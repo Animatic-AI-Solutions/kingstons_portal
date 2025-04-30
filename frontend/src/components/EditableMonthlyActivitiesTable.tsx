@@ -914,31 +914,33 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
   // Get class for cell
   const getCellClass = (fundId: number, month: string, activityType: string, isFirstColumn: boolean = false): string => {
+    // Base class for all cells
+    let baseClass = "px-4 py-2 border box-border min-w-[100px] max-w-none";
+    
+    // Check if there's a pending edit for this cell
     const pendingEdit = pendingEdits.find(
       edit => edit.fundId === fundId && 
               edit.month === month && 
               edit.activityType === activityType
     );
     
-    let classes = "px-4 py-2 border box-border min-w-[100px] max-w-none";
-    
-    // If there's a pending edit
+    // Add edit indicator if there's a pending edit
     if (pendingEdit) {
-      classes += " bg-yellow-50";
-    }
-    
-    // Make current value cells readonly
-    if (activityType === 'Current Value') {
-      classes += " bg-gray-50";
+      baseClass += " bg-yellow-50";
     }
     
     // Add special class for switch cells with linked funds
     if ((activityType === 'Switch In' || activityType === 'Switch Out') && 
         pendingEdit && pendingEdit.linkedFundId) {
-      classes += " border-blue-300 border-2";
+      baseClass += " border-blue-300 border-2";
     }
     
-    return classes;
+    // Add subtle indicator for Current Value cells but maintain same base color
+    if (activityType === 'Current Value') {
+      baseClass += " hover:bg-blue-50 border-b border-blue-200";
+    }
+    
+    return baseClass;
   };
   
   // Get the name of the linked fund for a switch cell
@@ -1180,7 +1182,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                   type="text"
                                   className="focus:outline-none bg-transparent text-center border-0 shadow-none w-auto min-w-0"
                                   value={cellValue}
-                                  disabled={isSubmitting || (activityType === 'Current Value' && !cellValue)}
+                                  disabled={isSubmitting}
                                   onChange={(e) => {
                                     handleCellValueChange(fund.id, month, activityType, e.target.value);
                                     // Adjust width to fit content
