@@ -1,0 +1,175 @@
+/* Global styles for improved readability and accessibility */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base font size and text color for better readability */
+@layer base {
+  html {
+    @apply text-text-primary;
+    font-size: 16px;
+  }
+  
+  body {
+    @apply bg-background-secondary;
+    line-height: 1.5;
+  }
+  
+  h1 {
+    @apply text-3xl font-bold mb-6 text-text-primary;
+  }
+  
+  h2 {
+    @apply text-2xl font-bold mb-4 text-text-primary;
+  }
+  
+  h3 {
+    @apply text-xl font-bold mb-3 text-text-primary;
+  }
+  
+  p {
+    @apply text-base text-text-primary mb-4;
+  }
+  
+  /* Improve form element styling */
+  label {
+    @apply block text-base font-medium text-text-primary mb-2;
+  }
+  
+  input, select, textarea {
+    @apply text-base px-4 py-3 rounded-lg border-gray-300 shadow-sm;
+    @apply focus:ring-primary-600 focus:border-primary-600;
+    @apply w-full;
+  }
+  
+  /* Button styling with larger clickable areas */
+  button, .btn {
+    @apply inline-flex items-center justify-center;
+    @apply px-6 py-3 text-base font-medium rounded-lg;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply transition-colors duration-200;
+  }
+  
+  .btn-primary {
+    @apply bg-primary-600 text-white;
+    @apply hover:bg-primary-700 focus:ring-primary-500;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-600 text-white;
+    @apply hover:bg-gray-700 focus:ring-gray-500;
+  }
+  
+  .btn-danger {
+    @apply bg-red-600 text-white;
+    @apply hover:bg-red-700 focus:ring-red-500;
+  }
+  
+  .btn-success {
+    @apply bg-green-600 text-white;
+    @apply hover:bg-green-700 focus:ring-green-500;
+  }
+  
+  .btn-warning {
+    @apply bg-yellow-600 text-white;
+    @apply hover:bg-yellow-700 focus:ring-yellow-500;
+  }
+  
+  /* Table styling for better readability */
+  table {
+    @apply min-w-full divide-y divide-gray-200;
+  }
+  
+  thead {
+    @apply bg-background-tertiary;
+  }
+  
+  th {
+    @apply px-6 py-4 text-left text-base font-semibold text-text-primary uppercase tracking-wider;
+  }
+  
+  td {
+    @apply px-6 py-5 text-base text-text-primary;
+  }
+  
+  tbody tr {
+    @apply bg-background-primary hover:bg-primary-50 transition-colors duration-150;
+  }
+  
+  tbody tr:not(:last-child) {
+    @apply border-b border-gray-200;
+  }
+  
+  /* Card styling */
+  .card {
+    @apply bg-background-primary shadow-md rounded-lg p-6 mb-6;
+  }
+  
+  /* Status indicators */
+  .status-active {
+    @apply px-3 py-1 inline-flex text-base font-semibold rounded-full bg-green-100 text-green-800;
+  }
+  
+  .status-inactive {
+    @apply px-3 py-1 inline-flex text-base font-semibold rounded-full bg-gray-100 text-gray-800;
+  }
+  
+  .status-dormant {
+    @apply px-3 py-1 inline-flex text-base font-semibold rounded-full bg-yellow-100 text-yellow-800;
+  }
+  
+  /* Value indicators */
+  .value-positive {
+    @apply text-green-700 font-medium;
+  }
+  
+  .value-negative {
+    @apply text-red-700 font-medium;
+  }
+  
+  /* Form layout */
+  .form-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 gap-6;
+  }
+  
+  .form-group {
+    @apply mb-6;
+  }
+  
+  /* Improved spacing */
+  .section {
+    @apply mb-8;
+  }
+  
+  .section-header {
+    @apply flex justify-between items-center mb-6;
+  }
+  
+  /* Accessibility improvements */
+  .sr-only {
+    @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
+  }
+  
+  /* Focus styles for keyboard navigation */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+  }
+}
+
+/* Cashline fund styling */
+.cashline-fund {
+  background-color: rgba(236, 253, 245, 0.5); /* Light mint green background */
+  border-left: 3px solid #10B981; /* Green border */
+}
+
+.cashline-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #0f766e;
+  background-color: #d1fae5;
+  border-radius: 0.375rem;
+  margin-right: 0.5rem;
+}

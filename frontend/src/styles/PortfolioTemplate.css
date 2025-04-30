@@ -1,0 +1,46 @@
+.portfolio-selection {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.template-details {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.funds-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.funds-table th,
+.funds-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.funds-table th {
+  background-color: #f3f4f6;
+  font-weight: 600;
+  color: #374151;
+}
+
+.funds-table tr:hover {
+  background-color: #f9fafb;
+}
+
+.template-selection {
+  margin-bottom: 1.5rem;
+}
+
+.custom-name-input {
+  margin-top: 1rem;
+} 

@@ -1,0 +1,48 @@
+# Root-level ignores (shared across project or not specific to frontend/backend)
+
+# macOS / Windows system files
+.DS_Store
+Thumbs.db
+
+# IDE/editor configs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Global env files
+.env
+.env.*
+!.env.example
+
+# Log files
+*.log
+
+# Python and Node environments
+.env/
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+venv311/
+node_modules/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Output
+dist/
+build/
+coverage/
+node_modules
+
+# Python distribution/packaging
+*.egg-info/
+*.egg

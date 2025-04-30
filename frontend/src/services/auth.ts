@@ -1,0 +1,255 @@
+import axios from 'axios';
+
+const API_URL = 'http://localhost:8000';
+
+/**
+ * Authentication Service
+ * 
+ * Handles all authentication-related operations:
+ * - Login
+ * - Logout
+ * - Signup
+ * - Password reset
+ * - Token management
+ * 
+ * API URL Structure:
+ * All API endpoints follow the pattern: /api/{resource}/{action}
+ * For authentication endpoints: /api/auth/{action}
+ * Example: /api/auth/login, /api/auth/signup
+ * 
+ * The createAuthenticatedApi() function below ensures all API calls
+ * follow this URL structure by adding the /api prefix when needed.
+ */
+export const authService = {
+  /**
+   * Login a user with email and password
+   * 
+   * @param email - User's email address
+   * @param password - User's password
+   * @returns Token and user data
+   */
+  login: async (email: string, password: string) => {
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/auth/login`, 
+        { email, password },
+        { withCredentials: true } // Include this option to allow cookies to be set
+      );
+      
+      if (response.data.access_token) {
+        localStorage.setItem('token', response.data.access_token);
+      }
+      
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Register a new user
+   * 
+   * @param firstName - User's first name
+   * @param lastName - User's last name
+   * @param email - User's email address
+   * @param password - User's password
+   * @returns Success message
+   */
+  signup: async (firstName: string, lastName: string, email: string, password: string) => {
+    try {
+      const response = await axios.post(`${API_URL}/api/auth/signup`, {
+        first_name: firstName,
+        last_name: lastName,
+        email,
+        password
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Log out the current user
+   * 
+   * Removes the token from localStorage and makes a logout request to the server
+   */
+  logout: async () => {
+    try {
+      // Get the current token
+      const token = localStorage.getItem('token');
+      
+      // Configure request with credentials to include cookies
+      const config = {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        withCredentials: true
+      };
+      
+      // Make the logout request - this will clear the session cookie on the server
+      await axios.post(`${API_URL}/api/auth/logout`, {}, config);
+      
+      // Remove the token from localStorage
+      localStorage.removeItem('token');
+    } catch (error) {
+      // Still remove the token even if the request fails
+      localStorage.removeItem('token');
+    }
+  },
+
+  /**
+   * Request a password reset email
+   * 
+   * @param email - User's email address
+   * @returns Success message
+   */
+  requestPasswordReset: async (email: string) => {
+    try {
+      const response = await axios.post(`${API_URL}/api/auth/forgot-password`, { email });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Verify a password reset token
+   * 
+   * @param token - Password reset token
+   * @returns Success message
+   */
+  verifyResetToken: async (token: string) => {
+    try {
+      const response = await axios.post(`${API_URL}/api/auth/verify-reset-token`, { token });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Reset a password with a token
+   * 
+   * @param token - Password reset token
+   * @param newPassword - New password
+   * @returns Success message
+   */
+  resetPassword: async (token: string, newPassword: string) => {
+    try {
+      const response = await axios.post(`${API_URL}/api/auth/reset-password`, {
+        token,
+        new_password: newPassword
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Get the current user's profile
+   * 
+   * @returns User profile data
+   */
+  getProfile: async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await axios.get(`${API_URL}/api/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        withCredentials: true
+      });
+      
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Get the current authentication token
+   * 
+   * @returns JWT token or null if not authenticated
+   */
+  getToken: () => {
+    return localStorage.getItem('token');
+  },
+
+  /**
+   * Check if the user is authenticated
+   * 
+   * @returns True if authenticated, false otherwise
+   */
+  isAuthenticated: () => {
+    return !!localStorage.getItem('token');
+  },
+
+  /**
+   * Complete password reset with token and new password
+   * 
+   * @param token - Reset token from email
+   * @param password - New password
+   * @returns Success message
+   */
+  confirmPasswordReset: async (token: string, password: string) => {
+    try {
+      const response = await axios.post(`${API_URL}/api/auth/reset-password`, { 
+        token, 
+        new_password: password 
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+};
+
+/**
+ * Configure Axios with authentication interceptor
+ * 
+ * Creates an axios instance with an interceptor to add the
+ * authentication token to all requests
+ */
+export const createAuthenticatedApi = () => {
+  try {
+    const api = axios.create({
+      baseURL: API_URL,  // Using just the base URL without /api
+      withCredentials: true
+    });
+  
+    // Add request interceptor for authentication and URL fixing
+    api.interceptors.request.use(config => {
+      // Add auth token
+      const token = authService.getToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      
+      // Fix URL paths for consistent /api prefix
+      if (config.url) {
+        // Always ensure URL starts with /api prefix (but no duplicates)
+        if (!config.url.startsWith('/api/')) {
+          config.url = `/api${config.url.startsWith('/') ? '' : '/'}${config.url}`;
+        }
+      }
+      
+      return config;
+    }, error => {
+      return Promise.reject(error);
+    });
+    
+    return api;
+  } catch (error) {
+    // Fallback to a simpler axios instance if there's an error
+    return axios.create({
+      baseURL: `${API_URL}/api`,
+      withCredentials: true
+    });
+  }
+};
+
+export default authService; 

@@ -1,0 +1,112 @@
+/* Auth page specific styles */
+
+:root {
+  /* These values are now defined in tailwind.config.js */
+  --primary: theme('colors.primary.700');
+  --primary-dark: theme('colors.primary.800');
+  --primary-light: theme('colors.primary.600');
+  --secondary: theme('colors.blue.500');
+  --white: theme('colors.white');
+  --light-gray: theme('colors.background.secondary');
+  --dark-gray: theme('colors.gray.800');
+  --error-red: theme('colors.red.600');
+}
+
+/* Grid layout for 50:50 split */
+.grid-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Carousel background image styles */
+.bg-center {
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: cover !important;
+}
+
+@media (max-width: 768px) {
+  .grid-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+}
+
+/* Form styles for auth pages */
+.form-input {
+  @apply w-full px-4 py-3 border border-gray-300 rounded-lg;
+  @apply focus:ring-2 focus:ring-primary-700 focus:border-primary-700;
+  @apply text-base;
+  transition: all 0.3s ease;
+  height: 48px;
+}
+
+.btn-primary {
+  @apply w-full py-3 rounded-lg text-white font-medium;
+  @apply bg-primary-700 hover:bg-primary-800;
+  @apply transition-all duration-200;
+  @apply text-base;
+  height: 48px;
+}
+
+.btn-primary:hover {
+  @apply transform hover:scale-[1.02];
+}
+
+.btn-primary:active {
+  @apply transform scale-[0.98];
+}
+
+.carousel-indicator {
+  @apply w-2 h-2 rounded-full bg-white bg-opacity-50 mx-1 cursor-pointer;
+  transition: all 0.3s ease;
+}
+
+.carousel-indicator.active {
+  @apply bg-white bg-opacity-100 w-4;
+}
+
+/* Animation classes */
+.slide-in {
+  animation: slideIn 0.6s ease forwards;
+}
+
+.fade-in {
+  animation: fadeIn 0.8s ease forwards;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Ken Burns effect for carousel */
+.ken-burns {
+  animation: kenBurns 20s ease alternate infinite;
+}
+
+@keyframes kenBurns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.05);
+  }
+} 
