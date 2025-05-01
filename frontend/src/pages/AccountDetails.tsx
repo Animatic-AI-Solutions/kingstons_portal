@@ -42,6 +42,9 @@ interface Account {
     portfolio_name: string;
     assignment_start_date: string;
   };
+  portfolio_id?: number;
+  holdings?: any[];
+  portfolio_funds?: any[];
 }
 
 interface Activity {
@@ -1603,7 +1606,7 @@ const AccountDetails: React.FC = () => {
                           <div className="text-sm font-bold text-gray-900">{formatCurrency(calculateTotalWithdrawals(activityLogs, holdings))}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-bold text-gray-900">{formatCurrency(calculateTotalMarketValue(holdings))}</div>
+                          <div className="text-sm font-bold text-gray-900">{formatCurrency(calculateTotalValue(holdings))}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-bold text-gray-900">{formatCurrency(calculateTotalValueMinusWithdrawals(holdings, activityLogs))}</div>
