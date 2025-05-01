@@ -220,7 +220,7 @@ const calculateTotalWithdrawals = (activities: ActivityLog[], holdings: Holding[
   return holdings.reduce((total, holding) => total + calculateWithdrawals(activities, holding.id), 0);
 };
 
-const calculateTotalMarketValue = (holdings: Holding[]): number => {
+const calculateTotalValue = (holdings: Holding[]): number => {
   return holdings.reduce((total, holding) => total + (holding.market_value || 0), 0);
 };
 
@@ -231,6 +231,18 @@ const calculateTotalValueMinusWithdrawals = (holdings: Holding[], activities: Ac
 
 const calculateTotalInvestmentsPlusSwitchIns = (activities: ActivityLog[], holdings: Holding[]): number => {
   return holdings.reduce((total, holding) => total + calculateInvestmentsPlusSwitchIns(activities, holding.id), 0);
+};
+
+// Add this new function to filter activity logs by year
+const filterActivitiesByYear = (activities: ActivityLog[], year: number): ActivityLog[] => {
+  return activities.filter(activity => {
+    const activityDate = new Date(activity.activity_timestamp);
+    return activityDate.getFullYear() === year;
+  });
+};
+
+const calculateTotalInvestments = (activities: ActivityLog[], holdings: Holding[]): number => {
+  return holdings.reduce((total, holding) => total + calculateInvestments(activities, holding.id), 0);
 };
 
 const AccountDetails: React.FC = () => {
@@ -467,9 +479,9 @@ const AccountDetails: React.FC = () => {
           const fund = fundsMap.get(pf.available_funds_id);
           const activities = fundActivities.filter((log: any) => log.portfolio_fund_id === pf.id);
 
-          // Calculate total units and market value
+          // Calculate total units and value
           let totalUnits = 0;
-          let totalMarketValue = 0;
+          let totalValue = 0;
           let totalAmountInvested = pf.amount_invested || 0; // Start with amount from portfolio_funds
 
           activities.forEach((activity: any) => {
@@ -477,7 +489,7 @@ const AccountDetails: React.FC = () => {
               totalUnits += activity.units_transacted;
             }
             if (activity.market_value_held) {
-              totalMarketValue = activity.market_value_held;
+              totalValue = activity.market_value_held;
             }
             if (activity.cash_flow_amount) {
               totalAmountInvested += activity.cash_flow_amount;
@@ -493,7 +505,7 @@ const AccountDetails: React.FC = () => {
             end_date: pf.end_date,
             fund_name: fund?.fund_name || 'Unknown Fund',
             amount_invested: totalAmountInvested,
-            market_value: totalMarketValue,
+            market_value: totalValue,
             irr: 0 // This would need to be calculated based on the performance data
           };
         });
@@ -533,7 +545,7 @@ const AccountDetails: React.FC = () => {
           const fundActivities = activities.filter((log: ActivityLog) => log.portfolio_fund_id === pf.id);
 
           let fundUnits = 0;
-          let fundMarketValue = 0;
+          let fundValue = 0;
           let fundAmountInvested = pf.amount_invested || 0;
 
           fundActivities.forEach((activity: ActivityLog) => {
@@ -541,12 +553,24 @@ const AccountDetails: React.FC = () => {
               fundUnits += activity.units_transacted;
             }
             if (activity.market_value_held) {
-              fundMarketValue = activity.market_value_held;
+              fundValue = activity.market_value_held;
             }
             if (activity.cash_flow_amount) {
               fundAmountInvested += activity.cash_flow_amount;
             }
           });
+
+          // Get the latest fund valuation to update the current value
+          try {
+            const latestValuationResponse = await api.get(`/fund_valuations/latest/${pf.id}`);
+            if (latestValuationResponse.data && latestValuationResponse.data.value) {
+              // Use the latest valuation for current value, overriding any value from activity logs
+              fundValue = latestValuationResponse.data.value;
+            }
+          } catch (error) {
+            // If no valuation exists, keep the value from activity logs
+            console.log(`No valuation found for fund ${pf.id}, using value from activities`);
+          }
 
           // Fetch the IRR value for this fund
           let irrValue = 0;
@@ -571,8 +595,8 @@ const AccountDetails: React.FC = () => {
             start_date: pf.start_date,
             end_date: pf.end_date,
             units: fundUnits,
-            market_value: fundMarketValue,
-            price_per_unit: fundUnits > 0 ? fundMarketValue / fundUnits : 0,
+            market_value: fundValue,
+            price_per_unit: fundUnits > 0 ? fundValue / fundUnits : 0,
             amount_invested: fundAmountInvested,
             activities: fundActivities,
             account_holding_id: holding.id,
@@ -1429,7 +1453,7 @@ const AccountDetails: React.FC = () => {
               <div className="space-y-8">
                 {/* Current Holdings Summary */}
                   <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold text-gray-900">Period Overview</h2>
+                    <h2 className="text-xl font-semibold text-gray-900">Period Overview for {selectedYear}</h2>
                     
                     <YearNavigator 
                       selectedYear={selectedYear}
