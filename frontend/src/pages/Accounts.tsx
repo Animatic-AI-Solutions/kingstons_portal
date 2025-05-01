@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -33,6 +33,80 @@ const Accounts: React.FC = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<{id: number, name: string} | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [providerFilter, setProviderFilter] = useState<string | null>(null);
+  const [showProviderFilter, setShowProviderFilter] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [showStatusFilter, setShowStatusFilter] = useState(false);
+  const providerFilterRef = useRef<HTMLDivElement>(null);
+  const statusFilterRef = useRef<HTMLDivElement>(null);
+  
+  // Position states for the dropdowns
+  const [providerDropdownPosition, setProviderDropdownPosition] = useState({ top: 0, left: 0 });
+  const [statusDropdownPosition, setStatusDropdownPosition] = useState({ top: 0, left: 0 });
+  
+  // Functions to calculate and set dropdown positions
+  const updateProviderDropdownPosition = () => {
+    if (providerFilterRef.current) {
+      const rect = providerFilterRef.current.getBoundingClientRect();
+      setProviderDropdownPosition({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX
+      });
+    }
+  };
+  
+  const updateStatusDropdownPosition = () => {
+    if (statusFilterRef.current) {
+      const rect = statusFilterRef.current.getBoundingClientRect();
+      setStatusDropdownPosition({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX
+      });
+    }
+  };
+  
+  // Add effect hooks for dropdown positioning
+  useEffect(() => {
+    if (showProviderFilter) {
+      updateProviderDropdownPosition();
+      window.addEventListener('scroll', updateProviderDropdownPosition);
+      window.addEventListener('resize', updateProviderDropdownPosition);
+    }
+    
+    return () => {
+      window.removeEventListener('scroll', updateProviderDropdownPosition);
+      window.removeEventListener('resize', updateProviderDropdownPosition);
+    };
+  }, [showProviderFilter]);
+  
+  useEffect(() => {
+    if (showStatusFilter) {
+      updateStatusDropdownPosition();
+      window.addEventListener('scroll', updateStatusDropdownPosition);
+      window.addEventListener('resize', updateStatusDropdownPosition);
+    }
+    
+    return () => {
+      window.removeEventListener('scroll', updateStatusDropdownPosition);
+      window.removeEventListener('resize', updateStatusDropdownPosition);
+    };
+  }, [showStatusFilter]);
+  
+  // Add click outside handler
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (providerFilterRef.current && !providerFilterRef.current.contains(event.target as Node)) {
+        setShowProviderFilter(false);
+      }
+      if (statusFilterRef.current && !statusFilterRef.current.contains(event.target as Node)) {
+        setShowStatusFilter(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const fetchAccounts = async () => {
     try {
@@ -177,6 +251,14 @@ const Accounts: React.FC = () => {
       (account.product_name && account.product_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
       account.status.toLowerCase().includes(searchQuery.toLowerCase())
     )
+    .filter(account => 
+      providerFilter === null || 
+      (account.provider_name && account.provider_name.toLowerCase() === providerFilter.toLowerCase())
+    )
+    .filter(account => 
+      statusFilter === null || 
+      (account.status.toLowerCase() === statusFilter.toLowerCase())
+    )
     .sort((a, b) => {
       let aValue: any = a[sortField];
       let bValue: any = b[sortField];
@@ -197,6 +279,15 @@ const Accounts: React.FC = () => {
       return 0;
     });
 
+  // Extract unique provider names and statuses
+  const providers = [...new Set(accounts
+    .map(account => account.provider_name)
+    .filter(provider => provider !== undefined && provider !== null))] as string[];
+    
+  const statuses = [...new Set(accounts
+    .map(account => account.status)
+    .filter(status => status !== null))] as string[];
+
   // Group accounts by client if the option is selected
   const groupedAccounts = groupByClient
     ? filteredAndSortedAccounts.reduce((groups: Record<string, Account[]>, account) => {
@@ -215,9 +306,9 @@ const Accounts: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Account Management</h1>
+    <div className="container mx-auto px-4 py-3">
+      <div className="flex justify-between items-center mb-3">
+        <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Accounts</h1>
         <div className="flex items-center gap-4">
           <label className="flex items-center gap-2">
             <input
@@ -226,27 +317,23 @@ const Accounts: React.FC = () => {
               onChange={(e) => setGroupByClient(e.target.checked)}
               className="form-checkbox h-5 w-5 text-blue-600"
             />
-            <span className="text-base">Group by Client</span>
+            <span>Group by Client</span>
           </label>
-        </div>
-      </div>
-
-      <div className="bg-white shadow rounded-lg p-6">
-        {/* Page Header */}
-        <div className="pb-5 border-b border-gray-200 sm:flex sm:items-center sm:justify-between">
-          <h1 className="text-3xl leading-6 font-medium text-gray-900">Accounts</h1>
-          <div className="mt-3 sm:mt-0 sm:ml-4">
             <button
               onClick={handleCreateClientAccounts}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="bg-primary-700 text-white px-4 py-1.5 rounded-xl font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 shadow-sm flex items-center gap-1"
             >
-              Create client accounts
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Create Account
             </button>
           </div>
         </div>
 
+      <div className="bg-white shadow rounded-lg p-4 overflow-visible">
         {/* Search and Sort Controls */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3 mb-3">
           {/* Search Bar */}
           <div className="flex-1">
             <div className="relative">
@@ -255,7 +342,7 @@ const Accounts: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search accounts..."
-                className="w-full pl-10 pr-4 py-3 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200"
               />
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -265,37 +352,7 @@ const Accounts: React.FC = () => {
             </div>
           </div>
 
-          {/* Sort Controls */}
-          <div className="flex gap-2">
-            <select
-              value={sortField}
-              onChange={(e) => handleSortFieldChange(e.target.value as SortField)}
-              className="border border-gray-300 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="account_name">Account</option>
-              <option value="client_name">Client</option>
-              <option value="product_name">Product</option>
-              <option value="provider_name">Provider</option>
-              <option value="total_value">Value</option>
-              <option value="irr">IRR</option>
-              <option value="status">Status</option>
-              <option value="start_date">Start Date</option>
-            </select>
-            <button
-              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              className="border border-gray-300 rounded-md px-3 py-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              {sortOrder === 'asc' ? (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                </svg>
-              ) : (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              )}
-            </button>
-          </div>
+          {/* Sort controls can be updated in the next edit */}
         </div>
 
         {/* Account List */}
@@ -310,12 +367,12 @@ const Accounts: React.FC = () => {
             <div className="text-gray-500 text-center py-4">No accounts found</div>
           ) : groupByClient ? (
             // Grouped by client view
-            <div className="space-y-8">
+            <div className="space-y-4">
               {Object.entries(groupedAccounts).map(([clientName, clientAccounts]) => (
                 <div key={clientName} className="border border-gray-200 rounded-lg overflow-hidden">
-                  <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                  <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
                     <div>
-                      <h3 className="text-lg font-medium text-gray-900">{clientName}</h3>
+                      <h3 className="text-base font-medium text-gray-900 font-sans tracking-tight">{clientName}</h3>
                       <p className="text-sm text-gray-500">{clientAccounts.length} account(s)</p>
                     </div>
                     <button
@@ -329,21 +386,213 @@ const Accounts: React.FC = () => {
                       Delete All
                     </button>
                   </div>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
+                  <div className="overflow-x-auto overflow-visible">
+                    <table className="min-w-full table-fixed divide-y divide-gray-200">
+                      <thead className="bg-gray-100">
                         <tr>
-                          <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                          <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                            <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('product_name')} title="Click to sort by Product">
                             Product
+                              <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                                {sortField === 'product_name' ? (
+                                  sortOrder === 'asc' ? (
+                                    <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                    </svg>
+                                  ) : (
+                                    <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                  )
+                                ) : (
+                                  <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                                  </svg>
+                                )}
+                              </span>
+                            </div>
                           </th>
-                          <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                          <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                            <div className="flex items-center justify-start relative" ref={providerFilterRef}>
+                              <div className="flex items-center cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('provider_name')} title="Click to sort by Provider">
+                                <span>Provider</span>
+                                <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                                  {sortField === 'provider_name' ? (
+                                    sortOrder === 'asc' ? (
+                                      <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                      </svg>
+                                    ) : (
+                                      <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                      </svg>
+                                    )
+                                  ) : (
+                                    <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                                    </svg>
+                                  )}
+                                </span>
+                              </div>
+                              <div className="flex items-center ml-1">
+                                {providerFilter && (
+                                  <span className="mr-1 px-1.5 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-800">
+                                    {providerFilter}
+                                  </span>
+                                )}
+                                <button 
+                                  onClick={() => {
+                                    updateProviderDropdownPosition();
+                                    setShowProviderFilter(!showProviderFilter);
+                                  }}
+                                  className={`${providerFilter ? 'text-indigo-600' : 'text-gray-500'} hover:text-indigo-600 focus:outline-none flex items-center`}
+                                  aria-label="Filter providers"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                  </svg>
+                                </button>
+                              </div>
+                              
+                              {showProviderFilter && (
+                                <div className="fixed z-50 w-48 bg-white rounded-md shadow-xl border border-gray-200 py-1 text-left" style={{ top: providerDropdownPosition.top, left: providerDropdownPosition.left }}>
+                                  <button 
+                                    onClick={() => {
+                                      setProviderFilter(null);
+                                      setShowProviderFilter(false);
+                                    }}
+                                    className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${providerFilter === null ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
+                                  >
+                                    All Providers
+                                  </button>
+                                  {providers.map(provider => (
+                                    <button 
+                                      key={provider}
+                                      onClick={() => {
+                                        setProviderFilter(provider);
+                                        setShowProviderFilter(false);
+                                      }}
+                                      className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${providerFilter === provider ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
+                                    >
+                                      {provider}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </th>
+                          <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                            <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('total_value')} title="Click to sort by Value">
                             Value
+                              <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                                {sortField === 'total_value' ? (
+                                  sortOrder === 'asc' ? (
+                                    <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                    </svg>
+                                  ) : (
+                                    <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                  )
+                                ) : (
+                                  <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                                  </svg>
+                                )}
+                              </span>
+                            </div>
                           </th>
-                          <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                            IRR
+                          <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                            <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('irr')} title="Click to sort by IRR">
+                              IRR
+                              <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                                {sortField === 'irr' ? (
+                                  sortOrder === 'asc' ? (
+                                    <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                    </svg>
+                                  ) : (
+                                    <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                  )
+                                ) : (
+                                  <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                                  </svg>
+                                )}
+                              </span>
+                            </div>
                           </th>
-                          <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                            Status
+                          <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                            <div className="flex items-center justify-start relative" ref={statusFilterRef}>
+                              <div className="flex items-center cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('status')} title="Click to sort by Status">
+                                <span>Status</span>
+                                <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                                  {sortField === 'status' ? (
+                                    sortOrder === 'asc' ? (
+                                      <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                      </svg>
+                                    ) : (
+                                      <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                      </svg>
+                                    )
+                                  ) : (
+                                    <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                                    </svg>
+                                  )}
+                                </span>
+                              </div>
+                              <div className="flex items-center ml-1">
+                                {statusFilter && (
+                                  <span className="mr-1 px-1.5 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-800">
+                                    {statusFilter}
+                                  </span>
+                                )}
+                                <button 
+                                  onClick={() => {
+                                    updateStatusDropdownPosition();
+                                    setShowStatusFilter(!showStatusFilter);
+                                  }}
+                                  className={`${statusFilter ? 'text-indigo-600' : 'text-gray-500'} hover:text-indigo-600 focus:outline-none flex items-center`}
+                                  aria-label="Filter statuses"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                  </svg>
+                                </button>
+                              </div>
+                              
+                              {showStatusFilter && (
+                                <div className="fixed z-50 w-48 bg-white rounded-md shadow-xl border border-gray-200 py-1 text-left" style={{ top: statusDropdownPosition.top, left: statusDropdownPosition.left }}>
+                                  <button 
+                                    onClick={() => {
+                                      setStatusFilter(null);
+                                      setShowStatusFilter(false);
+                                    }}
+                                    className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${statusFilter === null ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
+                                  >
+                                    All Statuses
+                                  </button>
+                                  {statuses.map(status => (
+                                    <button 
+                                      key={status}
+                                      onClick={() => {
+                                        setStatusFilter(status);
+                                        setShowStatusFilter(false);
+                                      }}
+                                      className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${statusFilter === status ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
+                                    >
+                                      {status}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           </th>
                         </tr>
                       </thead>
@@ -351,21 +600,31 @@ const Accounts: React.FC = () => {
                         {clientAccounts.map((account) => (
                           <tr 
                             key={account.id} 
-                            className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
+                            className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
                             onClick={() => handleAccountClick(account.id)}
                           >
-                            <td className="px-6 py-5 whitespace-nowrap">
-                              <div className="text-base font-medium text-gray-900">{account.product_name}</div>
+                            <td className="px-6 py-3 whitespace-nowrap">
+                              <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{account.product_name}</div>
+                              <div className="text-xs text-gray-500 font-sans">
+                                Account: {account.account_name}
+                              </div>
                             </td>
-                            <td className="px-6 py-5 whitespace-nowrap">
-                              {account.total_value !== undefined && (
-                                <div className="text-base text-gray-900">{formatCurrency(account.total_value)}</div>
+                            <td className="px-6 py-3 whitespace-nowrap">
+                              <div className="text-sm text-gray-600 font-sans">{account.provider_name || 'Unknown'}</div>
+                            </td>
+                            <td className="px-6 py-3 whitespace-nowrap">
+                              {account.total_value !== undefined ? (
+                                <div className="text-sm font-medium text-indigo-600">
+                                  {formatCurrency(account.total_value)}
+                                </div>
+                              ) : (
+                                <div className="text-sm text-gray-500">N/A</div>
                               )}
                             </td>
-                            <td className="px-6 py-5 whitespace-nowrap">
-                              {account.irr !== undefined && account.irr !== null && (
+                            <td className="px-6 py-3 whitespace-nowrap">
+                              {account.irr !== undefined && account.irr !== null ? (
                                 <div>
-                                  <div className={`text-base font-medium ${(account.irr ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                                  <div className={`text-sm font-medium ${(account.irr ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                                     {formatPercentage(account.irr)}
                                     <span className="ml-1">
                                       {(account.irr ?? 0) >= 0 ? '▲' : '▼'}
@@ -377,10 +636,12 @@ const Accounts: React.FC = () => {
                                     </div>
                                   )}
                                 </div>
+                              ) : (
+                                <div className="text-sm text-gray-500">-</div>
                               )}
                             </td>
-                            <td className="px-6 py-5 whitespace-nowrap">
-                              <span className={`px-2 inline-flex text-sm leading-5 font-semibold rounded-full ${
+                            <td className="px-6 py-3 whitespace-nowrap">
+                              <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
                                 account.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                               }`}>
                                 {account.status}
@@ -396,52 +657,277 @@ const Accounts: React.FC = () => {
             </div>
           ) : (
             // Regular table view
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+            <div className="overflow-x-auto overflow-visible">
+              <table className="min-w-full table-fixed divide-y divide-gray-200">
+                <thead className="bg-gray-100">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                    <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                      <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('client_name')} title="Click to sort by Client">
                       Client
+                        <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                          {sortField === 'client_name' ? (
+                            sortOrder === 'asc' ? (
+                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
+                            ) : (
+                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            )
+                          ) : (
+                            <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                            </svg>
+                          )}
+                        </span>
+                      </div>
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                    <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                      <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('product_name')} title="Click to sort by Product">
                       Product
+                        <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                          {sortField === 'product_name' ? (
+                            sortOrder === 'asc' ? (
+                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
+                            ) : (
+                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            )
+                          ) : (
+                            <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                            </svg>
+                          )}
+                        </span>
+                      </div>
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                    <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                      <div className="flex items-center justify-start relative" ref={providerFilterRef}>
+                        <div className="flex items-center cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('provider_name')} title="Click to sort by Provider">
+                          <span>Provider</span>
+                          <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                            {sortField === 'provider_name' ? (
+                              sortOrder === 'asc' ? (
+                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              ) : (
+                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              )
+                            ) : (
+                              <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                              </svg>
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex items-center ml-1">
+                          {providerFilter && (
+                            <span className="mr-1 px-1.5 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-800">
+                              {providerFilter}
+                            </span>
+                          )}
+                          <button 
+                            onClick={() => {
+                              updateProviderDropdownPosition();
+                              setShowProviderFilter(!showProviderFilter);
+                            }}
+                            className={`${providerFilter ? 'text-indigo-600' : 'text-gray-500'} hover:text-indigo-600 focus:outline-none flex items-center`}
+                            aria-label="Filter providers"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </div>
+                        
+                        {showProviderFilter && (
+                          <div className="fixed z-50 w-48 bg-white rounded-md shadow-xl border border-gray-200 py-1 text-left" style={{ top: providerDropdownPosition.top, left: providerDropdownPosition.left }}>
+                            <button 
+                              onClick={() => {
+                                setProviderFilter(null);
+                                setShowProviderFilter(false);
+                              }}
+                              className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${providerFilter === null ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
+                            >
+                              All Providers
+                            </button>
+                            {providers.map(provider => (
+                              <button 
+                                key={provider}
+                                onClick={() => {
+                                  setProviderFilter(provider);
+                                  setShowProviderFilter(false);
+                                }}
+                                className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${providerFilter === provider ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
+                              >
+                                {provider}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </th>
+                    <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                      <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('total_value')} title="Click to sort by Value">
                       Value
+                        <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                          {sortField === 'total_value' ? (
+                            sortOrder === 'asc' ? (
+                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
+                            ) : (
+                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            )
+                          ) : (
+                            <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                            </svg>
+                          )}
+                        </span>
+                      </div>
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                      IRR
+                    <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                      <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('irr')} title="Click to sort by IRR">
+                        IRR
+                        <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                          {sortField === 'irr' ? (
+                            sortOrder === 'asc' ? (
+                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
+                            ) : (
+                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            )
+                          ) : (
+                            <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                            </svg>
+                          )}
+                        </span>
+                      </div>
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                      Status
+                    <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                      <div className="flex items-center justify-start relative" ref={statusFilterRef}>
+                        <div className="flex items-center cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('status')} title="Click to sort by Status">
+                          <span>Status</span>
+                          <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                            {sortField === 'status' ? (
+                              sortOrder === 'asc' ? (
+                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              ) : (
+                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              )
+                            ) : (
+                              <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                              </svg>
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex items-center ml-1">
+                          {statusFilter && (
+                            <span className="mr-1 px-1.5 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-800">
+                              {statusFilter}
+                            </span>
+                          )}
+                          <button 
+                            onClick={() => {
+                              updateStatusDropdownPosition();
+                              setShowStatusFilter(!showStatusFilter);
+                            }}
+                            className={`${statusFilter ? 'text-indigo-600' : 'text-gray-500'} hover:text-indigo-600 focus:outline-none flex items-center`}
+                            aria-label="Filter statuses"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </div>
+                        
+                        {showStatusFilter && (
+                          <div className="fixed z-50 w-48 bg-white rounded-md shadow-xl border border-gray-200 py-1 text-left" style={{ top: statusDropdownPosition.top, left: statusDropdownPosition.left }}>
+                            <button 
+                              onClick={() => {
+                                setStatusFilter(null);
+                                setShowStatusFilter(false);
+                              }}
+                              className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${statusFilter === null ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
+                            >
+                              All Statuses
+                            </button>
+                            {statuses.map(status => (
+                              <button 
+                                key={status}
+                                onClick={() => {
+                                  setStatusFilter(status);
+                                  setShowStatusFilter(false);
+                                }}
+                                className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${statusFilter === status ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
+                              >
+                                {status}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredAndSortedAccounts.map((account) => (
+                  {filteredAndSortedAccounts.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 border-b border-gray-200">
+                        No accounts found
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredAndSortedAccounts.map((account) => (
                     <tr 
                       key={account.id} 
-                      className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
+                        className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
                       onClick={() => handleAccountClick(account.id)}
                     >
-                      <td className="px-6 py-5 whitespace-nowrap">
-                        <div className="text-base font-medium text-gray-900">{account.client_name}</div>
-                        <div className="text-sm text-gray-500">
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{account.client_name}</div>
+                          <div className="text-xs text-gray-500 font-sans">
                           Account: {account.account_name}
                         </div>
                       </td>
-                      <td className="px-6 py-5 whitespace-nowrap">
-                        <div className="text-base text-gray-900">{account.product_name}</div>
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <div className="text-sm text-gray-600 font-sans">{account.product_name}</div>
+                        </td>
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <div className="text-sm text-gray-600 font-sans">{account.provider_name || 'Unknown'}</div>
                       </td>
-                      <td className="px-6 py-5 whitespace-nowrap">
-                        {account.total_value !== undefined && (
-                          <div className="text-base text-gray-900">{formatCurrency(account.total_value)}</div>
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          {account.total_value !== undefined ? (
+                            <div className="text-sm font-medium text-indigo-600">
+                              {formatCurrency(account.total_value)}
+                            </div>
+                          ) : (
+                            <div className="text-sm text-gray-500">N/A</div>
                         )}
                       </td>
-                      <td className="px-6 py-5 whitespace-nowrap">
-                        {account.irr !== undefined && account.irr !== null && (
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          {account.irr !== undefined && account.irr !== null ? (
                           <div>
-                            <div className={`text-base font-medium ${(account.irr ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                              <div className={`text-sm font-medium ${(account.irr ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                               {formatPercentage(account.irr)}
                               <span className="ml-1">
                                 {(account.irr ?? 0) >= 0 ? '▲' : '▼'}
@@ -453,17 +939,20 @@ const Accounts: React.FC = () => {
                               </div>
                             )}
                           </div>
+                          ) : (
+                            <div className="text-sm text-gray-500">-</div>
                         )}
                       </td>
-                      <td className="px-6 py-5 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-sm leading-5 font-semibold rounded-full ${
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           account.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                         }`}>
                           {account.status}
                         </span>
                       </td>
                     </tr>
-                  ))}
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

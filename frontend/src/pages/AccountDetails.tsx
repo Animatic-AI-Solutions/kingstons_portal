@@ -1014,50 +1014,48 @@ const AccountDetails: React.FC = () => {
       <DeleteConfirmationModal />
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Header */}
-      <div className="mb-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-          <div>
-            <div className="flex items-center">
-              <Link to="/accounts" className="text-indigo-600 hover:text-indigo-900 mr-2">
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="mb-6 bg-white shadow-sm rounded-lg border border-gray-100 relative">
+        <Link to="/accounts" className="absolute left-4 top-4 text-indigo-600 hover:text-indigo-900 transition-colors duration-200">
+          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
               </Link>
-              <h1 className="text-3xl font-bold text-gray-900">{account.account_name}</h1>
-            </div>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between p-6">
+          <div>
+            <div className="flex items-center">
+              <div className="pl-9">
+                <h1 className="text-4xl font-normal text-gray-900 font-sans tracking-wide">
+                  {account.client_name}'s {account.account_name}
+                </h1>
             <div className="mt-1 flex items-center">
-              <Link to={`/clients/${account.client_id}`} className="text-xl font-medium text-primary-700 hover:text-primary-800 transition-colors duration-200 font-sans tracking-wide">
-                {account.client_name}
+                  <Link to={`/clients/${account.client_id}`} className="text-base font-medium text-gray-600 hover:text-primary-700 transition-colors duration-200 font-sans tracking-wide">
+                    Client: {account.client_name}
               </Link>
-              <span className="mx-2 text-gray-500">•</span>
-              <span className={`px-2 inline-flex text-sm leading-5 font-semibold rounded-full ${
+                  <span className="mx-2 text-gray-400">•</span>
+                  <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
                 account.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
               }`}>
                 {account.status}
               </span>
             </div>
           </div>
-          <div className="mt-4 md:mt-0 flex flex-wrap gap-2">
-            <button
-              onClick={handleAddHolding}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-md text-base font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-            >
-              Add Holding
-            </button>
           </div>
         </div>
 
-        {/* Key Metrics */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white shadow rounded-lg p-4">
-            <div className="text-sm font-medium text-gray-500">Total Value</div>
-            <div className="mt-1 text-2xl font-semibold text-gray-900">
+          <div className="flex flex-col gap-4 mt-4 md:mt-0 w-64">
+            {/* Key Metrics stacked vertically */}
+            <div className="py-3 pb-0">
+              <div className="text-sm font-medium text-gray-500">Latest Valuation</div>
+              <div className="mt-1 flex justify-end">
+                <span className="text-5xl font-semibold text-gray-900 font-sans tracking-tight">
               {account.total_value ? formatCurrency(account.total_value) : 'N/A'}
+                </span>
             </div>
           </div>
-          <div className="bg-white shadow rounded-lg p-4">
-            <div className="text-sm font-medium text-gray-500">IRR</div>
-            <div className={`mt-1 text-2xl font-semibold ${account.irr && account.irr >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+
+            <div className="py-1">
+              <div className="flex justify-end">
+                <span className={`text-2xl font-semibold ${account.irr && account.irr >= 0 ? 'text-green-700' : 'text-red-700'}`}>
               {account.irr !== undefined ? (
                 <>
                   {formatPercentage(account.irr / 100)}
@@ -1066,49 +1064,55 @@ const AccountDetails: React.FC = () => {
                   </span>
                 </>
               ) : 'N/A'}
+                </span>
             </div>
           </div>
-          <div className="bg-white shadow rounded-lg p-4">
-            <div className="text-sm font-medium text-gray-500">Weighting</div>
-            <div className="mt-1 text-2xl font-semibold text-gray-900">
-              {account.weighting !== undefined ? formatPercentage(account.weighting) : 'N/A'}
-            </div>
+            
+            <button
+              onClick={handleAddHolding}
+              className="bg-primary-700 text-white px-4 py-1.5 rounded-xl font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 shadow-sm flex items-center gap-1 justify-center mt-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Add Holding
+            </button>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="mb-6 border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+      <div className="mb-6">
+        <nav className="flex space-x-2 px-2 py-2 bg-gray-50 rounded-lg">
           <button
             onClick={() => setActiveTab('info')}
             className={`${
               activeTab === 'info'
-                ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-base`}
+                ? 'bg-primary-700 text-white shadow-sm'
+                : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+            } rounded-lg px-4 py-2 font-medium text-base transition-all duration-200 ease-in-out`}
           >
-            Info
+            Overview
           </button>
           <button
             onClick={() => setActiveTab('holdings')}
             className={`${
               activeTab === 'holdings'
-                ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-base`}
+                ? 'bg-primary-700 text-white shadow-sm'
+                : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+            } rounded-lg px-4 py-2 font-medium text-base transition-all duration-200 ease-in-out`}
           >
-            IRR
+            IRR Calculation
           </button>
           <button
             onClick={() => setActiveTab('activity')}
             className={`${
               activeTab === 'activity'
-                ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-base`}
+                ? 'bg-primary-700 text-white shadow-sm'
+                : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+            } rounded-lg px-4 py-2 font-medium text-base transition-all duration-200 ease-in-out`}
           >
-            Activity Log
+            IRR History
           </button>
         </nav>
       </div>
@@ -1118,143 +1122,307 @@ const AccountDetails: React.FC = () => {
         {/* Info Tab */}
         {activeTab === 'info' && (
           <div className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Account Information</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-normal text-gray-900 font-sans tracking-wide">Account Information</h2>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <dl className="space-y-4">
                   <div>
-                    <dt className="text-sm font-medium text-gray-500">Account Name</dt>
-                    <dd className="mt-1 text-base text-gray-900">{account.account_name}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm font-medium text-gray-500">Client</dt>
-                    <dd className="mt-1 text-base text-gray-900">
-                      <Link to={`/clients/${account.client_id}`} className="text-primary-700 font-medium hover:text-primary-800 transition-colors duration-200 font-sans">
-                        {account.client_name}
-                      </Link>
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm font-medium text-gray-500">Status</dt>
-                    <dd className="mt-1 text-base text-gray-900">{account.status}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm font-medium text-gray-500">Weighting</dt>
-                    <dd className="mt-1 text-base text-gray-900">
+                    <dt className="inline-block text-base font-medium text-gray-700">Weighting: </dt>
+                    <dd className="inline-block ml-1 text-base text-gray-900">
                       {account.weighting !== undefined ? formatPercentage(account.weighting) : 'N/A'}
                     </dd>
+                  </div>
+                  <div>
+                    <dt className="inline-block text-base font-medium text-gray-700">Provider: </dt>
+                    <dd className="inline-block ml-1 text-base text-gray-900">{account.provider_name}</dd>
                   </div>
                 </dl>
               </div>
               <div>
                 <dl className="space-y-4">
                   <div>
-                    <dt className="text-sm font-medium text-gray-500">Provider</dt>
-                    <dd className="mt-1 text-base text-gray-900">{account.provider_name}</dd>
+                    <dt className="inline-block text-base font-medium text-gray-700">Product: </dt>
+                    <dd className="inline-block ml-1 text-base text-gray-900">{account.product_name}</dd>
                   </div>
                   <div>
-                    <dt className="text-sm font-medium text-gray-500">Product</dt>
-                    <dd className="mt-1 text-base text-gray-900">{account.product_name}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm font-medium text-gray-500">Start Date</dt>
-                    <dd className="mt-1 text-base text-gray-900">{formatDate(account.start_date)}</dd>
+                    <dt className="inline-block text-base font-medium text-gray-700">Start Date: </dt>
+                    <dd className="inline-block ml-1 text-base text-gray-900">{formatDate(account.start_date)}</dd>
                   </div>
                   {account.end_date && (
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">End Date</dt>
-                      <dd className="mt-1 text-base text-gray-900">{formatDate(account.end_date)}</dd>
+                      <dt className="inline-block text-base font-medium text-gray-700">End Date: </dt>
+                      <dd className="inline-block ml-1 text-base text-gray-900">{formatDate(account.end_date)}</dd>
                     </div>
                   )}
                 </dl>
               </div>
             </div>
 
-              {/* Portfolio Section */}
-              <div className="mt-8 border-t border-gray-200 pt-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Fund Information</h3>
-                {account.current_portfolio ? (
+            {/* Fund Summary Table */}
+            <div className="mt-8 mb-8">
+              <h2 className="text-xl font-normal text-gray-900 font-sans tracking-wide mb-4">Fund Summary</h2>
+              <div className="overflow-x-auto rounded-lg border border-gray-200">
+                <table className="min-w-full table-fixed divide-y divide-gray-200">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                        <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150">
+                          Fund Name
+                          <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                            <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                            </svg>
+                          </span>
+                        </div>
+                      </th>
+                      <th className="w-[15%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                        <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150">
+                          ISIN Number
+                          <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                            <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                            </svg>
+                          </span>
+                        </div>
+                      </th>
+                      <th className="w-[15%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                        <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150">
+                          Latest Valuation
+                          <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                            <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                            </svg>
+                          </span>
+                        </div>
+                      </th>
+                      <th className="w-[15%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                        <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150">
+                          Weighting
+                          <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                            <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                            </svg>
+                          </span>
+                        </div>
+                      </th>
+                      <th className="w-[15%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                        <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150">
+                          Risk Factor
+                          <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                            <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                            </svg>
+                          </span>
+                        </div>
+                      </th>
+                      <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                        <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150">
+                          Last IRR
+                          <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                            <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                            </svg>
+                          </span>
+                        </div>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {holdings.map((holding) => (
+                      <tr key={holding.id} className="cursor-pointer hover:bg-indigo-50 transition-colors duration-150">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {holding.fund_name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                          {holding.isin_number || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                          {holding.market_value ? formatCurrency(holding.market_value) : 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                          {holding.target_weighting !== undefined ? formatPercentage(parseFloat(holding.target_weighting)) : 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            holding.risk_level === 'low' ? 'bg-green-100 text-green-800' : 
+                            holding.risk_level === 'medium' ? 'bg-yellow-100 text-yellow-800' : 
+                            holding.risk_level === 'high' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {getFundRiskRating(holding.fund_id || 0, fundsData) || 'N/A'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {holding.irr !== undefined ? (
+                            <span className={`text-sm ${holding.irr >= 0 ? 'text-green-700' : 'text-red-700'} font-medium`}>
+                              {formatPercentage(holding.irr / 100)}
+                              <span className="ml-1">
+                                {holding.irr >= 0 ? '▲' : '▼'}
+                              </span>
+                            </span>
+                          ) : (
+                            <span className="text-sm text-gray-500">N/A</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {holdings.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
+                          No funds found for this account.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Fund Information Section in Info Tab */}
+            {account.holdings && (
+              <div className="p-6 border-t border-gray-200">
+                <h2 className="text-xl font-normal text-gray-900 font-sans tracking-wide mb-4">Fund Information</h2>
+                
+                {account.holdings.length > 0 ? (
                   <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200 table-fixed">
-                      <thead className="bg-gray-50">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead>
                         <tr>
-                          <th className="w-1/6 px-4 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Fund Name</th>
-                          <th className="w-1/6 px-4 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">ISIN</th>
-                          <th className="w-1/6 px-4 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Last Valuation</th>
-                          <th className="w-1/6 px-4 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Weighting %</th>
-                          <th className="w-1/6 px-4 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Risk Level</th>
-                          <th className="w-1/6 px-4 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Last IRR</th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Fund Name
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            ISIN
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Last Valuation
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Weighting %
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Risk Level
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Last IRR
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {holdings.length > 0 ? (
-                          holdings.map((holding) => (
-                            <tr key={holding.id}>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{holding.fund_name}</td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{holding.isin || 'N/A'}</td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{holding.market_value ? formatCurrency(holding.market_value) : 'N/A'}</td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{holding.target_weighting ? formatPercentage(parseFloat(holding.target_weighting)) : 'N/A'}</td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{holding.risk_level || 'N/A'}</td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm">
-                                <span className={`${holding.irr && holding.irr >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                                  {holding.irr !== undefined ? (
-                                    <>
-                                      {formatPercentage(holding.irr / 100)}
-                                      <span className="ml-1">
-                                        {holding.irr >= 0 ? '▲' : '▼'}
-                                      </span>
-                                    </>
-                                  ) : 'N/A'}
+                        {account.holdings.map((holding) => (
+                          <tr key={holding.id} className="hover:bg-gray-50 transition-colors duration-150">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {holding.fund_name}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {holding.isin_number || 'N/A'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {holding.market_value ? formatCurrency(holding.market_value) : 'N/A'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {holding.target_weighting !== undefined ? formatPercentage(parseFloat(holding.target_weighting)) : 'N/A'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                holding.risk_level === 'low' ? 'bg-green-100 text-green-800' : 
+                                holding.risk_level === 'medium' ? 'bg-yellow-100 text-yellow-800' : 
+                                holding.risk_level === 'high' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {holding.risk_level || 'N/A'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {holding.irr !== undefined ? (
+                                <span className={`text-sm ${holding.irr >= 0 ? 'text-green-700' : 'text-red-700'} font-medium`}>
+                                  {formatPercentage(holding.irr / 100)}
+                                  <span className="ml-1">
+                                    {holding.irr >= 0 ? '▲' : '▼'}
+                                  </span>
                                 </span>
-                              </td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td colSpan={6} className="px-4 py-3 text-center text-sm text-gray-500">No funds available</td>
+                              ) : (
+                                <span className="text-sm text-gray-500">N/A</span>
+                              )}
+                            </td>
                           </tr>
-                        )}
+                        ))}
                       </tbody>
                     </table>
                   </div>
+                ) : account.portfolio_id ? (
+                  <div className="bg-yellow-50 p-4 rounded-md border border-yellow-100">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-yellow-800">No funds in this account</h3>
+                        <div className="mt-2 text-sm text-yellow-700">
+                          <p>
+                            This account has a portfolio but no funds have been added yet.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 ) : (
-                  <p className="text-gray-500">
-                    This account does not have an assigned portfolio. You can create a portfolio in the Holdings tab.
+                  <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-gray-800">No portfolio assigned</h3>
+                        <div className="mt-2 text-sm text-gray-700">
+                          <p>
+                            This account doesn't have a portfolio assigned. Create one in the Holdings tab.
                   </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
+            )}
               
-              {/* Danger Zone */}
-              <div className="mt-8 border-t border-red-200 pt-6">
-                <h3 className="text-lg font-medium text-red-600 mb-4">Danger Zone</h3>
-                <div className="bg-red-50 p-4 rounded-md">
-                  <div className="flex items-start">
+            {/* Danger Zone in Info Tab */}
+            {activeTab === 'info' && (
+              <div className="p-6 border-t border-gray-200">
+                <h2 className="text-xl font-normal text-red-600 font-sans tracking-wide mb-4">Danger Zone</h2>
+                <div className="bg-red-50 p-4 rounded-md border border-red-200">
+                  <div className="flex">
                     <div className="flex-shrink-0">
-                      <svg className="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                       </svg>
                     </div>
                     <div className="ml-3">
                       <h3 className="text-sm font-medium text-red-800">Delete this account</h3>
-                      <div className="mt-2">
-                        <p className="text-sm text-red-700">
-                          Once you delete an account, there is no going back. This action cannot be undone.
-                          {account.current_portfolio && ' This will also delete the associated portfolio.'}
+                      <div className="mt-2 text-sm text-red-700">
+                        <p>
+                          Once you delete an account, there is no going back. Please be certain.
+                          {account.portfolio_id && " This will also delete the associated portfolio."}
                         </p>
                       </div>
                       <div className="mt-4">
                         <button
                           type="button"
                           onClick={() => setIsDeleteModalOpen(true)}
-                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                          className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
                         >
                           Delete Account
                         </button>
                       </div>
                     </div>
                   </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -1293,174 +1461,166 @@ const AccountDetails: React.FC = () => {
                     />
                   </div>
                   
-                {/* Filter activities by selected year here, before the table */}
-                {(() => {
-                  const filteredActivities = filterActivitiesByYear(activityLogs, selectedYear);
-                  
-                  return (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200 table-fixed">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                                Name
-                            </th>
-                            <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                                ISIN
-                            </th>
-                            <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                                Investments
-                            </th>
-                            <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                                Regular Investments
-                            </th>
-                              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                                Government Uplifts
-                              </th>
-                              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                                Switch Ins
-                              </th>
-                              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                                Switch Outs
-                              </th>
-                              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                                Withdrawals
-                              </th>
-                              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                                Current Value
-                              </th>
-                              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                                Value Minus Withdrawals
-                              </th>
-                              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                                Investments + Switch Ins
-                              </th>
-                              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                                Most Recent IRR
-                              </th>
-                              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                                Risk
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {/* Fund rows */}
-                          {holdings
-                            .slice()
-                            .sort((a, b) => {
-                              // Place 'Cashline' fund at the end
-                              if (a.fund_name === 'Cashline') return 1;
-                              if (b.fund_name === 'Cashline') return -1;
-                              // Sort the rest alphabetically
-                              return (a.fund_name || '').localeCompare(b.fund_name || '');
-                            })
-                            .map((holding) => (
-                            <tr key={holding.id}>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-base font-medium text-gray-900">{holding.fund_name}</div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm text-gray-900">{holding.isin_number || 'N/A'}</div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm text-gray-900">{formatCurrency(calculateInvestments(filteredActivities, holding.id))}</div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm text-gray-900">{formatCurrency(calculateRegularInvestments(filteredActivities, holding.id))}</div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm text-gray-900">{formatCurrency(calculateGovernmentUplifts(filteredActivities, holding.id))}</div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm text-gray-900">{formatCurrency(calculateSwitchIns(filteredActivities, holding.id))}</div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm text-gray-900">{formatCurrency(calculateSwitchOuts(filteredActivities, holding.id))}</div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm text-gray-900">{formatCurrency(calculateWithdrawals(filteredActivities, holding.id))}</div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm text-gray-900">{formatCurrency(holding.market_value || 0)}</div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm text-gray-900">{formatCurrency(calculateValueMinusWithdrawals(holding.market_value || 0, filteredActivities, holding.id))}</div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm text-gray-900">{formatCurrency(calculateInvestmentsPlusSwitchIns(filteredActivities, holding.id))}</div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div>
-                                      <div className={`text-sm ${holding.irr && holding.irr >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                                      {holding.irr !== undefined ? (
-                                        <>
-                                          {formatPercentage(holding.irr / 100)}
-                                          <span className="ml-1">
-                                            {holding.irr >= 0 ? '▲' : '▼'}
-                                          </span>
-                                        </>
-                                      ) : 'N/A'}
-                                    </div>
-                                    {holding.irr_calculation_date && (
-                                        <div className="text-xs text-gray-500 mt-1">
-                                        as of {formatDate(holding.irr_calculation_date)}
-                                      </div>
-                                    )}
-                                  </div>
-                                </td>
-                                  <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm text-gray-900">{getFundRiskRating(holding.fund_id || 0, fundsData)}</div>
-                                </td>
-                              </tr>
-                            ))}
-                            
-                            {/* Totals Row */}
-                            <tr className="bg-gray-50 font-semibold">
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-base font-bold text-gray-900">Totals</div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                {/* No ISIN for totals */}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm font-bold text-gray-900">{formatCurrency(calculateTotalInvestments(filteredActivities, holdings))}</div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm font-bold text-gray-900">{formatCurrency(calculateTotalRegularInvestments(filteredActivities, holdings))}</div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm font-bold text-gray-900">{formatCurrency(calculateTotalGovernmentUplifts(filteredActivities, holdings))}</div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm font-bold text-gray-900">{formatCurrency(calculateTotalSwitchIns(filteredActivities, holdings))}</div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm font-bold text-gray-900">{formatCurrency(calculateTotalSwitchOuts(filteredActivities, holdings))}</div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm font-bold text-gray-900">{formatCurrency(calculateTotalWithdrawals(filteredActivities, holdings))}</div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm font-bold text-gray-900">{formatCurrency(calculateTotalValue(holdings))}</div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm font-bold text-gray-900">{formatCurrency(calculateTotalValueMinusWithdrawals(holdings, filteredActivities))}</div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm font-bold text-gray-900">{formatCurrency(calculateTotalInvestmentsPlusSwitchIns(filteredActivities, holdings))}</div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                {/* No average IRR calculation */}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                {/* No risk rating for totals */}
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    );
-                  })()}
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 table-fixed">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                            Name
+                        </th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                            ISIN
+                        </th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                            Investments
+                        </th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                            Regular Investments
+                        </th>
+                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                            Government Uplifts
+                          </th>
+                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                            Switch Ins
+                          </th>
+                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                            Switch Outs
+                          </th>
+                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                            Withdrawals
+                          </th>
+                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                            Most Recent Value
+                          </th>
+                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                            Value Minus Withdrawals
+                          </th>
+                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                            Investments + Switch Ins
+                          </th>
+                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                            Most Recent IRR
+                          </th>
+                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                            Risk
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {holdings
+                        .slice()
+                          .sort((a, b) => {
+                            // Place 'Cashline' fund at the end
+                            if (a.fund_name === 'Cashline') return 1;
+                            if (b.fund_name === 'Cashline') return -1;
+                            // Sort the rest alphabetically
+                            return (a.fund_name || '').localeCompare(b.fund_name || '');
+                          })
+                        .map((holding) => (
+                        <tr key={holding.id}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-base font-medium text-gray-900">{holding.fund_name}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                              {holding.isin_number || 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{formatCurrency(holding.amount_invested || 0)}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{formatCurrency(calculateRegularInvestments(activityLogs, holding.id))}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{formatCurrency(calculateGovernmentUplifts(activityLogs, holding.id))}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{formatCurrency(calculateSwitchIns(activityLogs, holding.id))}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{formatCurrency(calculateSwitchOuts(activityLogs, holding.id))}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{formatCurrency(calculateWithdrawals(activityLogs, holding.id))}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{formatCurrency(holding.market_value || 0)}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{formatCurrency(calculateValueMinusWithdrawals(holding.market_value || 0, activityLogs, holding.id))}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{formatCurrency(calculateInvestmentsPlusSwitchIns(activityLogs, holding.id))}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div>
+                                <div className={`text-sm ${holding.irr && holding.irr >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                                {holding.irr !== undefined ? (
+                                  <>
+                                    {formatPercentage(holding.irr / 100)}
+                                    <span className="ml-1">
+                                      {holding.irr >= 0 ? '▲' : '▼'}
+                                    </span>
+                                  </>
+                                ) : 'N/A'}
+                              </div>
+                              {holding.irr_calculation_date && (
+                                  <div className="text-xs text-gray-500 mt-1">
+                                  as of {formatDate(holding.irr_calculation_date)}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{getFundRiskRating(holding.fund_id || 0, fundsData)}</div>
+                          </td>
+                        </tr>
+                      ))}
+                      
+                      {/* Totals Row */}
+                      <tr className="bg-gray-50 font-semibold">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-base font-bold text-gray-900">Totals</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {/* No ISIN for totals */}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-bold text-gray-900">{formatCurrency(calculateTotalAmountInvested(holdings))}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-bold text-gray-900">{formatCurrency(calculateTotalRegularInvestments(activityLogs, holdings))}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-bold text-gray-900">{formatCurrency(calculateTotalGovernmentUplifts(activityLogs, holdings))}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-bold text-gray-900">{formatCurrency(calculateTotalSwitchIns(activityLogs, holdings))}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-bold text-gray-900">{formatCurrency(calculateTotalSwitchOuts(activityLogs, holdings))}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-bold text-gray-900">{formatCurrency(calculateTotalWithdrawals(activityLogs, holdings))}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-bold text-gray-900">{formatCurrency(calculateTotalMarketValue(holdings))}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-bold text-gray-900">{formatCurrency(calculateTotalValueMinusWithdrawals(holdings, activityLogs))}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-bold text-gray-900">{formatCurrency(calculateTotalInvestmentsPlusSwitchIns(activityLogs, holdings))}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {/* No average IRR calculation */}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {/* No risk rating for totals */}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
 
                 {/* Monthly Activities Table */}
                   <div className="mt-10">
