@@ -85,10 +85,7 @@ async def create_client_account(client_account: ClientAccountCreate, db = Depend
             "account_name": client_account.account_name,
             "status": client_account.status,
             "start_date": start_date_iso,
-            "weighting": client_account.weighting,
-            "plan_number": client_account.plan_number,
-            "is_bespoke": client_account.is_bespoke,
-            "original_template_id": client_account.original_template_id
+            "weighting": client_account.weighting
         }).execute()
         
         if not created_account.data or len(created_account.data) == 0:
