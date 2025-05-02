@@ -774,7 +774,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         
         try {
           const amount = parseFloat(edit.value);
-          if (isNaN(amount) || amount <= 0) {
+          if (isNaN(amount) || amount < 0) {
             throw new Error(`Invalid amount: ${edit.value} for Current Value`);
           }
           

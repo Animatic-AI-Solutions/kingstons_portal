@@ -28,10 +28,27 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
         - period_irr: The annualized IRR (monthly IRR * 12) as decimal
         - days_in_period: Number of days in the investment period
     """
+    # Basic input validation
+    if not dates or not amounts or len(dates) != len(amounts):
+        error_msg = f"Invalid inputs: dates={len(dates) if dates else 0}, amounts={len(amounts) if amounts else 0}"
+        logger.error(error_msg)
+        raise ValueError(error_msg)
+    
+    if len(dates) < 2 or len(amounts) < 2:
+        error_msg = "IRR calculation requires at least two cash flows (one initial investment and one return)"
+        logger.error(error_msg)
+        raise ValueError(error_msg)
+    
     # Validate cash flows
-    if not any(amount < 0 for amount in amounts) or not any(amount > 0 for amount in amounts):
-        logger.error("IRR calculation requires at least one positive and one negative cash flow")
-        return None
+    if not any(amount < 0 for amount in amounts):
+        error_msg = "IRR calculation requires at least one negative cash flow (investment)"
+        logger.error(error_msg)
+        raise ValueError(error_msg)
+        
+    if not any(amount > 0 for amount in amounts):
+        error_msg = "IRR calculation requires at least one positive cash flow (return or final valuation)"
+        logger.error(error_msg)
+        raise ValueError(error_msg)
         
     try:
         # Log input data for debugging
@@ -43,16 +60,87 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
         dates = [d for d, _ in sorted_flows]
         amounts = [a for _, a in sorted_flows]
         
+        # Check if all dates are the same
+        if all(d == dates[0] for d in dates):
+            logger.warning("All cash flow dates are identical - using simple return calculation instead of IRR")
+            # Calculate simple return: (ending_value - initial_investment) / initial_investment
+            total_outflow = sum(a for a in amounts if a < 0)  # Sum of all negative cash flows
+            total_inflow = sum(a for a in amounts if a > 0)   # Sum of all positive cash flows
+            
+            if total_outflow == 0:
+                error_msg = "Cannot calculate return: total investment amount is zero"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+                
+            simple_return = total_inflow / abs(total_outflow) - 1
+            logger.info(f"Simple return calculation: {simple_return}")
+            
+            # Since all cash flows are on the same day, the period is effectively 0 days
+            # We'll return the simple return as the IRR
+            return {
+                'period_irr': simple_return,
+                'days_in_period': 0,
+                'is_simple_return': True
+            }
+        
         # Get the start and end dates
         start_date = dates[0]
         end_date = dates[-1]
         
+        # Check for future dates
+        now = datetime.now()
+        future_dates = [d for d in dates if d > now]
+        if future_dates:
+            logger.warning(f"IRR calculation includes {len(future_dates)} future dates. This may affect the result.")
+        
         logger.info(f"Start date details: year={start_date.year}, month={start_date.month}, day={start_date.day}")
         logger.info(f"End date details: year={end_date.year}, month={end_date.month}, day={end_date.day}")
+        
+        # Check if the investment period is too short
+        if (end_date - start_date).days < 1:
+            logger.warning("Investment period is less than 1 day - using simple return calculation")
+            # Calculate simple return: (ending_value - initial_investment) / initial_investment
+            total_outflow = sum(a for a in amounts if a < 0)  # Sum of all negative cash flows
+            total_inflow = sum(a for a in amounts if a > 0)   # Sum of all positive cash flows
+            
+            if total_outflow == 0:
+                error_msg = "Cannot calculate return: total investment amount is zero"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+                
+            simple_return = total_inflow / abs(total_outflow) - 1
+            logger.info(f"Simple return calculation: {simple_return}")
+            
+            return {
+                'period_irr': simple_return,
+                'days_in_period': (end_date - start_date).days,
+                'is_simple_return': True
+            }
         
         # Calculate total number of months between start and end
         total_months = ((end_date.year - start_date.year) * 12) + (end_date.month - start_date.month)
         logger.info(f"Calculated total_months: {total_months}")
+        
+        if total_months < 1:
+            logger.warning("Investment period is less than one month - using simple IRR calculation")
+            # For very short periods, we'll calculate a simple IRR using just the initial and final cash flows
+            initial_investment = amounts[0]
+            final_value = amounts[-1]
+            
+            # Calculate simple return
+            simple_return = final_value / abs(initial_investment) - 1
+            
+            # Annualize the return based on days
+            days = (end_date - start_date).days
+            annualized_return = (1 + simple_return) ** (365 / max(1, days)) - 1
+            
+            logger.info(f"Simple return: {simple_return}, Annualized: {annualized_return}")
+            
+            return {
+                'period_irr': annualized_return,
+                'days_in_period': days,
+                'is_simple_return': True
+            }
         
         # Create array for all months in the period (initialized to zero)
         monthly_amounts = [0] * (total_months + 1)
@@ -61,6 +149,11 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
         # Map all cash flows to their corresponding months, totaling flows within same month
         for date, amount in zip(dates, amounts):
             month_index = ((date.year - start_date.year) * 12) + (date.month - start_date.month)
+            if month_index < 0 or month_index >= len(monthly_amounts):
+                error_msg = f"Invalid month index: {month_index} for date {date.isoformat()}"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+                
             logger.info(f"Mapping flow: date={date.isoformat()}, amount={amount}, month_index={month_index}")
             monthly_amounts[month_index] += amount  # Add to any existing amount for that month
         
@@ -74,42 +167,39 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
         logger.info(f"End date: {end_date.strftime('%Y-%m')}")
         logger.info(f"Total months: {total_months + 1}")
         
+        # Check if final value is positive (as expected for IRR calculation)
+        if final_value <= 0:
+            error_msg = f"Final cash flow (valuation) must be positive, but got {final_value}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        
+        # Check if we have a valid investment pattern (negative initial flow, positive final flow)
+        if monthly_amounts[0] >= 0:
+            error_msg = f"Initial cash flow should be negative (investment), but got {monthly_amounts[0]}"
+            logger.warning(error_msg)  # Warning only, as this might work in some cases
+        
         logger.info("\nMonthly cash flows:")
         for i, amount in enumerate(monthly_amounts):
-            if amount != 0:
-                try:
-                    # This is where the month overflow error might happen
-                    # Safely handle month arithmetic to avoid invalid month values
-                    year_offset = (start_date.month + i - 1) // 12
-                    month_value = (start_date.month + i - 1) % 12 + 1  # Ensure month is 1-12
-                    
-                    flow_date = datetime(
-                        year=start_date.year + year_offset,
-                        month=month_value,
-                        day=1
-                    )
-                    logger.info(f"{flow_date.strftime('%Y-%m')}: {amount:10.2f}")
-                except ValueError as e:
-                    # Log the specific error if date creation fails
-                    logger.error(f"Error creating flow date: i={i}, start_month={start_date.month}, " +
-                                f"calculated_month={(start_date.month + i - 1) % 12 + 1}, " +
-                                f"year={start_date.year + (start_date.month + i - 1) // 12}, error={str(e)}")
-        
-        logger.info(f"\nSummary:")
-        logger.info(f"Initial investment: {initial_investment}")
-        logger.info(f"Intermediate flows: {intermediate_flows}")
-        logger.info(f"Final value: {final_value}")
-        logger.info(f"Net invested: {initial_investment + intermediate_flows}")
-        logger.info(f"Full monthly_amounts array: {monthly_amounts}")
+            logger.info(f"Month {i}: {amount}")
         
         # Calculate IRR using the monthly cash flows
         logger.info("Calculating IRR using numpy_financial.irr...")
-        monthly_irr = npf.irr(monthly_amounts)
-        logger.info(f"Raw monthly IRR calculation result: {monthly_irr}")
+        try:
+            monthly_irr = npf.irr(monthly_amounts)
+            logger.info(f"Raw monthly IRR calculation result: {monthly_irr}")
+        except Exception as calc_err:
+            error_msg = f"NumPy IRR calculation error: {str(calc_err)}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         
         if monthly_irr is None:
-            logger.error("Could not calculate IRR - no valid solution found")
-            return None
+            error_msg = "Could not calculate IRR - no valid solution found. Check for alternating sign pattern in cash flows."
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        
+        # Check for extreme IRR values that might indicate an error
+        if abs(monthly_irr) > 1:  # More than 100% monthly return
+            logger.warning(f"Extreme IRR value detected: {monthly_irr}. This may indicate incorrect cash flow data.")
         
         # Annualize the monthly IRR by multiplying by 12
         annualized_irr = monthly_irr * 12
@@ -133,7 +223,7 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
         # Add stack trace for more detailed error information
         import traceback
         logger.error(f"IRR calculation stack trace: {traceback.format_exc()}")
-        return None
+        raise
 
 router = APIRouter()
 
@@ -151,7 +241,7 @@ async def get_portfolio_funds(
     How it works:
         1. Takes optional filter parameters
         2. Builds a query to retrieve matching portfolio-fund associations
-        3. Includes the latest valuation for each fund from the irr_values table
+        3. Includes the latest valuation for each fund from the fund_valuations table
         4. Returns a list of matching associations with pagination
     Expected output: A JSON array containing portfolio fund associations
     """
@@ -181,24 +271,26 @@ async def get_portfolio_funds(
         latest_valuations = {}
         
         if len(fund_ids) > 0:
-            # This query might need to be optimized depending on the database
-            # Here we're getting the latest valuation for each fund
+            # Get the latest valuation for each fund from fund_valuations
             for fund_id in fund_ids:
-                valuation_result = db.table("irr_values")\
-                    .select("valuation", "date", "fund_id")\
-                    .eq("fund_id", fund_id)\
-                    .order("date", desc=True)\
+                valuation_result = db.table("fund_valuations")\
+                    .select("value", "valuation_date", "portfolio_fund_id")\
+                    .eq("portfolio_fund_id", fund_id)\
+                    .order("valuation_date", desc=True)\
                     .limit(1)\
                     .execute()
                     
                 if valuation_result.data and len(valuation_result.data) > 0:
-                    latest_valuations[fund_id] = valuation_result.data[0]
+                    latest_valuations[fund_id] = {
+                        "value": valuation_result.data[0]["value"],
+                        "date": valuation_result.data[0]["valuation_date"]
+                    }
         
         # Add valuations to the portfolio funds
         for fund in result.data:
             fund_id = fund["id"]
             if fund_id in latest_valuations:
-                fund["market_value"] = float(latest_valuations[fund_id]["valuation"])
+                fund["market_value"] = float(latest_valuations[fund_id]["value"])
                 fund["valuation_date"] = latest_valuations[fund_id]["date"]
         
         return result.data
@@ -256,7 +348,7 @@ async def get_portfolio_fund(portfolio_fund_id: int, db = Depends(get_db)):
     How it works:
         1. Takes the portfolio_fund_id from the URL path
         2. Queries the 'portfolio_funds' table for a record with matching ID
-        3. Fetches the latest valuation from irr_values if available
+        3. Fetches the latest valuation from fund_valuations if available
         4. Returns the association data or raises a 404 error if not found
     Expected output: A JSON object containing the requested portfolio fund's details
     """
@@ -268,18 +360,18 @@ async def get_portfolio_fund(portfolio_fund_id: int, db = Depends(get_db)):
         # Get the portfolio fund data
         portfolio_fund = result.data[0]
         
-        # Get latest valuation for this fund if available
-        valuation_result = db.table("irr_values")\
-            .select("valuation", "date")\
-            .eq("fund_id", portfolio_fund_id)\
-            .order("date", desc=True)\
+        # Get latest valuation for this fund from fund_valuations
+        valuation_result = db.table("fund_valuations")\
+            .select("value", "valuation_date")\
+            .eq("portfolio_fund_id", portfolio_fund_id)\
+            .order("valuation_date", desc=True)\
             .limit(1)\
             .execute()
             
         if valuation_result.data and len(valuation_result.data) > 0:
             latest_valuation = valuation_result.data[0]
-            portfolio_fund["market_value"] = float(latest_valuation["valuation"])
-            portfolio_fund["valuation_date"] = latest_valuation["date"]
+            portfolio_fund["market_value"] = float(latest_valuation["value"])
+            portfolio_fund["valuation_date"] = latest_valuation["valuation_date"]
             
         return portfolio_fund
     except Exception as e:
@@ -448,6 +540,10 @@ async def calculate_portfolio_fund_irr(
         valuation = float(existing_valuation["value"])
         logger.info(f"Using valuation from database: {valuation}")
 
+        # Add the fund_valuation_id from the existing valuation
+        fund_valuation_id = existing_valuation["id"]
+        logger.info(f"Using fund_valuation_id: {fund_valuation_id}")
+
         # Check if portfolio fund exists
         check_result = db.table("portfolio_funds").select("*").eq("id", portfolio_fund_id).execute()
         if not check_result.data or len(check_result.data) == 0:
@@ -464,10 +560,77 @@ async def calculate_portfolio_fund_irr(
             .execute()
 
         if not activity_logs.data:
-            logger.error(f"No activity logs found for portfolio_fund_id: {portfolio_fund_id}")
-            raise HTTPException(status_code=400, detail="No activity logs found for this portfolio fund")
+            error_msg = "No activity logs found for this portfolio fund"
+            logger.error(error_msg)
+            return {
+                "status": "error",
+                "error": error_msg,
+                "portfolio_fund_id": portfolio_fund_id,
+                "irr_percentage": None
+            }
 
         logger.info(f"Found {len(activity_logs.data)} activity logs")
+
+        # Check if there's only a single activity log on the same date as valuation
+        if len(activity_logs.data) == 1:
+            activity_date = datetime.fromisoformat(activity_logs.data[0]["activity_timestamp"])
+            # Use the actual valuation date from the database record
+            if activity_date.year == valuation_date.year and activity_date.month == valuation_date.month:
+                logger.warning(f"Only a single activity on the same date as valuation for fund {portfolio_fund_id}")
+                
+                # Calculate simple return based on investment and valuation
+                activity_amount = float(activity_logs.data[0]["amount"])
+                activity_type = activity_logs.data[0]["activity_type"]
+                
+                if activity_type in ["Investment", "RegularInvestment", "GovernmentUplift"]:
+                    # Simple return = (Valuation / Investment) - 1
+                    simple_return = (valuation / activity_amount) - 1
+                    irr_percentage = simple_return * 100
+                    
+                    logger.info(f"Calculated simple return: {simple_return} ({irr_percentage}%)")
+                    
+                    # Store the IRR value using the correct valuation date
+                    irr_value_data = {
+                        "fund_id": portfolio_fund_id,
+                        "irr_result": float(round(irr_percentage, 2)),
+                        "date": valuation_date.isoformat(),
+                        "fund_valuation_id": fund_valuation_id  # Add the fund_valuation_id reference
+                    }
+                    
+                    # Check if IRR already exists
+                    existing_irr = db.table("irr_values")\
+                        .select("*")\
+                        .eq("fund_id", portfolio_fund_id)\
+                        .eq("date", valuation_date.isoformat())\
+                        .execute()
+                    
+                    if existing_irr.data and len(existing_irr.data) > 0:
+                        # Update existing
+                        irr_id = existing_irr.data[0]["id"]
+                        db.table("irr_values")\
+                            .update({"irr_result": float(round(irr_percentage, 2))})\
+                            .eq("id", irr_id)\
+                            .execute()
+                    else:
+                        # Insert new
+                        db.table("irr_values").insert(irr_value_data).execute()
+                    
+                    return {
+                        "status": "success",
+                        "irr_percentage": round(irr_percentage, 2),
+                        "portfolio_fund_id": portfolio_fund_id,
+                        "date": valuation_date.isoformat(),
+                        "calculation_type": "simple_return"
+                    }
+                else:
+                    error_msg = f"Cannot calculate return: The only activity is not an investment ({activity_type})"
+                    logger.error(error_msg)
+                    return {
+                        "status": "error",
+                        "error": error_msg,
+                        "portfolio_fund_id": portfolio_fund_id,
+                        "irr_percentage": None
+                    }
 
         # Prepare cash flows and dates for IRR calculation
         dates = []
@@ -512,18 +675,22 @@ async def calculate_portfolio_fund_irr(
 
         # Calculate IRR using numpy_financial method
         logger.info("Calling calculate_excel_style_irr with prepared data")
-        irr_result = calculate_excel_style_irr(dates, amounts)
-        logger.info(f"IRR calculation result: {irr_result}")
-        
-        if irr_result is None:
-            logger.error("Could not calculate IRR - no valid solution found")
-            raise HTTPException(status_code=400, detail="Could not calculate IRR - no valid solution found")
-            
-        # Convert period IRR to percentage for storage
-        irr_percentage = irr_result['period_irr'] * 100
-        # Round to 2 decimal places for consistency and readability
-        irr_percentage = round(irr_percentage, 2)
-        logger.info(f"Calculated period IRR: {irr_percentage:.2f}% (type: {type(irr_percentage).__name__})")
+        try:
+            irr_result = calculate_excel_style_irr(dates, amounts)
+            logger.info(f"IRR calculation result: {irr_result}")
+                
+            # Convert period IRR to percentage for storage
+            irr_percentage = irr_result['period_irr'] * 100
+            # Round to 2 decimal places for consistency and readability
+            irr_percentage = round(irr_percentage, 2)
+            logger.info(f"Calculated period IRR: {irr_percentage:.2f}% (type: {type(irr_percentage).__name__})")
+        except ValueError as ve:
+            error_message = str(ve)
+            logger.error(f"IRR calculation error: {error_message}")
+            raise HTTPException(status_code=400, detail=f"IRR calculation failed: {error_message}")
+        except Exception as e:
+            logger.error(f"Unexpected error in IRR calculation: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Unexpected error in IRR calculation: {str(e)}")
 
         # Check if an IRR value already exists for this fund and date
         existing_irr = db.table("irr_values")\
@@ -537,10 +704,10 @@ async def calculate_portfolio_fund_irr(
         
         # Ensure we're storing as a float, not an integer
         irr_value_data = {
-            "value": float(irr_percentage),  # Explicitly cast to float to ensure proper storage
-            "valuation": float(valuation)    # Also ensure valuation is a float
+            "irr_result": float(irr_percentage),  # Explicitly cast to float to ensure proper storage
+            "fund_valuation_id": fund_valuation_id  # Add the fund_valuation_id reference
         }
-        logger.info(f"IRR data to be saved: {irr_value_data} (value type: {type(irr_value_data['value']).__name__})")
+        logger.info(f"IRR data to be saved: {irr_value_data} (value type: {type(irr_value_data['irr_result']).__name__})")
         
         irr_value_id = None
         
@@ -550,7 +717,7 @@ async def calculate_portfolio_fund_irr(
             irr_value_id = oldest_record["id"]
             
             # Log the type and value of the existing record for debugging
-            old_value = oldest_record["value"]
+            old_value = oldest_record["irr_result"]
             old_value_type = type(old_value).__name__ 
             logger.info(f"Updating existing IRR value with ID: {irr_value_id}")
             logger.info(f"Old value: {old_value} (type: {old_value_type}), New value: {irr_percentage}")
@@ -576,9 +743,9 @@ async def calculate_portfolio_fund_irr(
             # No existing record, insert a new one
             full_irr_data = {
                 "fund_id": portfolio_fund_id,
-                "value": float(irr_percentage),  # Explicitly cast to float
+                "irr_result": float(irr_percentage),  # Explicitly cast to float
                 "date": valuation_date.isoformat(),
-                "valuation": float(valuation)    # Explicitly cast to float
+                "fund_valuation_id": fund_valuation_id  # Add the fund_valuation_id reference
             }
             
             logger.info(f"Storing new IRR value: {full_irr_data}")
@@ -596,7 +763,7 @@ async def calculate_portfolio_fund_irr(
         # Verify that the IRR value was stored correctly
         verification = db.table("irr_values").select("*").eq("id", irr_value_id).execute()
         if verification.data:
-            stored_value = verification.data[0]["value"]
+            stored_value = verification.data[0]["irr_result"]
             stored_type = type(stored_value).__name__
             logger.info(f"Verification - stored IRR: {stored_value} (type: {stored_type})")
             
@@ -610,7 +777,7 @@ async def calculate_portfolio_fund_irr(
             "irr_percentage": irr_percentage,      # Percentage form (e.g., 5.21)
             "irr_value_id": irr_value_id,
             "calculation_date": valuation_date.isoformat(),
-            "valuation": valuation,
+            "fund_valuation_id": fund_valuation_id,
             "days_in_period": irr_result['days_in_period']
         }
         logger.info(f"Returning response: {response_data}")
@@ -662,14 +829,14 @@ async def get_latest_irr(portfolio_fund_id: int, db = Depends(get_db)):
                 "portfolio_fund_id": portfolio_fund_id,
                 "irr": 0,
                 "calculation_date": None,
-                "valuation": None
+                "fund_valuation_id": None
             }
 
         latest_irr = irr_result.data[0]
         logger.info(f"Found latest IRR value: {latest_irr}")
         
         # Ensure we're handling the IRR as a float
-        irr_value = latest_irr["value"]
+        irr_value = latest_irr["irr_result"]
         
         # Log details about the retrieved value
         logger.info(f"Retrieved IRR value: {irr_value} (type: {type(irr_value).__name__})")
@@ -692,7 +859,7 @@ async def get_latest_irr(portfolio_fund_id: int, db = Depends(get_db)):
             "irr": irr_value,  # The percentage value (e.g., 5.21)
             "irr_decimal": irr_value / 100 if irr_value != 0 else 0.0,  # Also provide decimal form (e.g., 0.0521)
             "calculation_date": latest_irr["date"],
-            "valuation": latest_irr["valuation"]
+            "fund_valuation_id": latest_irr.get("fund_valuation_id")
         }
         logger.info(f"Returning response: {response}")
         return response
@@ -747,7 +914,42 @@ async def recalculate_all_irr_values(
             try:
                 # Parse date and extract month/year
                 valuation_date = datetime.fromisoformat(irr_value["date"])
-                valuation_amount = float(irr_value["valuation"])
+                fund_valuation_id = irr_value["fund_valuation_id"]
+                
+                # Get the valuation amount from fund_valuations table
+                if fund_valuation_id:
+                    valuation_result = db.table("fund_valuations")\
+                        .select("value")\
+                        .eq("id", fund_valuation_id)\
+                        .execute()
+                        
+                    if valuation_result.data and len(valuation_result.data) > 0:
+                        valuation_amount = float(valuation_result.data[0]["value"])
+                    else:
+                        logger.warning(f"Fund valuation record with ID {fund_valuation_id} not found, skipping IRR recalculation")
+                        continue
+                else:
+                    logger.warning(f"IRR record has no fund_valuation_id, looking for valuation by date")
+                    # Fall back to finding valuation by date if fund_valuation_id is not set
+                    month_start = valuation_date.replace(day=1)
+                    if month_start.month == 12:
+                        next_month = month_start.replace(year=month_start.year + 1, month=1)
+                    else:
+                        next_month = month_start.replace(month=month_start.month + 1)
+                    
+                    valuation_result = db.table("fund_valuations")\
+                        .select("*")\
+                        .eq("portfolio_fund_id", portfolio_fund_id)\
+                        .gte("valuation_date", month_start.isoformat())\
+                        .lt("valuation_date", next_month.isoformat())\
+                        .execute()
+                        
+                    if not valuation_result.data or len(valuation_result.data) == 0:
+                        logger.warning(f"No valuation found for date {valuation_date.isoformat()}, skipping IRR recalculation")
+                        continue
+                        
+                    valuation_amount = float(valuation_result.data[0]["value"])
+                    fund_valuation_id = valuation_result.data[0]["id"]
                 
                 logger.info(f"Recalculating IRR for date: {valuation_date.isoformat()}, valuation: {valuation_amount}")
                 
@@ -791,41 +993,337 @@ def calculate_portfolio_fund_irr_sync(
     year: int,
     valuation: float,
     db,
-    guess: float = 0.02
+    guess: float = 0.02,
+    fund_valuation_id: int = None
 ):
     """
-    Synchronous wrapper for calculate_portfolio_fund_irr.
-    This function can be used in non-async contexts where awaiting is not possible.
-    It calls the async IRR calculation function directly as it contains the core IRR calculation logic.
-    
-    Note: This bypasses the FastAPI router mechanism and calls the function directly.
-    It should only be used internally in the codebase where async/await can't be used.
+    Synchronous wrapper for IRR calculation functionality.
+    This function directly implements the IRR calculation without using asyncio,
+    avoiding the "event loop already running" error when called from another async context.
     """
-    import asyncio
+    import traceback
     
     try:
-        # Create a new event loop for this thread if one doesn't exist
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+        logger.info(f"Starting synchronous IRR calculation for portfolio_fund_id: {portfolio_fund_id}")
+        logger.info(f"Input parameters - month: {month}, year: {year}, valuation: {valuation}")
+        
+        # Validate input month and year
+        if not isinstance(month, int) or month < 1 or month > 12:
+            logger.error(f"Invalid month value: {month}. Must be an integer between 1 and 12.")
+            return {
+                "status": "error",
+                "error": f"Invalid month value: {month}. Must be an integer between 1 and 12.",
+                "portfolio_fund_id": portfolio_fund_id,
+                "irr_percentage": None
+            }
             
-        # Run the async function in the event loop
-        result = loop.run_until_complete(
-            calculate_portfolio_fund_irr(
-                portfolio_fund_id=portfolio_fund_id,
-                month=month,
-                year=year,
-                valuation=valuation,
-                guess=guess,
-                db=db
-            )
-        )
-        return result
+        if not isinstance(year, int) or year < 1900 or year > 2100:
+            logger.error(f"Invalid year value: {year}. Must be an integer between 1900 and 2100.")
+            return {
+                "status": "error",
+                "error": f"Invalid year value: {year}. Must be an integer between 1900 and 2100.",
+                "portfolio_fund_id": portfolio_fund_id,
+                "irr_percentage": None
+            }
+
+        # If fund_valuation_id is provided, use it directly
+        if fund_valuation_id:
+            valuation_result = db.table("fund_valuations") \
+                .select("*") \
+                .eq("id", fund_valuation_id) \
+                .execute()
+                
+            if not valuation_result.data or len(valuation_result.data) == 0:
+                error_msg = f"Specified valuation record with ID {fund_valuation_id} not found."
+                logger.error(error_msg)
+                return {
+                    "status": "error",
+                    "error": error_msg,
+                    "portfolio_fund_id": portfolio_fund_id,
+                    "irr_percentage": None
+                }
+        else:
+            # Otherwise query by month/year as before
+            first_day = datetime(year, month, 1)
+            if month == 12:
+                next_month = datetime(year + 1, 1, 1)
+            else:
+                next_month = datetime(year, month + 1, 1)
+
+            valuation_result = db.table("fund_valuations") \
+                .select("*") \
+                .eq("portfolio_fund_id", portfolio_fund_id) \
+                .gte("valuation_date", first_day.isoformat()) \
+                .lt("valuation_date", next_month.isoformat()) \
+                .execute()
+
+            if not valuation_result.data or len(valuation_result.data) == 0:
+                error_msg = f"No valuation record exists for {datetime(year, month, 1).strftime('%B %Y')}. Please add a valuation first."
+                logger.error(error_msg)
+                return {
+                    "status": "error",
+                    "error": error_msg,
+                    "portfolio_fund_id": portfolio_fund_id,
+                    "irr_percentage": None
+                }
+
+        # Use the valuation from the database
+        existing_valuation = valuation_result.data[0]
+        logger.info(f"Found existing valuation: {existing_valuation}")
+        valuation = float(existing_valuation["value"])
+        logger.info(f"Using valuation from database: {valuation}")
+
+        # Add the fund_valuation_id from the existing valuation
+        fund_valuation_id = existing_valuation["id"]
+        logger.info(f"Using fund_valuation_id: {fund_valuation_id}")
+        
+        # Get correct valuation date from the record
+        valuation_date = datetime.fromisoformat(existing_valuation["valuation_date"])
+        logger.info(f"Using valuation date: {valuation_date.isoformat()}")
+
+        # Check if portfolio fund exists
+        check_result = db.table("portfolio_funds").select("*").eq("id", portfolio_fund_id).execute()
+        if not check_result.data or len(check_result.data) == 0:
+            error_msg = f"Portfolio fund with ID {portfolio_fund_id} not found"
+            logger.error(error_msg)
+            return {
+                "status": "error",
+                "error": error_msg,
+                "portfolio_fund_id": portfolio_fund_id,
+                "irr_percentage": None
+            }
+
+        # Get all activity logs for this portfolio fund
+        activity_logs = db.table("holding_activity_log")\
+            .select("*")\
+            .eq("portfolio_fund_id", portfolio_fund_id)\
+            .order("activity_timestamp")\
+            .execute()
+
+        if not activity_logs.data:
+            error_msg = "No activity logs found for this portfolio fund"
+            logger.error(error_msg)
+            return {
+                "status": "error",
+                "error": error_msg,
+                "portfolio_fund_id": portfolio_fund_id,
+                "irr_percentage": None
+            }
+
+        logger.info(f"Found {len(activity_logs.data)} activity logs")
+
+        # Check if there's only a single activity log on the same date as valuation
+        if len(activity_logs.data) == 1:
+            activity_date = datetime.fromisoformat(activity_logs.data[0]["activity_timestamp"])
+            # Use the actual valuation date from the database record
+            if activity_date.year == valuation_date.year and activity_date.month == valuation_date.month:
+                logger.warning(f"Only a single activity on the same date as valuation for fund {portfolio_fund_id}")
+                
+                # Calculate simple return based on investment and valuation
+                activity_amount = float(activity_logs.data[0]["amount"])
+                activity_type = activity_logs.data[0]["activity_type"]
+                
+                if activity_type in ["Investment", "RegularInvestment", "GovernmentUplift"]:
+                    # Simple return = (Valuation / Investment) - 1
+                    simple_return = (valuation / activity_amount) - 1
+                    irr_percentage = simple_return * 100
+                    
+                    logger.info(f"Calculated simple return: {simple_return} ({irr_percentage}%)")
+                    
+                    # Store the IRR value using the correct valuation date
+                    irr_value_data = {
+                        "fund_id": portfolio_fund_id,
+                        "irr_result": float(round(irr_percentage, 2)),
+                        "date": valuation_date.isoformat(),
+                        "fund_valuation_id": fund_valuation_id  # Add the fund_valuation_id reference
+                    }
+                    
+                    # Check if IRR already exists
+                    existing_irr = db.table("irr_values")\
+                        .select("*")\
+                        .eq("fund_id", portfolio_fund_id)\
+                        .eq("date", valuation_date.isoformat())\
+                        .execute()
+                    
+                    if existing_irr.data and len(existing_irr.data) > 0:
+                        # Update existing
+                        irr_id = existing_irr.data[0]["id"]
+                        db.table("irr_values")\
+                            .update({"irr_result": float(round(irr_percentage, 2))})\
+                            .eq("id", irr_id)\
+                            .execute()
+                    else:
+                        # Insert new
+                        db.table("irr_values").insert(irr_value_data).execute()
+                    
+                    return {
+                        "status": "success",
+                        "irr_percentage": round(irr_percentage, 2),
+                        "portfolio_fund_id": portfolio_fund_id,
+                        "date": valuation_date.isoformat(),
+                        "calculation_type": "simple_return"
+                    }
+                else:
+                    error_msg = f"Cannot calculate return: The only activity is not an investment ({activity_type})"
+                    logger.error(error_msg)
+                    return {
+                        "status": "error",
+                        "error": error_msg,
+                        "portfolio_fund_id": portfolio_fund_id,
+                        "irr_percentage": None
+                    }
+
+        # Prepare cash flows and dates for IRR calculation
+        dates = []
+        amounts = []
+
+        # Add historical cash flows with traditional IRR convention:
+        # - Money going out (investments) is negative
+        # - Money coming in (withdrawals, returns) is positive
+        for log in activity_logs.data:
+            amount = float(log["amount"])
+            # Apply sign convention based on activity type
+            if log["activity_type"] in ["Investment", "RegularInvestment", "GovernmentUplift"]:
+                # Investments are money going out (negative)
+                amount = -amount
+            elif log["activity_type"] == "Withdrawal":
+                # Withdrawals are money coming in (positive)
+                amount = abs(amount)  # Ensure positive
+            elif log["activity_type"] == "Switch":
+                # For switches:
+                # - Negative amount means money going out (keep negative)
+                # - Positive amount means money coming in (keep positive)
+                amount = amount  # Keep original sign
+            
+            date = datetime.fromisoformat(log["activity_timestamp"])
+            dates.append(date)
+            amounts.append(amount)
+            logger.info(f"Added cash flow: {log['activity_type']}, date={date}, amount={amount}")
+
+        # Add current valuation as final positive cash flow (money coming in)
+        try:
+            # Use the actual valuation date from the database record
+            logger.info(f"Using valuation date: {valuation_date.isoformat()}")
+            
+            # Check if all activities are on the same date as the valuation
+            all_same_date = True
+            for date in dates:
+                if date.year != valuation_date.year or date.month != valuation_date.month:
+                    all_same_date = False
+                    break
+            
+            # If all activities are on the same date as valuation, add the valuation with a small time offset
+            if all_same_date:
+                logger.warning("All cash flows are on the same date - adjusting valuation date slightly")
+                # Add one day to the valuation date to create a minimum time difference
+                modified_valuation_date = valuation_date.replace(day=min(valuation_date.day + 1, 28))
+                dates.append(modified_valuation_date)
+            else:
+                dates.append(valuation_date)
+                
+            amounts.append(valuation)  # Positive because it's money coming in
+            logger.info(f"Added final valuation: date={valuation_date}, amount={valuation}")
+            
+        except ValueError as e:
+            error_msg = f"Invalid date parameters: {str(e)}"
+            logger.error(error_msg)
+            return {
+                "status": "error",
+                "error": error_msg,
+                "portfolio_fund_id": portfolio_fund_id,
+                "irr_percentage": None
+            }
+
+        # Calculate IRR using numpy_financial method
+        logger.info("Calling calculate_excel_style_irr with prepared data")
+        try:
+            irr_result = calculate_excel_style_irr(dates, amounts)
+            logger.info(f"IRR calculation result: {irr_result}")
+            
+            # Convert period IRR to percentage for storage
+            irr_percentage = irr_result['period_irr'] * 100
+            # Round to 2 decimal places
+            irr_percentage = round(irr_percentage, 2)
+            logger.info(f"Calculated IRR: {irr_percentage}%")
+            
+            # Check if an IRR value already exists for this fund and date
+            existing_irr = db.table("irr_values")\
+                .select("*")\
+                .eq("fund_id", portfolio_fund_id)\
+                .eq("date", valuation_date.isoformat())\
+                .execute()
+                
+            logger.info(f"Checking for existing IRR values for fund_id={portfolio_fund_id}, date={valuation_date.isoformat()}")
+            
+            # Ensure we're storing as a float, not an integer
+            irr_value_data = {
+                "irr_result": float(irr_percentage),  # Explicitly cast to float to ensure proper storage
+                "fund_valuation_id": fund_valuation_id  # Add the fund_valuation_id reference
+            }
+            
+            if existing_irr.data and len(existing_irr.data) > 0:
+                # Update the existing IRR value
+                oldest_record = existing_irr.data[0]
+                irr_value_id = oldest_record["id"]
+                
+                db.table("irr_values")\
+                    .update(irr_value_data)\
+                    .eq("id", irr_value_id)\
+                    .execute()
+                    
+                logger.info(f"Updated existing IRR value with ID: {irr_value_id}")
+                    
+            else:
+                # No existing record, insert a new one
+                full_irr_data = {
+                    "fund_id": portfolio_fund_id,
+                    "irr_result": float(irr_percentage),  # Explicitly cast to float
+                    "date": valuation_date.isoformat(),
+                    "fund_valuation_id": fund_valuation_id  # Add the fund_valuation_id reference
+                }
+                
+                logger.info(f"Storing new IRR value: {full_irr_data}")
+                db.table("irr_values").insert(full_irr_data).execute()
+            
+            calculation_type = "standard_irr"
+            if irr_result.get('is_simple_return'):
+                calculation_type = "simple_return"
+                
+            return {
+                "status": "success",
+                "irr_percentage": irr_percentage,
+                "portfolio_fund_id": portfolio_fund_id,
+                "date": valuation_date.isoformat(),
+                "calculation_type": calculation_type
+            }
+            
+        except ValueError as ve:
+            error_message = str(ve)
+            logger.error(f"IRR calculation error: {error_message}")
+            return {
+                "status": "error",
+                "error": error_message,
+                "portfolio_fund_id": portfolio_fund_id,
+                "irr_percentage": None
+            }
+        except Exception as e:
+            logger.error(f"Unexpected error in IRR calculation: {str(e)}")
+            logger.error(f"IRR calculation stack trace: {traceback.format_exc()}")
+            return {
+                "status": "error",
+                "error": f"Unexpected error in IRR calculation: {str(e)}",
+                "portfolio_fund_id": portfolio_fund_id,
+                "irr_percentage": None
+            }
     except Exception as e:
         logger.error(f"Error in synchronous IRR calculation: {str(e)}")
-        raise
+        logger.error(f"Stack trace: {traceback.format_exc()}")
+        return {
+            "status": "error",
+            "error": str(e),
+            "portfolio_fund_id": portfolio_fund_id,
+            "irr_percentage": None
+        }
 
 @router.get("/portfolio_funds/{portfolio_fund_id}/irr-values", response_model=List[dict])
 async def get_fund_irr_values(portfolio_fund_id: int, db = Depends(get_db)):
@@ -900,13 +1398,13 @@ async def update_irr_value(
             update_data["date"] = data["date"]
             logger.info(f"Updating date to: {data['date']}")
             
-        # Update valuation if provided
-        if "valuation" in data:
-            update_data["valuation"] = float(data["valuation"])
-            logger.info(f"Updating valuation to: {data['valuation']}")
+        # Update fund_valuation_id if provided
+        if "fund_valuation_id" in data:
+            update_data["fund_valuation_id"] = data["fund_valuation_id"]
+            logger.info(f"Updating fund_valuation_id to: {data['fund_valuation_id']}")
             
-        # If we're updating date or valuation, we need to recalculate IRR
-        if ("date" in data or "valuation" in data) and fund_id:
+        # If we're updating date or fund_valuation_id, we need to recalculate IRR
+        if ("date" in data or "fund_valuation_id" in data) and fund_id:
             logger.info(f"Recalculating IRR for fund_id: {fund_id}")
             
             # Get all activity logs for this portfolio fund to recalculate the IRR
@@ -942,11 +1440,35 @@ async def update_irr_value(
                 
                 # Add the final valuation as a positive cash flow
                 valuation_date = data.get("date", irr_record["date"])
-                valuation_amount = data.get("valuation", irr_record["valuation"])
                 
                 # Convert date string to datetime object if necessary
                 if isinstance(valuation_date, str):
                     valuation_date = datetime.fromisoformat(valuation_date.replace('Z', '+00:00'))
+                
+                if "fund_valuation_id" in data:
+                    # Get the valuation amount from the fund_valuation record
+                    valuation_record = db.table("fund_valuations")\
+                        .select("value")\
+                        .eq("id", data["fund_valuation_id"])\
+                        .execute()
+                    if valuation_record.data and len(valuation_record.data) > 0:
+                        valuation_amount = valuation_record.data[0]["value"]
+                    else:
+                        raise HTTPException(status_code=404, detail=f"Fund valuation with ID {data['fund_valuation_id']} not found")
+                else:
+                    # Get the valuation amount from the existing fund_valuation record
+                    existing_fund_valuation_id = irr_record["fund_valuation_id"]
+                    if existing_fund_valuation_id:
+                        valuation_record = db.table("fund_valuations")\
+                            .select("value")\
+                            .eq("id", existing_fund_valuation_id)\
+                            .execute()
+                        if valuation_record.data and len(valuation_record.data) > 0:
+                            valuation_amount = valuation_record.data[0]["value"]
+                        else:
+                            raise HTTPException(status_code=404, detail=f"Fund valuation with ID {existing_fund_valuation_id} not found")
+                    else:
+                        raise HTTPException(status_code=400, detail="Cannot recalculate IRR without fund_valuation_id")
                 
                 dates.append(valuation_date)
                 amounts.append(valuation_amount)
@@ -966,7 +1488,7 @@ async def update_irr_value(
                         logger.info(f"Calculated IRR: {irr_percentage}%")
                         
                         # Update the IRR value
-                        update_data["value"] = float(irr_percentage)
+                        update_data["irr_result"] = float(irr_percentage)
                     else:
                         logger.error("IRR calculation failed")
                         raise HTTPException(status_code=400, detail="Could not calculate IRR - no valid solution found")

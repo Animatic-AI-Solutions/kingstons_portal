@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { calculatePortfolioIRR } from '../services/api';
 
 interface Portfolio {
   id: number;
@@ -48,6 +49,25 @@ interface AssignedAccount {
   product?: Product;
 }
 
+interface IrrCalculationDetail {
+  portfolio_fund_id: number;
+  status: 'calculated' | 'skipped' | 'error';
+  message: string;
+  irr_value?: number;
+  existing_irr?: number;
+  date_info?: string;
+}
+
+interface IrrCalculationResult {
+  portfolio_id: number;
+  calculation_date: string;
+  total_funds: number;
+  successful: number;
+  skipped: number;
+  failed: number;
+  details: IrrCalculationDetail[];
+}
+
 const PortfolioDetails: React.FC = () => {
   const { portfolioId } = useParams<{ portfolioId: string }>();
   const navigate = useNavigate();
@@ -59,6 +79,8 @@ const PortfolioDetails: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isCalculatingIRR, setIsCalculatingIRR] = useState(false);
+  const [calculationResult, setCalculationResult] = useState<IrrCalculationResult | null>(null);
 
   useEffect(() => {
     fetchPortfolio();
@@ -264,6 +286,27 @@ const PortfolioDetails: React.FC = () => {
     }
   };
 
+  const handleCalculateIRR = async () => {
+    if (!portfolioId) return;
+    
+    try {
+      setIsCalculatingIRR(true);
+      setCalculationResult(null);
+      
+      const response = await calculatePortfolioIRR(parseInt(portfolioId));
+      setCalculationResult(response.data);
+      
+      // Refresh the data to show updated IRR values
+      fetchPortfolioFunds();
+    } catch (err: any) {
+      console.error('Error calculating IRR:', err);
+      const errorMessage = err.response?.data?.detail || 'Failed to calculate IRR values';
+      alert(`Error: ${errorMessage}`);
+    } finally {
+      setIsCalculatingIRR(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -378,12 +421,79 @@ const PortfolioDetails: React.FC = () => {
         </div>
 
       {/* Funds Section */}
-      <div className="bg-white rounded-lg shadow overflow-hidden mb-6">
-        <div className="px-4 py-5 sm:px-6 bg-gray-50">
-          <h2 className="text-lg font-medium text-gray-900">Portfolio Funds</h2>
+      <div className="mt-8">
+        <div className="flex flex-row justify-between items-center mb-4">
+          <h2 className="text-2xl font-semibold">Portfolio Funds</h2>
+          <div className="flex space-x-2">
+            <button 
+              onClick={handleCalculateIRR}
+              disabled={isCalculatingIRR}
+              className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {isCalculatingIRR ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Calculating...
+                </>
+              ) : (
+                'Calculate Latest IRRs'
+              )}
+            </button>
+            <button
+              onClick={handleBack}
+              className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+            >
+              Back
+            </button>
+            <button
+              onClick={handleEdit}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            >
+              Edit
+            </button>
+            <button
+              onClick={handleDeleteClick}
+              className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+            >
+              Delete
+            </button>
+          </div>
         </div>
-        <div className="border-t border-gray-200">
-          {portfolioFunds.length > 0 ? (
+        
+        {calculationResult && (
+          <div className={`px-4 py-3 rounded-md mb-4 ${
+            calculationResult.failed > 0 ? 'bg-yellow-100 border border-yellow-400' : 'bg-green-100 border border-green-400'
+          }`}>
+            <p className="text-sm font-medium">
+              IRR calculation complete for {calculationResult.total_funds} funds on {new Date(calculationResult.calculation_date).toLocaleDateString()}.
+              {calculationResult.successful > 0 && ` Successfully calculated ${calculationResult.successful} new IRR values.`}
+              {calculationResult.skipped > 0 && ` Skipped ${calculationResult.skipped} funds with existing IRR values.`}
+              {calculationResult.failed > 0 && ` Failed to calculate ${calculationResult.failed} IRR values.`}
+            </p>
+            
+            {/* Display detailed errors for failed calculations */}
+            {calculationResult.failed > 0 && (
+              <div className="mt-2 text-sm">
+                <p className="font-medium text-red-700">Error details:</p>
+                <ul className="list-disc pl-5 mt-1 space-y-1">
+                  {calculationResult.details
+                    .filter((detail: IrrCalculationDetail) => detail.status === 'error')
+                    .map((detail: IrrCalculationDetail, index: number) => (
+                      <li key={index} className="text-red-700">
+                        <span className="font-medium">Fund ID {detail.portfolio_fund_id}:</span> {detail.message}
+                        {detail.date_info && <span className="block mt-1 text-xs"> ({detail.date_info})</span>}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {portfolioFunds.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -450,7 +560,6 @@ const PortfolioDetails: React.FC = () => {
               No funds are associated with this portfolio.
             </div>
             )}
-        </div>
       </div>
 
       {/* Delete Confirmation Modal */}

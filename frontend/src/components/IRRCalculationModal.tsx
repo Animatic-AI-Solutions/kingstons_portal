@@ -53,7 +53,7 @@ const IRRCalculationModal: React.FC<IRRCalculationModalProps> = ({
       
       // Validate valuation input
       const valuationNumber = parseFloat(valuation);
-      if (isNaN(valuationNumber) || valuationNumber <= 0) {
+      if (isNaN(valuationNumber) || valuationNumber < 0) {
         throw new Error('Please enter a valid valuation amount');
       }
 

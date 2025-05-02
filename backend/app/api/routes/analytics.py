@@ -94,11 +94,11 @@ async def get_performance_data(
                 
                 for pf in pf_result.data:
                     # Get latest IRR value for this portfolio fund
-                    irr_result = db.table("irr_values").select("value").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                    irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                     
                     if irr_result.data and pf["amount_invested"]:
                         total_fum += pf["amount_invested"]
-                        weighted_irr += (irr_result.data[0]["value"] * pf["amount_invested"])
+                        weighted_irr += (irr_result.data[0]["irr_result"] * pf["amount_invested"])
                         total_weight += pf["amount_invested"]
                 
                 if total_weight > 0:
@@ -131,11 +131,11 @@ async def get_performance_data(
                 total_weight = 0
                 
                 for pf in pf_result.data:
-                    irr_result = db.table("irr_values").select("value").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                    irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                     
                     if irr_result.data and pf["amount_invested"]:
                         total_fum += pf["amount_invested"]
-                        weighted_irr += (irr_result.data[0]["value"] * pf["amount_invested"])
+                        weighted_irr += (irr_result.data[0]["irr_result"] * pf["amount_invested"])
                         total_weight += pf["amount_invested"]
                 
                 if total_weight > 0:
@@ -172,11 +172,11 @@ async def get_performance_data(
                         pf_result = db.table("portfolio_funds").select("id,amount_invested").eq("portfolio_id", holding["portfolio_id"]).execute()
                         
                         for pf in pf_result.data:
-                            irr_result = db.table("irr_values").select("value").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                            irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                             
                             if irr_result.data and pf["amount_invested"]:
                                 total_fum += pf["amount_invested"]
-                                weighted_irr += (irr_result.data[0]["value"] * pf["amount_invested"])
+                                weighted_irr += (irr_result.data[0]["irr_result"] * pf["amount_invested"])
                                 total_weight += pf["amount_invested"]
                 
                 if total_weight > 0:
@@ -222,11 +222,11 @@ async def get_performance_data(
                             pf_result = db.table("portfolio_funds").select("id,amount_invested").eq("portfolio_id", holding["portfolio_id"]).execute()
                             
                             for pf in pf_result.data:
-                                irr_result = db.table("irr_values").select("value").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                                irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                                 
                                 if irr_result.data and pf["amount_invested"]:
                                     total_fum += pf["amount_invested"]
-                                    weighted_irr += (irr_result.data[0]["value"] * pf["amount_invested"])
+                                    weighted_irr += (irr_result.data[0]["irr_result"] * pf["amount_invested"])
                                     total_weight += pf["amount_invested"]
                                     
                                     if not earliest_start_date or (holding["start_date"] and holding["start_date"] < earliest_start_date):
@@ -264,11 +264,11 @@ async def get_performance_data(
                 total_weight = 0
                 
                 for pf in pf_result.data:
-                    irr_result = db.table("irr_values").select("value").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                    irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                     
                     if irr_result.data and pf["amount_invested"]:
                         total_fum += pf["amount_invested"]
-                        weighted_irr += (irr_result.data[0]["value"] * pf["amount_invested"])
+                        weighted_irr += (irr_result.data[0]["irr_result"] * pf["amount_invested"])
                         total_weight += pf["amount_invested"]
                 
                 if total_weight > 0:
@@ -291,11 +291,11 @@ async def get_performance_data(
                 total_weight = 0
                 
                 for pf in pf_result.data:
-                    irr_result = db.table("irr_values").select("value").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                    irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                     
                     if irr_result.data and pf["amount_invested"]:
                         total_fum += pf["amount_invested"]
-                        weighted_irr += (irr_result.data[0]["value"] * pf["amount_invested"])
+                        weighted_irr += (irr_result.data[0]["irr_result"] * pf["amount_invested"])
                         total_weight += pf["amount_invested"]
                 
                 if total_weight > 0:
@@ -322,11 +322,11 @@ async def get_performance_data(
                         pf_result = db.table("portfolio_funds").select("id,amount_invested").eq("portfolio_id", holding["portfolio_id"]).execute()
                         
                     for pf in pf_result.data:
-                        irr_result = db.table("irr_values").select("value").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                        irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                             
                         if irr_result.data and pf["amount_invested"]:
                             total_fum += pf["amount_invested"]
-                            weighted_irr += (irr_result.data[0]["value"] * pf["amount_invested"])
+                            weighted_irr += (irr_result.data[0]["irr_result"] * pf["amount_invested"])
                             total_weight += pf["amount_invested"]
                 
                 if total_weight > 0:
@@ -360,11 +360,11 @@ async def get_performance_data(
                             pf_result = db.table("portfolio_funds").select("id,amount_invested").eq("portfolio_id", holding["portfolio_id"]).execute()
                             
                             for pf in pf_result.data:
-                                irr_result = db.table("irr_values").select("value").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                                irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                                 
                                 if irr_result.data and pf["amount_invested"]:
                                     total_fum += pf["amount_invested"]
-                                    weighted_irr += (irr_result.data[0]["value"] * pf["amount_invested"])
+                                    weighted_irr += (irr_result.data[0]["irr_result"] * pf["amount_invested"])
                                     total_weight += pf["amount_invested"]
                                     
                                     if not earliest_start_date or (holding["start_date"] and holding["start_date"] < earliest_start_date):
@@ -524,7 +524,7 @@ async def get_portfolio_performance(portfolio_id: int, db = Depends(get_db)):
                 annualized_irr = (1 + irr) ** (365 / 365) - 1  # Assuming 1 year period
             except:
                 annualized_irr = 0.0
-                
+            
             fund_performance.append({
                 "fund_id": fund["id"],
                 "fund_name": fund.get("fund_name", "Unknown Fund"),
@@ -541,7 +541,7 @@ async def get_portfolio_performance(portfolio_id: int, db = Depends(get_db)):
             portfolio_irr = (1 + irr) ** (365 / 365) - 1  # Assuming 1 year period
         except:
             portfolio_irr = 0.0
-            
+        
         return {
             "irr": portfolio_irr,
             "total_investment": total_investment,
@@ -698,16 +698,11 @@ async def calculate_client_irr(client_id: int, db = Depends(get_db)):
                     
                 # Get the most recent IRR value for each portfolio fund
                 for pf in portfolio_funds_result.data:
-                    irr_result = db.table("irr_values")\
-                        .select("value")\
-                        .eq("fund_id", pf["id"])\
-                        .order("date", desc=True)\
-                        .limit(1)\
-                        .execute()
-                        
-                    if irr_result.data and len(irr_result.data) > 0 and irr_result.data[0]["value"] is not None:
+                    irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                    
+                    if irr_result.data and len(irr_result.data) > 0 and irr_result.data[0]["irr_result"] is not None:
                         # IRR is stored as percentage in the database
-                        irr_value = irr_result.data[0]["value"]
+                        irr_value = irr_result.data[0]["irr_result"]
                         amount_invested = float(pf["amount_invested"] or 0)
                         
                         if amount_invested > 0:  # Only include funds with positive investment
@@ -818,15 +813,10 @@ async def calculate_account_irr(account_id: int, db = Depends(get_db)):
         for pf in portfolio_funds_result.data:
             amount_invested = float(pf["amount_invested"] or 0)
             if amount_invested > 0:  # Only include funds with positive investment
-                irr_result = db.table("irr_values")\
-                    .select("value, date")\
-                    .eq("fund_id", pf["id"])\
-                    .order("date", desc=True)\
-                    .limit(1)\
-                    .execute()
+                irr_result = db.table("irr_values").select("irr_result, date").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                     
-                if irr_result.data and len(irr_result.data) > 0 and irr_result.data[0]["value"] is not None:
-                    irr_value = irr_result.data[0]["value"]
+                if irr_result.data and len(irr_result.data) > 0 and irr_result.data[0]["irr_result"] is not None:
+                    irr_value = irr_result.data[0]["irr_result"]
                     weight = amount_invested / portfolio_total  # Weight by proportion of total portfolio investment
                     
                     all_irr_values.append(irr_value)
@@ -835,7 +825,7 @@ async def calculate_account_irr(account_id: int, db = Depends(get_db)):
                     
                     # Track the latest IRR date
                     if irr_result.data[0]["date"]:
-                        current_date = datetime.fromisoformat(irr_result.data[0]["date"].replace('Z', '+00:00'))
+                        current_date = datetime.fromisoformat(irr_result.data[0]["date"].replace('Z', '+00:00') if isinstance(irr_result.data[0]["date"], str) else irr_result.data[0]["date"].isoformat())
                         if latest_irr_date is None or current_date > latest_irr_date:
                             latest_irr_date = current_date
                     
@@ -859,7 +849,7 @@ async def calculate_account_irr(account_id: int, db = Depends(get_db)):
         
     except Exception as e:
         logger.error(f"Error calculating account IRR: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error calculating account IRR: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"Error calculating account IRR: {str(e)}")
 
 @router.get("/analytics/client_risks")
 async def get_client_risks(db = Depends(get_db)):
