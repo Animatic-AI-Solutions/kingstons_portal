@@ -116,7 +116,7 @@ async def create_client_account(client_account: ClientAccountCreate, db = Depend
         if existing_holding.data and len(existing_holding.data) > 0:
             logger.info(f"Portfolio already assigned to account {created_account['id']} via account_holdings - skipping portfolio creation")
             return created_account
-        
+                
         # Create portfolio for account
         logger.info(f"Creating portfolio for account {created_account['id']}")
         
@@ -137,9 +137,9 @@ async def create_client_account(client_account: ClientAccountCreate, db = Depend
         
         # Create account_holding to link account and portfolio
         account_holding = db.table("account_holdings").insert({
-            "client_account_id": created_account["id"],
-            "portfolio_id": portfolio["id"],
-            "status": "active",
+                    "client_account_id": created_account["id"],
+                    "portfolio_id": portfolio["id"],
+                    "status": "active",
             "start_date": start_date_iso,
         }).execute()
         
@@ -188,7 +188,7 @@ async def create_client_account(client_account: ClientAccountCreate, db = Depend
                         .delete()\
                         .eq("id", port_id)\
                         .execute()
-        
+            
         return created_account
     except HTTPException:
         raise

@@ -524,7 +524,7 @@ async def get_portfolio_performance(portfolio_id: int, db = Depends(get_db)):
                 annualized_irr = (1 + irr) ** (365 / 365) - 1  # Assuming 1 year period
             except:
                 annualized_irr = 0.0
-            
+                
             fund_performance.append({
                 "fund_id": fund["id"],
                 "fund_name": fund.get("fund_name", "Unknown Fund"),
@@ -541,7 +541,7 @@ async def get_portfolio_performance(portfolio_id: int, db = Depends(get_db)):
             portfolio_irr = (1 + irr) ** (365 / 365) - 1  # Assuming 1 year period
         except:
             portfolio_irr = 0.0
-        
+            
         return {
             "irr": portfolio_irr,
             "total_investment": total_investment,
@@ -699,7 +699,7 @@ async def calculate_client_irr(client_id: int, db = Depends(get_db)):
                 # Get the most recent IRR value for each portfolio fund
                 for pf in portfolio_funds_result.data:
                     irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
-                    
+                        
                     if irr_result.data and len(irr_result.data) > 0 and irr_result.data[0]["irr_result"] is not None:
                         # IRR is stored as percentage in the database
                         irr_value = irr_result.data[0]["irr_result"]
@@ -849,7 +849,7 @@ async def calculate_account_irr(account_id: int, db = Depends(get_db)):
         
     except Exception as e:
         logger.error(f"Error calculating account IRR: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error calculating account IRR: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error calculating account IRR: {str(e)}") 
 
 @router.get("/analytics/client_risks")
 async def get_client_risks(db = Depends(get_db)):

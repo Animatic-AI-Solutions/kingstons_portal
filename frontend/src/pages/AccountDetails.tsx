@@ -1570,17 +1570,17 @@ const AccountDetails: React.FC = () => {
                     holding_id: holding.account_holding_id,
                     fund_name: holding.fund_name || 'Unknown Fund',
                     irr: holding.irr
-                  })).sort((a, b) => {
-                    // Place 'Cashline' fund at the end
-                    if (a.fund_name === 'Cashline') return 1;
-                    if (b.fund_name === 'Cashline') return -1;
-                    // Sort the rest alphabetically
-                    return a.fund_name.localeCompare(b.fund_name);
-                  })}
+                      })).sort((a, b) => {
+                        // Place 'Cashline' fund at the end
+                        if (a.fund_name === 'Cashline') return 1;
+                        if (b.fund_name === 'Cashline') return -1;
+                        // Sort the rest alphabetically
+                        return a.fund_name.localeCompare(b.fund_name);
+                      })}
                   activities={convertActivityLogs(activityLogs)}
-                  accountHoldingId={holdings.length > 0 ? holdings[0].account_holding_id : 0}
+                      accountHoldingId={holdings.length > 0 ? holdings[0].account_holding_id : 0}
                   onActivitiesUpdated={refreshData}
-                  selectedYear={selectedYear}
+                      selectedYear={selectedYear}
                 />
                   </div>
               </div>
@@ -1642,10 +1642,10 @@ const AccountDetails: React.FC = () => {
               </div>
             )}
               
-            <YearNavigator 
-              selectedYear={selectedYear}
-              onYearChange={(year) => setSelectedYear(year)}
-            />
+              <YearNavigator 
+                selectedYear={selectedYear}
+                onYearChange={(year) => setSelectedYear(year)}
+              />
             
             <EditableMonthlyActivitiesTable 
               funds={holdings.map(holding => ({

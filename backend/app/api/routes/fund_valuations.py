@@ -15,7 +15,7 @@ async def create_fund_valuation(
 ):
     """
     Create a new fund valuation.
-    If the valuation value is zero or None, any existing valuation for the same fund and date will be deleted.
+    Zero-value valuations are now allowed and will be saved.
     """
     try:
         # Check if portfolio fund exists
@@ -30,38 +30,6 @@ async def create_fund_valuation(
                 value = float(fund_valuation.value)
             except (ValueError, TypeError):
                 raise HTTPException(status_code=400, detail="Invalid value format - must be a number")
-        
-        # Check for zero value
-        if value == 0 or value == 0.0:
-            # Check if valuation exists for this date
-            existing_valuation = db.table("fund_valuations") \
-                .select("*") \
-                .eq("portfolio_fund_id", fund_valuation.portfolio_fund_id) \
-                .eq("valuation_date", fund_valuation.valuation_date.isoformat()) \
-                .execute()
-            
-            # If there's an existing valuation, delete it
-            if existing_valuation.data and len(existing_valuation.data) > 0:
-                valuation_id = existing_valuation.data[0]["id"]
-                logger.info(f"Deleting existing valuation with ID {valuation_id} because new value is zero")
-                
-                delete_result = db.table("fund_valuations").delete().eq("id", valuation_id).execute()
-                
-                # Create a response with the deleted valuation info
-                deleted_data = existing_valuation.data[0]
-                deleted_data["_deleted"] = True
-                deleted_data["message"] = "Valuation was deleted because value was zero"
-                return deleted_data
-            
-            # No existing valuation to delete, return a placeholder response
-            return {
-                "id": None,
-                "portfolio_fund_id": fund_valuation.portfolio_fund_id,
-                "valuation_date": fund_valuation.valuation_date.isoformat(),
-                "value": 0,
-                "_deleted": True,
-                "message": "No valuation created because value was zero"
-            }
         
         # Check for duplicate (same portfolio_fund_id and valuation_date)
         existing_valuation = db.table("fund_valuations") \
@@ -226,8 +194,7 @@ async def update_fund_valuation(
 ):
     """
     Update a fund valuation.
-    If the valuation value is set to zero or empty (None), the valuation record will be deleted.
-    If the valuation doesn't exist and the value is zero, we treat this as success (nothing to do).
+    Zero-value valuations are now allowed and will be saved.
     """
     try:
         # Check if fund valuation exists
@@ -235,34 +202,7 @@ async def update_fund_valuation(
         
         # Handle case where valuation doesn't exist
         if not existing_result.data or len(existing_result.data) == 0:
-            # If the value is zero or None, just return success (nothing to do)
-            if fund_valuation.value is not None and (fund_valuation.value == 0 or fund_valuation.value == 0.0):
-                logger.info(f"Valuation with ID {valuation_id} not found, but value is zero, so nothing to do")
-                return {
-                    "id": valuation_id,
-                    "value": 0,
-                    "_deleted": True,
-                    "message": "No action needed - valuation doesn't exist and value is zero"
-                }
-            else:
-                # For non-zero values, still return 404 since we can't update something that doesn't exist
-                raise HTTPException(status_code=404, detail="Fund valuation not found")
-        
-        # Check if we should delete the valuation (value is zero or None)
-        if fund_valuation.value is not None and (fund_valuation.value == 0 or fund_valuation.value == 0.0):
-            logger.info(f"Deleting valuation with ID {valuation_id} because value is zero")
-            
-            # Delete the valuation
-            delete_result = db.table("fund_valuations").delete().eq("id", valuation_id).execute()
-            
-            if not delete_result or not hasattr(delete_result, 'data') or not delete_result.data:
-                raise HTTPException(status_code=500, detail="Failed to delete fund valuation")
-                
-            # Return the last known data with a special flag indicating it was deleted
-            deleted_data = existing_result.data[0]
-            deleted_data["_deleted"] = True
-            deleted_data["message"] = "Valuation was deleted because value was zero"
-            return deleted_data
+            raise HTTPException(status_code=404, detail="Fund valuation not found")
         
         # Prepare update data (only include fields that are provided)
         update_data = {

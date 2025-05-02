@@ -493,7 +493,7 @@ const PortfolioDetails: React.FC = () => {
           </div>
         )}
         
-        {portfolioFunds.length > 0 ? (
+          {portfolioFunds.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
