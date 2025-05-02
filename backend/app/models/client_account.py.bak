@@ -17,9 +17,6 @@ class ClientAccountBase(BaseModel):
     start_date: date
     end_date: Optional[date] = None
     weighting: Optional[float] = 0.0
-    plan_number: Optional[str] = None
-    is_bespoke: Optional[bool] = True
-    original_template_id: Optional[int] = None
     
     model_config = ConfigDict(
         json_encoders={date: lambda d: d.isoformat()},
@@ -37,9 +34,6 @@ class ClientAccountUpdate(BaseModel):
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     weighting: Optional[float] = None
-    plan_number: Optional[str] = None
-    is_bespoke: Optional[bool] = None
-    original_template_id: Optional[int] = None
     
     model_config = ConfigDict(
         json_encoders={date: lambda d: d.isoformat()},

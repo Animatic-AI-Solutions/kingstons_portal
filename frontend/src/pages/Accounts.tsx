@@ -243,6 +243,38 @@ const Accounts: React.FC = () => {
     return `${value.toFixed(1)}%`;
   };
 
+  // Get a unique color for each provider
+  const getProviderColor = (providerName: string | undefined): string => {
+    if (!providerName) return '#CCCCCC'; // Default gray for unknown providers
+    
+    // Define a set of vibrant colors to use for providers
+    const colors = [
+      '#4F46E5', // Indigo
+      '#16A34A', // Green
+      '#EA580C', // Orange
+      '#DC2626', // Red
+      '#7C3AED', // Purple
+      '#0369A1', // Blue
+      '#B45309', // Amber
+      '#0D9488', // Teal
+      '#BE185D', // Pink
+      '#475569', // Slate
+      '#059669', // Emerald
+      '#D97706', // Yellow
+      '#9333EA', // Fuchsia
+      '#4338CA', // Blue-600
+    ];
+    
+    // Use a simple hash function to get consistent colors for the same provider name
+    const hash = providerName.split('').reduce((acc, char) => {
+      return char.charCodeAt(0) + ((acc << 5) - acc);
+    }, 0);
+    
+    // Map the hash to one of our predefined colors
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
+  };
+
   const filteredAndSortedAccounts = accounts
     .filter(account => 
       (account.account_name && account.account_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -610,7 +642,13 @@ const Accounts: React.FC = () => {
                               </div>
                             </td>
                             <td className="px-6 py-3 whitespace-nowrap">
-                              <div className="text-sm text-gray-600 font-sans">{account.provider_name || 'Unknown'}</div>
+                              <div className="flex items-center">
+                                <div 
+                                  className="h-3 w-3 rounded-full mr-2 flex-shrink-0" 
+                                  style={{ backgroundColor: getProviderColor(account.provider_name) }}
+                                ></div>
+                                <div className="text-sm text-gray-600 font-sans">{account.provider_name || 'Unknown'}</div>
+                              </div>
                             </td>
                             <td className="px-6 py-3 whitespace-nowrap">
                               {account.total_value !== undefined ? (
@@ -913,8 +951,14 @@ const Accounts: React.FC = () => {
                           <div className="text-sm text-gray-600 font-sans">{account.product_name}</div>
                         </td>
                         <td className="px-6 py-3 whitespace-nowrap">
-                          <div className="text-sm text-gray-600 font-sans">{account.provider_name || 'Unknown'}</div>
-                      </td>
+                          <div className="flex items-center">
+                            <div 
+                              className="h-3 w-3 rounded-full mr-2 flex-shrink-0" 
+                              style={{ backgroundColor: getProviderColor(account.provider_name) }}
+                            ></div>
+                            <div className="text-sm text-gray-600 font-sans">{account.provider_name || 'Unknown'}</div>
+                          </div>
+                        </td>
                         <td className="px-6 py-3 whitespace-nowrap">
                           {account.total_value !== undefined ? (
                             <div className="text-sm font-medium text-indigo-600">
