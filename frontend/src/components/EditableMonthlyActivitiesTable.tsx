@@ -530,7 +530,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     
     try {
       // Case 1: Deletion (empty values)
-      if (amount <= 0) {
+      if (amount < 0) {
         // Delete Switch In activity if it exists
         if (switchIn?.originalActivityId) {
           await api.delete(`holding_activity_logs/${switchIn.originalActivityId}`);
@@ -774,7 +774,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         
         try {
           const amount = parseFloat(edit.value);
-          if (isNaN(amount) || amount <= 0) {
+          if (isNaN(amount) || amount < 0) {
             throw new Error(`Invalid amount: ${edit.value} for Current Value`);
           }
           
@@ -853,7 +853,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
               amount = parseFloat(switchOut.value);
             }
             
-            if (isNaN(amount) || amount <= 0) {
+            if (isNaN(amount) || amount < 0) {
               throw new Error(`Invalid amount: ${amount} for switch operation`);
             }
             

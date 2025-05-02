@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import EditableMonthlyActivitiesTable from '../components/EditableMonthlyActivitiesTable';
 import YearNavigator from '../components/YearNavigator';
+import { calculatePortfolioIRR } from '../services/api';
 
 interface Client {
   id: number;
@@ -132,6 +133,25 @@ interface Portfolio {
 }
 
 type TabType = 'info' | 'holdings' | 'activity'; // 'holdings' tab is displayed as 'IRR'
+
+interface IrrCalculationDetail {
+  portfolio_fund_id: number;
+  status: 'calculated' | 'skipped' | 'error';
+  message: string;
+  irr_value?: number;
+  existing_irr?: number;
+  date_info?: string;
+}
+
+interface IrrCalculationResult {
+  portfolio_id: number;
+  calculation_date: string;
+  total_funds: number;
+  successful: number;
+  skipped: number;
+  failed: number;
+  details: IrrCalculationDetail[];
+}
 
 // Helper function to convert ActivityLog[] to Activity[]
 const convertActivityLogs = (logs: ActivityLog[]): any[] => {
@@ -267,7 +287,8 @@ const AccountDetails: React.FC = () => {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [fundsData, setFundsData] = useState<Map<number, any>>(new Map());
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const [lastValuationDate, setLastValuationDate] = useState<string | null>(null);
+  const [isCalculatingIRR, setIsCalculatingIRR] = useState(false);
+  const [irrCalculationResult, setIrrCalculationResult] = useState<IrrCalculationResult | null>(null);
 
   useEffect(() => {
     if (accountId) {
@@ -1042,7 +1063,34 @@ const AccountDetails: React.FC = () => {
     );
   };
 
-  // Add function to handle account deletion
+  // Add handler for IRR calculation
+  const handleCalculateIRR = async () => {
+    if (!account || !account.current_portfolio) {
+      alert('No active portfolio assigned to this account');
+      return;
+    }
+    
+    const portfolioId = account.current_portfolio.id;
+    
+    try {
+      setIsCalculatingIRR(true);
+      setIrrCalculationResult(null);
+      
+      const response = await calculatePortfolioIRR(portfolioId);
+      setIrrCalculationResult(response.data);
+      
+      // Refresh the data to show updated IRR values
+      fetchData(accountId as string);
+    } catch (err: any) {
+      console.error('Error calculating IRR:', err);
+      const errorMessage = err.response?.data?.detail || 'Failed to calculate IRR values';
+      alert(`Error: ${errorMessage}`);
+    } finally {
+      setIsCalculatingIRR(false);
+    }
+  };
+
+  // Add delete confirmation modal component
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1426,24 +1474,48 @@ const AccountDetails: React.FC = () => {
                   </div>
                 </dl>
               </div>
-                
-                {/* Financial Details Section */}
-                <div className="bg-gray-50 rounded-lg p-5">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4 pb-2 border-b border-gray-200">Financial Details</h3>
-                  <dl className="space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center">
-                      <dt className="w-full sm:w-1/3 text-sm font-medium text-gray-600 mb-1 sm:mb-0">Weighting:</dt>
-                      <dd className="w-full sm:w-2/3 text-sm font-semibold text-gray-900">
-                        {account.weighting !== undefined ? (
-                          <div className="flex items-center">
-                            <span className="mr-2">{formatPercentage(account.weighting)}</span>
-                            <div className="w-20 bg-gray-200 rounded-full h-2">
-                              <div 
-                                className="bg-indigo-600 h-2 rounded-full" 
-                                style={{ width: `${Math.min(account.weighting * 100, 100)}%` }}
-                              ></div>
-                            </div>
-                          </div>
+            </div>
+
+              {/* Portfolio Section */}
+              <div className="mt-8 border-t border-gray-200 pt-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Fund Information</h3>
+                {account.current_portfolio ? (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200 table-fixed">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="w-1/6 px-4 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Fund Name</th>
+                          <th className="w-1/6 px-4 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">ISIN</th>
+                          <th className="w-1/6 px-4 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Last Valuation</th>
+                          <th className="w-1/6 px-4 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Weighting %</th>
+                          <th className="w-1/6 px-4 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Risk Level</th>
+                          <th className="w-1/6 px-4 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Last IRR</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {holdings.length > 0 ? (
+                          holdings.map((holding) => (
+                            <tr key={holding.id}>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{holding.fund_name}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{holding.isin_number || 'N/A'}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{holding.market_value ? formatCurrency(holding.market_value) : 'N/A'}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{holding.target_weighting ? formatPercentage(parseFloat(holding.target_weighting)) : 'N/A'}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{holding.risk_level || 'N/A'}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                <span className={`${holding.irr && holding.irr >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                                  {holding.irr !== undefined ? (
+                                    <>
+                                      {formatPercentage(holding.irr / 100)}
+                                      <span className="ml-1">
+                                        {holding.irr >= 0 ? '▲' : '▼'}
+                                      </span>
+                                    </>
+                                  ) : 'N/A'}
+                                </span>
+                              </td>
+                            </tr>
+                          ))
+
                         ) : (
                           'N/A'
                         )}
@@ -1750,6 +1822,57 @@ const AccountDetails: React.FC = () => {
 
                 {/* Monthly Activities Table */}
                   <div className="mt-10">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900">Monthly Activities</h2>
+                  <button 
+                    onClick={handleCalculateIRR}
+                    disabled={isCalculatingIRR || !account?.current_portfolio}
+                    className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {isCalculatingIRR ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Calculating IRRs...
+                      </>
+                    ) : (
+                      'Calculate Latest IRRs'
+                    )}
+                  </button>
+                </div>
+                
+                {irrCalculationResult && (
+                  <div className={`px-4 py-3 rounded-md mb-4 ${
+                    irrCalculationResult.failed > 0 ? 'bg-yellow-100 border border-yellow-400' : 'bg-green-100 border border-green-400'
+                  }`}>
+                    <p className="text-sm font-medium">
+                      IRR calculation complete for {irrCalculationResult.total_funds} funds on {new Date(irrCalculationResult.calculation_date).toLocaleDateString()}.
+                      {irrCalculationResult.successful > 0 && ` Successfully calculated ${irrCalculationResult.successful} new IRR values.`}
+                      {irrCalculationResult.skipped > 0 && ` Skipped ${irrCalculationResult.skipped} funds with existing IRR values.`}
+                      {irrCalculationResult.failed > 0 && ` Failed to calculate ${irrCalculationResult.failed} IRR values.`}
+                    </p>
+                    
+                    {/* Display detailed errors for failed calculations */}
+                    {irrCalculationResult.failed > 0 && (
+                      <div className="mt-2 text-sm">
+                        <p className="font-medium text-red-700">Error details:</p>
+                        <ul className="list-disc pl-5 mt-1 space-y-1">
+                          {irrCalculationResult.details
+                            .filter((detail: IrrCalculationDetail) => detail.status === 'error')
+                            .map((detail: IrrCalculationDetail, index: number) => (
+                              <li key={index} className="text-red-700">
+                                <span className="font-medium">Fund ID {detail.portfolio_fund_id}:</span> {detail.message}
+                                {detail.date_info && <span className="block mt-1 text-xs"> ({detail.date_info})</span>}
+                              </li>
+                            ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
                 <EditableMonthlyActivitiesTable 
                   funds={holdings.map(holding => ({
                     id: holding.id,
@@ -1777,7 +1900,56 @@ const AccountDetails: React.FC = () => {
         {/* Activity Log Tab */}
         {activeTab === 'activity' && (
           <div className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Monthly Activities</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Monthly Activities</h2>
+              <button 
+                onClick={handleCalculateIRR}
+                disabled={isCalculatingIRR || !account?.current_portfolio}
+                className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                {isCalculatingIRR ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Calculating IRRs...
+                  </>
+                ) : (
+                  'Calculate Latest IRRs'
+                )}
+              </button>
+            </div>
+            
+            {irrCalculationResult && (
+              <div className={`px-4 py-3 rounded-md mb-4 ${
+                irrCalculationResult.failed > 0 ? 'bg-yellow-100 border border-yellow-400' : 'bg-green-100 border border-green-400'
+              }`}>
+                <p className="text-sm font-medium">
+                  IRR calculation complete for {irrCalculationResult.total_funds} funds on {new Date(irrCalculationResult.calculation_date).toLocaleDateString()}.
+                  {irrCalculationResult.successful > 0 && ` Successfully calculated ${irrCalculationResult.successful} new IRR values.`}
+                  {irrCalculationResult.skipped > 0 && ` Skipped ${irrCalculationResult.skipped} funds with existing IRR values.`}
+                  {irrCalculationResult.failed > 0 && ` Failed to calculate ${irrCalculationResult.failed} IRR values.`}
+                </p>
+                
+                {/* Display detailed errors for failed calculations */}
+                {irrCalculationResult.failed > 0 && (
+                  <div className="mt-2 text-sm">
+                    <p className="font-medium text-red-700">Error details:</p>
+                    <ul className="list-disc pl-5 mt-1 space-y-1">
+                      {irrCalculationResult.details
+                        .filter((detail: IrrCalculationDetail) => detail.status === 'error')
+                        .map((detail: IrrCalculationDetail, index: number) => (
+                          <li key={index} className="text-red-700">
+                            <span className="font-medium">Fund ID {detail.portfolio_fund_id}:</span> {detail.message}
+                            {detail.date_info && <span className="block mt-1 text-xs"> ({detail.date_info})</span>}
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
               
               <YearNavigator 
                 selectedYear={selectedYear}

@@ -27,7 +27,7 @@ class ClientAccountBase(BaseModel):
     )
 
 class ClientAccountCreate(ClientAccountBase):
-    pass
+    skip_portfolio_creation: Optional[bool] = False
 
 class ClientAccountUpdate(BaseModel):
     client_id: Optional[int] = None

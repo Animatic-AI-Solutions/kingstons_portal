@@ -373,6 +373,12 @@ const CreateClientAccounts: React.FC = (): JSX.Element => {
         const response = await api.get(`/available_portfolios/${numericTemplateId}`);
         const template = response.data;
 
+        // Extract fund IDs, ensuring no duplicates
+        const uniqueFundIds: number[] = Array.from(
+          new Set(template.funds.map((f: { fund_id: number }) => f.fund_id))
+        );
+        console.log(`Template ${numericTemplateId} has ${template.funds.length} funds, ${uniqueFundIds.length} unique`);
+        
         // Update the account with template details
         setAccounts(prevAccounts => prevAccounts.map(account => {
           if (account.id === accountId) {
@@ -381,8 +387,8 @@ const CreateClientAccounts: React.FC = (): JSX.Element => {
               portfolio: {
                 ...account.portfolio,
                 templateId: numericTemplateId,
-                name: template.name,
-                selectedFunds: template.funds.map((f: { fund_id: number }) => f.fund_id)
+                name: template.name || `Template Portfolio ${numericTemplateId}`,
+                selectedFunds: uniqueFundIds
               }
             };
           }
@@ -505,17 +511,48 @@ const CreateClientAccounts: React.FC = (): JSX.Element => {
               start_date: formattedStartDate
             });
           }
+          
+          // Only add CASHLINE to bespoke portfolios - template portfolios have this handled by the backend
+          try {
+            console.log("Finding CASHLINE fund to add to bespoke portfolio");
+            // First, find the CASHLINE fund by ISIN
+            const cashlineFundResponse = await api.get('/funds?isin_number=CASHLINE');
+            
+            if (cashlineFundResponse.data && cashlineFundResponse.data.length > 0) {
+              const cashlineFund = cashlineFundResponse.data[0];
+              console.log("Adding CASHLINE fund to bespoke portfolio", portfolioId);
+              
+              // Add CASHLINE fund with 0% weighting
+              await api.post('/portfolio_funds', {
+                portfolio_id: portfolioId,
+                available_funds_id: cashlineFund.id,
+                target_weighting: 0,
+                value: 0,
+                start_date: formattedStartDate
+              });
+            } else {
+              console.warn("CASHLINE fund not found - unable to add to portfolio");
+            }
+          } catch (cashlineError) {
+            console.error("Error adding CASHLINE fund:", cashlineError);
+            // Continue with account creation even if CASHLINE fund addition fails
+          }
         }
 
         // Create the client account
-        const accountResponse = await api.post('/client_accounts', {
+        console.log("Creating client account with skip_portfolio_creation=true");
+        const accountData = {
           client_id: account.client_id,
           available_products_id: account.available_products_id,
           account_name: account.account_name,
           status: account.status,
           start_date: formattedStartDate,
-          weighting: account.weighting / 100
-        });
+          weighting: account.weighting / 100,
+          skip_portfolio_creation: true // This flag should prevent backend from creating another portfolio
+        };
+        console.log("Account data:", accountData);
+        
+        const accountResponse = await api.post('/client_accounts', accountData);
         
         const accountId = accountResponse.data.id;
         
@@ -639,20 +676,6 @@ const CreateClientAccounts: React.FC = (): JSX.Element => {
             </div>
           </div>
         )}
-
-        {/* Portfolio Name */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Portfolio Name <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={account.portfolio.name}
-            onChange={(e) => handlePortfolioNameChange(account.id, e.target.value)}
-            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-            required
-          />
-        </div>
 
         {/* Show fund selection only for bespoke portfolios */}
         {account.portfolio.type === 'bespoke' && account.available_products_id > 0 && (
@@ -828,7 +851,7 @@ const CreateClientAccounts: React.FC = (): JSX.Element => {
                           )}
                         </div>
 
-                        {/* Portfolio Name */}
+                        {/* Portfolio Name - Only ONE instance of Portfolio Name should exist */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Portfolio Name <span className="text-red-500">*</span>
@@ -857,15 +880,15 @@ const CreateClientAccounts: React.FC = (): JSX.Element => {
                             className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
                           />
                         </div>
-                      </div>
 
-                      {/* Portfolio Configuration */}
-                      {account.available_products_id > 0 && (
-                        <div className="mt-6 border-t pt-6">
-                          <h4 className="text-lg font-medium mb-4">Portfolio Configuration</h4>
-                          {renderPortfolioSection(account)}
-                        </div>
-                      )}
+                        {/* Portfolio Configuration */}
+                        {account.available_products_id > 0 && (
+                          <div className="mt-6 border-t pt-6">
+                            <h4 className="text-lg font-medium mb-4">Portfolio Configuration</h4>
+                            {renderPortfolioSection(account)}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

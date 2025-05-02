@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Pages - Main site pages
 import Home from './pages/Home';
@@ -24,7 +25,7 @@ import ClientDetails from './pages/ClientDetails';
 
 // Account Management Pages - For handling financial accounts
 import Accounts from './pages/Accounts';
-import AccountDetails from './pages/AccountDetails';
+import OptimizedAccountDetails from './pages/OptimizedAccountDetails';
 
 // Definitions Pages - System configuration and reference data management
 import Definitions from './pages/Definitions';
@@ -45,6 +46,17 @@ import CreateClientAccounts from './pages/CreateClientAccounts';
 
 // Reporting Pages - Analytics and performance reporting
 import Reporting from './pages/Reporting';
+
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes by default
+    },
+  },
+});
 
 /**
  * Main App content component
@@ -151,7 +163,7 @@ const AppContent: React.FC = () => {
             <>
               <Navbar />
               <div className="flex-grow pt-6 pb-12">
-                <AccountDetails />
+                <OptimizedAccountDetails />
               </div>
               <Footer />
             </>
@@ -338,17 +350,17 @@ const AppContent: React.FC = () => {
 
 /**
  * Main App component
- * Wraps the application content with necessary providers:
- * - Router: For handling application navigation
- * - AuthProvider: For managing authentication state across the app
+ * Wraps the entire application with necessary providers
  */
 const App: React.FC = () => {
   return (
-    <Router>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </Router>
+    <QueryClientProvider client={queryClient}>
+      <Router>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </Router>
+    </QueryClientProvider>
   );
 };
 

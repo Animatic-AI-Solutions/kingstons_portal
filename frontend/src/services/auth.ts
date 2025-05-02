@@ -242,6 +242,27 @@ export const createAuthenticatedApi = () => {
       return Promise.reject(error);
     });
     
+    // Add response interceptor for error handling
+    api.interceptors.response.use(
+      response => response,
+      error => {
+        // Log detailed information about the error
+        console.error('API Error:', error.message);
+        console.error('Request URL:', error.config?.url);
+        console.error('Request Method:', error.config?.method);
+        console.error('Response Status:', error.response?.status);
+        console.error('Response Data:', error.response?.data);
+        
+        // Check if error is due to token expiration (401 Unauthorized)
+        if (error.response?.status === 401) {
+          console.warn('Authentication token may be expired or invalid');
+          // Here you could trigger a token refresh or redirect to login
+        }
+        
+        return Promise.reject(error);
+      }
+    );
+    
     return api;
   } catch (error) {
     // Fallback to a simpler axios instance if there's an error

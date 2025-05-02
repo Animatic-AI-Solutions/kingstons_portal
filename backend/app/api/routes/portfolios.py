@@ -63,7 +63,8 @@ async def create_portfolio(portfolio: PortfolioCreate, db = Depends(get_db)):
     How it works:
         1. Validates the portfolio data using the PortfolioCreate model
         2. Inserts the validated data into the 'portfolios' table
-        3. Returns the newly created portfolio with its generated ID
+        3. Adds the CASHLINE fund with 0% weighting by default
+        4. Returns the newly created portfolio with its generated ID
     Expected output: A JSON object containing the created portfolio with all fields including ID and created_at timestamp
     """
     try:
@@ -81,7 +82,40 @@ async def create_portfolio(portfolio: PortfolioCreate, db = Depends(get_db)):
         
         result = db.table("portfolios").insert(data_dict).execute()
         if result.data and len(result.data) > 0:
-            return result.data[0]
+            new_portfolio = result.data[0]
+            
+            # Always add the CASHLINE fund to every new portfolio
+            logger.info(f"Adding CASHLINE fund to portfolio {new_portfolio['id']}")
+            
+            # Find the CASHLINE fund
+            cashline_fund_result = db.table("available_funds").select("*").eq("isin_number", "CASHLINE").limit(1).execute()
+            
+            if cashline_fund_result.data and len(cashline_fund_result.data) > 0:
+                cashline_fund = cashline_fund_result.data[0]
+                logger.info(f"Found CASHLINE fund with ID {cashline_fund['id']}")
+                
+                # Get the same start date as the portfolio
+                portfolio_start_date = data_dict['start_date']
+                
+                # Add CASHLINE fund with 0% weighting
+                cashline_fund_data = {
+                    "portfolio_id": new_portfolio["id"],
+                    "available_funds_id": cashline_fund["id"],
+                    "target_weighting": 0,  # 0% weighting
+                    "start_date": portfolio_start_date,
+                    "amount_invested": 0  # No initial investment
+                }
+                
+                cashline_result = db.table("portfolio_funds").insert(cashline_fund_data).execute()
+                if cashline_result.data and len(cashline_result.data) > 0:
+                    logger.info(f"Successfully added CASHLINE fund to portfolio {new_portfolio['id']}")
+                else:
+                    logger.warning(f"Failed to add CASHLINE fund to portfolio {new_portfolio['id']}")
+            else:
+                logger.warning("CASHLINE fund not found in available_funds table")
+                
+            return new_portfolio
+            
         raise HTTPException(status_code=400, detail="Failed to create portfolio")
     except HTTPException:
         raise
@@ -283,17 +317,89 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
             # No funds in template, just return the empty portfolio
             return new_portfolio
             
-        # Create funds in the new portfolio based on template
+        # Check for duplicate funds in the template and log them
+        fund_ids = [fund["fund_id"] for fund in template_funds_response.data]
+        unique_fund_ids = set(fund_ids)
+        if len(fund_ids) != len(unique_fund_ids):
+            # There are duplicates - log them for debugging
+            duplicate_funds = {}
+            for fund_id in fund_ids:
+                if fund_id in duplicate_funds:
+                    duplicate_funds[fund_id] += 1
+                else:
+                    duplicate_funds[fund_id] = 1
+                    
+            # Filter to just duplicates    
+            duplicates = {fund_id: count for fund_id, count in duplicate_funds.items() if count > 1}
+            logger.warning(f"Found duplicate funds in template {template_data.template_id}: {duplicates}")
+            
+            # Get fund names for better logging
+            for fund_id in duplicates.keys():
+                fund_details = db.table("available_funds").select("fund_name").eq("id", fund_id).execute()
+                if fund_details.data and len(fund_details.data) > 0:
+                    logger.warning(f"Fund ID {fund_id} ({fund_details.data[0].get('fund_name', 'Unknown')}) appears {duplicates[fund_id]} times in template")
+        
+        # Use a set to track which funds we've already added to avoid duplicates
+        added_fund_ids = set()
+            
+        # Create funds in the new portfolio based on template 
         for fund in template_funds_response.data:
+            fund_id = fund["fund_id"]
+            
+            # Skip duplicate funds
+            if fund_id in added_fund_ids:
+                logger.info(f"Skipping duplicate fund ID {fund_id} in template")
+                continue
+                
             fund_data = {
                 "portfolio_id": new_portfolio["id"],
-                "available_funds_id": fund["fund_id"],
+                "available_funds_id": fund_id,
                 "target_weighting": fund["target_weighting"],
                 "start_date": today,  # Use the same start_date as the portfolio
                 "amount_invested": 0  # Initial amount is zero
             }
             
             db.table("portfolio_funds").insert(fund_data).execute()
+            added_fund_ids.add(fund_id)  # Mark as added
+        
+        # Always add the CASHLINE fund if it's not already included in the template
+        # Find if CASHLINE is already added
+        cashline_fund_included = False
+        for fund in template_funds_response.data:
+            # Get fund details to check if it's the CASHLINE fund
+            fund_details = db.table("available_funds").select("*").eq("id", fund["fund_id"]).execute()
+            if fund_details.data and len(fund_details.data) > 0:
+                if fund_details.data[0].get("isin_number") == "CASHLINE":
+                    cashline_fund_included = True
+                    logger.info(f"CASHLINE fund already included in template {template_data.template_id}")
+                    break
+        
+        # If CASHLINE not already included, add it
+        if not cashline_fund_included:
+            logger.info(f"Adding CASHLINE fund to portfolio {new_portfolio['id']}")
+            # Find the CASHLINE fund
+            cashline_fund_result = db.table("available_funds").select("*").eq("isin_number", "CASHLINE").limit(1).execute()
+            
+            if cashline_fund_result.data and len(cashline_fund_result.data) > 0:
+                cashline_fund = cashline_fund_result.data[0]
+                logger.info(f"Found CASHLINE fund with ID {cashline_fund['id']}")
+                
+                # Add CASHLINE fund with 0% weighting
+                cashline_fund_data = {
+                    "portfolio_id": new_portfolio["id"],
+                    "available_funds_id": cashline_fund["id"],
+                    "target_weighting": 0,  # 0% weighting
+                    "start_date": today,
+                    "amount_invested": 0  # No initial investment
+                }
+                
+                cashline_result = db.table("portfolio_funds").insert(cashline_fund_data).execute()
+                if cashline_result.data and len(cashline_result.data) > 0:
+                    logger.info(f"Successfully added CASHLINE fund to portfolio {new_portfolio['id']}")
+                else:
+                    logger.warning(f"Failed to add CASHLINE fund to portfolio {new_portfolio['id']}")
+            else:
+                logger.warning("CASHLINE fund not found in available_funds table")
         
         logger.info(f"Successfully created portfolio ID {new_portfolio['id']} from template {template_data.template_id}")
         return new_portfolio
@@ -303,3 +409,217 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
     except Exception as e:
         logger.error(f"Error creating portfolio from template: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@router.post("/portfolios/{portfolio_id}/calculate-irr", response_model=dict)
+async def calculate_portfolio_irr(
+    portfolio_id: int,
+    db = Depends(get_db)
+):
+    """
+    What it does: Calculates the IRR for all portfolio funds in a portfolio for the most recent common date.
+    Why it's needed: Allows bulk IRR calculation across a portfolio when all funds have valuations.
+    How it works:
+        1. Gets all portfolio funds in the portfolio
+        2. Finds the most recent date for which all portfolio funds have valuations
+        3. For each portfolio fund, calculates IRR if it doesn't already exist for that date
+        4. Returns a summary of the calculation results
+    Expected output: A JSON object with the calculation results summary
+    """
+    try:
+        # Check if portfolio exists
+        portfolio_result = db.table("portfolios").select("*").eq("id", portfolio_id).execute()
+        if not portfolio_result.data or len(portfolio_result.data) == 0:
+            raise HTTPException(status_code=404, detail=f"Portfolio with ID {portfolio_id} not found")
+
+        # Get all portfolio funds in this portfolio
+        portfolio_funds_result = db.table("portfolio_funds").select("*").eq("portfolio_id", portfolio_id).execute()
+        if not portfolio_funds_result.data or len(portfolio_funds_result.data) == 0:
+            raise HTTPException(status_code=404, detail="No portfolio funds found in this portfolio")
+        
+        portfolio_funds = portfolio_funds_result.data
+        logger.info(f"Found {len(portfolio_funds)} funds in portfolio {portfolio_id}")
+        
+        # Get the most recent valuation date that exists for all portfolio funds
+        most_recent_valuation_dates = []
+        
+        for fund in portfolio_funds:
+            fund_id = fund["id"]
+            logger.info(f"Checking valuations for fund {fund_id}")
+            
+            # Get the most recent valuation for this fund
+            latest_valuation = db.table("fund_valuations")\
+                .select("*")\
+                .eq("portfolio_fund_id", fund_id)\
+                .order("valuation_date", desc=True)\
+                .limit(1)\
+                .execute()
+                
+            if not latest_valuation.data or len(latest_valuation.data) == 0:
+                # If any fund doesn't have a valuation, we can't calculate IRR
+                logger.error(f"No valuation found for portfolio fund ID {fund_id}")
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Portfolio fund ID {fund_id} has no valuations. All funds must have valuations to calculate IRR."
+                )
+                
+            # Add the date to our list
+            valuation_date = datetime.fromisoformat(latest_valuation.data[0]["valuation_date"])
+            most_recent_valuation_dates.append({
+                "portfolio_fund_id": fund_id,
+                "date": valuation_date,
+                "valuation": latest_valuation.data[0]["value"],
+                "valuation_id": latest_valuation.data[0]["id"]  # Include the valuation ID to ensure we're using the right record
+            })
+            logger.info(f"Fund {fund_id} has most recent valuation date: {valuation_date.isoformat()}")
+        
+        # Get the earliest date from the most recent valuations
+        # (This ensures all funds have a valuation on or after this date)
+        if not most_recent_valuation_dates:
+            raise HTTPException(status_code=400, detail="No valuations found for any portfolio funds")
+            
+        # Sort by date in ascending order and take the earliest (so all funds have valuations on or after this date)
+        most_recent_valuation_dates.sort(key=lambda x: x["date"])
+        common_date = most_recent_valuation_dates[0]["date"]
+        common_date_iso = common_date.isoformat()
+        logger.info(f"Using common date for calculations: {common_date_iso}")
+        
+        # Format as year and month for IRR calculation
+        year = common_date.year
+        month = common_date.month
+        
+        # Calculate IRR for each portfolio fund
+        calculation_results = []
+        funds_to_calculate = []
+        funds_with_existing_irr = []
+        
+        for fund_data in most_recent_valuation_dates:
+            portfolio_fund_id = fund_data["portfolio_fund_id"]
+            valuation = float(fund_data["valuation"])
+            
+            # This log line will help identify where activity logs are needed but missing
+            logger.info(f"Checking fund {portfolio_fund_id} for IRR calculation")
+            
+            # Check if IRR already exists for this date - use consistent string format for comparison
+            existing_irr = db.table("irr_values")\
+                .select("*")\
+                .eq("fund_id", portfolio_fund_id)\
+                .eq("date", common_date_iso)\
+                .execute()
+            
+            logger.info(f"Found {len(existing_irr.data) if existing_irr.data else 0} existing IRR record(s) for fund {portfolio_fund_id}")
+            
+            if existing_irr.data and len(existing_irr.data) > 0:
+                # IRR already exists for this fund on this date
+                funds_with_existing_irr.append(portfolio_fund_id)
+                calculation_results.append({
+                    "portfolio_fund_id": portfolio_fund_id,
+                    "status": "skipped",
+                    "message": "IRR already exists for this date",
+                    "existing_irr": existing_irr.data[0]["irr_result"]
+                })
+                logger.info(f"Skipping IRR calculation for fund {portfolio_fund_id} - already exists with value {existing_irr.data[0]['irr_result']}")
+            else:
+                # Add to list of funds that need calculation
+                funds_to_calculate.append({
+                    "portfolio_fund_id": portfolio_fund_id,
+                    "valuation": valuation,
+                    "valuation_id": fund_data.get("valuation_id")
+                })
+                logger.info(f"Fund {portfolio_fund_id} needs IRR calculation")
+        
+        # Calculate IRR for funds that need it
+        logger.info(f"Found {len(funds_to_calculate)} funds needing IRR calculation and {len(funds_with_existing_irr)} funds with existing IRR")
+        
+        for fund_info in funds_to_calculate:
+            portfolio_fund_id = fund_info["portfolio_fund_id"]
+            valuation = fund_info["valuation"]
+            
+            try:
+                # Calculate IRR for this fund
+                from app.api.routes.portfolio_funds import calculate_portfolio_fund_irr_sync
+                logger.info(f"Calculating IRR for fund {portfolio_fund_id}, month={month}, year={year}, valuation={valuation}")
+                
+                # Pass the fund_valuation_id directly to ensure we're using the correct valuation
+                irr_result = calculate_portfolio_fund_irr_sync(
+                    portfolio_fund_id=portfolio_fund_id,
+                    month=month,
+                    year=year,
+                    valuation=valuation,
+                    db=db,
+                    fund_valuation_id=fund_info.get("valuation_id")  # Pass the valuation ID directly
+                )
+                
+                logger.info(f"IRR calculation result for fund {portfolio_fund_id}: {irr_result}")
+                
+                if irr_result.get("status") == "error":
+                    # This is an error response from the calculation function
+                    error_msg = irr_result.get("error", "Unknown error during IRR calculation")
+                    calculation_results.append({
+                        "portfolio_fund_id": portfolio_fund_id,
+                        "status": "error",
+                        "message": error_msg,
+                        "date_info": f"Month: {month}, Year: {year}"
+                    })
+                    logger.error(f"Error in IRR calculation for fund {portfolio_fund_id}: {error_msg}")
+                else:
+                    # This is a successful calculation
+                    calculation_results.append({
+                        "portfolio_fund_id": portfolio_fund_id,
+                        "status": "calculated",
+                        "irr_value": irr_result.get("irr_percentage"),
+                        "message": "IRR calculated successfully"
+                    })
+                    logger.info(f"Successfully calculated IRR for fund {portfolio_fund_id}: {irr_result.get('irr_percentage')}%")
+            except Exception as e:
+                error_message = str(e)
+                logger.error(f"Error calculating IRR for fund ID {portfolio_fund_id}: {error_message}")
+                logger.error(f"Date: {common_date_iso}, Month: {month}, Year: {year}, Valuation: {valuation}")
+                
+                # Get activity logs for this fund to help troubleshoot
+                try:
+                    activity_logs = db.table("holding_activity_log")\
+                        .select("*")\
+                        .eq("portfolio_fund_id", portfolio_fund_id)\
+                        .execute()
+                        
+                    log_count = len(activity_logs.data) if activity_logs.data else 0
+                    logger.info(f"Fund {portfolio_fund_id} has {log_count} activity logs")
+                    
+                    if log_count == 0:
+                        detailed_error = f"{error_message}. Fund has no activity logs. IRR calculation requires cash flow activities."
+                    else:
+                        detailed_error = f"{error_message}. Fund has {log_count} activity logs."
+                except Exception as log_err:
+                    detailed_error = f"{error_message}. Could not retrieve activity logs: {str(log_err)}"
+                
+                calculation_results.append({
+                    "portfolio_fund_id": portfolio_fund_id,
+                    "status": "error",
+                    "message": detailed_error,
+                    "date_info": f"Month: {month}, Year: {year}"
+                })
+        
+        # Count the results by status
+        successful = sum(1 for r in calculation_results if r["status"] == "calculated")
+        skipped = sum(1 for r in calculation_results if r["status"] == "skipped")
+        failed = sum(1 for r in calculation_results if r["status"] == "error")
+        
+        logger.info(f"IRR calculation complete for {successful} funds on {common_date.strftime('%d/%m/%Y')}. Skipped {skipped} funds with existing IRR values.")
+        
+        return {
+            "portfolio_id": portfolio_id,
+            "calculation_date": common_date_iso,
+            "total_funds": len(portfolio_funds),
+            "successful": successful,
+            "skipped": skipped,
+            "failed": failed,
+            "details": calculation_results
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Portfolio-wide IRR calculation error: {str(e)}")
+        import traceback
+        logger.error(f"Stack trace: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Error calculating portfolio IRR: {str(e)}")

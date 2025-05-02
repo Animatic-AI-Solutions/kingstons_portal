@@ -214,4 +214,13 @@ export const deleteFundValuation = (valuationId: number) => {
   return api.delete(`fund_valuations/${valuationId}`);
 };
 
+/**
+ * Calculate IRRs for all portfolio funds in a portfolio
+ * @param {number} portfolioId - Portfolio ID
+ * @returns {Promise} - API response with calculation results
+ */
+export const calculatePortfolioIRR = (portfolioId: number) => {
+  return api.post(`portfolios/${portfolioId}/calculate-irr`);
+};
+
 export default api; 

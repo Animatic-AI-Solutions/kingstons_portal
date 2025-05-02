@@ -64,7 +64,8 @@ async def create_client_account(client_account: ClientAccountCreate, db = Depend
     How it works:
         1. Validates the input data
         2. Inserts the new account into the database
-        3. Returns the created account
+        3. Creates a portfolio for the account if none is specified
+        4. Returns the created account
     Expected output: The newly created client account object
     """
     try:
@@ -76,7 +77,10 @@ async def create_client_account(client_account: ClientAccountCreate, db = Depend
         today = date.today()
         start_date_iso = client_account.start_date.isoformat() if client_account.start_date else today.isoformat()
 
+        # Log all request data for debugging
         logger.info(f"Creating client account with client_id={client_account.client_id}, product_id={client_account.available_products_id}")
+        logger.info(f"Skip portfolio creation flag: {client_account.skip_portfolio_creation}")
+        logger.info(f"Full client account data: {client_account}")
         
         # Create the account
         created_account = db.table("client_accounts").insert({
@@ -97,152 +101,96 @@ async def create_client_account(client_account: ClientAccountCreate, db = Depend
         created_account = created_account.data[0]
         logger.info(f"Successfully created client account with ID {created_account['id']}")
         
-        try:
-            # Get product details
-            product_result = db.table("available_products").select("*").eq("id", client_account.available_products_id).execute()
-            if not product_result.data or len(product_result.data) == 0:
-                logger.warning(f"Cannot find product details for account {created_account['id']}")
-                return created_account
+        # Check if we should skip portfolio creation (when frontend is handling it)
+        skip_portfolio = getattr(client_account, 'skip_portfolio_creation', False)
+        logger.info(f"Retrieved skip_portfolio_creation value: {skip_portfolio}")
+        
+        if skip_portfolio:
+            logger.info(f"Skipping portfolio creation for account {created_account['id']} as requested by frontend")
+            return created_account
             
-            product = product_result.data[0]
-            logger.info(f"Found product: {product.get('product_name')}")
+        # Check if there's already an account_holding for this client_account
+        existing_holding = db.table("account_holdings")\
+            .select("*")\
+            .eq("client_account_id", created_account["id"])\
+            .eq("status", "active")\
+            .execute()
             
-            # Always create a portfolio for every account
-            portfolio_data = {
-                "portfolio_name": f"{client_account.account_name} Portfolio",
-                "status": "active",
-                "start_date": start_date_iso  # Use the same date as account
-            }
-            
-            logger.info(f"Creating portfolio with name: {portfolio_data['portfolio_name']}")
-            portfolio_result = db.table("portfolios").insert(portfolio_data).execute()
-            if not portfolio_result.data or len(portfolio_result.data) == 0:
-                logger.warning(f"Failed to create portfolio for account {created_account['id']}")
-                return created_account
+        if existing_holding.data and len(existing_holding.data) > 0:
+            logger.info(f"Portfolio already assigned to account {created_account['id']} via account_holdings - skipping portfolio creation")
+            return created_account
                 
-            portfolio = portfolio_result.data[0]
-            logger.info(f"Successfully created portfolio with ID {portfolio['id']}")
+        # Create portfolio for account
+        logger.info(f"Creating portfolio for account {created_account['id']}")
+        
+        # Determine a default portfolio name
+        portfolio_name = f"Portfolio for {created_account['account_name'] if created_account['account_name'] else 'Account ' + str(created_account['id'])}"
+        
+        portfolio = db.table("portfolios").insert({
+            "portfolio_name": portfolio_name,
+            "status": "active",
+            "start_date": start_date_iso,
+        }).execute()
+        
+        if not portfolio.data or len(portfolio.data) == 0:
+            raise HTTPException(status_code=500, detail="Failed to create portfolio for client account")
             
-            # Create account-portfolio relationship in account_holdings table
-            try:
-                holding_data = {
+        portfolio = portfolio.data[0]
+        logger.info(f"Successfully created portfolio with ID {portfolio['id']} for account {created_account['id']}")
+        
+        # Create account_holding to link account and portfolio
+        account_holding = db.table("account_holdings").insert({
                     "client_account_id": created_account["id"],
                     "portfolio_id": portfolio["id"],
                     "status": "active",
-                    "start_date": start_date_iso
-                }
-                
-                logger.info(f"Creating account_holding linking account {created_account['id']} to portfolio {portfolio['id']}")
-                holding_result = db.table("account_holdings").insert(holding_data).execute()
-                
-                if not holding_result.data or len(holding_result.data) == 0:
-                    logger.warning(f"Failed to create account holding between account {created_account['id']} and portfolio {portfolio['id']}")
-            except Exception as e:
-                logger.error(f"Error creating account holding: {str(e)}")
+            "start_date": start_date_iso,
+        }).execute()
+        
+        if not account_holding.data or len(account_holding.data) == 0:
+            raise HTTPException(status_code=500, detail="Failed to create account holding")
             
-            # ALWAYS add the cashline fund to the portfolio
-            logger.info("Attempting to find cashline fund with ISIN 'CASHLINE'")
-            cashline_fund_result = db.table("available_funds").select("*").eq("isin_number", "CASHLINE").limit(1).execute()
+        logger.info(f"Successfully created account holding for account {created_account['id']} and portfolio {portfolio['id']}")
+        
+        # Check for and remove any duplicate portfolios for this account before returning
+        # This is a safeguard against potential duplicate portfolio creation
+        all_holdings = db.table("account_holdings")\
+            .select("portfolio_id")\
+            .eq("client_account_id", created_account["id"])\
+            .execute()
             
-            logger.info(f"Cashline fund query result: {cashline_fund_result.data}")
+        if all_holdings.data and len(all_holdings.data) > 1:
+            logger.warning(f"Found multiple portfolios for account {created_account['id']} - cleaning up duplicates")
             
-            if cashline_fund_result.data and len(cashline_fund_result.data) > 0:
-                cashline_fund = cashline_fund_result.data[0]
-                logger.info(f"Found cashline fund with ID {cashline_fund['id']}, name: {cashline_fund.get('fund_name', 'Unknown')}")
-                
-                # Add cashline fund with 0% weighting and 0 amount invested
-                cashline_portfolio_fund_data = {
-                    "portfolio_id": portfolio["id"],
-                    "available_funds_id": cashline_fund["id"],
-                    "target_weighting": 0,  # 0% weighting
-                    "start_date": start_date_iso,  # Use same date as account
-                    "amount_invested": 0.00  # No initial investment
-                }
-                
-                logger.info(f"Adding cashline fund to portfolio_funds table with data: {cashline_portfolio_fund_data}")
-                
-                try:
-                    cashline_result = db.table("portfolio_funds").insert(cashline_portfolio_fund_data).execute()
-                    logger.info(f"Cashline fund insert result: {cashline_result.data}")
-                    
-                    if cashline_result.data and len(cashline_result.data) > 0:
-                        logger.info(f"Successfully added cashline fund to portfolio {portfolio['id']}")
-                    else:
-                        logger.warning(f"Failed to add cashline fund to portfolio {portfolio['id']}, result: {cashline_result}")
-                except Exception as cash_e:
-                    logger.error(f"Exception when adding cashline fund: {str(cash_e)}")
-            else:
-                logger.warning("Cashline fund with ISIN 'CASHLINE' not found in the database")
-                
-            # Get client data to check for initial investment
-            client_result = db.table("clients").select("*").eq("id", client_account.client_id).execute()
-            if not client_result.data or len(client_result.data) == 0:
-                logger.warning(f"Cannot find client details for account {created_account['id']}")
-                return created_account
-                
-            client = client_result.data[0]
-            client_initial_investment = client.get('initial_investment')
-            logger.info(f"Client initial investment: {client_initial_investment}, account weighting: {client_account.weighting}")
+            # Keep only one portfolio (the one that was created first)
+            portfolios_to_check = [h["portfolio_id"] for h in all_holdings.data]
             
-            # Only create product funds if there's an initial investment and weighting
-            if client_initial_investment is not None and client_initial_investment > 0 and client_account.weighting > 0:
-                account_amount = client_initial_investment * client_account.weighting / 100
-                logger.info(f"Calculated account amount: {account_amount}")
+            # Get portfolio creation dates
+            portfolios_info = db.table("portfolios")\
+                .select("id, created_at")\
+                .in_("id", portfolios_to_check)\
+                .order("created_at")\
+                .execute()
+            
+            if len(portfolios_info.data) > 1:
+                # Keep the first portfolio, delete all others
+                portfolio_to_keep = portfolios_info.data[0]["id"]
+                portfolios_to_delete = [p["id"] for p in portfolios_info.data[1:]]
                 
-                # Get available funds for this product
-                product_funds_result = db.table("product_funds").select("*").eq("available_products_id", client_account.available_products_id).execute()
-                if not product_funds_result.data or len(product_funds_result.data) == 0:
-                    logger.warning(f"No funds found for product {client_account.available_products_id}")
-                    return created_account
+                logger.info(f"Keeping portfolio {portfolio_to_keep}, deleting portfolios {portfolios_to_delete}")
                 
-                logger.info(f"Found {len(product_funds_result.data)} product funds for product {client_account.available_products_id}")
-                
-                # Calculate the total weightings to ensure they sum to 100%
-                total_weightings = sum(pf['target_weighting'] or 0 for pf in product_funds_result.data)
-                logger.info(f"Total fund weightings: {total_weightings}")
-                
-                if total_weightings <= 0:
-                    logger.warning("Total fund weightings sum to zero, cannot distribute amount")
-                    return created_account
-                
-                # Add the user-selected funds from the product template
-                logger.info(f"Adding {len(product_funds_result.data)} product funds to portfolio {portfolio['id']}")
-                
-                funds_added = 0
-                for product_fund in product_funds_result.data:
-                    weighting = product_fund['target_weighting'] or 0
-                    if weighting <= 0:
-                        logger.info(f"Skipping fund {product_fund['available_funds_id']} with zero or negative weighting")
-                        continue
-                    
-                    # Calculate the amount for this fund based on weighting
-                    normalized_weighting = weighting / total_weightings
-                    fund_amount = account_amount * normalized_weighting
-                    
-                    portfolio_fund_data = {
-                        "portfolio_id": portfolio["id"],
-                        "available_funds_id": product_fund['available_funds_id'],
-                        "target_weighting": normalized_weighting * 100,  # Store as percentage
-                        "start_date": start_date_iso,  # Use same date as account
-                        "amount_invested": fund_amount
-                    }
-                    
-                    try:
-                        fund_result = db.table("portfolio_funds").insert(portfolio_fund_data).execute()
-                        if fund_result.data and len(fund_result.data) > 0:
-                            funds_added += 1
-                            logger.info(f"Added fund {product_fund['available_funds_id']} to portfolio with amount {fund_amount}")
-                        else:
-                            logger.warning(f"Failed to add fund {product_fund['available_funds_id']} to portfolio")
-                    except Exception as fund_e:
-                        logger.error(f"Exception when adding fund {product_fund['available_funds_id']}: {str(fund_e)}")
-                
-                logger.info(f"Successfully created portfolio and distributed {account_amount} across {funds_added} funds for account {created_account['id']}")
-        except Exception as e:
-            logger.error(f"Error creating portfolio and funds: {str(e)}")
-            import traceback
-            logger.error(f"Traceback: {traceback.format_exc()}")
-            # Continue with account creation even if portfolio creation fails
+                # Delete the extra account_holdings
+                for port_id in portfolios_to_delete:
+                    db.table("account_holdings")\
+                        .delete()\
+                        .eq("client_account_id", created_account["id"])\
+                        .eq("portfolio_id", port_id)\
+                        .execute()
+                        
+                    # Delete the extra portfolios
+                    db.table("portfolios")\
+                        .delete()\
+                        .eq("id", port_id)\
+                        .execute()
             
         return created_account
     except HTTPException:
