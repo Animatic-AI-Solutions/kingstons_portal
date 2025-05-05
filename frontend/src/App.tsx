@@ -25,7 +25,10 @@ import ClientDetails from './pages/ClientDetails';
 
 // Account Management Pages - For handling financial accounts
 import Accounts from './pages/Accounts';
-import OptimizedAccountDetails from './pages/OptimizedAccountDetails';
+import AccountDetails from './pages/AccountDetails';
+import AccountOverview from './pages/AccountOverview';
+import AccountIRRCalculation from './pages/AccountIRRCalculation';
+import AccountIRRHistory from './pages/AccountIRRHistory';
 
 // Definitions Pages - System configuration and reference data management
 import Definitions from './pages/Definitions';
@@ -159,11 +162,11 @@ const AppContent: React.FC = () => {
             </>
           } />
           
-          <Route path="/accounts/:accountId" element={
+          <Route path="/accounts/:accountId/*" element={
             <>
               <Navbar />
               <div className="flex-grow pt-6 pb-12">
-                <OptimizedAccountDetails />
+                <AccountDetails />
               </div>
               <Footer />
             </>
