@@ -47,6 +47,7 @@ CREATE TABLE public.available_providers (
     name text NULL,
     status text NOT NULL DEFAULT 'active'::text,
     created_at timestamp WITH time zone NOT NULL DEFAULT now(),
+    theme_color text NULL,
     CONSTRAINT available_providers_pkey PRIMARY KEY (id)
 ) TABLESPACE pg_default;
 

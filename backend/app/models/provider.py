@@ -5,6 +5,7 @@ from typing import Optional
 class ProviderBase(BaseModel):
     name: Optional[str] = None
     status: str = "active"
+    theme_color: Optional[str] = None
 
 class ProviderCreate(ProviderBase):
     pass
@@ -12,6 +13,7 @@ class ProviderCreate(ProviderBase):
 class ProviderUpdate(BaseModel):
     name: Optional[str] = None
     status: Optional[str] = None
+    theme_color: Optional[str] = None
 
 class ProviderInDB(ProviderBase):
     id: int

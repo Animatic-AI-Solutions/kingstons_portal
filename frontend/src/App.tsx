@@ -177,15 +177,10 @@ const AppContent: React.FC = () => {
             </>
           } />
           
-          <Route path="/definitions/providers" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <Providers />
-              </div>
-              <Footer />
-            </>
-          } />
+          {/* Redirect routes for unified definitions page */}
+          <Route path="/definitions/providers" element={<Navigate to="/definitions?tab=providers" replace />} />
+          <Route path="/definitions/funds" element={<Navigate to="/definitions?tab=funds" replace />} />
+          <Route path="/definitions/portfolio-templates" element={<Navigate to="/definitions?tab=portfolios" replace />} />
           
           <Route path="/definitions/providers/:providerId" element={
             <>
@@ -207,16 +202,6 @@ const AppContent: React.FC = () => {
             </>
           } />
           
-          <Route path="/definitions/funds" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <Funds />
-              </div>
-              <Footer />
-            </>
-          } />
-          
           <Route path="/definitions/funds/:fundId" element={
             <>
               <Navbar />
@@ -232,16 +217,6 @@ const AppContent: React.FC = () => {
               <Navbar />
               <div className="flex-grow pt-6 pb-12">
                 <AddFund />
-              </div>
-              <Footer />
-            </>
-          } />
-          
-          <Route path="/definitions/portfolio-templates" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <Portfolios />
               </div>
               <Footer />
             </>

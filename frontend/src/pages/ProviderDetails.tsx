@@ -122,7 +122,7 @@ const ProviderDetails: React.FC = () => {
     try {
       setIsDeleting(true);
       await api.delete(`/available_providers/${providerId}`);
-      navigate('/definitions/providers', { replace: true });
+      navigate('/definitions?tab=providers', { replace: true });
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to delete provider');
     } finally {
@@ -155,7 +155,7 @@ const ProviderDetails: React.FC = () => {
                 {error || 'Failed to load provider details. Please try again later.'}
               </p>
               <button
-                onClick={() => navigate('/definitions/providers')}
+                onClick={() => navigate('/definitions?tab=providers')}
                 className="mt-2 text-red-700 underline"
               >
                 Return to Providers
@@ -174,7 +174,7 @@ const ProviderDetails: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
           <div>
             <div className="flex items-center">
-              <Link to="/definitions/providers" className="text-indigo-600 hover:text-indigo-900 mr-2">
+              <Link to="/definitions?tab=providers" className="text-indigo-600 hover:text-indigo-900 mr-2">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>

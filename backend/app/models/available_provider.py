@@ -5,6 +5,7 @@ from typing import Optional
 class AvailableProviderBase(BaseModel):
     name: Optional[str] = None
     status: str = "active"
+    theme_color: Optional[str] = None
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -14,6 +15,7 @@ class AvailableProviderCreate(AvailableProviderBase):
 class AvailableProviderUpdate(BaseModel):
     name: Optional[str] = None
     status: Optional[str] = None
+    theme_color: Optional[str] = None
 
 class AvailableProviderInDB(AvailableProviderBase):
     id: int

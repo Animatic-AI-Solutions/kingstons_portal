@@ -75,7 +75,7 @@ const PortfolioTemplateDetails: React.FC = () => {
   };
 
   const handleBack = () => {
-    navigate('/definitions/portfolio-templates');
+    navigate('/definitions?tab=portfolios');
   };
 
   const handleCreateClick = () => {
@@ -132,7 +132,7 @@ const PortfolioTemplateDetails: React.FC = () => {
     try {
       setIsDeleting(true);
       await api.delete(`/available_portfolios/${portfolioId}`);
-      navigate('/definitions/portfolio-templates');
+      navigate('/definitions?tab=portfolios');
     } catch (err: any) {
       console.error('Error deleting portfolio template:', err);
       if (err.response?.data?.detail) {
@@ -190,7 +190,7 @@ const PortfolioTemplateDetails: React.FC = () => {
           onClick={handleBack}
           className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
         >
-          Back to Templates
+          Back to Portfolios
         </button>
       </div>
     );
@@ -215,7 +215,7 @@ const PortfolioTemplateDetails: React.FC = () => {
           onClick={handleBack}
           className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
         >
-          Back to Templates
+          Back to Portfolios
         </button>
       </div>
     );

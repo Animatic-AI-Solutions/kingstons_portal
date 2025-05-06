@@ -85,7 +85,7 @@ const FundDetails: React.FC = () => {
   }, [fund, products]);
 
   const handleBack = () => {
-    navigate('/funds');
+    navigate('/definitions?tab=funds');
   };
 
   const handleDelete = async () => {
@@ -96,7 +96,7 @@ const FundDetails: React.FC = () => {
     try {
       await api.delete(`/funds/${id}`);
       alert('Fund deleted successfully');
-      navigate('/funds');
+      navigate('/definitions?tab=funds');
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to delete fund');
       console.error('Error deleting fund:', err);
@@ -284,18 +284,15 @@ const FundDetails: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-6 flex justify-between items-center">
-        <div className="flex items-center">
-          <button
-            onClick={handleBack}
-            className="mr-4 text-indigo-600 hover:text-indigo-900"
-          >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">
+          <button onClick={handleBack} className="text-indigo-600 mr-2 inline-flex items-center">
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
+            <span className="ml-1">Back to Funds</span>
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">{fund.fund_name || 'Fund Details'}</h1>
-        </div>
+        </h1>
         <div className="flex space-x-4">
           {!isEditing && (
             <>
