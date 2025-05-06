@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-type TabType = 'providers' | 'products' | 'funds' | 'portfolios';
+type TabType = 'providers' | 'funds' | 'portfolio-templates';
 
 const Definitions: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('providers');
@@ -11,12 +11,10 @@ const Definitions: React.FC = () => {
     switch (type) {
       case 'providers':
         return '/definitions/providers';
-      case 'products':
-        return '/definitions/products';
       case 'funds':
         return '/definitions/funds';
-      case 'portfolios':
-        return '/definitions/portfolios';
+      case 'portfolio-templates':
+        return '/definitions/portfolio-templates';
       default:
         return '/';
     }
@@ -27,12 +25,10 @@ const Definitions: React.FC = () => {
     switch (type) {
       case 'providers':
         return '/definitions/providers/add';
-      case 'products':
-        return '/definitions/products/add';
       case 'funds':
         return '/definitions/funds/add';
-      case 'portfolios':
-        return '/definitions/portfolios/add';
+      case 'portfolio-templates':
+        return '/definitions/portfolio-templates/add';
       default:
         return '/';
     }
@@ -58,16 +54,6 @@ const Definitions: React.FC = () => {
             Providers
           </button>
           <button
-            onClick={() => setActiveTab('products')}
-            className={`${
-              activeTab === 'products'
-                ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-base`}
-          >
-            Products
-          </button>
-          <button
             onClick={() => setActiveTab('funds')}
             className={`${
               activeTab === 'funds'
@@ -78,9 +64,9 @@ const Definitions: React.FC = () => {
             Funds
           </button>
           <button
-            onClick={() => setActiveTab('portfolios')}
+            onClick={() => setActiveTab('portfolio-templates')}
             className={`${
-              activeTab === 'portfolios'
+              activeTab === 'portfolio-templates'
                 ? 'border-indigo-500 text-indigo-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-base`}
@@ -143,46 +129,6 @@ const Definitions: React.FC = () => {
             </div>
           )}
 
-          {activeTab === 'products' && (
-            <div>
-              <p className="text-base text-gray-700 mb-4">
-                Products are the specific investment vehicles offered by providers. 
-                Managing products allows you to track which investment options are available to your clients.
-              </p>
-              <div className="mt-6">
-                <Link
-                  to={getEntityLink(activeTab)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  View All Products
-                </Link>
-              </div>
-              <div className="mt-8 border-t border-gray-200 pt-6">
-                <h3 className="text-lg font-medium text-gray-900">Product Management Features</h3>
-                <ul className="mt-4 space-y-2 text-base text-gray-700">
-                  <li className="flex items-start">
-                    <svg className="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Add and manage product details
-                  </li>
-                  <li className="flex items-start">
-                    <svg className="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Associate products with providers
-                  </li>
-                  <li className="flex items-start">
-                    <svg className="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Manage allowed funds for each product
-                  </li>
-                </ul>
-              </div>
-            </div>
-          )}
-
           {activeTab === 'funds' && (
             <div>
               <p className="text-base text-gray-700 mb-4">
@@ -223,22 +169,22 @@ const Definitions: React.FC = () => {
             </div>
           )}
 
-          {activeTab === 'portfolios' && (
+          {activeTab === 'portfolio-templates' && (
             <div>
               <p className="text-base text-gray-700 mb-4">
-                Portfolios are collections of funds with specific allocations. 
-                Managing portfolios allows you to create model allocations that can be applied to client accounts.
+                Portfolio Templates are pre-defined investment templates for clients. 
+                Managing portfolio templates allows you to create and apply investment strategies consistently.
               </p>
               <div className="mt-6">
                 <Link
                   to={getEntityLink(activeTab)}
                   className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
-                  View All Portfolios
+                  View All Portfolio Templates
                 </Link>
               </div>
               <div className="mt-8 border-t border-gray-200 pt-6">
-                <h3 className="text-lg font-medium text-gray-900">Portfolio Management Features</h3>
+                <h3 className="text-lg font-medium text-gray-900">Portfolio Template Management Features</h3>
                 <ul className="mt-4 space-y-2 text-base text-gray-700">
                   <li className="flex items-start">
                     <svg className="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

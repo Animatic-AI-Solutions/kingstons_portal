@@ -7,9 +7,17 @@ import { calculatePortfolioIRR } from '../services/api';
 
 interface Account {
   id: number;
-  client_account_id: number;
+  client_product_id: number;
+  client_id: number;
   client_name: string;
-  account_name: string;
+  product_name: string;
+  status: string;
+  start_date: string;
+  end_date?: string;
+  irr?: number;
+  total_value?: number;
+  provider_name?: string;
+  product_type?: string;
   current_portfolio?: {
     id: number;
     portfolio_name: string;
@@ -100,39 +108,40 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
       setIsLoading(true);
       setError(null);
       
-      console.log('AccountIRRHistory: Making API request to /client_accounts/' + accountId);
+      console.log('AccountIRRHistory: Making API request to /client_products/' + accountId);
       
       // First fetch the account to get the portfolio_id
-      const accountResponse = await api.get(`/client_accounts/${accountId}`);
+      const accountResponse = await api.get(`/client_products/${accountId}`);
       console.log('AccountIRRHistory: Account data received:', accountResponse.data);
       setAccount(accountResponse.data);
       
       // Get the portfolio_id from the account
       const portfolioId = accountResponse.data.current_portfolio?.id;
-      console.log('AccountIRRHistory: Portfolio ID from account:', portfolioId);
       
       if (!portfolioId) {
         console.warn('AccountIRRHistory: No portfolio ID found for this account');
+        setIsLoading(false);
+        return;
       }
       
       // Now fetch the remaining data in parallel
       const [
         holdingsResponse,
-        activityLogsResponse,
+        activitiesResponse,
         fundsResponse,
         portfolioFundsResponse
       ] = await Promise.all([
-        api.get(`/account_holdings?client_account_id=${accountId}`),
-        api.get(`/holding_activity_logs?client_account_id=${accountId}`),
+        api.get(`/product_holdings?client_product_id=${accountId}`),
+        api.get(`/holding_activity_logs?product_holding_id=${accountId}`),
         api.get('/funds'),
-        portfolioId ? api.get(`/portfolio_funds?portfolio_id=${portfolioId}`) : api.get('/portfolio_funds')
+        api.get(`/portfolio_funds?portfolio_id=${portfolioId}`)
       ]);
       
       console.log('AccountIRRHistory: Account data received:', accountResponse.data);
       setAccount(accountResponse.data);
       
       console.log('AccountIRRHistory: Holdings data received:', holdingsResponse.data);
-      console.log('AccountIRRHistory: Activity logs received:', activityLogsResponse.data);
+      console.log('AccountIRRHistory: Activity logs received:', activitiesResponse.data);
       
       // Create a map of funds for quick lookups
       const fundsMap = new Map<number, any>(
@@ -213,7 +222,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
       
       console.log('AccountIRRHistory: Processed holdings with fund names:', processedHoldings);
       setHoldings(processedHoldings || []);
-      setActivityLogs(activityLogsResponse.data || []);
+      setActivityLogs(activitiesResponse.data || []);
       
     } catch (err: any) {
       console.error('AccountIRRHistory: Error fetching data:', err);

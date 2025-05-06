@@ -1,13 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import date, datetime
-from typing import Optional, Any
-import json
-
-class DateEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, date):
-            return obj.isoformat()
-        return super().default(obj)
+from typing import Optional
 
 class ClientproductBase(BaseModel):
     client_id: int
@@ -19,9 +12,9 @@ class ClientproductBase(BaseModel):
     plan_number: Optional[str] = None
     provider_id: Optional[int] = None
     product_type: Optional[str] = None
-    
+    portfolio_id: Optional[int] = None
+
     model_config = ConfigDict(
-        json_encoders={date: lambda d: d.isoformat()},
         from_attributes=True
     )
 
@@ -38,21 +31,20 @@ class ClientproductUpdate(BaseModel):
     plan_number: Optional[str] = None
     provider_id: Optional[int] = None
     product_type: Optional[str] = None
-    
+    portfolio_id: Optional[int] = None
+
     model_config = ConfigDict(
-        json_encoders={date: lambda d: d.isoformat()},
         from_attributes=True
     )
 
-class ClientproductInDB(ClientproductBase):
+class Clientproduct(ClientproductBase):
     id: int
-    created_at: datetime
+    created_at: Optional[datetime] = None
 
     model_config = ConfigDict(
-        json_encoders={date: lambda d: d.isoformat(), datetime: lambda dt: dt.isoformat()},
+        json_encoders={
+            date: lambda d: d.isoformat(),
+            datetime: lambda dt: dt.isoformat()
+        },
         from_attributes=True
-    )
-
-class Clientproduct(ClientproductInDB):
-    """Complete client product model returned to frontend"""
-    pass
+    ) 

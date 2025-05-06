@@ -451,76 +451,94 @@ const AddAccount: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validate the form data
+    if (!validateForm()) {
+      return;
+    }
+
+    // Start loading
+    setIsSaving(true);
+
     try {
-      if (!validateForm() || !areAllPortfoliosComplete()) {
-        return;
-      }
-      
-      setIsSaving(true);
-      setError('');
-      
-      // Use the selected start date
-      const formattedStartDate = startDate.format('YYYY-MM-DD');
-      
-      for (const product of products) {
-        if (product.portfolioType === 'template' && product.templateId) {
-          // Create portfolio from template
-          const portfolioResponse = await api.post('/portfolios/from_template', {
-            template_id: product.templateId,
-            portfolio_name: product.newPortfolio?.name || `${values.accountName} Portfolio`
-          });
-          
-          // Update the product with the new portfolio ID
-          product.portfolio_id = portfolioResponse.data.id;
-        } else if (product.portfolioType === 'bespoke' && product.newPortfolio) {
-          // For custom portfolios, explicitly include the selected start date
-          const portfolioData = {
-            portfolio_name: product.newPortfolio.name || `${values.accountName} Portfolio`,
-            status: 'active',
-            start_date: formattedStartDate
-          };
-          
-          // Create the portfolio with the selected start date
-          const portfolioResponse = await api.post('/portfolios', portfolioData);
-          product.portfolio_id = portfolioResponse.data.id;
-          
-          // Add funds to portfolio with the same date
-          if (product.newPortfolio.selectedFunds && product.newPortfolio.selectedFunds.length > 0) {
-            for (const fundId of product.newPortfolio.selectedFunds) {
-              const weighting = parseFloat(product.newPortfolio.fundWeightings[fundId] || '0');
-              if (weighting > 0) {
-                await api.post('/portfolio_funds', {
-                  portfolio_id: product.portfolio_id,
-                  available_funds_id: fundId,
-                  target_weighting: weighting,
-                  start_date: formattedStartDate,
-                  amount_invested: 0 // Will be updated later
-                });
-              }
+      // First, create an account for this client
+      const accountData = {
+        client_id: selectedClientId,
+        product_name: products[0].name,
+        status: 'active',
+        start_date: startDate.format('YYYY-MM-DD'),
+        provider_id: products[0].provider_id,
+        product_type: products[0].productType,
+        skip_portfolio_creation: true // Don't create portfolio automatically
+      };
+
+      const response = await api.post('/client_products', accountData);
+      const newAccountId = response.data.id;
+
+      // Create a portfolio if selected
+      if (products[0].portfolioType === 'template' && products[0].templateId) {
+        // Create portfolio from template
+        const portfolioResponse = await api.post('/portfolios/from_template', {
+          template_id: products[0].templateId,
+          portfolio_name: products[0].newPortfolio?.name || `${products[0].name} Portfolio`
+        });
+        
+        // Attach the portfolio to the account
+        await api.post('/client_product_portfolio_assignments', {
+          client_product_id: newAccountId,
+          portfolio_id: portfolioResponse.data.id,
+          start_date: startDate.format('YYYY-MM-DD')
+        });
+      } else if (products[0].portfolioType === 'bespoke' && products[0].newPortfolio) {
+        // For custom portfolios, explicitly include the selected start date
+        const portfolioData = {
+          portfolio_name: products[0].newPortfolio.name || `${products[0].name} Portfolio`,
+          status: 'active',
+          start_date: startDate.format('YYYY-MM-DD')
+        };
+        
+        // Create the portfolio with the selected start date
+        const portfolioResponse = await api.post('/portfolios', portfolioData);
+        
+        // Add funds to portfolio with the same date
+        if (products[0].newPortfolio.selectedFunds && products[0].newPortfolio.selectedFunds.length > 0) {
+          for (const fundId of products[0].newPortfolio.selectedFunds) {
+            const weighting = parseFloat(products[0].newPortfolio.fundWeightings[fundId] || '0');
+            if (weighting > 0) {
+              await api.post('/portfolio_funds', {
+                portfolio_id: portfolioResponse.data.id,
+                available_funds_id: fundId,
+                target_weighting: weighting,
+                start_date: startDate.format('YYYY-MM-DD'),
+                amount_invested: 0 // Will be updated later
+              });
             }
           }
         }
+
+        // Attach the portfolio to the account
+        await api.post('/client_product_portfolio_assignments', {
+          client_product_id: newAccountId,
+          portfolio_id: portfolioResponse.data.id,
+          start_date: startDate.format('YYYY-MM-DD')
+        });
       }
-      
-      // Create the client account with the selected start date
-      const accountData = {
-        client_id: selectedClientId,
-        available_products_id: products[0].provider_id,
-        account_name: values.accountName,
-        status: 'active',
-        start_date: formattedStartDate,
-        weighting: parseFloat(products[0].allocation.toString())
-      };
-      
-      const response = await api.post('/client_accounts', accountData);
-      
-      // Navigate to the created account
-      message.success('Account created successfully!');
-      navigate(`/accounts/${response.data.id}`);
-    } catch (error) {
-      setError('Failed to create account');
-      console.error('Error:', error);
+
+      // Navigate back to accounts page with a success message
+      message.success('Product created successfully!');
+      navigate('/products', {
+        state: {
+          notification: {
+            type: 'success',
+            message: 'Product created successfully!'
+          }
+        }
+      });
+    } catch (error: any) {
+      console.error('Error creating product:', error);
+      setError(error.response?.data?.detail || 'Failed to create product.');
     } finally {
       setIsSaving(false);
     }

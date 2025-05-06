@@ -103,10 +103,10 @@ const Navbar: React.FC = () => {
                   Clients
                 </Link>
                 <Link 
-                  to="/accounts" 
-                  className={`px-2 py-6 text-base ${isActive('/accounts') ? activeNavLinkStyle : inactiveNavLinkStyle}`}
+                  to="/products" 
+                  className={`px-2 py-6 text-base ${isActive('/products') ? activeNavLinkStyle : inactiveNavLinkStyle}`}
                 >
-                  Accounts
+                  Products
                 </Link>
                 <Link 
                   to="/definitions" 

@@ -67,11 +67,11 @@ const Funds: React.FC = () => {
   };
 
   const handleAddFund = () => {
-    navigate('/funds/add');
+    navigate('/definitions/funds/add');
   };
 
   const handleFundClick = (fundId: number) => {
-    navigate(`/funds/${fundId}`);
+    navigate(`/definitions/funds/${fundId}`);
   };
 
   const filteredAndSortedFunds = funds

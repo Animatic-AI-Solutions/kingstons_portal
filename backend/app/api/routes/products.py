@@ -156,7 +156,7 @@ async def delete_product(product_id: int, db = Depends(get_db)):
     How it works:
         1. Verifies the product exists
         2. Deletes all product_funds associated with this product
-        3. Deletes all client_accounts associated with this product
+        3. Deletes all client_products associated with this product
         4. Finally deletes the product record
         5. Returns a success message
     Expected output: A JSON object with a success message confirmation
@@ -170,8 +170,8 @@ async def delete_product(product_id: int, db = Depends(get_db)):
         # Delete all product_funds associated with this product
         db.table("product_funds").delete().eq("available_products_id", product_id).execute()
         
-        # Delete all client_accounts associated with this product
-        db.table("client_accounts").delete().eq("available_products_id", product_id).execute()
+        # Delete all client_products associated with this product
+        db.table("client_products").delete().eq("available_products_id", product_id).execute()
         
         # Finally, delete the product
         result = db.table("available_products").delete().eq("id", product_id).execute()

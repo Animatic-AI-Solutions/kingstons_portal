@@ -2,14 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+interface Fund {
+  id: number;
+  fund_id: number;
+  target_weighting: number;
+  available_funds?: {
+    id: number;
+    fund_name: string;
+    risk_factor?: number;
+  };
+}
+
 interface Portfolio {
   id: number;
   name: string;
-  available_products_id: number | null;
   created_at: string;
+  funds?: Fund[];
+  averageRisk?: number;
 }
 
-type SortField = 'name' | 'created_at';
+type SortField = 'name' | 'created_at' | 'averageRisk';
 type SortOrder = 'asc' | 'desc';
 
 const Portfolios: React.FC = () => {
@@ -26,15 +38,75 @@ const Portfolios: React.FC = () => {
     fetchPortfolios();
   }, []);
 
+  const calculateAverageRisk = (portfolio: Portfolio): number => {
+    if (!portfolio.funds || portfolio.funds.length === 0) return 0;
+
+    let totalWeightedRisk = 0;
+    let totalWeight = 0;
+
+    portfolio.funds.forEach(fund => {
+      // Handle both direct risk_factor on fund or nested in available_funds
+      const riskFactor = fund.available_funds?.risk_factor;
+      
+      if (riskFactor !== undefined && fund.target_weighting) {
+        totalWeightedRisk += riskFactor * fund.target_weighting;
+        totalWeight += fund.target_weighting;
+      }
+    });
+
+    return totalWeight > 0 ? Number((totalWeightedRisk / totalWeight).toFixed(1)) : 0;
+  };
+
+  const fetchPortfolioDetails = async (portfolioId: number): Promise<Portfolio | null> => {
+    try {
+      const response = await api.get(`/available_portfolios/${portfolioId}`);
+      
+      if (response.data) {
+        console.log(`Fetched details for portfolio ${portfolioId}:`, response.data);
+        
+        // Calculate risk if funds data is available
+        const portfolioData = response.data;
+        const averageRisk = portfolioData.funds ? calculateAverageRisk(portfolioData) : 0;
+        
+        return {
+          ...portfolioData,
+          averageRisk
+        };
+      }
+      return null;
+    } catch (err) {
+      console.error(`Error fetching portfolio details for ${portfolioId}:`, err);
+      return null;
+    }
+  };
+
   const fetchPortfolios = async () => {
     try {
       setIsLoading(true);
       console.log("Fetching portfolio templates...");
       
+      // Get list of all portfolio templates
       const response = await api.get('/available_portfolios');
       console.log(`Received ${response.data.length} portfolio templates`);
       
-      setPortfolios(response.data);
+      // We need detailed information for each portfolio to calculate risk
+      const portfolioTemplates = response.data;
+      const detailedPortfolios = await Promise.all(
+        portfolioTemplates.map(async (portfolio: any) => {
+          const detailedPortfolio = await fetchPortfolioDetails(portfolio.id);
+          if (detailedPortfolio) {
+            return detailedPortfolio;
+          }
+          
+          // If detail fetch fails, return basic portfolio info
+          return {
+            ...portfolio,
+            averageRisk: 0
+          };
+        })
+      );
+      
+      setPortfolios(detailedPortfolios);
       setError(null);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to fetch portfolios');
@@ -54,11 +126,15 @@ const Portfolios: React.FC = () => {
   };
 
   const handleAddPortfolio = () => {
-    navigate('/portfolios/add');
+    navigate('/definitions/portfolio-templates/add');
   };
 
   const handlePortfolioClick = (portfolioId: number) => {
-    navigate(`/portfolio-templates/${portfolioId}`);
+    if (portfolioId) {
+      navigate(`/definitions/portfolio-templates/${portfolioId}`);
+    } else {
+      console.error('Attempted to navigate to portfolio template with undefined ID');
+    }
   };
 
   const filteredAndSortedPortfolios = portfolios
@@ -66,11 +142,17 @@ const Portfolios: React.FC = () => {
       (portfolio.name?.toLowerCase() || '').includes(searchQuery.toLowerCase())
     )
     .sort((a, b) => {
-      const aValue = String(a[sortField] || '').toLowerCase();
-      const bValue = String(b[sortField] || '').toLowerCase();
-      return sortOrder === 'asc' 
-        ? aValue.localeCompare(bValue)
-        : bValue.localeCompare(aValue);
+      if (sortField === 'averageRisk') {
+        const aValue = a.averageRisk || 0;
+        const bValue = b.averageRisk || 0;
+        return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+      } else {
+        const aValue = String(a[sortField] || '').toLowerCase();
+        const bValue = String(b[sortField] || '').toLowerCase();
+        return sortOrder === 'asc' 
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
     });
 
   return (
@@ -115,6 +197,7 @@ const Portfolios: React.FC = () => {
             >
               <option value="name">Name</option>
               <option value="created_at">Created Date</option>
+              <option value="averageRisk">Risk Factor</option>
             </select>
             <button
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
@@ -152,7 +235,7 @@ const Portfolios: React.FC = () => {
                       Template Name
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Product ID
+                      Risk Factor
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Created Date
@@ -170,7 +253,16 @@ const Portfolios: React.FC = () => {
                         <div className="text-sm font-medium text-gray-900">{portfolio.name || 'Unnamed Template'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">{portfolio.available_products_id || 'N/A'}</div>
+                        <div className="text-sm text-gray-900 font-medium">
+                          {portfolio.averageRisk && portfolio.averageRisk > 0 ? (
+                            <>
+                              {portfolio.averageRisk}
+                              <span className="ml-1 text-xs text-gray-500">(0-7)</span>
+                            </>
+                          ) : (
+                            'N/A'
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-500">

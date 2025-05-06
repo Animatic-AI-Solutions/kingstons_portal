@@ -2,8 +2,8 @@ from pydantic import BaseModel, Field, ConfigDict
 from datetime import date, datetime
 from typing import Optional
 
-class AccountHoldingBase(BaseModel):
-    client_account_id: int
+class ProductHoldingBase(BaseModel):
+    client_product_id: int
     portfolio_id: Optional[int] = None
     status: str = "active"
     start_date: date
@@ -14,11 +14,11 @@ class AccountHoldingBase(BaseModel):
         from_attributes=True
     )
 
-class AccountHoldingCreate(AccountHoldingBase):
+class ProductHoldingCreate(ProductHoldingBase):
     pass
 
-class AccountHoldingUpdate(BaseModel):
-    client_account_id: Optional[int] = None
+class ProductHoldingUpdate(BaseModel):
+    client_product_id: Optional[int] = None
     portfolio_id: Optional[int] = None
     status: Optional[str] = None
     start_date: Optional[date] = None
@@ -29,7 +29,7 @@ class AccountHoldingUpdate(BaseModel):
         from_attributes=True
     )
 
-class AccountHoldingInDB(AccountHoldingBase):
+class ProductHoldingInDB(ProductHoldingBase):
     id: int
     created_at: datetime
 
@@ -38,6 +38,6 @@ class AccountHoldingInDB(AccountHoldingBase):
         from_attributes=True
     )
 
-class AccountHolding(AccountHoldingInDB):
-    """Complete account holding model returned to frontend"""
+class ProductHolding(ProductHoldingInDB):
+    """Complete product holding model returned to frontend"""
     pass

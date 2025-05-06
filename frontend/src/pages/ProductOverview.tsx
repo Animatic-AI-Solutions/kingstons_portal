@@ -5,17 +5,17 @@ import { useAuth } from '../context/AuthContext';
 // Basic interfaces for type safety
 interface Account {
   id: number;
-  client_account_id: number;
+  client_product_id: number;
   client_id: number;
   client_name: string;
-  account_name: string;
+  product_name: string;
   status: string;
   start_date: string;
   end_date?: string;
   irr?: number;
   total_value?: number;
   provider_name?: string;
-  product_name?: string;
+  product_type?: string;
   plan_number?: string;
   is_bespoke?: boolean;
   original_template_id?: number;
@@ -71,15 +71,15 @@ const AccountOverview: React.FC<AccountOverviewProps> = ({ accountId: propAccoun
       setIsLoading(true);
       setError(null);
       
-      console.log('AccountOverview: Making API request to /client_accounts/' + accountId);
+      console.log('AccountOverview: Making API request to /client_products/' + accountId);
       
       // First fetch the account to get the portfolio_id
-      const accountResponse = await api.get(`/client_accounts/${accountId}`);
+      const accountResponse = await api.get(`/client_products/${accountId}`);
       console.log('AccountOverview: Account data received:', accountResponse.data);
       setAccount(accountResponse.data);
       
-      // Get the portfolio_id from the account
-      const portfolioId = accountResponse.data.current_portfolio?.id;
+      // Get the portfolio_id from the account - first try direct link, then fall back to current_portfolio
+      const portfolioId = accountResponse.data.portfolio_id || accountResponse.data.current_portfolio?.id;
       console.log('AccountOverview: Portfolio ID from account:', portfolioId);
       
       if (!portfolioId) {
@@ -88,19 +88,15 @@ const AccountOverview: React.FC<AccountOverviewProps> = ({ accountId: propAccoun
       
       // Now fetch the remaining data in parallel
       const [
-        holdingsResponse,
         fundsResponse,
         portfolioFundsResponse
       ] = await Promise.all([
-        api.get(`/account_holdings?client_account_id=${accountId}`),
         api.get('/funds'),
         portfolioId ? api.get(`/portfolio_funds?portfolio_id=${portfolioId}`) : api.get('/portfolio_funds')
       ]);
       
       console.log('AccountOverview: Account data received:', accountResponse.data);
       setAccount(accountResponse.data);
-      
-      console.log('AccountOverview: Holdings data received:', holdingsResponse.data);
       
       // Create a map of funds for quick lookups
       const fundsMap = new Map<number, any>(
@@ -112,79 +108,85 @@ const AccountOverview: React.FC<AccountOverviewProps> = ({ accountId: propAccoun
       
       console.log('AccountOverview: Portfolio funds data:', portfolioFundsResponse.data);
       
-      // Create a map of portfolio funds for quick lookups
-      const portfolioFundsMap = new Map<number, any>(
-        portfolioFundsResponse.data.map((pf: any) => [pf.id, pf])
-      );
-      
-      // Process holdings to include fund names
-      const processedHoldings = holdingsResponse.data.map((holding: any) => {
-        console.log('AccountOverview: Processing holding:', holding);
+      // With the new schema, portfolio_funds directly contain all the fund info we need
+      if (portfolioId && portfolioFundsResponse.data.length > 0) {
+        const processedHoldings = portfolioFundsResponse.data.map((pf: any) => {
+          // Find fund details
+          const fund = fundsMap.get(pf.available_funds_id);
+          
+          return {
+            id: pf.id,
+            fund_name: fund?.fund_name || 'Unknown Fund',
+            fund_id: fund?.id,
+            isin_number: fund?.isin_number || 'N/A',
+            target_weighting: pf.weighting,
+            amount_invested: pf.amount_invested || 0,
+            market_value: pf.market_value || pf.amount_invested || 0, // Use market_value if available, fall back to amount_invested
+            irr: pf.irr_result || null
+          };
+        });
         
-        // Get the portfolio ID from the holding or from the account
-        const portfolioId = holding.portfolio_id || accountResponse.data.current_portfolio?.id;
+        console.log('AccountOverview: Processed holdings from portfolio_funds:', processedHoldings);
+        setHoldings(processedHoldings);
+      } else {
+        // Fallback to product_holdings (legacy approach) if no portfolio_funds are found
+        console.log('AccountOverview: No portfolio funds found, falling back to product_holdings');
+        const holdingsResponse = await api.get(`/product_holdings?client_product_id=${accountId}`);
+        console.log('AccountOverview: Holdings data received:', holdingsResponse.data);
         
-        if (!portfolioId) {
-          console.warn('AccountOverview: No portfolio ID for holding:', holding.id);
+        // Process holdings to include fund names - legacy approach
+        const processedHoldings = holdingsResponse.data.map((holding: any) => {
+          console.log('AccountOverview: Processing holding:', holding);
+          
+          // Get the portfolio ID from the holding or from the account
+          const holdingPortfolioId = holding.portfolio_id || portfolioId;
+          
+          if (!holdingPortfolioId) {
+            console.warn('AccountOverview: No portfolio ID for holding:', holding.id);
+            return {
+              ...holding,
+              fund_name: 'Unknown Fund',
+              fund_id: null,
+              isin_number: 'N/A'
+            };
+          }
+          
+          // Find all portfolio funds for this portfolio
+          const relevantPortfolioFunds = portfolioFundsResponse.data.filter((pf: any) =>
+            pf.portfolio_id === holdingPortfolioId
+          );
+          
+          console.log('AccountOverview: Relevant portfolio funds for holding:', relevantPortfolioFunds);
+          
+          // Find a matching portfolio fund
+          // Try different matching strategies
+          let portfolioFund = relevantPortfolioFunds[0]; // Default to first fund in portfolio if no better match found
+          
+          // Try to match by fund_id if available
+          if (holding.fund_id) {
+            const matchByFundId = relevantPortfolioFunds.find((pf: any) =>
+              pf.available_funds_id === holding.fund_id
+            );
+            if (matchByFundId) portfolioFund = matchByFundId;
+          }
+          
+          console.log('AccountOverview: Matched portfolio fund:', portfolioFund);
+          
+          // Find the fund
+          const fund = portfolioFund ? fundsMap.get(portfolioFund.available_funds_id) : null;
+          console.log('AccountOverview: Matched fund:', fund);
+          
           return {
             ...holding,
-            fund_name: 'Unknown Fund',
-            fund_id: null,
-            isin_number: 'N/A'
+            fund_name: fund?.fund_name || holding.fund_name || 'Unknown Fund',
+            fund_id: fund?.id || holding.fund_id,
+            isin_number: fund?.isin_number || holding.isin_number || 'N/A'
           };
-        }
+        });
         
-        // Find all portfolio funds for this portfolio
-        const relevantPortfolioFunds = portfolioFundsResponse.data.filter((pf: any) =>
-          pf.portfolio_id === portfolioId
-        );
-        
-        console.log('AccountOverview: Relevant portfolio funds for holding:', relevantPortfolioFunds);
-        
-        // Find the specific portfolio fund for this holding
-        // Try different matching strategies
-        let portfolioFund = null;
-        
-        // Strategy 1: Direct ID match
-        portfolioFund = relevantPortfolioFunds.find((pf: any) => pf.id === holding.id);
-        
-        // Strategy 2: Match by portfolio_id and fund_id if available
-        if (!portfolioFund && holding.fund_id) {
-          portfolioFund = relevantPortfolioFunds.find((pf: any) =>
-            pf.available_funds_id === holding.fund_id
-          );
-        }
-        
-        // Strategy 3: If we still don't have a match, try to match by name
-        if (!portfolioFund && holding.fund_name) {
-          const fundId = Array.from(fundsMap.values()).find(
-            (fund: any) => fund.fund_name === holding.fund_name
-          )?.id;
-          
-          if (fundId) {
-            portfolioFund = relevantPortfolioFunds.find((pf: any) =>
-              pf.available_funds_id === fundId
-            );
-          }
-        }
-        
-        console.log('AccountOverview: Matched portfolio fund:', portfolioFund);
-        
-        // Find the fund
-        const fund = portfolioFund ? fundsMap.get(portfolioFund.available_funds_id) : null;
-        console.log('AccountOverview: Matched fund:', fund);
-        
-        return {
-          ...holding,
-          fund_name: fund?.fund_name || holding.fund_name || 'Unknown Fund',
-          fund_id: fund?.id || holding.fund_id,
-          isin_number: fund?.isin_number || holding.isin_number || 'N/A'
-        };
-      });
-      
-      console.log('AccountOverview: Processed holdings with fund names:', processedHoldings);
-      setHoldings(processedHoldings || []);
-      
+        console.log('AccountOverview: Processed holdings with fund names:', processedHoldings);
+        setHoldings(processedHoldings || []);
+      }
     } catch (err: any) {
       console.error('AccountOverview: Error fetching data:', err);
       setError(err.response?.data?.detail || 'Failed to fetch account details');
@@ -204,8 +206,11 @@ const AccountOverview: React.FC<AccountOverviewProps> = ({ accountId: propAccoun
   };
 
   // Format percentage with 1 decimal place
-  const formatPercentage = (value: number): string => {
-    return `${(value * 100).toFixed(1)}%`;
+  const formatPercentage = (value: number | null | undefined): string => {
+    if (value === null || value === undefined) {
+      return 'N/A';
+    }
+    return `${value.toFixed(1)}%`;
   };
 
   // Format date only
@@ -236,14 +241,14 @@ const AccountOverview: React.FC<AccountOverviewProps> = ({ accountId: propAccoun
     
     try {
       // Delete account and related data
-      await api.delete(`/client_accounts/${accountId}`);
+      await api.delete(`/client_products/${accountId}`);
       
       // Navigate back to accounts list
-      navigate('/accounts', { 
+      navigate('/products', { 
         state: { 
           notification: {
             type: 'success',
-            message: 'Account deleted successfully'
+            message: 'Product deleted successfully'
           }
         }
       });
@@ -328,10 +333,10 @@ const AccountOverview: React.FC<AccountOverviewProps> = ({ accountId: propAccoun
               {error || 'Failed to load account details. Please try again later.'}
             </p>
             <button
-              onClick={() => navigate('/accounts')}
+              onClick={() => navigate('/products')}
               className="mt-2 text-red-700 underline"
             >
-              Return to Accounts
+              Return to Products
             </button>
           </div>
         </div>
@@ -369,12 +374,12 @@ const AccountOverview: React.FC<AccountOverviewProps> = ({ accountId: propAccoun
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{holding.fund_name}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">{holding.isin_number || 'N/A'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">{holding.market_value ? formatCurrency(holding.market_value) : 'N/A'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">{holding.target_weighting ? formatPercentage(parseFloat(holding.target_weighting)) : 'N/A'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">{formatPercentage(holding.target_weighting ? parseFloat(holding.target_weighting.toString()) : null)}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">{getFundRiskRating(holding.fund_id || 0, fundsData)}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {holding.irr !== undefined ? (
+                        {holding.irr !== undefined && holding.irr !== null ? (
                           <span className={`${holding.irr >= 0 ? 'text-green-700' : 'text-red-700'} font-medium`}>
-                            {formatPercentage(holding.irr / 100)}
+                            {formatPercentage(holding.irr)}
                             <span className="ml-1">{holding.irr >= 0 ? '▲' : '▼'}</span>
                           </span>
                         ) : (

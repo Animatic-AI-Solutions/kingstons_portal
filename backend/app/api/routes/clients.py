@@ -171,12 +171,12 @@ async def delete_client(
     current_user: dict = Depends(get_current_user)
 ):
     """
-    What it does: Deletes a client record and all associated accounts and portfolios from the database.
-    Why it's needed: Allows removing clients that are no longer relevant, along with their accounts and portfolios.
+    What it does: Deletes a client record and all associated products and portfolios from the database.
+    Why it's needed: Allows removing clients that are no longer relevant, along with their products and portfolios.
     How it works:
         1. Takes the client_id from the URL path
         2. Verifies the client exists
-        3. Deletes all associated accounts, portfolios, and holdings using delete_client_accounts
+        3. Deletes all associated products, portfolios, and holdings using delete_client_products
         4. Deletes the client record
         5. Returns a success message
     Expected output: A JSON object with a success message confirmation
@@ -187,15 +187,15 @@ async def delete_client(
         if not check_result.data or len(check_result.data) == 0:
             raise HTTPException(status_code=404, detail=f"Client with ID {client_id} not found")
 
-        # First, delete all client accounts and associated data
+        # First, delete all client products and associated data
         try:
-            accounts_result = await delete_client_accounts(client_id, db)
-            accounts_deleted = accounts_result.get("deleted_accounts", 0)
-            portfolios_deleted = accounts_result.get("deleted_portfolios", 0)
-            holdings_deleted = accounts_result.get("deleted_holdings", 0)
+            products_result = await delete_client_products(client_id, db)
+            products_deleted = products_result.get("deleted_products", 0)
+            portfolios_deleted = products_result.get("deleted_portfolios", 0)
+            holdings_deleted = products_result.get("deleted_holdings", 0)
         except Exception as e:
-            logger.warning(f"Error deleting associated accounts: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Failed to delete client accounts: {str(e)}")
+            logger.warning(f"Error deleting associated products: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Failed to delete client products: {str(e)}")
 
         # Delete client
         result = db.table("clients").delete().eq("id", client_id).execute()
@@ -204,7 +204,7 @@ async def delete_client(
 
         return {
             "message": f"Client with ID {client_id} deleted successfully",
-            "deleted_accounts": accounts_deleted,
+            "deleted_products": products_deleted,
             "deleted_portfolios": portfolios_deleted,
             "deleted_holdings": holdings_deleted
         }
@@ -312,22 +312,22 @@ async def create_client_version(
         logger.error(f"Error creating client version: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to create client version: {str(e)}")
 
-@router.delete("/clients/{client_id}/accounts", response_model=dict)
-async def delete_client_accounts(
+@router.delete("/clients/{client_id}/products", response_model=dict)
+async def delete_client_products(
     client_id: int, 
     db = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
     """
-    What it does: Deletes all accounts for a client, along with associated portfolios and products, but preserves providers.
-    Why it's needed: Allows cleaning up client accounts without removing the client itself.
+    What it does: Deletes all products for a client, along with associated portfolios and products, but preserves providers.
+    Why it's needed: Allows cleaning up client products without removing the client itself.
     How it works:
-        1. Gets all accounts for the client
-        2. For each account:
-            a. Gets all holdings for the account
+        1. Gets all products for the client
+        2. For each product:
+            a. Gets all holdings for the product
             b. For each holding, gets portfolio details
             c. Deletes the holdings
-        3. Deletes the accounts
+        3. Deletes the products
         4. Returns a summary of deletions
     Expected output: A JSON object with counts of deleted entities
     """
@@ -337,36 +337,36 @@ async def delete_client_accounts(
         if not check_result.data or len(check_result.data) == 0:
             raise HTTPException(status_code=404, detail=f"Client with ID {client_id} not found")
 
-        # Get client accounts for this client
-        client_accounts_result = db.table("client_accounts").select("id").eq("client_id", client_id).execute()
+        # Get client products for this client
+        client_products_result = db.table("client_products").select("id").eq("client_id", client_id).execute()
         
         # Track statistics for response message
-        deleted_accounts = 0
+        deleted_products = 0
         deleted_portfolios = 0
         deleted_holdings = 0
 
-        if client_accounts_result.data and len(client_accounts_result.data) > 0:
-            account_ids = [account["id"] for account in client_accounts_result.data]
-            deleted_accounts = len(account_ids)
+        if client_products_result.data and len(client_products_result.data) > 0:
+            product_ids = [product["id"] for product in client_products_result.data]
+            deleted_products = len(product_ids)
             
-            # Get portfolio assignments for these accounts
-            for account_id in account_ids:
-                # Delete account holdings and their activity logs
-                holdings_result = db.table("account_holdings").select("id", "portfolio_id").eq("client_account_id", account_id).execute()
+            # Get portfolio assignments for these products
+            for product_id in product_ids:
+                # Delete product holdings and their activity logs
+                holdings_result = db.table("product_holdings").select("id", "portfolio_id").eq("client_product_id", product_id).execute()
                 portfolio_ids = []
                 
                 if holdings_result.data and len(holdings_result.data) > 0:
                     # Collect all portfolio IDs from the holdings
                     for holding in holdings_result.data:
                         # Delete activity logs for this holding
-                        db.table("holding_activity_log").delete().eq("account_holding_id", holding["id"]).execute()
+                        db.table("holding_activity_log").delete().eq("product_holding_id", holding["id"]).execute()
                         # Add portfolio ID to list if it exists
                         if "portfolio_id" in holding and holding["portfolio_id"] is not None:
                             portfolio_ids.append(holding["portfolio_id"])
                     
                     # Delete the holdings
                     deleted_holdings += len(holdings_result.data)
-                    db.table("account_holdings").delete().eq("client_account_id", account_id).execute()
+                    db.table("product_holdings").delete().eq("client_product_id", product_id).execute()
                 
                 # Remove duplicates from portfolio_ids
                 portfolio_ids = list(set(portfolio_ids))
@@ -386,26 +386,26 @@ async def delete_client_accounts(
                 
                 # Delete portfolios (if they're not used by other clients)
                 for portfolio_id in portfolio_ids:
-                    # Check if this portfolio is used by any other client accounts
-                    other_holdings = db.table("account_holdings").select("id").eq("portfolio_id", portfolio_id).neq("client_account_id", account_id).execute()
+                    # Check if this portfolio is used by any other client products
+                    other_holdings = db.table("product_holdings").select("id").eq("portfolio_id", portfolio_id).neq("client_product_id", product_id).execute()
                     has_other_assignments = other_holdings.data and len(other_holdings.data) > 0
                     
                     if not has_other_assignments:
-                        # Portfolio is not used by any other accounts, safe to delete
+                        # Portfolio is not used by any other products, safe to delete
                         db.table("portfolios").delete().eq("id", portfolio_id).execute()
                         deleted_portfolios += 1
             
-            # Delete all client accounts for this client
-            db.table("client_accounts").delete().eq("client_id", client_id).execute()
+            # Delete all client products for this client
+            db.table("client_products").delete().eq("client_id", client_id).execute()
 
         return {
-            "message": f"Successfully deleted {deleted_accounts} accounts, {deleted_portfolios} portfolios, and {deleted_holdings} holdings for client ID {client_id}",
-            "deleted_accounts": deleted_accounts,
+            "message": f"Successfully deleted {deleted_products} products, {deleted_portfolios} portfolios, and {deleted_holdings} holdings for client ID {client_id}",
+            "deleted_products": deleted_products,
             "deleted_portfolios": deleted_portfolios,
             "deleted_holdings": deleted_holdings
         }
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error deleting client accounts: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to delete client accounts: {str(e)}") 
+        logger.error(f"Error deleting client products: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete client products: {str(e)}") 

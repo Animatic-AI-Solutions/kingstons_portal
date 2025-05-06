@@ -324,9 +324,9 @@ async def create_portfolio_fund(
         portfolio_fund_data = {
             "portfolio_id": portfolio_fund.portfolio_id,
             "available_funds_id": portfolio_fund.available_funds_id,
-            "target_weighting": portfolio_fund.target_weighting or 0,
+            "weighting": 0 if portfolio_fund.weighting is None else portfolio_fund.weighting,
             "start_date": portfolio_fund.start_date.isoformat() if portfolio_fund.start_date else today,
-            "amount_invested": portfolio_fund.amount_invested
+            "amount_invested": 0 if portfolio_fund.amount_invested is None else portfolio_fund.amount_invested
         }
         
         result = db.table("portfolio_funds").insert(portfolio_fund_data).execute()

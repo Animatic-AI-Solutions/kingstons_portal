@@ -101,7 +101,7 @@ async def create_portfolio(portfolio: PortfolioCreate, db = Depends(get_db)):
                 cashline_fund_data = {
                     "portfolio_id": new_portfolio["id"],
                     "available_funds_id": cashline_fund["id"],
-                    "target_weighting": 0,  # 0% weighting
+                    "weighting": 0,  # 0% weighting
                     "start_date": portfolio_start_date,
                     "amount_invested": 0  # No initial investment
                 }
@@ -201,7 +201,7 @@ async def delete_portfolio(portfolio_id: int, db = Depends(get_db)):
            - Deletes all IRR values associated with the fund
            - Deletes all holding activity logs associated with the fund
         4. Deletes all portfolio_funds associated with this portfolio
-        5. Updates account_holdings to remove references to this portfolio
+        5. Updates product_holdings to remove references to this portfolio
         6. Deletes the portfolio record
         7. Returns a success message
     Expected output: A JSON object with a success message confirmation and deletion counts
@@ -243,10 +243,10 @@ async def delete_portfolio(portfolio_id: int, db = Depends(get_db)):
         db.table("portfolio_funds").delete().eq("portfolio_id", portfolio_id).execute()
         logger.info(f"Deleted {portfolio_funds_deleted} portfolio funds for portfolio {portfolio_id}")
         
-        # Update account_holdings to remove references to this portfolio
-        holdings_result = db.table("account_holdings").update({"portfolio_id": None}).eq("portfolio_id", portfolio_id).execute()
+        # Update product_holdings to remove references to this portfolio
+        holdings_result = db.table("product_holdings").update({"portfolio_id": None}).eq("portfolio_id", portfolio_id).execute()
         holdings_updated = len(holdings_result.data) if holdings_result.data else 0
-        logger.info(f"Updated {holdings_updated} account holdings to remove portfolio reference")
+        logger.info(f"Updated {holdings_updated} product holdings to remove portfolio reference")
         
         # Delete the portfolio
         result = db.table("portfolios").delete().eq("id", portfolio_id).execute()
@@ -354,7 +354,7 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
             fund_data = {
                 "portfolio_id": new_portfolio["id"],
                 "available_funds_id": fund_id,
-                "target_weighting": fund["target_weighting"],
+                "weighting": fund["target_weighting"],
                 "start_date": today,  # Use the same start_date as the portfolio
                 "amount_invested": 0  # Initial amount is zero
             }
@@ -388,7 +388,7 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
                 cashline_fund_data = {
                     "portfolio_id": new_portfolio["id"],
                     "available_funds_id": cashline_fund["id"],
-                    "target_weighting": 0,  # 0% weighting
+                    "weighting": 0,  # 0% weighting
                     "start_date": today,
                     "amount_invested": 0  # No initial investment
                 }

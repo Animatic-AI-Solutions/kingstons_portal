@@ -13,7 +13,7 @@ def validate_decimal_places(value: Decimal) -> Decimal:
 DecimalWithPrecision = Annotated[Decimal, AfterValidator(validate_decimal_places)]
 
 class HoldingActivityLogBase(BaseModel):
-    account_holding_id: int
+    product_holding_id: Optional[int] = None  # Made optional for the new database structure
     portfolio_fund_id: int
     activity_timestamp: date
     activity_type: str
@@ -43,7 +43,7 @@ class HoldingActivityLogCreate(HoldingActivityLogBase):
     pass
 
 class HoldingActivityLogUpdate(BaseModel):
-    account_holding_id: Optional[int] = None
+    product_holding_id: Optional[int] = None
     portfolio_fund_id: Optional[int] = None
     activity_timestamp: Optional[date] = None
     activity_type: Optional[str] = None

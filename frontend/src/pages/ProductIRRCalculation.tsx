@@ -7,9 +7,17 @@ import { calculatePortfolioIRR } from '../services/api';
 
 interface Account {
   id: number;
-  client_account_id: number;
+  client_product_id: number;
+  client_id: number;
   client_name: string;
-  account_name: string;
+  product_name: string;
+  status: string;
+  start_date: string;
+  end_date?: string;
+  irr?: number;
+  total_value?: number;
+  provider_name?: string;
+  product_type?: string;
   current_portfolio?: {
     id: number;
     portfolio_name: string;
@@ -194,122 +202,76 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       setIsLoading(true);
       setError(null);
       
-      console.log('AccountIRRCalculation: Making API request to /client_accounts/' + accountId);
+      console.log('AccountIRRCalculation: Making API request to /client_products/' + accountId);
       
-      // First fetch the account to get the portfolio_id
-      const accountResponse = await api.get(`/client_accounts/${accountId}`);
-      console.log('AccountIRRCalculation: Account data received:', accountResponse.data);
+      // First fetch the account/product to get the portfolio_id
+      const accountResponse = await api.get(`/client_products/${accountId}`);
+      console.log('AccountIRRCalculation: Account/product data received:', accountResponse.data);
       setAccount(accountResponse.data);
       
-      // Get the portfolio_id from the account
-      const portfolioId = accountResponse.data.current_portfolio?.id;
-      console.log('AccountIRRCalculation: Portfolio ID from account:', portfolioId);
+      // Get the portfolio_id from the account - first try direct link, then fall back to current_portfolio
+      const portfolioId = accountResponse.data.portfolio_id || accountResponse.data.current_portfolio?.id;
+      console.log('AccountIRRCalculation: Using portfolio ID:', portfolioId);
       
       if (!portfolioId) {
-        console.warn('AccountIRRCalculation: No portfolio ID found for this account');
+        console.error('AccountIRRCalculation: No portfolio ID found for this product');
+        setError('No portfolio is associated with this product. Please assign a portfolio first.');
+        setIsLoading(false);
+        return;
       }
       
-      // Now fetch the remaining data in parallel
-      const [
-        holdingsResponse,
-        activityLogsResponse,
-        fundsResponse,
-        portfolioFundsResponse
-      ] = await Promise.all([
-        api.get(`/account_holdings?client_account_id=${accountId}`),
-        api.get(`/holding_activity_logs?client_account_id=${accountId}`),
+      // Fetch portfolio funds directly using the portfolio_id
+      const portfolioFundsResponse = await api.get(`/portfolio_funds?portfolio_id=${portfolioId}`);
+      console.log('AccountIRRCalculation: Portfolio funds data:', portfolioFundsResponse.data);
+      
+      if (!portfolioFundsResponse.data || portfolioFundsResponse.data.length === 0) {
+        console.warn('AccountIRRCalculation: No portfolio funds found for portfolio ID:', portfolioId);
+        setError('This portfolio has no funds assigned to it. Please add funds to the portfolio first.');
+        setIsLoading(false);
+        return;
+      }
+      
+      // Get funds and activity logs
+      const [fundsResponse, activitiesResponse] = await Promise.all([
         api.get('/funds'),
-        portfolioId ? api.get(`/portfolio_funds?portfolio_id=${portfolioId}`) : api.get('/portfolio_funds')
+        api.get(`/holding_activity_logs?portfolio_id=${portfolioId}`)
       ]);
       
-      console.log('AccountIRRCalculation: Account data received:', accountResponse.data);
-      setAccount(accountResponse.data);
-      
-      console.log('AccountIRRCalculation: Holdings data received:', holdingsResponse.data);
-      console.log('AccountIRRCalculation: Activity logs received:', activityLogsResponse.data);
+      console.log('AccountIRRCalculation: Funds data:', fundsResponse.data);
+      console.log('AccountIRRCalculation: Activity logs received:', activitiesResponse.data);
       
       // Create a map of funds for quick lookups
       const fundsMap = new Map<number, any>(
         fundsResponse.data.map((fund: any) => [fund.id, fund])
       );
       
-      console.log('AccountIRRCalculation: Portfolio funds data:', portfolioFundsResponse.data);
-      
-      // Create a map of portfolio funds for quick lookups
-      const portfolioFundsMap = new Map<number, any>(
-        portfolioFundsResponse.data.map((pf: any) => [pf.id, pf])
-      );
-      
-      // Process holdings to include fund names
-      const processedHoldings = holdingsResponse.data.map((holding: any) => {
-        console.log('AccountIRRCalculation: Processing holding:', holding);
-        
-        // Get the portfolio ID from the holding or from the account
-        const portfolioId = holding.portfolio_id || accountResponse.data.current_portfolio?.id;
-        
-        if (!portfolioId) {
-          console.warn('AccountIRRCalculation: No portfolio ID for holding:', holding.id);
-          return {
-            ...holding,
-            fund_name: 'Unknown Fund',
-            isin_number: 'N/A'
-          };
-        }
-        
-        // Find all portfolio funds for this portfolio
-        const relevantPortfolioFunds = portfolioFundsResponse.data.filter((pf: any) =>
-          pf.portfolio_id === portfolioId
-        );
-        
-        console.log('AccountIRRCalculation: Relevant portfolio funds for holding:', relevantPortfolioFunds);
-        
-        // Find the specific portfolio fund for this holding
-        // Try different matching strategies
-        let portfolioFund = null;
-        
-        // Strategy 1: Direct ID match
-        portfolioFund = relevantPortfolioFunds.find((pf: any) => pf.id === holding.id);
-        
-        // Strategy 2: Match by portfolio_id and fund_id if available
-        if (!portfolioFund && holding.fund_id) {
-          portfolioFund = relevantPortfolioFunds.find((pf: any) =>
-            pf.available_funds_id === holding.fund_id
-          );
-        }
-        
-        // Strategy 3: If we still don't have a match, try to match by name
-        if (!portfolioFund && holding.fund_name) {
-          const fundId = Array.from(fundsMap.values()).find(
-            (fund: any) => fund.fund_name === holding.fund_name
-          )?.id;
-          
-          if (fundId) {
-            portfolioFund = relevantPortfolioFunds.find((pf: any) =>
-              pf.available_funds_id === fundId
-            );
-          }
-        }
-        
-        console.log('AccountIRRCalculation: Matched portfolio fund:', portfolioFund);
-        
-        // Find the fund
-        const fund = portfolioFund ? fundsMap.get(portfolioFund.available_funds_id) : null;
-        console.log('AccountIRRCalculation: Matched fund:', fund);
+      // Process portfolio funds as holdings
+      const processedHoldings = portfolioFundsResponse.data.map((portfolioFund: any) => {
+        // Get fund details
+        const fund = fundsMap.get(portfolioFund.available_funds_id);
         
         return {
-          ...holding,
-          fund_name: fund?.fund_name || holding.fund_name || 'Unknown Fund',
-          isin_number: fund?.isin_number || holding.isin_number || 'N/A'
+          id: portfolioFund.id, // Use portfolio_fund.id as the holding ID
+          portfolio_id: portfolioId,
+          fund_id: portfolioFund.available_funds_id,
+          fund_name: fund?.fund_name || 'Unknown Fund',
+          isin_number: fund?.isin_number || 'N/A',
+          target_weighting: portfolioFund.weighting,
+          amount_invested: portfolioFund.amount_invested || 0,
+          market_value: portfolioFund.market_value || portfolioFund.amount_invested || 0,
+          irr: portfolioFund.irr,
+          irr_calculation_date: portfolioFund.irr_calculation_date,
+          account_holding_id: parseInt(accountId) // Use client_product_id as account_holding_id
         };
       });
       
-      console.log('AccountIRRCalculation: Processed holdings with fund names:', processedHoldings);
+      console.log('AccountIRRCalculation: Processed holdings:', processedHoldings);
       setHoldings(processedHoldings || []);
-      setActivityLogs(activityLogsResponse.data || []);
+      setActivityLogs(activitiesResponse.data || []);
       
     } catch (err: any) {
       console.error('AccountIRRCalculation: Error fetching data:', err);
-      setError(err.response?.data?.detail || 'Failed to fetch account details');
+      setError(err.response?.data?.detail || 'Failed to fetch product details');
     } finally {
       setIsLoading(false);
     }
@@ -344,7 +306,10 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
 
   // Format percentage with 1 decimal place
   const formatPercentage = (value: number): string => {
-    return `${(value * 100).toFixed(1)}%`;
+    if (value === null || value === undefined) {
+      return 'N/A';
+    }
+    return `${value.toFixed(1)}%`;
   };
 
   // Format date only
@@ -423,7 +388,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       <div style={{ backgroundColor: '#ffeeee', padding: '10px', marginBottom: '10px' }}>
         <p><strong>Debug Info:</strong></p>
         <p>Account ID: {accountId}</p>
-        <p>Account Name: {account?.account_name}</p>
+        <p>Product Name: {account?.product_name}</p>
         <p>Holdings Count: {holdings.length}</p>
         <p>Activity Logs Count: {activityLogs.length}</p>
       </div>
@@ -511,7 +476,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                         <div className={`text-sm ${holding.irr && holding.irr >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                           {holding.irr !== undefined ? (
                             <>
-                              {formatPercentage(holding.irr / 100)}
+                              {formatPercentage(holding.irr)}
                               <span className="ml-1">
                                 {holding.irr >= 0 ? '▲' : '▼'}
                               </span>
@@ -527,6 +492,52 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                     </td>
                   </tr>
                 ))}
+                
+                {/* Total Row */}
+                <tr className="bg-gray-50 font-medium">
+                  <td className="px-6 py-4 whitespace-nowrap text-base font-bold text-gray-900">
+                    TOTAL
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap"></td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-bold text-gray-900">
+                      {formatCurrency(calculateTotalAmountInvested(holdings))}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-bold text-gray-900">
+                      {formatCurrency(calculateTotalRegularInvestments(activityLogs, holdings))}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-bold text-gray-900">
+                      {formatCurrency(calculateTotalGovernmentUplifts(activityLogs, holdings))}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-bold text-gray-900">
+                      {formatCurrency(calculateTotalSwitchIns(activityLogs, holdings))}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-bold text-gray-900">
+                      {formatCurrency(calculateTotalSwitchOuts(activityLogs, holdings))}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-bold text-gray-900">
+                      {formatCurrency(calculateTotalWithdrawals(activityLogs, holdings))}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-bold text-gray-900">
+                      {formatCurrency(calculateTotalValue(holdings))}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {/* No total IRR calculation */}
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -584,10 +595,28 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
               </div>
             )}
             
+            {activityLogs.length === 0 ? (
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-blue-700">
+                      No fund activities found for this product. You can add monthly activities using the table below. 
+                      Add fund values, investments, withdrawals and other transactions to calculate IRR.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+            
             <EditableMonthlyActivitiesTable 
               funds={holdings.map(holding => ({
-                id: holding.id,
-                holding_id: holding.account_holding_id,
+                id: holding.id, // This is now the portfolio_fund_id
+                holding_id: holding.account_holding_id, // This is the client_product_id
                 fund_name: holding.fund_name || 'Unknown Fund',
                 irr: holding.irr
               })).sort((a, b) => {
@@ -598,7 +627,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                 return a.fund_name.localeCompare(b.fund_name);
               })}
               activities={convertActivityLogs(activityLogs)}
-              accountHoldingId={holdings.length > 0 ? holdings[0].account_holding_id : 0}
+              accountHoldingId={accountId ? parseInt(accountId) : 0}
               onActivitiesUpdated={refreshData}
               selectedYear={selectedYear}
             />

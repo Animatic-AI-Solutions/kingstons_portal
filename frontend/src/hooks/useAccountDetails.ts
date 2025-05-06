@@ -23,10 +23,10 @@ interface Provider {
 
 interface Account {
   id: number;
-  client_account_id: number;
+  client_product_id: number;
   client_id: number;
   client_name?: string;
-  account_name: string;
+  product_name: string;
   status: string;
   start_date: string;
   end_date?: string;
@@ -34,7 +34,6 @@ interface Account {
   irr?: number;
   total_value?: number;
   provider_name?: string;
-  product_name?: string;
   product_type?: string;
   current_portfolio?: {
     id: number;
@@ -45,7 +44,7 @@ interface Account {
 
 interface ActivityLog {
   id: number;
-  account_holding_id: number;
+  product_holding_id: number;
   portfolio_fund_id: number;
   activity_timestamp: string;
   activity_type: string;
@@ -59,7 +58,7 @@ interface ActivityLog {
 
 interface AccountHolding {
   id: number;
-  client_account_id: number;
+  client_product_id: number;
   portfolio_id?: number;
   status: string;
   start_date: string;
@@ -100,7 +99,7 @@ interface Holding {
   market_value: number;
   irr?: number;
   activities: ActivityLog[];
-  account_holding_id: number;
+  product_holding_id: number;
   irr_calculation_date?: string;
   isin?: string;
   risk_level?: string;
@@ -132,7 +131,7 @@ export function useAccountDetails(accountId: string | undefined) {
   const accountQuery = useQuery({
     queryKey: ['account', accountId],
     queryFn: async () => {
-      const response = await api.get(`/client_accounts/${accountId}`);
+      const response = await api.get(`/client_products/${accountId}`);
       return response.data;
     },
     enabled,
@@ -205,7 +204,7 @@ export function useAccountDetails(accountId: string | undefined) {
       {
         queryKey: ['account_holdings', accountId],
         queryFn: async () => {
-          const response = await api.get(`/account_holdings?client_account_id=${accountId}`);
+          const response = await api.get(`/product_holdings?client_product_id=${accountId}`);
           return response.data;
         },
         enabled,
@@ -214,7 +213,7 @@ export function useAccountDetails(accountId: string | undefined) {
       {
         queryKey: ['account_activities', accountId],
         queryFn: async () => {
-          const response = await api.get(`/holding_activity_logs?client_account_id=${accountId}`);
+          const response = await api.get(`/holding_activity_logs?product_holding_id=${accountId}`);
           return response.data;
         },
         enabled,
@@ -224,7 +223,7 @@ export function useAccountDetails(accountId: string | undefined) {
         queryKey: ['account_irr', accountId],
         queryFn: async () => {
           try {
-            const response = await api.get(`/analytics/account/${accountId}/irr`);
+            const response = await api.get(`/analytics/product/${accountId}/irr`);
             return response.data;
           } catch (error) {
             console.error(`Error fetching account IRR:`, error);
@@ -350,7 +349,7 @@ export function useAccountDetails(accountId: string | undefined) {
               market_value: 0,
               amount_invested: pf.amount_invested || 0,
               activities: activities.filter((a: ActivityLog) => a.portfolio_fund_id === pf.id),
-              account_holding_id: holding.id,
+              product_holding_id: holding.id,
               irr: 0, // Will be fetched on-demand
               risk_level: fund?.risk_factor?.toString() || 'N/A'
             };

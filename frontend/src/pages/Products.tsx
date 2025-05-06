@@ -1,58 +1,164 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 interface Product {
   id: number;
-  provider_id: number | null;
-  portfolio_id: number | null;
-  status: string;
-  created_at: string;
+  client_id: number;
+  client_name?: string;
   product_name: string;
-  product_type: string;
+  provider_name?: string;
+  portfolio_name?: string;
+  status: string;
+  start_date: string;
+  irr?: number | null;
+  irr_date?: string | null;
+  total_value?: number;
 }
 
-type SortField = 'created_at' | 'status';
+type SortField = 'product_name' | 'client_name' | 'provider_name' | 'product_name' | 'status' | 'start_date' | 'irr' | 'total_value';
 type SortOrder = 'asc' | 'desc';
 
 const Products: React.FC = () => {
   const navigate = useNavigate();
   const { api } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] = useState<SortField>('created_at');
+  const [sortField, setSortField] = useState<SortField>('product_name');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('active');
-  const [providerId, setProviderId] = useState<number | null>(null);
-  const [showInactive, setShowInactive] = useState(false);
-  const [providers, setProviders] = useState([]);
-
+  const [groupByClient, setGroupByClient] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<{id: number, name: string} | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [providerFilter, setProviderFilter] = useState<string | null>(null);
+  const [showProviderFilter, setShowProviderFilter] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [showStatusFilter, setShowStatusFilter] = useState(false);
+  const providerFilterRef = useRef<HTMLDivElement>(null);
+  const statusFilterRef = useRef<HTMLDivElement>(null);
+  
+  // Position states for the dropdowns
+  const [providerDropdownPosition, setProviderDropdownPosition] = useState({ top: 0, left: 0 });
+  const [statusDropdownPosition, setStatusDropdownPosition] = useState({ top: 0, left: 0 });
+  
+  // Functions to calculate and set dropdown positions
+  const updateProviderDropdownPosition = () => {
+    if (providerFilterRef.current) {
+      const rect = providerFilterRef.current.getBoundingClientRect();
+      setProviderDropdownPosition({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX
+      });
+    }
+  };
+  
+  const updateStatusDropdownPosition = () => {
+    if (statusFilterRef.current) {
+      const rect = statusFilterRef.current.getBoundingClientRect();
+      setStatusDropdownPosition({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX
+      });
+    }
+  };
+  
+  // Add effect hooks for dropdown positioning
   useEffect(() => {
-    fetchProducts();
-  }, [statusFilter, providerId, showInactive]);
+    if (showProviderFilter) {
+      updateProviderDropdownPosition();
+      window.addEventListener('scroll', updateProviderDropdownPosition);
+      window.addEventListener('resize', updateProviderDropdownPosition);
+    }
+    
+    return () => {
+      window.removeEventListener('scroll', updateProviderDropdownPosition);
+      window.removeEventListener('resize', updateProviderDropdownPosition);
+    };
+  }, [showProviderFilter]);
+  
+  useEffect(() => {
+    if (showStatusFilter) {
+      updateStatusDropdownPosition();
+      window.addEventListener('scroll', updateStatusDropdownPosition);
+      window.addEventListener('resize', updateStatusDropdownPosition);
+    }
+    
+    return () => {
+      window.removeEventListener('scroll', updateStatusDropdownPosition);
+      window.removeEventListener('resize', updateStatusDropdownPosition);
+    };
+  }, [showStatusFilter]);
+  
+  // Add click outside handler
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (providerFilterRef.current && !providerFilterRef.current.contains(event.target as Node)) {
+        setShowProviderFilter(false);
+      }
+      if (statusFilterRef.current && !statusFilterRef.current.contains(event.target as Node)) {
+        setShowStatusFilter(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const fetchProducts = async () => {
     try {
       setIsLoading(true);
-      console.log("Fetching products...");
+      console.log("Fetching products data...");
       
-      // Fetch products data based on filter
-      const productsResponse = await api.get('/available_products', {
-        params: {
-          provider_id: providerId || undefined,
-          include_inactive: showInactive
+      // Fetch all required data in parallel
+      const [
+        productsRes,
+        clientsRes,
+        providersRes,
+        portfoliosRes,
+        holdingsRes,
+        fundRes
+      ] = await Promise.all([
+        api.get('/client_products'),
+        api.get('/clients'),
+        api.get('/available_providers'),
+        api.get('/portfolios'),
+        api.get('/product_holdings'),
+        api.get('/portfolio_funds')
+      ]);
+      
+      console.log(`Received ${productsRes.data.length} products`);
+      
+      // Process the products data - make sure to only set the actual product data
+      const productsData = productsRes.data.map((product: any) => {
+        // Find client name
+        const client = clientsRes.data.find((c: any) => c.id === product.client_id);
+        // Find Provider name
+        const provider = product.provider_id ? providersRes.data.find((p: any) => p.id === product.provider_id) : null;
+        // Find portfolio
+        const holding = holdingsRes.data.find((h: any) => h.client_product_id === product.id);
+        const portfolio = holding ? portfoliosRes.data.find((p: any) => p.id === holding.portfolio_id) : null;
+        
+        // Calculate total value if possible
+        let totalValue = undefined;
+        if (holding && holding.portfolio_id) {
+          const portfolioFunds = fundRes.data.filter((pf: any) => pf.portfolio_id === holding.portfolio_id);
+          totalValue = portfolioFunds.reduce((sum: number, pf: any) => sum + (pf.amount_invested || 0), 0);
         }
+        
+        return {
+          ...product,
+          client_name: client ? client.name : 'Unknown Client',
+          product_name: product ? product.product_name : 'Unknown Product',
+          provider_name: provider ? provider.name : 'Unknown Provider',
+          portfolio_name: portfolio ? portfolio.name : undefined,
+          total_value: totalValue
+        };
       });
       
-      console.log("Products data received:", productsResponse.data.length);
-      setProducts(productsResponse.data);
-      
-      // Fetch all providers for filtering
-      const providersResponse = await api.get('/available_providers');
-      setProviders(providersResponse.data);
-      
+      setProducts(productsData);
       setError(null);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to fetch products');
@@ -61,6 +167,10 @@ const Products: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchProducts();
+  }, [api]);
 
   const handleSortFieldChange = (field: SortField) => {
     if (field === sortField) {
@@ -71,68 +181,186 @@ const Products: React.FC = () => {
     }
   };
 
-  const handleAddProduct = () => {
-    navigate('/products/add');
-  };
-
   const handleProductClick = (productId: number) => {
     navigate(`/products/${productId}`);
   };
 
-  const filteredAndSortedProducts = products
-    .filter(product => {
-      // If search query is empty, include all products
-      if (searchQuery === '') return true;
+  const handleDeleteClientProducts = (clientName: string) => {
+    // Find the client ID from products
+    const clientProduct = products.find(product => product.client_name === clientName);
+    if (clientProduct) {
+      setClientToDelete({
+        id: clientProduct.client_id,
+        name: clientName
+      });
+      setShowDeleteConfirm(true);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!clientToDelete) return;
+    
+    try {
+      setIsDeleting(true);
       
-      // Otherwise, search by product name
-      return product.product_name?.toLowerCase().includes(searchQuery.toLowerCase()) || false;
-    })
+      // Call API to delete all products, portfolios, and products for this client
+      await api.delete(`/clients/${clientToDelete.id}/products`);
+      
+      // Refresh the products list
+      await fetchProducts();
+      
+      // Close the modal
+      setShowDeleteConfirm(false);
+      setClientToDelete(null);
+    } catch (err: any) {
+      console.error('Error deleting client products:', err);
+      setError(err.response?.data?.detail || 'Failed to delete client products');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Format currency with commas and 2 decimal places
+  const formatCurrency = (amount: number): string => {
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: 'GBP',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  };
+
+  // Format percentage with 1 decimal place
+  const formatPercentage = (value: number | null | undefined): string => {
+    if (value === null || value === undefined) {
+      return 'N/A';
+    }
+    return `${value.toFixed(1)}%`;
+  };
+
+  // Get a unique color for each provider
+  const getProviderColor = (providerName: string | undefined): string => {
+    if (!providerName) return '#CCCCCC'; // Default gray for unknown providers
+    
+    // Define a set of vibrant colors to use for providers
+    const colors = [
+      '#4F46E5', // Indigo
+      '#16A34A', // Green
+      '#EA580C', // Orange
+      '#DC2626', // Red
+      '#7C3AED', // Purple
+      '#0369A1', // Blue
+      '#B45309', // Amber
+      '#0D9488', // Teal
+      '#BE185D', // Pink
+      '#475569', // Slate
+      '#059669', // Emerald
+      '#D97706', // Yellow
+      '#9333EA', // Fuchsia
+      '#4338CA', // Blue-600
+    ];
+    
+    // Use a simple hash function to get consistent colors for the same provider name
+    const hash = providerName.split('').reduce((acc, char) => {
+      return char.charCodeAt(0) + ((acc << 5) - acc);
+    }, 0);
+    
+    // Map the hash to one of our predefined colors
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
+  };
+
+  const filteredAndSortedProducts = products
+    .filter(product => 
+      (product.product_name && product.product_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (product.client_name && product.client_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (product.provider_name && product.provider_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (product.product_name && product.product_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      product.status.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .filter(product => 
+      providerFilter === null || 
+      (product.provider_name && product.provider_name.toLowerCase() === providerFilter.toLowerCase())
+    )
+    .filter(product => 
+      statusFilter === null || 
+      (product.status.toLowerCase() === statusFilter.toLowerCase())
+    )
     .sort((a, b) => {
-      if (sortField === 'status') {
-        // For status values
-        const statusOrder = { 'active': 0, 'inactive': 1, 'dormant': 2 };
-        const aStatus = statusOrder[a.status as keyof typeof statusOrder] || 0;
-        const bStatus = statusOrder[b.status as keyof typeof statusOrder] || 0;
-        return sortOrder === 'asc' 
-          ? aStatus - bStatus
-          : bStatus - aStatus;
-      } else {
-        // For created_at values
-        const aValue = new Date(a.created_at).getTime();
-        const bValue = new Date(b.created_at).getTime();
-        return sortOrder === 'asc' 
-          ? aValue - bValue
-          : bValue - aValue;
+      let aValue: any = a[sortField];
+      let bValue: any = b[sortField];
+      
+      // Handle string comparisons
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
       }
+      
+      // Handle undefined values
+      if (aValue === undefined) return 1;
+      if (bValue === undefined) return -1;
+      
+      // Compare values
+      if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
     });
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-        <div className="flex items-center gap-4">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-          >
-            <option value="active">Active Products</option>
-            <option value="inactive">Inactive Products</option>
-            <option value="dormant">Dormant Products</option>
-            <option value="all">All Products</option>
-          </select>
-          <button
-            onClick={handleAddProduct}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-          >
-            Add Product
-          </button>
-        </div>
-      </div>
+  // Extract unique provider names and statuses
+  const providers = [...new Set(products
+    .map(product => product.provider_name)
+    .filter(provider => provider !== undefined && provider !== null))] as string[];
+    
+  const statuses = [...new Set(products
+    .map(product => product.status)
+    .filter(status => status !== null))] as string[];
 
-      <div className="bg-white shadow rounded-lg p-6">
+  // Group products by client if the option is selected
+  const groupedProducts = groupByClient
+    ? filteredAndSortedProducts.reduce((groups: Record<string, Product[]>, product) => {
+        const clientName = product.client_name || 'Unknown Client';
+        if (!groups[clientName]) {
+          groups[clientName] = [];
+        }
+        groups[clientName].push(product);
+        return groups;
+      }, {})
+    : {};
+
+  // Add a new handler function to navigate to the create client products page
+  const handleCreateClientProducts = () => {
+    navigate('/create-client-products');
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-3">
+      <div className="flex justify-between items-center mb-3">
+        <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Products</h1>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={groupByClient}
+              onChange={(e) => setGroupByClient(e.target.checked)}
+              className="form-checkbox h-5 w-5 text-blue-600"
+            />
+            <span>Group by Client</span>
+          </label>
+            <button
+              onClick={handleCreateClientProducts}
+            className="bg-primary-700 text-white px-4 py-1.5 rounded-xl font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 shadow-sm flex items-center gap-1"
+            >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Add Client Products
+            </button>
+          </div>
+        </div>
+
+      <div className="bg-white shadow rounded-lg p-4 overflow-visible">
         {/* Search and Sort Controls */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3 mb-3">
           {/* Search Bar */}
           <div className="flex-1">
             <div className="relative">
@@ -141,7 +369,7 @@ const Products: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search products..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200"
               />
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -151,34 +379,10 @@ const Products: React.FC = () => {
             </div>
           </div>
 
-          {/* Sort Controls */}
-          <div className="flex gap-2">
-            <select
-              value={sortField}
-              onChange={(e) => handleSortFieldChange(e.target.value as SortField)}
-              className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="created_at">Created Date</option>
-              <option value="status">Status</option>
-            </select>
-            <button
-              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              className="border border-gray-300 rounded-md px-3 py-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              {sortOrder === 'asc' ? (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                </svg>
-              ) : (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              )}
-            </button>
-          </div>
+          {/* Sort controls can be updated in the next edit */}
         </div>
 
-        {/* Product List */}
+        {/* product List */}
         <div className="mt-6">
           {isLoading ? (
             <div className="flex justify-center items-center py-8">
@@ -188,54 +392,663 @@ const Products: React.FC = () => {
             <div className="text-red-600 text-center py-4">{error}</div>
           ) : filteredAndSortedProducts.length === 0 ? (
             <div className="text-gray-500 text-center py-4">No products found</div>
+          ) : groupByClient ? (
+            // Grouped by client view
+            <div className="space-y-4">
+              {Object.entries(groupedProducts).map(([clientName, clientProducts]) => (
+                <div key={clientName} className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+                    <div>
+                      <h3 className="text-base font-medium text-gray-900 font-sans tracking-tight">{clientName}</h3>
+                      <p className="text-sm text-gray-500">{clientProducts.length} product(s)</p>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteClientProducts(clientName)}
+                      className="text-red-600 hover:text-red-800 text-sm font-medium flex items-center"
+                      title="Delete all products for this client"
+                    >
+                      <svg className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v10m4-10v10m5-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Delete All
+                    </button>
+                  </div>
+                  <div className="overflow-x-auto overflow-visible">
+                    <table className="min-w-full table-fixed divide-y divide-gray-200">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                            <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('product_name')} title="Click to sort by Product">
+                            Product
+                              <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                                {sortField === 'product_name' ? (
+                                  sortOrder === 'asc' ? (
+                                    <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                    </svg>
+                                  ) : (
+                                    <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                  )
+                                ) : (
+                                  <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                                  </svg>
+                                )}
+                              </span>
+                            </div>
+                          </th>
+                          <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                            <div className="flex items-center justify-start relative" ref={providerFilterRef}>
+                              <div className="flex items-center cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('provider_name')} title="Click to sort by Provider">
+                                <span>Provider</span>
+                                <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                                  {sortField === 'provider_name' ? (
+                                    sortOrder === 'asc' ? (
+                                      <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                      </svg>
+                                    ) : (
+                                      <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                      </svg>
+                                    )
+                                  ) : (
+                                    <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                                    </svg>
+                                  )}
+                                </span>
+                              </div>
+                              <div className="flex items-center ml-1">
+                                {providerFilter && (
+                                  <span className="mr-1 px-1.5 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-800">
+                                    {providerFilter}
+                                  </span>
+                                )}
+                                <button 
+                                  onClick={() => {
+                                    updateProviderDropdownPosition();
+                                    setShowProviderFilter(!showProviderFilter);
+                                  }}
+                                  className={`${providerFilter ? 'text-indigo-600' : 'text-gray-500'} hover:text-indigo-600 focus:outline-none flex items-center`}
+                                  aria-label="Filter providers"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                  </svg>
+                                </button>
+                              </div>
+                              
+                              {showProviderFilter && (
+                                <div className="fixed z-50 w-48 bg-white rounded-md shadow-xl border border-gray-200 py-1 text-left" style={{ top: providerDropdownPosition.top, left: providerDropdownPosition.left }}>
+                                  <button 
+                                    onClick={() => {
+                                      setProviderFilter(null);
+                                      setShowProviderFilter(false);
+                                    }}
+                                    className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${providerFilter === null ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
+                                  >
+                                    All Providers
+                                  </button>
+                                  {providers.map(provider => (
+                                    <button 
+                                      key={provider}
+                                      onClick={() => {
+                                        setProviderFilter(provider);
+                                        setShowProviderFilter(false);
+                                      }}
+                                      className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${providerFilter === provider ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
+                                    >
+                                      {provider}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </th>
+                          <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                            <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('total_value')} title="Click to sort by Value">
+                            Value
+                              <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                                {sortField === 'total_value' ? (
+                                  sortOrder === 'asc' ? (
+                                    <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                    </svg>
+                                  ) : (
+                                    <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                  )
+                                ) : (
+                                  <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                                  </svg>
+                                )}
+                              </span>
+                            </div>
+                          </th>
+                          <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                            <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('irr')} title="Click to sort by IRR">
+                              IRR
+                              <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                                {sortField === 'irr' ? (
+                                  sortOrder === 'asc' ? (
+                                    <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                    </svg>
+                                  ) : (
+                                    <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                  )
+                                ) : (
+                                  <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                                  </svg>
+                                )}
+                              </span>
+                            </div>
+                          </th>
+                          <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                            <div className="flex items-center justify-start relative" ref={statusFilterRef}>
+                              <div className="flex items-center cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('status')} title="Click to sort by Status">
+                                <span>Status</span>
+                                <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                                  {sortField === 'status' ? (
+                                    sortOrder === 'asc' ? (
+                                      <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                      </svg>
+                                    ) : (
+                                      <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                      </svg>
+                                    )
+                                  ) : (
+                                    <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                                    </svg>
+                                  )}
+                                </span>
+                              </div>
+                              <div className="flex items-center ml-1">
+                                {statusFilter && (
+                                  <span className="mr-1 px-1.5 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-800">
+                                    {statusFilter}
+                                  </span>
+                                )}
+                                <button 
+                                  onClick={() => {
+                                    updateStatusDropdownPosition();
+                                    setShowStatusFilter(!showStatusFilter);
+                                  }}
+                                  className={`${statusFilter ? 'text-indigo-600' : 'text-gray-500'} hover:text-indigo-600 focus:outline-none flex items-center`}
+                                  aria-label="Filter statuses"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                  </svg>
+                                </button>
+                              </div>
+                              
+                              {showStatusFilter && (
+                                <div className="fixed z-50 w-48 bg-white rounded-md shadow-xl border border-gray-200 py-1 text-left" style={{ top: statusDropdownPosition.top, left: statusDropdownPosition.left }}>
+                                  <button 
+                                    onClick={() => {
+                                      setStatusFilter(null);
+                                      setShowStatusFilter(false);
+                                    }}
+                                    className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${statusFilter === null ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
+                                  >
+                                    All Statuses
+                                  </button>
+                                  {statuses.map(status => (
+                                    <button 
+                                      key={status}
+                                      onClick={() => {
+                                        setStatusFilter(status);
+                                        setShowStatusFilter(false);
+                                      }}
+                                      className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${statusFilter === status ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
+                                    >
+                                      {status}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {clientProducts.map((product) => (
+                          <tr 
+                            key={product.id} 
+                            className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
+                            onClick={() => handleProductClick(product.id)}
+                          >
+                            <td className="px-6 py-3 whitespace-nowrap">
+                              <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{product.product_name}</div>
+                              <div className="text-xs text-gray-500 font-sans">
+                                product: {product.product_name}
+                              </div>
+                            </td>
+                            <td className="px-6 py-3 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div 
+                                  className="h-3 w-3 rounded-full mr-2 flex-shrink-0" 
+                                  style={{ backgroundColor: getProviderColor(product.provider_name) }}
+                                ></div>
+                                <div className="text-sm text-gray-600 font-sans">{product.provider_name || 'Unknown'}</div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-3 whitespace-nowrap">
+                              {product.total_value !== undefined ? (
+                                <div className="text-sm font-medium text-indigo-600">
+                                  {formatCurrency(product.total_value)}
+                                </div>
+                              ) : (
+                                <div className="text-sm text-gray-500">N/A</div>
+                              )}
+                            </td>
+                            <td className="px-6 py-3 whitespace-nowrap">
+                              {product.irr !== undefined && product.irr !== null ? (
+                                <div>
+                                  <div className={`text-sm font-medium ${(product.irr ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                                    {formatPercentage(product.irr)}
+                                    <span className="ml-1">
+                                      {(product.irr ?? 0) >= 0 ? '▲' : '▼'}
+                                    </span>
+                                  </div>
+                                  {product.irr_date && (
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      as of {new Date(product.irr_date).toLocaleDateString()}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="text-sm text-gray-500">-</div>
+                              )}
+                            </td>
+                            <td className="px-6 py-3 whitespace-nowrap">
+                              <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                product.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {product.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+            // Regular table view
+            <div className="overflow-x-auto overflow-visible">
+              <table className="min-w-full table-fixed divide-y divide-gray-200">
+                <thead className="bg-gray-100">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
+                    <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                      <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('client_name')} title="Click to sort by Client">
+                      Client
+                        <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                          {sortField === 'client_name' ? (
+                            sortOrder === 'asc' ? (
+                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
+                            ) : (
+                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            )
+                          ) : (
+                            <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                            </svg>
+                          )}
+                        </span>
+                      </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
+                    <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                      <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('product_name')} title="Click to sort by Product">
+                      Product
+                        <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                          {sortField === 'product_name' ? (
+                            sortOrder === 'asc' ? (
+                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
+                            ) : (
+                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            )
+                          ) : (
+                            <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                            </svg>
+                          )}
+                        </span>
+                      </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Created Date
+                    <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                      <div className="flex items-center justify-start relative" ref={providerFilterRef}>
+                        <div className="flex items-center cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('provider_name')} title="Click to sort by Provider">
+                          <span>Provider</span>
+                          <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                            {sortField === 'provider_name' ? (
+                              sortOrder === 'asc' ? (
+                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              ) : (
+                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              )
+                            ) : (
+                              <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                              </svg>
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex items-center ml-1">
+                          {providerFilter && (
+                            <span className="mr-1 px-1.5 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-800">
+                              {providerFilter}
+                            </span>
+                          )}
+                          <button 
+                            onClick={() => {
+                              updateProviderDropdownPosition();
+                              setShowProviderFilter(!showProviderFilter);
+                            }}
+                            className={`${providerFilter ? 'text-indigo-600' : 'text-gray-500'} hover:text-indigo-600 focus:outline-none flex items-center`}
+                            aria-label="Filter providers"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </div>
+                        
+                        {showProviderFilter && (
+                          <div className="fixed z-50 w-48 bg-white rounded-md shadow-xl border border-gray-200 py-1 text-left" style={{ top: providerDropdownPosition.top, left: providerDropdownPosition.left }}>
+                            <button 
+                              onClick={() => {
+                                setProviderFilter(null);
+                                setShowProviderFilter(false);
+                              }}
+                              className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${providerFilter === null ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
+                            >
+                              All Providers
+                            </button>
+                            {providers.map(provider => (
+                              <button 
+                                key={provider}
+                                onClick={() => {
+                                  setProviderFilter(provider);
+                                  setShowProviderFilter(false);
+                                }}
+                                className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${providerFilter === provider ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
+                              >
+                                {provider}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </th>
+                    <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                      <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('total_value')} title="Click to sort by Value">
+                      Value
+                        <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                          {sortField === 'total_value' ? (
+                            sortOrder === 'asc' ? (
+                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
+                            ) : (
+                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            )
+                          ) : (
+                            <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                            </svg>
+                          )}
+                        </span>
+                      </div>
+                    </th>
+                    <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                      <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('irr')} title="Click to sort by IRR">
+                        IRR
+                        <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                          {sortField === 'irr' ? (
+                            sortOrder === 'asc' ? (
+                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
+                            ) : (
+                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            )
+                          ) : (
+                            <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                            </svg>
+                          )}
+                        </span>
+                      </div>
+                    </th>
+                    <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                      <div className="flex items-center justify-start relative" ref={statusFilterRef}>
+                        <div className="flex items-center cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('status')} title="Click to sort by Status">
+                          <span>Status</span>
+                          <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                            {sortField === 'status' ? (
+                              sortOrder === 'asc' ? (
+                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              ) : (
+                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              )
+                            ) : (
+                              <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                              </svg>
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex items-center ml-1">
+                          {statusFilter && (
+                            <span className="mr-1 px-1.5 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-800">
+                              {statusFilter}
+                            </span>
+                          )}
+                          <button 
+                            onClick={() => {
+                              updateStatusDropdownPosition();
+                              setShowStatusFilter(!showStatusFilter);
+                            }}
+                            className={`${statusFilter ? 'text-indigo-600' : 'text-gray-500'} hover:text-indigo-600 focus:outline-none flex items-center`}
+                            aria-label="Filter statuses"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </div>
+                        
+                        {showStatusFilter && (
+                          <div className="fixed z-50 w-48 bg-white rounded-md shadow-xl border border-gray-200 py-1 text-left" style={{ top: statusDropdownPosition.top, left: statusDropdownPosition.left }}>
+                            <button 
+                              onClick={() => {
+                                setStatusFilter(null);
+                                setShowStatusFilter(false);
+                              }}
+                              className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${statusFilter === null ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
+                            >
+                              All Statuses
+                            </button>
+                            {statuses.map(status => (
+                              <button 
+                                key={status}
+                                onClick={() => {
+                                  setStatusFilter(status);
+                                  setShowStatusFilter(false);
+                                }}
+                                className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${statusFilter === status ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
+                              >
+                                {status}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredAndSortedProducts.map((product) => (
-                    <tr 
-                      key={product.id} 
-                      className="hover:bg-purple-50 transition-colors duration-150 cursor-pointer"
-                      onClick={() => handleProductClick(product.id)}
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{product.product_name || 'Unnamed Product'}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          product.status === 'active' ? 'bg-green-100 text-green-800' : 
-                          product.status === 'inactive' ? 'bg-red-100 text-red-800' : 
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {product.status.charAt(0).toUpperCase() + product.status.slice(1)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">
-                          {new Date(product.created_at).toLocaleDateString()}
-                        </div>
+                  {filteredAndSortedProducts.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 border-b border-gray-200">
+                        No products found
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredAndSortedProducts.map((product) => (
+                    <tr 
+                      key={product.id} 
+                        className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
+                      onClick={() => handleProductClick(product.id)}
+                    >
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{product.client_name}</div>
+                          <div className="text-xs text-gray-500 font-sans">
+                          product: {product.product_name}
+                        </div>
+                      </td>
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <div className="text-sm text-gray-600 font-sans">{product.product_name}</div>
+                        </td>
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div 
+                              className="h-3 w-3 rounded-full mr-2 flex-shrink-0" 
+                              style={{ backgroundColor: getProviderColor(product.provider_name) }}
+                            ></div>
+                            <div className="text-sm text-gray-600 font-sans">{product.provider_name || 'Unknown'}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          {product.total_value !== undefined ? (
+                            <div className="text-sm font-medium text-indigo-600">
+                              {formatCurrency(product.total_value)}
+                            </div>
+                          ) : (
+                            <div className="text-sm text-gray-500">N/A</div>
+                        )}
+                      </td>
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          {product.irr !== undefined && product.irr !== null ? (
+                          <div>
+                              <div className={`text-sm font-medium ${(product.irr ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                              {formatPercentage(product.irr)}
+                              <span className="ml-1">
+                                {(product.irr ?? 0) >= 0 ? '▲' : '▼'}
+                              </span>
+                            </div>
+                            {product.irr_date && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                as of {new Date(product.irr_date).toLocaleDateString()}
+                              </div>
+                            )}
+                          </div>
+                          ) : (
+                            <div className="text-sm text-gray-500">-</div>
+                        )}
+                      </td>
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          product.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {product.status}
+                        </span>
+                      </td>
+                    </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+          <div className="relative mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3 text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h3 className="text-lg leading-6 font-medium text-gray-900 mt-4">Delete All products</h3>
+              <div className="mt-2 px-7 py-3">
+                <p className="text-sm text-gray-500">
+                  Are you sure you want to delete all products for "{clientToDelete?.name}"?
+                </p>
+                <p className="text-sm text-gray-500 mt-2">
+                  This will delete all products, portfolios, and products associated with this client.
+                  <span className="font-medium"> This action cannot be undone.</span>
+                </p>
+              </div>
+              <div className="flex justify-center gap-4 mt-4">
+                <button 
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setClientToDelete(null);
+                  }}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleConfirmDelete}
+                  disabled={isDeleting}
+                  className={`px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 ${isDeleting ? 'opacity-75 cursor-not-allowed' : ''}`}
+                >
+                  {isDeleting ? (
+                    <span className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Deleting...
+                    </span>
+                  ) : "Delete All"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

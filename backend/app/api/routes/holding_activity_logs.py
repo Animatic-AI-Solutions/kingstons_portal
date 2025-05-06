@@ -44,8 +44,9 @@ async def check_valuation_exists_for_month(portfolio_fund_id: int, activity_date
 async def get_holding_activity_logs(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
     limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
-    account_holding_id: Optional[int] = None,
+    product_holding_id: Optional[int] = None,
     portfolio_fund_id: Optional[int] = None,
+    portfolio_id: Optional[int] = None,
     activity_type: Optional[str] = None,
     from_date: Optional[str] = None,
     to_date: Optional[str] = None,
@@ -64,12 +65,28 @@ async def get_holding_activity_logs(
     try:
         query = db.table("holding_activity_log").select("*")
         
-        if account_holding_id is not None:
-            query = query.eq("account_holding_id", account_holding_id)
+        if product_holding_id is not None:
+            query = query.eq("product_holding_id", product_holding_id)
         
         if portfolio_fund_id is not None:
             query = query.eq("portfolio_fund_id", portfolio_fund_id)
             
+        if portfolio_id is not None:
+            # First, get all portfolio_fund_ids associated with this portfolio
+            portfolio_funds = db.table("portfolio_funds") \
+                .select("id") \
+                .eq("portfolio_id", portfolio_id) \
+                .execute()
+                
+            if portfolio_funds.data and len(portfolio_funds.data) > 0:
+                # Extract the fund IDs
+                portfolio_fund_ids = [fund["id"] for fund in portfolio_funds.data]
+                # Filter activity logs by these fund IDs
+                query = query.in_("portfolio_fund_id", portfolio_fund_ids)
+            else:
+                # No funds in portfolio, return empty result
+                return []
+                
         if activity_type is not None:
             query = query.eq("activity_type", activity_type)
             
@@ -227,12 +244,12 @@ async def recalculate_fund_weightings(portfolio_id: int, db) -> None:
             logger.warning(f"Total portfolio value is zero, skipping weighting calculation for portfolio {portfolio_id}")
             return
             
-        # Update each fund's target_weighting
+        # Update each fund's weighting
         for fund_id, value in fund_values.items():
             new_weighting = value / total_value if total_value > 0 else 0
             
             db.table("portfolio_funds")\
-                .update({"target_weighting": new_weighting})\
+                .update({"weighting": new_weighting})\
                 .eq("id", fund_id)\
                 .execute()
                 
@@ -241,35 +258,35 @@ async def recalculate_fund_weightings(portfolio_id: int, db) -> None:
         logger.error(f"Error recalculating fund weightings: {str(e)}")
         raise
 
-async def recalculate_account_weightings(client_id: int, db) -> None:
+async def recalculate_product_weightings(client_id: int, db) -> None:
     """
-    Recalculate and update weightings for all accounts belonging to a client based on their portfolio values.
+    Recalculate and update weightings for all products belonging to a client based on their portfolio values.
     Considers fund valuations when available.
     """
     try:
-        # Get all active accounts for the client
-        accounts = db.table("client_accounts")\
+        # Get all active products for the client
+        products = db.table("client_products")\
             .select("id")\
             .eq("client_id", client_id)\
             .eq("status", "active")\
             .execute()
             
-        if not accounts.data:
+        if not products.data:
             return
             
-        account_values = []
+        product_values = []
         
-        # Calculate total value for each account
-        for account in accounts.data:
-            # Get the active holding for this account
-            holding = db.table("account_holdings")\
+        # Calculate total value for each product
+        for product in products.data:
+            # Get the active holding for this product
+            holding = db.table("product_holdings")\
                 .select("portfolio_id")\
-                .eq("client_account_id", account["id"])\
+                .eq("client_product_id", product["id"])\
                 .eq("status", "active")\
                 .execute()
                 
             if not holding.data or not holding.data[0]["portfolio_id"]:
-                account_values.append({"id": account["id"], "value": 0})
+                product_values.append({"id": product["id"], "value": 0})
                 continue
                 
             portfolio_id = holding.data[0]["portfolio_id"]
@@ -282,7 +299,7 @@ async def recalculate_account_weightings(client_id: int, db) -> None:
                 .execute()
                 
             if not portfolio_funds.data:
-                account_values.append({"id": account["id"], "value": 0})
+                product_values.append({"id": product["id"], "value": 0})
                 continue
                 
             # If we have a common valuation month, use those values
@@ -309,30 +326,30 @@ async def recalculate_account_weightings(client_id: int, db) -> None:
                         
                     total_value += value
                 
-                account_values.append({"id": account["id"], "value": total_value})
+                product_values.append({"id": product["id"], "value": total_value})
             else:
                 # Use invested amounts
                 total_value = sum(float(pf["amount_invested"] or 0) for pf in portfolio_funds.data)
-                account_values.append({"id": account["id"], "value": total_value})
+                product_values.append({"id": product["id"], "value": total_value})
         
-        # Calculate total value across all accounts
-        total_client_value = sum(av["value"] for av in account_values)
+        # Calculate total value across all products
+        total_client_value = sum(av["value"] for av in product_values)
         
         if total_client_value == 0:
             return
             
-        # Update each account's weighting
-        for av in account_values:
+        # Update each product's weighting
+        for av in product_values:
             new_weighting = av["value"] / total_client_value if total_client_value > 0 else 0
             
-            db.table("client_accounts")\
+            db.table("client_products")\
                 .update({"weighting": new_weighting})\
                 .eq("id", av["id"])\
                 .execute()
                 
-        logger.info(f"Updated account weightings for client {client_id}")
+        logger.info(f"Updated product weightings for client {client_id}")
     except Exception as e:
-        logger.error(f"Error recalculating account weightings: {str(e)}")
+        logger.error(f"Error recalculating product weightings: {str(e)}")
         raise
 
 async def has_valuation_been_edited(portfolio_fund_id: int, activity_date: date, db) -> bool:
@@ -510,7 +527,7 @@ async def create_holding_activity_log(
     """
     What it does: Creates a new holding activity log in the database and updates:
     1. Fund weightings within the portfolio(s) using the most recent common valuation month if available
-    2. Account weightings for the client(s) using the most recent common valuation month if available
+    2. product weightings for the client(s) using the most recent common valuation month if available
     3. Recalculates IRR values for the fund(s) with dates after the activity timestamp, but only if valuations have been edited
     Why it's needed: Allows adding new holding activity logs and keeps all weightings and IRR values in sync.
     How it works:
@@ -519,7 +536,7 @@ async def create_holding_activity_log(
         3. Tracks affected portfolios and funds
         4. If skip_fund_update is False, processes the activity to update fund amounts
         5. Recalculates fund weightings in affected portfolio(s) using the most recent common valuation month
-        6. Recalculates account weightings for affected client(s) using the most recent common valuation month
+        6. Recalculates product weightings for affected client(s) using the most recent common valuation month
         7. Recalculates IRR values with dates after the activity timestamp, but only for edited valuations
         8. Returns the newly created holding activity log
     """
@@ -530,7 +547,7 @@ async def create_holding_activity_log(
             activity_timestamp = holding_activity_log.activity_timestamp.isoformat() if isinstance(holding_activity_log.activity_timestamp, date) else str(holding_activity_log.activity_timestamp)
         
         logger.info(f"Creating holding activity log with data: "
-                  f"account_holding_id={holding_activity_log.account_holding_id} "
+                  f"product_holding_id={holding_activity_log.product_holding_id} "
                   f"portfolio_fund_id={holding_activity_log.portfolio_fund_id} "
                   f"activity_timestamp={activity_timestamp} "
                   f"activity_type={holding_activity_log.activity_type} "
@@ -544,27 +561,27 @@ async def create_holding_activity_log(
         related_fund_value = getattr(holding_activity_log, 'related_fund', None)
         logger.info(f"Has related_fund attribute: {has_related_fund}, Value: {related_fund_value}")
         
-        # Validate account_holding_id and get client_id
-        account_holding = db.table("account_holdings")\
-            .select("id", "client_account_id")\
-            .eq("id", holding_activity_log.account_holding_id)\
+        # Validate product_holding_id and get client_id
+        product_holding = db.table("product_holdings")\
+            .select("id", "client_product_id")\
+            .eq("id", holding_activity_log.product_holding_id)\
             .execute()
             
-        if not account_holding.data:
+        if not product_holding.data:
             raise HTTPException(status_code=404, 
-                detail=f"Account holding with ID {holding_activity_log.account_holding_id} not found")
+                detail=f"product holding with ID {holding_activity_log.product_holding_id} not found")
         
-        # Get client_id from client_accounts
-        client_account = db.table("client_accounts")\
+        # Get client_id from client_products
+        client_product = db.table("client_products")\
             .select("client_id")\
-            .eq("id", account_holding.data[0]["client_account_id"])\
+            .eq("id", product_holding.data[0]["client_product_id"])\
             .execute()
             
-        if not client_account.data:
+        if not client_product.data:
             raise HTTPException(status_code=404, 
-                detail=f"Client account not found for account holding {holding_activity_log.account_holding_id}")
+                detail=f"Client product not found for product holding {holding_activity_log.product_holding_id}")
         
-        client_id = client_account.data[0]["client_id"]
+        client_id = client_product.data[0]["client_id"]
         affected_client_ids = {client_id}  # Set to track all affected clients
         affected_portfolio_ids = set()  # Set to track all affected portfolios
         affected_portfolio_fund_ids = set()  # Set to track all affected portfolio funds
@@ -601,21 +618,21 @@ async def create_holding_activity_log(
             affected_portfolio_ids.add(related_fund_portfolio_id)
             affected_portfolio_fund_ids.add(related_fund_id)
             
-            # If related fund is in a different account, get its client_id
+            # If related fund is in a different product, get its client_id
             if related_fund_portfolio_id != source_portfolio_id:
-                related_holdings = db.table("account_holdings")\
-                    .select("client_account_id")\
+                related_holdings = db.table("product_holdings")\
+                    .select("client_product_id")\
                     .eq("portfolio_id", related_fund_portfolio_id)\
                     .execute()
                     
                 if related_holdings.data:
-                    related_accounts = db.table("client_accounts")\
+                    related_products = db.table("client_products")\
                         .select("client_id")\
-                        .eq("id", related_holdings.data[0]["client_account_id"])\
+                        .eq("id", related_holdings.data[0]["client_product_id"])\
                         .execute()
                         
-                    if related_accounts.data:
-                        affected_client_ids.add(related_accounts.data[0]["client_id"])
+                    if related_products.data:
+                        affected_client_ids.add(related_products.data[0]["client_id"])
         
         # Legacy support for Switch type
         if holding_activity_log.activity_type == 'Switch' and hasattr(holding_activity_log, 'target_portfolio_fund_id'):
@@ -632,21 +649,21 @@ async def create_holding_activity_log(
             affected_portfolio_ids.add(target_portfolio_id)
             affected_portfolio_fund_ids.add(holding_activity_log.target_portfolio_fund_id)
             
-            # If target fund is in a different account, get its client_id
+            # If target fund is in a different product, get its client_id
             if target_portfolio_id != source_portfolio_id:
-                target_holdings = db.table("account_holdings")\
-                    .select("client_account_id")\
+                target_holdings = db.table("product_holdings")\
+                    .select("client_product_id")\
                     .eq("portfolio_id", target_portfolio_id)\
                     .execute()
                     
                 if target_holdings.data:
-                    target_accounts = db.table("client_accounts")\
+                    target_products = db.table("client_products")\
                         .select("client_id")\
-                        .eq("id", target_holdings.data[0]["client_account_id"])\
+                        .eq("id", target_holdings.data[0]["client_product_id"])\
                         .execute()
                         
-                    if target_accounts.data:
-                        affected_client_ids.add(target_accounts.data[0]["client_id"])
+                    if target_products.data:
+                        affected_client_ids.add(target_products.data[0]["client_id"])
         
         # Get the data dictionary with proper datetime serialization
         data_dict = holding_activity_log.model_dump()
@@ -691,7 +708,7 @@ async def create_holding_activity_log(
             await recalculate_fund_weightings(portfolio_id, db)
             
         for client_id in affected_client_ids:
-            await recalculate_account_weightings(client_id, db)
+            await recalculate_product_weightings(client_id, db)
         
         # Recalculate IRR values for affected portfolio funds
         for portfolio_fund_id in affected_portfolio_fund_ids:
@@ -910,14 +927,14 @@ async def delete_holding_activity_log(holding_activity_log_id: int, db = Depends
     """
     What it does: Deletes a holding activity log and updates:
     1. Fund weightings within the portfolio(s) using the most recent common valuation month if available
-    2. Account weightings for the client(s) using the most recent common valuation month if available
+    2. product weightings for the client(s) using the most recent common valuation month if available
     3. Recalculates IRR values for the fund(s) with dates after the activity timestamp, but only if valuations have been edited
     Why it's needed: Allows removing activity logs while keeping all weightings and IRR values in sync.
     How it works:
         1. Retrieves the activity log and validates that it exists
         2. Tracks affected portfolios and funds for recalculation
         3. Recalculates fund weightings in affected portfolio(s) using the most recent common valuation month
-        4. Recalculates account weightings for affected client(s) using the most recent common valuation month
+        4. Recalculates product weightings for affected client(s) using the most recent common valuation month
         5. Recalculates IRR values with dates after the activity timestamp, but only for edited valuations
         6. Deletes the holding activity log
     """
@@ -979,22 +996,22 @@ async def delete_holding_activity_log(holding_activity_log_id: int, db = Depends
                 affected_portfolio_ids.add(related_portfolio_id)
                 affected_portfolio_fund_ids.add(related_fund_id)
         
-        # Get account holding info for client account lookup
-        account_holding_id = activity_data["account_holding_id"]
-        account_holding = db.table("account_holdings")\
-            .select("client_account_id")\
-            .eq("id", account_holding_id)\
+        # Get product holding info for client product lookup
+        product_holding_id = activity_data["product_holding_id"]
+        product_holding = db.table("product_holdings")\
+            .select("client_product_id")\
+            .eq("id", product_holding_id)\
             .execute()
             
         client_id = None
-        if account_holding.data:
-            client_account = db.table("client_accounts")\
+        if product_holding.data:
+            client_product = db.table("client_products")\
                 .select("client_id")\
-                .eq("id", account_holding.data[0]["client_account_id"])\
+                .eq("id", product_holding.data[0]["client_product_id"])\
                 .execute()
                 
-            if client_account.data:
-                client_id = client_account.data[0]["client_id"]
+            if client_product.data:
+                client_id = client_product.data[0]["client_id"]
         
         # Delete the holding activity log
         db.table("holding_activity_log").delete().eq("id", holding_activity_log_id).execute()
@@ -1004,9 +1021,9 @@ async def delete_holding_activity_log(holding_activity_log_id: int, db = Depends
         for portfolio_id in affected_portfolio_ids:
             await recalculate_fund_weightings(portfolio_id, db)
         
-        # Recalculate client account weightings
+        # Recalculate client product weightings
         if client_id:
-            await recalculate_account_weightings(client_id, db)
+            await recalculate_product_weightings(client_id, db)
         
         # Properly handle activity_timestamp for IRR recalculation
         activity_timestamp = activity_data.get("activity_timestamp")
@@ -1048,7 +1065,7 @@ async def update_holding_activity_log(
     """
     What it does: Updates a holding activity log in the database and:
     1. Fund weightings within the portfolio(s) using the most recent common valuation month if available
-    2. Account weightings for the client(s) using the most recent common valuation month if available
+    2. product weightings for the client(s) using the most recent common valuation month if available
     3. Recalculates IRR values for the fund(s) with dates after the activity timestamp, but only if valuations have been edited
     Why it's needed: Allows updating holding activity logs and keeps all weightings and IRR values in sync.
     How it works:
@@ -1056,7 +1073,7 @@ async def update_holding_activity_log(
         2. Updates the activity log with the new data
         2. If skip_fund_update is False, processes the activity to update fund amounts
         4. Recalculates fund weightings in affected portfolio(s) using the most recent common valuation month
-        5. Recalculates account weightings for affected client(s) using the most recent common valuation month
+        5. Recalculates product weightings for affected client(s) using the most recent common valuation month
         6. Recalculates IRR values with dates after the activity timestamp, but only for edited valuations
         7. Returns the updated holding activity log
     """
@@ -1073,7 +1090,7 @@ async def update_holding_activity_log(
             activity_timestamp = holding_activity_log.activity_timestamp.isoformat() if isinstance(holding_activity_log.activity_timestamp, date) else str(holding_activity_log.activity_timestamp)
         
         logger.info(f"Updating holding activity log with ID {activity_id}. New data: "
-                  f"account_holding_id={holding_activity_log.account_holding_id} "
+                  f"product_holding_id={holding_activity_log.product_holding_id} "
                   f"portfolio_fund_id={holding_activity_log.portfolio_fund_id} "
                   f"activity_timestamp={activity_timestamp} "
                   f"activity_type={holding_activity_log.activity_type} "
@@ -1082,28 +1099,28 @@ async def update_holding_activity_log(
                   
         logger.info(f"Skip fund update: {skip_fund_update}, Reverse before update: {reverse_before_update}")
         
-        # Validate account_holding_id and get client_id
-        account_holding_id = original_activity.data[0]["account_holding_id"]
-        account_holding = db.table("account_holdings")\
-            .select("id", "client_account_id")\
-            .eq("id", account_holding_id)\
+        # Validate product_holding_id and get client_id
+        product_holding_id = original_activity.data[0]["product_holding_id"]
+        product_holding = db.table("product_holdings")\
+            .select("id", "client_product_id")\
+            .eq("id", product_holding_id)\
             .execute()
             
-        if not account_holding.data:
+        if not product_holding.data:
             raise HTTPException(status_code=404, 
-                detail=f"Account holding with ID {account_holding_id} not found")
+                detail=f"product holding with ID {product_holding_id} not found")
         
-        # Get client_id from client_accounts
-        client_account = db.table("client_accounts")\
+        # Get client_id from client_products
+        client_product = db.table("client_products")\
             .select("client_id")\
-            .eq("id", account_holding.data[0]["client_account_id"])\
+            .eq("id", product_holding.data[0]["client_product_id"])\
             .execute()
             
-        if not client_account.data:
+        if not client_product.data:
             raise HTTPException(status_code=404, 
-                detail=f"Client account not found for account holding {account_holding_id}")
+                detail=f"Client product not found for product holding {product_holding_id}")
         
-        client_id = client_account.data[0]["client_id"]
+        client_id = client_product.data[0]["client_id"]
         
         # Validate portfolio_fund_id and get portfolio information
         portfolio_fund_id = holding_activity_log.portfolio_fund_id if holding_activity_log.portfolio_fund_id else original_activity.data[0]["portfolio_fund_id"]
@@ -1134,21 +1151,21 @@ async def update_holding_activity_log(
                 affected_portfolio_ids.add(related_portfolio_id)
                 affected_portfolio_fund_ids.add(related_fund_id)
                 
-                # If related fund is in a different account, get its client_id
+                # If related fund is in a different product, get its client_id
                 if related_portfolio_id != portfolio_fund.data[0]["portfolio_id"]:
-                    related_holdings = db.table("account_holdings")\
-                        .select("client_account_id")\
+                    related_holdings = db.table("product_holdings")\
+                        .select("client_product_id")\
                         .eq("portfolio_id", related_portfolio_id)\
                         .execute()
                         
                     if related_holdings.data:
-                        related_accounts = db.table("client_accounts")\
+                        related_products = db.table("client_products")\
                             .select("client_id")\
-                            .eq("id", related_holdings.data[0]["client_account_id"])\
+                            .eq("id", related_holdings.data[0]["client_product_id"])\
                             .execute()
                             
-                        if related_accounts.data:
-                            affected_client_ids.add(related_accounts.data[0]["client_id"])
+                        if related_products.data:
+                            affected_client_ids.add(related_products.data[0]["client_id"])
         
         # Legacy support for Switch type with target_portfolio_fund_id
         target_portfolio_fund_id = holding_activity_log.target_portfolio_fund_id if hasattr(holding_activity_log, 'target_portfolio_fund_id') and holding_activity_log.target_portfolio_fund_id is not None else original_activity.data[0].get("target_portfolio_fund_id")
@@ -1163,21 +1180,21 @@ async def update_holding_activity_log(
                 affected_portfolio_ids.add(target_portfolio_id)
                 affected_portfolio_fund_ids.add(target_portfolio_fund_id)
                 
-                # If target fund is in a different account, get its client_id
+                # If target fund is in a different product, get its client_id
                 if target_portfolio_id != portfolio_fund.data[0]["portfolio_id"]:
-                    target_holdings = db.table("account_holdings")\
-                        .select("client_account_id")\
+                    target_holdings = db.table("product_holdings")\
+                        .select("client_product_id")\
                         .eq("portfolio_id", target_portfolio_id)\
                         .execute()
                         
                     if target_holdings.data:
-                        target_accounts = db.table("client_accounts")\
+                        target_products = db.table("client_products")\
                             .select("client_id")\
-                            .eq("id", target_holdings.data[0]["client_account_id"])\
+                            .eq("id", target_holdings.data[0]["client_product_id"])\
                             .execute()
                             
-                        if target_accounts.data:
-                            affected_client_ids.add(target_accounts.data[0]["client_id"])
+                        if target_products.data:
+                            affected_client_ids.add(target_products.data[0]["client_id"])
         
         # Get any modified fields, keeping original data for unmodified fields
         update_data = {}
@@ -1287,7 +1304,7 @@ async def update_holding_activity_log(
             await recalculate_fund_weightings(portfolio_id, db)
             
         for client_id in affected_client_ids:
-            await recalculate_account_weightings(client_id, db)
+            await recalculate_product_weightings(client_id, db)
         
         # Recalculate IRR values for affected portfolio funds
         for portfolio_fund_id in affected_portfolio_fund_ids:
@@ -1331,12 +1348,12 @@ async def update_holding_activity_log(
 
 @router.get("/holding_activity_logs/earliest_date")
 async def get_earliest_activity_date(
-    account_holding_id: Optional[int] = None,
+    product_holding_id: Optional[int] = None,
     portfolio_fund_id: Optional[int] = None,
     db = Depends(get_db)
 ):
     """
-    What it does: Retrieves the earliest activity date for a given account holding or portfolio fund.
+    What it does: Retrieves the earliest activity date for a given product holding or portfolio fund.
     Why it's needed: To determine the starting point for monthly activity displays.
     How it works:
         1. Connects to the Supabase database
@@ -1346,13 +1363,13 @@ async def get_earliest_activity_date(
     Expected output: A JSON object with the earliest activity date
     """
     try:
-        if account_holding_id is None and portfolio_fund_id is None:
-            raise HTTPException(status_code=400, detail="Either account_holding_id or portfolio_fund_id is required")
+        if product_holding_id is None and portfolio_fund_id is None:
+            raise HTTPException(status_code=400, detail="Either product_holding_id or portfolio_fund_id is required")
 
         query = db.table("holding_activity_log").select("activity_timestamp")
         
-        if account_holding_id is not None:
-            query = query.eq("account_holding_id", account_holding_id)
+        if product_holding_id is not None:
+            query = query.eq("product_holding_id", product_holding_id)
         
         if portfolio_fund_id is not None:
             query = query.eq("portfolio_fund_id", portfolio_fund_id)

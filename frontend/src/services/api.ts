@@ -10,7 +10,7 @@ import axios from 'axios';
 
 // Create axios instance with the correct baseURL that works with Vite's proxy
 const api = axios.create({
-  baseURL: '',  // Empty base URL since we're using the request interceptor to add /api prefix
+  baseURL: '',  // Empty base URL since we're using Vite's proxy configuration
   headers: {
     'Content-Type': 'application/json',
   },

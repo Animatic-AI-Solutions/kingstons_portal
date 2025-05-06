@@ -161,7 +161,6 @@ describe('Definitions Component', () => {
     
     // Check if all tabs are displayed
     expect(screen.getByRole('tab', { name: /providers/i })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /products/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /funds/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /portfolios/i })).toBeInTheDocument();
   });
@@ -190,20 +189,6 @@ describe('Definitions Component', () => {
       expect(screen.getByText('Vanguard')).toBeInTheDocument();
     });
     
-    // Click on Products tab
-    const productsTab = screen.getByRole('tab', { name: /products/i });
-    fireEvent.click(productsTab);
-    
-    // Product templates should be visible
-    await waitFor(() => {
-      expect(screen.getByText('IRA')).toBeInTheDocument();
-    });
-    expect(screen.getByText('Brokerage Account')).toBeInTheDocument();
-    expect(screen.getByText('529 Plan')).toBeInTheDocument();
-    
-    // Provider templates should not be visible anymore
-    expect(screen.queryByText('Leading provider of mutual funds and ETFs')).not.toBeInTheDocument();
-    
     // Click on Funds tab
     const fundsTab = screen.getByRole('tab', { name: /funds/i });
     fireEvent.click(fundsTab);
@@ -214,6 +199,9 @@ describe('Definitions Component', () => {
     });
     expect(screen.getByText('Total Bond Market Index')).toBeInTheDocument();
     expect(screen.getByText('Total International Stock Index')).toBeInTheDocument();
+    
+    // Provider templates should not be visible anymore
+    expect(screen.queryByText('Leading provider of mutual funds and ETFs')).not.toBeInTheDocument();
     
     // Click on Portfolios tab
     const portfoliosTab = screen.getByRole('tab', { name: /portfolios/i });
@@ -263,15 +251,6 @@ describe('Definitions Component', () => {
     
     // Check if the add provider button is displayed
     expect(screen.getByRole('button', { name: /add provider/i })).toBeInTheDocument();
-    
-    // Click on Products tab
-    const productsTab = screen.getByRole('tab', { name: /products/i });
-    fireEvent.click(productsTab);
-    
-    // Check if the add product button is displayed
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /add product/i })).toBeInTheDocument();
-    });
     
     // Click on Funds tab
     const fundsTab = screen.getByRole('tab', { name: /funds/i });
