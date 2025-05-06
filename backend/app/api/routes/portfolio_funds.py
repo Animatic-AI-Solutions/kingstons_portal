@@ -273,10 +273,12 @@ async def get_portfolio_funds(
         if len(fund_ids) > 0:
             # Get the latest valuation for each fund from fund_valuations
             for fund_id in fund_ids:
+
                 valuation_result = db.table("fund_valuations")\
                     .select("value", "valuation_date", "portfolio_fund_id")\
                     .eq("portfolio_fund_id", fund_id)\
                     .order("valuation_date", desc=True)\
+
                     .limit(1)\
                     .execute()
                     
@@ -292,6 +294,7 @@ async def get_portfolio_funds(
             if fund_id in latest_valuations:
 
                 fund["market_value"] = float(latest_valuations[fund_id]["value"])
+
                 fund["valuation_date"] = latest_valuations[fund_id]["date"]
         
         return result.data
@@ -360,7 +363,7 @@ async def get_portfolio_fund(portfolio_fund_id: int, db = Depends(get_db)):
             
         # Get the portfolio fund data
         portfolio_fund = result.data[0]
-        
+
         # Get latest valuation for this fund from fund_valuations
         valuation_result = db.table("fund_valuations")\
             .select("value", "valuation_date")\
@@ -373,7 +376,7 @@ async def get_portfolio_fund(portfolio_fund_id: int, db = Depends(get_db)):
             latest_valuation = valuation_result.data[0]
             portfolio_fund["market_value"] = float(latest_valuation["value"])
             portfolio_fund["valuation_date"] = latest_valuation["valuation_date"]
-            
+
         return portfolio_fund
     except Exception as e:
         logger.error(f"Error retrieving portfolio fund: {str(e)}")
@@ -705,8 +708,10 @@ async def calculate_portfolio_fund_irr(
         
         # Ensure we're storing as a float, not an integer
         irr_value_data = {
+
             "irr_result": float(irr_percentage),  # Explicitly cast to float to ensure proper storage
             "fund_valuation_id": fund_valuation_id  # Add the fund_valuation_id reference
+
         }
         logger.info(f"IRR data to be saved: {irr_value_data} (value type: {type(irr_value_data['irr_result']).__name__})")
         
@@ -745,8 +750,10 @@ async def calculate_portfolio_fund_irr(
             full_irr_data = {
                 "fund_id": portfolio_fund_id,
                 "irr_result": float(irr_percentage),  # Explicitly cast to float
+
                 "date": valuation_date.isoformat(),
                 "fund_valuation_id": fund_valuation_id  # Add the fund_valuation_id reference
+
             }
             
             logger.info(f"Storing new IRR value: {full_irr_data}")
@@ -778,6 +785,7 @@ async def calculate_portfolio_fund_irr(
             "irr_percentage": irr_percentage,      # Percentage form (e.g., 5.21)
             "irr_value_id": irr_value_id,
             "calculation_date": valuation_date.isoformat(),
+
             "fund_valuation_id": fund_valuation_id,
             "days_in_period": irr_result['days_in_period']
         }
@@ -860,7 +868,9 @@ async def get_latest_irr(portfolio_fund_id: int, db = Depends(get_db)):
             "irr": irr_value,  # The percentage value (e.g., 5.21)
             "irr_decimal": irr_value / 100 if irr_value != 0 else 0.0,  # Also provide decimal form (e.g., 0.0521)
             "calculation_date": latest_irr["date"],
+
             "fund_valuation_id": latest_irr.get("fund_valuation_id")
+
         }
         logger.info(f"Returning response: {response}")
         return response
@@ -915,6 +925,7 @@ async def recalculate_all_irr_values(
             try:
                 # Parse date and extract month/year
                 valuation_date = datetime.fromisoformat(irr_value["date"])
+
                 fund_valuation_id = irr_value["fund_valuation_id"]
                 
                 # Get the valuation amount from fund_valuations table
@@ -951,6 +962,7 @@ async def recalculate_all_irr_values(
                         
                     valuation_amount = float(valuation_result.data[0]["value"])
                     fund_valuation_id = valuation_result.data[0]["id"]
+
                 
                 logger.info(f"Recalculating IRR for date: {valuation_date.isoformat()}, valuation: {valuation_amount}")
                 
@@ -1412,10 +1424,12 @@ async def update_irr_value(
             update_data["date"] = data["date"]
             logger.info(f"Updating date to: {data['date']}")
             
+
         # Update fund_valuation_id if provided
         if "fund_valuation_id" in data:
             update_data["fund_valuation_id"] = data["fund_valuation_id"]
             logger.info(f"Updating fund_valuation_id to: {data['fund_valuation_id']}")
+
             
         # If we're updating date or fund_valuation_id, we need to recalculate IRR
         if ("date" in data or "fund_valuation_id" in data) and fund_id:
@@ -1452,6 +1466,8 @@ async def update_irr_value(
                 
                 # Add the final valuation as a positive cash flow
                 valuation_date = data.get("date", irr_record["date"])
+
+
                 
                 # Convert date string to datetime object if necessary
                 if isinstance(valuation_date, str):
