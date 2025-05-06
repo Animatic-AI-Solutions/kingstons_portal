@@ -278,7 +278,6 @@ async def get_portfolio_funds(
                     .select("value", "valuation_date", "portfolio_fund_id")\
                     .eq("portfolio_fund_id", fund_id)\
                     .order("valuation_date", desc=True)\
-
                     .limit(1)\
                     .execute()
                     

@@ -25,12 +25,16 @@ interface ClientFormData {
 interface ClientAccount {
   id: number;
   client_id: number;
-  account_name: string;
+  product_name: string;
   status: string;
   start_date: string;
-  product_name?: string;
-  product_type?: string;
+  end_date?: string;
+  weighting?: number;
+  plan_number?: string;
+  provider_id?: number;
   provider_name?: string;
+  product_type?: string;
+  portfolio_id?: number;
   total_value?: number;
   previous_value?: number;
   irr?: number;
@@ -254,14 +258,9 @@ const ProductCard = ({ account }: { account: ClientAccount }) => {
         <div className="flex justify-between items-start">
           <div className="space-y-1">
             <h3 className="text-2xl font-semibold font-sans tracking-wide group-hover:text-indigo-700 transition-colors duration-200">
-              {account.account_name}
+              {account.product_name}
             </h3>
-            <p className="text-gray-600">{account.product_name || 'Unknown Product'}</p>
-            {account.product_type && (
-              <span className="inline-block px-2 py-1 text-xs font-medium rounded-md bg-gray-100 text-gray-800">
-                {account.product_type}
-              </span>
-            )}
+            <p className="text-gray-600">{account.product_type || 'Unknown Product'}</p>
             {account.risk_rating && (
               <div className="flex items-center mt-1">
                 <span className="text-xs text-gray-500 mr-1">Risk:</span>
@@ -360,8 +359,8 @@ const ClientDetails: React.FC = () => {
       console.log("Client data received:", clientResponse.data);
       setClient(clientResponse.data);
       
-      // Fetch client accounts
-      const accountsResponse = await api.get('/client_accounts', {
+      // Fetch client products (was client_accounts previously)
+      const accountsResponse = await api.get('/client_products', {
         params: { client_id: clientId }
       });
       
@@ -371,13 +370,20 @@ const ClientDetails: React.FC = () => {
       const accountsWithIRR = await Promise.all(
         accounts.map(async (account: ClientAccount) => {
           try {
-            const irrResponse = await api.get(`/analytics/account/${account.id}/irr`);
+            // Update analytics endpoint to use portfolio_id instead
+            const portfolioId = account.portfolio_id;
+            if (!portfolioId) {
+              console.warn(`No portfolio_id found for product ${account.id}`);
+              return account;
+            }
+            
+            const irrResponse = await api.get(`/analytics/portfolio/${portfolioId}/irr`);
             return {
               ...account,
               irr: irrResponse.data?.irr !== undefined ? irrResponse.data.irr : undefined
             };
           } catch (err) {
-            console.warn(`Failed to fetch IRR for account ${account.id}`, err);
+            console.warn(`Failed to fetch IRR for product ${account.id}`, err);
             return account;
           }
         })
