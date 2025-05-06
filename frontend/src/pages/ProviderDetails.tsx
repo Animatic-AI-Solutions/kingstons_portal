@@ -11,9 +11,11 @@ interface Provider {
 
 interface Product {
   id: number;
+  client_id: number;
+  client_name?: string;
   product_name: string;
   product_type: string;
-  available_providers_id: number;
+  provider_id: number;
   status: string;
   created_at: string;
 }
@@ -44,13 +46,21 @@ const ProviderDetails: React.FC = () => {
       setIsLoading(true);
       // Get provider details
       const providerResponse = await api.get(`/available_providers/${providerId}`);
-      // Get products for this provider
-      const productsResponse = await api.get(`/available_products`, {
-        params: { available_providers_id: providerId }
-      });
+      
+      try {
+        // Get products for this provider (using client_products table now)
+        const productsResponse = await api.get(`/client_products`, {
+          params: { provider_id: providerId }
+        });
+        
+        setProducts(productsResponse.data);
+      } catch (productErr: any) {
+        console.error('Error fetching provider products:', productErr);
+        // Set empty products array if there's an error
+        setProducts([]);
+      }
       
       setProvider(providerResponse.data);
-      setProducts(productsResponse.data);
       setFormData(providerResponse.data);
       setError(null);
     } catch (err: any) {
@@ -92,8 +102,8 @@ const ProviderDetails: React.FC = () => {
   };
 
   const handleAddProduct = () => {
-    // In a real implementation, this would navigate to an add product page
-    alert('Add Product functionality would be implemented here');
+    // Navigate to client products page with the provider ID pre-selected
+    navigate(`/create-client-products?provider=${providerId}`);
   };
 
   const handleDeleteClick = () => {
@@ -112,7 +122,7 @@ const ProviderDetails: React.FC = () => {
     try {
       setIsDeleting(true);
       await api.delete(`/available_providers/${providerId}`);
-      navigate('/providers', { replace: true });
+      navigate('/definitions/providers', { replace: true });
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to delete provider');
     } finally {
@@ -145,7 +155,7 @@ const ProviderDetails: React.FC = () => {
                 {error || 'Failed to load provider details. Please try again later.'}
               </p>
               <button
-                onClick={() => navigate('/providers')}
+                onClick={() => navigate('/definitions/providers')}
                 className="mt-2 text-red-700 underline"
               >
                 Return to Providers
@@ -164,7 +174,7 @@ const ProviderDetails: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
           <div>
             <div className="flex items-center">
-              <Link to="/providers" className="text-indigo-600 hover:text-indigo-900 mr-2">
+              <Link to="/definitions/providers" className="text-indigo-600 hover:text-indigo-900 mr-2">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
@@ -325,18 +335,18 @@ const ProviderDetails: React.FC = () => {
                 onClick={handleAddProduct}
                 className="bg-indigo-600 text-white px-4 py-2 rounded-md text-base font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
               >
-                Add Product
+                Add Client Product
               </button>
             </div>
             
             {products.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-gray-500">No products found for this provider.</p>
+                <p className="text-gray-500">No client products found for this provider.</p>
                 <button
                   onClick={handleAddProduct}
                   className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
-                  Add Your First Product
+                  Add Your First Client Product
                 </button>
               </div>
             ) : (
@@ -349,6 +359,9 @@ const ProviderDetails: React.FC = () => {
                       </th>
                       <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
                         Product Type
+                      </th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                        Client
                       </th>
                       <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
                         Status
@@ -369,7 +382,10 @@ const ProviderDetails: React.FC = () => {
                           <div className="text-base font-medium text-gray-900">{product.product_name}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-base text-gray-900">{product.product_type}</div>
+                          <div className="text-base text-gray-900">{product.product_type || "N/A"}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-base text-gray-900">{product.client_name || "Unknown"}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 inline-flex text-sm leading-5 font-semibold rounded-full ${

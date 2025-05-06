@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000';
+// Update the API_URL to use Vite's proxy configuration
+export const API_URL = '';  // Empty base URL to work with Vite's proxy
 
 /**
  * Authentication Service
@@ -31,7 +32,7 @@ export const authService = {
   login: async (email: string, password: string) => {
     try {
       const response = await axios.post(
-        `${API_URL}/api/auth/login`, 
+        `/api/auth/login`, 
         { email, password },
         { withCredentials: true } // Include this option to allow cookies to be set
       );
@@ -57,7 +58,7 @@ export const authService = {
    */
   signup: async (firstName: string, lastName: string, email: string, password: string) => {
     try {
-      const response = await axios.post(`${API_URL}/api/auth/signup`, {
+      const response = await axios.post(`/api/auth/signup`, {
         first_name: firstName,
         last_name: lastName,
         email,
@@ -86,7 +87,7 @@ export const authService = {
       };
       
       // Make the logout request - this will clear the session cookie on the server
-      await axios.post(`${API_URL}/api/auth/logout`, {}, config);
+      await axios.post(`/api/auth/logout`, {}, config);
       
       // Remove the token from localStorage
       localStorage.removeItem('token');
@@ -104,7 +105,7 @@ export const authService = {
    */
   requestPasswordReset: async (email: string) => {
     try {
-      const response = await axios.post(`${API_URL}/api/auth/forgot-password`, { email });
+      const response = await axios.post(`/api/auth/forgot-password`, { email });
       return response.data;
     } catch (error) {
       throw error;
@@ -119,7 +120,7 @@ export const authService = {
    */
   verifyResetToken: async (token: string) => {
     try {
-      const response = await axios.post(`${API_URL}/api/auth/verify-reset-token`, { token });
+      const response = await axios.post(`/api/auth/verify-reset-token`, { token });
       return response.data;
     } catch (error) {
       throw error;
@@ -135,7 +136,7 @@ export const authService = {
    */
   resetPassword: async (token: string, newPassword: string) => {
     try {
-      const response = await axios.post(`${API_URL}/api/auth/reset-password`, {
+      const response = await axios.post(`/api/auth/reset-password`, {
         token,
         new_password: newPassword
       });
@@ -157,7 +158,7 @@ export const authService = {
         throw new Error('No authentication token found');
       }
       
-      const response = await axios.get(`${API_URL}/api/auth/me`, {
+      const response = await axios.get(`/api/auth/me`, {
         headers: {
           Authorization: `Bearer ${token}`
         },
@@ -197,7 +198,7 @@ export const authService = {
    */
   confirmPasswordReset: async (token: string, password: string) => {
     try {
-      const response = await axios.post(`${API_URL}/api/auth/reset-password`, { 
+      const response = await axios.post(`/api/auth/reset-password`, { 
         token, 
         new_password: password 
       });
@@ -217,7 +218,7 @@ export const authService = {
 export const createAuthenticatedApi = () => {
   try {
     const api = axios.create({
-      baseURL: API_URL,  // Using just the base URL without /api
+      baseURL: '',  // Empty baseURL to work with Vite's proxy
       withCredentials: true
     });
   
@@ -242,11 +243,32 @@ export const createAuthenticatedApi = () => {
       return Promise.reject(error);
     });
     
+    // Add response interceptor for error handling
+    api.interceptors.response.use(
+      response => response,
+      error => {
+        // Log detailed information about the error
+        console.error('API Error:', error.message);
+        console.error('Request URL:', error.config?.url);
+        console.error('Request Method:', error.config?.method);
+        console.error('Response Status:', error.response?.status);
+        console.error('Response Data:', error.response?.data);
+        
+        // Check if error is due to token expiration (401 Unauthorized)
+        if (error.response?.status === 401) {
+          console.warn('Authentication token may be expired or invalid');
+          // Here you could trigger a token refresh or redirect to login
+        }
+        
+        return Promise.reject(error);
+      }
+    );
+    
     return api;
   } catch (error) {
     // Fallback to a simpler axios instance if there's an error
     return axios.create({
-      baseURL: `${API_URL}/api`,
+      baseURL: '',  // Empty baseURL to work with Vite's proxy
       withCredentials: true
     });
   }

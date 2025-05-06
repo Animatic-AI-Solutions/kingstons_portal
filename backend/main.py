@@ -1,4 +1,9 @@
 import os
+import sys
+
+# Add the backend directory to Python path
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,10 +18,10 @@ from dotenv import load_dotenv
 from app.api.routes import (
     clients, products, funds, portfolios, providers, 
     auth, profiles, product_funds,
-    portfolio_funds, client_accounts, account_holdings, 
-    holding_activity_logs, analytics,
-    client_account_portfolio_assignments, available_providers,
-    available_portfolios, fund_valuations
+    portfolio_funds, analytics,
+    available_providers,
+    available_portfolios, fund_valuations,
+    client_product_portfolio_assignments, client_products, holding_activity_logs, product_holdings
 )
 
 # Load environment variables from .env file
@@ -97,11 +102,11 @@ app.include_router(available_providers.router, prefix="/api", tags=["Available P
 app.include_router(available_portfolios.router, prefix="/api", tags=["Available Portfolios"])
 app.include_router(product_funds.router, prefix="/api", tags=["Product Funds"])
 app.include_router(portfolio_funds.router, prefix="/api", tags=["Portfolio Funds"])
-app.include_router(client_accounts.router, prefix="/api", tags=["Client Accounts"])
-app.include_router(account_holdings.router, prefix="/api", tags=["Account Holdings"])
+app.include_router(client_products.router, prefix="/api", tags=["Client products"])
+app.include_router(product_holdings.router, prefix="/api", tags=["product Holdings"])
 app.include_router(holding_activity_logs.router, prefix="/api", tags=["Holding Activity Logs"])
 app.include_router(analytics.router, prefix="/api", tags=["Analytics"])
-app.include_router(client_account_portfolio_assignments.router, prefix="/api", tags=["Client Account Portfolio Assignments"])
+app.include_router(client_product_portfolio_assignments.router, prefix="/api", tags=["Client product Portfolio Assignments"])
 app.include_router(fund_valuations.router, prefix="/api", tags=["Fund Valuations"])
 
 @app.get("/")

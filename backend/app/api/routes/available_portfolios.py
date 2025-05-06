@@ -21,14 +21,12 @@ class PortfolioFund(BaseModel):
 
 class PortfolioCreate(BaseModel):
     name: str
-    available_products_id: Optional[int] = None
     funds: Optional[List[PortfolioFund]] = None
 
 class AvailablePortfolio(BaseModel):
     id: int
     created_at: str
     name: Optional[str] = None
-    available_products_id: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -48,7 +46,6 @@ class PortfolioTemplateDetail(BaseModel):
     id: int
     created_at: datetime
     name: str
-    available_products_id: Optional[int] = None
     funds: List[PortfolioFundDetail] = []
 
     class Config:
@@ -112,8 +109,7 @@ async def get_available_portfolios(db = Depends(get_db)):
                 portfolio_model = AvailablePortfolio(
                     id=int(portfolio['id']),
                     created_at=str(portfolio['created_at']),
-                    name=portfolio.get('name'),
-                    available_products_id=portfolio.get('available_products_id')
+                    name=portfolio.get('name')
                 )
                 portfolios.append(portfolio_model)
                 logger.info(f"Successfully processed portfolio {idx}")
@@ -216,7 +212,6 @@ async def get_available_portfolio_details(request: Request, portfolio_id: int, d
             "id": portfolio["id"],
             "created_at": portfolio["created_at"],
             "name": portfolio["name"],
-            "available_products_id": portfolio.get("available_products_id"),
             "funds": funds
         }
         logger.info("=== Final Response ===")
@@ -238,10 +233,6 @@ async def create_available_portfolio(portfolio_data: PortfolioCreate, db = Depen
     portfolio_data_dict = {
         "name": portfolio_data.name
     }
-    
-    # Add available_products_id if provided
-    if portfolio_data.available_products_id is not None:
-        portfolio_data_dict["available_products_id"] = portfolio_data.available_products_id
     
     portfolio_response = db.table('available_portfolios')\
         .insert(portfolio_data_dict)\

@@ -62,11 +62,11 @@ const Providers: React.FC = () => {
   };
 
   const handleAddProvider = () => {
-    navigate('/providers/add');
+    navigate('/definitions/providers/add');
   };
 
   const handleProviderClick = (providerId: number) => {
-    navigate(`/providers/${providerId}`);
+    navigate(`/definitions/providers/${providerId}`);
   };
 
   const filteredAndSortedProviders = providers

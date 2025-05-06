@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Dialog } from '@headlessui/react';
+import { SearchableDropdown } from './ui';
 
 /**
  * Props interface for the IRR Calculation Modal component
@@ -53,7 +54,7 @@ const IRRCalculationModal: React.FC<IRRCalculationModalProps> = ({
       
       // Validate valuation input
       const valuationNumber = parseFloat(valuation);
-      if (isNaN(valuationNumber) || valuationNumber <= 0) {
+      if (isNaN(valuationNumber) || valuationNumber < 0) {
         throw new Error('Please enter a valid valuation amount');
       }
 
@@ -91,19 +92,18 @@ const IRRCalculationModal: React.FC<IRRCalculationModalProps> = ({
               <label htmlFor="month" className="block text-sm font-medium text-gray-700">
                 Month
               </label>
-              <select
+              <SearchableDropdown
                 id="month"
                 value={month}
-                onChange={(e) => setMonth(parseInt(e.target.value))}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              >
-                {/* Generate options for all 12 months */}
-                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                  <option key={m} value={m}>
-                    {new Date(2000, m - 1).toLocaleString('default', { month: 'long' })}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => setMonth(typeof value === 'string' ? parseInt(value) : value as number)}
+                options={Array.from({ length: 12 }, (_, i) => i + 1).map((m) => ({
+                  value: m,
+                  label: new Date(2000, m - 1).toLocaleString('default', { month: 'long' })
+                }))}
+                placeholder="Select month"
+                className="mt-1"
+                required
+              />
             </div>
 
             {/* Year input field */}

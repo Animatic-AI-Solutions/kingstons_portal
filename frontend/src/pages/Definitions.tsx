@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-type TabType = 'providers' | 'products' | 'funds' | 'portfolios';
+type TabType = 'providers' | 'funds' | 'portfolio-templates';
 
 const Definitions: React.FC = () => {
   const navigate = useNavigate();
@@ -14,12 +14,10 @@ const Definitions: React.FC = () => {
     switch (type) {
       case 'providers':
         return '/definitions/providers';
-      case 'products':
-        return '/definitions/products';
       case 'funds':
         return '/definitions/funds';
-      case 'portfolios':
-        return '/definitions/portfolios';
+      case 'portfolio-templates':
+        return '/definitions/portfolio-templates';
       default:
         return '/';
     }
@@ -30,12 +28,10 @@ const Definitions: React.FC = () => {
     switch (type) {
       case 'providers':
         return '/definitions/providers/add';
-      case 'products':
-        return '/definitions/products/add';
       case 'funds':
         return '/definitions/funds/add';
-      case 'portfolios':
-        return '/definitions/portfolios/add';
+      case 'portfolio-templates':
+        return '/definitions/portfolio-templates/add';
       default:
         return '/';
     }
@@ -177,6 +173,7 @@ const Definitions: React.FC = () => {
             Providers
           </button>
           <button
+
             onClick={() => setActiveTab('products')}
             className={`${
               activeTab === 'products'
@@ -187,6 +184,7 @@ const Definitions: React.FC = () => {
             Products
           </button>
           <button
+
             onClick={() => setActiveTab('funds')}
             className={`${
               activeTab === 'funds'
@@ -197,12 +195,14 @@ const Definitions: React.FC = () => {
             Funds
           </button>
           <button
-            onClick={() => setActiveTab('portfolios')}
+            onClick={() => setActiveTab('portfolio-templates')}
             className={`${
-              activeTab === 'portfolios'
-                ? 'bg-primary-700 text-white shadow-sm'
-                : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
-            } rounded-lg px-4 py-2 font-medium text-base transition-all duration-200 ease-in-out`}
+
+              activeTab === 'portfolio-templates'
+                ? 'border-indigo-500 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-base`}
+
           >
             Portfolios
           </button>
@@ -294,6 +294,7 @@ const Definitions: React.FC = () => {
             </div>
           )}
 
+
           {activeTab === 'products' && (
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
@@ -356,6 +357,7 @@ const Definitions: React.FC = () => {
               </div>
             </div>
           )}
+
 
           {activeTab === 'funds' && (
         <div className="bg-white shadow rounded-lg overflow-hidden">
@@ -426,71 +428,44 @@ const Definitions: React.FC = () => {
             </div>
           )}
 
-          {activeTab === 'portfolios' && (
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">Portfolio</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">Type</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">Risk Profile</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">Advisor</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">Performance (YTD)</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {samplePortfolios.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 border-b border-gray-200">
-                      No portfolios found
-                    </td>
-                  </tr>
-                ) : (
-                  samplePortfolios.map(portfolio => (
-                    <tr 
-                      key={portfolio.id} 
-                      className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
-                      onClick={() => handleItemClick('portfolios', portfolio.id)}
-                    >
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{portfolio.name}</div>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm text-gray-600 font-sans">{portfolio.type}</div>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          portfolio.risk === 'Conservative' ? 'bg-blue-100 text-blue-800' : 
-                          portfolio.risk === 'Balanced' ? 'bg-indigo-100 text-indigo-800' : 
-                          portfolio.risk === 'Growth' ? 'bg-purple-100 text-purple-800' : 
-                          'bg-pink-100 text-pink-800'
-                        }`}>
-                          {portfolio.risk}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <span 
-                            className="inline-block h-2 w-2 rounded-full mr-2"
-                            style={{ backgroundColor: getAdvisorColor(portfolio.advisor) }}
-                          ></span>
-                          <div className="text-sm text-gray-600 font-sans">{portfolio.advisor}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className={`text-sm font-medium ${portfolio.performance >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                          {formatPercentage(portfolio.performance)}
-                          <span className="ml-1">
-                            {portfolio.performance >= 0 ? '▲' : '▼'}
-                          </span>
+
+          {activeTab === 'portfolio-templates' && (
+            <div>
+              <p className="text-base text-gray-700 mb-4">
+                Portfolio Templates are pre-defined investment templates for clients. 
+                Managing portfolio templates allows you to create and apply investment strategies consistently.
+              </p>
+              <div className="mt-6">
+                <Link
+                  to={getEntityLink(activeTab)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  View All Portfolio Templates
+                </Link>
               </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+              <div className="mt-8 border-t border-gray-200 pt-6">
+                <h3 className="text-lg font-medium text-gray-900">Portfolio Template Management Features</h3>
+                <ul className="mt-4 space-y-2 text-base text-gray-700">
+                  <li className="flex items-start">
+                    <svg className="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Create and manage portfolio models
+                  </li>
+                  <li className="flex items-start">
+                    <svg className="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Set fund allocations within portfolios
+                  </li>
+                  <li className="flex items-start">
+                    <svg className="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Track portfolio performance
+                  </li>
+                </ul>
+
               </div>
             </div>
           )}

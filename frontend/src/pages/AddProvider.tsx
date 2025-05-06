@@ -83,7 +83,7 @@ const AddProvider: React.FC = () => {
     try {
       setIsSubmitting(true);
       await api.post('/available_providers', formData);
-      navigate('/providers');
+      navigate('/definitions/providers');
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to create provider');
       console.error('Error creating provider:', err);
@@ -94,18 +94,16 @@ const AddProvider: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="mb-6 bg-white shadow-sm rounded-lg border border-gray-100 relative">
-        <Link to="/providers" className="absolute left-4 top-4 text-fuchsia-600 hover:text-fuchsia-900 transition-colors duration-200">
-          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-        </Link>
-        <div className="flex flex-col p-6">
-          <div className="pl-9">
-            <h1 className="text-4xl font-normal text-gray-900 font-sans tracking-wide">
-              Add Provider
-            </h1>
-          </div>
+
+      <div className="mb-6">
+        <div className="flex items-center">
+          <Link to="/definitions/providers" className="text-indigo-600 hover:text-indigo-900 mr-2">
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+          </Link>
+          <h1 className="text-3xl font-bold text-gray-900">Add Provider</h1>
+
         </div>
       </div>
 
@@ -202,8 +200,10 @@ const AddProvider: React.FC = () => {
 
           <div className="mt-10 flex justify-end">
             <Link
-              to="/providers"
-              className="mr-4 bg-white py-3 px-6 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-fuchsia-500"
+
+              to="/definitions/providers"
+              className="mr-4 bg-white py-3 px-6 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+
             >
               Cancel
             </Link>

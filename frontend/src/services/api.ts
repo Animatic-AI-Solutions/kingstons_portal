@@ -10,7 +10,7 @@ import axios from 'axios';
 
 // Create axios instance with the correct baseURL that works with Vite's proxy
 const api = axios.create({
-  baseURL: '',  // Empty base URL since we're using the request interceptor to add /api prefix
+  baseURL: '',  // Empty base URL since we're using Vite's proxy configuration
   headers: {
     'Content-Type': 'application/json',
   },
@@ -212,6 +212,15 @@ export const updateFundValuation = (valuationId: number, data: {
  */
 export const deleteFundValuation = (valuationId: number) => {
   return api.delete(`fund_valuations/${valuationId}`);
+};
+
+/**
+ * Calculate IRRs for all portfolio funds in a portfolio
+ * @param {number} portfolioId - Portfolio ID
+ * @returns {Promise} - API response with calculation results
+ */
+export const calculatePortfolioIRR = (portfolioId: number) => {
+  return api.post(`portfolios/${portfolioId}/calculate-irr`);
 };
 
 export default api; 

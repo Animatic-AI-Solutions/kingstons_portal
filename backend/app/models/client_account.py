@@ -9,38 +9,42 @@ class DateEncoder(json.JSONEncoder):
             return obj.isoformat()
         return super().default(obj)
 
-class ClientAccountBase(BaseModel):
+class ClientproductBase(BaseModel):
     client_id: int
-    available_products_id: int
-    account_name: Optional[str] = None
+    product_name: Optional[str] = None
     status: str = "active"
     start_date: date
     end_date: Optional[date] = None
     weighting: Optional[float] = 0.0
+    plan_number: Optional[str] = None
+    provider_id: Optional[int] = None
+    product_type: Optional[str] = None
     
     model_config = ConfigDict(
         json_encoders={date: lambda d: d.isoformat()},
         from_attributes=True
     )
 
-class ClientAccountCreate(ClientAccountBase):
-    pass
+class ClientproductCreate(ClientproductBase):
+    skip_portfolio_creation: Optional[bool] = False
 
-class ClientAccountUpdate(BaseModel):
+class ClientproductUpdate(BaseModel):
     client_id: Optional[int] = None
-    available_products_id: Optional[int] = None
-    account_name: Optional[str] = None
+    product_name: Optional[str] = None
     status: Optional[str] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     weighting: Optional[float] = None
+    plan_number: Optional[str] = None
+    provider_id: Optional[int] = None
+    product_type: Optional[str] = None
     
     model_config = ConfigDict(
         json_encoders={date: lambda d: d.isoformat()},
         from_attributes=True
     )
 
-class ClientAccountInDB(ClientAccountBase):
+class ClientproductInDB(ClientproductBase):
     id: int
     created_at: datetime
 
@@ -49,6 +53,6 @@ class ClientAccountInDB(ClientAccountBase):
         from_attributes=True
     )
 
-class ClientAccount(ClientAccountInDB):
-    """Complete client account model returned to frontend"""
+class Clientproduct(ClientproductInDB):
+    """Complete client product model returned to frontend"""
     pass

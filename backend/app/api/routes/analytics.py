@@ -28,7 +28,7 @@ async def get_dashboard_stats(db = Depends(get_db)):
         stats = {
             "totalFUM": 0,
             "companyIRR": 0,
-            "totalAccounts": 0,
+            "totalproducts": 0,
             "totalClients": 0,
             "totalPortfolios": 0
         }
@@ -37,7 +37,7 @@ async def get_dashboard_stats(db = Depends(get_db)):
         company_irr_result = await calculate_company_irr(db)
         stats["companyIRR"] = company_irr_result["company_irr"]
         stats["totalClients"] = company_irr_result["client_count"]
-        stats["totalAccounts"] = company_irr_result["total_accounts"]
+        stats["totalproducts"] = company_irr_result["total_products"]
         
         # Calculate total FUM from portfolio funds
         portfolio_funds_result = db.table("portfolio_funds").select("amount_invested").execute()
@@ -57,7 +57,7 @@ async def get_dashboard_stats(db = Depends(get_db)):
 @router.get("/analytics/performance_data")
 async def get_performance_data(
     date_range: Literal["all-time", "ytd", "12m", "3y", "5y"] = "all-time",
-    entity_type: Literal["overview", "clients", "accounts", "portfolios", "funds", "products", "providers"] = "overview",
+    entity_type: Literal["overview", "clients", "products", "portfolios", "funds", "products", "providers"] = "overview",
     sort_order: Literal["highest", "lowest"] = "highest",
     limit: int = Query(5, ge=1, le=100),
     db = Depends(get_db)
@@ -94,11 +94,11 @@ async def get_performance_data(
                 
                 for pf in pf_result.data:
                     # Get latest IRR value for this portfolio fund
-                    irr_result = db.table("irr_values").select("value").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                    irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                     
                     if irr_result.data and pf["amount_invested"]:
                         total_fum += pf["amount_invested"]
-                        weighted_irr += (irr_result.data[0]["value"] * pf["amount_invested"])
+                        weighted_irr += (irr_result.data[0]["irr_result"] * pf["amount_invested"])
                         total_weight += pf["amount_invested"]
                 
                 if total_weight > 0:
@@ -131,11 +131,11 @@ async def get_performance_data(
                 total_weight = 0
                 
                 for pf in pf_result.data:
-                    irr_result = db.table("irr_values").select("value").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                    irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                     
                     if irr_result.data and pf["amount_invested"]:
                         total_fum += pf["amount_invested"]
-                        weighted_irr += (irr_result.data[0]["value"] * pf["amount_invested"])
+                        weighted_irr += (irr_result.data[0]["irr_result"] * pf["amount_invested"])
                         total_weight += pf["amount_invested"]
                 
                 if total_weight > 0:
@@ -155,13 +155,13 @@ async def get_performance_data(
             )
             response["performanceData"] = response["performanceData"][:limit]
 
-        elif entity_type == "accounts":
-            # Get accounts with their latest IRR values and total FUM
-            accounts_result = db.table("client_accounts").select("*").execute()
+        elif entity_type == "products":
+            # Get products with their latest IRR values and total FUM
+            products_result = db.table("client_products").select("*").execute()
             
-            for account in accounts_result.data:
-                # Get account holdings and their portfolio funds
-                holdings_result = db.table("account_holdings").select("portfolio_id").eq("client_account_id", account["id"]).execute()
+            for product in products_result.data:
+                # Get product holdings and their portfolio funds
+                holdings_result = db.table("product_holdings").select("portfolio_id").eq("client_product_id", product["id"]).execute()
                 
                 total_fum = 0
                 weighted_irr = 0
@@ -172,25 +172,25 @@ async def get_performance_data(
                         pf_result = db.table("portfolio_funds").select("id,amount_invested").eq("portfolio_id", holding["portfolio_id"]).execute()
                         
                         for pf in pf_result.data:
-                            irr_result = db.table("irr_values").select("value").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                            irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                             
                             if irr_result.data and pf["amount_invested"]:
                                 total_fum += pf["amount_invested"]
-                                weighted_irr += (irr_result.data[0]["value"] * pf["amount_invested"])
+                                weighted_irr += (irr_result.data[0]["irr_result"] * pf["amount_invested"])
                                 total_weight += pf["amount_invested"]
                 
                 if total_weight > 0:
-                    # Get client name for account
-                    client_result = db.table("clients").select("name").eq("id", account["client_id"]).execute()
+                    # Get client name for product
+                    client_result = db.table("clients").select("name").eq("id", product["client_id"]).execute()
                     client_name = client_result.data[0]["name"] if client_result.data else "Unknown Client"
                     
                     response["performanceData"].append({
-                        "id": account["id"],
-                        "name": account["account_name"] or f"{client_name}'s Account",
-                        "type": "account",
+                        "id": product["id"],
+                        "name": product["product_name"] or f"{client_name}'s product",
+                        "type": "product",
                         "irr": weighted_irr / total_weight,
                     "fum": total_fum,
-                        "startDate": account["start_date"]
+                        "startDate": product["start_date"]
                     })
             
             # Sort by IRR
@@ -205,28 +205,28 @@ async def get_performance_data(
             clients_result = db.table("clients").select("*").execute()
             
             for client in clients_result.data:
-                # Get client accounts
-                accounts_result = db.table("client_accounts").select("id").eq("client_id", client["id"]).execute()
+                # Get client products
+                products_result = db.table("client_products").select("id").eq("client_id", client["id"]).execute()
                 
                 total_fum = 0
                 weighted_irr = 0
                 total_weight = 0
                 earliest_start_date = None
                 
-                for account in accounts_result.data:
-                    # Get account holdings and their portfolio funds
-                    holdings_result = db.table("account_holdings").select("portfolio_id,start_date").eq("client_account_id", account["id"]).execute()
+                for product in products_result.data:
+                    # Get product holdings and their portfolio funds
+                    holdings_result = db.table("product_holdings").select("portfolio_id,start_date").eq("client_product_id", product["id"]).execute()
                     
                     for holding in holdings_result.data:
                         if holding["portfolio_id"]:
                             pf_result = db.table("portfolio_funds").select("id,amount_invested").eq("portfolio_id", holding["portfolio_id"]).execute()
                             
                             for pf in pf_result.data:
-                                irr_result = db.table("irr_values").select("value").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                                irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                                 
                                 if irr_result.data and pf["amount_invested"]:
                                     total_fum += pf["amount_invested"]
-                                    weighted_irr += (irr_result.data[0]["value"] * pf["amount_invested"])
+                                    weighted_irr += (irr_result.data[0]["irr_result"] * pf["amount_invested"])
                                     total_weight += pf["amount_invested"]
                                     
                                     if not earliest_start_date or (holding["start_date"] and holding["start_date"] < earliest_start_date):
@@ -264,11 +264,11 @@ async def get_performance_data(
                 total_weight = 0
                 
                 for pf in pf_result.data:
-                    irr_result = db.table("irr_values").select("value").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                    irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                     
                     if irr_result.data and pf["amount_invested"]:
                         total_fum += pf["amount_invested"]
-                        weighted_irr += (irr_result.data[0]["value"] * pf["amount_invested"])
+                        weighted_irr += (irr_result.data[0]["irr_result"] * pf["amount_invested"])
                         total_weight += pf["amount_invested"]
                 
                 if total_weight > 0:
@@ -291,11 +291,11 @@ async def get_performance_data(
                 total_weight = 0
                 
                 for pf in pf_result.data:
-                    irr_result = db.table("irr_values").select("value").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                    irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                     
                     if irr_result.data and pf["amount_invested"]:
                         total_fum += pf["amount_invested"]
-                        weighted_irr += (irr_result.data[0]["value"] * pf["amount_invested"])
+                        weighted_irr += (irr_result.data[0]["irr_result"] * pf["amount_invested"])
                         total_weight += pf["amount_invested"]
                 
                 if total_weight > 0:
@@ -308,10 +308,10 @@ async def get_performance_data(
                         "startDate": portfolio["start_date"]
                     })
             
-            # Get top accounts
-            accounts_result = db.table("client_accounts").select("*").execute()
-            for account in accounts_result.data:
-                holdings_result = db.table("account_holdings").select("portfolio_id").eq("client_account_id", account["id"]).execute()
+            # Get top products
+            products_result = db.table("client_products").select("*").execute()
+            for product in products_result.data:
+                holdings_result = db.table("product_holdings").select("portfolio_id").eq("client_product_id", product["id"]).execute()
                 
                 total_fum = 0
                 weighted_irr = 0
@@ -322,49 +322,49 @@ async def get_performance_data(
                         pf_result = db.table("portfolio_funds").select("id,amount_invested").eq("portfolio_id", holding["portfolio_id"]).execute()
                         
                     for pf in pf_result.data:
-                        irr_result = db.table("irr_values").select("value").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                        irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                             
                         if irr_result.data and pf["amount_invested"]:
                             total_fum += pf["amount_invested"]
-                            weighted_irr += (irr_result.data[0]["value"] * pf["amount_invested"])
+                            weighted_irr += (irr_result.data[0]["irr_result"] * pf["amount_invested"])
                             total_weight += pf["amount_invested"]
                 
                 if total_weight > 0:
-                    client_result = db.table("clients").select("name").eq("id", account["client_id"]).execute()
+                    client_result = db.table("clients").select("name").eq("id", product["client_id"]).execute()
                     client_name = client_result.data[0]["name"] if client_result.data else "Unknown Client"
                     
                     all_performers.append({
-                        "id": account["id"],
-                        "name": account["account_name"] or f"{client_name}'s Account",
-                        "type": "account",
+                        "id": product["id"],
+                        "name": product["product_name"] or f"{client_name}'s product",
+                        "type": "product",
                         "irr": weighted_irr / total_weight,
                         "fum": total_fum,
-                        "startDate": account["start_date"]
+                        "startDate": product["start_date"]
                     })
             
             # Get top clients
             clients_result = db.table("clients").select("*").execute()
             for client in clients_result.data:
-                accounts_result = db.table("client_accounts").select("id").eq("client_id", client["id"]).execute()
+                products_result = db.table("client_products").select("id").eq("client_id", client["id"]).execute()
                 
                 total_fum = 0
                 weighted_irr = 0
                 total_weight = 0
                 earliest_start_date = None
                 
-                for account in accounts_result.data:
-                    holdings_result = db.table("account_holdings").select("portfolio_id,start_date").eq("client_account_id", account["id"]).execute()
+                for product in products_result.data:
+                    holdings_result = db.table("product_holdings").select("portfolio_id,start_date").eq("client_product_id", product["id"]).execute()
                     
                     for holding in holdings_result.data:
                         if holding["portfolio_id"]:
                             pf_result = db.table("portfolio_funds").select("id,amount_invested").eq("portfolio_id", holding["portfolio_id"]).execute()
                             
                             for pf in pf_result.data:
-                                irr_result = db.table("irr_values").select("value").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                                irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                                 
                                 if irr_result.data and pf["amount_invested"]:
                                     total_fum += pf["amount_invested"]
-                                    weighted_irr += (irr_result.data[0]["value"] * pf["amount_invested"])
+                                    weighted_irr += (irr_result.data[0]["irr_result"] * pf["amount_invested"])
                                     total_weight += pf["amount_invested"]
                                     
                                     if not earliest_start_date or (holding["start_date"] and holding["start_date"] < earliest_start_date):
@@ -571,14 +571,14 @@ async def calculate_company_irr(db = Depends(get_db)):
             return {
                 "company_irr": 0,
                 "client_count": 0,
-                "total_accounts": 0,
+                "total_products": 0,
                 "total_portfolio_funds": 0,
                 "total_investment": 0
             }
             
         client_irrs = []
         client_investments = []  # Store total investment for each client
-        total_accounts = 0
+        total_products = 0
         total_portfolio_funds = 0
         
         # Calculate IRR and total investment for each client
@@ -587,15 +587,15 @@ async def calculate_company_irr(db = Depends(get_db)):
                 # Get client's IRR and portfolio fund count
                 client_result = await calculate_client_irr(client["id"], db)
                 
-                # Get all accounts for this client to sum up total investment
-                accounts_result = db.table("client_accounts").select("id").eq("client_id", client["id"]).execute()
+                # Get all products for this client to sum up total investment
+                products_result = db.table("client_products").select("id").eq("client_id", client["id"]).execute()
                 client_total_investment = 0
                 
-                for account in accounts_result.data:
-                    # Get all holdings for this account
-                    holdings_result = db.table("account_holdings")\
+                for product in products_result.data:
+                    # Get all holdings for this product
+                    holdings_result = db.table("product_holdings")\
                         .select("portfolio_id")\
-                        .eq("client_account_id", account["id"])\
+                        .eq("client_product_id", product["id"])\
                         .execute()
                         
                     for holding in holdings_result.data:
@@ -614,7 +614,7 @@ async def calculate_company_irr(db = Depends(get_db)):
                 if client_result["irr"] != 0 and client_total_investment > 0:
                     client_irrs.append(client_result["irr"])
                     client_investments.append(client_total_investment)
-                    total_accounts += client_result["account_count"]
+                    total_products += client_result["product_count"]
                     total_portfolio_funds += client_result["portfolio_fund_count"]
                     logger.info(f"Added client {client['id']} IRR: {client_result['irr']}% "
                               f"with investment {client_total_investment}")
@@ -639,7 +639,7 @@ async def calculate_company_irr(db = Depends(get_db)):
         return {
             "company_irr": company_irr,
             "client_count": len(client_irrs),
-            "total_accounts": total_accounts,
+            "total_products": total_products,
             "total_portfolio_funds": total_portfolio_funds,
             "total_investment": total_investment
         }
@@ -651,10 +651,10 @@ async def calculate_company_irr(db = Depends(get_db)):
 @router.get("/analytics/client/{client_id}/irr")
 async def calculate_client_irr(client_id: int, db = Depends(get_db)):
     """
-    Calculate the weighted average IRR across all accounts (active and dormant) for a specific client.
+    Calculate the weighted average IRR across all products (active and dormant) for a specific client.
     This is done by:
-    1. Finding all accounts for the client
-    2. For each account, finding its portfolio
+    1. Finding all products for the client
+    2. For each product, finding its portfolio
     3. For each portfolio, finding its portfolio funds
     4. For each portfolio fund, getting its most recent IRR value and amount invested
     5. Calculating weighted average IRR using amount_invested as weights
@@ -662,22 +662,22 @@ async def calculate_client_irr(client_id: int, db = Depends(get_db)):
     try:
         logger.info(f"Calculating IRR for client {client_id}")
         
-        # Get all accounts for the client
-        accounts_result = db.table("client_accounts").select("*").eq("client_id", client_id).execute()
+        # Get all products for the client
+        products_result = db.table("client_products").select("*").eq("client_id", client_id).execute()
         
-        if not accounts_result.data:
-            logger.info(f"No accounts found for client {client_id}")
-            return {"client_id": client_id, "irr": 0, "account_count": 0}
+        if not products_result.data:
+            logger.info(f"No products found for client {client_id}")
+            return {"client_id": client_id, "irr": 0, "product_count": 0}
             
         all_irr_values = []
         all_weights = []  # Store amount_invested for each IRR value
-        account_count = len(accounts_result.data)
+        product_count = len(products_result.data)
         
-        for account in accounts_result.data:
-            # Get all holdings for this account (both active and dormant)
-            holdings_result = db.table("account_holdings")\
+        for product in products_result.data:
+            # Get all holdings for this product (both active and dormant)
+            holdings_result = db.table("product_holdings")\
                 .select("portfolio_id")\
-                .eq("client_account_id", account["id"])\
+                .eq("client_product_id", product["id"])\
                 .execute()
                 
             if not holdings_result.data:
@@ -698,16 +698,11 @@ async def calculate_client_irr(client_id: int, db = Depends(get_db)):
                     
                 # Get the most recent IRR value for each portfolio fund
                 for pf in portfolio_funds_result.data:
-                    irr_result = db.table("irr_values")\
-                        .select("value")\
-                        .eq("fund_id", pf["id"])\
-                        .order("date", desc=True)\
-                        .limit(1)\
-                        .execute()
+                    irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                         
-                    if irr_result.data and len(irr_result.data) > 0 and irr_result.data[0]["value"] is not None:
+                    if irr_result.data and len(irr_result.data) > 0 and irr_result.data[0]["irr_result"] is not None:
                         # IRR is stored as percentage in the database
-                        irr_value = irr_result.data[0]["value"]
+                        irr_value = irr_result.data[0]["irr_result"]
                         amount_invested = float(pf["amount_invested"] or 0)
                         
                         if amount_invested > 0:  # Only include funds with positive investment
@@ -730,7 +725,7 @@ async def calculate_client_irr(client_id: int, db = Depends(get_db)):
         return {
             "client_id": client_id,
             "irr": client_irr,  # Return as percentage
-            "account_count": account_count,
+            "product_count": product_count,
             "portfolio_fund_count": len(all_irr_values)
         }
         
@@ -738,31 +733,31 @@ async def calculate_client_irr(client_id: int, db = Depends(get_db)):
         logger.error(f"Error calculating client IRR: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error calculating client IRR: {str(e)}")
 
-@router.get("/analytics/account/{account_id}/irr")
-async def calculate_account_irr(account_id: int, db = Depends(get_db)):
+@router.get("/analytics/product/{product_id}/irr")
+async def calculate_product_irr(product_id: int, db = Depends(get_db)):
     """
-    Calculate the weighted average IRR for a specific account.
+    Calculate the weighted average IRR for a specific product.
     This is done by:
-    1. Finding the account's current portfolio through account_holdings
+    1. Finding the product's current portfolio through product_holdings
     2. For each portfolio fund in that portfolio:
        - Get its most recent IRR value
        - Weight it by (amount_invested in this fund / total amount invested in all funds in this portfolio)
-    3. Sum the weighted IRRs to get the account's total IRR
+    3. Sum the weighted IRRs to get the product's total IRR
     """
     try:
-        logger.info(f"Calculating IRR for account {account_id}")
+        logger.info(f"Calculating IRR for product {product_id}")
         
-        # Get the active holding for this account
-        holdings_result = db.table("account_holdings")\
+        # Get the active holding for this product
+        holdings_result = db.table("product_holdings")\
             .select("portfolio_id")\
-            .eq("client_account_id", account_id)\
+            .eq("client_product_id", product_id)\
             .eq("status", "active")\
             .execute()
             
         if not holdings_result.data:
-            logger.info(f"No active holding found for account {account_id}")
+            logger.info(f"No active holding found for product {product_id}")
             return {
-                "account_id": account_id,
+                "product_id": product_id,
                 "irr": 0,
                 "portfolio_fund_count": 0,
                 "total_invested": 0,
@@ -771,9 +766,9 @@ async def calculate_account_irr(account_id: int, db = Depends(get_db)):
             
         portfolio_id = holdings_result.data[0]["portfolio_id"]
         if not portfolio_id:
-            logger.info(f"No portfolio assigned to active holding for account {account_id}")
+            logger.info(f"No portfolio assigned to active holding for product {product_id}")
             return {
-                "account_id": account_id,
+                "product_id": product_id,
                 "irr": 0,
                 "portfolio_fund_count": 0,
                 "total_invested": 0,
@@ -789,7 +784,7 @@ async def calculate_account_irr(account_id: int, db = Depends(get_db)):
         if not portfolio_funds_result.data:
             logger.info(f"No portfolio funds found for portfolio {portfolio_id}")
             return {
-                "account_id": account_id,
+                "product_id": product_id,
                 "irr": 0,
                 "portfolio_fund_count": 0,
                 "total_invested": 0,
@@ -807,7 +802,7 @@ async def calculate_account_irr(account_id: int, db = Depends(get_db)):
         if portfolio_total == 0:
             logger.info(f"No investments found in portfolio {portfolio_id}")
             return {
-                "account_id": account_id,
+                "product_id": product_id,
                 "irr": 0,
                 "portfolio_fund_count": len(portfolio_funds_result.data),
                 "total_invested": 0,
@@ -818,15 +813,10 @@ async def calculate_account_irr(account_id: int, db = Depends(get_db)):
         for pf in portfolio_funds_result.data:
             amount_invested = float(pf["amount_invested"] or 0)
             if amount_invested > 0:  # Only include funds with positive investment
-                irr_result = db.table("irr_values")\
-                    .select("value, date")\
-                    .eq("fund_id", pf["id"])\
-                    .order("date", desc=True)\
-                    .limit(1)\
-                    .execute()
+                irr_result = db.table("irr_values").select("irr_result, date").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                     
-                if irr_result.data and len(irr_result.data) > 0 and irr_result.data[0]["value"] is not None:
-                    irr_value = irr_result.data[0]["value"]
+                if irr_result.data and len(irr_result.data) > 0 and irr_result.data[0]["irr_result"] is not None:
+                    irr_value = irr_result.data[0]["irr_result"]
                     weight = amount_invested / portfolio_total  # Weight by proportion of total portfolio investment
                     
                     all_irr_values.append(irr_value)
@@ -835,7 +825,7 @@ async def calculate_account_irr(account_id: int, db = Depends(get_db)):
                     
                     # Track the latest IRR date
                     if irr_result.data[0]["date"]:
-                        current_date = datetime.fromisoformat(irr_result.data[0]["date"].replace('Z', '+00:00'))
+                        current_date = datetime.fromisoformat(irr_result.data[0]["date"].replace('Z', '+00:00') if isinstance(irr_result.data[0]["date"], str) else irr_result.data[0]["date"].isoformat())
                         if latest_irr_date is None or current_date > latest_irr_date:
                             latest_irr_date = current_date
                     
@@ -843,23 +833,23 @@ async def calculate_account_irr(account_id: int, db = Depends(get_db)):
         
         # Calculate weighted average IRR
         if all_irr_values and all_weights:
-            account_irr = sum(irr * weight for irr, weight in zip(all_irr_values, all_weights))
-            logger.info(f"Calculated weighted account IRR: {account_irr}% from {len(all_irr_values)} IRR values")
+            product_irr = sum(irr * weight for irr, weight in zip(all_irr_values, all_weights))
+            logger.info(f"Calculated weighted product IRR: {product_irr}% from {len(all_irr_values)} IRR values")
         else:
-            account_irr = 0
+            product_irr = 0
             logger.info("No valid IRR values found for calculation")
         
         return {
-            "account_id": account_id,
-            "irr": account_irr,  # Return as percentage
+            "product_id": product_id,
+            "irr": product_irr,  # Return as percentage
             "portfolio_fund_count": len(portfolio_funds_result.data),
             "total_invested": total_invested,
             "date": latest_irr_date.isoformat() if latest_irr_date else None
         }
         
     except Exception as e:
-        logger.error(f"Error calculating account IRR: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error calculating account IRR: {str(e)}") 
+        logger.error(f"Error calculating product IRR: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error calculating product IRR: {str(e)}") 
 
 @router.get("/analytics/client_risks")
 async def get_client_risks(db = Depends(get_db)):
@@ -867,8 +857,8 @@ async def get_client_risks(db = Depends(get_db)):
     Calculate and return the weighted average risk for each client based on their investments.
     The risk is calculated as:
     1. Portfolio level: Weighted average of fund risks based on amount_invested
-    2. Account level: Weighted average of portfolio risks based on total investment
-    3. Client level: Weighted average of account risks based on total investment
+    2. product level: Weighted average of portfolio risks based on total investment
+    3. Client level: Weighted average of product risks based on total investment
     """
     try:
         # Get all active clients
@@ -878,32 +868,32 @@ async def get_client_risks(db = Depends(get_db)):
         
         for client in clients_result.data:
             try:
-                # Get all accounts for this client
-                accounts_result = db.table("client_accounts")\
+                # Get all products for this client
+                products_result = db.table("client_products")\
                     .select("*")\
                     .eq("client_id", client["id"])\
                     .eq("status", "active")\
                     .execute()
                 
-                if not accounts_result.data:
+                if not products_result.data:
                     continue
                 
                 total_client_investment = 0
                 weighted_risk_sum = 0
                 
-                for account in accounts_result.data:
-                    # Get all holdings for this account
-                    holdings_result = db.table("account_holdings")\
+                for product in products_result.data:
+                    # Get all holdings for this product
+                    holdings_result = db.table("product_holdings")\
                         .select("portfolio_id")\
-                        .eq("client_account_id", account["id"])\
+                        .eq("client_product_id", product["id"])\
                         .eq("status", "active")\
                         .execute()
                     
                     if not holdings_result.data:
                         continue
                     
-                    account_investment = 0
-                    account_risk_sum = 0
+                    product_investment = 0
+                    product_risk_sum = 0
                     
                     for holding in holdings_result.data:
                         if not holding["portfolio_id"]:
@@ -939,13 +929,13 @@ async def get_client_risks(db = Depends(get_db)):
                         
                         if portfolio_investment > 0:
                             portfolio_risk = portfolio_risk_sum / portfolio_investment
-                            account_investment += portfolio_investment
-                            account_risk_sum += portfolio_risk * portfolio_investment
+                            product_investment += portfolio_investment
+                            product_risk_sum += portfolio_risk * portfolio_investment
                     
-                    if account_investment > 0:
-                        account_risk = account_risk_sum / account_investment
-                        total_client_investment += account_investment
-                        weighted_risk_sum += account_risk * account_investment
+                    if product_investment > 0:
+                        product_risk = product_risk_sum / product_investment
+                        total_client_investment += product_investment
+                        weighted_risk_sum += product_risk * product_investment
                 
                 if total_client_investment > 0:
                     client_risk = weighted_risk_sum / total_client_investment
