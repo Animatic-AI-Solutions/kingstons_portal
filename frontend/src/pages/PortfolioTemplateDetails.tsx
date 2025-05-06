@@ -5,7 +5,6 @@ import { useAuth } from '../context/AuthContext';
 interface PortfolioTemplate {
   id: number;
   name: string;
-  available_products_id: number | null;
   created_at: string;
   funds: PortfolioTemplateFund[];
 }
@@ -25,20 +24,11 @@ interface PortfolioTemplateFund {
   };
 }
 
-interface Product {
-  id: number;
-  product_name: string;
-  product_type: string;
-  status: string;
-  available_providers_id: number;
-}
-
 const PortfolioTemplateDetails: React.FC = () => {
   const { portfolioId } = useParams<{ portfolioId: string }>();
   const navigate = useNavigate();
   const { api } = useAuth();
   const [template, setTemplate] = useState<PortfolioTemplate | null>(null);
-  const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -48,28 +38,44 @@ const PortfolioTemplateDetails: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
-    fetchPortfolioTemplate();
+    if (portfolioId && portfolioId !== 'undefined') {
+      fetchPortfolioTemplate();
+    } else {
+      setError('No portfolio template ID provided');
+      setIsLoading(false);
+    }
   }, [portfolioId]);
 
   const fetchPortfolioTemplate = async () => {
     try {
       setIsLoading(true);
+      console.log(`Fetching portfolio template with ID: ${portfolioId}`);
       const response = await api.get(`/available_portfolios/${portfolioId}`);
-      // If the portfolio template has an associated product, fetch that too
-      if (response.data.available_products_id) {
-        const productResponse = await api.get(`/available_products/${response.data.available_products_id}`);
-        setProduct(productResponse.data);
-      }
+      console.log('Portfolio template data received:', response.data);
+      
       setTemplate(response.data);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to fetch portfolio template');
+      console.error('Error fetching portfolio template:', err);
+      if (err.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        if (Array.isArray(detail)) {
+          setError(detail.map(item => typeof item === 'object' ? 
+            (item.msg || JSON.stringify(item)) : String(item)).join(', '));
+        } else if (typeof detail === 'object') {
+          setError(JSON.stringify(detail));
+        } else {
+          setError(String(detail));
+        }
+      } else {
+        setError('Failed to fetch portfolio template');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleBack = () => {
-    navigate('/portfolios');
+    navigate('/definitions/portfolio-templates');
   };
 
   const handleCreateClick = () => {
@@ -85,18 +91,32 @@ const PortfolioTemplateDetails: React.FC = () => {
 
     try {
       setIsCreating(true);
+      setError(null);
       const response = await api.post('/available_portfolios/from-template', {
         template_id: parseInt(portfolioId as string),
         portfolio_name: customName.trim()
       });
       
       // Navigate to the newly created portfolio
-      navigate(`/portfolios/${response.data.id}`);
+      navigate(`/definitions/portfolios/${response.data.id}`);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to create portfolio from template');
+      console.error('Error creating portfolio from template:', err);
+      if (err.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        if (Array.isArray(detail)) {
+          setError(detail.map(item => typeof item === 'object' ? 
+            (item.msg || JSON.stringify(item)) : String(item)).join(', '));
+        } else if (typeof detail === 'object') {
+          setError(JSON.stringify(detail));
+        } else {
+          setError(String(detail));
+        }
+      } else {
+        setError('Failed to create portfolio from template');
+      }
+      setShowCreateModal(false);
     } finally {
       setIsCreating(false);
-      setShowCreateModal(false);
     }
   };
 
@@ -112,9 +132,22 @@ const PortfolioTemplateDetails: React.FC = () => {
     try {
       setIsDeleting(true);
       await api.delete(`/available_portfolios/${portfolioId}`);
-      navigate('/portfolio-templates');
+      navigate('/definitions/portfolio-templates');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to delete portfolio template');
+      console.error('Error deleting portfolio template:', err);
+      if (err.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        if (Array.isArray(detail)) {
+          setError(detail.map(item => typeof item === 'object' ? 
+            (item.msg || JSON.stringify(item)) : String(item)).join(', '));
+        } else if (typeof detail === 'object') {
+          setError(JSON.stringify(detail));
+        } else {
+          setError(String(detail));
+        }
+      } else {
+        setError('Failed to delete portfolio template');
+      }
     } finally {
       setIsDeleting(false);
       setShowDeleteConfirm(false);
@@ -147,7 +180,9 @@ const PortfolioTemplateDetails: React.FC = () => {
               </svg>
             </div>
             <div className="ml-3">
-              <p className="text-red-700 text-base">{error}</p>
+              <p className="text-red-700 text-base">
+                {typeof error === 'string' ? error : 'An error occurred while fetching portfolio template details'}
+              </p>
             </div>
           </div>
         </div>
@@ -198,16 +233,16 @@ const PortfolioTemplateDetails: React.FC = () => {
             <svg className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to Templates
+            Back to Portfolio Templates
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">{template.name || 'Unnamed Template'}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{template?.name || 'Unnamed Template'}</h1>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-0">
           <button
             onClick={handleCreateClick}
             className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
           >
-            Create Portfolio
+            Create Portfolio from Template
           </button>
           <button
             onClick={handleDeleteClick}
@@ -225,29 +260,17 @@ const PortfolioTemplateDetails: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <p className="text-sm font-medium text-gray-500">Template Name</p>
-              <p className="mt-1 text-base text-gray-900">{template.name || 'Unnamed Template'}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-500">Associated Product</p>
-              <p className="mt-1 text-base text-gray-900">
-                {product ? (
-                  <Link to={`/products/${product.id}`} className="text-indigo-600 hover:text-indigo-800">
-                    {product.product_name}
-                  </Link>
-                ) : (
-                  'None'
-                )}
-              </p>
+              <p className="mt-1 text-base text-gray-900">{template?.name || 'Unnamed Template'}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">Created Date</p>
               <p className="mt-1 text-base text-gray-900">
-                {new Date(template.created_at).toLocaleDateString()}
+                {template?.created_at ? new Date(template.created_at).toLocaleDateString() : 'N/A'}
               </p>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">Number of Funds</p>
-              <p className="mt-1 text-base text-gray-900">{template.funds?.length || 0}</p>
+              <p className="mt-1 text-base text-gray-900">{template?.funds?.length || 0}</p>
             </div>
           </div>
         </div>
@@ -257,7 +280,7 @@ const PortfolioTemplateDetails: React.FC = () => {
       <div className="bg-white shadow rounded-lg">
         <div className="p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Template Funds</h2>
-          {template.funds && template.funds.length > 0 ? (
+          {template?.funds && template.funds.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -278,22 +301,26 @@ const PortfolioTemplateDetails: React.FC = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {template.funds.slice().sort((a, b) => 
-                    a.available_funds.fund_name.localeCompare(b.available_funds.fund_name)
+                    (a.available_funds?.fund_name || '').localeCompare(b.available_funds?.fund_name || '')
                   ).map((fund) => (
                     <tr key={fund.id}>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <Link to={`/funds/${fund.available_funds.id}`} className="text-indigo-600 hover:text-indigo-800">
-                          {fund.available_funds.fund_name}
-                        </Link>
+                        {fund.available_funds ? (
+                          <Link to={`/definitions/funds/${fund.available_funds.id}`} className="text-indigo-600 hover:text-indigo-800">
+                            {fund.available_funds.fund_name}
+                          </Link>
+                        ) : (
+                          `Fund ID: ${fund.fund_id}`
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {fund.available_funds.isin_number || 'N/A'}
+                        {fund.available_funds?.isin_number || 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {formatPercentage(fund.target_weighting)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {fund.available_funds.risk_factor || 'N/A'}
+                        {fund.available_funds?.risk_factor || 'N/A'}
                       </td>
                     </tr>
                   ))}

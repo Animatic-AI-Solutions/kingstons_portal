@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import AccountDetails from '../pages/AccountDetails';
+import AccountDetails from '../pages/ProductDetails';
 
 // Mock components and hooks
 jest.mock('react-router-dom', () => ({

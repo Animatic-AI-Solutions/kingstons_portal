@@ -18,14 +18,6 @@ interface Provider {
   status: string;
 }
 
-interface Product {
-  id: number;
-  product_name: string;
-  product_type: string;
-  available_providers_id: number;
-  status: string;
-}
-
 interface Fund {
   id: number;
   fund_name: string;
@@ -35,15 +27,17 @@ interface Fund {
   status: string;
 }
 
-interface AccountItem {
+interface ProductItem {
   id: string; // Temporary ID for UI
   client_id: number;
-  available_products_id: number;
-  account_name: string;
+  provider_id: number;
+  product_type: string;
+  product_name: string;
   status: string;
   weighting: number;
   start_date?: dayjs.Dayjs; // Use dayjs type
   portfolio: {
+    id?: number; // Portfolio ID when created or selected
     name: string;
     selectedFunds: number[];
     type: 'template' | 'bespoke';
@@ -58,12 +52,11 @@ interface PortfolioTemplate {
   name: string | null;
 }
 
-const CreateClientAccounts: React.FC = (): JSX.Element => {
+const CreateClientProducts: React.FC = (): JSX.Element => {
   const navigate = useNavigate();
   const { api } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [providers, setProviders] = useState<Provider[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [funds, setFunds] = useState<Fund[]>([]);
   const [availableTemplates, setAvailableTemplates] = useState<PortfolioTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -71,9 +64,9 @@ const CreateClientAccounts: React.FC = (): JSX.Element => {
   
   // Form state
   const [clientId, setClientId] = useState<number | null>(null);
-  const [accounts, setAccounts] = useState<AccountItem[]>([]);
+  const [products, setProducts] = useState<ProductItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [providerProducts, setProviderProducts] = useState<Record<number, Product[]>>({});
+  const [providerProducts, setProviderProducts] = useState<Record<number, any>>({});
   const [availableFundsByProvider, setAvailableFundsByProvider] = useState<Record<number, Fund[]>>({});
   const [isLoadingFunds, setIsLoadingFunds] = useState<Record<string, boolean>>({});
   const [showFundDropdowns, setShowFundDropdowns] = useState<Record<string, boolean>>({});
@@ -118,26 +111,23 @@ const CreateClientAccounts: React.FC = (): JSX.Element => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        console.log("Fetching data for CreateClientAccounts...");
+        console.log("Fetching data for CreateClientProducts...");
         
         // Fetch all necessary data in parallel
         const [
           clientsRes,
           providersRes,
-          productsRes,
           fundsRes,
           portfoliosRes
         ] = await Promise.all([
           api.get('/clients'),
           api.get('/available_providers'),
-          api.get('/available_products'),
           api.get('/funds'),
           api.get('/available_portfolios')
         ]);
         
         setClients(clientsRes.data);
         setProviders(providersRes.data);
-        setProducts(productsRes.data);
         setFunds(fundsRes.data);
         setAvailableTemplates(portfoliosRes.data);
         
@@ -146,7 +136,7 @@ const CreateClientAccounts: React.FC = (): JSX.Element => {
           setClientId(clientsRes.data[0].id);
         }
         
-        console.log("Data fetched successfully for CreateClientAccounts");
+        console.log("Data fetched successfully for CreateClientProducts");
       } catch (err: any) {
         console.error('Error fetching data:', err);
         setError(err.response?.data?.detail || 'Failed to fetch data');
@@ -158,87 +148,119 @@ const CreateClientAccounts: React.FC = (): JSX.Element => {
     fetchData();
   }, [api]);
 
-  // Add a new useEffect to load funds for accounts that already have a product selected
+  // Add a new useEffect to load all available funds on component mount
   useEffect(() => {
-    // Only load funds for accounts that have a product selected but don't have funds loaded yet
-    accounts.forEach(account => {
-      if (account.available_products_id > 0 && !availableFundsByProvider[account.available_products_id]) {
-        loadFundsForProduct(account.available_products_id, account.id);
+    const loadAllFunds = async () => {
+      try {
+        setIsLoading(true);
+        const fundsResponse = await api.get('/funds');
+        setFunds(fundsResponse.data);
+        setFilteredFunds(fundsResponse.data);
+      } catch (err) {
+        console.error('Error loading all funds:', err);
+      } finally {
+        setIsLoading(false);
       }
+    };
+    
+    loadAllFunds();
+  }, [api]);
+
+  // Add a new useEffect to load funds for products that already have a provider selected
+  useEffect(() => {
+    // Only load funds for products that have a provider selected but don't have funds loaded yet
+    products.forEach(product => {
+      loadFundsForProduct(product.provider_id, product.id);
     });
-  }, [accounts.map(account => account.available_products_id).join(',')]); // Only re-run when product selections change
+  }, [products.map(product => product.provider_id).join(',')]); // Only re-run when provider selections change
+
+  // Modify the function to load funds regardless of provider selection
+  const loadFundsForProduct = async (providerId: number, productId: string) => {
+    // We don't need to check for providerId existence anymore since funds should be available regardless
+    setIsLoadingFunds(prev => ({ ...prev, [productId]: true }));
+    
+    try {
+      // We already have funds loaded in the component state, so we can just use those
+      // This function now only tracks loading state for UI purposes
+      setIsLoadingFunds(prev => ({ ...prev, [productId]: false }));
+    } catch (err) {
+      console.error('Error processing funds for product:', err);
+      setIsLoadingFunds(prev => ({ ...prev, [productId]: false }));
+    }
+  };
 
   const handleClientChange = (clientId: number) => {
     setClientId(clientId);
     
-    // Reset accounts when client changes
-    if (accounts.length > 0) {
-      if (window.confirm('Changing client will clear all current accounts. Continue?')) {
-        setAccounts([]);
+    // Reset products when client changes
+    if (products.length > 0) {
+      if (window.confirm('Changing client will clear all current products. Continue?')) {
+        setProducts([]);
       } else {
         return;
       }
     }
   };
 
-  const handleAddAccount = () => {
+  const handleAddProduct = () => {
     if (!clientId) {
       setError('Please select a client first');
       return;
     }
     
-    // Create a new empty account with a temporary ID
-    const newAccount: AccountItem = {
+    // Create a new empty product with a temporary ID
+    const newProduct: ProductItem = {
       id: `temp-${Date.now()}`,
       client_id: clientId,
-      available_products_id: 0,
-      account_name: `Account ${accounts.length + 1}`,
+      provider_id: 0,
+      product_type: '',
+      product_name: `Product ${products.length + 1}`,
       status: 'active',
       weighting: 0, // Set default weighting to 0
       start_date: startDate, // Use the selected start date
       portfolio: {
-        name: '',
+        name: `Portfolio ${products.length + 1}`, // Set a default portfolio name
         selectedFunds: [],
         type: 'bespoke',
         fundWeightings: {}
       }
     };
     
-    setAccounts([...accounts, newAccount]);
+    setProducts([...products, newProduct]);
   };
 
-  const handleRemoveAccount = (id: string) => {
-    setAccounts(prevAccounts => prevAccounts.filter(account => account.id !== id));
+  const handleRemoveProduct = (id: string) => {
+    setProducts(prevProducts => prevProducts.filter(product => product.id !== id));
     setError(null);
   };
 
-  // Update account amounts based on total amount and weightings
-  const updateAccountAmounts = () => {
-    if (accounts.length === 0) return;
+  // Update product amounts based on total amount and weightings
+  const updateProductAmounts = () => {
+    if (products.length === 0) return;
     
-    setAccounts(accounts.map(account => ({
-      ...account,
-      weighting: account.weighting
+    setProducts(products.map(product => ({
+      ...product,
+      weighting: product.weighting
     })));
   };
 
-  const handleAccountChange = (accountId: string, field: string, value: any) => {
-    setAccounts(prevAccounts => {
-      const updatedAccounts = prevAccounts.map(account => {
-        if (account.id === accountId) {
-          const updatedAccount = { ...account, [field]: value };
+  const handleProductChange = (productId: string, field: string, value: any) => {
+    setProducts(prevProducts => {
+      const updatedProducts = prevProducts.map(product => {
+        if (product.id === productId) {
+          const updatedProduct = { ...product, [field]: value };
           
           // If weighting is changed, recalculate the total_amount based on the weighting
           if (field === 'weighting') {
-            updatedAccount.weighting = value;
+            updatedProduct.weighting = value;
           }
           
-          return updatedAccount;
+          return updatedProduct;
         }
-        return account;
+        return product;
       });
       
-      return updatedAccounts;
+      return updatedProducts;
     });
   };
 
@@ -257,162 +279,134 @@ const CreateClientAccounts: React.FC = (): JSX.Element => {
   };
 
   const getFilteredProducts = (searchTerm: string) => {
-    if (!searchTerm.trim()) return products;
+    if (!searchTerm.trim()) return providers;
     
     const term = searchTerm.toLowerCase();
-    return products.filter(product => 
-      product.product_name.toLowerCase().includes(term) || 
-      product.product_type.toLowerCase().includes(term)
+    return providers.filter(provider => 
+      provider.name.toLowerCase().includes(term)
     );
   };
 
-  const handleSelectProduct = (accountId: string, productId: number, productName: string) => {
-    handleAccountChange(accountId, 'available_products_id', productId);
-    toggleProductDropdown(accountId, false);
-    // Load funds for the selected product
-    loadFundsForProduct(productId, accountId);
+  const handleSelectProvider = (productId: string, providerId: number, providerName: string) => {
+    handleProductChange(productId, 'provider_id', providerId);
+    // Update the search terms with the selected provider name
+    setProductSearchTerms(prev => ({
+      ...prev,
+      [productId]: providerName
+    }));
+    toggleProductDropdown(productId, false);
+    // We don't need to load funds for the selected provider anymore
+    // since all funds are loaded on component mount
+  };
+
+  const handleProductTypeChange = (productId: string, productType: string) => {
+    handleProductChange(productId, 'product_type', productType);
   };
 
   // Add handlers for fund selection
-  const handlePortfolioNameChange = (accountId: string, name: string) => {
-    setAccounts(prevAccounts => prevAccounts.map(account => {
-      if (account.id === accountId) {
+  const handlePortfolioNameChange = (productId: string, name: string) => {
+    setProducts(prevProducts => prevProducts.map(product => {
+      if (product.id === productId) {
         return {
-          ...account,
+          ...product,
           portfolio: {
-            ...account.portfolio,
+            ...product.portfolio,
             name: name
           }
         };
       }
-      return account;
+      return product;
     }));
   };
   
-  const handleFundSelection = (accountId: string, fundId: number) => {
-    setAccounts(prevAccounts => prevAccounts.map(account => {
-      if (account.id === accountId) {
-        const selectedFunds = [...account.portfolio.selectedFunds];
+  const handleFundSelection = (productId: string, fundId: number) => {
+    setProducts(prevProducts => prevProducts.map(product => {
+      if (product.id === productId) {
+        const selectedFunds = [...product.portfolio.selectedFunds];
         if (selectedFunds.includes(fundId)) {
           // Remove fund
           return {
-            ...account,
+            ...product,
             portfolio: {
-              ...account.portfolio,
+              ...product.portfolio,
               selectedFunds: selectedFunds.filter(id => id !== fundId)
             }
           };
         } else {
           // Add fund
           return {
-            ...account,
+            ...product,
             portfolio: {
-              ...account.portfolio,
+              ...product.portfolio,
               selectedFunds: [...selectedFunds, fundId]
             }
           };
         }
       }
-      return account;
+      return product;
     }));
   };
   
-  const calculateTotalFundWeighting = (account: AccountItem): number => {
-    return account.portfolio.selectedFunds.length;
+  const calculateTotalFundWeighting = (product: ProductItem): number => {
+    return product.portfolio.selectedFunds.length;
   };
   
-  const loadFundsForProduct = async (productId: number, accountId: string) => {
-    if (!productId) return;
-    
-    setIsLoadingFunds(prev => ({ ...prev, [accountId]: true }));
-    
-    try {
-      const fundsResponse = await api.get('/funds');
-      
-      // Update availableFundsByProvider with all funds
-      setAvailableFundsByProvider(prev => ({
-        ...prev,
-        [productId]: fundsResponse.data
-      }));
-    } catch (err) {
-      console.error('Error loading funds:', err);
-      // Set empty array for this product if there's an error
-      setAvailableFundsByProvider(prev => ({
-        ...prev,
-        [productId]: []
-      }));
-    } finally {
-      setIsLoadingFunds(prev => ({ ...prev, [accountId]: false }));
-    }
-  };
-
-  // Add these new handler functions after handleFundSelection
-  const handlePortfolioTypeChange = (accountId: string, type: 'template' | 'bespoke'): void => {
-    setAccounts(prevAccounts => prevAccounts.map(account => {
-      if (account.id === accountId) {
+  // Portfolio configuration functions
+  const handlePortfolioTypeChange = (productId: string, type: 'template' | 'bespoke'): void => {
+    setProducts(prevProducts => prevProducts.map(product => {
+      if (product.id === productId) {
         return {
-          ...account,
+          ...product,
           portfolio: {
-            ...account.portfolio,
+            ...product.portfolio,
             type,
             templateId: undefined,
             selectedFunds: []
           }
         };
       }
-      return account;
+      return product;
     }));
   };
 
-  const handleTemplateSelection = async (accountId: string, templateId: string): Promise<void> => {
-    try {
-      const numericTemplateId = templateId ? parseInt(templateId, 10) : undefined;
-      
-      if (numericTemplateId) {
-        // Fetch template details
-        const response = await api.get(`/available_portfolios/${numericTemplateId}`);
-        const template = response.data;
+  const handleTemplateSelection = async (productId: string, templateId: string): Promise<void> => {
+    if (!templateId) {
+      return;
+    }
 
-        // Extract fund IDs, ensuring no duplicates
-        const uniqueFundIds: number[] = Array.from(
-          new Set(template.funds.map((f: { fund_id: number }) => f.fund_id))
-        );
-        console.log(`Template ${numericTemplateId} has ${template.funds.length} funds, ${uniqueFundIds.length} unique`);
-        
-        // Update the account with template details
-        setAccounts(prevAccounts => prevAccounts.map(account => {
-          if (account.id === accountId) {
-            return {
-              ...account,
-              portfolio: {
-                ...account.portfolio,
-                templateId: numericTemplateId,
-                name: template.name || `Template Portfolio ${numericTemplateId}`,
-                selectedFunds: uniqueFundIds
-              }
-            };
-          }
-          return account;
-        }));
-      } else {
-        // Clear template selection
-        setAccounts(prevAccounts => prevAccounts.map(account => {
-          if (account.id === accountId) {
-            return {
-              ...account,
-              portfolio: {
-                ...account.portfolio,
-                templateId: undefined,
-                selectedFunds: []
-              }
-            };
-          }
-          return account;
-        }));
-      }
-    } catch (error) {
-      console.error('Error loading template details:', error);
-      setError('Failed to load template details. Please try again.');
+    setIsLoading(true);
+    try {
+      // Fetch template details
+      const response = await api.get(`/available_portfolios/${templateId}`);
+      const templateData = response.data;
+      
+      // Get funds in the template
+      const templateFunds = templateData.funds || [];
+      const fundIds = templateFunds.map((fund: any) => fund.fund_id);
+      
+      // Update the product's portfolio with template information
+      const updatedProducts = products.map(product => {
+        if (product.id === productId) {
+          return {
+            ...product,
+            portfolio: {
+              ...product.portfolio,
+              templateId: parseInt(templateId),
+              name: `${templateData.name || `Template ${templateId}`} for ${product.product_name}`,
+              selectedFunds: fundIds,
+              fundWeightings: {}
+            }
+          };
+        }
+        return product;
+      });
+      
+      setProducts(updatedProducts);
+    } catch (err) {
+      console.error('Error loading template:', err);
+      alert('Failed to load template details. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -423,40 +417,45 @@ const CreateClientAccounts: React.FC = (): JSX.Element => {
       return false;
     }
 
-    // At least one account must be added
-    if (accounts.length === 0) {
-      setError('Please add at least one account');
+    // At least one product must be added
+    if (products.length === 0) {
+      setError('Please add at least one product');
       return false;
     }
 
-    // All accounts must have required fields
-    for (const account of accounts) {
-      if (!account.account_name.trim()) {
-        setError('All accounts must have a name');
+    // All products must have required fields
+    for (const product of products) {
+      if (!product.product_name.trim()) {
+        setError('All products must have a name');
         return false;
       }
       
-      if (account.available_products_id === 0) {
-        setError(`Please select a product for ${account.account_name}`);
+      if (product.provider_id === 0) {
+        setError(`Please select a provider for ${product.product_name}`);
+        return false;
+      }
+      
+      if (!product.product_type.trim()) {
+        setError(`Please select a product type for ${product.product_name}`);
         return false;
       }
       
       // Portfolio validation
-      if (!account.portfolio.name.trim()) {
-        setError(`Please enter a portfolio name for account "${account.account_name}"`);
+      if (!product.portfolio.name.trim()) {
+        setError(`Please enter a portfolio name for product "${product.product_name}"`);
         return false;
       }
       
       // For template portfolios, check if a template is selected
-      if (account.portfolio.type === 'template') {
-        if (!account.portfolio.templateId) {
-          setError(`Please select a template portfolio for account "${account.account_name}"`);
+      if (product.portfolio.type === 'template') {
+        if (!product.portfolio.templateId) {
+          setError(`Please select a template portfolio for product "${product.product_name}"`);
           return false;
         }
       } else {
         // For bespoke portfolios, check fund selection
-        if (account.portfolio.selectedFunds.length === 0) {
-          setError(`Please select at least one fund for the portfolio in account "${account.account_name}"`);
+        if (product.portfolio.selectedFunds.length === 0) {
+          setError(`Please select at least one fund for the portfolio in product "${product.product_name}"`);
           return false;
         }
       }
@@ -465,7 +464,7 @@ const CreateClientAccounts: React.FC = (): JSX.Element => {
     return true;
   };
 
-  // Update the handleSubmit function to handle template-based portfolios
+  // Update the handleSubmit function to use the new schema with provider_id and product_type.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -480,96 +479,69 @@ const CreateClientAccounts: React.FC = (): JSX.Element => {
       // Format the selected start date with dayjs
       const formattedStartDate = startDate.format('YYYY-MM-DD');
       
-      for (const account of accounts) {
-        let portfolioId: number;
+      for (const product of products) {
+        let portfolioId: number | undefined;
 
-        if (account.portfolio.type === 'template' && account.portfolio.templateId) {
+        // First, create the portfolio if needed
+        if (product.portfolio.type === 'template' && product.portfolio.templateId) {
           // Create portfolio from template
           const templateResponse = await api.post('/portfolios/from_template', {
-            template_id: account.portfolio.templateId,
-            portfolio_name: account.portfolio.name,
+            template_id: product.portfolio.templateId,
+            portfolio_name: product.portfolio.name,
             status: 'active',
             start_date: formattedStartDate
           });
           portfolioId = templateResponse.data.id;
-        } else {
+          console.log(`Created portfolio from template with ID: ${portfolioId}`);
+        } else if (product.portfolio.type === 'bespoke') {
           // Create a bespoke portfolio
           const portfolioResponse = await api.post('/portfolios', {
-            portfolio_name: account.portfolio.name,
+            portfolio_name: product.portfolio.name,
             status: 'active',
             start_date: formattedStartDate
           });
           portfolioId = portfolioResponse.data.id;
+          console.log(`Created bespoke portfolio with ID: ${portfolioId}`);
           
           // Add funds for bespoke portfolio
-          for (const fundId of account.portfolio.selectedFunds) {
+          for (const fundId of product.portfolio.selectedFunds) {
             await api.post('/portfolio_funds', {
               portfolio_id: portfolioId,
               available_funds_id: fundId,
-              target_weighting: parseFloat(account.portfolio.fundWeightings[fundId] || '0'),
-              value: 0,
-              start_date: formattedStartDate
+              weighting: 0, // Default to equal weights
+              start_date: formattedStartDate // Add the start_date field which is required
             });
           }
-          
-          // Only add CASHLINE to bespoke portfolios - template portfolios have this handled by the backend
-          try {
-            console.log("Finding CASHLINE fund to add to bespoke portfolio");
-            // First, find the CASHLINE fund by ISIN
-            const cashlineFundResponse = await api.get('/funds?isin_number=CASHLINE');
-            
-            if (cashlineFundResponse.data && cashlineFundResponse.data.length > 0) {
-              const cashlineFund = cashlineFundResponse.data[0];
-              console.log("Adding CASHLINE fund to bespoke portfolio", portfolioId);
-              
-              // Add CASHLINE fund with 0% weighting
-              await api.post('/portfolio_funds', {
-                portfolio_id: portfolioId,
-                available_funds_id: cashlineFund.id,
-                target_weighting: 0,
-                value: 0,
-                start_date: formattedStartDate
-              });
-            } else {
-              console.warn("CASHLINE fund not found - unable to add to portfolio");
-            }
-          } catch (cashlineError) {
-            console.error("Error adding CASHLINE fund:", cashlineError);
-            // Continue with account creation even if CASHLINE fund addition fails
-          }
+        } else if (product.portfolio.id) {
+          // Use existing portfolio if already set
+          portfolioId = product.portfolio.id;
+          console.log(`Using existing portfolio with ID: ${portfolioId}`);
         }
-
-        // Create the client account
-        console.log("Creating client account with skip_portfolio_creation=true");
-        const accountData = {
-          client_id: account.client_id,
-          available_products_id: account.available_products_id,
-          account_name: account.account_name,
-          status: account.status,
+        
+        // Create client product with direct portfolio_id link
+        const clientProductData = {
+          client_id: product.client_id,
+          provider_id: product.provider_id,
+          product_type: product.product_type,
+          product_name: product.product_name,
+          status: product.status,
           start_date: formattedStartDate,
-          weighting: account.weighting / 100,
-          skip_portfolio_creation: true // This flag should prevent backend from creating another portfolio
+          portfolio_id: portfolioId // Link directly to portfolio
         };
-        console.log("Account data:", accountData);
         
-        const accountResponse = await api.post('/client_accounts', accountData);
+        console.log("Creating client product with data:", clientProductData);
         
-        const accountId = accountResponse.data.id;
-        
-        // Link the account to the portfolio
-        await api.post('/account_holdings', {
-          client_account_id: accountId,
-          portfolio_id: portfolioId,
-          status: 'active',
-          start_date: formattedStartDate
-        });
+        // Create the client product
+        const productResponse = await api.post('/client_products', clientProductData);
+        console.log(`Created client product with ID: ${productResponse.data.id}`);
       }
-
-      // Navigate to accounts page after successful creation
-      navigate('/accounts');
-    } catch (err: any) {
-      console.error('Error creating accounts:', err);
-      setError(err.response?.data?.detail || 'Failed to create accounts. Please try again.');
+      
+      // Show success message and navigate back
+      alert('Client products and portfolios created successfully!');
+      navigate('/products');
+    } catch (error: any) {
+      console.error('Error saving client products:', error);
+      setError(error.response?.data?.detail || 'Failed to save client products');
     } finally {
       setIsSaving(false);
     }
@@ -591,69 +563,52 @@ const CreateClientAccounts: React.FC = (): JSX.Element => {
     setFilteredFunds(filtered);
   };
 
-  const renderPortfolioSection = (account: AccountItem): JSX.Element => {
+  const renderPortfolioSection = (product: ProductItem): JSX.Element => {
     return (
-      <div className="space-y-4">
+      <div className="portfolio-section">
         {/* Portfolio Type Selection */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Portfolio Type <span className="text-red-500">*</span>
           </label>
-          <div className="flex space-x-4">
-            <label className="inline-flex items-center">
-              <input
-                type="radio"
-                className="form-radio"
-                name={`portfolio-type-${account.id}`}
-                value="template"
-                checked={account.portfolio.type === 'template'}
-                onChange={(e) => handlePortfolioTypeChange(account.id, e.target.value as 'template' | 'bespoke')}
-              />
-              <span className="ml-2">Template</span>
-            </label>
-            <label className="inline-flex items-center">
-              <input
-                type="radio"
-                className="form-radio"
-                name={`portfolio-type-${account.id}`}
-                value="bespoke"
-                checked={account.portfolio.type === 'bespoke'}
-                onChange={(e) => handlePortfolioTypeChange(account.id, e.target.value as 'template' | 'bespoke')}
-              />
-              <span className="ml-2">Bespoke</span>
-            </label>
-          </div>
+          <Radio.Group
+            value={product.portfolio.type}
+            onChange={(e) => handlePortfolioTypeChange(product.id, e.target.value as 'template' | 'bespoke')}
+          >
+            <Radio value="bespoke">Bespoke Portfolio</Radio>
+            <Radio value="template">Template Portfolio</Radio>
+          </Radio.Group>
         </div>
 
-        {/* Template Selection */}
-        {account.portfolio.type === 'template' && (
+        {/* Template Selection - Only show if template type is selected */}
+        {product.portfolio.type === 'template' && (
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Select Template <span className="text-red-500">*</span>
             </label>
-            <select
-              value={account.portfolio.templateId || ''}
-              onChange={(e) => handleTemplateSelection(account.id, e.target.value)}
-              className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-              required
+            <Select
+              style={{ width: '100%' }}
+              placeholder="Select a template"
+              value={product.portfolio.templateId?.toString()}
+              onChange={(value) => handleTemplateSelection(product.id, value)}
             >
-              <option value="">Select a template</option>
+              <Select.Option value="">-- Select Template --</Select.Option>
               {availableTemplates.map(template => (
-                <option key={template.id} value={template.id}>
-                  {template.name}
-                </option>
+                <Select.Option key={template.id} value={template.id.toString()}>
+                  {template.name || `Template ${template.id}`}
+                </Select.Option>
               ))}
-            </select>
+            </Select>
           </div>
         )}
 
-        {/* Show selected funds for template portfolios */}
-        {account.portfolio.type === 'template' && account.portfolio.templateId && (
+        {/* Selected Funds Table - Show for both template and bespoke, but read-only for template */}
+        {product.portfolio.selectedFunds.length > 0 && (
           <div className="mb-4">
             <h4 className="text-sm font-medium text-gray-700 mb-2">Selected Funds</h4>
-            <div className="overflow-x-auto">
+            <div className="border rounded-md overflow-hidden">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead>
+                <thead className="bg-gray-50">
                   <tr>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Fund Name
@@ -661,7 +616,7 @@ const CreateClientAccounts: React.FC = (): JSX.Element => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {account.portfolio.selectedFunds.map((fundId) => {
+                  {product.portfolio.selectedFunds.map((fundId) => {
                     const fund = funds.find(f => f.id === fundId);
                     return (
                       <tr key={fundId}>
@@ -678,7 +633,7 @@ const CreateClientAccounts: React.FC = (): JSX.Element => {
         )}
 
         {/* Show fund selection only for bespoke portfolios */}
-        {account.portfolio.type === 'bespoke' && account.available_products_id > 0 && (
+        {product.portfolio.type === 'bespoke' && (
           <div className="fund-selection">
             <h4>Select Funds</h4>
             <Input
@@ -691,8 +646,8 @@ const CreateClientAccounts: React.FC = (): JSX.Element => {
               {filteredFunds.map(fund => (
                 <div key={fund.id} className="fund-item">
                   <Checkbox
-                    checked={account.portfolio.selectedFunds.includes(fund.id)}
-                    onChange={() => handleFundSelection(account.id, fund.id)}
+                    checked={product.portfolio.selectedFunds.includes(fund.id)}
+                    onChange={() => handleFundSelection(product.id, fund.id)}
                   >
                     {fund.fund_name} ({fund.isin_number})
                   </Checkbox>
@@ -718,12 +673,12 @@ const CreateClientAccounts: React.FC = (): JSX.Element => {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Create Client Accounts</h1>
+        <h1 className="text-3xl font-bold">Create Client Products</h1>
         <button
-          onClick={() => navigate('/accounts')}
+          onClick={() => navigate('/products')}
           className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50"
         >
-          Back to Accounts
+          Back to Products
         </button>
       </div>
 
@@ -774,120 +729,141 @@ const CreateClientAccounts: React.FC = (): JSX.Element => {
               />
             </div>
 
-            {/* Account List */}
+            {/* Product List */}
             <div className="space-y-6">
               <div className="flex justify-between items-center pb-4 border-b border-gray-200">
-                <h2 className="text-xl font-medium">Accounts</h2>
+                <h2 className="text-xl font-medium">Products</h2>
                 <button
                   type="button"
-                  onClick={handleAddAccount}
+                  onClick={handleAddProduct}
                   className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                 >
-                  Add Account
+                  Add Client Product
                 </button>
               </div>
 
-              {accounts.length === 0 ? (
+              {products.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  <p>No accounts added yet. Click "Add Account" to create a new account.</p>
+                  <p>No products added yet. Click "Add Client Product" to create a new product.</p>
                 </div>
               ) : (
                 <div>
-                  {accounts.map((account) => (
-                    <div key={account.id} className="border rounded-md p-6 mb-6 bg-gray-50">
-                      {/* Account Header */}
+                  {products.map((product) => (
+                    <div key={product.id} className="border rounded-md p-6 mb-6 bg-gray-50">
+                      {/* Product Header */}
                       <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-medium">{account.account_name}</h3>
+                        <h3 className="text-lg font-medium">{product.product_name}</h3>
                         <button
                           type="button"
-                          onClick={() => handleRemoveAccount(account.id)}
+                          onClick={() => handleRemoveProduct(product.id)}
                           className="text-red-600 hover:text-red-800"
                         >
                           Remove
                         </button>
                       </div>
 
-                      {/* Account Form */}
+                      {/* Product Form */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Account Name */}
+                        {/* Product Name */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Account Name <span className="text-red-500">*</span>
+                            Product Name <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
-                            value={account.account_name}
-                            onChange={(e) => handleAccountChange(account.id, 'account_name', e.target.value)}
+                            value={product.product_name}
+                            onChange={(e) => handleProductChange(product.id, 'product_name', e.target.value)}
                             className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
                             required
                           />
                         </div>
 
-                        {/* Product Selection */}
+                        {/* Provider Selection */}
                         <div className="product-dropdown-container relative">
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Product <span className="text-red-500">*</span>
+                            Provider <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
-                            value={productSearchTerms[account.id] || ''}
-                            onClick={() => toggleProductDropdown(account.id, true)}
-                            onChange={(e) => handleProductSearch(account.id, e.target.value)}
-                            placeholder="Search for a product..."
+                            value={productSearchTerms[product.id] || ''}
+                            onClick={() => toggleProductDropdown(product.id, true)}
+                            onChange={(e) => handleProductSearch(product.id, e.target.value)}
+                            placeholder="Search for a provider..."
                             className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
                           />
-                          {showProductDropdowns[account.id] && (
+                          {showProductDropdowns[product.id] && (
                             <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base overflow-auto">
-                              {getFilteredProducts(productSearchTerms[account.id] || '').map(product => (
+                              {getFilteredProducts(productSearchTerms[product.id] || '').map(provider => (
                                 <div
-                                  key={product.id}
+                                  key={provider.id}
                                   className="cursor-pointer hover:bg-gray-100 py-2 px-4"
-                                  onClick={() => handleSelectProduct(account.id, product.id, product.product_name)}
+                                  onClick={() => handleSelectProvider(product.id, provider.id, provider.name)}
                                 >
-                                  {product.product_name}
+                                  {provider.name}
                                 </div>
                               ))}
                             </div>
                           )}
                         </div>
 
-                        {/* Portfolio Name - Only ONE instance of Portfolio Name should exist */}
+                        {/* Product Type */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Product Type <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            value={product.product_type}
+                            onChange={(e) => handleProductTypeChange(product.id, e.target.value)}
+                            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                            required
+                          >
+                            <option value="">Select product type</option>
+                            <option value="ISA">ISA</option>
+                            <option value="JISA">Junior ISA</option>
+                            <option value="SIPP">SIPP</option>
+                            <option value="GIA">GIA</option>
+                            <option value="Offshore Bond">Offshore Bond</option>
+                            <option value="Onshore Bond">Onshore Bond</option>
+                            <option value="Trust">Trust</option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </div>
+
+                        {/* Portfolio Name */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Portfolio Name <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
-                            value={account.portfolio.name}
-                            onChange={(e) => handlePortfolioNameChange(account.id, e.target.value)}
+                            value={product.portfolio.name}
+                            onChange={(e) => handlePortfolioNameChange(product.id, e.target.value)}
                             className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
                             required
                           />
                         </div>
 
-                        {/* Account Weighting */}
+                        {/* Product Weighting */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Account Weighting (%)
+                            Product Weighting (%)
                           </label>
                           <input
                             type="number"
                             min="0"
                             max="100"
                             step="0.01"
-                            value={account.weighting}
-                            onChange={(e) => handleAccountChange(account.id, 'weighting', parseFloat(e.target.value))}
+                            value={product.weighting}
+                            onChange={(e) => handleProductChange(product.id, 'weighting', parseFloat(e.target.value))}
                             className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
                           />
                         </div>
 
                         {/* Portfolio Configuration */}
-                        {account.available_products_id > 0 && (
-                          <div className="mt-6 border-t pt-6">
-                            <h4 className="text-lg font-medium mb-4">Portfolio Configuration</h4>
-                            {renderPortfolioSection(account)}
-                          </div>
-                        )}
+                        <div className="mt-6 border-t pt-6 col-span-2">
+                          <h4 className="text-lg font-medium mb-4">Portfolio Configuration</h4>
+                          {renderPortfolioSection(product)}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -899,17 +875,17 @@ const CreateClientAccounts: React.FC = (): JSX.Element => {
             <div className="mt-8 flex justify-end space-x-4">
               <button
                 type="button"
-                onClick={() => navigate('/accounts')}
+                onClick={() => navigate('/products')}
                 className="px-6 py-3 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={isSaving || accounts.length === 0}
+                disabled={isSaving}
                 className="px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
               >
-                {isSaving ? 'Creating...' : 'Create Accounts'}
+                {isSaving ? 'Saving...' : 'Save Products'}
               </button>
             </div>
           </form>
@@ -919,4 +895,4 @@ const CreateClientAccounts: React.FC = (): JSX.Element => {
   );
 };
 
-export default CreateClientAccounts; 
+export default CreateClientProducts; 

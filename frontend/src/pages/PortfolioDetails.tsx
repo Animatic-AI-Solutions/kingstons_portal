@@ -38,13 +38,15 @@ interface Product {
   available_providers_id: number;
 }
 
-interface AssignedAccount {
+interface PortfolioAssignment {
   id: number;
-  client_account_id: number;
+  client_product_id: number;
   portfolio_id: number;
+  status: string;
   start_date: string;
-  end_date: string | null;
+  end_date?: string;
   account_name?: string;
+  product_name?: string;
   client_name?: string;
   product?: Product;
 }
@@ -74,7 +76,7 @@ const PortfolioDetails: React.FC = () => {
   const { api } = useAuth();
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [portfolioFunds, setPortfolioFunds] = useState<PortfolioFund[]>([]);
-  const [assignedAccounts, setAssignedAccounts] = useState<AssignedAccount[]>([]);
+  const [assignedAccounts, setAssignedAccounts] = useState<PortfolioAssignment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -141,7 +143,7 @@ const PortfolioDetails: React.FC = () => {
             response.data.map(async (assignment: any) => {
               try {
                 // Fetch account details
-                const accountResponse = await api.get(`/client_accounts/${assignment.client_account_id}`);
+                const accountResponse = await api.get(`/client_products/${assignment.client_product_id}`);
                 const account = accountResponse.data;
                 
                 // Fetch client details
@@ -159,10 +161,10 @@ const PortfolioDetails: React.FC = () => {
                   product: product
                 };
               } catch (err) {
-                console.error(`Error fetching details for account ${assignment.client_account_id}:`, err);
+                console.error(`Error fetching details for account ${assignment.client_product_id}:`, err);
                 return {
                   ...assignment,
-                  account_name: `Account ${assignment.client_account_id}`,
+                  account_name: `Account ${assignment.client_product_id}`,
                   client_name: 'Unknown Client'
                 };
               }
@@ -179,7 +181,7 @@ const PortfolioDetails: React.FC = () => {
         
         try {
           // Attempt to find assignments using the client_account_portfolio_assignments endpoint
-          const response = await api.get('/client_account_portfolio_assignments', {
+          const response = await api.get('/client_product_portfolio_assignments', {
             params: { portfolio_id: portfolioId }
           });
           
@@ -188,7 +190,7 @@ const PortfolioDetails: React.FC = () => {
               response.data.map(async (assignment: any) => {
                 try {
                   // Fetch account details
-                  const accountResponse = await api.get(`/client_accounts/${assignment.client_account_id}`);
+                  const accountResponse = await api.get(`/client_products/${assignment.client_product_id}`);
                   const account = accountResponse.data;
                   
                   // Fetch client details
@@ -206,10 +208,10 @@ const PortfolioDetails: React.FC = () => {
                     product: product
                   };
                 } catch (err) {
-                  console.error(`Error fetching details for account ${assignment.client_account_id}:`, err);
+                  console.error(`Error fetching details for account ${assignment.client_product_id}:`, err);
                   return {
                     ...assignment,
-                    account_name: `Account ${assignment.client_account_id}`,
+                    account_name: `Account ${assignment.client_product_id}`,
                     client_name: 'Unknown Client'
                   };
                 }
@@ -391,20 +393,12 @@ const PortfolioDetails: React.FC = () => {
           </div>
             {assignedAccounts.length > 0 && (
           <div>
-                <dt className="text-sm font-medium text-gray-500">Linked Account</dt>
+                <dt className="text-sm font-medium text-gray-500">Linked Product</dt>
                 <dd className="mt-1 text-sm text-gray-900">
-                  <Link to={`/accounts/${assignedAccounts[0].client_account_id}`} className="text-indigo-600 hover:text-indigo-900">
-                    {assignedAccounts[0].account_name || `Account ${assignedAccounts[0].client_account_id}`}
+                  <Link to={`/products/${assignedAccounts[0].client_product_id}`} className="text-indigo-600 hover:text-indigo-900">
+                    {assignedAccounts[0].product_name || `Product ${assignedAccounts[0].client_product_id}`}
                     {assignedAccounts[0].client_name && ` (${assignedAccounts[0].client_name})`}
                   </Link>
-                </dd>
-          </div>
-            )}
-            {assignedAccounts.length > 0 && assignedAccounts[0].product && (
-          <div>
-                <dt className="text-sm font-medium text-gray-500">Product</dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  {assignedAccounts[0].product.product_name} ({assignedAccounts[0].product.product_type})
                 </dd>
           </div>
             )}

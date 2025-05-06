@@ -28,7 +28,7 @@ async def signup(
     db = Depends(get_db)
 ):
     """
-    What it does: Creates a new user account.
+    What it does: Creates a new user product.
     Why it's needed: Allows new users to register in the system.
     How it works:
         1. Checks if email is already taken
@@ -450,7 +450,7 @@ async def update_profile(
         logger.info(f"Received profile data: {profile_data}")
         
         # Validate preferred landing page
-        valid_pages = ['/', '/clients', '/accounts', '/definitions', '/reporting']
+        valid_pages = ['/', '/clients', '/products', '/definitions', '/reporting']
         if profile_data.preferred_landing_page and profile_data.preferred_landing_page not in valid_pages:
             logger.warning(f"Invalid landing page: {profile_data.preferred_landing_page}")
             raise HTTPException(status_code=400, detail="Invalid landing page selected")

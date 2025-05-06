@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { SearchableDropdown } from './ui';
 
 /**
  * Interface for client form data
@@ -103,17 +104,23 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSubmit, initialData }) => {
         <label htmlFor="status" className="block text-sm font-medium text-gray-700">
           Status
         </label>
-        <select
-          name="status"
+        <SearchableDropdown
           id="status"
           value={formData.status}
-          onChange={handleChange}
+          onChange={(value) => {
+            setFormData((prev) => ({
+              ...prev,
+              status: value as string
+            }));
+          }}
+          options={[
+            { value: 'active', label: 'Active' },
+            { value: 'inactive', label: 'Inactive' }
+          ]}
+          placeholder="Select status"
+          className="mt-1"
           required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-        >
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
+        />
       </div>
 
       {/* Advisor Field - Optional field for assigned advisor */}

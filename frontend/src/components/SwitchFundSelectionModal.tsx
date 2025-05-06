@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { SearchableDropdown } from './ui';
 
 interface Fund {
   id: number;
@@ -78,18 +79,15 @@ const SwitchFundSelectionModal: React.FC<SwitchFundSelectionModalProps> = ({
             <label htmlFor="fund-select" className="block text-sm font-medium text-gray-700 mb-1">
               Select Fund
             </label>
-            <select
+            <SearchableDropdown
               id="fund-select"
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               value={selectedFundId || ''}
-              onChange={(e) => setSelectedFundId(parseInt(e.target.value))}
-            >
-              {funds.map((fund) => (
-                <option key={fund.id} value={fund.id}>
-                  {fund.fund_name}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => setSelectedFundId(typeof value === 'string' ? parseInt(value) : value as number)}
+              options={funds.map(fund => ({ value: fund.id, label: fund.fund_name }))}
+              placeholder="Select a fund"
+              className="w-full"
+              required
+            />
           </div>
         ) : (
           <div className="mb-6 text-red-500">

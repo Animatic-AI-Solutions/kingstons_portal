@@ -23,26 +23,23 @@ import Clients from './pages/Clients';
 import AddClient from './pages/AddClient';
 import ClientDetails from './pages/ClientDetails';
 
-// Account Management Pages - For handling financial accounts
-import Accounts from './pages/Accounts';
-import OptimizedAccountDetails from './pages/OptimizedAccountDetails';
+// Product Management Pages - For handling financial products
+import Products from './pages/Products';
+import ProductDetails from './pages/ProductDetails';
 
 // Definitions Pages - System configuration and reference data management
 import Definitions from './pages/Definitions';
 import Providers from './pages/Providers';  // Investment providers
-import Products from './pages/Products';    // Financial products offered
 import Funds from './pages/Funds';          // Investment funds
 import Portfolios from './pages/Portfolios'; // Portfolio management
 import ProviderDetails from './pages/ProviderDetails';
-import ProductDetails from './pages/ProductDetails';
 import FundDetails from './pages/FundDetails';
 import PortfolioDetails from './pages/PortfolioDetails';
 import PortfolioTemplateDetails from './pages/PortfolioTemplateDetails';
 import AddProvider from './pages/AddProvider';
-import AddProduct from './pages/AddProduct';
 import AddFund from './pages/AddFund';
-import AddPortfolio from './pages/AddPortfolio';
-import CreateClientAccounts from './pages/CreateClientAccounts';
+import AddPortfolioTemplate from './pages/AddPortfolioTemplate';
+import CreateClientProducts from './pages/CreateClientProducts';
 
 // Reporting Pages - Analytics and performance reporting
 import Reporting from './pages/Reporting';
@@ -148,22 +145,22 @@ const AppContent: React.FC = () => {
             </>
           } />
           
-          {/* Account Management Section - Managing financial accounts */}
-          <Route path="/accounts" element={
+          {/* Product Management Section - Managing client products */}
+          <Route path="/products" element={
             <>
               <Navbar />
               <div className="flex-grow pt-6 pb-12">
-                <Accounts />
+                <Products />
               </div>
               <Footer />
             </>
           } />
           
-          <Route path="/accounts/:accountId" element={
+          <Route path="/products/:productId/*" element={
             <>
               <Navbar />
               <div className="flex-grow pt-6 pb-12">
-                <OptimizedAccountDetails />
+                <ProductDetails />
               </div>
               <Footer />
             </>
@@ -210,36 +207,6 @@ const AppContent: React.FC = () => {
             </>
           } />
           
-          <Route path="/definitions/products" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <Products />
-              </div>
-              <Footer />
-            </>
-          } />
-          
-          <Route path="/definitions/products/:productId" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <ProductDetails />
-              </div>
-              <Footer />
-            </>
-          } />
-          
-          <Route path="/definitions/products/add" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <AddProduct />
-              </div>
-              <Footer />
-            </>
-          } />
-          
           <Route path="/definitions/funds" element={
             <>
               <Navbar />
@@ -270,7 +237,7 @@ const AppContent: React.FC = () => {
             </>
           } />
           
-          <Route path="/definitions/portfolios" element={
+          <Route path="/definitions/portfolio-templates" element={
             <>
               <Navbar />
               <div className="flex-grow pt-6 pb-12">
@@ -280,17 +247,7 @@ const AppContent: React.FC = () => {
             </>
           } />
           
-          <Route path="/definitions/portfolios/:portfolioId" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <PortfolioDetails />
-              </div>
-              <Footer />
-            </>
-          } />
-          
-          <Route path="/definitions/portfolio-templates/:templateId" element={
+          <Route path="/definitions/portfolio-templates/:portfolioId" element={
             <>
               <Navbar />
               <div className="flex-grow pt-6 pb-12">
@@ -300,33 +257,33 @@ const AppContent: React.FC = () => {
             </>
           } />
           
-          <Route path="/definitions/portfolios/add" element={
+          <Route path="/definitions/portfolio-templates/add" element={
             <>
               <Navbar />
               <div className="flex-grow pt-6 pb-12">
-                <AddPortfolio />
+                <AddPortfolioTemplate />
               </div>
               <Footer />
             </>
           } />
           
           {/* Client Account Management - Creating accounts for specific clients */}
-          <Route path="/client-accounts/:clientId" element={
+          <Route path="/client-products/:clientId" element={
             <>
               <Navbar />
               <div className="flex-grow pt-6 pb-12">
-                <CreateClientAccounts />
+                <CreateClientProducts />
               </div>
               <Footer />
             </>
           } />
           
           {/* General account creation flow - Allows creating accounts without specific client context */}
-          <Route path="/create-client-accounts" element={
+          <Route path="/create-client-products" element={
             <>
               <Navbar />
               <div className="flex-grow pt-6 pb-12">
-                <CreateClientAccounts />
+                <CreateClientProducts />
               </div>
               <Footer />
             </>

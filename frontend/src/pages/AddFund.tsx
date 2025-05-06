@@ -55,11 +55,17 @@ const AddFund: React.FC = () => {
       setError('Fund name is required');
       return;
     }
+
+    // Validate risk factor is between 0 and 7
+    if (formData.risk_factor !== null && (formData.risk_factor < 0 || formData.risk_factor > 7)) {
+      setError('Risk factor must be between 0 and 7');
+      return;
+    }
     
     try {
       setIsSubmitting(true);
       await api.post('/funds', formData);
-      navigate('/funds');
+      navigate('/definitions/funds');
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to create fund');
       console.error('Error creating fund:', err);
@@ -131,14 +137,14 @@ const AddFund: React.FC = () => {
 
             <div>
               <label htmlFor="risk_factor" className="block text-sm font-medium text-gray-700">
-                Risk Factor (1-10)
+                Risk Factor (0-7)
               </label>
               <input
                 type="number"
                 id="risk_factor"
                 name="risk_factor"
-                min="1"
-                max="10"
+                min="0"
+                max="7"
                 value={formData.risk_factor === null ? '' : formData.risk_factor}
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"

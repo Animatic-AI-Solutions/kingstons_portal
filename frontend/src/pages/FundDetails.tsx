@@ -167,6 +167,14 @@ const FundDetails: React.FC = () => {
       return;
     }
 
+    // Validate risk factor is between 0 and 7
+    if (formData.risk_factor !== undefined && 
+        formData.risk_factor !== null && 
+        (formData.risk_factor < 0 || formData.risk_factor > 7)) {
+      setError('Risk factor must be between 0 and 7');
+      return;
+    }
+
     try {
       await api.patch(`/funds/${id}`, formData);
       await fetchFundDetails();
@@ -392,14 +400,14 @@ const FundDetails: React.FC = () => {
               </div>
               <div>
                 <label htmlFor="risk_factor" className="block text-sm font-medium text-gray-700">
-                  Risk Factor (1-10)
+                  Risk Factor (0-7)
                 </label>
                 <input
                   type="number"
                   id="risk_factor"
                   name="risk_factor"
-                  min="1"
-                  max="10"
+                  min="0"
+                  max="7"
                   value={formData.risk_factor === null ? '' : formData.risk_factor}
                   onChange={handleChange}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
