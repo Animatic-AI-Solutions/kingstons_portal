@@ -697,43 +697,6 @@ const Definitions: React.FC = () => {
     );
   }, []);
 
-  // Function to migrate existing providers to have theme_color
-  const updateProviderColors = useCallback(async () => {
-    try {
-      // Log the start of the operation
-      console.log("Starting provider color migration...");
-      
-      // Create a copy to avoid modifying the original array during iteration
-      const providersToUpdate = [...providers].filter(p => !p.theme_color);
-      
-      if (providersToUpdate.length === 0) {
-        console.log("No providers need color update");
-        return;
-      }
-      
-      console.log(`Found ${providersToUpdate.length} providers that need color updates`);
-      
-      // Update each provider
-      for (const provider of providersToUpdate) {
-        try {
-          const computedColor = getProviderColor(provider.name);
-          await api.patch(`/available_providers/${provider.id}`, {
-            theme_color: computedColor
-          });
-          console.log(`Updated color for "${provider.name}" to ${computedColor}`);
-        } catch (err) {
-          console.error(`Failed to update color for "${provider.name}":`, err);
-        }
-      }
-      
-      console.log("Provider color migration completed");
-      // Refresh the providers list
-      fetchProviders();
-    } catch (err) {
-      console.error("Error in provider color migration:", err);
-    }
-  }, [providers, api, getProviderColor, fetchProviders]);
-
   return (
     <DefinitionsContext.Provider value={contextValue}>
     <div className="container mx-auto px-4 py-3">
@@ -858,17 +821,6 @@ const Definitions: React.FC = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 )}
-              </button>
-              {/* Hidden admin button to migrate colors */}
-              <button 
-                onClick={updateProviderColors}
-                title="Update provider colors"
-                className="border border-gray-300 rounded-md px-3 py-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:border-primary-700 text-xs text-gray-500"
-                aria-label="Update provider colors"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-                </svg>
               </button>
             </div>
           )}
