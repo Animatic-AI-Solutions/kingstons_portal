@@ -408,4 +408,15 @@ async def delete_client_products(
         raise
     except Exception as e:
         logger.error(f"Error deleting client products: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to delete client products: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"Failed to delete client products: {str(e)}")
+
+@router.get("/client_fum_summary", response_model=List[dict])
+async def get_client_fum_summary(db = Depends(get_db)):
+    """
+    Returns the FUM (Funds Under Management) summary for all clients from the client_fum_summary view.
+    """
+    try:
+        result = db.table("client_fum_summary").select("*").execute()
+        return result.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}") 

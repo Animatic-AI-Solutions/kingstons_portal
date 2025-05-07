@@ -346,6 +346,17 @@ FROM
 GROUP BY
     cp.id;
 
+CREATE OR REPLACE VIEW public.client_fum_summary AS
+SELECT
+    c.id AS client_id,
+    COALESCE(SUM(pvis.total_value), 0) AS fum
+FROM
+    clients c
+    LEFT JOIN client_products cp ON cp.client_id = c.id
+    LEFT JOIN product_value_irr_summary pvis ON cp.id = pvis.client_product_id
+GROUP BY
+    c.id;
+
 -- portfolio_fund_providers view removed as it depended on removed tables.
 -- If a similar view is needed, it would need to be redesigned based on the new structure.
 

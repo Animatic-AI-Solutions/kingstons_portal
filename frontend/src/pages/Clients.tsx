@@ -114,33 +114,39 @@ const Clients: React.FC = () => {
       console.log("API object:", api);
 
       let clientData = [];
+      let fumData = [];
 
       if (!api || typeof api.get !== 'function') {
         console.error("API instance is not valid. Creating a direct axios request instead.");
         // Fallback to direct axios request if api is not properly initialized
-        const response = await axios.get('http://localhost:8000/clients', {
-          params: {
-            show_dormant: showDormant
-          },
-          withCredentials: true
-        });
-        clientData = response.data;
+        const [clientsResponse, fumResponse] = await Promise.all([
+          axios.get('http://localhost:8000/clients', {
+            params: { show_dormant: showDormant },
+            withCredentials: true
+          }),
+          axios.get('http://localhost:8000/client_fum_summary', { withCredentials: true })
+        ]);
+        clientData = clientsResponse.data;
+        fumData = fumResponse.data;
       } else {
         // Use the regular api instance from context
-        const response = await api.get('/clients', {
-        params: {
-          show_dormant: showDormant
-        }
-      });
-        clientData = response.data;
+        const [clientsResponse, fumResponse] = await Promise.all([
+          api.get('/clients', { params: { show_dormant: showDormant } }),
+          api.get('/client_fum_summary')
+        ]);
+        clientData = clientsResponse.data;
+        fumData = fumResponse.data;
       }
-      
-      // Add mock FUM data if it doesn't exist
+
+      // Map FUM data by client_id for quick lookup
+      const fumMap = new Map(fumData.map((row: any) => [row.client_id, row.fum]));
+
+      // Merge FUM into clients
       const clientsWithFum = clientData.map((client: Client) => ({
         ...client,
-        fum: client.fum || Math.floor(Math.random() * 10000000) // Random FUM value for demonstration
+        fum: fumMap.get(client.id) ?? 0
       }));
-      
+
       setClients(clientsWithFum);
       setError(null);
     } catch (err: any) {
