@@ -3,6 +3,7 @@ from typing import List, Optional
 import logging
 from datetime import datetime, date
 import numpy_financial as npf
+from decimal import Decimal
 
 from app.models.portfolio_fund import PortfolioFund, PortfolioFundCreate, PortfolioFundUpdate
 from app.models.irr_value import IRRValueCreate
@@ -225,6 +226,11 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
         logger.error(f"IRR calculation stack trace: {traceback.format_exc()}")
         raise
 
+def to_serializable(val):
+    if isinstance(val, Decimal):
+        return float(val)
+    return val
+
 router = APIRouter()
 
 @router.get("/portfolio_funds", response_model=List[PortfolioFund])
@@ -326,17 +332,17 @@ async def create_portfolio_fund(
         portfolio_fund_data = {
             "portfolio_id": portfolio_fund.portfolio_id,
             "available_funds_id": portfolio_fund.available_funds_id,
-            "weighting": 0 if portfolio_fund.weighting is None else portfolio_fund.weighting,
+            "weighting": to_serializable(0 if portfolio_fund.weighting is None else portfolio_fund.weighting),
             "start_date": portfolio_fund.start_date.isoformat() if portfolio_fund.start_date else today,
-            "amount_invested": 0 if portfolio_fund.amount_invested is None else portfolio_fund.amount_invested
+            "amount_invested": to_serializable(0 if portfolio_fund.amount_invested is None else portfolio_fund.amount_invested)
         }
         
         result = db.table("portfolio_funds").insert(portfolio_fund_data).execute()
         
         if not result.data or len(result.data) == 0:
             raise HTTPException(status_code=500, detail="Failed to create portfolio fund")
-            
-        return result.data[0]
+        # Use Pydantic model for serialization
+        return PortfolioFund(**result.data[0])
     except HTTPException:
         raise
     except Exception as e:

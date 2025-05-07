@@ -398,22 +398,9 @@ async def get_performance_data(
 @router.get("/analytics/product_client_counts")
 async def get_product_client_counts(db = Depends(get_db)):
     """
-    What it does: Generates analytics data showing the number of clients using each product, categorized by client relationship type.
-    Why it's needed: Provides business insights on product distribution across different client relationship types.
-    How it works:
-        1. Retrieves all active products
-        2. Retrieves all clients and their relationship types
-        3. Retrieves all client-product associations
-        4. Builds a matrix of relationship types and product names with counts
-        5. Returns structured data for easy visualization
-    Expected output: A JSON object with:
-        - "relationships": Array of all unique client relationship types
-        - "products": Array of all active product names
-        - "data": Array of objects, each containing:
-            - "relationship": A relationship type
-            - "counts": Object mapping product names to client counts
-    
-    Example output:
+    Counts the number of clients by relationship type and product type.
+    Returns a matrix of relationship types vs product types with counts.
+    Example response:
     {
         "relationships": ["Spouse", "Child", "Parent"],
         "products": ["Product A", "Product B"],
@@ -425,8 +412,8 @@ async def get_product_client_counts(db = Depends(get_db)):
     }
     """
     try:
-        # Get all active products
-        products_result = await db.table("available_products").select("id", "name").execute()
+        # Get all product types from client_products
+        products_result = await db.table("client_products").select("product_type").execute()
         
         if not products_result.data:
             return {
@@ -435,8 +422,11 @@ async def get_product_client_counts(db = Depends(get_db)):
                 "data": []
             }
         
+        # Extract unique product types
+        product_types = list(set(product["product_type"] for product in products_result.data if product["product_type"]))
+        
         # Get all clients and their relationship types
-        clients_result = await db.table("clients").select("id", "relationship_type").execute()
+        clients_result = await db.table("clients").select("id", "relationship").execute()
         
         if not clients_result.data:
             return {
@@ -446,22 +436,19 @@ async def get_product_client_counts(db = Depends(get_db)):
             }
         
         # Get all client-product associations
-        client_products_result = await db.table("client_products").select("*").execute()
+        client_products_result = await db.table("client_products").select("client_id", "product_type").execute()
         
         # Build the response
-        relationships = list(set(client["relationship_type"] for client in clients_result.data if client["relationship_type"]))
-        products = [product["name"] for product in products_result.data]
+        relationships = list(set(client["relationship"] for client in clients_result.data if client["relationship"]))
         
         data = []
         for relationship in relationships:
-            counts = {product: 0 for product in products}
+            counts = {product_type: 0 for product_type in product_types}
             for client in clients_result.data:
-                if client["relationship_type"] == relationship:
+                if client["relationship"] == relationship:
                     for cp in client_products_result.data:
-                        if cp["client_id"] == client["id"]:
-                            product = next((p["name"] for p in products_result.data if p["id"] == cp["product_id"]), None)
-                            if product:
-                                counts[product] += 1
+                        if cp["client_id"] == client["id"] and cp["product_type"] in product_types:
+                            counts[cp["product_type"]] += 1
             data.append({
                 "relationship": relationship,
                 "counts": counts
@@ -469,7 +456,7 @@ async def get_product_client_counts(db = Depends(get_db)):
         
         return {
             "relationships": relationships,
-            "products": products,
+            "products": product_types,
             "data": data
         }
     except Exception as e:

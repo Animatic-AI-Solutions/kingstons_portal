@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import FilterDropdown from '../components/ui/FilterDropdown';
 
 interface Product {
   id: number;
@@ -32,80 +33,8 @@ const Products: React.FC = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<{id: number, name: string} | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [providerFilter, setProviderFilter] = useState<string | null>(null);
-  const [showProviderFilter, setShowProviderFilter] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [showStatusFilter, setShowStatusFilter] = useState(false);
-  const providerFilterRef = useRef<HTMLDivElement>(null);
-  const statusFilterRef = useRef<HTMLDivElement>(null);
-  
-  // Position states for the dropdowns
-  const [providerDropdownPosition, setProviderDropdownPosition] = useState({ top: 0, left: 0 });
-  const [statusDropdownPosition, setStatusDropdownPosition] = useState({ top: 0, left: 0 });
-  
-  // Functions to calculate and set dropdown positions
-  const updateProviderDropdownPosition = () => {
-    if (providerFilterRef.current) {
-      const rect = providerFilterRef.current.getBoundingClientRect();
-      setProviderDropdownPosition({
-        top: rect.bottom + window.scrollY,
-        left: rect.left + window.scrollX
-      });
-    }
-  };
-  
-  const updateStatusDropdownPosition = () => {
-    if (statusFilterRef.current) {
-      const rect = statusFilterRef.current.getBoundingClientRect();
-      setStatusDropdownPosition({
-        top: rect.bottom + window.scrollY,
-        left: rect.left + window.scrollX
-      });
-    }
-  };
-  
-  // Add effect hooks for dropdown positioning
-  useEffect(() => {
-    if (showProviderFilter) {
-      updateProviderDropdownPosition();
-      window.addEventListener('scroll', updateProviderDropdownPosition);
-      window.addEventListener('resize', updateProviderDropdownPosition);
-    }
-    
-    return () => {
-      window.removeEventListener('scroll', updateProviderDropdownPosition);
-      window.removeEventListener('resize', updateProviderDropdownPosition);
-    };
-  }, [showProviderFilter]);
-  
-  useEffect(() => {
-    if (showStatusFilter) {
-      updateStatusDropdownPosition();
-      window.addEventListener('scroll', updateStatusDropdownPosition);
-      window.addEventListener('resize', updateStatusDropdownPosition);
-    }
-    
-    return () => {
-      window.removeEventListener('scroll', updateStatusDropdownPosition);
-      window.removeEventListener('resize', updateStatusDropdownPosition);
-    };
-  }, [showStatusFilter]);
-  
-  // Add click outside handler
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (providerFilterRef.current && !providerFilterRef.current.contains(event.target as Node)) {
-        setShowProviderFilter(false);
-      }
-      if (statusFilterRef.current && !statusFilterRef.current.contains(event.target as Node)) {
-        setShowStatusFilter(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+  const [providerFilter, setProviderFilter] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
 
   const fetchProducts = async () => {
     try {
@@ -125,21 +54,27 @@ const Products: React.FC = () => {
         api.get('/available_providers'),
         api.get('/portfolios')
       ]);
-
+      
       // Map summary data by client_product_id for quick lookup
       const summaryMap = new Map(
         summaryRes.data.map((row: any) => [row.client_product_id, row])
       );
-
+      
       // Merge summary data into products
       const productsData = productsRes.data.map((product: any) => {
         const summary: any = summaryMap.get(product.id) || {};
         const client = clientsRes.data.find((c: any) => c.id === product.client_id);
         const provider = product.provider_id ? providersRes.data.find((p: any) => p.id === product.provider_id) : null;
         const portfolio = product.portfolio_id ? portfoliosRes.data.find((p: any) => p.id === product.portfolio_id) : null;
+        
+        // Create client name from forname and surname
+        const clientName = client ? 
+          `${client.forname || ''} ${client.surname || ''}`.trim() : 
+          'Unknown Client';
+          
         return {
           ...product,
-          client_name: client ? client.name : 'Unknown Client',
+          client_name: clientName,
           product_name: product ? product.product_name : 'Unknown Product',
           provider_name: provider ? provider.name : 'Unknown Provider',
           portfolio_name: portfolio ? portfolio.name : undefined,
@@ -268,12 +203,12 @@ const Products: React.FC = () => {
       product.status.toLowerCase().includes(searchQuery.toLowerCase())
     )
     .filter(product => 
-      providerFilter === null || 
-      (product.provider_name && product.provider_name.toLowerCase() === providerFilter.toLowerCase())
+      providerFilter.length === 0 ||
+      (product.provider_name && providerFilter.includes(product.provider_name))
     )
     .filter(product => 
-      statusFilter === null || 
-      (product.status.toLowerCase() === statusFilter.toLowerCase())
+      statusFilter.length === 0 ||
+      (product.status && statusFilter.includes(product.status))
     )
     .sort((a, b) => {
       let aValue: any = a[sortField];
@@ -300,9 +235,7 @@ const Products: React.FC = () => {
     .map(product => product.provider_name)
     .filter(provider => provider !== undefined && provider !== null))] as string[];
     
-  const statuses = [...new Set(products
-    .map(product => product.status)
-    .filter(status => status !== null))] as string[];
+  const statuses = ['active', 'inactive', 'dormant'];
 
   // Group products by client if the option is selected
   const groupedProducts = groupByClient
@@ -429,9 +362,9 @@ const Products: React.FC = () => {
                             </div>
                           </th>
                           <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                            <div className="flex items-center justify-start relative" ref={providerFilterRef}>
-                              <div className="flex items-center cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('provider_name')} title="Click to sort by Provider">
-                                <span>Provider</span>
+                            <div className="flex flex-col items-start">
+                              <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('provider_name')}>
+                                Provider
                                 <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
                                   {sortField === 'provider_name' ? (
                                     sortOrder === 'asc' ? (
@@ -449,52 +382,15 @@ const Products: React.FC = () => {
                                     </svg>
                                   )}
                                 </span>
-                              </div>
-                              <div className="flex items-center ml-1">
-                                {providerFilter && (
-                                  <span className="mr-1 px-1.5 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-800">
-                                    {providerFilter}
                                   </span>
-                                )}
-                                <button 
-                                  onClick={() => {
-                                    updateProviderDropdownPosition();
-                                    setShowProviderFilter(!showProviderFilter);
-                                  }}
-                                  className={`${providerFilter ? 'text-indigo-600' : 'text-gray-500'} hover:text-indigo-600 focus:outline-none flex items-center`}
-                                  aria-label="Filter providers"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                                  </svg>
-                                </button>
-                              </div>
-                              
-                              {showProviderFilter && (
-                                <div className="fixed z-50 w-48 bg-white rounded-md shadow-xl border border-gray-200 py-1 text-left" style={{ top: providerDropdownPosition.top, left: providerDropdownPosition.left }}>
-                                  <button 
-                                    onClick={() => {
-                                      setProviderFilter(null);
-                                      setShowProviderFilter(false);
-                                    }}
-                                    className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${providerFilter === null ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
-                                  >
-                                    All Providers
-                                  </button>
-                                  {providers.map(provider => (
-                                    <button 
-                                      key={provider}
-                                      onClick={() => {
-                                        setProviderFilter(provider);
-                                        setShowProviderFilter(false);
-                                      }}
-                                      className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${providerFilter === provider ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
-                                    >
-                                      {provider}
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
+                              <FilterDropdown
+                                id="provider-filter"
+                                options={providers.map(p => ({ value: p, label: p }))}
+                                value={providerFilter}
+                                onChange={vals => setProviderFilter(vals.filter(v => typeof v === 'string'))}
+                                placeholder="All Providers"
+                                className="min-w-[140px] mt-1"
+                              />
                             </div>
                           </th>
                           <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
@@ -520,7 +416,7 @@ const Products: React.FC = () => {
                             </div>
                           </th>
                           <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                            <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('irr')} title="Click to sort by IRR">
+                            <div className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('irr')} title="Click to sort by IRR">
                               IRR
                               <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
                                 {sortField === 'irr' ? (
@@ -542,9 +438,9 @@ const Products: React.FC = () => {
                             </div>
                           </th>
                           <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                            <div className="flex items-center justify-start relative" ref={statusFilterRef}>
-                              <div className="flex items-center cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('status')} title="Click to sort by Status">
-                                <span>Status</span>
+                            <div className="flex flex-col items-start">
+                              <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('status')}>
+                                Status
                                 <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
                                   {sortField === 'status' ? (
                                     sortOrder === 'asc' ? (
@@ -562,52 +458,15 @@ const Products: React.FC = () => {
                                     </svg>
                                   )}
                                 </span>
-                              </div>
-                              <div className="flex items-center ml-1">
-                                {statusFilter && (
-                                  <span className="mr-1 px-1.5 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-800">
-                                    {statusFilter}
                                   </span>
-                                )}
-                                <button 
-                                  onClick={() => {
-                                    updateStatusDropdownPosition();
-                                    setShowStatusFilter(!showStatusFilter);
-                                  }}
-                                  className={`${statusFilter ? 'text-indigo-600' : 'text-gray-500'} hover:text-indigo-600 focus:outline-none flex items-center`}
-                                  aria-label="Filter statuses"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                                  </svg>
-                                </button>
-                              </div>
-                              
-                              {showStatusFilter && (
-                                <div className="fixed z-50 w-48 bg-white rounded-md shadow-xl border border-gray-200 py-1 text-left" style={{ top: statusDropdownPosition.top, left: statusDropdownPosition.left }}>
-                                  <button 
-                                    onClick={() => {
-                                      setStatusFilter(null);
-                                      setShowStatusFilter(false);
-                                    }}
-                                    className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${statusFilter === null ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
-                                  >
-                                    All Statuses
-                                  </button>
-                                  {statuses.map(status => (
-                                    <button 
-                                      key={status}
-                                      onClick={() => {
-                                        setStatusFilter(status);
-                                        setShowStatusFilter(false);
-                                      }}
-                                      className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${statusFilter === status ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
-                                    >
-                                      {status}
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
+                              <FilterDropdown
+                                id="status-filter"
+                                options={statuses.map(s => ({ value: s, label: s }))}
+                                value={statusFilter}
+                                onChange={vals => setStatusFilter(vals.filter(v => typeof v === 'string'))}
+                                placeholder="All Statuses"
+                                className="min-w-[140px] mt-1"
+                              />
                             </div>
                           </th>
                         </tr>
@@ -621,9 +480,6 @@ const Products: React.FC = () => {
                           >
                             <td className="px-6 py-3 whitespace-nowrap">
                               <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{product.product_name}</div>
-                              <div className="text-xs text-gray-500 font-sans">
-                                product: {product.product_name}
-                              </div>
                             </td>
                             <td className="px-6 py-3 whitespace-nowrap">
                               <div className="flex items-center">
@@ -728,9 +584,9 @@ const Products: React.FC = () => {
                       </div>
                     </th>
                     <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      <div className="flex items-center justify-start relative" ref={providerFilterRef}>
-                        <div className="flex items-center cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('provider_name')} title="Click to sort by Provider">
-                          <span>Provider</span>
+                      <div className="flex flex-col items-start">
+                        <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('provider_name')}>
+                          Provider
                           <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
                             {sortField === 'provider_name' ? (
                               sortOrder === 'asc' ? (
@@ -748,52 +604,15 @@ const Products: React.FC = () => {
                               </svg>
                             )}
                           </span>
-                        </div>
-                        <div className="flex items-center ml-1">
-                          {providerFilter && (
-                            <span className="mr-1 px-1.5 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-800">
-                              {providerFilter}
                             </span>
-                          )}
-                          <button 
-                            onClick={() => {
-                              updateProviderDropdownPosition();
-                              setShowProviderFilter(!showProviderFilter);
-                            }}
-                            className={`${providerFilter ? 'text-indigo-600' : 'text-gray-500'} hover:text-indigo-600 focus:outline-none flex items-center`}
-                            aria-label="Filter providers"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                            </svg>
-                          </button>
-                        </div>
-                        
-                        {showProviderFilter && (
-                          <div className="fixed z-50 w-48 bg-white rounded-md shadow-xl border border-gray-200 py-1 text-left" style={{ top: providerDropdownPosition.top, left: providerDropdownPosition.left }}>
-                            <button 
-                              onClick={() => {
-                                setProviderFilter(null);
-                                setShowProviderFilter(false);
-                              }}
-                              className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${providerFilter === null ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
-                            >
-                              All Providers
-                            </button>
-                            {providers.map(provider => (
-                              <button 
-                                key={provider}
-                                onClick={() => {
-                                  setProviderFilter(provider);
-                                  setShowProviderFilter(false);
-                                }}
-                                className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${providerFilter === provider ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
-                              >
-                                {provider}
-                              </button>
-                            ))}
-                          </div>
-                        )}
+                        <FilterDropdown
+                          id="provider-filter"
+                          options={providers.map(p => ({ value: p, label: p }))}
+                          value={providerFilter}
+                          onChange={vals => setProviderFilter(vals.filter(v => typeof v === 'string'))}
+                          placeholder="All Providers"
+                          className="min-w-[140px] mt-1"
+                        />
                       </div>
                     </th>
                     <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
@@ -819,7 +638,7 @@ const Products: React.FC = () => {
                       </div>
                     </th>
                     <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('irr')} title="Click to sort by IRR">
+                      <div className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('irr')} title="Click to sort by IRR">
                         IRR
                         <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
                           {sortField === 'irr' ? (
@@ -841,9 +660,9 @@ const Products: React.FC = () => {
                       </div>
                     </th>
                     <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      <div className="flex items-center justify-start relative" ref={statusFilterRef}>
-                        <div className="flex items-center cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('status')} title="Click to sort by Status">
-                          <span>Status</span>
+                      <div className="flex flex-col items-start">
+                        <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('status')}>
+                          Status
                           <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
                             {sortField === 'status' ? (
                               sortOrder === 'asc' ? (
@@ -861,52 +680,15 @@ const Products: React.FC = () => {
                               </svg>
                             )}
                           </span>
-                        </div>
-                        <div className="flex items-center ml-1">
-                          {statusFilter && (
-                            <span className="mr-1 px-1.5 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-800">
-                              {statusFilter}
                             </span>
-                          )}
-                          <button 
-                            onClick={() => {
-                              updateStatusDropdownPosition();
-                              setShowStatusFilter(!showStatusFilter);
-                            }}
-                            className={`${statusFilter ? 'text-indigo-600' : 'text-gray-500'} hover:text-indigo-600 focus:outline-none flex items-center`}
-                            aria-label="Filter statuses"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                            </svg>
-                          </button>
-                        </div>
-                        
-                        {showStatusFilter && (
-                          <div className="fixed z-50 w-48 bg-white rounded-md shadow-xl border border-gray-200 py-1 text-left" style={{ top: statusDropdownPosition.top, left: statusDropdownPosition.left }}>
-                            <button 
-                              onClick={() => {
-                                setStatusFilter(null);
-                                setShowStatusFilter(false);
-                              }}
-                              className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${statusFilter === null ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
-                            >
-                              All Statuses
-                            </button>
-                            {statuses.map(status => (
-                              <button 
-                                key={status}
-                                onClick={() => {
-                                  setStatusFilter(status);
-                                  setShowStatusFilter(false);
-                                }}
-                                className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${statusFilter === status ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
-                              >
-                                {status}
-                              </button>
-                            ))}
-                          </div>
-                        )}
+                        <FilterDropdown
+                          id="status-filter"
+                          options={statuses.map(s => ({ value: s, label: s }))}
+                          value={statusFilter}
+                          onChange={vals => setStatusFilter(vals.filter(v => typeof v === 'string'))}
+                          placeholder="All Statuses"
+                          className="min-w-[140px] mt-1"
+                        />
                       </div>
                     </th>
                   </tr>
@@ -927,10 +709,7 @@ const Products: React.FC = () => {
                     >
                         <td className="px-6 py-3 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{product.client_name}</div>
-                          <div className="text-xs text-gray-500 font-sans">
-                          product: {product.product_name}
-                        </div>
-                      </td>
+                        </td>
                         <td className="px-6 py-3 whitespace-nowrap">
                           <div className="text-sm text-gray-600 font-sans">{product.product_name}</div>
                         </td>

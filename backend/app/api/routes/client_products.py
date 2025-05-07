@@ -177,9 +177,11 @@ async def get_client_product(client_product_id: int, db = Depends(get_db)):
         client_product = result.data[0]
         
         # Get additional client information for context
-        client_result = db.table("clients").select("name").eq("id", client_product.get("client_id")).execute()
+        client_result = db.table("clients").select("forname,surname").eq("id", client_product.get("client_id")).execute()
         if client_result.data and len(client_result.data) > 0:
-            client_product["client_name"] = client_result.data[0].get("name")
+            client = client_result.data[0]
+            client_name = f"{client.get('forname', '')} {client.get('surname', '')}".strip()
+            client_product["client_name"] = client_name
         
         # Get provider information if available
         if client_product.get("provider_id"):
@@ -240,7 +242,7 @@ async def update_client_product(client_product_id: int, client_product_update: C
         1. Validates the update data using the ClientproductUpdate model
         2. Removes any None values from the input (fields that aren't being updated)
         3. Verifies the client product exists
-        4. Validates that referenced client_id and available_products_id exist if provided
+        4. Validates that referenced client_id exists if provided
         5. Updates only the provided fields in the database
         6. Returns the updated client product information
     Expected output: A JSON object containing the updated client product's details
@@ -262,12 +264,6 @@ async def update_client_product(client_product_id: int, client_product_update: C
             client_check = db.table("clients").select("id").eq("id", update_data["client_id"]).execute()
             if not client_check.data or len(client_check.data) == 0:
                 raise HTTPException(status_code=404, detail=f"Client with ID {update_data['client_id']} not found")
-        
-        # Validate available_products_id if provided
-        if "available_products_id" in update_data and update_data["available_products_id"] is not None:
-            product_check = db.table("available_products").select("id").eq("id", update_data["available_products_id"]).execute()
-            if not product_check.data or len(product_check.data) == 0:
-                raise HTTPException(status_code=404, detail=f"Product with ID {update_data['available_products_id']} not found")
         
         # Convert date objects to ISO format strings
         if 'start_date' in update_data and update_data['start_date'] is not None:
@@ -296,114 +292,90 @@ async def delete_client_product(client_product_id: int, db = Depends(get_db)):
     Why it's needed: Allows removing client products that are no longer relevant to the business.
     How it works:
         1. Verifies the client product exists
-        2. Gets all product_holdings associated with this client product
-        3. For each holding, finds associated portfolio and portfolio funds
-        4. For each portfolio fund:
-           - Deletes all IRR values associated with the fund
-           - Deletes all holding activity logs associated with the fund
-        5. Deletes all portfolio_funds associated with client-specific portfolios
-        6. Deletes the portfolios that were used exclusively by this client
-        7. Deletes all product_holdings associated with this client product
-        8. Finally deletes the client product record
-        9. Returns a success message with deletion counts
+        2. Gets the portfolio_id directly from the client product
+        3. For the linked portfolio:
+           a. Gets all portfolio_funds for this portfolio
+           b. For each portfolio fund:
+              - Deletes all fund_valuations associated with the fund
+              - Deletes all IRR values associated with the fund
+              - Deletes all holding_activity_log entries associated with the fund
+           c. Deletes all portfolio_funds for this portfolio
+        4. Deletes the client product record first (to remove the foreign key constraint)
+        5. Deletes the portfolio itself
+        6. Returns a success message with deletion counts
     Expected output: A JSON object with a success message confirmation and deletion counts
     """
     try:
         # Check if client product exists
-        check_result = db.table("client_products").select("id").eq("id", client_product_id).execute()
+        check_result = db.table("client_products").select("*").eq("id", client_product_id).execute()
         if not check_result.data or len(check_result.data) == 0:
             raise HTTPException(status_code=404, detail=f"Client product with ID {client_product_id} not found")
+        
+        client_product = check_result.data[0]
+        portfolio_id = client_product.get("portfolio_id")
         
         logger.info(f"Deleting client product with ID {client_product_id} and all associated records")
         
         # Initialize counters for deleted records
-        holdings_deleted = 0
-        activity_logs_deleted = 0
         portfolio_funds_deleted = 0
+        fund_valuations_deleted = 0
         irr_values_deleted = 0
-        portfolios_deleted = 0
+        activity_logs_deleted = 0
         
-        # Get all product_holdings for this client product
-        product_holdings = db.table("product_holdings").select("id", "portfolio_id").eq("client_product_id", client_product_id).execute()
-        
-        # Track portfolios that belong to this client
-        client_portfolios = set()
-        
-        if product_holdings.data and len(product_holdings.data) > 0:
-            holdings_deleted = len(product_holdings.data)
+        # Process the portfolio if it exists
+        if portfolio_id:
+            logger.info(f"Processing portfolio with ID {portfolio_id}")
             
-            for holding in product_holdings.data:
-                holding_id = holding["id"]
-                portfolio_id = holding.get("portfolio_id")
-                
-                # Add to client portfolios if exists
-                if portfolio_id:
-                    client_portfolios.add(portfolio_id)
-                
-                # Delete activity logs for this holding
-                activity_result = db.table("holding_activity_log").delete().eq("product_holding_id", holding_id).execute()
-                deleted_count = len(activity_result.data) if activity_result.data else 0
-                activity_logs_deleted += deleted_count
-                logger.info(f"Deleted {deleted_count} activity logs for holding {holding_id}")
+            # Get all portfolio funds for this portfolio
+            portfolio_funds = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
             
-            # Delete the holdings
-            db.table("product_holdings").delete().eq("client_product_id", client_product_id).execute()
-            logger.info(f"Deleted {holdings_deleted} product holdings")
-        
-        # For each portfolio that might belong to this client
-        for portfolio_id in client_portfolios:
-            # Check if this portfolio is used by other clients
-            other_holdings = db.table("product_holdings")\
-                .select("id")\
-                .eq("portfolio_id", portfolio_id)\
-                .neq("client_product_id", client_product_id)\
-                .execute()
+            if portfolio_funds.data and len(portfolio_funds.data) > 0:
+                portfolio_funds_count = len(portfolio_funds.data)
+                portfolio_funds_deleted = portfolio_funds_count
                 
-            # If no other clients use this portfolio, we can safely delete it and its funds
-            if not other_holdings.data or len(other_holdings.data) == 0:
-                # Get all portfolio funds for this portfolio
-                portfolio_funds = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
-                
-                if portfolio_funds.data:
-                    portfolio_funds_count = len(portfolio_funds.data)
-                    portfolio_funds_deleted += portfolio_funds_count
+                # Process each portfolio fund
+                for fund in portfolio_funds.data:
+                    fund_id = fund["id"]
                     
-                    # Process each portfolio fund
-                    for fund in portfolio_funds.data:
-                        fund_id = fund["id"]
-                        
-                        # Delete IRR values for this fund
-                        irr_result = db.table("irr_values").delete().eq("fund_id", fund_id).execute()
-                        deleted_count = len(irr_result.data) if irr_result.data else 0
-                        irr_values_deleted += deleted_count
-                        logger.info(f"Deleted {deleted_count} IRR values for portfolio fund {fund_id}")
-                        
-                        # Delete remaining activity logs for this fund (those not tied to this client's holdings)
-                        activity_result = db.table("holding_activity_log").delete().eq("portfolio_fund_id", fund_id).execute()
-                        deleted_count = len(activity_result.data) if activity_result.data else 0
-                        activity_logs_deleted += deleted_count
-                        logger.info(f"Deleted {deleted_count} additional activity logs for portfolio fund {fund_id}")
+                    # Delete fund valuations for this fund
+                    fund_val_result = db.table("fund_valuations").delete().eq("portfolio_fund_id", fund_id).execute()
+                    deleted_count = len(fund_val_result.data) if fund_val_result.data else 0
+                    fund_valuations_deleted += deleted_count
+                    logger.info(f"Deleted {deleted_count} fund valuations for portfolio fund {fund_id}")
                     
-                    # Delete all portfolio funds for this portfolio
-                    db.table("portfolio_funds").delete().eq("portfolio_id", portfolio_id).execute()
-                    logger.info(f"Deleted {portfolio_funds_count} portfolio funds for portfolio {portfolio_id}")
+                    # Delete IRR values for this fund
+                    irr_result = db.table("irr_values").delete().eq("fund_id", fund_id).execute()
+                    deleted_count = len(irr_result.data) if irr_result.data else 0
+                    irr_values_deleted += deleted_count
+                    logger.info(f"Deleted {deleted_count} IRR values for portfolio fund {fund_id}")
+                    
+                    # Delete activity logs for this fund
+                    activity_result = db.table("holding_activity_log").delete().eq("portfolio_fund_id", fund_id).execute()
+                    deleted_count = len(activity_result.data) if activity_result.data else 0
+                    activity_logs_deleted += deleted_count
+                    logger.info(f"Deleted {deleted_count} activity logs for portfolio fund {fund_id}")
                 
-                # Delete the portfolio
-                db.table("portfolios").delete().eq("id", portfolio_id).execute()
-                portfolios_deleted += 1
-                logger.info(f"Deleted portfolio {portfolio_id}")
+                # Delete all portfolio funds for this portfolio
+                db.table("portfolio_funds").delete().eq("portfolio_id", portfolio_id).execute()
+                logger.info(f"Deleted {portfolio_funds_count} portfolio funds for portfolio {portfolio_id}")
         
-        # Finally, delete the client product
+        # Delete the client product FIRST to remove foreign key constraint
         result = db.table("client_products").delete().eq("id", client_product_id).execute()
+        logger.info(f"Deleted client product {client_product_id}")
+        
+        # Now it's safe to delete the portfolio
+        if portfolio_id:
+            db.table("portfolios").delete().eq("id", portfolio_id).execute()
+            logger.info(f"Deleted portfolio {portfolio_id}")
         
         return {
             "message": f"Client product with ID {client_product_id} and all associated records deleted successfully",
             "details": {
-                "holdings_deleted": holdings_deleted,
-                "activity_logs_deleted": activity_logs_deleted,
+                "portfolio_deleted": 1 if portfolio_id else 0,
                 "portfolio_funds_deleted": portfolio_funds_deleted,
+                "fund_valuations_deleted": fund_valuations_deleted,
                 "irr_values_deleted": irr_values_deleted,
-                "portfolios_deleted": portfolios_deleted
+                "activity_logs_deleted": activity_logs_deleted
             }
         }
     except HTTPException:
