@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { SearchableDropdown } from '../components/ui';
+import FilterDropdown from '../components/ui/FilterDropdown';
 
 interface Client {
   id: string;
-  name: string;
+  forname: string | null;
+  surname: string | null;
   relationship: string;
   status: string;
   advisor: string | null;
@@ -15,22 +17,22 @@ interface Client {
   fum?: number;
 }
 
-type SortField = 'name' | 'relationship' | 'fum';
+type SortField = 'surname' | 'relationship' | 'fum';
 type SortOrder = 'asc' | 'desc';
 
 const Clients: React.FC = () => {
   const navigate = useNavigate();
   const { api } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortField, setSortField] = useState<SortField>('surname');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDormant, setShowDormant] = useState(false);
-  const [advisorFilter, setAdvisorFilter] = useState<string | null>(null);
+  const [advisorFilter, setAdvisorFilter] = useState<string[]>([]);
   const [showAdvisorFilter, setShowAdvisorFilter] = useState(false);
-  const [relationshipFilter, setRelationshipFilter] = useState<string | null>(null);
+  const [relationshipFilter, setRelationshipFilter] = useState<string[]>([]);
   const [showRelationshipFilter, setShowRelationshipFilter] = useState(false);
   const advisorFilterRef = useRef<HTMLDivElement>(null);
   const relationshipFilterRef = useRef<HTMLDivElement>(null);
@@ -176,16 +178,17 @@ const Clients: React.FC = () => {
 
   const filteredAndSortedClients = clients
     .filter(client => 
-      client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (client.forname?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+      (client.surname?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
       client.relationship.toLowerCase().includes(searchQuery.toLowerCase())
     )
     .filter(client => 
-      advisorFilter === null || 
-      (client.advisor && client.advisor.toLowerCase().includes(advisorFilter.toLowerCase()))
+      advisorFilter.length === 0 ||
+      (client.advisor && advisorFilter.includes(client.advisor))
     )
     .filter(client => 
-      relationshipFilter === null || 
-      (client.relationship && client.relationship.toLowerCase().includes(relationshipFilter.toLowerCase()))
+      relationshipFilter.length === 0 ||
+      (client.relationship && relationshipFilter.includes(client.relationship))
     )
     .sort((a, b) => {
       if (sortField === 'fum') {
@@ -193,11 +196,31 @@ const Clients: React.FC = () => {
         const bValue = b.fum || 0;
         return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
       } else {
-        const aValue = String(a[sortField] || '').toLowerCase();
-        const bValue = String(b[sortField] || '').toLowerCase();
-      return sortOrder === 'asc' 
-        ? aValue.localeCompare(bValue)
-        : bValue.localeCompare(aValue);
+        // Always sort by surname first, then by forname as a tiebreaker
+        if (sortField === 'surname') {
+          const aSurname = String(a.surname || '').toLowerCase();
+          const bSurname = String(b.surname || '').toLowerCase();
+          const surnameCompare = sortOrder === 'asc' 
+            ? aSurname.localeCompare(bSurname)
+            : bSurname.localeCompare(aSurname);
+            
+          // If surnames are the same, compare by forname as tiebreaker
+          if (surnameCompare === 0) {
+            const aForname = String(a.forname || '').toLowerCase();
+            const bForname = String(b.forname || '').toLowerCase();
+            return sortOrder === 'asc' 
+              ? aForname.localeCompare(bForname)
+              : bForname.localeCompare(aForname);
+          }
+          return surnameCompare;
+        } else {
+          // For other fields, sort normally
+          const aValue = String(a[sortField] || '').toLowerCase();
+          const bValue = String(b[sortField] || '').toLowerCase();
+          return sortOrder === 'asc' 
+            ? aValue.localeCompare(bValue)
+            : bValue.localeCompare(aValue);
+        }
       }
     });
 
@@ -273,10 +296,10 @@ const Clients: React.FC = () => {
                 <thead className="bg-gray-100">
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider w-1/4 border-b-2 border-indigo-300">
-                      <div className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('name')}>
-                        Name
+                      <div className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('surname')}>
+                        Client Name
                         <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                          {sortField === 'name' ? (
+                          {sortField === 'surname' ? (
                             sortOrder === 'asc' ? (
                               <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
@@ -295,9 +318,9 @@ const Clients: React.FC = () => {
                       </div>
                     </th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider w-1/4 border-b-2 border-indigo-300">
-                      <div className="flex items-center justify-start relative" ref={relationshipFilterRef}>
-                        <div className="flex items-center cursor-pointer" onClick={() => handleSortFieldChange('relationship')}>
-                          <span>Relationship</span>
+                      <div className="flex flex-col items-start">
+                        <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('relationship')}>
+                          Relationship
                           <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
                             {sortField === 'relationship' ? (
                               sortOrder === 'asc' ? (
@@ -315,102 +338,28 @@ const Clients: React.FC = () => {
                               </svg>
                             )}
                           </span>
-                        </div>
-                        <div className="flex items-center ml-2">
-                          {relationshipFilter && (
-                            <span className="mr-1 px-1.5 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-800">
-                              {relationshipFilter}
-                            </span>
-                          )}
-                          <button 
-                            onClick={() => {
-                              updateRelationshipDropdownPosition();
-                              setShowRelationshipFilter(!showRelationshipFilter);
-                            }}
-                            className={`${relationshipFilter ? 'text-indigo-600' : 'text-gray-500'} hover:text-indigo-600 focus:outline-none flex items-center`}
-                            aria-label="Filter relationships"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                            </svg>
-                          </button>
-                        </div>
-                        
-                        {showRelationshipFilter && (
-                          <div className="fixed z-50 w-48 bg-white rounded-md shadow-xl border border-gray-200 py-1 text-left" style={{ top: relationshipDropdownPosition.top, left: relationshipDropdownPosition.left }}>
-                            <button 
-                              onClick={() => {
-                                setRelationshipFilter(null);
-                                setShowRelationshipFilter(false);
-                              }}
-                              className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${relationshipFilter === null ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
-                            >
-                              All Relationships
-                            </button>
-                            {relationships.map(relationship => (
-                              <button 
-                                key={relationship}
-                                onClick={() => {
-                                  setRelationshipFilter(relationship);
-                                  setShowRelationshipFilter(false);
-                                }}
-                                className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${relationshipFilter === relationship ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
-                              >
-                                {relationship}
-                              </button>
-                            ))}
-                          </div>
-                        )}
+                        </span>
+                        <FilterDropdown
+                          id="relationship-filter"
+                          options={relationships.map(r => ({ value: r, label: r }))}
+                          value={relationshipFilter}
+                          onChange={vals => setRelationshipFilter(vals.filter(v => typeof v === 'string'))}
+                          placeholder="All Relationships"
+                          className="min-w-[140px] mt-1"
+                        />
                       </div>
                     </th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider w-1/4 border-b-2 border-indigo-300">
-                      <div className="flex items-center justify-start relative" ref={advisorFilterRef}>
+                      <div className="flex flex-col items-start">
                         <span>Advisor</span>
-                        <div className="flex items-center ml-2">
-                          {advisorFilter && (
-                            <span className="mr-1 px-1.5 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-800">
-                              {advisorFilter}
-                            </span>
-                          )}
-                          <button 
-                            onClick={() => {
-                              updateAdvisorDropdownPosition();
-                              setShowAdvisorFilter(!showAdvisorFilter);
-                            }}
-                            className={`${advisorFilter ? 'text-indigo-600' : 'text-gray-500'} hover:text-indigo-600 focus:outline-none flex items-center`}
-                            aria-label="Filter advisors"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                            </svg>
-                          </button>
-                        </div>
-                        
-                        {showAdvisorFilter && (
-                          <div className="fixed z-50 w-48 bg-white rounded-md shadow-xl border border-gray-200 py-1 text-left" style={{ top: advisorDropdownPosition.top, left: advisorDropdownPosition.left }}>
-                            <button 
-                              onClick={() => {
-                                setAdvisorFilter(null);
-                                setShowAdvisorFilter(false);
-                              }}
-                              className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${advisorFilter === null ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
-                            >
-                              All Advisors
-                            </button>
-                            {advisors.map(advisor => (
-                              <button 
-                                key={advisor}
-                                onClick={() => {
-                                  setAdvisorFilter(advisor);
-                                  setShowAdvisorFilter(false);
-                                }}
-                                className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${advisorFilter === advisor ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
-                              >
-                                {advisor}
-                              </button>
-                            ))}
-                          </div>
-                        )}
+                        <FilterDropdown
+                          id="advisor-filter"
+                          options={advisors.map(a => ({ value: a, label: a }))}
+                          value={advisorFilter}
+                          onChange={vals => setAdvisorFilter(vals.filter(v => typeof v === 'string'))}
+                          placeholder="All Advisors"
+                          className="min-w-[140px] mt-1"
+                        />
                       </div>
                     </th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider w-1/4 border-b-2 border-indigo-300">
@@ -452,11 +401,13 @@ const Clients: React.FC = () => {
                       onClick={() => handleClientClick(client.id)}
                     >
                         <td className="px-4 py-3 whitespace-nowrap w-1/4">
-                          <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{client.name}</div>
-                      </td>
+                          <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">
+                            {client.forname || ''} {client.surname || ''}
+                          </div>
+                        </td>
                         <td className="px-4 py-3 whitespace-nowrap w-1/4">
                           <div className="text-sm text-gray-600 font-sans">{client.relationship}</div>
-                      </td>
+                        </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 w-1/4 font-sans">
                           {client.advisor ? (
                             <div className="flex items-center">

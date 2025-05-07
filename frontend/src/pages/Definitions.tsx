@@ -458,16 +458,7 @@ const Definitions: React.FC = () => {
         return;
       }
       
-      // Warn about possible integration issues between mock/real data
-      const confirmNavigation = window.confirm(
-        'Note: This will navigate to the portfolio template details page. ' +
-        'If this is a newly created template, it may not be fully initialized in the database yet. ' +
-        '\n\nProceed to details?'
-      );
-      
-      if (!confirmNavigation) {
-        return;
-      }
+      // Navigate directly without confirmation
     }
     navigate(`/definitions/${type}/${id}`);
   }, [navigate, portfolios]);

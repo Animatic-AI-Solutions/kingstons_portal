@@ -310,3 +310,81 @@ async def create_portfolio_from_template(data: PortfolioFromTemplate, db = Depen
             print(f"Failed to add fund {template_fund['fund_id']} to portfolio {new_portfolio['id']}")
     
     return new_portfolio 
+
+@router.delete("/{portfolio_id}", response_model=dict)
+async def delete_available_portfolio(portfolio_id: int, db = Depends(get_db)):
+    """
+    Delete a portfolio template and all its associated funds.
+    
+    Args:
+        portfolio_id: The ID of the portfolio template to delete
+        
+    Returns:
+        A success message and details of what was deleted
+    """
+    try:
+        logger.info(f"Deleting portfolio template with ID: {portfolio_id}")
+        
+        # First check if portfolio exists
+        check_result = db.table("available_portfolios").select("id").eq("id", portfolio_id).execute()
+        if not check_result.data or len(check_result.data) == 0:
+            raise HTTPException(status_code=404, detail=f"Portfolio template with ID {portfolio_id} not found")
+        
+        # Get all funds for this portfolio
+        funds_result = db.table("available_portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
+        funds_deleted = len(funds_result.data) if funds_result.data else 0
+        
+        # Delete all funds first
+        if funds_deleted > 0:
+            db.table("available_portfolio_funds").delete().eq("portfolio_id", portfolio_id).execute()
+            logger.info(f"Deleted {funds_deleted} funds from portfolio template {portfolio_id}")
+        
+        # Now delete the portfolio template
+        result = db.table("available_portfolios").delete().eq("id", portfolio_id).execute()
+        
+        if not result.data or len(result.data) == 0:
+            raise HTTPException(status_code=500, detail="Failed to delete portfolio template")
+        
+        return {
+            "message": f"Portfolio template with ID {portfolio_id} deleted successfully",
+            "details": {
+                "portfolio_deleted": 1,
+                "funds_deleted": funds_deleted
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting portfolio template: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@router.get("/available_portfolio_funds", response_model=List[dict])
+async def get_available_portfolio_funds(
+    portfolio_id: Optional[int] = None,
+    fund_id: Optional[int] = None,
+    db = Depends(get_db)
+):
+    """
+    Get portfolio funds with optional filtering by portfolio_id or fund_id.
+    
+    Args:
+        portfolio_id: Optional filter by portfolio ID
+        fund_id: Optional filter by fund ID
+        
+    Returns:
+        List of portfolio funds
+    """
+    try:
+        query = db.table("available_portfolio_funds").select("*")
+        
+        if portfolio_id is not None:
+            query = query.eq("portfolio_id", portfolio_id)
+            
+        if fund_id is not None:
+            query = query.eq("fund_id", fund_id)
+            
+        result = query.execute()
+        return result.data
+    except Exception as e:
+        logger.error(f"Error fetching available portfolio funds: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch portfolio funds: {str(e)}") 

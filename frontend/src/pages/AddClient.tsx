@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 interface ClientFormData {
-  name: string;
+  forname: string;
+  surname: string;
   relationship: string;
   status: string;
   advisor: string | null;
@@ -13,7 +14,8 @@ const AddClient: React.FC = () => {
   const navigate = useNavigate();
   const { api } = useAuth();
   const [formData, setFormData] = useState<ClientFormData>({
-    name: '',
+    forname: '',
+    surname: '',
     relationship: '',
     status: 'active',
     advisor: null
@@ -34,8 +36,13 @@ const AddClient: React.FC = () => {
     setError(null);
     
     // Validate form data
-    if (!formData.name?.trim()) {
-      setError('Client name is required');
+    if (!formData.forname?.trim()) {
+      setError('First name is required');
+      return;
+    }
+    
+    if (!formData.surname?.trim()) {
+      setError('Last name is required');
       return;
     }
     
@@ -53,7 +60,7 @@ const AddClient: React.FC = () => {
       // Redirect to clients list
       navigate('/clients');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to create client');
+      setError(`Failed to create client: ${JSON.stringify(err.response?.data || err.message)}`);
       console.error('Error creating client:', err);
     } finally {
       setIsSubmitting(false);
@@ -82,14 +89,29 @@ const AddClient: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Name
+              <label htmlFor="forname" className="block text-sm font-medium text-gray-700">
+                First Name
               </label>
               <input
                 type="text"
-                id="name"
-                name="name"
-                value={formData.name}
+                id="forname"
+                name="forname"
+                value={formData.forname}
+                onChange={handleChange}
+                required
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="surname" className="block text-sm font-medium text-gray-700">
+                Last Name
+              </label>
+              <input
+                type="text"
+                id="surname"
+                name="surname"
+                value={formData.surname}
                 onChange={handleChange}
                 required
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
