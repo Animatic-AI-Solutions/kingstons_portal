@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, createContext, useContext } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import FilterDropdown from '../components/ui/FilterDropdown';
 
 // Provider interface
 interface Provider {
@@ -57,7 +58,7 @@ type TabType = 'providers' | 'funds' | 'portfolio-templates';
 type SortOrder = 'asc' | 'desc';
 type ProviderSortField = 'name' | 'status' | 'created_at';
 type FundSortField = 'fund_name' | 'risk_factor' | 'isin_number' | 'fund_cost' | 'created_at';
-type PortfolioSortField = 'name' | 'type' | 'risk' | 'weighted_risk' | 'performance' | 'created_at' | 'averageRisk';
+type PortfolioSortField = 'name' | 'weighted_risk' | 'performance' | 'created_at' | 'averageRisk';
 
 // Error helper function
 const getErrorMessage = (error: any): string => {
@@ -257,13 +258,25 @@ const Definitions: React.FC = () => {
   const [providerSortField, setProviderSortField] = useState<ProviderSortField>('name');
   const [providerSortOrder, setProviderSortOrder] = useState<SortOrder>('asc');
   
+  // Provider filtering state
+  const [providerStatusFilters, setProviderStatusFilters] = useState<(string | number)[]>([]);
+  
   // Fund sorting state
   const [fundSortField, setFundSortField] = useState<FundSortField>('fund_name');
   const [fundSortOrder, setFundSortOrder] = useState<SortOrder>('asc');
   
+  // Fund filtering state
+  const [fundStatusFilters, setFundStatusFilters] = useState<(string | number)[]>([]);
+  const [riskLevelFilters, setRiskLevelFilters] = useState<(string | number)[]>([]);
+  
   // Portfolio sorting state
   const [portfolioSortField, setPortfolioSortField] = useState<PortfolioSortField>('name');
   const [portfolioSortOrder, setPortfolioSortOrder] = useState<SortOrder>('asc');
+  
+  // Portfolio filtering state
+  const [portfolioTypeFilters, setPortfolioTypeFilters] = useState<(string | number)[]>([]);
+  const [riskRangeFilters, setRiskRangeFilters] = useState<(string | number)[]>([]);
+  const [irrRangeFilters, setIrrRangeFilters] = useState<(string | number)[]>([]);
   
   // API calls for all entity types
   const fetchProviders = useCallback(async ({ signal }: { signal?: AbortSignal } = {}) => {
@@ -378,6 +391,24 @@ const Definitions: React.FC = () => {
     return 'Aggressive';
   };
   
+  // Helper function to get risk range from portfolio weighted risk
+  const getRiskRange = (portfolio: Portfolio): string => {
+    const risk = portfolio.weighted_risk || portfolio.averageRisk || 0;
+    if (risk < 3) return '0-3';
+    if (risk < 5) return '3-5';
+    if (risk < 7) return '5-7';
+    return '7+';
+  };
+  
+  // Helper function to get IRR range
+  const getIRRRange = (portfolio: Portfolio): string => {
+    const irr = portfolio.performance || 0;
+    if (irr < 0) return 'Negative';
+    if (irr < 5) return '0-5%';
+    if (irr < 10) return '5-10%';
+    return '10%+';
+  };
+  
   // Use custom hooks for data fetching
   const { 
     data: providers, 
@@ -445,8 +476,26 @@ const Definitions: React.FC = () => {
   
   // Navigation functions
   const handleItemClick = useCallback((type: TabType, id: number) => {
+    // Add debugging for clicked items
+    console.log(`Clicked on ${type} with ID: ${id}, type: ${typeof id}`);
+    
+    // For funds, ensure the ID is a valid number
+    if (type === 'funds') {
+      // If id is not a number or is NaN, show an error
+      if (typeof id !== 'number' || isNaN(id)) {
+        alert(`Invalid fund ID: ${id}`);
+        return;
+      }
+      
+      // Ensure the fund exists in our loaded funds data
+      const fund = funds.find(f => f.id === id);
+      if (!fund) {
+        console.error(`Fund with ID ${id} not found in current data`);
+        // But still navigate, as it might exist in the database
+      }
+    }
     // For portfolio templates, only navigate if they have complete data
-    if (type === 'portfolio-templates') {
+    else if (type === 'portfolio-templates') {
       console.log(`Trying to open portfolio template ID: ${id}`);
       // Find the portfolio in the original unfiltered array
       const portfolio = portfolios.find(p => p.id === id);
@@ -457,11 +506,14 @@ const Definitions: React.FC = () => {
         alert('This portfolio template has incomplete fund data and cannot be opened.');
         return;
       }
-      
-      // Navigate directly without confirmation
     }
-    navigate(`/definitions/${type}/${id}`);
-  }, [navigate, portfolios]);
+    
+    // Log navigation URL for debugging
+    const navigationUrl = `/definitions/${type}/${id}`;
+    console.log(`Navigating to: ${navigationUrl}`);
+    
+    navigate(navigationUrl);
+  }, [navigate, portfolios, funds]);
   
   const getEntityLink = useCallback((type: TabType) => {
     switch (type) {
@@ -476,8 +528,8 @@ const Definitions: React.FC = () => {
     }
   }, []);
   
-  const getAddEntityLink = useCallback((type: TabType) => {
-    switch (type) {
+  const getAddEntityLink = useMemo(() => {
+    switch (activeTab) {
       case 'providers':
         return '/definitions/providers/add';
       case 'funds':
@@ -487,11 +539,11 @@ const Definitions: React.FC = () => {
       default:
         return '/';
     }
-  }, []);
+  }, [activeTab]);
   
   const handleAddNew = useCallback(() => {
-    navigate(getAddEntityLink(activeTab));
-  }, [navigate, getAddEntityLink, activeTab]);
+    navigate(getAddEntityLink);
+  }, [navigate, getAddEntityLink]);
   
   // Provider sort function
   const handleProviderSortChange = useCallback((field: ProviderSortField) => {
@@ -541,6 +593,16 @@ const Definitions: React.FC = () => {
     showInactive
   ]);
   
+  // Helper functions for funds
+  const getFundRiskLevel = (fund: Fund): string => {
+    const risk = fund.risk_factor;
+    if (risk === null || risk === undefined) return 'Unrated';
+    if (risk < 3) return 'Low';
+    if (risk < 5) return 'Medium';
+    if (risk < 7) return 'High';
+    return 'Very High';
+  };
+  
   // Filter and sort providers
   const filteredAndSortedProviders = useMemo(() => {
     return providers
@@ -549,6 +611,10 @@ const Definitions: React.FC = () => {
         (provider.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
          provider.status?.toLowerCase().includes(searchQuery.toLowerCase()) ||
          (provider.type && provider.type?.toLowerCase().includes(searchQuery.toLowerCase())))
+      )
+      .filter(provider => 
+        providerStatusFilters.length === 0 || 
+        (provider.status && providerStatusFilters.includes(provider.status))
       )
       .sort((a, b) => {
         let aValue: any = a[providerSortField];
@@ -565,7 +631,7 @@ const Definitions: React.FC = () => {
         if (aValue > bValue) return providerSortOrder === 'asc' ? 1 : -1;
         return 0;
       });
-  }, [providers, showInactive, searchQuery, providerSortField, providerSortOrder]);
+  }, [providers, showInactive, searchQuery, providerSortField, providerSortOrder, providerStatusFilters]);
   
   // Filter and sort funds
   const filteredAndSortedFunds = useMemo(() => {
@@ -575,6 +641,14 @@ const Definitions: React.FC = () => {
         ((fund.fund_name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
          (fund.isin_number?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
          (fund.provider_name && (fund.provider_name.toLowerCase() || '').includes(searchQuery.toLowerCase())))
+      )
+      .filter(fund => 
+        fundStatusFilters.length === 0 || 
+        (fund.status && fundStatusFilters.includes(fund.status))  
+      )
+      .filter(fund => 
+        riskLevelFilters.length === 0 ||
+        riskLevelFilters.includes(getFundRiskLevel(fund))
       )
       .sort((a, b) => {
         if (fundSortField === 'risk_factor' || fundSortField === 'fund_cost') {
@@ -606,22 +680,29 @@ const Definitions: React.FC = () => {
             : bValue.localeCompare(aValue);
         }
       });
-  }, [funds, showInactive, searchQuery, fundSortField, fundSortOrder]);
+  }, [funds, showInactive, searchQuery, fundSortField, fundSortOrder, fundStatusFilters, riskLevelFilters]);
   
-  // Filter and sort portfolios
+  // Apply search filter and sorting to portfolios
   const filteredAndSortedPortfolios = useMemo(() => {
-    return portfolios
-      .filter(portfolio => 
-        (portfolio.name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) || 
-        (portfolio.type?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-        (portfolio.risk?.toLowerCase() || '').includes(searchQuery.toLowerCase())
-      )
-      .sort((a, b) => {
-        if (portfolioSortField === 'weighted_risk' || portfolioSortField === 'performance' || portfolioSortField === 'averageRisk') {
-          // For numeric values
-          let aField = 0;
-          let bField = 0;
+    return [...portfolios]
+      .filter(portfolio => {
+        const searchMatch = searchQuery === '' || 
+          portfolio.name?.toLowerCase().includes(searchQuery.toLowerCase());
           
+        // Apply risk range filters if any are selected
+        const riskMatch = riskRangeFilters.length === 0 || 
+          riskRangeFilters.includes(getRiskRange(portfolio));
+          
+        // Apply IRR range filters if any are selected
+        const irrMatch = irrRangeFilters.length === 0 || 
+          irrRangeFilters.includes(getIRRRange(portfolio));
+        
+        return searchMatch && riskMatch && irrMatch;
+      })
+      .sort((a, b) => {
+        // Handle numeric fields differently
+        if (['weighted_risk', 'performance', 'averageRisk'].includes(portfolioSortField)) {
+          let aField, bField;
           if (portfolioSortField === 'weighted_risk') {
             aField = a.weighted_risk || a.averageRisk || 0;
             bField = b.weighted_risk || b.averageRisk || 0;
@@ -637,7 +718,7 @@ const Definitions: React.FC = () => {
             ? aField - bField
             : bField - aField;
         } else {
-          // For string values (name, type, risk)
+          // For string values (name)
           const aValue = String(a[portfolioSortField] || '').toLowerCase();
           const bValue = String(b[portfolioSortField] || '').toLowerCase();
           
@@ -646,7 +727,54 @@ const Definitions: React.FC = () => {
             : bValue.localeCompare(aValue);
         }
       });
-  }, [portfolios, searchQuery, portfolioSortField, portfolioSortOrder]);
+  }, [portfolios, searchQuery, portfolioSortField, portfolioSortOrder, riskRangeFilters, irrRangeFilters]);
+  
+  // Get unique statuses for filter options
+  const providerStatusOptions = useMemo(() => {
+    const statuses = new Set<string>();
+    providers.forEach(provider => {
+      if (provider.status) {
+        statuses.add(provider.status);
+      }
+    });
+    return Array.from(statuses).map(status => ({ value: status, label: status }));
+  }, [providers]);
+  
+  // Get unique statuses for fund filter options
+  const fundStatusOptions = useMemo(() => {
+    const statuses = new Set<string>();
+    funds.forEach(fund => {
+      if (fund.status) {
+        statuses.add(fund.status);
+      }
+    });
+    return Array.from(statuses).map(status => ({ value: status, label: status }));
+  }, [funds]);
+  
+  // Risk level options for funds
+  const riskLevelOptions = useMemo(() => [
+    { value: 'Unrated', label: 'Unrated' },
+    { value: 'Low', label: 'Low Risk (0-3)' },
+    { value: 'Medium', label: 'Medium Risk (3-5)' },
+    { value: 'High', label: 'High Risk (5-7)' },
+    { value: 'Very High', label: 'Very High Risk (7+)' }
+  ], []);
+  
+  // Risk range filter options for portfolios
+  const riskRangeOptions = useMemo(() => [
+    { value: '0-3', label: 'Low (0-3)' },
+    { value: '3-5', label: 'Moderate (3-5)' },
+    { value: '5-7', label: 'High (5-7)' },
+    { value: '7+', label: 'Very High (7+)' }
+  ], []);
+  
+  // IRR range filter options
+  const irrRangeOptions = useMemo(() => [
+    { value: 'Negative', label: 'Negative' },
+    { value: '0-5%', label: '0-5%' },
+    { value: '5-10%', label: '5-10%' },
+    { value: '10%+', label: '10%+' }
+  ], []);
 
   // Format performance with proper formatting and default value
   const formatPortfolioPerformance = useCallback((value: number | undefined): string => {
@@ -686,6 +814,23 @@ const Definitions: React.FC = () => {
         </div>
       </div>
     );
+  }, []);
+
+  // Extract unique portfolio types and risk levels for filters
+  const portfolioTypeOptions = useMemo(() => {
+    const uniqueTypes = new Set<string>();
+    portfolios.forEach(portfolio => {
+      if (portfolio.type) {
+        uniqueTypes.add(portfolio.type);
+      }
+    });
+    return Array.from(uniqueTypes).map(type => ({ value: type, label: type }));
+  }, [portfolios]);
+
+  // Format IRR with proper formatting and default value
+  const formatIRR = useCallback((value: number | undefined): string => {
+    const performance = value ?? 0;
+    return `${performance.toFixed(1)}%`;
   }, []);
 
   return (
@@ -784,315 +929,257 @@ const Definitions: React.FC = () => {
             </div>
           </div>
         </div>
-          
-          {/* Conditional sort controls based on active tab */}
-          {activeTab === 'providers' && (
-            <div className="flex gap-2">
-              <select
-                value={providerSortField}
-                onChange={(e) => handleProviderSortChange(e.target.value as ProviderSortField)}
-                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:border-primary-700"
-                aria-label="Sort field"
-              >
-                <option value="name">Name</option>
-                <option value="status">Status</option>
-                <option value="created_at">Created Date</option>
-              </select>
-              <button
-                onClick={() => setProviderSortOrder(providerSortOrder === 'asc' ? 'desc' : 'asc')}
-                className="border border-gray-300 rounded-md px-3 py-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:border-primary-700"
-                aria-label={`Sort ${providerSortOrder === 'asc' ? 'ascending' : 'descending'}`}
-              >
-                {providerSortOrder === 'asc' ? (
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                  </svg>
-                ) : (
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                )}
-              </button>
-            </div>
-          )}
-          
-          {activeTab === 'funds' && (
-            <div className="flex gap-2">
-              <select
-                value={fundSortField}
-                onChange={(e) => handleFundSortChange(e.target.value as FundSortField)}
-                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:border-primary-700"
-                aria-label="Sort field"
-              >
-                <option value="fund_name">Name</option>
-                <option value="risk_factor">Risk Factor</option>
-                <option value="isin_number">ISIN</option>
-                <option value="fund_cost">Fund Cost</option>
-                <option value="created_at">Created Date</option>
-              </select>
-              <button
-                onClick={() => setFundSortOrder(fundSortOrder === 'asc' ? 'desc' : 'asc')}
-                className="border border-gray-300 rounded-md px-3 py-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:border-primary-700"
-                aria-label={`Sort ${fundSortOrder === 'asc' ? 'ascending' : 'descending'}`}
-              >
-                {fundSortOrder === 'asc' ? (
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                  </svg>
-                ) : (
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                )}
-              </button>
-            </div>
-          )}
-          
-          {activeTab === 'portfolio-templates' && (
-            <div className="flex gap-2">
-              <select
-                value={portfolioSortField}
-                onChange={(e) => handlePortfolioSortChange(e.target.value as PortfolioSortField)}
-                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:border-primary-700"
-                aria-label="Sort field"
-              >
-                <option value="name">Name</option>
-                <option value="type">Type</option>
-                <option value="risk">Risk Level</option>
-                <option value="weighted_risk">Weighted Risk</option>
-                <option value="performance">Performance</option>
-              </select>
-              <button
-                onClick={() => setPortfolioSortOrder(portfolioSortOrder === 'asc' ? 'desc' : 'asc')}
-                className="border border-gray-300 rounded-md px-3 py-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:border-primary-700"
-                aria-label={`Sort ${portfolioSortOrder === 'asc' ? 'ascending' : 'descending'}`}
-              >
-                {portfolioSortOrder === 'asc' ? (
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                  </svg>
-                ) : (
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                )}
-              </button>
-            </div>
-          )}
       </div>
 
-        {/* Tab Panels */}
-        <div id="providers-panel" role="tabpanel" aria-labelledby="providers-tab">
-          <TabTransition isVisible={activeTab === 'providers'}>
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-              {providersLoading ? (
-                <div className="p-6">
-                  <TableSkeleton columns={5} />
-                </div>
-              ) : providersError ? (
-                <div className="p-6">
-                  <ErrorDisplay message={providersError} />
-                </div>
-              ) : filteredAndSortedProviders.length === 0 ? (
-                <div className="p-6">
-                  <EmptyState message="No providers found" />
-                </div>
-              ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-100">
-                <tr>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/4">Provider</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/4">Status</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/4">Products</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/4">Last Updated</th>
+      {/* Tab Panels */}
+      <div id="providers-panel" role="tabpanel" aria-labelledby="providers-tab">
+        <TabTransition isVisible={activeTab === 'providers'}>
+      <div className="bg-white shadow rounded-lg overflow-hidden">
+            {providersLoading ? (
+              <div className="p-6">
+                <TableSkeleton columns={4} />
+              </div>
+            ) : providersError ? (
+              <div className="p-6">
+                <ErrorDisplay message={providersError} />
+              </div>
+            ) : filteredAndSortedProviders.length === 0 ? (
+              <div className="p-6">
+                <EmptyState message="No providers found" />
+              </div>
+            ) : (
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-100">
+            <tr>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/4">Provider</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/4">
+                      <div className="flex flex-col items-start gap-1">
+                        <span>Status</span>
+                        <FilterDropdown
+                          id="provider-status-filter"
+                          options={providerStatusOptions}
+                          value={providerStatusFilters}
+                          onChange={setProviderStatusFilters}
+                          placeholder="All Statuses"
+                          className="mt-1"
+                        />
+                      </div>
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/4">Products</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/4">Last Updated</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredAndSortedProviders.map(provider => (
+                <tr 
+                  key={provider.id} 
+                  className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
+                  onClick={() => handleItemClick('providers', provider.id)}
+                >
+                  <td className="px-6 py-3 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div 
+                        className="h-3 w-3 rounded-full mr-2 flex-shrink-0" 
+                        style={{ backgroundColor: provider.theme_color || getProviderColor(provider.name) }}
+                        aria-hidden="true"
+                      ></div>
+                      <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{provider.name}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-3 whitespace-nowrap">
+                    <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      provider.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {provider.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3 whitespace-nowrap">
+                        <div className="text-sm text-indigo-600 font-medium">{provider.products || 0}</div>
+                  </td>
+                  <td className="px-6 py-3 whitespace-nowrap">
+                    <div className="text-sm text-gray-600">
+                          {new Date(provider.created_at).toLocaleDateString()}
+            </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredAndSortedProviders.map(provider => (
+                  ))}
+          </tbody>
+        </table>
+          </div>
+          )}
+        </div>
+      </TabTransition>
+    </div>
+
+    <div id="funds-panel" role="tabpanel" aria-labelledby="funds-tab">
+      <TabTransition isVisible={activeTab === 'funds'}>
+    <div className="bg-white shadow rounded-lg overflow-hidden">
+          {fundsLoading ? (
+            <div className="p-6">
+              <TableSkeleton columns={5} />
+            </div>
+          ) : fundsError ? (
+            <div className="p-6">
+              <ErrorDisplay message={fundsError} />
+            </div>
+          ) : filteredAndSortedFunds.length === 0 ? (
+            <div className="p-6">
+              <EmptyState message="No funds found" />
+            </div>
+          ) : (
+    <div className="overflow-x-auto">
+      <table className="min-w-full divide-y divide-gray-200">
+        <thead className="bg-gray-100">
+          <tr>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5">Name</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5">ISIN</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5">
+                    <div className="flex flex-col items-start gap-1">
+                      <span>Risk Factor</span>
+                      <FilterDropdown
+                        id="risk-level-filter"
+                        options={riskLevelOptions}
+                        value={riskLevelFilters}
+                        onChange={setRiskLevelFilters}
+                        placeholder="All Risk Levels"
+                        className="mt-1"
+                      />
+                    </div>
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5">Fund Cost</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5">
+                    <div className="flex flex-col items-start gap-1">
+                      <span>Status</span>
+                      <FilterDropdown
+                        id="fund-status-filter"
+                        options={fundStatusOptions}
+                        value={fundStatusFilters}
+                        onChange={setFundStatusFilters}
+                        placeholder="All Statuses"
+                        className="mt-1"
+                      />
+                    </div>
+                  </th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredAndSortedFunds.map(fund => (
                     <tr 
-                      key={provider.id} 
+                      key={fund.id} 
+                  className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
+                      onClick={() => handleItemClick('funds', fund.id)}
+                >
+                  <td className="px-6 py-3 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{fund.fund_name}</div>
+                      </td>
+                      <td className="px-6 py-3 whitespace-nowrap">
+                        <div className="text-sm text-gray-600 font-sans">{fund.isin_number || 'N/A'}</div>
+                      </td>
+                      <td className="px-6 py-3 whitespace-nowrap">
+                        <div className="text-sm text-gray-600 font-sans">{fund.risk_factor !== null ? fund.risk_factor : 'N/A'}</div>
+                  </td>
+                  <td className="px-6 py-3 whitespace-nowrap">
+                        <div className="text-sm text-gray-600 font-sans">
+                          {fund.fund_cost !== null ? `${fund.fund_cost.toFixed(1)}%` : 'N/A'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-3 whitespace-nowrap">
+                    <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          fund.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                    }`}>
+                          {fund.status}
+                    </span>
+                  </td>
+                </tr>
+                  ))}
+        </tbody>
+      </table>
+          </div>
+          )}
+        </div>
+      </TabTransition>
+    </div>
+
+    <div id="portfolios-panel" role="tabpanel" aria-labelledby="portfolios-tab">
+      <TabTransition isVisible={activeTab === 'portfolio-templates'}>
+    <div className="bg-white shadow rounded-lg overflow-hidden">
+          {portfoliosLoading ? (
+            <div className="p-6">
+              <TableSkeleton columns={3} />
+            </div>
+          ) : portfoliosError ? (
+            <div className="p-6">
+              <ErrorDisplay message={portfoliosError} />
+            </div>
+          ) : filteredAndSortedPortfolios.length === 0 ? (
+            <div className="p-6">
+              <EmptyState message="No portfolio templates found" />
+            </div>
+          ) : (
+    <div className="overflow-x-auto">
+      <table className="min-w-full divide-y divide-gray-200">
+        <thead className="bg-gray-100">
+          <tr>
+            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/3">Name</th>
+            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/3">
+              <div className="flex flex-col items-start gap-1">
+                <span>Weighted Risk</span>
+                <FilterDropdown
+                  id="risk-range-filter"
+                  options={riskRangeOptions}
+                  value={riskRangeFilters}
+                  onChange={setRiskRangeFilters}
+                  placeholder="All Risk Ranges"
+                  className="mt-1"
+                />
+              </div>
+            </th>
+            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/3">
+              <div className="flex flex-col items-start gap-1">
+                <span>Average IRR</span>
+                <FilterDropdown
+                  id="irr-range-filter"
+                  options={irrRangeOptions}
+                  value={irrRangeFilters}
+                  onChange={setIrrRangeFilters}
+                  placeholder="All IRR Ranges"
+                  className="mt-1"
+                />
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredAndSortedPortfolios.map(portfolio => (
+                    <tr 
+                      key={portfolio.id} 
                       className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
-                      onClick={() => handleItemClick('providers', provider.id)}
+                      onClick={() => handleItemClick('portfolio-templates', portfolio.id)}
                     >
                       <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div 
-                            className="h-3 w-3 rounded-full mr-2 flex-shrink-0" 
-                            style={{ backgroundColor: provider.theme_color || getProviderColor(provider.name) }}
-                            aria-hidden="true"
-                          ></div>
-                          <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{provider.name}</div>
+                        <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{portfolio.name}</div>
+                      </td>
+                      <td className="px-6 py-3 whitespace-nowrap">
+                        {displayWeightedRisk(portfolio)}
+                      </td>
+                      <td className="px-6 py-3 whitespace-nowrap">
+                        <div className={`text-sm font-medium ${(portfolio.performance || 0) >= 6 ? 'text-green-700' : 'text-amber-700'}`}>
+                          {formatIRR(portfolio.performance)}
                         </div>
                       </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          provider.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {provider.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                            <div className="text-sm text-indigo-600 font-medium">{provider.products || 0}</div>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm text-gray-600">
-                              {new Date(provider.created_at).toLocaleDateString()}
-              </div>
-                      </td>
                     </tr>
-                      ))}
-              </tbody>
-            </table>
-              </div>
-              )}
-            </div>
-          </TabTransition>
+                  ))}
+        </tbody>
+      </table>
+          </div>
+          )}
         </div>
-
-        <div id="funds-panel" role="tabpanel" aria-labelledby="funds-tab">
-          <TabTransition isVisible={activeTab === 'funds'}>
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-              {fundsLoading ? (
-                <div className="p-6">
-                  <TableSkeleton columns={5} />
-                </div>
-              ) : fundsError ? (
-                <div className="p-6">
-                  <ErrorDisplay message={fundsError} />
-                </div>
-              ) : filteredAndSortedFunds.length === 0 ? (
-                <div className="p-6">
-                  <EmptyState message="No funds found" />
-                </div>
-              ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-100">
-                <tr>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5">Name</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5">ISIN</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5">Risk Factor</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5">Fund Cost</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5">Status</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredAndSortedFunds.map(fund => (
-                        <tr 
-                          key={fund.id} 
-                      className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
-                          onClick={() => handleItemClick('funds', fund.id)}
-                    >
-                      <td className="px-6 py-3 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{fund.fund_name}</div>
-                          </td>
-                          <td className="px-6 py-3 whitespace-nowrap">
-                            <div className="text-sm text-gray-600 font-sans">{fund.isin_number || 'N/A'}</div>
-                          </td>
-                          <td className="px-6 py-3 whitespace-nowrap">
-                            <div className="text-sm text-gray-600 font-sans">{fund.risk_factor !== null ? fund.risk_factor : 'N/A'}</div>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                            <div className="text-sm text-gray-600 font-sans">
-                              {fund.fund_cost !== null ? `${fund.fund_cost.toFixed(1)}%` : 'N/A'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              fund.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                              {fund.status}
-                        </span>
-                      </td>
-                    </tr>
-                      ))}
-              </tbody>
-            </table>
-              </div>
-              )}
-            </div>
-          </TabTransition>
+      </TabTransition>
+          </div>
         </div>
-
-        <div id="portfolios-panel" role="tabpanel" aria-labelledby="portfolios-tab">
-          <TabTransition isVisible={activeTab === 'portfolio-templates'}>
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-              {portfoliosLoading ? (
-                <div className="p-6">
-                  <TableSkeleton columns={5} />
-                </div>
-              ) : portfoliosError ? (
-                <div className="p-6">
-                  <ErrorDisplay message={portfoliosError} />
-                </div>
-              ) : filteredAndSortedPortfolios.length === 0 ? (
-                <div className="p-6">
-                  <EmptyState message="No portfolio templates found" />
-                </div>
-              ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-100">
-                <tr>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/6">Name</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/6">Type</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/6">Risk Level</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/6">Weighted Risk</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5">Performance</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredAndSortedPortfolios.map(portfolio => {
-                        console.log(`Rendering portfolio row: ${portfolio.id} - ${portfolio.name} - Has allocations: ${!!portfolio.funds}`);
-                        return (
-                        <tr 
-                          key={portfolio.id} 
-                      className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
-                          onClick={() => {
-                            console.log(`Clicked on portfolio: ${portfolio.id} - ${portfolio.name}`);
-                            handleItemClick('portfolio-templates', portfolio.id);
-                          }}
-                    >
-                      <td className="px-6 py-3 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{portfolio.name}</div>
-                          </td>
-                          <td className="px-6 py-3 whitespace-nowrap">
-                            <div className="text-sm text-gray-600 font-sans">{portfolio.type}</div>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                            <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              portfolio.risk === 'Conservative' ? 'bg-green-100 text-green-800' : 
-                              portfolio.risk === 'Balanced' ? 'bg-blue-100 text-blue-800' : 
-                              portfolio.risk === 'Growth' ? 'bg-yellow-100 text-yellow-800' : 
-                              'bg-red-100 text-red-800'
-                            }`}>
-                              {portfolio.risk}
-                            </span>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                            {displayWeightedRisk(portfolio)}
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                            <div className={`text-sm font-medium ${(portfolio.performance || 0) >= 5 ? 'text-green-700' : 'text-amber-700'}`}>
-                              {formatPortfolioPerformance(portfolio.performance)}
-                          <span className="ml-1">
-                                {(portfolio.performance || 0) >= 5 ? '▲' : '▼'}
-                          </span>
-              </div>
-                      </td>
-                    </tr>
-                      )})}
-              </tbody>
-            </table>
-              </div>
-              )}
-            </div>
-          </TabTransition>
-              </div>
-            </div>
-    </DefinitionsContext.Provider>
-  );
+</DefinitionsContext.Provider>
+);
 };
 
 export default Definitions;

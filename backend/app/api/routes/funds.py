@@ -106,37 +106,36 @@ async def get_fund(
     portfolio_id: Optional[int] = None,
     db: SupabaseClient = Depends(get_db)
 ):
-    """Get a specific fund with optional provider context"""
+    """Get a specific fund"""
     try:
+        logger.info(f"Received request for fund_id: {fund_id}")
+        
         # Get base fund data
+        logger.info(f"Querying available_funds table for fund with ID {fund_id}")
         fund_result = db.table("available_funds").select("*").eq("id", fund_id).execute()
+        
+        logger.info(f"Query result: {fund_result}")
+        
         if not fund_result.data:
+            logger.error(f"Fund with ID {fund_id} not found")
             raise HTTPException(status_code=404, detail=f"Fund with ID {fund_id} not found")
         
         fund_data = fund_result.data[0]
+        logger.info(f"Found fund data: {fund_data}")
         
-        # If portfolio_id is provided, get provider context
-        provider_id = None
-        if portfolio_id:
-            provider_result = db.table("portfolio_fund_providers")\
-                .select("provider_id")\
-                .eq("fund_id", fund_id)\
-                .eq("portfolio_id", portfolio_id)\
-                .execute()
-            
-            if provider_result.data:
-                provider_id = provider_result.data[0]["provider_id"]
-        
+        # Available funds in this context are never assigned providers
+        # Only return the portfolio_id parameter which may be used for context
         return {
             **fund_data,
-            "provider_id": provider_id,
             "portfolio_id": portfolio_id
         }
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error fetching fund {fund_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to fetch fund")
+        logger.error(f"Exception type: {type(e)}")
+        logger.error(f"Exception details: {e.__dict__}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch fund: {str(e)}")
 
 @router.post("/funds", response_model=FundInDB)
 async def create_fund(fund: FundCreate, db: SupabaseClient = Depends(get_db)):

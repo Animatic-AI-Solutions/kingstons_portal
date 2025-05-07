@@ -360,31 +360,95 @@ async def delete_available_portfolio(portfolio_id: int, db = Depends(get_db)):
 
 @router.get("/available_portfolio_funds", response_model=List[dict])
 async def get_available_portfolio_funds(
-    portfolio_id: Optional[int] = None,
-    fund_id: Optional[int] = None,
+    portfolio_id: Optional[str] = None,
+    fund_id: Optional[str] = None,
     db = Depends(get_db)
 ):
     """
     Get portfolio funds with optional filtering by portfolio_id or fund_id.
     
     Args:
-        portfolio_id: Optional filter by portfolio ID
-        fund_id: Optional filter by fund ID
+        portfolio_id: Optional filter by portfolio ID (as string)
+        fund_id: Optional filter by fund ID (as string)
         
     Returns:
         List of portfolio funds
     """
     try:
+        # Add detailed logging for debugging
+        logger.info("=== get_available_portfolio_funds called ===")
+        logger.info(f"portfolio_id: {portfolio_id}, type: {type(portfolio_id)}")
+        logger.info(f"fund_id: {fund_id}, type: {type(fund_id)}")
+        
+        # Convert string parameters to integers if provided
+        portfolio_id_int = None
+        fund_id_int = None
+        
+        if portfolio_id:
+            try:
+                portfolio_id_int = int(portfolio_id)
+                logger.info(f"Converted portfolio_id to int: {portfolio_id_int}")
+            except ValueError:
+                logger.error(f"Invalid portfolio_id: {portfolio_id}")
+                raise HTTPException(status_code=422, detail="portfolio_id must be a valid integer")
+                
+        if fund_id:
+            try:
+                fund_id_int = int(fund_id)
+                logger.info(f"Converted fund_id to int: {fund_id_int}")
+            except ValueError:
+                logger.error(f"Invalid fund_id: {fund_id}")
+                raise HTTPException(status_code=422, detail="fund_id must be a valid integer")
+        
+        # Build query
         query = db.table("available_portfolio_funds").select("*")
         
-        if portfolio_id is not None:
-            query = query.eq("portfolio_id", portfolio_id)
+        if portfolio_id_int is not None:
+            query = query.eq("portfolio_id", portfolio_id_int)
             
-        if fund_id is not None:
-            query = query.eq("fund_id", fund_id)
-            
+        if fund_id_int is not None:
+            query = query.eq("fund_id", fund_id_int)
+        
+        logger.info(f"Executing query with portfolio_id={portfolio_id_int}, fund_id={fund_id_int}")
         result = query.execute()
+        logger.info(f"Query result: {result.data}")
+        
         return result.data
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error fetching available portfolio funds: {str(e)}")
+        logger.error(f"Error type: {type(e)}")
+        logger.error(f"Error args: {e.args}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch portfolio funds: {str(e)}")
+
+@router.get("/available_portfolio_funds/by-fund/{fund_id}", response_model=List[dict])
+async def get_portfolio_funds_by_fund_id(
+    fund_id: int,
+    db = Depends(get_db)
+):
+    """
+    Get portfolio funds for a specific fund ID using a path parameter to avoid validation issues.
+    
+    Args:
+        fund_id: The fund ID to search for (as part of the URL path)
+        
+    Returns:
+        List of portfolio funds using this fund
+    """
+    try:
+        logger.info(f"=== get_portfolio_funds_by_fund_id called with fund_id: {fund_id} ===")
+        
+        # Build query with the fund_id in the path parameter
+        query = db.table("available_portfolio_funds").select("*").eq("fund_id", fund_id)
+        logger.info(f"Executing query for fund_id={fund_id}")
+        
+        result = query.execute()
+        logger.info(f"Query result: {result.data}")
+        
+        return result.data
+    except Exception as e:
+        logger.error(f"Error fetching portfolio funds for fund ID {fund_id}: {str(e)}")
+        logger.error(f"Error type: {type(e)}")
+        logger.error(f"Error args: {e.args}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch portfolio funds: {str(e)}") 

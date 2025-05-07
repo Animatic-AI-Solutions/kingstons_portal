@@ -2,14 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-interface Provider {
-  id: number;
-  name: string;
-}
-
 interface Portfolio {
   id: number;
-  name: string;
+  created_at: string;
+  name: string | null;
 }
 
 interface PortfolioFund {
@@ -27,17 +23,15 @@ interface Fund {
   fund_cost: number | null;
   status: string;
   created_at: string;
-  provider_id?: number | null;
   portfolio_id?: number | null;
 }
 
 const FundDetails: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { fundId: id } = useParams<{ fundId: string }>();
   const { portfolioId } = useParams<{ portfolioId: string }>();
   const navigate = useNavigate();
   const { api } = useAuth();
   const [fund, setFund] = useState<Fund | null>(null);
-  const [provider, setProvider] = useState<Provider | null>(null);
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [linkedPortfolios, setLinkedPortfolios] = useState<Portfolio[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,36 +39,48 @@ const FundDetails: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<Fund>>({});
   const [originalFormData, setOriginalFormData] = useState<Partial<Fund>>({});
-  const [providerName, setProviderName] = useState<string>('');
   const [portfolioName, setPortfolioName] = useState<string>('');
 
   const fetchFundDetails = async () => {
     try {
+      // Validate the ID parameter
       if (!id || id === 'undefined') {
-        setError('Invalid fund ID');
+        setError('Invalid fund ID: parameter is missing or undefined');
+        setIsLoading(false);
+        return;
+      }
+      
+      // Convert to numeric ID and verify
+      const numericId = parseInt(id, 10);
+      
+      if (isNaN(numericId)) {
+        setError(`Invalid fund ID: ${id} is not a valid number`);
         setIsLoading(false);
         return;
       }
 
       setIsLoading(true);
-      const response = await api.get(`/funds/${id}`, {
-        params: { portfolio_id: portfolioId }
-      });
-      setFund(response.data);
       
-      // If we have a provider_id from the portfolio context, fetch provider details
-      if (response.data.provider_id) {
-        try {
-          const providerResponse = await api.get(`/available_providers/${response.data.provider_id}`);
-          setProvider(providerResponse.data);
-        } catch (err) {
-          console.error('Error fetching provider details:', err);
+      try {
+        const response = await api.get(`/funds/${numericId}`, {
+          params: { portfolio_id: portfolioId }
+        });
+        
+        setFund(response.data);
+        setIsLoading(false);
+      } catch (apiError: any) {
+        let errorMessage = 'Failed to fetch fund details';
+        if (apiError.response?.data?.detail) {
+          errorMessage = apiError.response.data.detail;
+        } else if (apiError.message) {
+          errorMessage = apiError.message;
         }
+        
+        setError(errorMessage);
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to fetch fund details');
+      setError('An unexpected error occurred while loading fund details');
       setIsLoading(false);
     }
   };
@@ -82,10 +88,14 @@ const FundDetails: React.FC = () => {
   useEffect(() => {
     fetchFundDetails();
     fetchPortfolios();
-    if (id) {
+  }, [id, portfolioId, api]);
+
+  // Separate useEffect to handle fetching linked portfolios after portfolios are loaded
+  useEffect(() => {
+    if (id && portfolios.length > 0) {
       fetchLinkedPortfolios(parseInt(id));
     }
-  }, [id, portfolioId, api]);
+  }, [id, portfolios]);
 
   const fetchPortfolios = async () => {
     try {
@@ -98,20 +108,32 @@ const FundDetails: React.FC = () => {
 
   const fetchLinkedPortfolios = async (fundId: number) => {
     try {
-      // Find all portfolio templates that use this fund
-      const portfolioFundsResponse = await api.get('/available_portfolio_funds', {
-        params: { fund_id: fundId }
-      });
+      // Ensure fundId is a number
+      const numericFundId = Number(fundId);
+      if (isNaN(numericFundId)) {
+        return;
+      }
       
-      if (portfolioFundsResponse.data && portfolioFundsResponse.data.length > 0) {
-        const portfolioIds = portfolioFundsResponse.data.map((pf: any) => pf.portfolio_id);
+      try {
+        // Use the path parameter endpoint
+        const portfolioFundsResponse = await api.get(`/available_portfolios/available_portfolio_funds/by-fund/${numericFundId}`);
         
-        // Get portfolio details for each linked portfolio
-        const linkedPortfoliosData = portfolios.filter(p => portfolioIds.includes(p.id));
-        setLinkedPortfolios(linkedPortfoliosData);
+        if (portfolioFundsResponse.data && portfolioFundsResponse.data.length > 0) {
+          const portfolioIds = portfolioFundsResponse.data.map((pf: any) => pf.portfolio_id);
+          
+          // Get portfolio details for each linked portfolio
+          const linkedPortfoliosData = portfolios.filter(p => portfolioIds.includes(p.id));
+          setLinkedPortfolios(linkedPortfoliosData);
+        } else {
+          setLinkedPortfolios([]);
+        }
+      } catch (apiError: any) {
+        // Gracefully handle the error - don't show linked portfolios section
+        setLinkedPortfolios([]);
       }
     } catch (err: any) {
-      console.error('Error fetching linked portfolios:', err);
+      // Clear linked portfolios on error
+      setLinkedPortfolios([]);
     }
   };
 
@@ -119,7 +141,7 @@ const FundDetails: React.FC = () => {
     if (fund && portfolios.length > 0 && fund.portfolio_id) {
       const portfolio = portfolios.find(p => p.id === fund.portfolio_id);
       if (portfolio) {
-        setPortfolioName(portfolio.name);
+        setPortfolioName(portfolio.name || '');
       }
     }
   }, [fund, portfolios]);
@@ -165,7 +187,6 @@ const FundDetails: React.FC = () => {
     if (!fund) return;
     
     setOriginalFormData({
-      provider_id: fund.provider_id,
       fund_name: fund.fund_name,
       isin_number: fund.isin_number,
       risk_factor: fund.risk_factor,
@@ -174,7 +195,6 @@ const FundDetails: React.FC = () => {
     });
     
     setFormData({
-      provider_id: fund.provider_id,
       fund_name: fund.fund_name,
       isin_number: fund.isin_number,
       risk_factor: fund.risk_factor,
@@ -495,14 +515,6 @@ const FundDetails: React.FC = () => {
                   </div>
                 </dd>
               </div>
-              {provider && (
-                <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Provider</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                    {provider.name}
-                  </dd>
-                </div>
-              )}
               
               {linkedPortfolios.length > 0 && (
                 <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
