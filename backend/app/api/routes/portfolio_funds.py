@@ -965,9 +965,42 @@ async def recalculate_all_irr_values(
                 
                 logger.info(f"Recalculating IRR for date: {valuation_date.isoformat()}, valuation: {valuation_amount}")
                 
-                # Skip if valuation is zero or negative
-                if valuation_amount <= 0:
-                    logger.warning(f"Skipping IRR calculation for invalid valuation: {valuation_amount}")
+                # For zero valuations, store an IRR of zero instead of skipping
+                if valuation_amount == 0:
+                    logger.info(f"Zero valuation detected - storing IRR value of 0 for portfolio_fund_id {portfolio_fund_id}")
+                    
+                    # Check if IRR already exists for this date
+                    existing_irr = db.table("irr_values")\
+                        .select("*")\
+                        .eq("fund_id", portfolio_fund_id)\
+                        .eq("date", valuation_date.isoformat())\
+                        .execute()
+                    
+                    irr_value_data = {
+                        "fund_id": portfolio_fund_id,
+                        "irr_result": 0.0,  # Set IRR to zero
+                        "date": valuation_date.isoformat(),
+                        "fund_valuation_id": fund_valuation_id
+                    }
+                    
+                    if existing_irr.data and len(existing_irr.data) > 0:
+                        # Update existing record
+                        irr_id = existing_irr.data[0]["id"]
+                        db.table("irr_values")\
+                            .update({"irr_result": 0.0})\
+                            .eq("id", irr_id)\
+                            .execute()
+                    else:
+                        # Create new record
+                        db.table("irr_values").insert(irr_value_data).execute()
+                    
+                    update_count += 1
+                    logger.info(f"Successfully set IRR to 0 for zero valuation on date: {valuation_date.isoformat()}")
+                    continue
+                
+                # Skip if valuation is negative
+                if valuation_amount < 0:
+                    logger.warning(f"Skipping IRR calculation for negative valuation: {valuation_amount}")
                     continue
                 
                 # Recalculate IRR for this date and valuation

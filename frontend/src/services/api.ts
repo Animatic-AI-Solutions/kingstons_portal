@@ -223,4 +223,14 @@ export const calculatePortfolioIRR = (portfolioId: number) => {
   return api.post(`portfolios/${portfolioId}/calculate-irr`);
 };
 
+/**
+ * Calculate IRRs for all portfolio funds in a portfolio for a specific date
+ * @param {number} portfolioId - Portfolio ID
+ * @param {string} date - Date in YYYY-MM-DD format
+ * @returns {Promise} - API response with calculation results
+ */
+export const calculatePortfolioIRRForDate = (portfolioId: number, date: string) => {
+  return api.post(`portfolios/${portfolioId}/calculate-irr-for-date?date=${encodeURIComponent(date)}`);
+};
+
 export default api; 

@@ -219,6 +219,23 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     }
   };
 
+  // Format activity type for display - convert camelCase or snake_case to spaces
+  const formatActivityType = (activityType: string): string => {
+    if (!activityType) return '';
+    
+    // Replace underscores with spaces
+    let formatted = activityType.replace(/_/g, ' ');
+    
+    // Add spaces between camelCase words
+    formatted = formatted.replace(/([a-z])([A-Z])/g, '$1 $2');
+    
+    // Capitalize first letter of each word
+    return formatted
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   // Get activities for a specific fund, month, and activity type
   const getActivity = (fundId: number, month: string, activityType: string): Activity | undefined => {
     // Convert activity types for matching using our helper function
@@ -1091,6 +1108,35 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     }
   };
 
+  // Calculate the total for a specific fund and month
+  const calculateFundMonthTotal = (fundId: number, month: string): number => {
+    // Sum up all non-zero values for each activity type for this fund and month
+    // Skip "Current Value" as it's not part of the sum total
+    return ACTIVITY_TYPES
+      .filter(activityType => activityType !== 'Current Value') // Exclude Current Value from totals
+      .reduce((total, activityType) => {
+        const cellValue = getCellValue(fundId, month, activityType);
+        if (cellValue && !isNaN(parseFloat(cellValue))) {
+          // For investments, add positive values
+          // For withdrawals and switch outs, subtract (they reduce the total)
+          if (activityType === 'Investment' || 
+              activityType === 'RegularInvestment' || 
+              activityType === 'GovernmentUplift' || 
+              activityType === 'Switch In') {
+            return total + parseFloat(cellValue);
+          } else if (activityType === 'Withdrawal' || activityType === 'Switch Out') {
+            return total - parseFloat(cellValue);
+          }
+        }
+        return total;
+      }, 0);
+  };
+
+  // Format the total for display with correct signs
+  const formatTotal = (total: number): string => {
+    return total === 0 ? '' : formatCurrency(total);
+  };
+
   return (
     <>
       <div className="mt-8">
@@ -1149,7 +1195,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                     {ACTIVITY_TYPES.map(activityType => (
                       <tr key={`${fund.id}-${activityType}`}>
                         <td className="px-4 py-2 font-medium text-gray-500 sticky left-0 z-10 bg-white shadow-[5px_0_5px_-5px_rgba(0,0,0,0.1)]">
-                          {activityType}
+                          {formatActivityType(activityType)}
                         </td>
                         {months.map((month, monthIndex) => {
                           const cellValue = getCellValue(fund.id, month, activityType);
@@ -1212,6 +1258,26 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                         })}
                       </tr>
                     ))}
+                    
+                    {/* Total row for each fund */}
+                    <tr className="bg-gray-100 border-t border-gray-200">
+                      <td className="px-4 py-2 font-semibold text-red-600 sticky left-0 z-10 bg-gray-100 shadow-[5px_0_5px_-5px_rgba(0,0,0,0.1)]">
+                        Total
+                      </td>
+                      {months.map(month => {
+                        const total = calculateFundMonthTotal(fund.id, month);
+                        const formattedTotal = formatTotal(total);
+                        
+                        return (
+                          <td 
+                            key={`total-${fund.id}-${month}`} 
+                            className="px-4 py-2 text-center font-semibold text-red-600"
+                          >
+                            {formattedTotal}
+                          </td>
+                        );
+                      })}
+                    </tr>
                   </React.Fragment>
                 ))}
               </tbody>
