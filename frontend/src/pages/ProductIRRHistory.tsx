@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import YearNavigator from '../components/YearNavigator';
-import EditableMonthlyActivitiesTable from '../components/EditableMonthlyActivitiesTable';
-import { calculatePortfolioIRR } from '../services/api';
+import { getFundIRRValues } from '../services/api';
 
 interface Account {
   id: number;
@@ -18,11 +16,8 @@ interface Account {
   total_value?: number;
   provider_name?: string;
   product_type?: string;
-  current_portfolio?: {
-    id: number;
-    portfolio_name: string;
-    assignment_start_date: string;
-  };
+  portfolio_id?: number;
+  portfolio_name?: string;
 }
 
 interface Holding {
@@ -60,6 +55,24 @@ interface IrrCalculationResult {
   details: IrrCalculationDetail[];
 }
 
+interface IRRValue {
+  id: number;
+  fund_id: number;
+  irr: number;
+  date: string;
+  created_at: string;
+  fund_valuation_id?: number;
+}
+
+interface IRRTableData {
+  [portfolioFundId: string]: {
+    fundName: string;
+    values: {
+      [monthYear: string]: number;
+    };
+  };
+}
+
 // Helper function to convert ActivityLog[] to Activity[]
 const convertActivityLogs = (logs: ActivityLog[]): any[] => {
   return logs.map(log => ({
@@ -76,6 +89,12 @@ const filterActivitiesByYear = (activities: ActivityLog[], year: number): Activi
   });
 };
 
+// Format date to display month and year
+const formatMonthYear = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toLocaleString('default', { month: 'short', year: 'numeric' });
+};
+
 interface AccountIRRHistoryProps {
   accountId?: string;
 }
@@ -90,9 +109,10 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const [isCalculatingIRR, setIsCalculatingIRR] = useState(false);
   const [irrCalculationResult, setIrrCalculationResult] = useState<IrrCalculationResult | null>(null);
+  const [irrHistoryData, setIrrHistoryData] = useState<IRRTableData>({});
+  const [irrTableColumns, setIrrTableColumns] = useState<string[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
   useEffect(() => {
     if (accountId) {
@@ -113,16 +133,30 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
       // First fetch the account to get the portfolio_id
       const accountResponse = await api.get(`/client_products/${accountId}`);
       console.log('AccountIRRHistory: Account data received:', accountResponse.data);
-      setAccount(accountResponse.data);
       
       // Get the portfolio_id from the account
-      const portfolioId = accountResponse.data.current_portfolio?.id;
+      const portfolioId = accountResponse.data.portfolio_id;
       
       if (!portfolioId) {
         console.warn('AccountIRRHistory: No portfolio ID found for this account');
+        setError('No portfolio is associated with this product. Please assign a portfolio first.');
+        // Set account even if there's an error so we can show product info
+        setAccount(accountResponse.data);
         setIsLoading(false);
         return;
       }
+      
+      // Get portfolio details if we have a portfolio_id
+      if (portfolioId) {
+        const portfolioResponse = await api.get(`/portfolios/${portfolioId}`);
+        if (portfolioResponse.data) {
+          // Merge portfolio data into account object
+          accountResponse.data.portfolio_name = portfolioResponse.data.portfolio_name;
+        }
+      }
+      
+      // Set account data with portfolio information
+      setAccount(accountResponse.data);
       
       // Now fetch the remaining data in parallel
       const [
@@ -136,9 +170,6 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
         api.get('/funds'),
         api.get(`/portfolio_funds?portfolio_id=${portfolioId}`)
       ]);
-      
-      console.log('AccountIRRHistory: Account data received:', accountResponse.data);
-      setAccount(accountResponse.data);
       
       console.log('AccountIRRHistory: Holdings data received:', holdingsResponse.data);
       console.log('AccountIRRHistory: Activity logs received:', activitiesResponse.data);
@@ -160,7 +191,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
         console.log('AccountIRRHistory: Processing holding:', holding);
         
         // Get the portfolio ID from the holding or from the account
-        const portfolioId = holding.portfolio_id || accountResponse.data.current_portfolio?.id;
+        const portfolioId = holding.portfolio_id || accountResponse.data.portfolio_id;
         
         if (!portfolioId) {
           console.warn('AccountIRRHistory: No portfolio ID for holding:', holding.id);
@@ -224,11 +255,69 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
       setHoldings(processedHoldings || []);
       setActivityLogs(activitiesResponse.data || []);
       
+      // Fetch IRR history data for all portfolio funds
+      await fetchIRRHistory(portfolioFundsResponse.data, fundsMap);
+      
     } catch (err: any) {
       console.error('AccountIRRHistory: Error fetching data:', err);
       setError(err.response?.data?.detail || 'Failed to fetch account details');
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  // Fetch IRR history data for all portfolio funds
+  const fetchIRRHistory = async (portfolioFunds: any[], fundsMap: Map<number, any>) => {
+    try {
+      setIsLoadingHistory(true);
+      
+      const irrData: IRRTableData = {};
+      const allMonthYears = new Set<string>();
+      
+      // Fetch IRR values for each portfolio fund
+      for (const fund of portfolioFunds) {
+        try {
+          const response = await getFundIRRValues(fund.id);
+          const irrValues: IRRValue[] = response.data;
+          
+          console.log(`Received IRR values for fund ${fund.id}:`, irrValues);
+          
+          if (irrValues && irrValues.length > 0) {
+            // Get fund name from the funds map
+            const fundDetails = fundsMap.get(fund.available_funds_id);
+            const fundName = fundDetails?.fund_name || `Fund ${fund.id}`;
+            
+            irrData[fund.id] = {
+              fundName,
+              values: {}
+            };
+            
+            // Process each IRR value
+            irrValues.forEach(value => {
+              const monthYear = formatMonthYear(value.date);
+              allMonthYears.add(monthYear);
+              irrData[fund.id].values[monthYear] = value.irr;
+            });
+          }
+        } catch (err) {
+          console.error(`Error fetching IRR values for fund ${fund.id}:`, err);
+        }
+      }
+      
+      // Sort month/years chronologically
+      const sortedMonthYears = Array.from(allMonthYears).sort((a, b) => {
+        const dateA = new Date(a);
+        const dateB = new Date(b);
+        return dateB.getTime() - dateA.getTime(); // Descending (newest first)
+      });
+      
+      setIrrTableColumns(sortedMonthYears);
+      setIrrHistoryData(irrData);
+      
+    } catch (err) {
+      console.error('Error fetching IRR history:', err);
+    } finally {
+      setIsLoadingHistory(false);
     }
   };
 
@@ -259,31 +348,27 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
     });
   };
 
-  // Add handler for IRR calculation
-  const handleCalculateIRR = async () => {
-    if (!account || !account.current_portfolio) {
-      alert('No active portfolio assigned to this account');
-      return;
-    }
+  // Format percentage value
+  const formatPercentage = (value: number | undefined): string => {
+    if (value === undefined || value === null) return '-';
+    return `${value.toFixed(2)}%`;
+  };
+
+  // Format activity type for display - convert camelCase or snake_case to spaces
+  const formatActivityType = (activityType: string): string => {
+    if (!activityType) return '';
     
-    const portfolioId = account.current_portfolio.id;
+    // Replace underscores with spaces
+    let formatted = activityType.replace(/_/g, ' ');
     
-    try {
-      setIsCalculatingIRR(true);
-      setIrrCalculationResult(null);
-      
-      const response = await calculatePortfolioIRR(portfolioId);
-      setIrrCalculationResult(response.data);
-      
-      // Refresh the data to show updated IRR values
-      fetchData(accountId as string);
-    } catch (err: any) {
-      console.error('Error calculating IRR:', err);
-      const errorMessage = err.response?.data?.detail || 'Failed to calculate IRR values';
-      alert(`Error: ${errorMessage}`);
-    } finally {
-      setIsCalculatingIRR(false);
-    }
+    // Add spaces between camelCase words
+    formatted = formatted.replace(/([a-z])([A-Z])/g, '$1 $2');
+    
+    // Capitalize first letter of each word
+    return formatted
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
   };
 
   if (isLoading) {
@@ -323,25 +408,8 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
     <div className="bg-white shadow rounded-lg p-6">
       <h2 className="text-xl font-semibold mb-4">IRR History</h2>
       
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium text-gray-900">Monthly Activities</h3>
-        <button 
-          onClick={handleCalculateIRR}
-          disabled={isCalculatingIRR || !account?.current_portfolio}
-          className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
-        >
-          {isCalculatingIRR ? (
-            <>
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Calculating IRRs...
-            </>
-          ) : (
-            'Calculate Latest IRRs'
-          )}
-        </button>
+      <div className="mb-6">
+        <h3 className="text-lg font-medium text-gray-900">Monthly IRR Values</h3>
       </div>
       
       {irrCalculationResult && (
@@ -373,30 +441,78 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
           )}
         </div>
       )}
-        
-      <YearNavigator 
-        selectedYear={selectedYear}
-        onYearChange={(year) => setSelectedYear(year)}
-      />
-    
-      <EditableMonthlyActivitiesTable 
-        funds={holdings.map(holding => ({
-          id: holding.id,
-          holding_id: holding.account_holding_id,
-          fund_name: holding.fund_name || 'Unknown Fund',
-          irr: holding.irr
-        })).sort((a, b) => {
-          // Place 'Cashline' fund at the end
-          if (a.fund_name === 'Cashline') return 1;
-          if (b.fund_name === 'Cashline') return -1;
-          // Sort the rest alphabetically
-          return a.fund_name.localeCompare(b.fund_name);
-        })}
-        activities={convertActivityLogs(activityLogs)}
-        accountHoldingId={holdings.length > 0 ? holdings[0].account_holding_id : 0}
-        onActivitiesUpdated={refreshData}
-        selectedYear={selectedYear}
-      />
+      
+      {/* IRR History Table */}
+      <div className="mt-4 mb-8">
+        {isLoadingHistory ? (
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            <span className="ml-2 text-gray-600">Loading IRR history...</span>
+          </div>
+        ) : Object.keys(irrHistoryData).length === 0 ? (
+          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-blue-700">
+                  No IRR history data available.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10">
+                    Fund
+                  </th>
+                  {irrTableColumns.map(monthYear => (
+                    <th key={monthYear} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {monthYear}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {Object.entries(irrHistoryData).map(([fundId, fund]) => (
+                  <tr key={fundId}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 bg-white z-10">
+                      {fund.fundName}
+                    </td>
+                    {irrTableColumns.map(monthYear => {
+                      const irrValue = fund.values[monthYear];
+                      const irrClass = irrValue !== undefined
+                        ? irrValue >= 0 
+                          ? 'text-green-600' 
+                          : 'text-red-600'
+                        : 'text-gray-400';
+                      
+                      return (
+                        <td key={`${fundId}-${monthYear}`} className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span className={irrClass}>
+                            {formatPercentage(irrValue)}
+                            {irrValue !== undefined && (
+                              <span className="ml-1">
+                                {irrValue >= 0 ? '▲' : '▼'}
+                              </span>
+                            )}
+                          </span>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

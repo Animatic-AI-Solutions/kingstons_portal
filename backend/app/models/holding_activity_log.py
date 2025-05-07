@@ -13,12 +13,14 @@ def validate_decimal_places(value: Decimal) -> Decimal:
 DecimalWithPrecision = Annotated[Decimal, AfterValidator(validate_decimal_places)]
 
 class HoldingActivityLogBase(BaseModel):
-    product_holding_id: Optional[int] = None  # Made optional for the new database structure
+    product_id: Optional[int] = None  # New field that references client_products.id directly
+    product_holding_id: Optional[int] = None  # Kept for backward compatibility
     portfolio_fund_id: int
     activity_timestamp: date
     activity_type: str
     amount: Optional[DecimalWithPrecision] = None
     related_fund: Optional[int] = None  # Used for Switch activities to reference the related fund
+    account_holding_id: Optional[int] = None  # For backward compatibility - redirects to product_id
     
     @field_validator('activity_timestamp', mode='before')
     @classmethod
@@ -43,12 +45,14 @@ class HoldingActivityLogCreate(HoldingActivityLogBase):
     pass
 
 class HoldingActivityLogUpdate(BaseModel):
+    product_id: Optional[int] = None
     product_holding_id: Optional[int] = None
     portfolio_fund_id: Optional[int] = None
     activity_timestamp: Optional[date] = None
     activity_type: Optional[str] = None
     amount: Optional[DecimalWithPrecision] = None
     related_fund: Optional[int] = None
+    account_holding_id: Optional[int] = None
     
     @field_validator('activity_timestamp', mode='before')
     @classmethod
