@@ -86,7 +86,7 @@ async def get_holding_activity_logs(
             else:
                 # No funds in portfolio, return empty result
                 return []
-                
+            
         if activity_type is not None:
             query = query.eq("activity_type", activity_type)
             
@@ -584,13 +584,13 @@ async def create_holding_activity_log(
             logger.info(f"Looking up client_product_id from product_holding_id: {holding_activity_log.product_holding_id}")
             
             # Get the client_product_id from product_holding
-            product_holding = db.table("product_holdings")\
+        product_holding = db.table("product_holdings")\
                 .select("client_product_id")\
-                .eq("id", holding_activity_log.product_holding_id)\
-                .execute()
-                
-            if not product_holding.data:
-                raise HTTPException(status_code=404, 
+            .eq("id", holding_activity_log.product_holding_id)\
+            .execute()
+            
+        if not product_holding.data:
+            raise HTTPException(status_code=404, 
                     detail=f"Product holding with ID {holding_activity_log.product_holding_id} not found")
             
             product_id = product_holding.data[0]["client_product_id"]
@@ -610,7 +610,7 @@ async def create_holding_activity_log(
         if not client_product.data:
             raise HTTPException(status_code=404, 
                 detail=f"Client product with ID {product_id} not found")
-            
+        
         client_id = client_product.data[0]["client_id"]
         affected_client_ids.add(client_id)
         
@@ -1152,8 +1152,8 @@ async def update_holding_activity_log(
                 client_product = db.table("client_products")\
                     .select("client_id")\
                     .eq("id", product_id)\
-                    .execute()
-                
+            .execute()
+            
                 if client_product.data:
                     client_id = client_product.data[0]["client_id"]
                     affected_client_ids.add(client_id)

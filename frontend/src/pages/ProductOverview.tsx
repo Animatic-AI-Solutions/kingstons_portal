@@ -180,15 +180,17 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
               // Fetch the latest IRR for this fund
               try {
                 const irrResponse = await api.get(
-                  `/portfolio_funds/${pf.id}/latest-irr`
+                  `/portfolio_funds/${pf.id}/irr-values`
                 );
                 
                 console.log(`DEBUG - Latest IRR for fund ${pf.id}:`, irrResponse.data);
                 
-                if (irrResponse.data) {
-                  // The latest-irr endpoint returns a single result with the most recent IRR
-                  pf.irr_result = irrResponse.data.irr;
-                  console.log(`DEBUG - Assigned IRR value for fund ${pf.id}: ${pf.irr_result}, data type: ${typeof pf.irr_result}`);
+                if (irrResponse.data && irrResponse.data.length > 0) {
+                  // Sort by date descending to ensure we get the most recent
+                  const sortedIrrValues = [...irrResponse.data].sort(
+                    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+                  );
+                  pf.irr_result = sortedIrrValues[0].irr;
                 }
               } catch (irrErr) {
                 console.error(`Error fetching IRR for fund ${pf.id}:`, irrErr);
@@ -237,14 +239,6 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             valuation_date: pf.valuation_date
           });
           
-          // Log IRR value for debugging
-          console.log('DEBUG - Fund IRR value:', {
-            fund_name: fund?.fund_name,
-            fund_id: pf.available_funds_id,
-            irr_result: pf.irr_result,
-            irr_result_type: typeof pf.irr_result
-          });
-          
           return {
             id: pf.id,
             fund_name: fund?.fund_name || 'Unknown Fund',
@@ -276,23 +270,23 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           
           if (!holdingPortfolioId) {
             console.warn('ProductOverview: No portfolio ID for holding:', holding.id);
-            return {
-              ...holding,
-              fund_name: 'Unknown Fund',
-              fund_id: null,
-              isin_number: 'N/A'
-            };
-          }
-          
-          // Find all portfolio funds for this portfolio
-          const relevantPortfolioFunds = portfolioFundsResponse.data.filter((pf: any) =>
+          return {
+            ...holding,
+            fund_name: 'Unknown Fund',
+            fund_id: null,
+            isin_number: 'N/A'
+          };
+        }
+        
+        // Find all portfolio funds for this portfolio
+        const relevantPortfolioFunds = portfolioFundsResponse.data.filter((pf: any) =>
             pf.portfolio_id === holdingPortfolioId
-          );
-          
+        );
+        
           console.log('ProductOverview: Relevant portfolio funds for holding:', relevantPortfolioFunds);
-          
+        
           // Find a matching portfolio fund
-          // Try different matching strategies
+        // Try different matching strategies
           let portfolioFund = relevantPortfolioFunds[0]; // Default to first fund in portfolio if no better match found
           
           // Try to match by fund_id if available
@@ -304,21 +298,21 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           }
           
           console.log('ProductOverview: Matched portfolio fund:', portfolioFund);
-          
-          // Find the fund
-          const fund = portfolioFund ? fundsMap.get(portfolioFund.available_funds_id) : null;
-          console.log('ProductOverview: Matched fund:', fund);
-          
-          return {
-            ...holding,
-            fund_name: fund?.fund_name || holding.fund_name || 'Unknown Fund',
-            fund_id: fund?.id || holding.fund_id,
-            isin_number: fund?.isin_number || holding.isin_number || 'N/A'
-          };
-        });
         
+        // Find the fund
+        const fund = portfolioFund ? fundsMap.get(portfolioFund.available_funds_id) : null;
+          console.log('ProductOverview: Matched fund:', fund);
+        
+        return {
+          ...holding,
+          fund_name: fund?.fund_name || holding.fund_name || 'Unknown Fund',
+          fund_id: fund?.id || holding.fund_id,
+          isin_number: fund?.isin_number || holding.isin_number || 'N/A'
+        };
+      });
+      
         console.log('ProductOverview: Processed holdings with fund names:', processedHoldings);
-        setHoldings(processedHoldings || []);
+      setHoldings(processedHoldings || []);
       }
     } catch (err: any) {
       console.error('ProductOverview: Error fetching data:', err);

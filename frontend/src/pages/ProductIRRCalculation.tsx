@@ -264,9 +264,22 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       );
       
       // Process portfolio funds as holdings
-      const processedHoldings = portfolioFundsResponse.data.map((portfolioFund: any) => {
+      const processedHoldings = await Promise.all(portfolioFundsResponse.data.map(async (portfolioFund: any) => {
         // Get fund details
         const fund = fundsMap.get(portfolioFund.available_funds_id);
+        
+        // Fetch latest IRR for this fund
+        let latestIrr: number | undefined = undefined;
+        let latestIrrDate: string | undefined = undefined;
+        try {
+          const irrResp = await api.get(`/portfolio_funds/${portfolioFund.id}/latest-irr`);
+          if (irrResp.data && irrResp.data.irr !== undefined) {
+            latestIrr = irrResp.data.irr;
+            latestIrrDate = irrResp.data.calculation_date;
+          }
+        } catch (err) {
+          // Ignore error, fallback to undefined
+        }
         
         return {
           id: portfolioFund.id, // Use portfolio_fund.id as the holding ID
@@ -277,11 +290,11 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
           target_weighting: portfolioFund.weighting,
           amount_invested: portfolioFund.amount_invested || 0,
           market_value: portfolioFund.market_value || portfolioFund.amount_invested || 0,
-          irr: portfolioFund.irr,
-          irr_calculation_date: portfolioFund.irr_calculation_date,
+          irr: latestIrr,
+          irr_calculation_date: latestIrrDate,
           account_holding_id: parseInt(accountId) // Use client_product_id as account_holding_id
         };
-      });
+      }));
       
       console.log('AccountIRRCalculation: Processed holdings:', processedHoldings);
       setHoldings(processedHoldings || []);
