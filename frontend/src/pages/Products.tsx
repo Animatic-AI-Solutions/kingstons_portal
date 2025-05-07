@@ -110,54 +110,43 @@ const Products: React.FC = () => {
   const fetchProducts = async () => {
     try {
       setIsLoading(true);
-      console.log("Fetching products data...");
-      
-      // Fetch all required data in parallel
+      console.log("Fetching products data from summary view...");
+      // Fetch product summary data from the new view endpoint
       const [
+        summaryRes,
         productsRes,
         clientsRes,
         providersRes,
-        portfoliosRes,
-        holdingsRes,
-        fundRes
+        portfoliosRes
       ] = await Promise.all([
+        api.get('/product_value_irr_summary'),
         api.get('/client_products'),
         api.get('/clients'),
         api.get('/available_providers'),
-        api.get('/portfolios'),
-        api.get('/product_holdings'),
-        api.get('/portfolio_funds')
+        api.get('/portfolios')
       ]);
-      
-      console.log(`Received ${productsRes.data.length} products`);
-      
-      // Process the products data - make sure to only set the actual product data
+
+      // Map summary data by client_product_id for quick lookup
+      const summaryMap = new Map(
+        summaryRes.data.map((row: any) => [row.client_product_id, row])
+      );
+
+      // Merge summary data into products
       const productsData = productsRes.data.map((product: any) => {
-        // Find client name
+        const summary: any = summaryMap.get(product.id) || {};
         const client = clientsRes.data.find((c: any) => c.id === product.client_id);
-        // Find Provider name
         const provider = product.provider_id ? providersRes.data.find((p: any) => p.id === product.provider_id) : null;
-        // Find portfolio
-        const holding = holdingsRes.data.find((h: any) => h.client_product_id === product.id);
-        const portfolio = holding ? portfoliosRes.data.find((p: any) => p.id === holding.portfolio_id) : null;
-        
-        // Calculate total value if possible
-        let totalValue = undefined;
-        if (holding && holding.portfolio_id) {
-          const portfolioFunds = fundRes.data.filter((pf: any) => pf.portfolio_id === holding.portfolio_id);
-          totalValue = portfolioFunds.reduce((sum: number, pf: any) => sum + (pf.amount_invested || 0), 0);
-        }
-        
+        const portfolio = product.portfolio_id ? portfoliosRes.data.find((p: any) => p.id === product.portfolio_id) : null;
         return {
           ...product,
           client_name: client ? client.name : 'Unknown Client',
           product_name: product ? product.product_name : 'Unknown Product',
           provider_name: provider ? provider.name : 'Unknown Provider',
           portfolio_name: portfolio ? portfolio.name : undefined,
-          total_value: totalValue
+          total_value: summary.total_value,
+          irr: summary.irr_weighted
         };
       });
-      
       setProducts(productsData);
       setError(null);
     } catch (err: any) {

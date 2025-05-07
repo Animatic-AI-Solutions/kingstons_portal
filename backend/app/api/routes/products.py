@@ -182,3 +182,15 @@ async def delete_product(product_id: int, db = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error deleting product and associated records: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to delete product: {str(e)}")
+
+@router.get("/product_value_irr_summary", response_model=List[dict])
+async def get_product_value_irr_summary(db = Depends(get_db)):
+    """
+    Returns the product value and IRR summary for all client products from the product_value_irr_summary view.
+    """
+    try:
+        result = db.table("product_value_irr_summary").select("*").execute()
+        return result.data
+    except Exception as e:
+        logger.error(f"Error fetching product value IRR summary: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
