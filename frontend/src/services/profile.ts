@@ -23,7 +23,7 @@ export const profileService = {
       const validData: ProfileUpdateData = {};
       
       if (profileData.preferred_landing_page !== undefined) {
-        validData.preferred_landing_page = profileData.preferred_landing_page;
+        validData.preferred_landing_page = profileData.preferred_landing_page.trim();
       }
       
       if (profileData.profile_picture_url !== undefined) {

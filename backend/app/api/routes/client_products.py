@@ -48,7 +48,21 @@ async def get_client_products(
             limit_val = limit.default
             
         result = query.range(skip_val, skip_val + limit_val - 1).execute()
-        return result.data
+        
+        # Enhance the response with provider information including theme color
+        enhanced_data = []
+        for product in result.data:
+            if product.get("provider_id"):
+                provider_result = db.table("available_providers")\
+                    .select("name", "theme_color")\
+                    .eq("id", product.get("provider_id"))\
+                    .execute()
+                if provider_result.data and len(provider_result.data) > 0:
+                    product["provider_name"] = provider_result.data[0].get("name")
+                    product["provider_theme_color"] = provider_result.data[0].get("theme_color")
+            enhanced_data.append(product)
+            
+        return enhanced_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
@@ -183,9 +197,10 @@ async def get_client_product(client_product_id: int, db = Depends(get_db)):
         
         # Get provider information if available
         if client_product.get("provider_id"):
-            provider_result = db.table("available_providers").select("name").eq("id", client_product.get("provider_id")).execute()
+            provider_result = db.table("available_providers").select("name", "theme_color").eq("id", client_product.get("provider_id")).execute()
             if provider_result.data and len(provider_result.data) > 0:
                 client_product["provider_name"] = provider_result.data[0].get("name")
+                client_product["provider_theme_color"] = provider_result.data[0].get("theme_color")
         
         # Get portfolio information if available via direct link
         if client_product.get("portfolio_id"):

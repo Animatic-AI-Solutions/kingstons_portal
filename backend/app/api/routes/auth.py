@@ -451,10 +451,15 @@ async def update_profile(
         
         # Validate preferred landing page
         valid_pages = ['/', '/clients', '/products', '/definitions', '/reporting']
-        if profile_data.preferred_landing_page and profile_data.preferred_landing_page not in valid_pages:
-            logger.warning(f"Invalid landing page: {profile_data.preferred_landing_page}")
-            raise HTTPException(status_code=400, detail="Invalid landing page selected")
-            
+        if profile_data.preferred_landing_page:
+            # Trim any whitespace and ensure it's a valid page
+            landing_page = profile_data.preferred_landing_page.strip()
+            if landing_page not in valid_pages:
+                logger.warning(f"Invalid landing page: {landing_page}")
+                raise HTTPException(status_code=400, detail="Invalid landing page selected")
+            # Use the cleaned value
+            profile_data.preferred_landing_page = landing_page
+        
         # Only include fields that exist in the database
         update_data = {}
         if profile_data.preferred_landing_page is not None:
@@ -466,7 +471,7 @@ async def update_profile(
         
         if not update_data:
             logger.warning("No valid profile data provided for update")
-            raise HTTPException(status_code=400, detail="No valid profile data provided")
+            raise HTTPException(status_code=400, detail="No changes to save")
             
         logger.info(f"Updating profile for user ID: {current_user['id']} with data: {update_data}")
         

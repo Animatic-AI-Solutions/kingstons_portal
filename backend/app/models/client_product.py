@@ -11,6 +11,8 @@ class ClientproductBase(BaseModel):
     weighting: Optional[float] = 0.0
     plan_number: Optional[str] = None
     provider_id: Optional[int] = None
+    provider_name: Optional[str] = None
+    provider_theme_color: Optional[str] = None
     product_type: Optional[str] = None
     portfolio_id: Optional[int] = None
 
