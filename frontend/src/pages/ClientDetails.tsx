@@ -5,7 +5,8 @@ import { useAuth } from '../context/AuthContext';
 // Enhanced TypeScript interfaces
 interface Client {
   id: string;
-  name: string;
+  forname: string | null;
+  surname: string | null;
   relationship: string;
   status: string;
   advisor: string | null;
@@ -16,7 +17,8 @@ interface Client {
 }
 
 interface ClientFormData {
-  name: string;
+  forname: string | null;
+  surname: string | null;
   relationship: string;
   status: string;
   advisor: string | null;
@@ -88,7 +90,7 @@ const ClientHeader = ({
           <div className="flex items-center">
             <div className="pl-9">
               <h1 className="text-4xl font-normal text-gray-900 font-sans tracking-wide">
-                {client.name}
+                {client.forname} {client.surname}
               </h1>
               <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1">
                 <div className="text-base text-gray-600 font-sans tracking-wide">
@@ -288,7 +290,8 @@ const ClientDetails: React.FC = () => {
   const [versions, setVersions] = useState<any[]>([]);
   const [showVersionModal, setShowVersionModal] = useState(false);
   const [formData, setFormData] = useState<ClientFormData>({
-    name: '',
+    forname: null,
+    surname: null,
     relationship: '',
     status: 'active',
     advisor: null
@@ -413,7 +416,8 @@ const ClientDetails: React.FC = () => {
     
     // Initialize form data with current client values
     setFormData({
-      name: client.name,
+      forname: client.forname,
+      surname: client.surname,
       relationship: client.relationship,
       status: client.status,
       advisor: client.advisor
@@ -430,7 +434,8 @@ const ClientDetails: React.FC = () => {
       // Only send fields that have actually changed
       const changedFields: Partial<ClientFormData> = {};
       
-      if (formData.name !== client.name) changedFields.name = formData.name;
+      if (formData.forname !== client.forname) changedFields.forname = formData.forname;
+      if (formData.surname !== client.surname) changedFields.surname = formData.surname;
       if (formData.relationship !== client.relationship) changedFields.relationship = formData.relationship;
       if (formData.status !== client.status) changedFields.status = formData.status;
       
@@ -482,7 +487,7 @@ const ClientDetails: React.FC = () => {
           Clients
         </Link>
         <span>/</span>
-        <span className="text-gray-900">{client?.name || 'Client Details'}</span>
+        <span className="text-gray-900">{client ? `${client.forname} ${client.surname}` : 'Client Details'}</span>
       </div>
     );
   };
@@ -564,16 +569,27 @@ const ClientDetails: React.FC = () => {
             <div className="p-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-0.5">Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-0.5">First Name</label>
                   <input
                     type="text"
-                    name="name"
-                    value={formData.name}
+                    name="forname"
+                    value={formData.forname || ''}
                     onChange={handleChange}
                     className="block w-full h-10 px-3 py-2 text-base rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-200"
                   />
                 </div>
                 
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-0.5">Last Name</label>
+                  <input
+                    type="text"
+                    name="surname"
+                    value={formData.surname || ''}
+                    onChange={handleChange}
+                    className="block w-full h-10 px-3 py-2 text-base rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-200"
+                  />
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-0.5">Relationship</label>
                   <select
@@ -622,7 +638,7 @@ const ClientDetails: React.FC = () => {
             <h2 className="text-xl font-normal text-gray-900 font-sans tracking-wide">Client Products</h2>
             
             <Link
-              to={`/create-client-products?client_id=${clientId}&client_name=${encodeURIComponent(client.name)}`}
+              to={`/create-client-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.forname} ${client?.surname}`)}`}
               className="inline-flex items-center px-4 py-1.5 text-sm font-medium text-white bg-primary-700 rounded-xl shadow-sm hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-700 transition-all duration-200"
             >
               <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -643,7 +659,7 @@ const ClientDetails: React.FC = () => {
               <div className="text-gray-500 mb-4">No products found for this client.</div>
               <div className="flex justify-center">
                 <Link 
-                  to={`/create-client-products?client_id=${clientId}&client_name=${encodeURIComponent(client.name)}`}
+                  to={`/create-client-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.forname} ${client?.surname}`)}`}
                   className="inline-flex items-center px-4 py-1.5 text-sm font-medium text-white bg-primary-700 rounded-xl shadow-sm hover:bg-primary-800 transition-colors duration-200"
                 >
                   <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

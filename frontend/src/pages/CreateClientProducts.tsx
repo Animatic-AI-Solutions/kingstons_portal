@@ -1,9 +1,7 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext';
-import { format } from 'date-fns';
 import { Radio, Select, Input, Checkbox, DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
@@ -98,6 +96,10 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   
   // Add refs for product sections
   const productRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  
+  // Create a state for toast notifications that won't disrupt the UI flow
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showToast, setShowToast] = useState(false);
   
   // Click outside handler for dropdowns
   useEffect(() => {
@@ -376,8 +378,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         // If this is a template portfolio and we're modifying the funds, convert to bespoke
         if (product.portfolio.type === 'template' && product.portfolio.templateId) {
           updatedType = 'bespoke';
-          // Show notification that we're converting to bespoke
-          showError(`Template portfolio has been converted to bespoke because you modified the fund selection.`);
+          // Show a toast notification instead of an error
+          showToastMessage(`Template portfolio has been converted to bespoke because you modified the fund selection.`);
         }
         
         return {
@@ -461,8 +463,17 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   };
 
   // Helper to show error as popup
+  const showToastMessage = (msg: string) => {
+    setToastMessage(msg);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 4000);
+  };
+
+  // Keep showError for critical errors that should block the UI
   const showError = (msg: string) => {
-    setError(msg);
+    // Make sure msg is always a string to avoid React errors with objects
+    const errorMessage = typeof msg === 'object' ? JSON.stringify(msg) : msg;
+    setError(errorMessage);
     setShowErrorPopup(true);
     setTimeout(() => setShowErrorPopup(false), 4000);
   };
@@ -559,15 +570,24 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           if (portfolioId) {
             const fundPromises = product.portfolio.selectedFunds.map(async (fundId) => {
               try {
-                await api.post('/portfolio_funds', {
+                // Check the API schema - it might be expecting a different field naming or format
+                const fundData = {
                   portfolio_id: portfolioId,
-                  fund_id: fundId,
-                  weighting: 0, // Set equal weighting for all funds
-                  status: 'active'
-                });
+                  available_funds_id: fundId, // Changed from fund_id to available_funds_id to match DB schema
+                  weighting: 1, // Try using 1 instead of 0
+                  status: 'active',
+                  start_date: formattedStartDate // Add start date if required by API
+                };
+                
+                console.log(`Adding fund ${fundId} to portfolio ${portfolioId} with data:`, fundData);
+                await api.post('/portfolio_funds', fundData);
                 console.log(`Added fund ${fundId} to portfolio ${portfolioId}`);
-              } catch (err) {
+              } catch (err: any) { // Type the error as any to access response property
                 console.error(`Error adding fund ${fundId} to portfolio:`, err);
+                // Log the response data from the error to help debug
+                if (err.response && err.response.data) {
+                  console.error('API Error details:', err.response.data);
+                }
                 throw err;
               }
             });
@@ -575,15 +595,23 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             // Add Cashline fund if available
             if (cashlineFund) {
               try {
-                await api.post('/portfolio_funds', {
+                // Same format update for cashline fund
+                const cashlineFundData = {
                   portfolio_id: portfolioId,
-                  fund_id: cashlineFund.id,
-                  weighting: 0, // Set equal weighting
-                  status: 'active'
-                });
+                  available_funds_id: cashlineFund.id, // Changed from fund_id to available_funds_id
+                  weighting: 1, // Try using 1 instead of 0
+                  status: 'active',
+                  start_date: formattedStartDate // Add start date if required by API
+                };
+                
+                console.log(`Adding Cashline fund ${cashlineFund.id} to portfolio ${portfolioId} with data:`, cashlineFundData);
+                await api.post('/portfolio_funds', cashlineFundData);
                 console.log(`Added Cashline fund ${cashlineFund.id} to portfolio ${portfolioId}`);
-              } catch (err) {
+              } catch (err: any) { // Type the error as any
                 console.error(`Error adding Cashline fund to portfolio:`, err);
+                if (err.response && err.response.data) {
+                  console.error('API Error details:', err.response.data);
+                }
                 // Continue if Cashline couldn't be added, don't block the rest of the submission
               }
             }
@@ -597,7 +625,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         if (portfolioId) {
           try {
             await api.post('/client_products', {
-              client_id: clientId,
+              client_id: selectedClientId,
               provider_id: product.provider_id,
               product_type: product.product_type,
               product_name: product.product_name,
@@ -606,8 +634,11 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               start_date: formattedStartDate
             });
             console.log(`Created client product for portfolio ${portfolioId}`);
-          } catch (err) {
+          } catch (err: any) { // Type the error as any
             console.error('Error creating client product:', err);
+            if (err.response && err.response.data) {
+              console.error('API Error details:', err.response.data);
+            }
             throw err;
           }
         }
@@ -616,9 +647,23 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       // Successful completion
       alert('Successfully created client products and portfolios');
       navigate('/products');
-    } catch (err: any) {
+    } catch (err: any) { // Type the error as any
       console.error('Error in form submission:', err);
-      showError(err.response?.data?.detail || 'Failed to create client products');
+      
+      // Better error handling to show more details
+      let errorMessage = 'Failed to create client products';
+      if (err.response && err.response.data) {
+        if (err.response.data.detail && Array.isArray(err.response.data.detail)) {
+          // Format detailed validation errors
+          errorMessage = err.response.data.detail.map((detail: any) => 
+            `${detail.loc ? detail.loc.join('.') + ': ' : ''}${detail.msg}`
+          ).join(', ');
+        } else if (typeof err.response.data.detail === 'string') {
+          errorMessage = err.response.data.detail;
+        }
+      }
+      
+      showError(errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -767,6 +812,31 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   return (
 
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Toast notification */}
+      {showToast && (
+        <div className="fixed top-4 right-4 z-50 bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded shadow-md">
+          <div className="flex">
+            <div className="py-1">
+              <svg className="h-6 w-6 text-blue-500 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-bold">Notification</p>
+              <p className="text-sm">{toastMessage}</p>
+            </div>
+            <button 
+              onClick={() => setShowToast(false)} 
+              className="ml-auto text-blue-500 hover:text-blue-700"
+            >
+              <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Breadcrumb Navigation */}
       <nav className="mb-8 flex" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
@@ -860,7 +930,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                   >
                   {clients.map(client => (
                       <Select.Option key={client.id} value={client.id}>
-                      {client.name}
+                      {client.forname} {client.surname}
                       </Select.Option>
                   ))}
                   </Select>
@@ -929,6 +999,21 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                         </button>
                       </div>
 
+                      {/* Product Name Field */}
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Product Name <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={product.product_name}
+                          onChange={(e) => handleProductChange(product.id, 'product_name', e.target.value)}
+                          className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                          placeholder="Enter product name"
+                          required
+                        />
+                      </div>
+
                       {/* Provider and Product Type Selection in horizontal layout */}
                       <div className="flex gap-4 mb-3">
                         {/* Provider Selection */}
@@ -967,33 +1052,34 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                               { value: 'Other', label: 'Other' },
                             ]}
                             value={product.product_type}
-
                             onChange={val => handleProductTypeChange(product.id, String(val))}
                             placeholder="Select product type"
                             className="w-full"
                             required
                           />
                         </div>
+                      </div>
 
-                        {/* Portfolio Name */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Portfolio Name <span className="text-red-500">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            value={product.portfolio.name}
-                            onChange={(e) => handlePortfolioNameChange(product.id, e.target.value)}
-                            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                            required
-                          />
-                        </div>
+                      {/* Portfolio Name */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Portfolio Name <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={product.portfolio.name}
+                          onChange={(e) => handlePortfolioNameChange(product.id, e.target.value)}
+                          className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                          required
+                        />
+                      </div>
 
-                        {/* Portfolio Configuration */}
-                        <div className="mt-6 border-t pt-6 col-span-2">
-                          <h4 className="text-lg font-medium mb-4">Portfolio Configuration</h4>
+                      {/* Portfolio Configuration */}
+                      <div className="mt-6 border-t pt-6 col-span-2">
+                        <h4 className="text-lg font-medium mb-4">Portfolio Configuration</h4>
 
-                          {renderPortfolioSection(product)}
+                        {renderPortfolioSection(product)}
+                      </div>
                     </div>
                   ))}
                 </div>
