@@ -263,4 +263,35 @@ export const getAvailableColors = () => {
   return api.get('available_providers/available-colors');
 };
 
+/**
+ * PORTFOLIO API ENDPOINTS
+ * 
+ * Functions for managing portfolio data
+ */
+
+/**
+ * Fetches all portfolios with template information
+ * @param {Object} params - Optional query parameters
+ * @param {number} [params.skip] - Number of records to skip for pagination
+ * @param {number} [params.limit] - Maximum number of records to return
+ * @param {string} [params.status] - Filter by portfolio status
+ * @returns {Promise} - API response with portfolios including template info
+ */
+export const getPortfoliosWithTemplate = (params?: {
+  skip?: number;
+  limit?: number;
+  status?: string;
+}) => {
+  return api.get('portfolios/with-template', { params });
+};
+
+/**
+ * Fetches a single portfolio with template information
+ * @param {number} portfolioId - Portfolio ID
+ * @returns {Promise} - API response with portfolio including template info
+ */
+export const getPortfolioWithTemplate = (portfolioId: number) => {
+  return api.get(`portfolios/${portfolioId}`);
+};
+
 export default api; 
