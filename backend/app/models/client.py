@@ -3,7 +3,8 @@ from typing import Optional
 
 class ClientBase(BaseModel):
     """Base model for client data"""
-    name: Optional[str] = Field(default="")
+    forname: Optional[str] = Field(default="")
+    surname: Optional[str] = Field(default="")
     relationship: Optional[str] = Field(default="")
     status: Optional[str] = Field(default="active")
     advisor: Optional[str] = Field(default=None)
@@ -18,7 +19,8 @@ class ClientCreate(ClientBase):
 
 class ClientUpdate(BaseModel):
     """Model for updating an existing client"""
-    name: Optional[str] = None
+    forname: Optional[str] = None
+    surname: Optional[str] = None
     relationship: Optional[str] = None
     status: Optional[str] = None
     advisor: Optional[str] = None

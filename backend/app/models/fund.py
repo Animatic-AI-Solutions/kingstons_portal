@@ -29,34 +29,5 @@ class FundInDB(FundBase):
     model_config = ConfigDict(from_attributes=True)
 
 class FundWithProvider(FundInDB):
-    """Model for fund data including provider context"""
-    provider_id: Optional[int] = None
+    """Model for fund data with additional context"""
     portfolio_id: Optional[int] = None
-
-    @classmethod
-    async def get_with_provider(cls, db, fund_id: int, portfolio_id: Optional[int] = None) -> 'FundWithProvider':
-        """Get fund data with provider context from a specific portfolio"""
-        # Get base fund data
-        fund_result = await db.table("available_funds").select("*").eq("id", fund_id).single().execute()
-        if not fund_result.data:
-            raise ValueError(f"Fund with ID {fund_id} not found")
-        
-        fund_data = fund_result.data
-        
-        # If portfolio_id is provided, get provider context
-        provider_id = None
-        if portfolio_id:
-            provider_result = await db.table("portfolio_fund_providers")\
-                .select("provider_id")\
-                .eq("fund_id", fund_id)\
-                .eq("portfolio_id", portfolio_id)\
-                .single().execute()
-            
-            if provider_result.data:
-                provider_id = provider_result.data["provider_id"]
-        
-        return cls(
-            **fund_data,
-            provider_id=provider_id,
-            portfolio_id=portfolio_id
-        )

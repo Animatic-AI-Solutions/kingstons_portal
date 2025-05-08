@@ -31,11 +31,8 @@ const PortfolioTemplateDetails: React.FC = () => {
   const [template, setTemplate] = useState<PortfolioTemplate | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
-  const [customName, setCustomName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     if (portfolioId && portfolioId !== 'undefined') {
@@ -76,48 +73,6 @@ const PortfolioTemplateDetails: React.FC = () => {
 
   const handleBack = () => {
     navigate('/definitions?tab=portfolios');
-  };
-
-  const handleCreateClick = () => {
-    setShowCreateModal(true);
-    setCustomName(template?.name ? `${template.name} (Copy)` : 'New Portfolio');
-  };
-
-  const handleCreatePortfolio = async () => {
-    if (!customName || customName.trim() === '') {
-      setError('Please enter a portfolio name');
-      return;
-    }
-
-    try {
-      setIsCreating(true);
-      setError(null);
-      const response = await api.post('/available_portfolios/from-template', {
-        template_id: parseInt(portfolioId as string),
-        portfolio_name: customName.trim()
-      });
-      
-      // Navigate to the newly created portfolio
-      navigate(`/definitions/portfolios/${response.data.id}`);
-    } catch (err: any) {
-      console.error('Error creating portfolio from template:', err);
-      if (err.response?.data?.detail) {
-        const detail = err.response.data.detail;
-        if (Array.isArray(detail)) {
-          setError(detail.map(item => typeof item === 'object' ? 
-            (item.msg || JSON.stringify(item)) : String(item)).join(', '));
-        } else if (typeof detail === 'object') {
-          setError(JSON.stringify(detail));
-        } else {
-          setError(String(detail));
-        }
-      } else {
-        setError('Failed to create portfolio from template');
-      }
-      setShowCreateModal(false);
-    } finally {
-      setIsCreating(false);
-    }
   };
 
   const handleDeleteClick = () => {
@@ -238,12 +193,6 @@ const PortfolioTemplateDetails: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">{template?.name || 'Unnamed Template'}</h1>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-0">
-          <button
-            onClick={handleCreateClick}
-            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-          >
-            Create Portfolio from Template
-          </button>
           <button
             onClick={handleDeleteClick}
             className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
@@ -375,69 +324,6 @@ const PortfolioTemplateDetails: React.FC = () => {
                   className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
                   onClick={handleCancelDelete}
                   disabled={isDeleting}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Create Portfolio Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-10 overflow-y-auto">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
-              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
-            </div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="sm:flex sm:items-start">
-                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-green-100 sm:mx-0 sm:h-10 sm:w-10">
-                    <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-                    </svg>
-                  </div>
-                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900">Create Portfolio</h3>
-                    <div className="mt-2">
-                      <p className="text-sm text-gray-500">
-                        Enter a name for the new portfolio that will be created from this template.
-                      </p>
-                    </div>
-                    <div className="mt-4">
-                      <label htmlFor="portfolioName" className="block text-sm font-medium text-gray-700">
-                        Portfolio Name
-                      </label>
-                      <input
-                        type="text"
-                        id="portfolioName"
-                        value={customName}
-                        onChange={(e) => setCustomName(e.target.value)}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <button
-                  type="button"
-                  className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm ${
-                    isCreating ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-700'
-                  }`}
-                  onClick={handleCreatePortfolio}
-                  disabled={isCreating}
-                >
-                  {isCreating ? 'Creating...' : 'Create'}
-                </button>
-                <button
-                  type="button"
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                  onClick={() => setShowCreateModal(false)}
-                  disabled={isCreating}
                 >
                   Cancel
                 </button>

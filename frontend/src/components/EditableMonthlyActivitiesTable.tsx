@@ -22,6 +22,9 @@ interface Fund {
   holding_id: number;
   irr?: number;
   start_date?: string;
+  isActive?: boolean;
+  inactiveHoldingIds?: any[]; // Updated to handle objects instead of just IDs
+  isInactiveBreakdown?: boolean;
 }
 
 interface CellEdit {
@@ -42,6 +45,7 @@ interface EditableMonthlyActivitiesTableProps {
   accountHoldingId: number;
   onActivitiesUpdated: () => void;
   selectedYear?: number;
+  allFunds?: any[]; // Add property to receive the full list of all funds
 }
 
 interface FundValuation {
@@ -75,7 +79,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   activities,
   accountHoldingId,
   onActivitiesUpdated,
-  selectedYear
+  selectedYear,
+  allFunds = [] // Default to empty array
 }) => {
   const [months, setMonths] = useState<string[]>([]);
   const [pendingEdits, setPendingEdits] = useState<CellEdit[]>([]);
@@ -86,6 +91,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   const [showSwitchFundModal, setShowSwitchFundModal] = useState(false);
   const [switchSelectionData, setSwitchSelectionData] = useState<SwitchSelectionData | null>(null);
   const [activitiesState, setActivities] = useState<Activity[]>(activities);
+  const [showInactiveFunds, setShowInactiveFunds] = useState(false);
   
   // Add state to track the currently focused cell
   const [focusedCell, setFocusedCell] = useState<{ fundId: number, activityType: string, monthIndex: number } | null>(null);
@@ -219,6 +225,23 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     }
   };
 
+  // Format activity type for display - convert camelCase or snake_case to spaces
+  const formatActivityType = (activityType: string): string => {
+    if (!activityType) return '';
+    
+    // Replace underscores with spaces
+    let formatted = activityType.replace(/_/g, ' ');
+    
+    // Add spaces between camelCase words
+    formatted = formatted.replace(/([a-z])([A-Z])/g, '$1 $2');
+    
+    // Capitalize first letter of each word
+    return formatted
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   // Get activities for a specific fund, month, and activity type
   const getActivity = (fundId: number, month: string, activityType: string): Activity | undefined => {
     // Convert activity types for matching using our helper function
@@ -276,94 +299,68 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
   // Handle cell value change
   const handleCellValueChange = (fundId: number, month: string, activityType: string, value: string) => {
-    // Validate value (must be a number)
-    if (value !== '' && isNaN(Number(value))) {
+    // Find the fund to check if it's the Previous Funds entry
+    const fund = funds.find(f => f.id === fundId);
+    
+    // Don't allow edits to Previous Funds cells
+    if (fund && fund.isActive === false) {
       return;
     }
 
-    // Find any existing activity or valuation
-    let originalValue = '';
-    let originalId;
-    let originalRelatedFund;
+    const sanitizedValue = value.trim() === '' 
+      ? '' 
+      : value.replace(/[^0-9.]/g, ''); // Allow only numbers and decimal points
     
-    if (activityType === 'Current Value') {
-      const valuation = getFundValuation(fundId, month);
-      if (valuation) {
-        originalValue = valuation.value.toString();
-        originalId = valuation.id;
-      }
-    } else {
+    // Get existing activity
       const activity = getActivity(fundId, month, activityType);
-      if (activity) {
-        originalValue = Math.abs(parseFloat(activity.amount)).toString();
-        originalId = activity.id;
-        originalRelatedFund = activity.related_fund;
-      }
-    }
     
-    // Check if there's already a pending edit for this cell
+    // Get the activity ID if it exists
+    const activityId = activity?.id;
+    
+    // Check for existing pending edit
     const existingEditIndex = pendingEdits.findIndex(
-      edit => edit.fundId === fundId && 
-              edit.month === month && 
-              edit.activityType === activityType
+      edit => edit.fundId === fundId && edit.month === month && edit.activityType === activityType
     );
     
-    // If this is the same as the original value, remove the pending edit
-    if (originalValue && value === originalValue && existingEditIndex !== -1) {
-      const updatedEdits = [...pendingEdits];
-      updatedEdits.splice(existingEditIndex, 1);
-      setPendingEdits(updatedEdits);
-      return;
-    }
+    // If there's an existing edit, update it
+    if (existingEditIndex !== -1) {
+      const newEdits = [...pendingEdits];
     
-    // If value is empty and there's an original activity, mark for deletion
-    if (value === '' && originalId) {
-      const newEdit: CellEdit = {
-        fundId,
-        month,
-        activityType,
-        value: '',
-        isNew: false,
-        originalActivityId: originalId,
-        toDelete: true, // Mark this activity for deletion
-        linkedFundId: originalRelatedFund
-      };
-      
-      if (existingEditIndex !== -1) {
-        // Update existing edit
-        const updatedEdits = [...pendingEdits];
-        updatedEdits[existingEditIndex] = newEdit;
-        setPendingEdits(updatedEdits);
+      // If the value is empty and the original activity existed, mark for deletion
+      if (sanitizedValue === '' && activityId) {
+        newEdits[existingEditIndex] = {
+          ...newEdits[existingEditIndex],
+          value: sanitizedValue,
+          toDelete: true
+        };
+      } else if (sanitizedValue === '' && !activityId) {
+        // If the value is empty and there was no original activity, remove the edit
+        newEdits.splice(existingEditIndex, 1);
       } else {
-        // Add new edit
-        setPendingEdits([...pendingEdits, newEdit]);
+        // Otherwise update the value
+        newEdits[existingEditIndex] = {
+          ...newEdits[existingEditIndex],
+          value: sanitizedValue,
+          toDelete: false
+        };
       }
-      return;
-    }
-    
-    // Otherwise update or add a pending edit
+      
+      setPendingEdits(newEdits);
+      }
+    // If there's no existing edit and the value differs from the current activity
+    else if (sanitizedValue !== getCellValue(fundId, month, activityType)) {
     const newEdit: CellEdit = {
       fundId,
       month,
       activityType,
-      value,
-      isNew: !originalId,
-      originalActivityId: originalId,
-      linkedFundId: originalRelatedFund
-    };
-    
-    if (existingEditIndex !== -1) {
-      // Update existing edit
-      const updatedEdits = [...pendingEdits];
-      updatedEdits[existingEditIndex] = newEdit;
-      setPendingEdits(updatedEdits);
-    } else {
-      // Add new edit
+        value: sanitizedValue,
+        isNew: !activityId,
+        originalActivityId: activityId,
+        toDelete: sanitizedValue === '' && !!activityId
+      };
+      
       setPendingEdits([...pendingEdits, newEdit]);
     }
-
-    // No longer show the fund selection modal immediately
-    // We'll do that in the onBlur handler instead
   };
 
   // Update the handleCellBlur function to check if the value actually changed
@@ -917,6 +914,10 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     // Base class for all cells
     let baseClass = "px-4 py-2 border box-border min-w-[100px] max-w-none";
     
+    // Get the fund to check if it's the Previous Funds entry
+    const fund = funds.find(f => f.id === fundId);
+    const isPreviousFunds = fund && fund.isActive === false;
+    
     // Check if there's a pending edit for this cell
     const pendingEdit = pendingEdits.find(
       edit => edit.fundId === fundId && 
@@ -938,6 +939,11 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     // Add subtle indicator for Current Value cells but maintain same base color
     if (activityType === 'Current Value') {
       baseClass += " hover:bg-blue-50 border-b border-blue-200";
+    }
+    
+    // Add specific styling for Previous Funds cells
+    if (isPreviousFunds) {
+      baseClass += " bg-gray-50 text-gray-500";
     }
     
     return baseClass;
@@ -1091,6 +1097,35 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     }
   };
 
+  // Calculate the total for a specific fund and month
+  const calculateFundMonthTotal = (fundId: number, month: string): number => {
+    // Sum up all non-zero values for each activity type for this fund and month
+    // Skip "Current Value" as it's not part of the sum total
+    return ACTIVITY_TYPES
+      .filter(activityType => activityType !== 'Current Value') // Exclude Current Value from totals
+      .reduce((total, activityType) => {
+        const cellValue = getCellValue(fundId, month, activityType);
+        if (cellValue && !isNaN(parseFloat(cellValue))) {
+          // For investments, add positive values
+          // For withdrawals and switch outs, subtract (they reduce the total)
+          if (activityType === 'Investment' || 
+              activityType === 'RegularInvestment' || 
+              activityType === 'GovernmentUplift' || 
+              activityType === 'Switch In') {
+            return total + parseFloat(cellValue);
+          } else if (activityType === 'Withdrawal' || activityType === 'Switch Out') {
+            return total - parseFloat(cellValue);
+          }
+        }
+        return total;
+      }, 0);
+  };
+
+  // Format the total for display with correct signs
+  const formatTotal = (total: number): string => {
+    return total === 0 ? '' : formatCurrency(total);
+  };
+
   return (
     <>
       <div className="mt-8">
@@ -1133,23 +1168,110 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {funds.map(fund => (
-                  <React.Fragment key={fund.id}>
+                {/* First get any inactive funds that might need to be displayed */}
+                {(() => {
+                  // If we're showing the inactive funds breakdown, we need to find the previous funds entry
+                  const previousFundsEntry = funds.find(f => f.isActive === false && f.inactiveHoldingIds && f.inactiveHoldingIds.length > 0);
+                  
+                  // Find all funds that should be displayed
+                  let fundsToDisplay = [...funds];
+                  
+                  // If showing inactive funds and we have a previous funds entry with inactive funds
+                  if (showInactiveFunds && previousFundsEntry && previousFundsEntry.inactiveHoldingIds) {
+                    // Now inactiveHoldingIds is an array of objects with id, fund_id, and fund_name
+                    const inactiveFundsToShow = previousFundsEntry.inactiveHoldingIds.map(holding => {
+                      // The holding already has the fund_name, so we can use it directly
+                      return {
+                        id: holding.id, // This is the portfolio_fund_id
+                        fund_name: holding.fund_name || `Inactive Fund ${holding.id}`,
+                        holding_id: -1,
+                        isActive: false,
+                        isInactiveBreakdown: true,
+                        // Preserve the original fund_id for reference
+                        fund_id: holding.fund_id
+                      };
+                    });
+                    
+                    // Insert inactive funds after the Previous Funds entry
+                    const previousFundsIndex = fundsToDisplay.findIndex(f => f.id === previousFundsEntry.id);
+                    if (previousFundsIndex >= 0) {
+                      fundsToDisplay = [
+                        ...fundsToDisplay.slice(0, previousFundsIndex + 1),
+                        ...inactiveFundsToShow,
+                        ...fundsToDisplay.slice(previousFundsIndex + 1)
+                      ];
+                    }
+                  }
+                  
+                  return fundsToDisplay.map(fund => (
+                    <React.Fragment key={`${fund.id}${fund.isInactiveBreakdown ? '-breakdown' : ''}`}>
                     {/* Fund name row */}
-                    <tr className="bg-gray-50 border-t border-gray-200">
-                      <td className="px-4 py-3 font-semibold text-gray-900 sticky left-0 z-10 bg-gray-50 shadow-[5px_0_5px_-5px_rgba(0,0,0,0.1)]">
+                      <tr className={`${
+                        fund.isActive === false 
+                          ? fund.isInactiveBreakdown 
+                            ? 'bg-gray-50 border-t border-dashed border-gray-300' 
+                            : 'bg-gray-100 border-t border-gray-300'
+                          : 'bg-gray-50 border-t border-gray-200'
+                      }`}>
+                        <td className={`px-4 py-3 font-semibold ${
+                          fund.isActive === false 
+                            ? fund.isInactiveBreakdown 
+                              ? 'text-gray-600 pl-8' // Indent inactive breakdown funds
+                              : 'text-blue-800' 
+                            : 'text-gray-900'
+                        } sticky left-0 z-10 ${
+                          fund.isActive === false 
+                            ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
+                            : 'bg-gray-50'
+                        } shadow-[5px_0_5px_-5px_rgba(0,0,0,0.1)]`}>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              {fund.isInactiveBreakdown && 
+                                <span className="text-gray-400 mr-2">→</span>
+                              }
                         {fund.fund_name}
+                              {fund.isActive === false && !fund.isInactiveBreakdown && (
+                                <div className="text-xs text-gray-500 font-normal mt-1">
+                                  ({fund.inactiveHoldingIds?.length || 0} inactive {(fund.inactiveHoldingIds?.length || 0) === 1 ? 'fund' : 'funds'} - not editable)
+                                </div>
+                              )}
+                              {fund.isInactiveBreakdown && (
+                                <div className="text-xs text-gray-500 font-normal">
+                                  (inactive)
+                                </div>
+                              )}
+                            </div>
+                            {fund.isActive === false && !fund.isInactiveBreakdown && fund.inactiveHoldingIds && fund.inactiveHoldingIds.length > 0 && (
+                              <button
+                                onClick={() => setShowInactiveFunds(!showInactiveFunds)}
+                                className="ml-2 px-2 py-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                                title={showInactiveFunds ? "Hide inactive funds" : "Show inactive funds breakdown"}
+                              >
+                                {showInactiveFunds ? "Hide" : "Show"} Breakdown
+                              </button>
+                            )}
+                          </div>
                       </td>
                       {months.map(month => (
-                        <td key={`fund-header-${fund.id}-${month}`} className="bg-gray-50"></td>
+                          <td key={`fund-header-${fund.id}-${month}`} className={
+                            fund.isActive === false 
+                              ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
+                              : 'bg-gray-50'
+                          }></td>
                       ))}
                     </tr>
                     
                     {/* Activity type rows */}
                     {ACTIVITY_TYPES.map(activityType => (
-                      <tr key={`${fund.id}-${activityType}`}>
-                        <td className="px-4 py-2 font-medium text-gray-500 sticky left-0 z-10 bg-white shadow-[5px_0_5px_-5px_rgba(0,0,0,0.1)]">
-                          {activityType}
+                        <tr key={`${fund.id}-${activityType}${fund.isInactiveBreakdown ? '-breakdown' : ''}`} 
+                            className={fund.isInactiveBreakdown ? 'bg-gray-50' : ''}>
+                          <td className={`px-4 py-2 font-medium text-gray-500 sticky left-0 z-10 ${
+                            fund.isInactiveBreakdown ? 'bg-gray-50 pl-8' : 'bg-white'
+                          } shadow-[5px_0_5px_-5px_rgba(0,0,0,0.1)]`}>
+                            {fund.isInactiveBreakdown && 
+                              <span className="text-gray-400 mr-2">→</span>
+                            }
+                          {formatActivityType(activityType)}
                         </td>
                         {months.map((month, monthIndex) => {
                           const cellValue = getCellValue(fund.id, month, activityType);
@@ -1157,13 +1279,18 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                           
                           return (
                             <td 
-                              key={`${fund.id}-${month}-${activityType}`} 
-                              className={getCellClass(fund.id, month, activityType, false)}
+                                key={`${fund.id}-${month}-${activityType}${fund.isInactiveBreakdown ? '-breakdown' : ''}`} 
+                                className={`${getCellClass(fund.id, month, activityType, false)} ${
+                                  fund.isInactiveBreakdown ? 'bg-gray-50 opacity-75' : ''
+                                }`}
                               title={linkedFundName ? 
                                 `${activityType === 'Switch In' ? 'From' : 'To'}: ${linkedFundName}` : 
                                 undefined}
-                              id={`cell-${fund.id}-${month}-${activityType}`}
+                                id={`cell-${fund.id}-${month}-${activityType}${fund.isInactiveBreakdown ? '-breakdown' : ''}`}
                               onClick={() => {
+                                  // Don't focus inactive breakdown cells
+                                  if (fund.isInactiveBreakdown) return;
+                                  
                                 // Update focused cell state
                                 setFocusedCell({
                                   fundId: fund.id,
@@ -1180,17 +1307,30 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                               <div className="flex justify-center items-center">
                                 <input
                                   type="text"
-                                  className="focus:outline-none bg-transparent text-center border-0 shadow-none w-auto min-w-0"
+                                    className={`focus:outline-none bg-transparent text-center border-0 shadow-none w-auto min-w-0 ${!fund.isActive || fund.isInactiveBreakdown ? 'text-gray-500 cursor-not-allowed' : ''}`}
                                   value={cellValue}
-                                  disabled={isSubmitting}
+                                    disabled={isSubmitting || fund.isActive === false || fund.isInactiveBreakdown}
                                   onChange={(e) => {
+                                      // Only allow changes for active funds that aren't part of a breakdown
+                                      if (fund.isActive !== false && !fund.isInactiveBreakdown) {
                                     handleCellValueChange(fund.id, month, activityType, e.target.value);
                                     // Adjust width to fit content
                                     e.target.style.width = (e.target.value.length + 2) + 'ch';
+                                      }
                                   }}
-                                  onBlur={(e) => handleCellBlur(fund.id, month, activityType)}
-                                  onKeyDown={(e) => handleKeyDown(e, fund.id, activityType, monthIndex)}
-                                  tabIndex={0}
+                                    onBlur={(e) => {
+                                      // Only handle blur for active funds that aren't part of a breakdown
+                                      if (fund.isActive !== false && !fund.isInactiveBreakdown) {
+                                        handleCellBlur(fund.id, month, activityType);
+                                      }
+                                    }}
+                                    onKeyDown={(e) => {
+                                      // Only handle keyboard navigation for active funds that aren't part of a breakdown
+                                      if (fund.isActive !== false && !fund.isInactiveBreakdown) {
+                                        handleKeyDown(e, fund.id, activityType, monthIndex);
+                                      }
+                                    }}
+                                    tabIndex={fund.isActive === false || fund.isInactiveBreakdown ? -1 : 0}
                                   style={{
                                     border: 'none',
                                     outline: 'none',
@@ -1198,11 +1338,12 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                     background: 'transparent',
                                     padding: '0 2px',
                                     width: (cellValue.length + 2) + 'ch',
-                                    minWidth: '4ch'
+                                      minWidth: '4ch',
+                                      opacity: fund.isActive === false || fund.isInactiveBreakdown ? 0.7 : 1
                                   }}
                                 />
                               </div>
-                              {linkedFundName && (
+                                {linkedFundName && !fund.isInactiveBreakdown && (
                                 <div className="text-xs text-blue-600 text-center mt-1">
                                   {activityType === 'Switch In' ? 'From' : 'To'}: {linkedFundName}
                                 </div>
@@ -1212,8 +1353,34 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                         })}
                       </tr>
                     ))}
+                    
+                      {/* Don't show totals for inactive breakdown funds */}
+                      {!fund.isInactiveBreakdown && (
+                    <tr className="bg-gray-100 border-t border-gray-200">
+                      <td className="px-4 py-2 font-semibold text-red-600 sticky left-0 z-10 bg-gray-100 shadow-[5px_0_5px_-5px_rgba(0,0,0,0.1)]">
+                            {fund.isInactiveBreakdown && 
+                              <span className="text-gray-400 mr-2">→</span>
+                            }
+                        Total
+                      </td>
+                      {months.map(month => {
+                        const total = calculateFundMonthTotal(fund.id, month);
+                        const formattedTotal = formatTotal(total);
+                        
+                        return (
+                          <td 
+                                key={`total-${fund.id}-${month}${fund.isInactiveBreakdown ? '-breakdown' : ''}`} 
+                            className="px-4 py-2 text-center font-semibold text-red-600"
+                          >
+                            {formattedTotal}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                      )}
                   </React.Fragment>
-                ))}
+                  ));
+                })()}
               </tbody>
             </table>
           </div>

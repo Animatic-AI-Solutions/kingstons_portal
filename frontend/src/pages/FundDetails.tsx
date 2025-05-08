@@ -2,14 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-interface Provider {
+interface Portfolio {
   id: number;
-  name: string;
+  created_at: string;
+  name: string | null;
 }
 
-interface Product {
+interface PortfolioFund {
   id: number;
-  name: string;
+  portfolio_id: number;
+  available_funds_id: number;
+  weighting: number;
 }
 
 interface Fund {
@@ -20,69 +23,128 @@ interface Fund {
   fund_cost: number | null;
   status: string;
   created_at: string;
-  provider_id?: number | null;
   portfolio_id?: number | null;
 }
 
 const FundDetails: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { fundId: id } = useParams<{ fundId: string }>();
   const { portfolioId } = useParams<{ portfolioId: string }>();
   const navigate = useNavigate();
   const { api } = useAuth();
   const [fund, setFund] = useState<Fund | null>(null);
-  const [provider, setProvider] = useState<Provider | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
+  const [linkedPortfolios, setLinkedPortfolios] = useState<Portfolio[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<Fund>>({});
   const [originalFormData, setOriginalFormData] = useState<Partial<Fund>>({});
-  const [providerName, setProviderName] = useState<string>('');
-  const [productName, setProductName] = useState<string>('');
+  const [portfolioName, setPortfolioName] = useState<string>('');
 
   const fetchFundDetails = async () => {
     try {
-      setIsLoading(true);
-      const response = await api.get(`/funds/${id}`, {
-        params: { portfolio_id: portfolioId }
-      });
-      setFund(response.data);
-      
-      // If we have a provider_id from the portfolio context, fetch provider details
-      if (response.data.provider_id) {
-        const providerResponse = await api.get(`/providers/${response.data.provider_id}`);
-        setProvider(providerResponse.data);
+      // Validate the ID parameter
+      if (!id || id === 'undefined') {
+        setError('Invalid fund ID: parameter is missing or undefined');
+        setIsLoading(false);
+        return;
       }
       
-      setIsLoading(false);
+      // Convert to numeric ID and verify
+      const numericId = parseInt(id, 10);
+      
+      if (isNaN(numericId)) {
+        setError(`Invalid fund ID: ${id} is not a valid number`);
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      
+      try {
+        const response = await api.get(`/funds/${numericId}`, {
+          params: { portfolio_id: portfolioId }
+        });
+        
+        setFund(response.data);
+        setIsLoading(false);
+      } catch (apiError: any) {
+        let errorMessage = 'Failed to fetch fund details';
+        if (apiError.response?.data?.detail) {
+          errorMessage = apiError.response.data.detail;
+        } else if (apiError.message) {
+          errorMessage = apiError.message;
+        }
+        
+        setError(errorMessage);
+        setIsLoading(false);
+      }
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to fetch fund details');
+      setError('An unexpected error occurred while loading fund details');
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
     fetchFundDetails();
-    fetchProducts();
+    fetchPortfolios();
   }, [id, portfolioId, api]);
 
-  const fetchProducts = async () => {
+  // Separate useEffect to handle fetching linked portfolios after portfolios are loaded
+  useEffect(() => {
+    if (id && portfolios.length > 0) {
+      fetchLinkedPortfolios(parseInt(id));
+    }
+  }, [id, portfolios]);
+
+  const fetchPortfolios = async () => {
     try {
-      const response = await api.get('/available_products');
-      setProducts(response.data);
+      const response = await api.get('/available_portfolios');
+      setPortfolios(response.data);
     } catch (err: any) {
-      console.error('Error fetching products:', err);
+      console.error('Error fetching portfolios:', err);
+    }
+  };
+
+  const fetchLinkedPortfolios = async (fundId: number) => {
+    try {
+      // Ensure fundId is a number
+      const numericFundId = Number(fundId);
+      if (isNaN(numericFundId)) {
+        return;
+      }
+      
+      try {
+        // Use the path parameter endpoint
+        const portfolioFundsResponse = await api.get(`/available_portfolios/available_portfolio_funds/by-fund/${numericFundId}`);
+        
+        if (portfolioFundsResponse.data && portfolioFundsResponse.data.length > 0) {
+          const portfolioIds = portfolioFundsResponse.data.map((pf: any) => pf.portfolio_id);
+          
+          // Get portfolio details for each linked portfolio
+          const linkedPortfoliosData = portfolios.filter(p => portfolioIds.includes(p.id));
+          setLinkedPortfolios(linkedPortfoliosData);
+        } else {
+          setLinkedPortfolios([]);
+        }
+      } catch (apiError: any) {
+        // Gracefully handle the error - don't show linked portfolios section
+        setLinkedPortfolios([]);
+      }
+    } catch (err: any) {
+      // Clear linked portfolios on error
+      setLinkedPortfolios([]);
     }
   };
 
   useEffect(() => {
-    if (fund && products.length > 0 && fund.portfolio_id) {
-      const product = products.find(p => p.id === fund.portfolio_id);
-      if (product) {
-        setProductName(product.name);
+    if (fund && portfolios.length > 0 && fund.portfolio_id) {
+      const portfolio = portfolios.find(p => p.id === fund.portfolio_id);
+      if (portfolio) {
+        setPortfolioName(portfolio.name || '');
       }
     }
-  }, [fund, products]);
+  }, [fund, portfolios]);
 
   const handleBack = () => {
     navigate('/definitions?tab=funds');
@@ -125,7 +187,6 @@ const FundDetails: React.FC = () => {
     if (!fund) return;
     
     setOriginalFormData({
-      provider_id: fund.provider_id,
       fund_name: fund.fund_name,
       isin_number: fund.isin_number,
       risk_factor: fund.risk_factor,
@@ -134,7 +195,6 @@ const FundDetails: React.FC = () => {
     });
     
     setFormData({
-      provider_id: fund.provider_id,
       fund_name: fund.fund_name,
       isin_number: fund.isin_number,
       risk_factor: fund.risk_factor,
@@ -266,7 +326,7 @@ const FundDetails: React.FC = () => {
               </svg>
             </div>
             <div className="ml-3">
-              <p className="text-yellow-700">Fund not found.</p>
+              <p className="text-yellow-700">Fund not found</p>
             </div>
           </div>
         </div>
@@ -284,231 +344,213 @@ const FundDetails: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          <button onClick={handleBack} className="text-indigo-600 mr-2 inline-flex items-center">
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+      {/* Header with back button */}
+      <div className="flex justify-between items-start mb-6">
+        <div>
+          <button
+            onClick={handleBack}
+            className="inline-flex items-center text-sm text-gray-600 hover:text-indigo-600 mb-2"
+          >
+            <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            <span className="ml-1">Back to Funds</span>
+            Back to Funds
           </button>
-        </h1>
-        <div className="flex space-x-4">
+          <h1 className="text-2xl font-bold text-gray-900">{fund.fund_name}</h1>
+          <p className="text-sm text-gray-500">ISIN: {fund.isin_number}</p>
+        </div>
+        
+        {/* Action buttons */}
+        <div className="flex space-x-3">
           {!isEditing && (
             <>
               <button
                 onClick={handleEdit}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 Edit
               </button>
               <button
                 onClick={handleDelete}
-                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
               >
                 Delete
               </button>
-              {fund.status === 'active' && (
-                <button
-                  onClick={() => handleChangeStatus('dormant')}
-                  className="bg-yellow-600 text-white px-4 py-2 rounded-md hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2"
-                >
-                  Set Dormant
-                </button>
-              )}
-              {fund.status === 'dormant' && (
-                <button
-                  onClick={() => handleChangeStatus('active')}
-                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                >
-                  Set Active
-                </button>
-              )}
-              {fund.status !== 'inactive' && (
-                <button
-                  onClick={() => handleChangeStatus('inactive')}
-                  className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                >
-                  Set Inactive
-                </button>
-              )}
             </>
           )}
         </div>
       </div>
 
-      <div className="bg-white shadow rounded-lg p-6">
-        {error && (
-          <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-red-700">{error}</p>
-              </div>
+      {isEditing ? (
+        // Edit form
+        <div className="bg-white shadow overflow-hidden sm:rounded-lg p-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div>
+              <label htmlFor="fund_name" className="block text-sm font-medium text-gray-700">
+                Fund Name
+              </label>
+              <input
+                type="text"
+                name="fund_name"
+                id="fund_name"
+                value={formData.fund_name || ''}
+                onChange={handleChange}
+                className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+              />
             </div>
-          </div>
-        )}
-
-        {isEditing ? (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="fund_name" className="block text-sm font-medium text-gray-700">
-                  Fund Name
-                </label>
-                <input
-                  type="text"
-                  id="fund_name"
-                  name="fund_name"
-                  value={formData.fund_name || ''}
-                  onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label htmlFor="isin_number" className="block text-sm font-medium text-gray-700">
-                  ISIN Number
-                </label>
-                <input
-                  type="text"
-                  id="isin_number"
-                  name="isin_number"
-                  value={formData.isin_number || ''}
-                  onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label htmlFor="provider_id" className="block text-sm font-medium text-gray-700">
-                  Provider
-                </label>
-                <input
-                  type="text"
-                  id="provider_name"
-                  name="provider_name"
-                  value={provider?.name || ''}
-                  onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label htmlFor="risk_factor" className="block text-sm font-medium text-gray-700">
-                  Risk Factor (0-7)
-                </label>
-                <input
-                  type="number"
-                  id="risk_factor"
-                  name="risk_factor"
-                  min="0"
-                  max="7"
-                  value={formData.risk_factor === null ? '' : formData.risk_factor}
-                  onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label htmlFor="fund_cost" className="block text-sm font-medium text-gray-700">
-                  Fund Cost (%)
-                </label>
-                <input
-                  type="number"
-                  id="fund_cost"
-                  name="fund_cost"
-                  step="0.0001"
-                  min="0"
-                  value={formData.fund_cost === null ? '' : formData.fund_cost}
-                  onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-              {products.length > 0 && (
-                <div>
-                  <label htmlFor="portfolio_id" className="block text-sm font-medium text-gray-700">
-                    Associated Product
-                  </label>
-                  <input
-                    type="text"
-                    id="portfolio_name"
-                    name="portfolio_name"
-                    value={productName || ''}
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  />
-                </div>
-              )}
+            <div>
+              <label htmlFor="isin_number" className="block text-sm font-medium text-gray-700">
+                ISIN Number
+              </label>
+              <input
+                type="text"
+                name="isin_number"
+                id="isin_number"
+                value={formData.isin_number || ''}
+                onChange={handleChange}
+                className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+              />
             </div>
-            <div className="flex justify-end space-x-3">
+            <div>
+              <label htmlFor="risk_factor" className="block text-sm font-medium text-gray-700">
+                Risk Factor (0-7)
+              </label>
+              <input
+                type="number"
+                name="risk_factor"
+                id="risk_factor"
+                min="0"
+                max="7"
+                step="1"
+                value={formData.risk_factor !== null && formData.risk_factor !== undefined ? formData.risk_factor : ''}
+                onChange={handleChange}
+                className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+              />
+            </div>
+            <div>
+              <label htmlFor="fund_cost" className="block text-sm font-medium text-gray-700">
+                Fund Cost (%)
+              </label>
+              <input
+                type="number"
+                name="fund_cost"
+                id="fund_cost"
+                min="0"
+                step="0.01"
+                value={formData.fund_cost !== null && formData.fund_cost !== undefined ? formData.fund_cost : ''}
+                onChange={handleChange}
+                className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+              />
+            </div>
+            
+            <div className="sm:col-span-2 flex justify-end space-x-3 mt-4">
               <button
+                type="button"
                 onClick={handleCancelEdit}
-                className="px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleSaveChanges}
-                className="inline-flex justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 Save Changes
               </button>
             </div>
           </div>
-        ) : (
-          <div>
-            <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
-              <div>
+        </div>
+      ) : (
+        // View mode
+        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+          <div className="border-t border-gray-200">
+            <dl>
+              <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500">Fund Name</dt>
-                <dd className="mt-1 text-lg text-gray-900">{fund.fund_name || 'N/A'}</dd>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{fund.fund_name}</dd>
               </div>
-              <div>
+              <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500">ISIN Number</dt>
-                <dd className="mt-1 text-lg text-gray-900">{fund.isin_number || 'N/A'}</dd>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{fund.isin_number}</dd>
               </div>
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Provider</dt>
-                <dd className="mt-1 text-lg text-gray-900">{provider?.name || 'N/A'}</dd>
-              </div>
-              <div>
+              <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500">Risk Factor</dt>
-                <dd className="mt-1 text-lg text-gray-900">{fund.risk_factor || 'N/A'}</dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Fund Cost</dt>
-                <dd className="mt-1 text-lg text-gray-900">
-                  {fund.fund_cost !== null ? `${fund.fund_cost.toFixed(4)}%` : 'N/A'}
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                  {fund.risk_factor !== null ? fund.risk_factor : 'Not set'}
                 </dd>
               </div>
-              <div>
+              <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                <dt className="text-sm font-medium text-gray-500">Fund Cost</dt>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                  {fund.fund_cost !== null ? `${fund.fund_cost}%` : 'Not set'}
+                </dd>
+              </div>
+              <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500">Status</dt>
-                <dd className="mt-1">
+                <dd className="mt-1 text-sm sm:mt-0 sm:col-span-2">
                   <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      fund.status === 'active' ? 'bg-green-100 text-green-800' : 
-                    fund.status === 'dormant' ? 'bg-yellow-100 text-yellow-800' : 
-                    'bg-gray-100 text-gray-800'
-                    }`}>
+                    fund.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                  }`}>
                     {fund.status}
                   </span>
+                  
+                  {/* Status change buttons */}
+                  <div className="mt-2">
+                    {fund.status === 'active' ? (
+                      <button
+                        onClick={() => handleChangeStatus('inactive')}
+                        className="text-xs text-red-600 hover:text-red-900 underline"
+                      >
+                        Set as Inactive
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleChangeStatus('active')}
+                        className="text-xs text-green-600 hover:text-green-900 underline"
+                      >
+                        Set as Active
+                      </button>
+                    )}
+                  </div>
                 </dd>
               </div>
-              {productName && (
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Associated Product</dt>
-                  <dd className="mt-1 text-lg text-gray-900">{productName}</dd>
+              
+              {linkedPortfolios.length > 0 && (
+                <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                  <dt className="text-sm font-medium text-gray-500">Used in Portfolio Templates</dt>
+                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                    <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
+                      {linkedPortfolios.map(portfolio => (
+                        <li key={portfolio.id} className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
+                          <div className="w-0 flex-1 flex items-center">
+                            <span className="ml-2 flex-1 w-0 truncate">{portfolio.name}</span>
+                          </div>
+                          <div className="ml-4 flex-shrink-0">
+                            <a 
+                              href={`/definitions/portfolio-templates/${portfolio.id}`} 
+                              className="font-medium text-indigo-600 hover:text-indigo-500"
+                            >
+                              View
+                            </a>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </dd>
                 </div>
               )}
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Created</dt>
-                <dd className="mt-1 text-lg text-gray-900">
-                  {new Date(fund.created_at).toLocaleDateString()}
+              
+              <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                <dt className="text-sm font-medium text-gray-500">Created At</dt>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                  {new Date(fund.created_at).toLocaleString()}
                 </dd>
               </div>
             </dl>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,14 +1,18 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+
 import { useAuth } from '../context/AuthContext';
 import { format } from 'date-fns';
 import { Radio, Select, Input, Checkbox, DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
+import SearchableDropdown from '../components/ui/SearchableDropdown';
 
 interface Client {
   id: number;
-  name: string;
+  forname: string | null;
+  surname: string | null;
   initial_investment: number | null;
 }
 
@@ -34,7 +38,7 @@ interface ProductItem {
   product_type: string;
   product_name: string;
   status: string;
-  weighting: number;
+  weighting: number; // Will always be 0
   start_date?: dayjs.Dayjs; // Use dayjs type
   portfolio: {
     id?: number; // Portfolio ID when created or selected
@@ -62,6 +66,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   const [availableTemplates, setAvailableTemplates] = useState<PortfolioTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showErrorPopup, setShowErrorPopup] = useState(false);
   
   // Get client info from URL parameters
   const searchParams = new URLSearchParams(location.search);
@@ -87,6 +92,12 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   
   // Start date state
   const [startDate, setStartDate] = useState<dayjs.Dayjs>(dayjs());
+  
+  // Add a state for tracking template loading per product
+  const [templateLoading, setTemplateLoading] = useState<Record<string, boolean>>({});
+  
+  // Add refs for product sections
+  const productRefs = useRef<Record<string, HTMLDivElement | null>>({});
   
   // Click outside handler for dropdowns
   useEffect(() => {
@@ -160,8 +171,15 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       try {
         setIsLoading(true);
         const fundsResponse = await api.get('/funds');
-        setFunds(fundsResponse.data);
-        setFilteredFunds(fundsResponse.data);
+        const allFunds = fundsResponse.data;
+        
+        // Filter out cashline funds - they'll be added automatically
+        const nonCashlineFunds = allFunds.filter((fund: Fund) => 
+          !fund.fund_name.toLowerCase().includes('cashline')
+        );
+        
+        setFunds(allFunds); // Keep all funds in state for reference
+        setFilteredFunds(nonCashlineFunds); // But only show non-cashline funds in the UI
       } catch (err) {
         console.error('Error loading all funds:', err);
       } finally {
@@ -209,21 +227,28 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   };
 
   const handleAddProduct = () => {
+
     if (!selectedClientId) {
       setError('Please select a client first');
+
       return;
     }
     
     // Create a new empty product with a temporary ID
+    const productId = `temp-${Date.now()}`;
     const newProduct: ProductItem = {
+
       id: `temp-${Date.now()}`,
       client_id: selectedClientId,
+
       provider_id: 0,
       product_type: '',
       product_name: `Product ${products.length + 1}`,
       status: 'active',
-      weighting: 0,
-      start_date: startDate,
+
+      weighting: 0, // Always 0 for new products
+      start_date: startDate, // Use the selected start date
+
       portfolio: {
         name: `Portfolio ${products.length + 1}`,
         selectedFunds: [],
@@ -232,22 +257,29 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       }
     };
     
+    // Update products state
     setProducts([...products, newProduct]);
+    
+    // Scroll to new product after UI updates
+    setTimeout(() => {
+      if (productRefs.current[productId]) {
+        productRefs.current[productId]?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+        
+        // Focus on the first input field (product name)
+        const nameInput = productRefs.current[productId]?.querySelector('input[type="text"]');
+        if (nameInput instanceof HTMLInputElement) {
+          nameInput.focus();
+        }
+      }
+    }, 100);
   };
 
   const handleRemoveProduct = (id: string) => {
     setProducts(prevProducts => prevProducts.filter(product => product.id !== id));
     setError(null);
-  };
-
-  // Update product amounts based on total amount and weightings
-  const updateProductAmounts = () => {
-    if (products.length === 0) return;
-    
-    setProducts(products.map(product => ({
-      ...product,
-      weighting: product.weighting
-    })));
   };
 
   const handleProductChange = (productId: string, field: string, value: any) => {
@@ -256,9 +288,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         if (product.id === productId) {
           const updatedProduct = { ...product, [field]: value };
           
-          // If weighting is changed, recalculate the total_amount based on the weighting
+          // Always keep weighting at 0
           if (field === 'weighting') {
-            updatedProduct.weighting = value;
+            updatedProduct.weighting = 0;
           }
           
           return updatedProduct;
@@ -329,25 +361,34 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     setProducts(prevProducts => prevProducts.map(product => {
       if (product.id === productId) {
         const selectedFunds = [...product.portfolio.selectedFunds];
-        if (selectedFunds.includes(fundId)) {
+        const isSelected = selectedFunds.includes(fundId);
+        let updatedFunds;
+        let updatedType = product.portfolio.type;
+        
+        if (isSelected) {
           // Remove fund
-          return {
-            ...product,
-            portfolio: {
-              ...product.portfolio,
-              selectedFunds: selectedFunds.filter(id => id !== fundId)
-            }
-          };
+          updatedFunds = selectedFunds.filter(id => id !== fundId);
         } else {
           // Add fund
-          return {
-            ...product,
-            portfolio: {
-              ...product.portfolio,
-              selectedFunds: [...selectedFunds, fundId]
-            }
-          };
+          updatedFunds = [...selectedFunds, fundId];
         }
+        
+        // If this is a template portfolio and we're modifying the funds, convert to bespoke
+        if (product.portfolio.type === 'template' && product.portfolio.templateId) {
+          updatedType = 'bespoke';
+          // Show notification that we're converting to bespoke
+          showError(`Template portfolio has been converted to bespoke because you modified the fund selection.`);
+        }
+        
+        return {
+          ...product,
+          portfolio: {
+            ...product.portfolio,
+            type: updatedType,
+            templateId: updatedType === 'bespoke' ? undefined : product.portfolio.templateId,
+            selectedFunds: updatedFunds
+          }
+        };
       }
       return product;
     }));
@@ -380,7 +421,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       return;
     }
 
-    setIsLoading(true);
+    // Set loading state just for this specific product
+    setTemplateLoading(prev => ({ ...prev, [productId]: true }));
+    
     try {
       // Fetch template details
       const response = await api.get(`/available_portfolios/${templateId}`);
@@ -410,63 +453,61 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       setProducts(updatedProducts);
     } catch (err) {
       console.error('Error loading template:', err);
-      alert('Failed to load template details. Please try again.');
+      showError('Failed to load template details. Please try again.');
     } finally {
-      setIsLoading(false);
+      // Clear loading state for this product
+      setTemplateLoading(prev => ({ ...prev, [productId]: false }));
     }
   };
 
+  // Helper to show error as popup
+  const showError = (msg: string) => {
+    setError(msg);
+    setShowErrorPopup(true);
+    setTimeout(() => setShowErrorPopup(false), 4000);
+  };
+
   const validateForm = (): boolean => {
+
     // Client must be selected
     if (!selectedClientId) {
       setError('Please select a client');
+
       return false;
     }
-
-    // At least one product must be added
     if (products.length === 0) {
-      setError('Please add at least one product');
+      showError('Please add at least one product');
       return false;
     }
-
-    // All products must have required fields
     for (const product of products) {
       if (!product.product_name.trim()) {
-        setError('All products must have a name');
+        showError('All products must have a name');
         return false;
       }
-      
       if (product.provider_id === 0) {
-        setError(`Please select a provider for ${product.product_name}`);
+        showError(`Please select a provider for ${product.product_name}`);
         return false;
       }
-      
       if (!product.product_type.trim()) {
-        setError(`Please select a product type for ${product.product_name}`);
+        showError(`Please select a product type for ${product.product_name}`);
         return false;
       }
-      
-      // Portfolio validation
       if (!product.portfolio.name.trim()) {
-        setError(`Please enter a portfolio name for product "${product.product_name}"`);
+        showError(`Please enter a portfolio name for product "${product.product_name}"`);
         return false;
       }
-      
-      // For template portfolios, check if a template is selected
       if (product.portfolio.type === 'template') {
         if (!product.portfolio.templateId) {
-          setError(`Please select a template portfolio for product "${product.product_name}"`);
+          showError(`Please select a template portfolio for product "${product.product_name}"`);
           return false;
         }
       } else {
-        // For bespoke portfolios, check fund selection
         if (product.portfolio.selectedFunds.length === 0) {
-          setError(`Please select at least one fund for the portfolio in product "${product.product_name}"`);
+          showError(`Please select at least one fund for the portfolio in product "${product.product_name}"`);
           return false;
         }
       }
     }
-
     return true;
   };
 
@@ -484,6 +525,11 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     try {
       // Format the selected start date with dayjs
       const formattedStartDate = startDate.format('YYYY-MM-DD');
+      
+      // Find the Cashline fund ID (if it exists in our funds list)
+      const cashlineFund = funds.find(fund => 
+        fund.fund_name.toLowerCase().includes('cashline')
+      );
       
       for (const product of products) {
         let portfolioId: number | undefined;
@@ -510,68 +556,107 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           console.log(`Created bespoke portfolio with ID: ${portfolioId}`);
           
           // Add funds for bespoke portfolio
-          for (const fundId of product.portfolio.selectedFunds) {
-            await api.post('/portfolio_funds', {
-              portfolio_id: portfolioId,
-              available_funds_id: fundId,
-              weighting: 0, // Default to equal weights
-              start_date: formattedStartDate // Add the start_date field which is required
+          if (portfolioId) {
+            const fundPromises = product.portfolio.selectedFunds.map(async (fundId) => {
+              try {
+                await api.post('/portfolio_funds', {
+                  portfolio_id: portfolioId,
+                  fund_id: fundId,
+                  weighting: 0, // Set equal weighting for all funds
+                  status: 'active'
+                });
+                console.log(`Added fund ${fundId} to portfolio ${portfolioId}`);
+              } catch (err) {
+                console.error(`Error adding fund ${fundId} to portfolio:`, err);
+                throw err;
+              }
             });
+            
+            // Add Cashline fund if available
+            if (cashlineFund) {
+              try {
+                await api.post('/portfolio_funds', {
+                  portfolio_id: portfolioId,
+                  fund_id: cashlineFund.id,
+                  weighting: 0, // Set equal weighting
+                  status: 'active'
+                });
+                console.log(`Added Cashline fund ${cashlineFund.id} to portfolio ${portfolioId}`);
+              } catch (err) {
+                console.error(`Error adding Cashline fund to portfolio:`, err);
+                // Continue if Cashline couldn't be added, don't block the rest of the submission
+              }
+            }
+
+            // Wait for all fund additions to complete
+            await Promise.all(fundPromises);
           }
-        } else if (product.portfolio.id) {
-          // Use existing portfolio if already set
-          portfolioId = product.portfolio.id;
-          console.log(`Using existing portfolio with ID: ${portfolioId}`);
         }
-        
-        // Create client product with direct portfolio_id link
-        const clientProductData = {
-          client_id: product.client_id,
-          provider_id: product.provider_id,
-          product_type: product.product_type,
-          product_name: product.product_name,
-          status: product.status,
-          start_date: formattedStartDate,
-          portfolio_id: portfolioId // Link directly to portfolio
-        };
-        
-        console.log("Creating client product with data:", clientProductData);
-        
-        // Create the client product
-        const productResponse = await api.post('/client_products', clientProductData);
-        console.log(`Created client product with ID: ${productResponse.data.id}`);
+
+        // Now, create client product with reference to the portfolio
+        if (portfolioId) {
+          try {
+            await api.post('/client_products', {
+              client_id: clientId,
+              provider_id: product.provider_id,
+              product_type: product.product_type,
+              product_name: product.product_name,
+              portfolio_id: portfolioId,
+              status: 'active',
+              start_date: formattedStartDate
+            });
+            console.log(`Created client product for portfolio ${portfolioId}`);
+          } catch (err) {
+            console.error('Error creating client product:', err);
+            throw err;
+          }
+        }
       }
       
-      // Show success message and navigate back
-      alert('Client products and portfolios created successfully!');
+      // Successful completion
+      alert('Successfully created client products and portfolios');
       navigate('/products');
-    } catch (error: any) {
-      console.error('Error saving client products:', error);
-      setError(error.response?.data?.detail || 'Failed to save client products');
+    } catch (err: any) {
+      console.error('Error in form submission:', err);
+      showError(err.response?.data?.detail || 'Failed to create client products');
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Add fund search functionality
+  // Update fund filtering to exclude cashline funds
   const handleFundSearch = (searchTerm: string): void => {
     setFundSearchTerm(searchTerm);
-    if (!searchTerm.trim()) {
-      setFilteredFunds(funds);
+    
+    if (!searchTerm) {
+      const nonCashlineFunds = funds.filter((fund: Fund) => 
+        !fund.fund_name.toLowerCase().includes('cashline') // Exclude any cashline funds
+      );
+      setFilteredFunds(nonCashlineFunds);
       return;
     }
     
     const term = searchTerm.toLowerCase();
     const filtered = funds.filter((fund: Fund) => 
-      fund.fund_name.toLowerCase().includes(term) || 
-      (fund.isin_number && fund.isin_number.toLowerCase().includes(term))
+      (fund.fund_name.toLowerCase().includes(term) || 
+      (fund.isin_number && fund.isin_number.toLowerCase().includes(term))) &&
+      !fund.fund_name.toLowerCase().includes('cashline') // Also exclude cashline funds from search results
     );
     setFilteredFunds(filtered);
   };
 
   const renderPortfolioSection = (product: ProductItem): JSX.Element => {
+    const isLoadingTemplate = templateLoading[product.id] === true;
+    
     return (
       <div className="portfolio-section">
+        {/* Show loading overlay when template is loading */}
+        {isLoadingTemplate && (
+          <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-10">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
+          </div>
+        )}
+        
         {/* Portfolio Type Selection */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -580,6 +665,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           <Radio.Group
             value={product.portfolio.type}
             onChange={(e) => handlePortfolioTypeChange(product.id, e.target.value as 'template' | 'bespoke')}
+            disabled={isLoadingTemplate}
           >
             <Radio value="bespoke">Bespoke Portfolio</Radio>
             <Radio value="template">Template Portfolio</Radio>
@@ -592,23 +678,20 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Select Template <span className="text-red-500">*</span>
             </label>
-            <Select
-              style={{ width: '100%' }}
+            <SearchableDropdown
+              id={`template-select-${product.id}`}
+              options={availableTemplates.map(t => ({ value: t.id.toString(), label: t.name || `Template ${t.id}` }))}
+              value={product.portfolio.templateId?.toString() ?? ''}
+              onChange={val => handleTemplateSelection(product.id, String(val))}
               placeholder="Select a template"
-              value={product.portfolio.templateId?.toString()}
-              onChange={(value) => handleTemplateSelection(product.id, value)}
-            >
-              <Select.Option value="">-- Select Template --</Select.Option>
-              {availableTemplates.map(template => (
-                <Select.Option key={template.id} value={template.id.toString()}>
-                  {template.name || `Template ${template.id}`}
-                </Select.Option>
-              ))}
-            </Select>
+              className="w-full"
+              required
+              disabled={isLoadingTemplate}
+            />
           </div>
         )}
 
-        {/* Selected Funds Table - Show for both template and bespoke, but read-only for template */}
+        {/* Selected Funds Table - Show for both template and bespoke */}
         {product.portfolio.selectedFunds.length > 0 && (
           <div className="mb-4">
             <h4 className="text-sm font-medium text-gray-700 mb-2">Selected Funds</h4>
@@ -638,30 +721,35 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           </div>
         )}
 
-        {/* Show fund selection only for bespoke portfolios */}
-        {product.portfolio.type === 'bespoke' && (
-          <div className="fund-selection">
-            <h4>Select Funds</h4>
-            <Input
-              placeholder="Search funds by name or ISIN"
-              value={fundSearchTerm}
-              onChange={(e) => handleFundSearch(e.target.value)}
-              style={{ marginBottom: '1rem' }}
-            />
-            <div className="fund-list">
-              {filteredFunds.map(fund => (
-                <div key={fund.id} className="fund-item">
-                  <Checkbox
-                    checked={product.portfolio.selectedFunds.includes(fund.id)}
-                    onChange={() => handleFundSelection(product.id, fund.id)}
-                  >
-                    {fund.fund_name} ({fund.isin_number})
-                  </Checkbox>
-                </div>
-              ))}
-            </div>
+        {/* Show fund selection for both template and bespoke portfolios */}
+        <div className="fund-selection mt-4">
+          <h4 className="text-sm font-medium text-gray-700 mb-2">
+            {product.portfolio.type === 'template' ? 'Modify Template Funds' : 'Select Funds'}
+            {product.portfolio.type === 'template' && (
+              <span className="text-xs text-gray-500 ml-2">(modifying will convert to bespoke)</span>
+            )}
+          </h4>
+          <Input
+            placeholder="Search funds by name or ISIN"
+            value={fundSearchTerm}
+            onChange={(e) => handleFundSearch(e.target.value)}
+            style={{ marginBottom: '1rem' }}
+            disabled={isLoadingTemplate}
+          />
+          <div className="fund-list max-h-60 overflow-y-auto border rounded-md p-2">
+            {filteredFunds.map(fund => (
+              <div key={fund.id} className="fund-item hover:bg-gray-50 p-1">
+                <Checkbox
+                  checked={product.portfolio.selectedFunds.includes(fund.id)}
+                  onChange={() => handleFundSelection(product.id, fund.id)}
+                  disabled={isLoadingTemplate}
+                >
+                  {fund.fund_name} ({fund.isin_number})
+                </Checkbox>
+              </div>
+            ))}
           </div>
-        )}
+        </div>
       </div>
     );
   };
@@ -677,6 +765,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   }
 
   return (
+
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Breadcrumb Navigation */}
       <nav className="mb-8 flex" aria-label="Breadcrumb">
@@ -723,6 +812,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         <Link
           to={`/clients/${urlClientId}`}
           className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+
         >
           <svg className="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
             <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
@@ -732,14 +822,17 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       </div>
 
       <div className="max-w-6xl mx-auto p-4">
+
       {isLoading ? (
         <div className="flex justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-700"></div>
         </div>
+
       ) : error ? (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
           <p>{error}</p>
         </div>
+
       ) : (
         <div className="bg-white shadow-md rounded-lg p-4">
           <form onSubmit={handleSubmit}>
@@ -751,6 +844,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                   Client Name <span className="text-red-500">*</span>
               </label>
               {clients.length > 0 ? (
+
                   <Select
                     showSearch
                     value={selectedClientId || undefined}
@@ -770,6 +864,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                       </Select.Option>
                   ))}
                   </Select>
+
               ) : (
                 <div className="text-gray-500">No clients available. Please add a client first.</div>
               )}
@@ -812,9 +907,17 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               ) : (
                 <div className="space-y-4">
                   {products.map((product) => (
-                    <div key={product.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                      <div className="flex justify-between items-start mb-3">
-                        <h3 className="text-base font-medium text-gray-900">Product {products.indexOf(product) + 1}</h3>
+
+                    <div 
+                      key={product.id} 
+                      className="border rounded-md p-6 mb-6 bg-gray-50 relative"
+                      ref={el => productRefs.current[product.id] = el}
+                      id={`product-${product.id}`}
+                    >
+                      {/* Product Header */}
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-medium">{product.product_name}</h3>
+
                         <button
                           type="button"
                           onClick={() => handleRemoveProduct(product.id)}
@@ -833,19 +936,17 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Provider <span className="text-red-500">*</span>
                           </label>
-                          <select
-                            value={product.provider_id || ''}
-                            onChange={(e) => handleSelectProvider(product.id, parseInt(e.target.value), e.target.options[e.target.selectedIndex].text)}
-                            className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+
+                          <SearchableDropdown
+                            id={`provider-select-${product.id}`}
+                            options={providers.map(p => ({ value: p.id, label: p.name }))}
+                            value={product.provider_id}
+                            onChange={val => handleProductChange(product.id, 'provider_id', Number(val))}
+                            placeholder="Select a provider"
+                            className="w-full"
                             required
-                          >
-                            <option value="">Select a provider</option>
-                            {providers.map(provider => (
-                              <option key={provider.id} value={provider.id}>
-                                  {provider.name}
-                              </option>
-                              ))}
-                          </select>
+                          />
+
                         </div>
 
                         {/* Product Type Selection */}
@@ -853,21 +954,45 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Product Type <span className="text-red-500">*</span>
                           </label>
-                          <select
+                          <SearchableDropdown
+                            id={`product-type-select-${product.id}`}
+                            options={[
+                              { value: 'ISA', label: 'ISA' },
+                              { value: 'JISA', label: 'Junior ISA' },
+                              { value: 'SIPP', label: 'SIPP' },
+                              { value: 'GIA', label: 'GIA' },
+                              { value: 'Offshore Bond', label: 'Offshore Bond' },
+                              { value: 'Onshore Bond', label: 'Onshore Bond' },
+                              { value: 'Trust', label: 'Trust' },
+                              { value: 'Other', label: 'Other' },
+                            ]}
                             value={product.product_type}
-                            onChange={(e) => handleProductTypeChange(product.id, e.target.value)}
-                            className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+
+                            onChange={val => handleProductTypeChange(product.id, String(val))}
+                            placeholder="Select product type"
+                            className="w-full"
                             required
-                          >
-                            <option value="">Select a type</option>
-                            <option value="pension">Pension</option>
-                            <option value="investment">Investment</option>
-                            <option value="isa">ISA</option>
-                          </select>
-                        </div>
+                          />
                         </div>
 
-                      {/* Portfolio Section */}
+                        {/* Portfolio Name */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Portfolio Name <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={product.portfolio.name}
+                            onChange={(e) => handlePortfolioNameChange(product.id, e.target.value)}
+                            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                            required
+                          />
+                        </div>
+
+                        {/* Portfolio Configuration */}
+                        <div className="mt-6 border-t pt-6 col-span-2">
+                          <h4 className="text-lg font-medium mb-4">Portfolio Configuration</h4>
+
                           {renderPortfolioSection(product)}
                     </div>
                   ))}
