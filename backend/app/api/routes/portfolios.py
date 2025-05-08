@@ -297,7 +297,8 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
         portfolio_data = {
             "portfolio_name": template_data.portfolio_name,
             "status": "active",
-            "start_date": today  # Set to today's date
+            "start_date": today,  # Set to today's date
+            "original_template_id": template_data.template_id  # Add template ID reference
         }
         
         portfolio_result = db.table("portfolios").insert(portfolio_data).execute()
