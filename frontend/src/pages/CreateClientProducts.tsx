@@ -163,8 +163,15 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       try {
         setIsLoading(true);
         const fundsResponse = await api.get('/funds');
-        setFunds(fundsResponse.data);
-        setFilteredFunds(fundsResponse.data);
+        const allFunds = fundsResponse.data;
+        
+        // Filter out cashline funds - they'll be added automatically
+        const nonCashlineFunds = allFunds.filter((fund: Fund) => 
+          !fund.fund_name.toLowerCase().includes('cashline')
+        );
+        
+        setFunds(allFunds); // Keep all funds in state for reference
+        setFilteredFunds(nonCashlineFunds); // But only show non-cashline funds in the UI
       } catch (err) {
         console.error('Error loading all funds:', err);
       } finally {
@@ -502,6 +509,11 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       // Format the selected start date with dayjs
       const formattedStartDate = startDate.format('YYYY-MM-DD');
       
+      // Find the Cashline fund ID (if it exists in our funds list)
+      const cashlineFund = funds.find(fund => 
+        fund.fund_name.toLowerCase().includes('cashline')
+      );
+      
       for (const product of products) {
         let portfolioId: number | undefined;
 
@@ -527,62 +539,91 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           console.log(`Created bespoke portfolio with ID: ${portfolioId}`);
           
           // Add funds for bespoke portfolio
-          for (const fundId of product.portfolio.selectedFunds) {
-            await api.post('/portfolio_funds', {
-              portfolio_id: portfolioId,
-              available_funds_id: fundId,
-              weighting: 0, // Always use 0 for weighting
-              start_date: formattedStartDate // Add the start_date field which is required
+          if (portfolioId) {
+            const fundPromises = product.portfolio.selectedFunds.map(async (fundId) => {
+              try {
+                await api.post('/portfolio_funds', {
+                  portfolio_id: portfolioId,
+                  fund_id: fundId,
+                  weighting: 0, // Set equal weighting for all funds
+                  status: 'active'
+                });
+                console.log(`Added fund ${fundId} to portfolio ${portfolioId}`);
+              } catch (err) {
+                console.error(`Error adding fund ${fundId} to portfolio:`, err);
+                throw err;
+              }
             });
+            
+            // Add Cashline fund if available
+            if (cashlineFund) {
+              try {
+                await api.post('/portfolio_funds', {
+                  portfolio_id: portfolioId,
+                  fund_id: cashlineFund.id,
+                  weighting: 0, // Set equal weighting
+                  status: 'active'
+                });
+                console.log(`Added Cashline fund ${cashlineFund.id} to portfolio ${portfolioId}`);
+              } catch (err) {
+                console.error(`Error adding Cashline fund to portfolio:`, err);
+                // Continue if Cashline couldn't be added, don't block the rest of the submission
+              }
+            }
+
+            // Wait for all fund additions to complete
+            await Promise.all(fundPromises);
           }
-        } else if (product.portfolio.id) {
-          // Use existing portfolio if already set
-          portfolioId = product.portfolio.id;
-          console.log(`Using existing portfolio with ID: ${portfolioId}`);
         }
-        
-        // Create client product with direct portfolio_id link
-        const clientProductData = {
-          client_id: product.client_id,
-          provider_id: product.provider_id,
-          product_type: product.product_type,
-          product_name: product.product_name,
-          status: product.status,
-          start_date: formattedStartDate,
-          weighting: 0, // Always 0 for new products
-          portfolio_id: portfolioId // Link directly to portfolio
-        };
-        
-        console.log("Creating client product with data:", clientProductData);
-        
-        // Create the client product
-        const productResponse = await api.post('/client_products', clientProductData);
-        console.log(`Created client product with ID: ${productResponse.data.id}`);
+
+        // Now, create client product with reference to the portfolio
+        if (portfolioId) {
+          try {
+            await api.post('/client_products', {
+              client_id: clientId,
+              provider_id: product.provider_id,
+              product_type: product.product_type,
+              product_name: product.product_name,
+              portfolio_id: portfolioId,
+              status: 'active',
+              start_date: formattedStartDate
+            });
+            console.log(`Created client product for portfolio ${portfolioId}`);
+          } catch (err) {
+            console.error('Error creating client product:', err);
+            throw err;
+          }
+        }
       }
       
-      // Show success message and navigate back
-      alert('Client products and portfolios created successfully!');
+      // Successful completion
+      alert('Successfully created client products and portfolios');
       navigate('/products');
-    } catch (error: any) {
-      console.error('Error saving client products:', error);
-      showError(error.response?.data?.detail || 'Failed to save client products');
+    } catch (err: any) {
+      console.error('Error in form submission:', err);
+      showError(err.response?.data?.detail || 'Failed to create client products');
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Add fund search functionality
+  // Update fund filtering to exclude cashline funds
   const handleFundSearch = (searchTerm: string): void => {
     setFundSearchTerm(searchTerm);
-    if (!searchTerm.trim()) {
-      setFilteredFunds(funds);
+    
+    if (!searchTerm) {
+      const nonCashlineFunds = funds.filter((fund: Fund) => 
+        !fund.fund_name.toLowerCase().includes('cashline') // Exclude any cashline funds
+      );
+      setFilteredFunds(nonCashlineFunds);
       return;
     }
     
     const term = searchTerm.toLowerCase();
     const filtered = funds.filter((fund: Fund) => 
-      fund.fund_name.toLowerCase().includes(term) || 
-      (fund.isin_number && fund.isin_number.toLowerCase().includes(term))
+      (fund.fund_name.toLowerCase().includes(term) || 
+      (fund.isin_number && fund.isin_number.toLowerCase().includes(term))) &&
+      !fund.fund_name.toLowerCase().includes('cashline') // Also exclude cashline funds from search results
     );
     setFilteredFunds(filtered);
   };
