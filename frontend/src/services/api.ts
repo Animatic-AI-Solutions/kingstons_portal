@@ -233,4 +233,34 @@ export const calculatePortfolioIRRForDate = (portfolioId: number, date: string) 
   return api.post(`portfolios/${portfolioId}/calculate-irr-for-date?date=${encodeURIComponent(date)}`);
 };
 
+/**
+ * PROVIDER API ENDPOINTS
+ * 
+ * Functions for managing provider data
+ */
+
+/**
+ * Fetches all providers with their theme colors
+ * @returns {Promise} - API response with providers and theme colors
+ */
+export const getProviderThemeColors = () => {
+  return api.get('available_providers/theme-colors');
+};
+
+/**
+ * Initializes provider theme colors for any providers that don't have one set
+ * @returns {Promise} - API response with update results
+ */
+export const initializeProviderThemeColors = () => {
+  return api.post('available_providers/update-theme-colors');
+};
+
+/**
+ * Fetches all available colors that are not already used by existing providers
+ * @returns {Promise} - API response with available colors
+ */
+export const getAvailableColors = () => {
+  return api.get('available_providers/available-colors');
+};
+
 export default api; 

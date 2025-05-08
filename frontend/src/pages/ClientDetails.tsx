@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getProviderColor } from '../services/providerColors';
 
 // Enhanced TypeScript interfaces
 interface Client {
@@ -167,7 +168,20 @@ const ClientHeader = ({
 
 // Product Card Component
 const ProductCard: React.FC<{ account: ClientAccount }> = ({ account }) => {
-  const themeColor = account.provider_theme_color || '#4B2D83'; // Default to primary-700 if no theme color
+  // Use the provider color service instead of direct fallback
+  const themeColor = getProviderColor(
+    account.provider_id, 
+    account.provider_name, 
+    account.provider_theme_color
+  );
+  
+  // Log to debug theme color
+  console.log(`Product card for ${account.product_name}:`, {
+    provider: account.provider_name, 
+    provider_id: account.provider_id,
+    provider_theme_color: account.provider_theme_color,
+    using_color: themeColor
+  });
   
   // Memoize style objects for performance
   const styles = useMemo(() => ({
@@ -177,6 +191,22 @@ const ProductCard: React.FC<{ account: ClientAccount }> = ({ account }) => {
     } as React.CSSProperties,
     cardStyle: {
       border: `3px solid ${themeColor}`,
+      borderLeft: `10px solid ${themeColor}`,
+      borderRadius: '0.5rem',
+      overflow: 'hidden'
+    },
+    headerStyle: {
+      borderBottom: `2px solid ${themeColor}15`,
+      paddingBottom: '0.5rem'
+    },
+    providerDot: {
+      backgroundColor: themeColor,
+      width: '12px',
+      height: '12px',
+      borderRadius: '50%',
+      display: 'inline-block',
+      marginRight: '8px',
+      verticalAlign: 'middle'
     }
   }), [themeColor]);
 
@@ -184,11 +214,11 @@ const ProductCard: React.FC<{ account: ClientAccount }> = ({ account }) => {
     <Link 
       to={`/accounts/${account.id}`} 
       className="block bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
-      style={{...styles.themeVars, ...styles.cardStyle}}
+      style={styles.cardStyle}
     >
       {/* Main Content */}
       <div className="p-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between" style={styles.headerStyle}>
           {/* Left side - Product Info */}
           <div>
             <div className="flex items-center">
@@ -203,7 +233,10 @@ const ProductCard: React.FC<{ account: ClientAccount }> = ({ account }) => {
                 {account.product_type === 'bespoke' ? 'Bespoke' : 'Template'}
               </span>
             </div>
-            <p className="text-sm text-gray-500 mt-1">{account.provider_name || 'Unknown Provider'}</p>
+            <div className="flex items-center mt-1">
+              <span style={styles.providerDot}></span>
+              <p className="text-base text-gray-600 font-medium">{account.provider_name || 'Unknown Provider'}</p>
+            </div>
             {account.plan_number && (
               <p className="text-sm text-gray-500 mt-0.5">Plan: {account.plan_number}</p>
             )}
@@ -321,6 +354,46 @@ const ClientDetails: React.FC = () => {
     };
   }, [clientAccounts]);
 
+  // Add a direct check for provider theme colors
+  useEffect(() => {
+    // Direct check of provider colors via API
+    const checkProviderColors = async () => {
+      try {
+        console.log("Performing direct provider theme color check...");
+        const providersResponse = await api.get('/available_providers');
+        console.log("All providers with theme colors:", providersResponse.data);
+        
+        if (clientAccounts.length > 0) {
+          // Check for any providers with null theme colors
+          const providersWithNullColors = providersResponse.data.filter(
+            (p: any) => p.theme_color === null
+          );
+          console.log("Providers with null theme colors:", providersWithNullColors);
+          
+          // Check if provider IDs in client accounts match the stored data
+          clientAccounts.forEach(account => {
+            const matchingProvider = providersResponse.data.find(
+              (p: any) => p.id === account.provider_id
+            );
+            console.log(`Provider check for ${account.product_name}:`, {
+              provider_id: account.provider_id,
+              matched_provider: matchingProvider,
+              theme_color_in_provider: matchingProvider?.theme_color,
+              theme_color_in_account: account.provider_theme_color,
+              is_theme_color_missing: account.provider_theme_color !== matchingProvider?.theme_color
+            });
+          });
+        }
+      } catch (err) {
+        console.error("Error checking provider colors:", err);
+      }
+    };
+    
+    if (clientAccounts.length > 0) {
+      checkProviderColors();
+    }
+  }, [clientAccounts, api]);
+
   // Data fetching with error retry
   useEffect(() => {
     if (clientId) {
@@ -343,12 +416,22 @@ const ClientDetails: React.FC = () => {
         params: { client_id: clientId }
       });
       
+      // Log the raw response to check if theme colors are included
+      console.log("Raw client products API response:", accountsResponse.data);
+      
       const accounts = accountsResponse.data || [];
       
       // Enhanced data fetching for accounts - get IRR for each account
       const accountsWithIRR = await Promise.all(
         accounts.map(async (account: ClientAccount) => {
           try {
+            // Log provider data for debugging
+            console.log(`Provider data from API for product ${account.id}:`, {
+              provider_id: account.provider_id,
+              provider_name: account.provider_name,
+              provider_theme_color: account.provider_theme_color // Check if this value exists
+            });
+            
             // Update analytics endpoint to use portfolio_id instead
             const portfolioId = account.portfolio_id;
             if (!portfolioId) {
@@ -368,6 +451,7 @@ const ClientDetails: React.FC = () => {
         })
       );
       
+      console.log("Final client products with IRR:", accountsWithIRR);
       setClientAccounts(accountsWithIRR);
       setError(null);
     } catch (err: any) {
@@ -487,7 +571,7 @@ const ClientDetails: React.FC = () => {
           Clients
         </Link>
         <span>/</span>
-        <span className="text-gray-900">{client ? `${client.forname} ${client.surname}` : 'Client Details'}</span>
+        <span className="text-gray-900">{client ? `${client.forname} ${client?.surname}` : 'Client Details'}</span>
       </div>
     );
   };

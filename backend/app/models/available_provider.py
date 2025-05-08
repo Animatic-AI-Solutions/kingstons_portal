@@ -30,3 +30,18 @@ class AvailableProvider(AvailableProviderInDB):
     """Complete available provider model returned to frontend"""
     pass
 
+class ColorOption(BaseModel):
+    """Model for color options used in the available-colors endpoint"""
+    name: str
+    value: str
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class ProviderThemeColor(BaseModel):
+    """Model for provider theme color data used in the theme-colors endpoint"""
+    id: int
+    name: str
+    theme_color: Optional[str] = None
+    
+    model_config = ConfigDict(from_attributes=True)
+

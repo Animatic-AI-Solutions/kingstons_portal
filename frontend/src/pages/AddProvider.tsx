@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getAvailableColors } from '../services/api';
 
 interface ProviderFormData {
   name: string;
@@ -8,53 +9,89 @@ interface ProviderFormData {
   theme_color: string;
 }
 
+interface ColorOption {
+  name: string;
+  value: string;
+}
+
 const AddProvider: React.FC = () => {
   const navigate = useNavigate();
   const { api } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [availableColors, setAvailableColors] = useState<ColorOption[]>([]);
+  const [isLoadingColors, setIsLoadingColors] = useState(true);
   const [formData, setFormData] = useState<ProviderFormData>({
     name: '',
     status: 'active',
-    theme_color: '#4F46E5' // Default to primary-700 color
+    theme_color: '' // Will be set when colors are loaded
   });
 
-  // Define color options in rainbow order
-  const colorOptions = [
-    // Reds/Pinks
-    { name: 'Red', value: '#ef4444' },
-    { name: 'Rose', value: '#f43f5e' },
-    { name: 'Pink', value: '#ec4899' },
-    { name: 'Magenta', value: '#b22fac' },
+  // Fetch available colors on component mount
+  useEffect(() => {
+    const fetchColors = async () => {
+      try {
+        setIsLoadingColors(true);
+        const response = await getAvailableColors();
+        const colors = response.data;
+        
+        setAvailableColors(colors);
+        
+        // Set default color to the first available color
+        if (colors.length > 0 && !formData.theme_color) {
+          setFormData(prev => ({
+            ...prev,
+            theme_color: colors[0].value
+          }));
+        }
+        
+        setError(null);
+      } catch (err: any) {
+        console.error('Error fetching available colors:', err);
+        
+        // Use a diverse set of fallback colors if API request fails
+        const fallbackColors = [
+          // Vibrant / Pure Colors
+          {name: 'Blue', value: '#2563EB'},         // Bright Blue
+          {name: 'Red', value: '#DC2626'},          // Pure Red
+          {name: 'Green', value: '#16A34A'},        // Bright Green
+          {name: 'Purple', value: '#8B5CF6'},       // Vibrant Purple
+          {name: 'Orange', value: '#F97316'},       // Bright Orange
+          
+          // Light / Soft Colors
+          {name: 'Sky Blue', value: '#38BDF8'},     // Light Blue
+          {name: 'Mint', value: '#4ADE80'},         // Light Green
+          {name: 'Lavender', value: '#C4B5FD'},     // Soft Purple
+          {name: 'Peach', value: '#FDBA74'},        // Soft Orange
+          {name: 'Rose', value: '#FDA4AF'},         // Soft Pink
+          
+          // Deep / Dark Colors
+          {name: 'Navy', value: '#1E40AF'},         // Deep Blue
+          {name: 'Forest', value: '#15803D'},       // Forest Green
+          {name: 'Maroon', value: '#9F1239'},       // Deep Red
+          {name: 'Indigo', value: '#4338CA'},       // Deep Purple
+          {name: 'Slate', value: '#334155'},        // Dark Slate
+        ];
+        
+        setAvailableColors(fallbackColors);
+        
+        // Set a default color
+        if (!formData.theme_color) {
+          setFormData(prev => ({
+            ...prev,
+            theme_color: fallbackColors[0].value
+          }));
+        }
+        
+        // Don't show a warning - silently use the fallback colors
+        setError(null);
+      } finally {
+        setIsLoadingColors(false);
+      }
+    };
     
-    // Oranges
-    { name: 'Orange', value: '#f97316' },
-    { name: 'Amber', value: '#f59e0b' },
-    
-    // Yellows
-    { name: 'Yellow', value: '#eab308' },
-    
-    // Greens
-    { name: 'Lime', value: '#84cc16' },
-    { name: 'Green', value: '#22c55e' },
-    { name: 'Emerald', value: '#10b981' },
-    { name: 'Teal', value: '#14b8a6' },
-    
-    // Blues
-    { name: 'Cyan', value: '#06b6d4' },
-    { name: 'Light Blue', value: '#0ea5e9' },
-    { name: 'Blue', value: '#2563eb' },
-    
-    // Purples/Indigos/Violets
-    { name: 'Indigo', value: '#4F46E5' },
-    { name: 'Violet', value: '#8b5cf6' },
-    { name: 'Fuchsia', value: '#d946ef' },
-    { name: 'Purple', value: '#7e22ce' },
-    
-    // Neutrals
-    { name: 'Slate', value: '#64748b' },
-    { name: 'Gray', value: '#6b7280' }
-  ];
+    fetchColors();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -80,13 +117,19 @@ const AddProvider: React.FC = () => {
       return;
     }
     
+    if (!formData.theme_color) {
+      setError('Please select a color for the provider');
+      return;
+    }
+    
     try {
       setIsSubmitting(true);
+      setError(null);
       await api.post('/available_providers', formData);
       navigate('/definitions?tab=providers');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to create provider');
       console.error('Error creating provider:', err);
+      setError(err.response?.data?.detail || 'Failed to create provider');
     } finally {
       setIsSubmitting(false);
     }
@@ -168,7 +211,7 @@ const AddProvider: React.FC = () => {
           <div className="p-4 border-b border-gray-200 bg-gray-50">
             <h2 className="text-lg font-medium text-gray-900">Provider Information</h2>
             <p className="mt-1 text-sm text-gray-500">
-              Enter the details for this investment provider. All providers require a name and color.
+              Enter the details for this investment provider. All providers require a unique name and color.
             </p>
           </div>
 
@@ -181,35 +224,54 @@ const AddProvider: React.FC = () => {
                     <h3 className="text-base font-medium text-gray-900">Theme Color</h3>
                   </div>
                   <div className="p-4">
-                    <div className="flex items-center mb-3">
-                      <div 
-                        className="h-12 w-12 rounded-full border-2 mr-3 shadow-md" 
-                        style={{ backgroundColor: formData.theme_color, borderColor: formData.theme_color === '#ffffff' ? '#d1d5db' : formData.theme_color }}
-                      ></div>
-                      <span className="text-sm font-medium text-gray-700">
-                        {colorOptions.find(c => c.value === formData.theme_color)?.name || 'Custom'}
-                      </span>
-                    </div>
+                    {isLoadingColors ? (
+                      <div className="flex justify-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-700"></div>
+                      </div>
+                    ) : (
+                      <>
+                        {availableColors.length === 0 ? (
+                          <div className="text-center py-3 text-gray-500">
+                            No colors available. All colors are currently in use.
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center mb-3">
+                              <div 
+                                className="h-12 w-12 rounded-full border-2 mr-3 shadow-md" 
+                                style={{ 
+                                  backgroundColor: formData.theme_color, 
+                                  borderColor: formData.theme_color === '#ffffff' ? '#d1d5db' : formData.theme_color 
+                                }}
+                              ></div>
+                              <span className="text-sm font-medium text-gray-700">
+                                {availableColors.find(c => c.value === formData.theme_color)?.name || 'Select a color'}
+                              </span>
+                            </div>
 
-                    <div className="grid grid-cols-5 gap-3">
-                      {colorOptions.map((color) => (
-                        <button
-                          key={color.value}
-                          type="button"
-                          className={`aspect-square w-8 rounded-full hover:ring-2 hover:ring-offset-2 hover:ring-primary-500 focus:outline-none transition-all duration-200 shadow-sm ${
-                            formData.theme_color === color.value 
-                              ? 'ring-2 ring-offset-2 ring-gray-400 scale-110'
-                              : ''
-                          }`}
-                          style={{ backgroundColor: color.value }}
-                          onClick={() => handleColorSelect(color.value)}
-                          title={color.name}
-                        ></button>
-                      ))}
-                    </div>
-                    <p className="mt-3 text-sm text-gray-500">
-                      Select a theme color for this provider. This color will be used as a visual identifier.
-                    </p>
+                            <div className="grid grid-cols-5 gap-3">
+                              {availableColors.map((color) => (
+                                <button
+                                  key={color.value}
+                                  type="button"
+                                  className={`aspect-square w-9 rounded-full hover:ring-2 hover:ring-offset-2 hover:ring-primary-500 focus:outline-none transition-all duration-200 shadow-sm ${
+                                    formData.theme_color === color.value 
+                                      ? 'ring-2 ring-offset-2 ring-gray-400 scale-110'
+                                      : ''
+                                  }`}
+                                  style={{ backgroundColor: color.value }}
+                                  onClick={() => handleColorSelect(color.value)}
+                                  title={color.name}
+                                ></button>
+                              ))}
+                            </div>
+                            <p className="mt-3 text-sm text-gray-500">
+                              Select a theme color for this provider. Each provider must have a unique color.
+                            </p>
+                          </>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -269,22 +331,22 @@ const AddProvider: React.FC = () => {
             </Link>
             <button
               type="submit"
-              disabled={isSubmitting}
-              className={`bg-primary-700 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 shadow-sm transition-colors duration-200 ${
-                isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
+              disabled={isSubmitting || isLoadingColors || availableColors.length === 0}
+              className={`px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${
+                (isSubmitting || isLoadingColors || availableColors.length === 0) 
+                  ? 'opacity-50 cursor-not-allowed' 
+                  : 'hover:bg-primary-800'
               }`}
             >
               {isSubmitting ? (
                 <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Saving...
+                  Creating...
                 </span>
-              ) : (
-                'Save Provider'
-              )}
+              ) : 'Create Provider'}
             </button>
           </div>
         </form>

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
+import { getProviderColor } from '../services/providerColors';
 import FilterDropdown from '../components/ui/FilterDropdown';
 
 interface Product {
@@ -9,6 +11,8 @@ interface Product {
   client_name?: string;
   product_name: string;
   provider_name?: string;
+  provider_id?: number;
+  provider_theme_color?: string;
   portfolio_name?: string;
   status: string;
   start_date: string;
@@ -162,45 +166,12 @@ const Products: React.FC = () => {
     return `${value.toFixed(1)}%`;
   };
 
-  // Get a unique color for each provider
-  const getProviderColor = (providerName: string | undefined): string => {
-    if (!providerName) return '#CCCCCC'; // Default gray for unknown providers
-    
-    // Define a set of vibrant colors to use for providers
-    const colors = [
-      '#4F46E5', // Indigo
-      '#16A34A', // Green
-      '#EA580C', // Orange
-      '#DC2626', // Red
-      '#7C3AED', // Purple
-      '#0369A1', // Blue
-      '#B45309', // Amber
-      '#0D9488', // Teal
-      '#BE185D', // Pink
-      '#475569', // Slate
-      '#059669', // Emerald
-      '#D97706', // Yellow
-      '#9333EA', // Fuchsia
-      '#4338CA', // Blue-600
-    ];
-    
-    // Use a simple hash function to get consistent colors for the same provider name
-    const hash = providerName.split('').reduce((acc, char) => {
-      return char.charCodeAt(0) + ((acc << 5) - acc);
-    }, 0);
-    
-    // Map the hash to one of our predefined colors
-    const index = Math.abs(hash) % colors.length;
-    return colors[index];
-  };
-
   const filteredAndSortedProducts = products
     .filter(product => 
       (product.product_name && product.product_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (product.client_name && product.client_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (product.provider_name && product.provider_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (product.product_name && product.product_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      product.status.toLowerCase().includes(searchQuery.toLowerCase())
+      (product.status && product.status.toLowerCase().includes(searchQuery.toLowerCase()))
     )
     .filter(product => 
       providerFilter.length === 0 ||
@@ -485,7 +456,7 @@ const Products: React.FC = () => {
                               <div className="flex items-center">
                                 <div 
                                   className="h-3 w-3 rounded-full mr-2 flex-shrink-0" 
-                                  style={{ backgroundColor: getProviderColor(product.provider_name) }}
+                                  style={{ backgroundColor: getProviderColor(product.provider_id, product.provider_name, product.provider_theme_color) }}
                                 ></div>
                                 <div className="text-sm text-gray-600 font-sans">{product.provider_name || 'Unknown'}</div>
                               </div>
@@ -717,7 +688,7 @@ const Products: React.FC = () => {
                           <div className="flex items-center">
                             <div 
                               className="h-3 w-3 rounded-full mr-2 flex-shrink-0" 
-                              style={{ backgroundColor: getProviderColor(product.provider_name) }}
+                              style={{ backgroundColor: getProviderColor(product.provider_id, product.provider_name, product.provider_theme_color) }}
                             ></div>
                             <div className="text-sm text-gray-600 font-sans">{product.provider_name || 'Unknown'}</div>
                           </div>

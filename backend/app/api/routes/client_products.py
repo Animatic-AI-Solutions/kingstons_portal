@@ -26,13 +26,16 @@ async def get_client_products(
     How it works:
         1. Connects to the Supabase database
         2. Builds a query to the 'client_products' table with optional filters
-        3. Applies pagination parameters to limit result size
-        4. Returns the data as a list of Clientproduct objects
-    Expected output: A JSON array of client product objects with all their details
+        3. Separately fetches provider data and client data
+        4. Combines the data in Python 
+        5. Returns the data as a list of Clientproduct objects
+    Expected output: A JSON array of client product objects with all their details including provider theme colors
     """
     try:
+        # Build the base query for client_products
         query = db.table("client_products").select("*")
         
+        # Apply filters if provided
         if client_id is not None:
             query = query.eq("client_id", client_id)
             
@@ -47,23 +50,58 @@ async def get_client_products(
         if hasattr(limit, 'default'):
             limit_val = limit.default
             
+        # Get the client products with pagination
         result = query.range(skip_val, skip_val + limit_val - 1).execute()
+        client_products = result.data
         
-        # Enhance the response with provider information including theme color
+        # Fetch all needed providers and clients in bulk
+        provider_ids = [p.get("provider_id") for p in client_products if p.get("provider_id") is not None]
+        client_ids = [p.get("client_id") for p in client_products if p.get("client_id") is not None]
+        
+        # Only fetch providers if we have provider IDs
+        providers_map = {}
+        if provider_ids:
+            providers_result = db.table("available_providers").select("*").in_("id", provider_ids).execute()
+            # Create a lookup map of provider data by ID
+            providers_map = {p.get("id"): p for p in providers_result.data}
+            
+        # Only fetch clients if we have client IDs
+        clients_map = {}
+        if client_ids:
+            clients_result = db.table("clients").select("*").in_("id", client_ids).execute()
+            # Create a lookup map of client data by ID
+            clients_map = {c.get("id"): c for c in clients_result.data}
+        
+        # Enhance the response data with provider and client information
         enhanced_data = []
-        for product in result.data:
-            if product.get("provider_id"):
-                provider_result = db.table("available_providers")\
-                    .select("name", "theme_color")\
-                    .eq("id", product.get("provider_id"))\
-                    .execute()
-                if provider_result.data and len(provider_result.data) > 0:
-                    product["provider_name"] = provider_result.data[0].get("name")
-                    product["provider_theme_color"] = provider_result.data[0].get("theme_color")
+        for product in client_products:
+            # Add provider data if available
+            provider_id = product.get("provider_id")
+            if provider_id and provider_id in providers_map:
+                provider = providers_map[provider_id]
+                product["provider_name"] = provider.get("name")
+                product["provider_theme_color"] = provider.get("theme_color")
+            
+            # Add client name if available
+            client_id = product.get("client_id")
+            if client_id and client_id in clients_map:
+                client = clients_map[client_id]
+                forname = client.get("forname", "")
+                surname = client.get("surname", "")
+                product["client_name"] = f"{forname} {surname}".strip()
+            
             enhanced_data.append(product)
             
+        logger.info(f"Retrieved {len(enhanced_data)} client products with provider data")
+        
+        # Log the first few products for debugging purposes
+        if enhanced_data and len(enhanced_data) > 0:
+            sample = enhanced_data[0]
+            logger.info(f"Sample product data: id={sample.get('id')}, provider_name={sample.get('provider_name')}, theme_color={sample.get('provider_theme_color')}")
+        
         return enhanced_data
     except Exception as e:
+        logger.error(f"Error fetching client products: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.post("/client_products", response_model=Clientproduct)
@@ -178,74 +216,48 @@ async def get_client_product(client_product_id: int, db = Depends(get_db)):
     Why it's needed: Allows viewing detailed information about a specific client product.
     How it works:
         1. Takes the client_product_id from the URL path
-        2. Queries the 'client_products' table for a record with matching ID
-        3. Enhances the response with portfolio information if available
-        4. Returns the client product data or raises a 404 error if not found
-    Expected output: A JSON object containing the requested client product's details
+        2. Queries the 'client_products' table for the main record
+        3. Makes separate queries to get client and provider information
+        4. Combines all data and returns it
+    Expected output: A JSON object containing the requested client product's details including provider theme color
     """
     try:
+        # Query the client_product by ID
         result = db.table("client_products").select("*").eq("id", client_product_id).execute()
+            
         if not result.data or len(result.data) == 0:
             raise HTTPException(status_code=404, detail=f"Client product with ID {client_product_id} not found")
 
         client_product = result.data[0]
         
-        # Get additional client information for context
-        client_result = db.table("clients").select("forname,surname").eq("id", client_product.get("client_id")).execute()
-        if client_result.data and len(client_result.data) > 0:
-            client = client_result.data[0]
-            client_name = f"{client.get('forname', '')} {client.get('surname', '')}".strip()
-            client_product["client_name"] = client_name
-        
-        # Get provider information if available
-        if client_product.get("provider_id"):
-            provider_result = db.table("available_providers").select("name", "theme_color").eq("id", client_product.get("provider_id")).execute()
+        # Fetch provider data if available
+        provider_id = client_product.get("provider_id")
+        if provider_id:
+            provider_result = db.table("available_providers").select("*").eq("id", provider_id).execute()
             if provider_result.data and len(provider_result.data) > 0:
-                client_product["provider_name"] = provider_result.data[0].get("name")
-                client_product["provider_theme_color"] = provider_result.data[0].get("theme_color")
+                provider = provider_result.data[0]
+                client_product["provider_name"] = provider.get("name")
+                client_product["provider_theme_color"] = provider.get("theme_color")
+                logger.info(f"Added provider data: {provider.get('name')} with theme color: {provider.get('theme_color')}")
         
-        # Get portfolio information if available via direct link
-        if client_product.get("portfolio_id"):
-            portfolio_result = db.table("portfolios").select("*").eq("id", client_product.get("portfolio_id")).execute()
-            if portfolio_result.data and len(portfolio_result.data) > 0:
-                client_product["current_portfolio"] = {
-                    "id": portfolio_result.data[0].get("id"),
-                    "portfolio_name": portfolio_result.data[0].get("portfolio_name"),
-                    "assignment_start_date": client_product.get("start_date")
-                }
-        # Backward compatibility - check for product_holdings if no direct portfolio_id is set
-        else:
-            holding_result = db.table("product_holdings")\
-                .select("*")\
-                .eq("client_product_id", client_product_id)\
-                .eq("status", "active")\
-                .is_("end_date", "null")\
-                .execute()
-            
-            if holding_result.data and len(holding_result.data) > 0:
-                holding = holding_result.data[0]
-                portfolio_result = db.table("portfolios")\
-                    .select("*")\
-                    .eq("id", holding.get("portfolio_id"))\
-                    .execute()
-                
-                if portfolio_result.data and len(portfolio_result.data) > 0:
-                    client_product["current_portfolio"] = {
-                        "id": portfolio_result.data[0].get("id"),
-                        "portfolio_name": portfolio_result.data[0].get("portfolio_name"),
-                        "assignment_start_date": holding.get("start_date")
-                    }
-                    
-                    # Update the client_product with the portfolio_id for future reference
-                    db.table("client_products")\
-                        .update({"portfolio_id": holding.get("portfolio_id")})\
-                        .eq("id", client_product_id)\
-                        .execute()
+        # Fetch client data if available
+        client_id = client_product.get("client_id")
+        if client_id:
+            client_result = db.table("clients").select("*").eq("id", client_id).execute()
+            if client_result.data and len(client_result.data) > 0:
+                client = client_result.data[0]
+                forname = client.get("forname", "")
+                surname = client.get("surname", "")
+                client_product["client_name"] = f"{forname} {surname}".strip()
+                logger.info(f"Added client name: {client_product['client_name']}")
+        
+        logger.info(f"Retrieved client product {client_product_id} with provider theme color: {client_product.get('provider_theme_color')}")
         
         return client_product
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error fetching client product: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.patch("/client_products/{client_product_id}", response_model=Clientproduct)

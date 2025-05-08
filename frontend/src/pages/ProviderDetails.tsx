@@ -1,12 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getAvailableColors } from '../services/api';
 
 interface Provider {
   id: number;
   name: string;
   status: string;
+  theme_color?: string;
   created_at: string;
+}
+
+interface ColorOption {
+  name: string;
+  value: string;
 }
 
 interface Product {
@@ -36,10 +43,127 @@ const ProviderDetails: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [availableColors, setAvailableColors] = useState<ColorOption[]>([]);
+  const [isLoadingColors, setIsLoadingColors] = useState(false);
 
   useEffect(() => {
     fetchProvider();
   }, [providerId]);
+
+  useEffect(() => {
+    if (isEditing) {
+      fetchAvailableColors();
+    }
+  }, [isEditing, provider]);
+
+  const fetchAvailableColors = async () => {
+    try {
+      setIsLoadingColors(true);
+      const response = await getAvailableColors();
+      let colors = response.data;
+      
+      // If the provider already has a color, add it to the available colors
+      if (provider?.theme_color) {
+        const currentColorExists = colors.some((c: ColorOption) => c.value === provider.theme_color);
+        if (!currentColorExists) {
+          const colorName = getColorNameByValue(provider.theme_color) || 'Current Color';
+          colors = [{ name: colorName, value: provider.theme_color }, ...colors];
+        }
+      }
+      
+      setAvailableColors(colors);
+    } catch (err: any) {
+      console.error('Error fetching available colors:', err);
+      
+      // Use a diverse set of fallback colors
+      const fallbackColors = [
+        // Vibrant / Pure Colors
+        {name: 'Blue', value: '#2563EB'},         // Bright Blue
+        {name: 'Red', value: '#DC2626'},          // Pure Red
+        {name: 'Green', value: '#16A34A'},        // Bright Green
+        {name: 'Purple', value: '#8B5CF6'},       // Vibrant Purple
+        {name: 'Orange', value: '#F97316'},       // Bright Orange
+        
+        // Light / Soft Colors
+        {name: 'Sky Blue', value: '#38BDF8'},     // Light Blue
+        {name: 'Mint', value: '#4ADE80'},         // Light Green
+        {name: 'Lavender', value: '#C4B5FD'},     // Soft Purple
+        {name: 'Peach', value: '#FDBA74'},        // Soft Orange
+        {name: 'Rose', value: '#FDA4AF'},         // Soft Pink
+        
+        // Deep / Dark Colors
+        {name: 'Navy', value: '#1E40AF'},         // Deep Blue
+        {name: 'Forest', value: '#15803D'},       // Forest Green
+        {name: 'Maroon', value: '#9F1239'},       // Deep Red
+        {name: 'Indigo', value: '#4338CA'},       // Deep Purple
+        {name: 'Slate', value: '#334155'},        // Dark Slate
+      ];
+      
+      // If the provider already has a color, add it to the fallback colors
+      let colorsWithCurrent = [...fallbackColors];
+      if (provider?.theme_color) {
+        const currentColorExists = colorsWithCurrent.some(c => c.value === provider.theme_color);
+        if (!currentColorExists) {
+          const colorName = getColorNameByValue(provider.theme_color) || 'Current Color';
+          colorsWithCurrent = [{ name: colorName, value: provider.theme_color }, ...colorsWithCurrent];
+        }
+      }
+      
+      setAvailableColors(colorsWithCurrent);
+    } finally {
+      setIsLoadingColors(false);
+    }
+  };
+
+  const getColorNameByValue = (value: string): string | undefined => {
+    const colorNames: Record<string, string> = {
+      // Vibrant / Pure Colors
+      '#2563EB': 'Blue',
+      '#DC2626': 'Red',
+      '#16A34A': 'Green',
+      '#8B5CF6': 'Purple',
+      '#F97316': 'Orange',
+      
+      // Light / Soft Colors
+      '#38BDF8': 'Sky Blue',
+      '#4ADE80': 'Mint',
+      '#C4B5FD': 'Lavender',
+      '#FDBA74': 'Peach',
+      '#FDA4AF': 'Rose',
+      
+      // Deep / Dark Colors
+      '#1E40AF': 'Navy',
+      '#15803D': 'Forest',
+      '#9F1239': 'Maroon',
+      '#4338CA': 'Indigo',
+      '#334155': 'Slate',
+      
+      // Legacy colors (for backward compatibility)
+      '#4F46E5': 'Blue (Legacy)',
+      '#EA580C': 'Orange (Legacy)',
+      '#7C3AED': 'Purple (Legacy)',
+      '#0369A1': 'Light Blue (Legacy)',
+      '#B45309': 'Yellow (Legacy)',
+      '#0D9488': 'Teal (Legacy)',
+      '#BE185D': 'Pink (Legacy)',
+      '#475569': 'Slate (Legacy)',
+      '#059669': 'Emerald (Legacy)',
+      '#D97706': 'Yellow (Legacy)',
+      '#9333EA': 'Fuchsia (Legacy)',
+      '#0E7490': 'Cyan (Legacy)',
+      '#6D28D9': 'Violet (Legacy)',
+      '#92400E': 'Amber (Legacy)',
+      '#B91C1C': 'Red (Legacy)',
+      '#7E22CE': 'Purple (Legacy)',
+      '#C2410C': 'Orange (Legacy)',
+      '#0F766E': 'Teal (Legacy)',
+      '#3730A3': 'Indigo (Legacy)',
+      '#047857': 'Emerald (Legacy)',
+      '#0284C7': 'Sky (Legacy)',
+      '#E11D48': 'Rose (Legacy)',
+    };
+    return colorNames[value];
+  };
 
   const fetchProvider = async () => {
     try {
@@ -78,6 +202,13 @@ const ProviderDetails: React.FC = () => {
     }));
   };
 
+  const handleColorSelect = (color: string) => {
+    setFormData(prev => ({
+      ...prev,
+      theme_color: color
+    }));
+  };
+
   const handleSaveChanges = async () => {
     try {
       setIsSaving(true);
@@ -88,6 +219,7 @@ const ProviderDetails: React.FC = () => {
       setError(null);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to update provider');
+      console.error('Error updating provider:', err);
     } finally {
       setIsSaving(false);
     }
@@ -128,6 +260,137 @@ const ProviderDetails: React.FC = () => {
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const renderEditForm = () => {
+    return (
+      <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+          <h3 className="text-lg leading-6 font-medium text-gray-900">Edit Provider</h3>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="px-4 py-5 sm:p-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-6">
+            <div className="sm:col-span-3">
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                Provider Name
+              </label>
+              <div className="mt-1">
+                <input
+                  type="text"
+                  name="name"
+                  id="name"
+                  value={formData.name || ''}
+                  onChange={handleChange}
+                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                />
+              </div>
+            </div>
+
+            <div className="sm:col-span-3">
+              <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+                Status
+              </label>
+              <div className="mt-1">
+                <select
+                  id="status"
+                  name="status"
+                  value={formData.status || ''}
+                  onChange={handleChange}
+                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="sm:col-span-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Theme Color
+              </label>
+              
+              {isLoadingColors ? (
+                <div className="flex justify-left py-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-700"></div>
+                  <span className="ml-2 text-sm text-gray-500">Loading available colors...</span>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center mb-3">
+                    <div 
+                      className="h-10 w-10 rounded-full border-2 mr-3 shadow-sm" 
+                      style={{ 
+                        backgroundColor: formData.theme_color, 
+                        borderColor: formData.theme_color === '#ffffff' ? '#d1d5db' : formData.theme_color 
+                      }}
+                    ></div>
+                    <span className="text-sm font-medium text-gray-700">
+                      {availableColors.find(c => c.value === formData.theme_color)?.name || 'Select a color'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-5 gap-3">
+                    {availableColors.map((color) => (
+                      <button
+                        key={color.value}
+                        type="button"
+                        className={`aspect-square w-9 rounded-full hover:ring-2 hover:ring-offset-2 hover:ring-primary-500 focus:outline-none transition-all duration-200 shadow-sm ${
+                          formData.theme_color === color.value 
+                            ? 'ring-2 ring-offset-2 ring-gray-400 scale-110'
+                            : ''
+                        }`}
+                        style={{ backgroundColor: color.value }}
+                        onClick={() => handleColorSelect(color.value)}
+                        title={color.name}
+                      ></button>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-sm text-gray-500">
+                    Select a theme color for this provider. Each provider must have a unique color.
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="px-4 py-3 bg-gray-50 text-right sm:px-6 flex justify-end space-x-3">
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSaveChanges}
+            disabled={isSaving || isLoadingColors}
+            className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
+              isSaving || isLoadingColors ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'
+            }`}
+          >
+            {isSaving ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
+      </div>
+    );
   };
 
   if (isLoading) {
@@ -274,37 +537,7 @@ const ProviderDetails: React.FC = () => {
         {activeTab === 'info' && (
           <div className="p-6">
             {isEditing ? (
-              <div className="space-y-6 max-w-lg">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                    Provider Name
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name || ''}
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-3 px-4 text-base focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-                    Status
-                  </label>
-                  <select
-                    id="status"
-                    name="status"
-                    value={formData.status || ''}
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-3 px-4 text-base focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                </div>
-              </div>
+              renderEditForm()
             ) : (
               <div className="space-y-4 max-w-lg">
                 <div>

@@ -38,6 +38,7 @@ interface ProductItem {
   status: string;
   weighting: number; // Will always be 0
   start_date?: dayjs.Dayjs; // Use dayjs type
+  plan_number?: string; // Add plan number field
   portfolio: {
     id?: number; // Portfolio ID when created or selected
     name: string;
@@ -631,7 +632,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               product_name: product.product_name,
               portfolio_id: portfolioId,
               status: 'active',
-              start_date: formattedStartDate
+              start_date: formattedStartDate,
+              plan_number: product.plan_number || null
             });
             console.log(`Created client product for portfolio ${portfolioId}`);
           } catch (err: any) { // Type the error as any
@@ -794,6 +796,34 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Plan Number */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Plan Number
+          </label>
+          <input
+            type="text"
+            value={product.plan_number || ''}
+            onChange={(e) => handleProductChange(product.id, 'plan_number', e.target.value)}
+            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+            placeholder="Enter plan number"
+          />
+        </div>
+
+        {/* Portfolio Name */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Portfolio Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={product.portfolio.name}
+            onChange={(e) => handlePortfolioNameChange(product.id, e.target.value)}
+            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+            required
+          />
         </div>
       </div>
     );
@@ -1060,17 +1090,17 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                         </div>
                       </div>
 
-                      {/* Portfolio Name */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Portfolio Name <span className="text-red-500">*</span>
+                      {/* Plan Number */}
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Plan Number
                         </label>
                         <input
                           type="text"
-                          value={product.portfolio.name}
-                          onChange={(e) => handlePortfolioNameChange(product.id, e.target.value)}
+                          value={product.plan_number || ''}
+                          onChange={(e) => handleProductChange(product.id, 'plan_number', e.target.value)}
                           className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                          required
+                          placeholder="Enter plan number"
                         />
                       </div>
 
