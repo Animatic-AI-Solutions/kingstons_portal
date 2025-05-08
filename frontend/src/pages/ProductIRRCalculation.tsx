@@ -36,6 +36,14 @@ interface Holding {
   irr?: number;
   irr_calculation_date?: string;
   account_holding_id: number;
+  isVirtual?: boolean;
+  inactiveHoldingIds?: Array<{
+    id: number;
+    fund_id?: number;
+    fund_name?: string;
+  }>;
+  end_date?: string;
+  status?: string;
 }
 
 interface ActivityLog {
@@ -129,6 +137,73 @@ const calculateTotalAmountInvested = (holdings: Holding[]): number => {
   return holdings.reduce((total, holding) => total + (holding.amount_invested || 0), 0);
 };
 
+// Helper to filter active/inactive holdings
+const filterActiveHoldings = (holdings: Holding[]): Holding[] => {
+  return holdings.filter(holding => holding.status === 'active' || !holding.status);
+};
+
+const filterInactiveHoldings = (holdings: Holding[]): Holding[] => {
+  const today = new Date();
+  
+  return holdings.filter(holding => {
+    // Check if status is explicitly set to 'inactive'
+    const isStatusInactive = holding.status === 'inactive';
+    
+    // Check if end_date exists and is in the past
+    const hasEndDatePassed = holding.end_date && new Date(holding.end_date) <= today;
+    
+    // Return true if either condition is met
+    return isStatusInactive || hasEndDatePassed;
+  });
+};
+
+// Create a virtual "Previous Funds" entry that aggregates all inactive funds
+const createPreviousFundsEntry = (inactiveHoldings: Holding[], activityLogs: ActivityLog[]): Holding | null => {
+  if (inactiveHoldings.length === 0) return null;
+  
+  // Sum up all the values from inactive holdings
+  const totalAmountInvested = inactiveHoldings.reduce((sum, holding) => sum + (holding.amount_invested || 0), 0);
+  const totalMarketValue = inactiveHoldings.reduce((sum, holding) => sum + (holding.market_value || 0), 0);
+  
+  // Calculate weighted average IRR if any inactive holdings have IRR values
+  const holdingsWithIRR = inactiveHoldings.filter(h => h.irr !== undefined);
+  let weightedIRR = undefined;
+  
+  if (holdingsWithIRR.length > 0) {
+    const totalValueWithIRR = holdingsWithIRR.reduce((sum, h) => sum + (h.market_value || 0), 0);
+    if (totalValueWithIRR > 0) {
+      weightedIRR = holdingsWithIRR.reduce((sum, h) => 
+        sum + ((h.irr || 0) * (h.market_value || 0)), 0) / totalValueWithIRR;
+    }
+  }
+  
+  // Find the most recent IRR calculation date among inactive holdings
+  const sortedDates = inactiveHoldings
+    .filter(h => h.irr_calculation_date)
+    .map(h => h.irr_calculation_date)
+    .sort((a, b) => new Date(b!).getTime() - new Date(a!).getTime());
+  
+  const latestCalculationDate = sortedDates.length > 0 ? sortedDates[0] : undefined;
+  
+  return {
+    id: -1, // Special ID for the virtual fund
+    fund_name: 'Previous Funds', // Distinctive name
+    amount_invested: totalAmountInvested,
+    market_value: totalMarketValue,
+    irr: weightedIRR,
+    irr_calculation_date: latestCalculationDate,
+    account_holding_id: -1,
+    isVirtual: true, // Flag to identify this as a virtual entry
+    // Store the detailed information about inactive holdings
+    inactiveHoldingIds: inactiveHoldings.map(h => ({
+      id: h.id, // Portfolio fund ID
+      fund_id: h.fund_id, // The actual fund ID to match with allFunds
+      fund_name: h.fund_name // Include the fund name directly
+    })),
+    status: 'previous_funds' // Special status to identify this as an aggregation of inactive funds
+  } as Holding;
+};
+
 const calculateTotalRegularInvestments = (activities: ActivityLog[], holdings: Holding[]): number => {
   return holdings.reduce((total, holding) => total + calculateRegularInvestments(activities, holding.id), 0);
 };
@@ -192,6 +267,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
   const [isIRRModalOpen, setIsIRRModalOpen] = useState<boolean>(false);
   const [isDateSelectionModalOpen, setIsDateSelectionModalOpen] = useState<boolean>(false);
   const [dateSelectionResult, setDateSelectionResult] = useState<any>(null);
+  const [allFunds, setAllFunds] = useState<any[]>([]);
 
   useEffect(() => {
     if (accountId) {
@@ -242,6 +318,15 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       const portfolioFundsResponse = await api.get(`/portfolio_funds?portfolio_id=${portfolioId}`);
       console.log('AccountIRRCalculation: Portfolio funds data:', portfolioFundsResponse.data);
       
+      // Enhanced logging for portfolio funds data
+      if (portfolioFundsResponse.data && portfolioFundsResponse.data.length > 0) {
+        console.log('Detailed portfolio funds data:');
+        portfolioFundsResponse.data.forEach((fund: any, index: number) => {
+          console.log(`Fund ${index + 1}: ID=${fund.id}, Name=${fund.fund_name}, Status=${fund.status}, `,
+                      `End date=${fund.end_date}, Available funds ID=${fund.available_funds_id}`);
+        });
+      }
+      
       if (!portfolioFundsResponse.data || portfolioFundsResponse.data.length === 0) {
         console.warn('AccountIRRCalculation: No portfolio funds found for portfolio ID:', portfolioId);
         setError('This portfolio has no funds assigned to it. Please add funds to the portfolio first.');
@@ -258,13 +343,16 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       console.log('AccountIRRCalculation: Funds data:', fundsResponse.data);
       console.log('AccountIRRCalculation: Activity logs received:', activitiesResponse.data);
       
+      // Store the complete list of funds for reference
+      setAllFunds(fundsResponse.data || []);
+      
       // Create a map of funds for quick lookups
       const fundsMap = new Map<number, any>(
         fundsResponse.data.map((fund: any) => [fund.id, fund])
       );
       
       // Process portfolio funds as holdings
-      const processedHoldings = await Promise.all(portfolioFundsResponse.data.map(async (portfolioFund: any) => {
+      const processedHoldings = await Promise.all(portfolioFundsResponse.data.map(async (portfolioFund: any, index: number) => {
         // Get fund details
         const fund = fundsMap.get(portfolioFund.available_funds_id);
         
@@ -281,6 +369,11 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
           // Ignore error, fallback to undefined
         }
         
+        // Use the status directly from the portfolio_fund record
+        // If status is not provided, default to 'active'
+        const status = portfolioFund.status || 'active';
+        console.log(`Portfolio fund ${portfolioFund.id} (${fund?.fund_name || 'Unknown'}): status = ${status}`);
+        
         return {
           id: portfolioFund.id, // Use portfolio_fund.id as the holding ID
           portfolio_id: portfolioId,
@@ -292,7 +385,9 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
           market_value: portfolioFund.market_value || portfolioFund.amount_invested || 0,
           irr: latestIrr,
           irr_calculation_date: latestIrrDate,
-          account_holding_id: parseInt(accountId) // Use client_product_id as account_holding_id
+          account_holding_id: parseInt(accountId), // Use client_product_id as account_holding_id
+          status: status, // Use the status from the portfolio_fund record
+          end_date: portfolioFund.end_date // Include the end_date from the portfolio_fund record
         };
       }));
       
@@ -419,39 +514,28 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-16">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600"></div>
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-gray-900"></div>
       </div>
     );
   }
 
   if (error || !account) {
     return (
-      <div className="bg-red-50 border-l-4 border-red-500 p-4 mt-8">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <svg className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div className="ml-3">
-            <p className="text-red-700 text-base">
-              {error || 'Failed to load account details. Please try again later.'}
-            </p>
-            <button
-              onClick={() => navigate('/accounts')}
-              className="mt-2 text-red-700 underline"
-            >
-              Return to Accounts
-            </button>
-          </div>
-        </div>
+      <div className="text-center p-8">
+        <div className="text-red-600 mb-4">{error || 'Failed to load account details. Please try again later.'}</div>
+        <button 
+          onClick={() => navigate(-1)} 
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          Go Back
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="bg-white shadow rounded-lg p-6">
+    <div className="container mx-auto px-4 py-8">
       <h2 className="text-xl font-semibold mb-4">IRR Calculation</h2>
       
       {holdings.length === 0 ? (
@@ -461,130 +545,195 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       ) : (
         <div className="space-y-8">
           {/* Current Holdings Summary */}
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">Period Overview for {selectedYear}</h2>
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center">
+                <h2 className="text-xl font-semibold text-gray-900">Period Overview</h2>
+                <div className="ml-6">
+                  <YearNavigator
+                    selectedYear={selectedYear}
+                    onYearChange={setSelectedYear}
+                  />
+                </div>
+              </div>
+            </div>
             
-            <YearNavigator 
-              selectedYear={selectedYear}
-              onYearChange={(year) => setSelectedYear(year)}
-            />
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 table-fixed">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">ISIN</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Investments</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Regular Investments</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Government Uplifts</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Switch Ins</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Switch Outs</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Withdrawals</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Most Recent Value</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Most Recent IRR</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {holdings.map((holding) => (
-                  <tr key={holding.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-base font-medium text-gray-900">{holding.fund_name}</div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Name</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">ISIN</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Investments</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Regular Investments</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Government Uplifts</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Switch Ins</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Switch Outs</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Withdrawals</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Most Recent Value</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Most Recent IRR</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {/* First separate active and inactive holdings */}
+                  {(() => {
+                    const activeHoldings = filterActiveHoldings(holdings);
+                    const inactiveHoldings = filterInactiveHoldings(holdings);
+                    const previousFundsEntry = createPreviousFundsEntry(inactiveHoldings, activityLogs);
+                    
+                    // Display active holdings
+                    const displayHoldings = [...activeHoldings];
+                    
+                    // Add the Previous Funds entry if it exists
+                    if (previousFundsEntry) {
+                      displayHoldings.push(previousFundsEntry);
+                    }
+                    
+                    return (
+                      <>
+                        {displayHoldings.map((holding) => (
+                          <tr key={holding.id} className={holding.isVirtual ? "bg-gray-100 border-t border-gray-300" : ""}>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className={holding.isVirtual ? "ml-4 font-medium" : "ml-4"}>
+                                  <div className={`text-sm ${holding.isVirtual ? "font-semibold text-blue-800" : "font-medium text-gray-900"}`}>
+                                    {holding.fund_name}
+                                  </div>
+                                  {holding.isVirtual && inactiveHoldings.length > 0 && (
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      ({inactiveHoldings.length} inactive {inactiveHoldings.length === 1 ? 'fund' : 'funds'})
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{holding.isin_number || 'N/A'}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                {formatCurrency(holding.amount_invested)}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                {holding.isVirtual 
+                                  ? formatCurrency(calculateTotalRegularInvestments(activityLogs, inactiveHoldings))
+                                  : formatCurrency(calculateRegularInvestments(activityLogs, holding.id))}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                {holding.isVirtual
+                                  ? formatCurrency(calculateTotalGovernmentUplifts(activityLogs, inactiveHoldings))
+                                  : formatCurrency(calculateGovernmentUplifts(activityLogs, holding.id))}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                {holding.isVirtual
+                                  ? formatCurrency(calculateTotalSwitchIns(activityLogs, inactiveHoldings))
+                                  : formatCurrency(calculateSwitchIns(activityLogs, holding.id))}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                {holding.isVirtual
+                                  ? formatCurrency(calculateTotalSwitchOuts(activityLogs, inactiveHoldings))
+                                  : formatCurrency(calculateSwitchOuts(activityLogs, holding.id))}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                {holding.isVirtual
+                                  ? formatCurrency(calculateTotalWithdrawals(activityLogs, inactiveHoldings))
+                                  : formatCurrency(calculateWithdrawals(activityLogs, holding.id))}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                {formatCurrency(holding.market_value || 0)}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div>
+                                <div className={`text-sm ${
+                                  holding.irr !== undefined 
+                                    ? (holding.irr >= 0 
+                                      ? (holding.isVirtual ? "font-medium text-green-700" : "text-green-700") 
+                                      : (holding.isVirtual ? "font-medium text-red-700" : "text-red-700"))
+                                    : "text-gray-500"
+                                }`}>
+                                  {holding.irr !== undefined ? (
+                                    <>
+                                      {formatPercentage(holding.irr)}
+                                      <span className="ml-1">
+                                        {holding.irr >= 0 ? '▲' : '▼'}
+                                      </span>
+                                    </>
+                                  ) : 'N/A'}
+                                </div>
+                                {holding.irr_calculation_date && (
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    as of {formatDate(holding.irr_calculation_date)}
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </>
+                    );
+                  })()}
+                  
+                  {/* Total Row */}
+                  <tr className="bg-gray-50 font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-base font-bold text-red-600">
+                      TOTAL
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {holding.isin_number || 'N/A'}
-                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap"></td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{formatCurrency(holding.amount_invested || 0)}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{formatCurrency(calculateRegularInvestments(activityLogs, holding.id))}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{formatCurrency(calculateGovernmentUplifts(activityLogs, holding.id))}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{formatCurrency(calculateSwitchIns(activityLogs, holding.id))}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{formatCurrency(calculateSwitchOuts(activityLogs, holding.id))}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{formatCurrency(calculateWithdrawals(activityLogs, holding.id))}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{formatCurrency(holding.market_value || 0)}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className={`text-sm ${holding.irr && holding.irr >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                          {holding.irr !== undefined ? (
-                            <>
-                              {formatPercentage(holding.irr)}
-                              <span className="ml-1">
-                                {holding.irr >= 0 ? '▲' : '▼'}
-                              </span>
-                            </>
-                          ) : 'N/A'}
-                        </div>
-                        {holding.irr_calculation_date && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            as of {formatDate(holding.irr_calculation_date)}
-                          </div>
-                        )}
+                      <div className="text-sm font-bold text-red-600">
+                        {formatCurrency(calculateTotalAmountInvested(holdings))}
                       </div>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-bold text-red-600">
+                        {formatCurrency(calculateTotalRegularInvestments(activityLogs, holdings))}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-bold text-red-600">
+                        {formatCurrency(calculateTotalGovernmentUplifts(activityLogs, holdings))}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-bold text-red-600">
+                        {formatCurrency(calculateTotalSwitchIns(activityLogs, holdings))}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-bold text-red-600">
+                        {formatCurrency(calculateTotalSwitchOuts(activityLogs, holdings))}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-bold text-red-600">
+                        {formatCurrency(calculateTotalWithdrawals(activityLogs, holdings))}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-bold text-red-600">
+                        {formatCurrency(calculateTotalValue(holdings))}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {/* No total IRR calculation */}
+                    </td>
                   </tr>
-                ))}
-                
-                {/* Total Row */}
-                <tr className="bg-gray-50 font-medium">
-                  <td className="px-6 py-4 whitespace-nowrap text-base font-bold text-red-600">
-                    TOTAL
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap"></td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-bold text-red-600">
-                      {formatCurrency(calculateTotalAmountInvested(holdings))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-bold text-red-600">
-                      {formatCurrency(calculateTotalRegularInvestments(activityLogs, holdings))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-bold text-red-600">
-                      {formatCurrency(calculateTotalGovernmentUplifts(activityLogs, holdings))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-bold text-red-600">
-                      {formatCurrency(calculateTotalSwitchIns(activityLogs, holdings))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-bold text-red-600">
-                      {formatCurrency(calculateTotalSwitchOuts(activityLogs, holdings))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-bold text-red-600">
-                      {formatCurrency(calculateTotalWithdrawals(activityLogs, holdings))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-bold text-red-600">
-                      {formatCurrency(calculateTotalValue(holdings))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {/* No total IRR calculation */}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Monthly Activities Table */}
@@ -658,24 +807,65 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
               </div>
             ) : null}
             
-            <EditableMonthlyActivitiesTable 
-              funds={holdings.map(holding => ({
-                id: holding.id, // This is now the portfolio_fund_id
-                holding_id: holding.account_holding_id, // This is the client_product_id
+            {/* Separate active and inactive holdings for the table */}
+            {(() => {
+              const activeHoldings = filterActiveHoldings(holdings);
+              const inactiveHoldings = filterInactiveHoldings(holdings);
+              
+              // Log which holdings are identified as inactive
+              console.log('Inactive holdings identified:');
+              inactiveHoldings.forEach(holding => {
+                console.log(`Inactive holding: ID=${holding.id}, Fund name=${holding.fund_name}, Status=${holding.status}, End date=${holding.end_date}`);
+              });
+              
+              // Create a virtual "Previous Funds" entry for the EditableMonthlyActivitiesTable
+              const previousFundsEntry = inactiveHoldings.length > 0 ? {
+                id: -1,
+                holding_id: -1,
+                fund_name: 'Previous Funds',
+                irr: undefined,
+                isActive: false,
+                inactiveHoldingIds: inactiveHoldings.map(h => ({
+                  id: h.id,
+                  fund_id: h.fund_id,
+                  fund_name: h.fund_name
+                }))
+              } : null;
+              
+              // Prepare the list of funds for the table
+              const tableFunds = [...activeHoldings.map(holding => ({
+                id: holding.id,
+                holding_id: holding.account_holding_id,
                 fund_name: holding.fund_name || 'Unknown Fund',
-                irr: holding.irr
-              })).sort((a, b) => {
-                // Place 'Cashline' fund at the end
+                irr: holding.irr,
+                isActive: true
+              }))];
+              
+              // Add the Previous Funds virtual entry if there are inactive funds
+              if (previousFundsEntry) {
+                tableFunds.push(previousFundsEntry);
+              }
+              
+              // Sort funds alphabetically, but place Cashline at the end and Previous Funds at the very end
+              tableFunds.sort((a, b) => {
+                if (a.id === -1) return 1; // Previous Funds goes last
+                if (b.id === -1) return -1;
                 if (a.fund_name === 'Cashline') return 1;
                 if (b.fund_name === 'Cashline') return -1;
-                // Sort the rest alphabetically
-                return a.fund_name.localeCompare(b.fund_name);
-              })}
-              activities={convertActivityLogs(activityLogs)}
-              accountHoldingId={accountId ? parseInt(accountId) : 0}
-              onActivitiesUpdated={refreshData}
-              selectedYear={selectedYear}
-            />
+                return (a.fund_name || '').localeCompare(b.fund_name || '');
+              });
+              
+              return (
+                <EditableMonthlyActivitiesTable 
+                  funds={tableFunds}
+                  activities={convertActivityLogs(activityLogs)}
+                  accountHoldingId={accountId ? parseInt(accountId) : 0}
+                  onActivitiesUpdated={refreshData}
+                  selectedYear={selectedYear}
+                  allFunds={allFunds} // Pass all funds from the API instead of just holdings
+                />
+              );
+            })()}
           </div>
         </div>
       )}
