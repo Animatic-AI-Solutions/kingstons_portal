@@ -4,7 +4,7 @@ import logging
 from datetime import date, datetime
 from pydantic import BaseModel
 
-from app.models.portfolio import Portfolio, PortfolioCreate, PortfolioUpdate
+from app.models.portfolio import Portfolio, PortfolioCreate, PortfolioUpdate, PortfolioWithTemplate, TemplateInfo
 from app.db.database import get_db
 from app.models.holding_activity_log import HoldingActivityLog, HoldingActivityLogUpdate
 from app.api.routes.portfolio_funds import calculate_excel_style_irr
@@ -123,7 +123,7 @@ async def create_portfolio(portfolio: PortfolioCreate, db = Depends(get_db)):
         logger.error(f"Error creating portfolio: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-@router.get("/portfolios/{portfolio_id}", response_model=Portfolio)
+@router.get("/portfolios/{portfolio_id}", response_model=PortfolioWithTemplate)
 async def get_portfolio(portfolio_id: int, db = Depends(get_db)):
     """
     What it does: Retrieves a single portfolio by ID.
@@ -131,17 +131,32 @@ async def get_portfolio(portfolio_id: int, db = Depends(get_db)):
     How it works:
         1. Takes the portfolio_id from the URL path
         2. Queries the 'portfolios' table for a record with matching ID
-        3. Returns the portfolio data or raises a 404 error if not found
-    Expected output: A JSON object containing the requested portfolio's details
+        3. Fetches template information if the portfolio was created from a template
+        4. Returns the portfolio data or raises a 404 error if not found
+    Expected output: A JSON object containing the requested portfolio's details with template info
     """
     try:
         result = db.table("portfolios").select("*").eq("id", portfolio_id).execute()
-        if result.data and len(result.data) > 0:
-            return result.data[0]
-        raise HTTPException(status_code=404, detail=f"Portfolio with ID {portfolio_id} not found")
+        if not result.data or len(result.data) == 0:
+            raise HTTPException(status_code=404, detail=f"Portfolio with ID {portfolio_id} not found")
+        
+        portfolio = result.data[0]
+        
+        # If portfolio has an original_template_id, get the template info
+        if portfolio.get("original_template_id"):
+            template_result = db.table("available_portfolios") \
+                .select("*") \
+                .eq("id", portfolio["original_template_id"]) \
+                .execute()
+                
+            if template_result.data and len(template_result.data) > 0:
+                portfolio["template_info"] = template_result.data[0]
+        
+        return portfolio
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error getting portfolio: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.patch("/portfolios/{portfolio_id}", response_model=Portfolio)
@@ -892,3 +907,63 @@ async def calculate_portfolio_irr_for_date(
         logger.error(f"Error calculating IRR: {str(e)}")
         logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Failed to calculate IRR: {str(e)}")
+
+@router.get("/portfolios/with-template", response_model=List[PortfolioWithTemplate])
+async def get_portfolios_with_template(
+    skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
+    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
+    status: Optional[str] = None,
+    db = Depends(get_db)
+):
+    """
+    What it does: Retrieves a paginated list of portfolios with template information.
+    Why it's needed: Provides a way to view and filter investment portfolios with their template origins.
+    How it works:
+        1. Connects to the Supabase database
+        2. Builds a query to the 'portfolios' table with optional filters
+        3. Applies pagination parameters to limit result size
+        4. For each portfolio with an original_template_id, fetches the template info
+        5. Returns the data as a list of PortfolioWithTemplate objects
+    Expected output: A JSON array of portfolio objects with template details where applicable
+    """
+    try:
+        query = db.table("portfolios").select("*")
+        
+        if status is not None:
+            query = query.eq("status", status)
+            
+        # Extract values from Query objects
+        skip_val = skip
+        limit_val = limit
+        if hasattr(skip, 'default'):
+            skip_val = skip.default
+        if hasattr(limit, 'default'):
+            limit_val = limit.default
+            
+        result = query.range(skip_val, skip_val + limit_val - 1).execute()
+        
+        # If no portfolios found, return empty list
+        if not result.data:
+            return []
+        
+        portfolios = result.data
+        
+        # Create a set of all template IDs to fetch in a single query
+        template_ids = {p["original_template_id"] for p in portfolios if p.get("original_template_id")}
+        
+        # If there are templates to fetch, get them all at once
+        templates_dict = {}
+        if template_ids:
+            templates_query = db.table("available_portfolios").select("*").in_("id", list(template_ids)).execute()
+            if templates_query.data:
+                templates_dict = {t["id"]: t for t in templates_query.data}
+        
+        # Add template info to each portfolio
+        for portfolio in portfolios:
+            if portfolio.get("original_template_id") and portfolio["original_template_id"] in templates_dict:
+                portfolio["template_info"] = templates_dict[portfolio["original_template_id"]]
+        
+        return portfolios
+    except Exception as e:
+        logger.error(f"Error fetching portfolios with template: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

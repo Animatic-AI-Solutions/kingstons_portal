@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import date, datetime
-from typing import Optional
+from typing import Optional, Dict, Any
 
 class ClientproductBase(BaseModel):
     client_id: int
@@ -15,6 +15,9 @@ class ClientproductBase(BaseModel):
     provider_theme_color: Optional[str] = None
     product_type: Optional[str] = None
     portfolio_id: Optional[int] = None
+    original_template_id: Optional[int] = None
+    original_template_name: Optional[str] = None
+    template_info: Optional[Dict[str, Any]] = None
 
     model_config = ConfigDict(
         from_attributes=True

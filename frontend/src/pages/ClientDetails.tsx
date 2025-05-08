@@ -43,6 +43,13 @@ interface ClientAccount {
   irr?: number;
   risk_rating?: number;
   provider_theme_color?: string;
+  original_template_id?: number;
+  original_template_name?: string;
+  template_info?: {
+    id: number;
+    name: string;
+    created_at: string;
+  };
 }
 
 // Extracted component for client header
@@ -175,12 +182,15 @@ const ProductCard: React.FC<{ account: ClientAccount }> = ({ account }) => {
     account.provider_theme_color
   );
   
-  // Log to debug theme color
+  // Log to debug theme color and template info
   console.log(`Product card for ${account.product_name}:`, {
     provider: account.provider_name, 
     provider_id: account.provider_id,
     provider_theme_color: account.provider_theme_color,
-    using_color: themeColor
+    using_color: themeColor,
+    original_template_id: account.original_template_id,
+    original_template_name: account.original_template_name,
+    template_info: account.template_info
   });
   
   // Memoize style objects for performance
@@ -230,7 +240,9 @@ const ProductCard: React.FC<{ account: ClientAccount }> = ({ account }) => {
                   color: themeColor
                 }}
               >
-                {account.product_type === 'bespoke' ? 'Bespoke' : 'Template'}
+                {account.original_template_id 
+                  ? (account.template_info?.name || account.original_template_name || `Template #${account.original_template_id}`)
+                  : 'Bespoke'}
               </span>
             </div>
             <div className="flex items-center mt-1">

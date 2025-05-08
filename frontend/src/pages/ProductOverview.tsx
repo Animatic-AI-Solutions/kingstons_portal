@@ -27,6 +27,11 @@ interface Account {
     portfolio_name: string;
     assignment_start_date: string;
   };
+  template_info?: {
+    id: number;
+    name: string;
+    created_at: string;
+  };
 }
 
 interface Holding {
@@ -628,7 +633,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                   <span className="text-gray-600 font-medium">Template:</span>{" "}
                   <span className="text-gray-900">
                     {account.original_template_id 
-                      ? account.original_template_name || `Template #${account.original_template_id}` 
+                      ? (account.template_info?.name || account.original_template_name || `Template #${account.original_template_id}`)
                       : "Bespoke"}
                   </span>
                 </div>

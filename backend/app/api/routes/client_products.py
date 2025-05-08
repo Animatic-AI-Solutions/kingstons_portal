@@ -26,10 +26,10 @@ async def get_client_products(
     How it works:
         1. Connects to the Supabase database
         2. Builds a query to the 'client_products' table with optional filters
-        3. Separately fetches provider data and client data
+        3. Separately fetches provider data, client data, and template data
         4. Combines the data in Python 
         5. Returns the data as a list of Clientproduct objects
-    Expected output: A JSON array of client product objects with all their details including provider theme colors
+    Expected output: A JSON array of client product objects with all their details including provider theme colors and template info
     """
     try:
         # Build the base query for client_products
@@ -57,6 +57,7 @@ async def get_client_products(
         # Fetch all needed providers and clients in bulk
         provider_ids = [p.get("provider_id") for p in client_products if p.get("provider_id") is not None]
         client_ids = [p.get("client_id") for p in client_products if p.get("client_id") is not None]
+        portfolio_ids = [p.get("portfolio_id") for p in client_products if p.get("portfolio_id") is not None]
         
         # Only fetch providers if we have provider IDs
         providers_map = {}
@@ -72,7 +73,25 @@ async def get_client_products(
             # Create a lookup map of client data by ID
             clients_map = {c.get("id"): c for c in clients_result.data}
         
-        # Enhance the response data with provider and client information
+        # Fetch portfolio information to get template info
+        portfolios_map = {}
+        template_ids = set()
+        if portfolio_ids:
+            portfolios_result = db.table("portfolios").select("*").in_("id", portfolio_ids).execute()
+            if portfolios_result.data:
+                portfolios_map = {p.get("id"): p for p in portfolios_result.data}
+                # Collect all template IDs to fetch in bulk
+                template_ids = {p.get("original_template_id") for p in portfolios_result.data 
+                              if p.get("original_template_id") is not None}
+        
+        # Fetch all needed templates in bulk
+        templates_map = {}
+        if template_ids:
+            templates_result = db.table("available_portfolios").select("*").in_("id", list(template_ids)).execute()
+            if templates_result.data:
+                templates_map = {t.get("id"): t for t in templates_result.data}
+        
+        # Enhance the response data with provider, client, and template information
         enhanced_data = []
         for product in client_products:
             # Add provider data if available
@@ -90,9 +109,20 @@ async def get_client_products(
                 surname = client.get("surname", "")
                 product["client_name"] = f"{forname} {surname}".strip()
             
+            # Add portfolio and template info if available
+            portfolio_id = product.get("portfolio_id")
+            if portfolio_id and portfolio_id in portfolios_map:
+                portfolio = portfolios_map[portfolio_id]
+                original_template_id = portfolio.get("original_template_id")
+                if original_template_id and original_template_id in templates_map:
+                    template = templates_map[original_template_id]
+                    product["original_template_id"] = original_template_id
+                    product["original_template_name"] = template.get("name")
+                    product["template_info"] = template
+            
             enhanced_data.append(product)
             
-        logger.info(f"Retrieved {len(enhanced_data)} client products with provider data")
+        logger.info(f"Retrieved {len(enhanced_data)} client products with provider data and template info")
         
         # Log the first few products for debugging purposes
         if enhanced_data and len(enhanced_data) > 0:
@@ -217,9 +247,10 @@ async def get_client_product(client_product_id: int, db = Depends(get_db)):
     How it works:
         1. Takes the client_product_id from the URL path
         2. Queries the 'client_products' table for the main record
-        3. Makes separate queries to get client and provider information
-        4. Combines all data and returns it
-    Expected output: A JSON object containing the requested client product's details including provider theme color
+        3. Makes separate queries to get client, provider, and portfolio information
+        4. If the portfolio has a template, adds the template info
+        5. Combines all data and returns it
+    Expected output: A JSON object containing the requested client product's details including provider theme color and template info
     """
     try:
         # Query the client_product by ID
@@ -250,6 +281,27 @@ async def get_client_product(client_product_id: int, db = Depends(get_db)):
                 surname = client.get("surname", "")
                 client_product["client_name"] = f"{forname} {surname}".strip()
                 logger.info(f"Added client name: {client_product['client_name']}")
+        
+        # Fetch portfolio information if available
+        portfolio_id = client_product.get("portfolio_id")
+        if portfolio_id:
+            portfolio_result = db.table("portfolios").select("*").eq("id", portfolio_id).execute()
+            if portfolio_result.data and len(portfolio_result.data) > 0:
+                portfolio = portfolio_result.data[0]
+                
+                # Check if portfolio was created from a template
+                original_template_id = portfolio.get("original_template_id")
+                if original_template_id:
+                    # Set the original_template_id on the client_product
+                    client_product["original_template_id"] = original_template_id
+                    
+                    # Fetch template details
+                    template_result = db.table("available_portfolios").select("*").eq("id", original_template_id).execute()
+                    if template_result.data and len(template_result.data) > 0:
+                        template = template_result.data[0]
+                        client_product["original_template_name"] = template.get("name")
+                        client_product["template_info"] = template
+                        logger.info(f"Added template info: {template.get('name')} (ID: {original_template_id})")
         
         logger.info(f"Retrieved client product {client_product_id} with provider theme color: {client_product.get('provider_theme_color')}")
         
