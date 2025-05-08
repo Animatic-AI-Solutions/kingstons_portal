@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+
 import { useAuth } from '../context/AuthContext';
 import { format } from 'date-fns';
 import { Radio, Select, Input, Checkbox, DatePicker } from 'antd';
@@ -56,6 +58,7 @@ interface PortfolioTemplate {
 
 const CreateClientProducts: React.FC = (): JSX.Element => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { api } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [providers, setProviders] = useState<Provider[]>([]);
@@ -65,8 +68,13 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   const [error, setError] = useState<string | null>(null);
   const [showErrorPopup, setShowErrorPopup] = useState(false);
   
+  // Get client info from URL parameters
+  const searchParams = new URLSearchParams(location.search);
+  const urlClientId = searchParams.get('client_id');
+  const clientName = searchParams.get('client_name');
+  
   // Form state
-  const [clientId, setClientId] = useState<number | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState<number | null>(urlClientId ? parseInt(urlClientId) : null);
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [providerProducts, setProviderProducts] = useState<Record<number, any>>({});
@@ -142,7 +150,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         
         // Set defaults
         if (clientsRes.data.length > 0) {
-          setClientId(clientsRes.data[0].id);
+          setSelectedClientId(clientsRes.data[0].id);
         }
         
         console.log("Data fetched successfully for CreateClientProducts");
@@ -206,7 +214,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   };
 
   const handleClientChange = (clientId: number) => {
-    setClientId(clientId);
+    setSelectedClientId(clientId);
     
     // Reset products when client changes
     if (products.length > 0) {
@@ -219,24 +227,30 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   };
 
   const handleAddProduct = () => {
-    if (!clientId) {
-      showError('Please select a client first');
+
+    if (!selectedClientId) {
+      setError('Please select a client first');
+
       return;
     }
     
     // Create a new empty product with a temporary ID
     const productId = `temp-${Date.now()}`;
     const newProduct: ProductItem = {
-      id: productId,
-      client_id: clientId,
+
+      id: `temp-${Date.now()}`,
+      client_id: selectedClientId,
+
       provider_id: 0,
       product_type: '',
       product_name: `Product ${products.length + 1}`,
       status: 'active',
+
       weighting: 0, // Always 0 for new products
       start_date: startDate, // Use the selected start date
+
       portfolio: {
-        name: `Portfolio ${products.length + 1}`, // Set a default portfolio name
+        name: `Portfolio ${products.length + 1}`,
         selectedFunds: [],
         type: 'bespoke',
         fundWeightings: {}
@@ -454,8 +468,11 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   };
 
   const validateForm = (): boolean => {
-    if (!clientId) {
-      showError('Please select a client');
+
+    // Client must be selected
+    if (!selectedClientId) {
+      setError('Please select a client');
+
       return false;
     }
     if (products.length === 0) {
@@ -748,92 +765,149 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      {/* Error Popup (always rendered, floating) */}
-      {showErrorPopup && error && (
-        <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 bg-red-600 text-white px-6 py-3 rounded shadow-lg flex items-center space-x-2">
-          <span>{error}</span>
-          <button
-            className="ml-4 text-white hover:text-gray-200 text-xl font-bold focus:outline-none"
-            onClick={() => setShowErrorPopup(false)}
-            aria-label="Dismiss error"
-          >
-            ×
-          </button>
+
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Breadcrumb Navigation */}
+      <nav className="mb-8 flex" aria-label="Breadcrumb">
+        <ol className="inline-flex items-center space-x-1 md:space-x-3">
+          <li className="inline-flex items-center">
+            <Link to="/clients" className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-primary-700">
+              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
+              </svg>
+              Clients
+            </Link>
+          </li>
+          <li>
+            <div className="flex items-center">
+              <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
+              </svg>
+              <Link to={`/clients/${urlClientId}`} className="ml-1 text-sm font-medium text-gray-500 hover:text-primary-700 md:ml-2">
+                {clientName || 'Client Details'}
+              </Link>
+            </div>
+          </li>
+          <li aria-current="page">
+            <div className="flex items-center">
+              <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
+              </svg>
+              <span className="ml-1 text-sm font-medium text-primary-700 md:ml-2">Add Product</span>
+            </div>
+          </li>
+        </ol>
+      </nav>
+
+      {/* Header */}
+      <div className="flex justify-between items-center mb-4 mt-4">
+        <div className="flex items-center">
+          <div className="bg-primary-100 p-2 rounded-lg mr-3 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+          <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Create Client Products</h1>
         </div>
-      )}
-      {/* Main content */}
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Create Client Products</h1>
-        <button
-          onClick={() => navigate('/products')}
-          className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50"
+        <Link
+          to={`/clients/${urlClientId}`}
+          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+
         >
-          Back to Products
-        </button>
+          <svg className="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+          </svg>
+          Back
+        </Link>
       </div>
+
+      <div className="max-w-6xl mx-auto p-4">
+
       {isLoading ? (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-700"></div>
         </div>
+
+      ) : error ? (
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
+          <p>{error}</p>
+        </div>
+
       ) : (
-        <div className="bg-white shadow-md rounded-lg p-6">
+        <div className="bg-white shadow-md rounded-lg p-4">
           <form onSubmit={handleSubmit}>
+            {/* Client Selection and Start Date in horizontal layout */}
+            <div className="flex gap-4 mb-4">
             {/* Client Selection */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Client <span className="text-red-500">*</span>
+              <div className="w-1/2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Client Name <span className="text-red-500">*</span>
               </label>
               {clients.length > 0 ? (
-                <SearchableDropdown
-                  id="client-select"
-                  options={clients.map(c => ({ 
-                    value: c.id, 
-                    label: `${c.forname || ''} ${c.surname || ''}`.trim() 
-                  }))}
-                  value={clientId ?? ''}
-                  onChange={val => handleClientChange(Number(val))}
-                  placeholder="Select a client"
-                  className="w-full"
-                  required
-                />
+
+                  <Select
+                    showSearch
+                    value={selectedClientId || undefined}
+                    onChange={(value) => handleClientChange(value)}
+                    placeholder="Search for a client"
+                    optionFilterProp="children"
+                    filterOption={(input, option) =>
+                      (option?.children as unknown as string)
+                        .toLowerCase()
+                        .includes(input.toLowerCase())
+                    }
+                    className="w-full"
+                  >
+                  {clients.map(client => (
+                      <Select.Option key={client.id} value={client.id}>
+                      {client.name}
+                      </Select.Option>
+                  ))}
+                  </Select>
+
               ) : (
                 <div className="text-gray-500">No clients available. Please add a client first.</div>
               )}
             </div>
 
             {/* Start Date Selection */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="w-1/2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                 Start Date <span className="text-red-500">*</span>
               </label>
               <DatePicker
                 value={startDate}
                 onChange={(date) => setStartDate(date as Dayjs)}
-                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md h-[38px]"
+                  style={{ width: '100%' }}
               />
+              </div>
             </div>
 
             {/* Product List */}
-            <div className="space-y-6">
-              <div className="flex justify-between items-center pb-4 border-b border-gray-200">
-                <h2 className="text-xl font-medium">Products</h2>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center pb-3 border-b border-gray-200">
+                <h2 className="text-lg font-medium">Products</h2>
                 <button
                   type="button"
                   onClick={handleAddProduct}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                  className="bg-primary-700 text-white px-3 py-1.5 rounded-xl font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 shadow-sm flex items-center gap-1"
                 >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
                   Add Client Product
                 </button>
               </div>
 
               {products.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No products added yet. Click "Add Client Product" to create a new product.</p>
+                <div className="text-center py-6 text-gray-500">
+                  No products added yet. Click the button above to add a product.
                 </div>
               ) : (
-                <div>
+                <div className="space-y-4">
                   {products.map((product) => (
+
                     <div 
                       key={product.id} 
                       className="border rounded-md p-6 mb-6 bg-gray-50 relative"
@@ -843,36 +917,26 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                       {/* Product Header */}
                       <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-medium">{product.product_name}</h3>
+
                         <button
                           type="button"
                           onClick={() => handleRemoveProduct(product.id)}
-                          className="text-red-600 hover:text-red-800"
+                          className="text-gray-400 hover:text-red-500 transition-colors duration-200"
                         >
-                          Remove
+                          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
                         </button>
                       </div>
 
-                      {/* Product Form */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Product Name */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Product Name <span className="text-red-500">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            value={product.product_name}
-                            onChange={(e) => handleProductChange(product.id, 'product_name', e.target.value)}
-                            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                            required
-                          />
-                        </div>
-
+                      {/* Provider and Product Type Selection in horizontal layout */}
+                      <div className="flex gap-4 mb-3">
                         {/* Provider Selection */}
-                        <div className="product-dropdown-container relative">
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <div className="w-1/2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Provider <span className="text-red-500">*</span>
                           </label>
+
                           <SearchableDropdown
                             id={`provider-select-${product.id}`}
                             options={providers.map(p => ({ value: p.id, label: p.name }))}
@@ -882,11 +946,12 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                             className="w-full"
                             required
                           />
+
                         </div>
 
-                        {/* Product Type */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {/* Product Type Selection */}
+                        <div className="w-1/2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Product Type <span className="text-red-500">*</span>
                           </label>
                           <SearchableDropdown
@@ -902,6 +967,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                               { value: 'Other', label: 'Other' },
                             ]}
                             value={product.product_type}
+
                             onChange={val => handleProductTypeChange(product.id, String(val))}
                             placeholder="Select product type"
                             className="w-full"
@@ -926,28 +992,20 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                         {/* Portfolio Configuration */}
                         <div className="mt-6 border-t pt-6 col-span-2">
                           <h4 className="text-lg font-medium mb-4">Portfolio Configuration</h4>
+
                           {renderPortfolioSection(product)}
-                        </div>
-                      </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Form Actions */}
-            <div className="mt-8 flex justify-end space-x-4">
-              <button
-                type="button"
-                onClick={() => navigate('/products')}
-                className="px-6 py-3 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Cancel
-              </button>
+            {/* Submit Button */}
+            <div className="mt-6 flex justify-end">
               <button
                 type="submit"
                 disabled={isSaving}
-                className="px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                className="bg-primary-700 text-white px-4 py-2 rounded-xl font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 shadow-sm"
               >
                 {isSaving ? 'Saving...' : 'Save Products'}
               </button>
@@ -955,6 +1013,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           </form>
         </div>
       )}
+      </div>
     </div>
   );
 };

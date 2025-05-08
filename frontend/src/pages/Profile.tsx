@@ -7,7 +7,7 @@ import { Card, Button, ProfileAvatar } from '../components/ui';
 const landingPageOptions = [
   { value: '/', label: 'Home' },
   { value: '/clients', label: 'Clients' },
-  { value: '/accounts', label: 'Accounts' },
+  { value: '/products', label: 'Products' },
   { value: '/definitions', label: 'Definitions' },
   { value: '/reporting', label: 'Analytics' }
 ];
@@ -57,7 +57,11 @@ const Profile: React.FC = () => {
     } catch (err: any) {
       console.error('Profile update error:', err);
       const errorMessage = err.response?.data?.detail || 'Failed to update profile';
-      setError(`Failed to update profile: ${errorMessage}`);
+      if (errorMessage === 'No valid profile data provided') {
+        setError('No changes to save');
+      } else {
+        setError(`Failed to update profile: ${errorMessage}`);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -169,7 +173,7 @@ const Profile: React.FC = () => {
                       ))}
                     </select>
                     <p className="mt-1 text-sm text-gray-500">
-                      This page will be shown when you first log in
+                      This page will be shown when you first log in. You can still access the homepage and other pages through the navigation menu.
                     </p>
                   </div>
                 </div>

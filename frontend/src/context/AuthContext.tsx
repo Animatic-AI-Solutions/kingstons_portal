@@ -110,9 +110,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Redirect to preferred landing page when authenticated
   useEffect(() => {
-    // Navigate to preferred landing page after authentication if at home or login
-    if (isAuthenticated && user?.preferred_landing_page && 
-       (location.pathname === '/' || location.pathname === '/login')) {
+    // Only redirect if:
+    // 1. User is authenticated
+    // 2. Has a preferred landing page
+    // 3. Is on the login page (not homepage)
+    // 4. Hasn't been redirected before in this session
+    if (isAuthenticated && 
+        user?.preferred_landing_page && 
+        location.pathname === '/login' &&
+        !sessionStorage.getItem('hasRedirected')) {
+      sessionStorage.setItem('hasRedirected', 'true');
       navigate(user.preferred_landing_page);
     }
   }, [isAuthenticated, user, navigate, location.pathname]);
