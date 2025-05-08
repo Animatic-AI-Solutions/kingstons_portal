@@ -277,7 +277,8 @@ async def create_portfolio_from_template(data: PortfolioFromTemplate, db = Depen
         .insert({
             "portfolio_name": data.portfolio_name,
             "status": "active",
-            "start_date": str(date.today())
+            "start_date": str(date.today()),
+            "original_template_id": data.template_id
         })\
         .execute()
     
