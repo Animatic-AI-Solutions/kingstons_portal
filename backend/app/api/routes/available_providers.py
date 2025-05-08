@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional
 import logging
 
-from app.models.available_provider import AvailableProvider, AvailableProviderCreate, AvailableProviderUpdate
+from app.models.available_provider import AvailableProvider, AvailableProviderCreate, AvailableProviderUpdate, ColorOption, ProviderThemeColor
 from app.db.database import get_db
 
 # Set up logging
@@ -10,6 +10,30 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# Define a constant for all available colors at the top of the file after imports
+DEFAULT_COLORS = [
+    # Vibrant / Pure Colors
+    {'name': 'Blue', 'value': '#2563EB'},         # Bright Blue
+    {'name': 'Red', 'value': '#DC2626'},          # Pure Red
+    {'name': 'Green', 'value': '#16A34A'},        # Bright Green
+    {'name': 'Purple', 'value': '#8B5CF6'},       # Vibrant Purple
+    {'name': 'Orange', 'value': '#F97316'},       # Bright Orange
+    
+    # Light / Soft Colors
+    {'name': 'Sky Blue', 'value': '#38BDF8'},     # Light Blue
+    {'name': 'Mint', 'value': '#4ADE80'},         # Light Green
+    {'name': 'Lavender', 'value': '#C4B5FD'},     # Soft Purple
+    {'name': 'Peach', 'value': '#FDBA74'},        # Soft Orange
+    {'name': 'Rose', 'value': '#FDA4AF'},         # Soft Pink
+    
+    # Deep / Dark Colors
+    {'name': 'Navy', 'value': '#1E40AF'},         # Deep Blue
+    {'name': 'Forest', 'value': '#15803D'},       # Forest Green
+    {'name': 'Maroon', 'value': '#9F1239'},       # Deep Red
+    {'name': 'Indigo', 'value': '#4338CA'},       # Deep Purple
+    {'name': 'Slate', 'value': '#334155'},        # Dark Slate
+]
 
 @router.get("/available_providers", response_model=List[AvailableProvider])
 async def get_available_providers(
@@ -61,15 +85,24 @@ async def create_available_provider(provider: AvailableProviderCreate, db = Depe
     Why it's needed: Allows adding new available providers to the system.
     How it works:
         1. Validates the provider data using the AvailableProviderCreate model
-        2. Inserts the validated data into the 'available_providers' table
-        3. Returns the newly created provider with its generated ID
+        2. Checks if the theme color is already in use by another provider
+        3. Inserts the validated data into the 'available_providers' table
+        4. Returns the newly created provider with its generated ID
     Expected output: A JSON object containing the created provider with all fields including ID and created_at timestamp
     """
     try:
+        # Check if the color is already used by another provider
+        if provider.theme_color:
+            color_check = db.table("available_providers").select("id").eq("theme_color", provider.theme_color).execute()
+            if color_check.data and len(color_check.data) > 0:
+                raise HTTPException(status_code=400, detail=f"The selected color is already in use by another provider")
+        
         result = db.table("available_providers").insert(provider.model_dump()).execute()
         if result.data and len(result.data) > 0:
             return result.data[0]
         raise HTTPException(status_code=400, detail="Failed to create available provider")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error creating available provider: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to create available provider: {str(e)}")
@@ -105,8 +138,9 @@ async def update_available_provider(provider_id: int, provider_update: Available
         1. Validates the update data using the AvailableProviderUpdate model
         2. Removes any None values from the input (fields that aren't being updated)
         3. Verifies the provider exists
-        4. Updates only the provided fields in the database
-        5. Returns the updated provider information
+        4. If updating theme_color, checks that it's not already in use by another provider
+        5. Updates only the provided fields in the database
+        6. Returns the updated provider information
     Expected output: A JSON object containing the updated provider's details
     """
     # Remove None values from the update data
@@ -120,6 +154,15 @@ async def update_available_provider(provider_id: int, provider_update: Available
         check_result = db.table("available_providers").select("id").eq("id", provider_id).execute()
         if not check_result.data or len(check_result.data) == 0:
             raise HTTPException(status_code=404, detail=f"Available provider with ID {provider_id} not found")
+        
+        # If updating theme_color, check if it's already in use by another provider
+        if "theme_color" in update_data:
+            color_check = db.table("available_providers").select("id").eq("theme_color", update_data["theme_color"]).execute()
+            if color_check.data and len(color_check.data) > 0:
+                # Check if it's the same provider (allow updating other fields without changing color)
+                is_same_provider = any(p.get("id") == provider_id for p in color_check.data)
+                if not is_same_provider:
+                    raise HTTPException(status_code=400, detail=f"The selected color is already in use by another provider")
         
         # Update the provider
         result = db.table("available_providers").update(update_data).eq("id", provider_id).execute()
@@ -160,4 +203,142 @@ async def delete_available_provider(provider_id: int, db = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error deleting available provider: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to delete available provider: {str(e)}")
+
+@router.post("/available_providers/update-theme-colors", response_model=dict)
+async def update_provider_theme_colors(db = Depends(get_db)):
+    """
+    What it does: Updates theme colors for all providers that have null theme colors.
+    Why it's needed: Utility endpoint to initialize theme colors for providers.
+    How it works:
+        1. Fetches all providers
+        2. Assigns theme colors to those that have null theme colors
+        3. Updates the database
+    Expected output: A JSON object with a success message and the number of providers updated
+    """
+    try:
+        # Predefined colors for common providers
+        provider_colors = {
+            "Gov": "#EA580C",      # Orange
+            "AJBell": "#0369A1",   # Blue
+            "HL": "#16A34A",       # Green
+            "Fidelity": "#7C3AED", # Purple
+            "Standard Life": "#DC2626", # Red
+            "Quilter": "#B45309",  # Amber
+            "Aviva": "#D97706",    # Yellow
+            "Embark": "#BE185D",   # Pink
+            # Add more providers and their colors as needed
+        }
+        
+        # Default colors for providers not in the predefined list
+        default_colors = [
+            "#4F46E5", # Indigo
+            "#16A34A", # Green
+            "#EA580C", # Orange
+            "#DC2626", # Red
+            "#7C3AED", # Purple
+            "#0369A1", # Blue
+            "#B45309", # Amber
+            "#0D9488", # Teal
+            "#BE185D", # Pink
+            "#475569"  # Slate
+        ]
+        
+        # Fetch all providers
+        result = db.table("available_providers").select("*").execute()
+        providers = result.data
+        
+        if not providers:
+            return {"message": "No providers found in the database", "updated": 0}
+        
+        # Track the number of updates
+        updates_made = 0
+        color_index = 0
+        
+        for provider in providers:
+            # Skip providers that already have a theme color
+            if provider.get("theme_color"):
+                continue
+                
+            provider_id = provider["id"]
+            provider_name = provider["name"]
+            
+            # Use predefined color if available, otherwise use one from default list
+            if provider_name in provider_colors:
+                theme_color = provider_colors[provider_name]
+            else:
+                theme_color = default_colors[color_index % len(default_colors)]
+                color_index += 1
+            
+            # Update the provider's theme color
+            update_result = db.table("available_providers").update({"theme_color": theme_color}).eq("id", provider_id).execute()
+            
+            if update_result.data and len(update_result.data) > 0:
+                updates_made += 1
+                logger.info(f"Updated theme color for provider {provider_name} (ID: {provider_id}) to {theme_color}")
+        
+        return {
+            "message": f"Successfully updated theme colors for {updates_made} providers",
+            "updated": updates_made
+        }
+    except Exception as e:
+        logger.error(f"Error updating provider theme colors: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to update provider theme colors: {str(e)}")
+
+@router.get("/available_providers/theme-colors", response_model=List[ProviderThemeColor])
+async def get_provider_theme_colors(db = Depends(get_db)):
+    """
+    What it does: Retrieves a simplified list of providers with their ID, name, and theme color.
+    Why it's needed: Provides a lightweight endpoint to fetch just the provider colors for UI styling.
+    How it works:
+        1. Queries the 'available_providers' table for ID, name, and theme_color
+        2. Returns a simplified list for frontend use
+    Expected output: A JSON array of objects with id, name, and theme_color fields
+    """
+    try:
+        logger.info("Fetching provider theme colors")
+        query = db.table("available_providers").select("id,name,theme_color").execute()
+        
+        # Check if any providers have null theme colors and log a warning
+        providers_without_colors = [p for p in query.data if p.get("theme_color") is None]
+        if providers_without_colors:
+            provider_names = [p.get("name", f"ID: {p.get('id')}") for p in providers_without_colors]
+            logger.warning(f"Found {len(providers_without_colors)} providers without theme colors: {', '.join(provider_names)}")
+            logger.info("Consider calling /available_providers/update-theme-colors to initialize missing colors")
+        
+        return query.data
+    except Exception as e:
+        logger.error(f"Error fetching provider theme colors: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch provider theme colors: {str(e)}")
+
+@router.get("/available_providers/available-colors", response_model=List[ColorOption])
+async def get_available_colors(db = Depends(get_db)):
+    """
+    What it does: Retrieves a list of colors that are not currently used by any provider.
+    Why it's needed: Allows frontend to show only available colors when creating/editing providers.
+    How it works:
+        1. Fetches all provider theme_colors currently in use
+        2. Returns a list of available colors (those not currently in use)
+    Expected output: A JSON array of color objects with name and value properties
+    """
+    try:
+        # Get all providers that have a theme_color set
+        result = db.table("available_providers").select("theme_color").not_.is_("theme_color", "null").execute()
+        
+        # Extract used colors
+        used_colors = [provider.get("theme_color") for provider in result.data if provider.get("theme_color")]
+        logger.info(f"Found {len(used_colors)} colors already in use: {used_colors}")
+        
+        # Filter out colors that are already in use
+        available_colors = [color for color in DEFAULT_COLORS if color["value"] not in used_colors]
+        
+        # If all colors are used, return a "No colors available" message
+        if not available_colors:
+            logger.warning("All default colors are in use")
+            # Return at least one color as fallback if all are used
+            return [{'name': 'Default (All colors in use)', 'value': '#CCCCCC'}]
+            
+        return available_colors
+    except Exception as e:
+        logger.error(f"Error fetching available colors: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch available colors: {str(e)}")
 
