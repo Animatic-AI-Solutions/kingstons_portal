@@ -52,6 +52,20 @@ interface ClientAccount {
   };
 }
 
+// Add interface for ProductFund
+interface ProductFund {
+  id: number;
+  fund_name: string;
+  isin_number?: string;
+  amount_invested?: number;
+  market_value?: number;
+  investments?: number;
+  withdrawals?: number;
+  switch_in?: number;
+  switch_out?: number;
+  irr?: number;
+}
+
 // Extracted component for client header
 const ClientHeader = ({ 
   client, 
@@ -159,22 +173,20 @@ const ClientHeader = ({
   );
 };
 
-// Formatting functions
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: 'GBP',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
-
-  const formatPercentage = (value: number): string => {
-    return `${(value).toFixed(2)}%`;
-  };
-
 // Product Card Component
-const ProductCard: React.FC<{ account: ClientAccount }> = ({ account }) => {
+const ProductCard: React.FC<{ 
+  account: ClientAccount;
+  isExpanded: boolean;
+  onToggleExpand: () => void; 
+  funds: ProductFund[];
+  isLoadingFunds: boolean;
+}> = ({ 
+  account, 
+  isExpanded, 
+  onToggleExpand, 
+  funds, 
+  isLoadingFunds 
+}) => {
   // Use the provider color service instead of direct fallback
   const themeColor = getProviderColor(
     account.provider_id, 
@@ -220,14 +232,31 @@ const ProductCard: React.FC<{ account: ClientAccount }> = ({ account }) => {
     }
   }), [themeColor]);
 
+  // Format number as currency
+  const formatCurrency = (amount: number): string => {
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: 'GBP',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  };
+
+  // Format percentage with 2 decimal places
+  const formatPercentage = (value: number): string => {
+    return `${(value).toFixed(2)}%`;
+  };
+
   return (
-    <Link 
-      to={`/accounts/${account.id}`} 
+    <div 
       className="block bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
       style={styles.cardStyle}
     >
       {/* Main Content */}
-      <div className="p-4">
+      <Link 
+        to={`/products/${account.id}/overview`} 
+        className="block p-4"
+      >
         <div className="flex items-center justify-between" style={styles.headerStyle}>
           {/* Left side - Product Info */}
           <div>
@@ -282,7 +311,7 @@ const ProductCard: React.FC<{ account: ClientAccount }> = ({ account }) => {
         <div className="mt-3 flex justify-between items-center">
           <div className="flex items-center">
             {account.risk_rating && (
-              <div className="flex items-center">
+              <div className="flex items-center mr-3">
                 <span className="text-sm font-medium text-gray-900 mr-2">
                   Risk: {account.risk_rating}
                 </span>
@@ -297,8 +326,40 @@ const ProductCard: React.FC<{ account: ClientAccount }> = ({ account }) => {
                 </div>
               </div>
             )}
+            
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggleExpand();
+              }}
+              className="inline-flex items-center text-xs font-medium text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200"
+            >
+              {isExpanded ? (
+                <>
+                  <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                  </svg>
+                  Hide Details
+                </>
+              ) : (
+                <>
+                  <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                  Show Details
+                </>
+              )}
+            </button>
           </div>
           <div className="flex items-center">
+            <Link
+              to={`/products/${account.id}/irr-calculation`}
+              className="inline-flex items-center mr-3 px-2 py-0.5 text-xs font-medium text-white bg-primary-700 rounded-lg shadow-sm hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-700 transition-all duration-200"
+              style={{ backgroundColor: themeColor }}
+            >
+              Complete IRR
+            </Link>
             <span 
               className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
               style={{ 
@@ -317,8 +378,78 @@ const ProductCard: React.FC<{ account: ClientAccount }> = ({ account }) => {
             </span>
           </div>
         </div>
-      </div>
-    </Link>
+      </Link>
+      
+      {/* Expandable Fund Table */}
+      {isExpanded && (
+        <div className="px-4 pb-4">
+          {isLoadingFunds ? (
+            <div className="py-4 text-center text-sm text-gray-500">
+              Loading fund details...
+            </div>
+          ) : funds.length === 0 ? (
+            <div className="py-4 text-center text-sm text-gray-500">
+              No fund details available for this product.
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-gray-200 mt-2">
+              <table className="min-w-full divide-y divide-gray-200 text-xs">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fund</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Investments</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Withdrawals</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Switch In</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Switch Out</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Product Switch</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Current Valuation</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Most Recent IRR</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {funds.map((fund) => (
+                    <tr key={fund.id} className="hover:bg-gray-50">
+                      <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-gray-900">{fund.fund_name}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(fund.investments || 0)}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(fund.withdrawals || 0)}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(fund.switch_in || 0)}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(fund.switch_out || 0)}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">-</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(fund.market_value || 0)}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">
+                        {fund.irr !== undefined ? formatPercentage(fund.irr) : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                  
+                  {/* Totals row */}
+                  <tr className="bg-gray-50 font-medium">
+                    <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-gray-900">TOTAL</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
+                      {formatCurrency(funds.reduce((sum, fund) => sum + (fund.investments || 0), 0))}
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
+                      {formatCurrency(funds.reduce((sum, fund) => sum + (fund.withdrawals || 0), 0))}
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
+                      {formatCurrency(funds.reduce((sum, fund) => sum + (fund.switch_in || 0), 0))}
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
+                      {formatCurrency(funds.reduce((sum, fund) => sum + (fund.switch_out || 0), 0))}
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">-</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
+                      {formatCurrency(funds.reduce((sum, fund) => sum + (fund.market_value || 0), 0))}
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">-</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -341,6 +472,149 @@ const ClientDetails: React.FC = () => {
     status: 'active',
     advisor: null
   });
+  
+  // State for expanded product cards
+  const [expandedProducts, setExpandedProducts] = useState<number[]>([]);
+  const [expandedProductFunds, setExpandedProductFunds] = useState<Record<number, ProductFund[]>>({});
+  const [isLoadingFunds, setIsLoadingFunds] = useState<Record<number, boolean>>({});
+
+  // Toggle expanded state for a product
+  const toggleProductExpand = async (accountId: number) => {
+    if (expandedProducts.includes(accountId)) {
+      // Collapse the product
+      setExpandedProducts(expandedProducts.filter(id => id !== accountId));
+    } else {
+      // Expand the product and load its funds
+      setExpandedProducts([...expandedProducts, accountId]);
+      
+      // If we haven't already loaded this product's fund data
+      if (!expandedProductFunds[accountId]) {
+        await fetchProductFunds(accountId);
+      }
+    }
+  };
+
+  // Fetch fund details and activities for a product
+  const fetchProductFunds = async (accountId: number) => {
+    try {
+      // Mark as loading
+      setIsLoadingFunds(prev => ({ ...prev, [accountId]: true }));
+      
+      // Get the account
+      const account = clientAccounts.find(acc => acc.id === accountId);
+      if (!account || !account.portfolio_id) {
+        console.error(`No portfolio ID found for account ${accountId}`);
+        setExpandedProductFunds(prev => ({ ...prev, [accountId]: [] }));
+        setIsLoadingFunds(prev => ({ ...prev, [accountId]: false }));
+        return;
+      }
+      
+      // Get the portfolio funds
+      const [portfolioFundsResponse, fundsResponse] = await Promise.all([
+        api.get(`/portfolio_funds?portfolio_id=${account.portfolio_id}`),
+        api.get('/funds')
+      ]);
+      
+      // Create a map of funds for quick lookups
+      interface Fund {
+        id: number;
+        fund_name: string;
+        isin_number: string;
+        [key: string]: any;
+      }
+      
+      const fundsMap = new Map<number, Fund>(
+        fundsResponse.data.map((fund: Fund) => [fund.id, fund])
+      );
+      
+      // Get fund details with portfolio info
+      const portfolioFunds = portfolioFundsResponse.data;
+      
+      // For each fund, get its activities
+      const fundsWithActivities = await Promise.all(
+        portfolioFunds.map(async (pf: any) => {
+          // Get all activity logs for this fund - no date restrictions for all-time data
+          const activitiesResponse = await api.get('/holding_activity_logs', {
+            params: { portfolio_fund_id: pf.id }
+          });
+          
+          const activities = activitiesResponse.data || [];
+          
+          // Calculate activity totals by type
+          const investments = activities
+            .filter((activity: any) => 
+              activity.activity_type === 'Investment' || 
+              activity.activity_type === 'RegularInvestment' || 
+              activity.activity_type === 'GovernmentUplift')
+            .reduce((sum: number, activity: any) => sum + Math.abs(activity.amount), 0);
+            
+          const withdrawals = activities
+            .filter((activity: any) => activity.activity_type === 'Withdrawal')
+            .reduce((sum: number, activity: any) => sum + Math.abs(activity.amount), 0);
+            
+          const switchIn = activities
+            .filter((activity: any) => activity.activity_type === 'SwitchIn')
+            .reduce((sum: number, activity: any) => sum + Math.abs(activity.amount), 0);
+            
+          const switchOut = activities
+            .filter((activity: any) => activity.activity_type === 'SwitchOut')
+            .reduce((sum: number, activity: any) => sum + Math.abs(activity.amount), 0);
+            
+          // Try to get latest IRR
+          let irrValue;
+          try {
+            const irrResponse = await api.get(`/portfolio_funds/${pf.id}/latest-irr`);
+            irrValue = irrResponse.data?.irr;
+          } catch (err) {
+            console.warn(`Failed to fetch IRR for fund ${pf.id}`, err);
+          }
+          
+          // Get fund details
+          const fund = fundsMap.get(pf.available_funds_id);
+          
+          return {
+            id: pf.id,
+            fund_name: fund?.fund_name || 'Unknown Fund',
+            isin_number: fund?.isin_number || 'N/A',
+            amount_invested: pf.amount_invested || 0,
+            market_value: pf.market_value || 0,
+            investments,
+            withdrawals,
+            switch_in: switchIn,
+            switch_out: switchOut,
+            irr: irrValue
+          };
+        })
+      );
+      
+      // Store the funds data
+      setExpandedProductFunds(prev => ({ ...prev, [accountId]: fundsWithActivities }));
+    } catch (err) {
+      console.error(`Error fetching fund details for account ${accountId}:`, err);
+      setExpandedProductFunds(prev => ({ ...prev, [accountId]: [] }));
+    } finally {
+      setIsLoadingFunds(prev => ({ ...prev, [accountId]: false }));
+    }
+  };
+  
+  // Set all products to be expanded when clientAccounts are updated
+  useEffect(() => {
+    if (clientAccounts.length > 0) {
+      // Get all account IDs
+      const allAccountIds = clientAccounts.map(account => account.id);
+      
+      // Set expanded products state
+      setExpandedProducts(allAccountIds);
+      
+      // Load fund data for any cards that don't have it yet
+      allAccountIds.forEach(accountId => {
+        if (!expandedProductFunds[accountId]) {
+          fetchProductFunds(accountId);
+        }
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientAccounts, expandedProductFunds]);
 
   // Calculate totals with memoization for performance
   const { totalFundsUnderManagement, totalIRR } = useMemo(() => {
@@ -365,46 +639,6 @@ const ClientDetails: React.FC = () => {
       totalIRR: avgIRR
     };
   }, [clientAccounts]);
-
-  // Add a direct check for provider theme colors
-  useEffect(() => {
-    // Direct check of provider colors via API
-    const checkProviderColors = async () => {
-      try {
-        console.log("Performing direct provider theme color check...");
-        const providersResponse = await api.get('/available_providers');
-        console.log("All providers with theme colors:", providersResponse.data);
-        
-        if (clientAccounts.length > 0) {
-          // Check for any providers with null theme colors
-          const providersWithNullColors = providersResponse.data.filter(
-            (p: any) => p.theme_color === null
-          );
-          console.log("Providers with null theme colors:", providersWithNullColors);
-          
-          // Check if provider IDs in client accounts match the stored data
-          clientAccounts.forEach(account => {
-            const matchingProvider = providersResponse.data.find(
-              (p: any) => p.id === account.provider_id
-            );
-            console.log(`Provider check for ${account.product_name}:`, {
-              provider_id: account.provider_id,
-              matched_provider: matchingProvider,
-              theme_color_in_provider: matchingProvider?.theme_color,
-              theme_color_in_account: account.provider_theme_color,
-              is_theme_color_missing: account.provider_theme_color !== matchingProvider?.theme_color
-            });
-          });
-        }
-      } catch (err) {
-        console.error("Error checking provider colors:", err);
-      }
-    };
-    
-    if (clientAccounts.length > 0) {
-      checkProviderColors();
-    }
-  }, [clientAccounts, api]);
 
   // Data fetching with error retry
   useEffect(() => {
@@ -728,7 +962,7 @@ const ClientDetails: React.FC = () => {
           </div>
         )}
 
-        {/* Products Section */}
+        {/* Client Products Section */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-normal text-gray-900 font-sans tracking-wide">Client Products</h2>
@@ -744,27 +978,38 @@ const ClientDetails: React.FC = () => {
             </Link>
           </div>
           
-          {clientAccounts.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {clientAccounts.map(account => (
-                <ProductCard key={account.id} account={account} />
-              ))}
-            </div>
-          ) : (
-            <div className="bg-gray-50 p-6 rounded-lg text-center border border-gray-200">
-              <div className="text-gray-500 mb-4">No products found for this client.</div>
-              <div className="flex justify-center">
-                <Link 
-                  to={`/create-client-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.forname} ${client?.surname}`)}`}
-                  className="inline-flex items-center px-4 py-1.5 text-sm font-medium text-white bg-primary-700 rounded-xl shadow-sm hover:bg-primary-800 transition-colors duration-200"
-                >
-                  <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  Add First Product
-                </Link>
+          {!isLoading ? (
+            clientAccounts.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4">
+                {clientAccounts.map(account => (
+                  <ProductCard 
+                    key={account.id} 
+                    account={account} 
+                    isExpanded={expandedProducts.includes(account.id)}
+                    onToggleExpand={() => toggleProductExpand(account.id)}
+                    funds={expandedProductFunds[account.id] || []}
+                    isLoadingFunds={isLoadingFunds[account.id] || false}
+                  />
+                ))}
               </div>
-            </div>
+            ) : (
+              <div className="bg-gray-50 p-6 rounded-lg text-center border border-gray-200">
+                <div className="text-gray-500 mb-4">No products found for this client.</div>
+                <div className="flex justify-center">
+                  <Link 
+                    to={`/create-client-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.forname} ${client?.surname}`)}`}
+                    className="inline-flex items-center px-4 py-1.5 text-sm font-medium text-white bg-primary-700 rounded-xl shadow-sm hover:bg-primary-800 transition-colors duration-200"
+                  >
+                    <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Add First Product
+                  </Link>
+                </div>
+              </div>
+            )
+          ) : (
+            <div className="text-gray-500 p-6 text-center">Loading client products...</div>
           )}
         </div>
         
