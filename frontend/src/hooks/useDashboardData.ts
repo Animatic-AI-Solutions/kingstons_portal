@@ -17,6 +17,20 @@ export interface Fund {
   category?: string;
 }
 
+// Define type for API response data
+interface PerformanceDataItem {
+  id: number;
+  name: string;
+  type: string;
+  irr: number;
+  fum: number;
+  startDate: string | null;
+}
+
+interface FundDistributionResponse {
+  funds: Fund[];
+}
+
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 export const useDashboardData = () => {
@@ -26,18 +40,6 @@ export const useDashboardData = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
   const [lastFetched, setLastFetched] = useState<number>(0);
-
-  // Mock fund data for demonstration
-  const mockFunds: Fund[] = [
-    { id: '1', name: 'Global Equity Fund', amount: 12500000, category: 'equity' },
-    { id: '2', name: 'UK Bond Fund', amount: 8200000, category: 'bond' },
-    { id: '3', name: 'Emerging Markets', amount: 4500000, category: 'equity' },
-    { id: '4', name: 'Property Fund', amount: 3100000, category: 'property' },
-    { id: '5', name: 'Cash Fund', amount: 1800000, category: 'cash' },
-    { id: '6', name: 'Alternative Assets', amount: 900000, category: 'alternative' },
-    { id: '7', name: 'Tech Growth Fund', amount: 450000, category: 'equity' },
-    { id: '8', name: 'Infrastructure Fund', amount: 350000, category: 'alternative' },
-  ];
 
   const fetchData = useCallback(async (forceRefresh = false) => {
     const now = Date.now();
@@ -56,20 +58,26 @@ export const useDashboardData = () => {
       setLoading(true);
       
       // Fetch dashboard stats
-      const response = await api.get('/analytics/dashboard_stats');
+      const dashboardResponse = await api.get('/analytics/dashboard_stats');
       
       // Set metrics from response data, with fallbacks for missing values
       setMetrics({
-        totalFUM: response.data?.totalFUM || 0,
-        companyIRR: response.data?.companyIRR || 0,
-        totalClients: response.data?.totalClients || 0,
-        totalAccounts: response.data?.totalAccounts || 0,
-        totalActiveHoldings: response.data?.totalActiveHoldings || 0
+        totalFUM: dashboardResponse.data?.totalFUM || 0,
+        companyIRR: dashboardResponse.data?.companyIRR || 0,
+        totalClients: dashboardResponse.data?.totalClients || 0,
+        totalAccounts: dashboardResponse.data?.totalAccounts || 0,
+        totalActiveHoldings: dashboardResponse.data?.totalActiveHoldings || 0
       });
       
-      // In a real implementation, we would fetch fund data from the API
-      // For now, use mock data
-      setFunds(mockFunds);
+      // Fetch fund distribution data from the dedicated endpoint
+      const fundsResponse = await api.get<FundDistributionResponse>('/analytics/fund_distribution');
+      
+      // Use the funds data directly from the response
+      if (fundsResponse.data?.funds) {
+        setFunds(fundsResponse.data.funds);
+      } else {
+        setFunds([]);
+      }
       
       // Update last fetched timestamp
       setLastFetched(now);

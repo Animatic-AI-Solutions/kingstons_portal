@@ -4,7 +4,7 @@ import ChangeIndicator from './ChangeIndicator';
 interface StatBoxProps {
   title: string;
   value: number | string;
-  changePercentage: number;
+  changePercentage: number | null;
   timeframe?: string;
   format?: 'currency' | 'percentage' | 'number';
   icon?: React.ReactNode;
@@ -116,11 +116,16 @@ const StatBox: React.FC<StatBoxProps> = ({
           )}
           <div>
             <p className="text-4xl font-bold text-gray-800">{formattedValue}</p>
-            <ChangeIndicator 
-              value={changePercentage} 
-              timeframe={timeframe}
-              className="mt-2" 
-            />
+            {changePercentage !== null && (
+              <ChangeIndicator 
+                value={changePercentage} 
+                timeframe={timeframe}
+                className="mt-2" 
+              />
+            )}
+            {changePercentage === null && timeframe && (
+              <p className="text-sm text-gray-500 mt-2">{timeframe}</p>
+            )}
           </div>
         </div>
       </div>

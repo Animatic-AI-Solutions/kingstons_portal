@@ -81,8 +81,8 @@ const Home: React.FC = () => {
                 title="Total Funds Under Management"
                 value={metrics?.totalFUM || 0}
                 format="currency"
-                changePercentage={12.5}
-                timeframe="since start of business year"
+                changePercentage={null}
+                timeframe="current value"
                 icon={<CurrencyIcon />}
                 colorScheme="primary"
               />
@@ -92,8 +92,8 @@ const Home: React.FC = () => {
                 title="Company IRR"
                 value={metrics?.companyIRR || 0}
                 format="percentage"
-                changePercentage={0.4}
-                timeframe="since start of business year"
+                changePercentage={null}
+                timeframe="current value"
                 icon={<ChartIcon />}
                 colorScheme="secondary"
               />
@@ -103,8 +103,8 @@ const Home: React.FC = () => {
                 title="Total Clients"
                 value={metrics?.totalClients || 0}
                 format="number"
-                changePercentage={2.0}
-                timeframe="since start of business year"
+                changePercentage={null}
+                timeframe="current count"
                 icon={<ClientsIcon />}
                 colorScheme="success"
               />
@@ -114,8 +114,8 @@ const Home: React.FC = () => {
                 title="Total Accounts"
                 value={metrics?.totalAccounts || 0}
                 format="number"
-                changePercentage={5.0}
-                timeframe="since start of business year"
+                changePercentage={null}
+                timeframe="current count"
                 icon={<AccountsIcon />}
                 colorScheme="warning"
               />
