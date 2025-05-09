@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -65,6 +65,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   const [fundsData, setFundsData] = useState<Map<number, any>>(new Map());
   const [lastValuationDate, setLastValuationDate] = useState<string | null>(null);
   const [targetRisk, setTargetRisk] = useState<number | null>(null);
+  const [displayedTargetRisk, setDisplayedTargetRisk] = useState<string>("N/A");
 
   useEffect(() => {
     if (accountId) {
@@ -74,6 +75,15 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       console.error('ProductOverview: No accountId available for data fetching');
     }
   }, [accountId, api]);
+
+  // Call the async function to calculate target risk and update state
+  useEffect(() => {
+    if (account) {
+      calculateTargetRisk().then(risk => {
+        setDisplayedTargetRisk(risk);
+      });
+    }
+  }, [account, api]);
 
   const fetchData = async (accountId: string) => {
     try {
@@ -401,25 +411,165 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   };
 
   // Calculate target risk based on the original portfolio template
-  const calculateTargetRisk = (): string => {
+  const calculateTargetRisk = async (): Promise<string> => {
     if (!account) return "N/A";
     
-    // First check if we've fetched a target risk
+    // First check if we've already fetched a target risk
     if (targetRisk !== null) {
       return targetRisk.toString();
     }
     
-    // Fall back to account's target_risk if available
-    if (account.target_risk !== undefined) {
+    // If account has target_risk already set, use that
+    if (account.target_risk !== undefined && account.target_risk !== null) {
       return account.target_risk.toString();
     }
     
-    return "N/A"; // No target risk available
+    // If we have a template ID, fetch the template and calculate the weighted risk
+    if (account.original_template_id) {
+      try {
+        // Get the template details directly - it often already has the funds in the response
+        const templateResponse = await api.get(`/available_portfolios/${account.original_template_id}`);
+        const templateData = templateResponse.data || {};
+        
+        // Check if there are funds in the template response
+        if (templateData.funds && templateData.funds.length > 0) {
+          let totalWeight = 0;
+          let weightedRiskSum = 0;
+          let validFundsCount = 0;
+          
+          // Calculate weighted average of risk factors
+          for (const fund of templateData.funds) {
+            // The risk factor may already be in the fund data via the available_funds nested object
+            if (fund.available_funds && 
+                fund.available_funds.risk_factor !== undefined && 
+                fund.available_funds.risk_factor !== null) {
+              
+              const risk = fund.available_funds.risk_factor;
+              const weight = fund.target_weighting || 0;
+              
+              weightedRiskSum += risk * weight;
+              totalWeight += weight;
+              validFundsCount++;
+              console.log(`Fund ${fund.available_funds.fund_name}: risk=${risk}, weight=${weight}`);
+            }
+          }
+          
+          // If we found valid funds with risk factors, calculate the weighted average
+          if (validFundsCount > 0 && totalWeight > 0) {
+            const calculatedRisk = weightedRiskSum / totalWeight;
+            
+            // Cache the calculated risk
+            setTargetRisk(calculatedRisk);
+            
+            // Also update the account object
+            setAccount(prev => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                target_risk: calculatedRisk
+              };
+            });
+            
+            console.log(`Calculated target risk: ${calculatedRisk.toFixed(1)} from ${validFundsCount} funds`);
+            return calculatedRisk.toFixed(1);
+          }
+        } else {
+          console.warn("No funds found in template response, trying alternative endpoint");
+          
+          // Alternatively, try to get the funds through the specific endpoint
+          try {
+            // We need to use the by-fund endpoint to avoid validation issues
+            const fundsInTemplateResponse = await api.get(`/available_portfolios/${account.original_template_id}/funds`);
+            const templateFunds = fundsInTemplateResponse.data || [];
+            
+            if (templateFunds.length === 0) {
+              console.warn("No funds found in template");
+              return "N/A";
+            }
+            
+            let totalWeight = 0;
+            let weightedRiskSum = 0;
+            let validFundsCount = 0;
+            
+            // Calculate weighted average of risk factors
+            for (const fund of templateFunds) {
+              // We may need to fetch the fund details if not already included
+              if (fund.fund_id) {
+                const fundResponse = await api.get(`/funds/${fund.fund_id}`);
+                const fundData = fundResponse.data;
+                
+                if (fundData && fundData.risk_factor !== null && fundData.risk_factor !== undefined) {
+                  const weight = fund.target_weighting || 0;
+                  weightedRiskSum += fundData.risk_factor * weight;
+                  totalWeight += weight;
+                  validFundsCount++;
+                  console.log(`Fund ${fundData.fund_name}: risk=${fundData.risk_factor}, weight=${weight}`);
+                }
+              }
+            }
+            
+            // If we found valid funds with risk factors, calculate the weighted average
+            if (validFundsCount > 0 && totalWeight > 0) {
+              const calculatedRisk = weightedRiskSum / totalWeight;
+              
+              // Cache the calculated risk
+              setTargetRisk(calculatedRisk);
+              
+              // Also update the account object
+              setAccount(prev => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  target_risk: calculatedRisk
+                };
+              });
+              
+              console.log(`Calculated target risk: ${calculatedRisk.toFixed(1)} from ${validFundsCount} funds (alt method)`);
+              return calculatedRisk.toFixed(1);
+            }
+          } catch (innerErr) {
+            console.error("Error fetching template funds via alternative endpoint:", innerErr);
+          }
+        }
+      } catch (err) {
+        console.error("Error calculating target risk:", err);
+      }
+    }
+    
+    return "N/A";
+  };
+
+  // Check if all holdings have the same valuation date
+  const findCommonValuationDate = (holdings: Holding[]): string | null => {
+    // Filter out holdings without valuation dates
+    const holdingsWithDates = holdings.filter(h => h.valuation_date !== undefined && h.valuation_date !== null);
+    if (holdingsWithDates.length === 0) return null;
+    
+    // Get all unique dates - using type assertion since we've filtered out undefined values
+    const uniqueDates = [...new Set(holdingsWithDates.map(h => h.valuation_date as string))];
+    
+    // If all have the same date, return it
+    if (uniqueDates.length === 1) {
+      return uniqueDates[0];
+    }
+    
+    // Otherwise, find the most recent date that all funds share
+    // (This would be more complex and require checking date ranges - for now
+    // we'll just log the issue and use the current valuation approach)
+    if (uniqueDates.length > 1) {
+      console.log('Multiple valuation dates found across holdings:', uniqueDates);
+    }
+    
+    return null;
   };
 
   // Calculate live risk as weighted average of fund risk factors based on valuations
   const calculateLiveRisk = (): string => {
     if (holdings.length === 0) return "N/A";
+    
+    // Check if all valuations are from the same date
+    const commonDate = findCommonValuationDate(holdings);
+    console.log('Common valuation date for risk calculation:', commonDate);
     
     let totalValue = 0;
     let weightedRiskSum = 0;
@@ -430,45 +580,51 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       holdings.map(h => ({
         fund_name: h.fund_name,
         market_value: h.market_value,
-        fund_id: h.fund_id
+        fund_id: h.fund_id,
+        valuation_date: h.valuation_date
       }))
     );
     
-    for (const holding of holdings) {
+    // First, calculate total portfolio value from valid holdings
+    const holdingsToUse = holdings.filter(h => 
+      h.fund_id && 
+      h.market_value !== undefined && 
+      h.market_value !== null && 
+      // If we have a common date, only use holdings with that date
+      (!commonDate || (h.valuation_date !== undefined && h.valuation_date !== null && h.valuation_date === commonDate))
+    );
+    
+    if (holdingsToUse.length === 0) {
+      console.log('No valid holdings found for risk calculation');
+      return "N/A";
+    }
+    
+    // Calculate total value
+    totalValue = holdingsToUse.reduce((sum, h) => sum + h.market_value, 0);
+    
+    // Now calculate weighted risk
+    for (const holding of holdingsToUse) {
       const fundId = holding.fund_id;
+      const value = holding.market_value;
+      const fund = Array.from(fundsData.values()).find(f => f.id === fundId);
       
-      // Consider valuations of zero, but not undefined/null
-      if (fundId && holding.market_value !== undefined && holding.market_value !== null) {
-        const value = holding.market_value;
-        const fund = Array.from(fundsData.values()).find(f => f.id === fundId);
+      if (fund && fund.risk_factor !== undefined && fund.risk_factor !== null) {
+        weightedRiskSum += fund.risk_factor * value;
+        fundsWithValidValuations++;
         
-        if (fund && fund.risk_factor !== undefined && fund.risk_factor !== null) {
-          totalValue += value;
-          weightedRiskSum += fund.risk_factor * value;
-          fundsWithValidValuations++;
-          
-          console.log('DEBUG - Risk calculation for fund:', {
-            fund_name: fund.fund_name,
-            fund_id: fundId,
-            risk_factor: fund.risk_factor,
-            value: value,
-            contribution: fund.risk_factor * value,
-            included: true
-          });
-        }
-      } else {
-        console.log('DEBUG - Skipping fund in risk calculation:', {
-          fund_name: holding.fund_name,
+        console.log('DEBUG - Risk calculation for fund:', {
+          fund_name: fund.fund_name,
           fund_id: fundId,
-          market_value: holding.market_value,
-          included: false,
-          reason: holding.market_value === undefined || holding.market_value === null ? 
-            'No valuation available' : 'No fund ID or risk factor'
+          risk_factor: fund.risk_factor,
+          value: value,
+          contribution: fund.risk_factor * value,
+          included: true,
+          valuation_date: holding.valuation_date
         });
       }
     }
     
-    // If no funds have valid valuations, return N/A
+    // If no funds have valid risk factors, return N/A
     if (fundsWithValidValuations === 0) return "N/A";
     
     // Calculate weighted average and round to 1 decimal place
@@ -477,11 +633,58 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       totalValue,
       weightedRiskSum,
       weightedAverage,
-      fundsWithValidValuations
+      fundsWithValidValuations,
+      commonDate
     });
     
     return weightedAverage.toFixed(1);
   };
+
+  // Calculate live weightings based on current market values
+  const calculateLiveWeightings = (holdings: Holding[]): Map<number, number> => {
+    const weightings = new Map<number, number>();
+    
+    // First check if all holdings have market values
+    const hasAllMarketValues = holdings.every(h => 
+      h.market_value !== undefined && h.market_value !== null
+    );
+    
+    if (hasAllMarketValues) {
+      // Calculate total portfolio value
+      const totalValue = holdings.reduce((sum, h) => sum + h.market_value, 0);
+      
+      // Calculate each fund's proportion of the total
+      holdings.forEach(holding => {
+        const weighting = totalValue > 0 ? (holding.market_value / totalValue) * 100 : 0;
+        weightings.set(holding.id, weighting);
+      });
+      
+      console.log('Calculated live weightings based on market values:', 
+        Object.fromEntries([...weightings.entries()].map(([id, weight]) => {
+          const fund = holdings.find(h => h.id === id);
+          return [fund?.fund_name || id, weight];
+        }))
+      );
+    } else {
+      // Fall back to stored target weightings
+      console.log('Some funds missing market values, using stored target weightings');
+      holdings.forEach(holding => {
+        if (holding.target_weighting !== undefined && holding.target_weighting !== null) {
+          const weight = typeof holding.target_weighting === 'string' 
+            ? parseFloat(holding.target_weighting) 
+            : holding.target_weighting;
+          weightings.set(holding.id, weight);
+        } else {
+          weightings.set(holding.id, 0);
+        }
+      });
+    }
+    
+    return weightings;
+  };
+  
+  // Memoize the weightings calculation
+  const liveWeightings = useMemo(() => calculateLiveWeightings(holdings), [holdings]);
 
   // Add function to handle account deletion
   const handleDeleteProduct = async () => {
@@ -651,14 +854,14 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                 <div>
                   <span className="text-gray-600 font-medium">Target Risk:</span>{" "}
                   <span className="text-gray-900 font-semibold">
-                    {calculateTargetRisk()}
+                    {displayedTargetRisk}
                   </span>
-                  {calculateTargetRisk() !== "N/A" && (
+                  {displayedTargetRisk !== "N/A" && (
                     <div className="mt-1 bg-gray-200 h-2 w-full rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-blue-600" 
                         style={{ 
-                          width: `${Math.min(100, (Number(calculateTargetRisk()) / 10) * 100)}%` 
+                          width: `${Math.min(100, (Number(displayedTargetRisk) / 10) * 100)}%` 
                         }}
                       ></div>
                     </div>
@@ -680,8 +883,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                     </div>
                   )}
                 </div>
-                {calculateLiveRisk() !== "N/A" && calculateTargetRisk() !== "N/A" && 
-                  Number(calculateLiveRisk()) !== Number(calculateTargetRisk()) && (
+                {calculateLiveRisk() !== "N/A" && displayedTargetRisk !== "N/A" && 
+                  Number(calculateLiveRisk()) !== Number(displayedTargetRisk) && (
                   <div className="mt-2 text-amber-600 text-sm font-medium flex items-center">
                     <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -732,8 +935,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           : 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {holding.target_weighting !== null && holding.target_weighting !== undefined
-                          ? `${parseFloat(holding.target_weighting.toString()).toFixed(1)}%` 
+                        {liveWeightings.has(holding.id)
+                          ? `${liveWeightings.get(holding.id)?.toFixed(1)}%` 
                           : 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">{getFundRiskRating(holding.fund_id || 0, fundsData)}</td>

@@ -855,15 +855,20 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                 return (a.fund_name || '').localeCompare(b.fund_name || '');
               });
               
+              // Filter activities by year
+              const yearFilteredActivities = filterActivitiesByYear(activityLogs, selectedYear);
+              
               return (
-                <EditableMonthlyActivitiesTable 
-                  funds={tableFunds}
-                  activities={convertActivityLogs(activityLogs)}
-                  accountHoldingId={accountId ? parseInt(accountId) : 0}
-                  onActivitiesUpdated={refreshData}
-                  selectedYear={selectedYear}
-                  allFunds={allFunds} // Pass all funds from the API instead of just holdings
-                />
+                <div className="overflow-x-auto">
+                  <EditableMonthlyActivitiesTable 
+                    funds={tableFunds}
+                    activities={convertActivityLogs(yearFilteredActivities)}
+                    accountHoldingId={accountId ? parseInt(accountId) : 0}
+                    onActivitiesUpdated={refreshData}
+                    selectedYear={selectedYear}
+                    allFunds={allFunds} // Pass all funds from the API instead of just holdings
+                  />
+                </div>
               );
             })()}
           </div>
