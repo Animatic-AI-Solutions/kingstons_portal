@@ -598,6 +598,11 @@ async def calculate_portfolio_fund_irr(
                     
                     logger.info(f"Calculated simple return: {simple_return} ({irr_percentage}%)")
                     
+                    # Validate IRR value against database constraints
+                    if abs(irr_percentage) > 99999.99:
+                        logger.warning(f"IRR value {irr_percentage} exceeds database limits, capping to 99999.99")
+                        irr_percentage = 99999.99 if irr_percentage > 0 else -99999.99
+                    
                     # Store the IRR value using the correct valuation date
                     irr_value_data = {
                         "fund_id": portfolio_fund_id,
@@ -713,11 +718,15 @@ async def calculate_portfolio_fund_irr(
         
         # Ensure we're storing as a float, not an integer
         irr_value_data = {
-
             "irr_result": float(irr_percentage),  # Explicitly cast to float to ensure proper storage
             "fund_valuation_id": fund_valuation_id  # Add the fund_valuation_id reference
-
         }
+        
+        # Validate IRR value against database constraints (numeric(7,2) allows max 99999.99)
+        if abs(irr_value_data["irr_result"]) > 99999.99:
+            logger.warning(f"IRR value {irr_value_data['irr_result']} exceeds database limits, capping to 99999.99")
+            irr_value_data["irr_result"] = 99999.99 if irr_value_data["irr_result"] > 0 else -99999.99
+        
         logger.info(f"IRR data to be saved: {irr_value_data} (value type: {type(irr_value_data['irr_result']).__name__})")
         
         irr_value_id = None
@@ -1181,6 +1190,11 @@ def calculate_portfolio_fund_irr_sync(
                     
                     logger.info(f"Calculated simple return: {simple_return} ({irr_percentage}%)")
                     
+                    # Validate IRR value against database constraints
+                    if abs(irr_percentage) > 99999.99:
+                        logger.warning(f"IRR value {irr_percentage} exceeds database limits, capping to 99999.99")
+                        irr_percentage = 99999.99 if irr_percentage > 0 else -99999.99
+                    
                     # Store the IRR value using the correct valuation date
                     irr_value_data = {
                         "fund_id": portfolio_fund_id,
@@ -1312,6 +1326,11 @@ def calculate_portfolio_fund_irr_sync(
                 "fund_valuation_id": fund_valuation_id  # Add the fund_valuation_id reference
             }
             
+            # Validate IRR value against database constraints (numeric(7,2) allows max 99999.99)
+            if abs(irr_value_data["irr_result"]) > 99999.99:
+                logger.warning(f"IRR value {irr_value_data['irr_result']} exceeds database limits, capping to 99999.99")
+                irr_value_data["irr_result"] = 99999.99 if irr_value_data["irr_result"] > 0 else -99999.99
+            
             if existing_irr.data and len(existing_irr.data) > 0:
                 # Update the existing IRR value
                 oldest_record = existing_irr.data[0]
@@ -1328,7 +1347,7 @@ def calculate_portfolio_fund_irr_sync(
                 # No existing record, insert a new one
                 full_irr_data = {
                     "fund_id": portfolio_fund_id,
-                    "irr_result": float(irr_percentage),  # Explicitly cast to float
+                    "irr_result": irr_value_data["irr_result"],  # Use the possibly capped value
                     "date": valuation_date.isoformat(),
                     "fund_valuation_id": fund_valuation_id  # Add the fund_valuation_id reference
                 }

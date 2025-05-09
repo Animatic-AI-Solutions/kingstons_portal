@@ -266,7 +266,7 @@ async def recalculate_product_weightings(client_id: int, db) -> None:
     try:
         # Get all active products for the client
         products = db.table("client_products")\
-            .select("id")\
+            .select("id", "portfolio_id")\
             .eq("client_id", client_id)\
             .eq("status", "active")\
             .execute()
@@ -278,18 +278,13 @@ async def recalculate_product_weightings(client_id: int, db) -> None:
         
         # Calculate total value for each product
         for product in products.data:
-            # Get the active holding for this product
-            holding = db.table("product_holdings")\
-                .select("portfolio_id")\
-                .eq("client_product_id", product["id"])\
-                .eq("status", "active")\
-                .execute()
-                
-            if not holding.data or not holding.data[0]["portfolio_id"]:
+            # Get the portfolio directly from client_products (no need for product_holdings)
+            portfolio_id = product.get("portfolio_id")
+            
+            if not portfolio_id:
                 product_values.append({"id": product["id"], "value": 0})
                 continue
                 
-            portfolio_id = holding.data[0]["portfolio_id"]
             common_month = await find_most_recent_common_valuation_month(portfolio_id, db)
             
             # Get all funds in the portfolio
@@ -580,30 +575,19 @@ async def create_holding_activity_log(
             holding_activity_log.product_id = product_id
             
         elif hasattr(holding_activity_log, 'product_holding_id') and holding_activity_log.product_holding_id:
-            # For backward compatibility with product_holding_id
-            logger.info(f"Looking up client_product_id from product_holding_id: {holding_activity_log.product_holding_id}")
-            
-            # Get the client_product_id from product_holding
-        product_holding = db.table("product_holdings")\
-                .select("client_product_id")\
-            .eq("id", holding_activity_log.product_holding_id)\
-            .execute()
-            
-        if not product_holding.data:
-            raise HTTPException(status_code=404, 
-                    detail=f"Product holding with ID {holding_activity_log.product_holding_id} not found")
-            
-            product_id = product_holding.data[0]["client_product_id"]
-            logger.info(f"Found client_product_id: {product_id} from product_holding_id: {holding_activity_log.product_holding_id}")
-            holding_activity_log.product_id = product_id
+            # For backward compatibility with product_holding_id - this needs to be updated
+            # In the new schema, there's no product_holdings table anymore
+            logger.info(f"product_holding_id is no longer supported as product_holdings table has been removed")
+            raise HTTPException(status_code=400, 
+                    detail="product_holding_id is no longer supported. Please use product_id instead.")
         else:
             # No valid product identifier found
             raise HTTPException(status_code=400, 
-                detail="Missing required field: either product_id, account_holding_id, or product_holding_id is required")
+                detail="Missing required field: either product_id or account_holding_id is required")
                 
         # Now that we have a product_id, get the client_id
         client_product = db.table("client_products")\
-            .select("client_id")\
+            .select("client_id, portfolio_id")\
             .eq("id", product_id)\
             .execute()
             
@@ -651,15 +635,10 @@ async def create_holding_activity_log(
             
             # If related fund is in a different product, get its client_id
             if related_fund_portfolio_id != source_portfolio_id:
-                related_holdings = db.table("product_holdings")\
-                    .select("client_product_id")\
-                    .eq("portfolio_id", related_fund_portfolio_id)\
-                    .execute()
-                    
-                if related_holdings.data:
+                # Instead of querying product_holdings, directly check client_products
                     related_products = db.table("client_products")\
                         .select("client_id")\
-                        .eq("id", related_holdings.data[0]["client_product_id"])\
+                    .eq("portfolio_id", related_fund_portfolio_id)\
                         .execute()
                         
                     if related_products.data:
@@ -682,15 +661,10 @@ async def create_holding_activity_log(
             
             # If target fund is in a different product, get its client_id
             if target_portfolio_id != source_portfolio_id:
-                target_holdings = db.table("product_holdings")\
-                    .select("client_product_id")\
-                    .eq("portfolio_id", target_portfolio_id)\
-                    .execute()
-                    
-                if target_holdings.data:
+                # Instead of querying product_holdings, directly check client_products
                     target_products = db.table("client_products")\
                         .select("client_id")\
-                        .eq("id", target_holdings.data[0]["client_product_id"])\
+                    .eq("portfolio_id", target_portfolio_id)\
                         .execute()
                         
                     if target_products.data:
@@ -786,159 +760,147 @@ async def create_holding_activity_log(
         logger.error(f"Error creating holding activity log: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-# Add this new helper function
 async def process_activity_for_fund_updates(activity_data: dict, db) -> None:
     """
-    Process an activity to update the amount_invested in the related funds.
-    This is extracted as a separate function to support the skip_fund_update parameter.
+    Process a newly added or updated activity record, updating fund amounts
+    based on the activity type (Contribution, Withdrawal, Valuation, Fee, etc.)
     """
     try:
-        activity_type = activity_data.get("activity_type")
-        portfolio_fund_id = activity_data.get("portfolio_fund_id")
-        amount = float(activity_data.get("amount", 0))
-        related_fund = activity_data.get("related_fund")
+        if 'portfolio_fund_id' not in activity_data or not activity_data['portfolio_fund_id']:
+            logger.error("Cannot process activity without portfolio_fund_id")
+            return
+            
+        portfolio_fund_id = activity_data['portfolio_fund_id']
         
-        # Ensure activity_timestamp is properly serialized if present
-        if "activity_timestamp" in activity_data:
-            timestamp = activity_data["activity_timestamp"]
-            if isinstance(timestamp, date):
-                activity_data["activity_timestamp"] = timestamp.isoformat()
-        
-        # Add debug logs to check the data
-        logger.info(f"Processing activity for fund updates: type={activity_type}, portfolio_fund_id={portfolio_fund_id}, amount={amount}, related_fund={related_fund}")
-        
-        # Get current fund value
-        portfolio_fund = db.table("portfolio_funds")\
-            .select("id", "amount_invested")\
+        # Get current fund data
+        fund_response = db.table("portfolio_funds")\
+            .select("*")\
             .eq("id", portfolio_fund_id)\
             .execute()
             
-        if not portfolio_fund.data:
-            logger.error(f"Portfolio fund not found with ID: {portfolio_fund_id}")
+        if not fund_response.data:
+            logger.error(f"Portfolio fund {portfolio_fund_id} not found")
             return
         
-        current_amount = float(portfolio_fund.data[0]["amount_invested"] or 0)
-        logger.info(f"Current amount for fund {portfolio_fund_id}: {current_amount}")
+        fund = fund_response.data[0]
+        current_amount = fund.get('amount_invested') or 0
         
-        # Process based on activity type
-        if activity_type in ["Investment", "GovernmentUplift", "RegularInvestment"]:
-            # For investments, add the amount to the fund
+        # Check for zero amount in the activity
+        if not activity_data.get('amount'):
+            logger.info(f"Skipping fund update for zero amount activity (type: {activity_data.get('activity_type')})")
+            return
+            
+        amount = float(activity_data['amount'])
+        activity_type = activity_data['activity_type']
+        new_amount = current_amount
+        
+        # Process different activity types
+        if activity_type == 'Contribution':
+            # Contributions increase the amount invested
             new_amount = current_amount + amount
-            db.table("portfolio_funds")\
-                .update({"amount_invested": new_amount})\
-                .eq("id", portfolio_fund_id)\
-                .execute()
-            logger.info(f"Updated fund {portfolio_fund_id} amount_invested to {new_amount} after investment")
+            logger.info(f"Processing Contribution: {current_amount} + {amount} = {new_amount}")
             
-        elif activity_type == "Withdrawal":
-            # For withdrawals, subtract the amount from the fund
-            new_amount = current_amount - abs(amount)
-            if new_amount < 0:
-                new_amount = 0  # Prevent negative amounts
-            
-            db.table("portfolio_funds")\
-                .update({"amount_invested": new_amount})\
-                .eq("id", portfolio_fund_id)\
-                .execute()
-            logger.info(f"Updated fund {portfolio_fund_id} amount_invested to {new_amount} after withdrawal")
-            
-        elif activity_type == "SwitchIn" and related_fund:
-            # For switch in, add to current fund and subtract from source fund
-            new_amount = current_amount + amount
-            
-            # Update current fund
-            db.table("portfolio_funds")\
-                .update({"amount_invested": new_amount})\
-                .eq("id", portfolio_fund_id)\
-                .execute()
-            
-            # Update source fund (if provided)
-            logger.info(f"SwitchIn: updating related fund {related_fund} (source of the switch)")
-            related_fund_data = db.table("portfolio_funds")\
-                .select("id", "amount_invested")\
-                .eq("id", related_fund)\
-                .execute()
-                
-            if related_fund_data.data:
-                related_amount = float(related_fund_data.data[0]["amount_invested"] or 0)
-                logger.info(f"Related fund {related_fund} current amount: {related_amount}")
-                new_related_amount = related_amount - amount
-                if new_related_amount < 0:
-                    new_related_amount = 0  # Prevent negative amounts
-                    logger.warning(f"Related fund {related_fund} would have negative amount, setting to 0")
-                
-                db.table("portfolio_funds")\
-                    .update({"amount_invested": new_related_amount})\
-                    .eq("id", related_fund)\
-                    .execute()
-                logger.info(f"Updated related fund {related_fund} amount_invested to {new_related_amount} after switch in")
-            else:
-                logger.error(f"Related fund {related_fund} not found for SwitchIn activity")
-            
-            logger.info(f"Updated fund {portfolio_fund_id} amount_invested to {new_amount} after switch in")
-            
-        elif activity_type == "SwitchOut" and related_fund:
-            # For SwitchOut, we normally would subtract from current fund and add to target fund,
-            # but since we're now handling this in the SwitchIn operation, we'll check for partner activity
-            
-            # Check if a corresponding SwitchIn activity exists
-            logger.info(f"SwitchOut detected. Checking for existing SwitchIn activity with related_fund={portfolio_fund_id}")
-            
-            # Look for a SwitchIn activity that references this fund as its related_fund
-            existing_switch_in = db.table("holding_activity_log")\
-                .select("*")\
-                .eq("activity_type", "SwitchIn")\
-                .eq("related_fund", portfolio_fund_id)\
-                .eq("amount", amount)\
-                .eq("portfolio_fund_id", related_fund)\
-                .gte("created_at", (datetime.now() - timedelta(minutes=5)).isoformat())\
-                .execute()
-                
-            if existing_switch_in.data and len(existing_switch_in.data) > 0:
-                # If there's a recent matching SwitchIn activity, skip the updates to avoid double-counting
-                logger.info(f"Found matching SwitchIn activity (ID: {existing_switch_in.data[0]['id']}). Skipping fund updates to avoid double-counting.")
-                return
-                
-            # If no matching SwitchIn activity is found (or it's too old), proceed with normal updates
-            # This is a fallback to ensure the system works even if the SwitchIn activity fails or isn't created
-            logger.info(f"No matching SwitchIn activity found. Proceeding with normal SwitchOut updates.")
-            
+        elif activity_type == 'Withdrawal':
+            # Withdrawals decrease the amount invested
             new_amount = current_amount - amount
-            if new_amount < 0:
-                new_amount = 0  # Prevent negative amounts
-                logger.warning(f"Fund {portfolio_fund_id} would have negative amount after SwitchOut, setting to 0")
+            logger.info(f"Processing Withdrawal: {current_amount} - {amount} = {new_amount}")
             
-            # Update current fund
-            db.table("portfolio_funds")\
-                .update({"amount_invested": new_amount})\
-                .eq("id", portfolio_fund_id)\
-                .execute()
+        elif activity_type == 'Fee':
+            # Fees decrease the amount invested
+            new_amount = current_amount - amount
+            logger.info(f"Processing Fee: {current_amount} - {amount} = {new_amount}")
             
-            # Update target fund (if provided)
-            logger.info(f"SwitchOut: updating related fund {related_fund} (target of the switch)")
-            related_fund_data = db.table("portfolio_funds")\
-                .select("id", "amount_invested")\
-                .eq("id", related_fund)\
+        elif activity_type == 'Distribution':
+            # Distributions decrease the amount invested
+            new_amount = current_amount - amount
+            logger.info(f"Processing Distribution: {current_amount} - {amount} = {new_amount}")
+            
+        elif activity_type == 'SwitchOut':
+            # Switch Out decreases the amount invested
+            new_amount = current_amount - amount
+            logger.info(f"Processing SwitchOut: {current_amount} - {amount} = {new_amount}")
+            
+            # Process the related fund for Switch In
+            if 'related_fund' in activity_data and activity_data['related_fund']:
+                related_fund_id = activity_data['related_fund']
+                
+                # Create a corresponding SwitchIn activity
+                switch_in_data = {
+                    'portfolio_fund_id': related_fund_id,
+                    'activity_timestamp': activity_data['activity_timestamp'],
+                    'activity_type': 'SwitchIn',
+                    'amount': amount,
+                    'related_fund': portfolio_fund_id,
+                    'product_id': activity_data.get('product_id')
+                }
+                
+                # Check if this is a cross-product switch
+                # Get source product info
+                source_portfolio_id = fund['portfolio_id']
+                
+                if 'product_id' in activity_data and activity_data['product_id']:
+                    source_product_id = activity_data['product_id']
+                    
+                    # Get target fund's portfolio
+                    target_fund = db.table("portfolio_funds")\
+                        .select("portfolio_id")\
+                        .eq("id", related_fund_id)\
                 .execute()
                 
-            if related_fund_data.data:
-                related_amount = float(related_fund_data.data[0]["amount_invested"] or 0)
-                logger.info(f"Related fund {related_fund} current amount: {related_amount}")
+                    if target_fund.data:
+                        target_portfolio_id = target_fund.data[0]['portfolio_id']
+                        
+                        # Check if target portfolio is in a different product
+                        if target_portfolio_id != source_portfolio_id:
+                            # Find product with this portfolio_id
+                            target_product = db.table("client_products")\
+                                .select("id")\
+                                .eq("portfolio_id", target_portfolio_id)\
+                                .execute()
+                                
+                            if target_product.data:
+                                target_product_id = target_product.data[0]['id']
+                                switch_in_data['product_id'] = target_product_id
+                                logger.info(f"Cross-product switch: source product={source_product_id}, target product={target_product_id}")
+                
+                # Create the SwitchIn activity
+                db.table("holding_activity_log")\
+                    .insert(switch_in_data)\
+                .execute()
+            
+                # Update the related fund
+                related_fund = db.table("portfolio_funds")\
+                    .select("amount_invested")\
+                    .eq("id", related_fund_id)\
+                .execute()
+                
+                if related_fund.data:
+                    related_amount = related_fund.data[0].get('amount_invested') or 0
                 new_related_amount = related_amount + amount
                 
                 db.table("portfolio_funds")\
                     .update({"amount_invested": new_related_amount})\
-                    .eq("id", related_fund)\
+                        .eq("id", related_fund_id)\
                     .execute()
-                logger.info(f"Updated related fund {related_fund} amount_invested to {new_related_amount} after switch out")
-            else:
-                logger.error(f"Related fund {related_fund} not found for SwitchOut activity")
+                        
+            logger.info(f"Updated related fund {related_fund_id} amount: {related_amount} + {amount} = {new_related_amount}")
             
-            logger.info(f"Updated fund {portfolio_fund_id} amount_invested to {new_amount} after switch out")
+        elif activity_type == 'SwitchIn':
+            # Switch In increases the amount invested
+            new_amount = current_amount + amount
+            logger.info(f"Processing SwitchIn: {current_amount} + {amount} = {new_amount}")
+            
+        # Update the fund amount
+        if new_amount != current_amount:
+            db.table("portfolio_funds")\
+                .update({"amount_invested": new_amount})\
+                .eq("id", portfolio_fund_id)\
+                .execute()
+                
+            logger.info(f"Updated fund {portfolio_fund_id} amount invested from {current_amount} to {new_amount}")
         
     except Exception as e:
         logger.error(f"Error processing activity for fund updates: {str(e)}")
-        # Don't re-raise the exception to avoid breaking the main process
 
 @router.get("/holding_activity_logs/{holding_activity_log_id}", response_model=HoldingActivityLog)
 async def get_holding_activity_log(holding_activity_log_id: int, db = Depends(get_db)):
@@ -1001,6 +963,7 @@ async def delete_holding_activity_log(holding_activity_log_id: int, db = Depends
         # Set up tracking of affected portfolios and clients
         affected_portfolio_ids = {source_portfolio_id}
         affected_portfolio_fund_ids = {source_portfolio_fund_id}
+        affected_client_ids = set()
         
         # Check for related fund in switch activities
         related_fund_id = None
@@ -1020,6 +983,17 @@ async def delete_holding_activity_log(holding_activity_log_id: int, db = Depends
                 
                 affected_portfolio_ids.add(related_portfolio_id)
                 affected_portfolio_fund_ids.add(related_fund_id)
+                
+                # If related fund is in a different product, get its client_id
+                if related_portfolio_id != source_portfolio_id:
+                    # Instead of querying product_holdings, directly check client_products
+                    related_products = db.table("client_products")\
+                        .select("client_id")\
+                        .eq("portfolio_id", related_portfolio_id)\
+                        .execute()
+                        
+                    if related_products.data:
+                        affected_client_ids.add(related_products.data[0]["client_id"])
                 
         # Legacy Switch support
         elif activity_data["activity_type"] == "Switch" and activity_data.get("target_portfolio_fund_id"):
@@ -1048,6 +1022,7 @@ async def delete_holding_activity_log(holding_activity_log_id: int, db = Depends
                 
             if client_product.data:
                 client_id = client_product.data[0]["client_id"]
+                affected_client_ids.add(client_id)
         
         # Delete the holding activity log
         db.table("holding_activity_log").delete().eq("id", holding_activity_log_id).execute()
@@ -1058,7 +1033,7 @@ async def delete_holding_activity_log(holding_activity_log_id: int, db = Depends
             await recalculate_fund_weightings(portfolio_id, db)
         
         # Recalculate client product weightings
-        if client_id:
+        for client_id in affected_client_ids:
             await recalculate_product_weightings(client_id, db)
         
         # Properly handle activity_timestamp for IRR recalculation
@@ -1099,136 +1074,143 @@ async def update_holding_activity_log(
     db = Depends(get_db)
 ):
     """
-    What it does: Updates an existing holding activity log and recalculates associated values as needed:
-    1. Updates the activity log with the new data
-    2. If reverse_before_update is True, first reverses the effect of the original activity
-    3. Updates fund amounts based on the new activity data unless skip_fund_update is True
-    4. Recalculates fund weightings within the portfolio(s) using the most recent common valuation month
-    5. Recalculates product weightings for the client(s) using the most recent common valuation month
-    6. Recalculates IRR values for affected fund(s) with calculation dates after the activity timestamp, but only if valuations have been edited
-
-    Why it's needed: Allows editing holding activity logs while keeping all weightings and IRR values in sync.
-    
+    What it does: Updates an existing holding activity log and updates related entities based on activity changes.
+    Why it's needed: Allows modifying holding activity logs while keeping fund amounts and IRR values in sync.
     How it works:
-    1. Validates the holding activity log update data
-    2. Gets the original activity to track changes
-    3. Updates the activity log with new data
-    4. Identifies affected portfolios, funds, and clients
-    5. If reverse_before_update is True, reverses the effect of the original activity on fund amounts
-    6. If skip_fund_update is False, processes the updated activity to update fund amounts
-    7. Recalculates fund weightings in affected portfolio(s) using the most recent common valuation month
-    8. Recalculates product weightings for affected client(s) using the most recent common valuation month
-    9. Recalculates IRR values for affected fund(s) with calculation dates after the activity timestamp, but only if valuations have been edited
-    10. Returns the updated holding activity log
-    
-    Expected output: The updated holding activity log with potentially recalculated related values
+        1. Validates the activity update data
+        2. Optionally reverses the effect of the original activity
+        3. Updates the activity with new values
+        4. Processes the updated activity to modify fund amounts
+        5. Recalculates valuations and IRR values as needed
+        6. Returns the updated activity log
     """
     try:
-        logger.info(f"Updating holding activity log {activity_id} with skip_fund_update={skip_fund_update}, reverse_before_update={reverse_before_update}")
-        
         # Get the existing activity
-        original_activity = db.table("holding_activity_log")\
+        existing_result = db.table("holding_activity_log")\
             .select("*")\
             .eq("id", activity_id)\
             .execute()
             
-        if not original_activity.data:
+        if not existing_result.data:
             raise HTTPException(status_code=404, detail=f"Holding activity log with ID {activity_id} not found")
         
-        # Get the original values we need to track changes
-        original_portfolio_fund_id = original_activity.data[0]["portfolio_fund_id"]
-        original_activity_type = original_activity.data[0]["activity_type"]
-        original_amount = original_activity.data[0]["amount"]
-        original_related_fund = original_activity.data[0].get("related_fund")
-        product_id = original_activity.data[0].get("product_id")
+        existing_activity = existing_result.data[0]
         
-        # Client ID lookup
-        client_id = None
+        # Get the data dictionary from the update model
+        update_data = {k: v for k, v in holding_activity_log.model_dump().items() if v is not None}
+        
+        # Debug
+        logger.info(f"Updating activity {activity_id} with data: {update_data}")
+        logger.info(f"Existing activity: {existing_activity}")
+        logger.info(f"Reverse before update: {reverse_before_update}")
+        logger.info(f"Skip fund update: {skip_fund_update}")
+        
+        # Ensure amount is a float if present
+        if 'amount' in update_data and update_data['amount'] is not None:
+            try:
+                update_data['amount'] = float(update_data['amount'])
+            except (ValueError, TypeError):
+                raise HTTPException(status_code=422, detail="Invalid amount format")
+                
+        # Track portfolios and clients affected by this update
+        affected_portfolio_ids = set()
+        affected_portfolio_fund_ids = set()
         affected_client_ids = set()
         
-        # Try to get client ID from product_id directly
-        if product_id is not None:
-            try:
-                client_product = db.table("client_products")\
-                    .select("client_id")\
-                    .eq("id", product_id)\
-            .execute()
-            
-                if client_product.data:
-                    client_id = client_product.data[0]["client_id"]
-                    affected_client_ids.add(client_id)
-            except Exception as e:
-                logger.warning(f"Error getting client from product_id: {e}")
-        
-        # Get portfolio info
-        portfolio_fund = db.table("portfolio_funds")\
+        # Get original portfolio fund
+        original_fund_id = existing_activity['portfolio_fund_id']
+        original_fund_result = db.table("portfolio_funds")\
             .select("portfolio_id")\
-            .eq("id", original_portfolio_fund_id)\
+            .eq("id", original_fund_id)\
             .execute()
             
-        if not portfolio_fund.data:
-            raise HTTPException(status_code=404, detail=f"Portfolio fund {original_portfolio_fund_id} not found")
+        if original_fund_result.data:
+            original_portfolio_id = original_fund_result.data[0]['portfolio_id']
+            affected_portfolio_ids.add(original_portfolio_id)
+            affected_portfolio_fund_ids.add(original_fund_id)
         
-        # Track affected items
-        affected_portfolio_ids = {portfolio_fund.data[0]["portfolio_id"]}
-        affected_portfolio_fund_ids = {original_portfolio_fund_id}
+        # Get original product id (for direct link in the updated schema)
+        original_product_id = existing_activity.get('product_id')
         
-        # Add debug logging to track input parameters - properly format date objects
-        activity_timestamp = None
-        if holding_activity_log.activity_timestamp:
-            activity_timestamp = holding_activity_log.activity_timestamp.isoformat() if isinstance(holding_activity_log.activity_timestamp, date) else str(holding_activity_log.activity_timestamp)
+        if original_product_id:
+            # Get client_id from client_products
+            client_result = db.table("client_products")\
+                    .select("client_id")\
+                .eq("id", original_product_id)\
+            .execute()
+            
+            if client_result.data:
+                affected_client_ids.add(client_result.data[0]['client_id'])
         
-        logger.info(f"Updating holding activity log with ID {activity_id}. New data: "
-                  f"product_id={holding_activity_log.product_id} "
-                  f"portfolio_fund_id={holding_activity_log.portfolio_fund_id} "
-                  f"activity_timestamp={activity_timestamp} "
-                  f"activity_type={holding_activity_log.activity_type} "
-                  f"amount={holding_activity_log.amount} "
-                  f"related_fund={holding_activity_log.related_fund}")
-                  
-        logger.info(f"Skip fund update: {skip_fund_update}, Reverse before update: {reverse_before_update}")
+        # If portfolio_fund_id is being changed, add the new fund and portfolio to affected lists
+        if 'portfolio_fund_id' in update_data and update_data['portfolio_fund_id'] != original_fund_id:
+            new_fund_result = db.table("portfolio_funds")\
+            .select("portfolio_id")\
+                .eq("id", update_data['portfolio_fund_id'])\
+            .execute()
+            
+            if new_fund_result.data:
+                new_portfolio_id = new_fund_result.data[0]['portfolio_id']
+                affected_portfolio_ids.add(new_portfolio_id)
+                affected_portfolio_fund_ids.add(update_data['portfolio_fund_id'])
         
-        # Get any modified fields, keeping original data for unmodified fields
-        update_data = {}
-        for key, value in holding_activity_log.model_dump(exclude_unset=True).items():
-            # Skip None values to avoid overwriting with None
-            if value is not None:
-                # Skip account_holding_id and product_holding_id as they're not in the database schema
-                if key in ['account_holding_id', 'product_holding_id']:
-                    logger.info(f"Skipping {key}={value} from update data as it's not in the schema")
+        # If product_id is being changed, add the new client to the affected list
+        if 'product_id' in update_data and update_data['product_id'] != original_product_id:
+            new_client_result = db.table("client_products")\
+                .select("client_id")\
+                .eq("id", update_data['product_id'])\
+                .execute()
+                
+            if new_client_result.data:
+                affected_client_ids.add(new_client_result.data[0]['client_id'])
+        
+        # Handle related funds for Switch activities
+        if existing_activity.get('activity_type') in ['SwitchIn', 'SwitchOut'] and existing_activity.get('related_fund'):
+            related_fund_id = existing_activity['related_fund']
+            related_fund_result = db.table("portfolio_funds")\
+                .select("portfolio_id")\
+                .eq("id", related_fund_id)\
+                .execute()
+                
+            if related_fund_result.data:
+                related_portfolio_id = related_fund_result.data[0]['portfolio_id']
+                affected_portfolio_ids.add(related_portfolio_id)
+                affected_portfolio_fund_ids.add(related_fund_id)
+                
+                # Get client for the related fund's portfolio
+                related_client_result = db.table("client_products")\
+                    .select("client_id")\
+                    .eq("portfolio_id", related_portfolio_id)\
+                    .execute()
                     
-                    # If product_id is not set but account_holding_id or product_holding_id is,
-                    # use that value for product_id
-                    if key == 'account_holding_id' and 'product_id' not in update_data and not holding_activity_log.product_id:
-                        update_data['product_id'] = value
-                        logger.info(f"Using account_holding_id={value} as product_id")
-                    elif key == 'product_holding_id' and 'product_id' not in update_data and not holding_activity_log.product_id:
-                        # For product_holding_id we need to get the client_product_id
-                        try:
-                            product_holding = db.table("product_holdings")\
-                                .select("client_product_id")\
-                                .eq("id", value)\
+                if related_client_result.data:
+                    affected_client_ids.add(related_client_result.data[0]['client_id'])
+                    
+        # If the activity type is changing to/from a switch type, or the related fund is changing
+        if ('activity_type' in update_data and update_data['activity_type'] in ['SwitchIn', 'SwitchOut']) or \
+           (existing_activity.get('activity_type') in ['SwitchIn', 'SwitchOut'] and 'related_fund' in update_data):
+            
+            # If there's a new related fund
+            if 'related_fund' in update_data and update_data['related_fund']:
+                new_related_fund_id = update_data['related_fund']
+                new_related_fund_result = db.table("portfolio_funds")\
+                    .select("portfolio_id")\
+                    .eq("id", new_related_fund_id)\
                                 .execute()
                             
-                            if product_holding.data:
-                                client_product_id = product_holding.data[0]["client_product_id"]
-                                update_data['product_id'] = client_product_id
-                                logger.info(f"Using client_product_id={client_product_id} from product_holding_id={value} as product_id")
-                        except Exception as e:
-                            logger.warning(f"Error getting client_product_id from product_holding_id: {e}")
+                if new_related_fund_result.data:
+                    new_related_portfolio_id = new_related_fund_result.data[0]['portfolio_id']
+                    affected_portfolio_ids.add(new_related_portfolio_id)
+                    affected_portfolio_fund_ids.add(new_related_fund_id)
                     
-                    continue
-                # For 'amount', ensure it's a float
-                elif key == 'amount':
-                    try:
-                        update_data[key] = float(value)
-                    except (ValueError, TypeError):
-                        raise HTTPException(status_code=422, detail="Invalid amount format")
-                # For timestamps, convert to ISO format string
-                elif key == 'activity_timestamp' and isinstance(value, date):
-                    update_data[key] = value.isoformat()
-                else:
-                    update_data[key] = value
+                    # Get client for the new related fund's portfolio
+                    new_related_client_result = db.table("client_products")\
+                        .select("client_id")\
+                        .eq("portfolio_id", new_related_portfolio_id)\
+                        .execute()
+                        
+                    if new_related_client_result.data:
+                        affected_client_ids.add(new_related_client_result.data[0]['client_id'])
         
         # Update the activity log
         result = db.table("holding_activity_log").update(update_data).eq("id", activity_id).execute()
@@ -1240,7 +1222,7 @@ async def update_holding_activity_log(
         if not skip_fund_update:
             # Prepare activity data for processing
             # Make a deep copy and ensure proper serialization
-            activity_data = {**original_activity.data[0], **update_data}
+            activity_data = {**existing_activity, **update_data}
             
             # Ensure activity_timestamp is properly serialized if it's not already
             if "activity_timestamp" in activity_data and isinstance(activity_data["activity_timestamp"], date):
@@ -1256,7 +1238,7 @@ async def update_holding_activity_log(
                     logger.info(f"Reversing the effect of the original activity before applying the new one")
                     
                     # Create a copy of the original activity with negated amount
-                    original_data = {**original_activity.data[0]}
+                    original_data = {**existing_activity}
                     # For reversal, we need to invert the activity type effect
                     if original_data.get("activity_type") in ["Investment", "RegularInvestment", "GovernmentUplift"]:
                         # For "adding" activities, we need to subtract

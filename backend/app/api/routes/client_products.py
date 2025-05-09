@@ -375,11 +375,11 @@ async def delete_client_product(client_product_id: int, db = Depends(get_db)):
         3. For the linked portfolio:
            a. Gets all portfolio_funds for this portfolio
            b. For each portfolio fund:
+              - Deletes all IRR values associated with the fund first (to remove foreign key dependency)
               - Deletes all fund_valuations associated with the fund
-              - Deletes all IRR values associated with the fund
               - Deletes all holding_activity_log entries associated with the fund
            c. Deletes all portfolio_funds for this portfolio
-        4. Deletes the client product record first (to remove the foreign key constraint)
+        4. Deletes the client product record
         5. Deletes the portfolio itself
         6. Returns a success message with deletion counts
     Expected output: A JSON object with a success message confirmation and deletion counts
@@ -416,17 +416,29 @@ async def delete_client_product(client_product_id: int, db = Depends(get_db)):
                 for fund in portfolio_funds.data:
                     fund_id = fund["id"]
                     
-                    # Delete fund valuations for this fund
-                    fund_val_result = db.table("fund_valuations").delete().eq("portfolio_fund_id", fund_id).execute()
-                    deleted_count = len(fund_val_result.data) if fund_val_result.data else 0
-                    fund_valuations_deleted += deleted_count
-                    logger.info(f"Deleted {deleted_count} fund valuations for portfolio fund {fund_id}")
-                    
-                    # Delete IRR values for this fund
+                    # First, delete IRR values for this fund (IMPORTANT: do this BEFORE deleting fund_valuations)
                     irr_result = db.table("irr_values").delete().eq("fund_id", fund_id).execute()
                     deleted_count = len(irr_result.data) if irr_result.data else 0
                     irr_values_deleted += deleted_count
                     logger.info(f"Deleted {deleted_count} IRR values for portfolio fund {fund_id}")
+                    
+                    # Also delete IRR values for any fund valuations related to this fund
+                    # Get all fund valuation IDs for this fund
+                    fund_valuation_ids_result = db.table("fund_valuations").select("id").eq("portfolio_fund_id", fund_id).execute()
+                    if fund_valuation_ids_result.data and len(fund_valuation_ids_result.data) > 0:
+                        valuation_ids = [v["id"] for v in fund_valuation_ids_result.data]
+                        # Delete IRR values referencing these fund valuation IDs
+                        for val_id in valuation_ids:
+                            val_irr_result = db.table("irr_values").delete().eq("fund_valuation_id", val_id).execute()
+                            deleted_count = len(val_irr_result.data) if val_irr_result.data else 0
+                            irr_values_deleted += deleted_count
+                            logger.info(f"Deleted {deleted_count} IRR values for fund valuation {val_id}")
+                    
+                    # Now it's safe to delete fund valuations for this fund
+                    fund_val_result = db.table("fund_valuations").delete().eq("portfolio_fund_id", fund_id).execute()
+                    deleted_count = len(fund_val_result.data) if fund_val_result.data else 0
+                    fund_valuations_deleted += deleted_count
+                    logger.info(f"Deleted {deleted_count} fund valuations for portfolio fund {fund_id}")
                     
                     # Delete activity logs for this fund
                     activity_result = db.table("holding_activity_log").delete().eq("portfolio_fund_id", fund_id).execute()
@@ -438,7 +450,7 @@ async def delete_client_product(client_product_id: int, db = Depends(get_db)):
                 db.table("portfolio_funds").delete().eq("portfolio_id", portfolio_id).execute()
                 logger.info(f"Deleted {portfolio_funds_count} portfolio funds for portfolio {portfolio_id}")
         
-        # Delete the client product FIRST to remove foreign key constraint
+        # Delete the client product
         result = db.table("client_products").delete().eq("id", client_product_id).execute()
         logger.info(f"Deleted client product {client_product_id}")
         
