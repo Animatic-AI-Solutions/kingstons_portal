@@ -4,8 +4,10 @@ from collections import defaultdict
 from datetime import datetime, date, timedelta
 import logging
 from statistics import mean
+import numpy_financial as npf
 
 from app.db.database import get_db
+from app.api.routes.portfolio_funds import calculate_excel_style_irr
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -25,13 +27,13 @@ async def get_fund_distribution(
     db = Depends(get_db)
 ):
     """
-    What it does: Returns the distribution of funds based on the amount invested.
+    What it does: Returns the distribution of funds based on their current value from latest valuations.
     Why it's needed: Provides data for the fund distribution pie chart on the dashboard.
     How it works: 
         1. Fetches all available funds
-        2. For each fund, calculates the total amount invested across all portfolio funds
-        3. Returns funds sorted by amount invested (descending)
-    Expected output: A list of funds with their names and invested amounts
+        2. For each fund, calculates the total current value across all portfolio funds using latest valuations
+        3. Returns funds sorted by current value (descending)
+    Expected output: A list of funds with their names and current values
     """
     try:
         logger.info(f"Fetching fund distribution data with limit: {limit}")
@@ -45,20 +47,31 @@ async def get_fund_distribution(
         
         fund_data = []
         
-        # For each fund, calculate total amount invested
+        # For each fund, calculate total current value from latest valuations
         for fund in funds_result.data:
             # Get all portfolio_funds entries for this fund
-            pf_result = db.table("portfolio_funds").select("amount_invested").eq("available_funds_id", fund["id"]).execute()
+            pf_result = db.table("portfolio_funds").select("id").eq("available_funds_id", fund["id"]).execute()
             
-            # Sum up the total amount invested
-            total_amount = sum(pf["amount_invested"] or 0 for pf in pf_result.data)
+            total_value = 0
             
-            # Only include funds with amounts > 0
-            if total_amount > 0:
+            for pf in pf_result.data:
+                # Get the latest valuation for this portfolio fund
+                valuation_result = db.table("latest_fund_valuations").select("value").eq("portfolio_fund_id", pf["id"]).execute()
+                
+                if valuation_result.data and len(valuation_result.data) > 0:
+                    total_value += valuation_result.data[0]["value"] or 0
+                else:
+                    # Fallback to amount_invested if no valuation exists
+                    amount_result = db.table("portfolio_funds").select("amount_invested").eq("id", pf["id"]).execute()
+                    if amount_result.data:
+                        total_value += amount_result.data[0]["amount_invested"] or 0
+            
+            # Only include funds with values > 0
+            if total_value > 0:
                 fund_data.append({
                     "id": fund["id"],
                     "name": fund["fund_name"],
-                    "amount": total_amount,
+                    "amount": total_value,
                     "category": "fund"  # Default category, could be enhanced in future
                 })
         
@@ -80,26 +93,32 @@ async def get_dashboard_stats(db = Depends(get_db)):
         stats = {
             "totalFUM": 0,
             "companyIRR": 0,
-            "totalproducts": 0,
+            "totalAccounts": 0,
             "totalClients": 0,
-            "totalPortfolios": 0
+            "totalActiveHoldings": 0
         }
         
         # Get company-wide IRR using our new calculation method
         company_irr_result = await calculate_company_irr(db)
         stats["companyIRR"] = company_irr_result["company_irr"]
         stats["totalClients"] = company_irr_result["client_count"]
-        stats["totalproducts"] = company_irr_result["total_products"]
+        stats["totalAccounts"] = company_irr_result["total_products"]
         
-        # Calculate total FUM from portfolio funds
-        portfolio_funds_result = db.table("portfolio_funds").select("amount_invested").execute()
-        if portfolio_funds_result.data:
-            stats["totalFUM"] = sum(pf["amount_invested"] or 0 for pf in portfolio_funds_result.data)
+        # Calculate total FUM from latest fund valuations instead of portfolio_funds.amount_invested
+        # This gives a more accurate representation of current value vs. historical invested amount
+        latest_valuations_result = db.table("latest_fund_valuations").select("value").execute()
+        if latest_valuations_result.data:
+            stats["totalFUM"] = sum(val["value"] or 0 for val in latest_valuations_result.data)
+        else:
+            # Fallback to amount_invested if no valuations exist
+            portfolio_funds_result = db.table("portfolio_funds").select("amount_invested").execute()
+            if portfolio_funds_result.data:
+                stats["totalFUM"] = sum(pf["amount_invested"] or 0 for pf in portfolio_funds_result.data)
         
-        # Get total portfolios
-        portfolios_result = db.table("portfolios").select("id").execute()
-        if portfolios_result.data:
-            stats["totalPortfolios"] = len(portfolios_result.data)
+        # Get total active holdings (portfolio funds that are active)
+        active_holdings_result = db.table("portfolio_funds").select("id").eq("status", "active").execute()
+        if active_holdings_result.data:
+            stats["totalActiveHoldings"] = len(active_holdings_result.data)
         
         return stats
     except Exception as e:
@@ -588,19 +607,18 @@ async def get_portfolio_performance(portfolio_id: int, db = Depends(get_db)):
 @router.get("/analytics/company/irr")
 async def calculate_company_irr(db = Depends(get_db)):
     """
-    Calculate the company-wide IRR using a weighted average of client IRRs,
-    where each client's weight is proportional to their total investment amount.
-    This provides a more accurate view of the company's performance by giving
-    more weight to larger investors.
+    Calculate the company-wide IRR based on all portfolio funds across all active portfolios.
+    Instead of averaging client IRRs, this directly calculates the IRR from all cash flows
+    and valuations across the entire company.
     """
     try:
-        logger.info("Calculating company-wide IRR")
+        logger.info("Calculating company-wide IRR across all active portfolio funds")
         
-        # Get all clients
-        clients_result = db.table("clients").select("id").execute()
+        # Get all active portfolios
+        portfolios_result = db.table("portfolios").select("id").eq("status", "active").execute()
         
-        if not clients_result.data:
-            logger.info("No clients found")
+        if not portfolios_result.data:
+            logger.info("No active portfolios found")
             return {
                 "company_irr": 0,
                 "client_count": 0,
@@ -608,65 +626,106 @@ async def calculate_company_irr(db = Depends(get_db)):
                 "total_portfolio_funds": 0,
                 "total_investment": 0
             }
+        
+        # Collect all portfolio fund IDs from active portfolios
+        all_portfolio_fund_ids = []
+        for portfolio in portfolios_result.data:
+            pf_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio["id"]).eq("status", "active").execute()
+            all_portfolio_fund_ids.extend([pf["id"] for pf in pf_result.data])
+        
+        if not all_portfolio_fund_ids:
+            logger.info("No active portfolio funds found in active portfolios")
+            return {
+                "company_irr": 0,
+                "client_count": 0,
+                "total_products": 0,
+                "total_portfolio_funds": 0,
+                "total_investment": 0
+            }
+        
+        logger.info(f"Processing {len(all_portfolio_fund_ids)} active portfolio funds")
+        
+        # For IRR calculation, we need the initial investments and current valuations
+        total_investment = 0
+        total_current_value = 0
+        all_cash_flows = []  # Will store (date, amount) tuples for all cash flows
+        
+        # Get data needed for company stats
+        client_count_result = db.table("clients").select("id").eq("status", "active").execute()
+        client_count = len(client_count_result.data) if client_count_result.data else 0
+        
+        product_count_result = db.table("client_products").select("id").eq("status", "active").execute()
+        total_products = len(product_count_result.data) if product_count_result.data else 0
+        
+        # Collect all cash flows from all portfolio funds
+        for fund_id in all_portfolio_fund_ids:
+            # 1. Get the investments (negative cash flows)
+            investments_result = db.table("holding_activity_log")\
+                .select("activity_timestamp, amount, activity_type")\
+                .eq("portfolio_fund_id", fund_id)\
+                .execute()
             
-        client_irrs = []
-        client_investments = []  # Store total investment for each client
-        total_products = 0
-        total_portfolio_funds = 0
+            if investments_result.data:
+                for activity in investments_result.data:
+                    if activity["activity_type"] == "Investment" and activity["amount"]:
+                        # Investment is a negative cash flow (money going out)
+                        flow_date = datetime.fromisoformat(activity["activity_timestamp"].replace('Z', '+00:00')) \
+                            if isinstance(activity["activity_timestamp"], str) \
+                            else activity["activity_timestamp"]
+                        flow_amount = -float(activity["amount"])  # Negative for investments
+                        all_cash_flows.append((flow_date, flow_amount))
+                        total_investment += abs(flow_amount)
+            
+            # 2. Get the current valuation (positive cash flow)
+            valuation_result = db.table("latest_fund_valuations")\
+                .select("valuation_date, value")\
+                .eq("portfolio_fund_id", fund_id)\
+                .execute()
+            
+            if valuation_result.data and len(valuation_result.data) > 0:
+                valuation = valuation_result.data[0]
+                if valuation["value"] and valuation["valuation_date"]:
+                    val_date = datetime.fromisoformat(valuation["valuation_date"].replace('Z', '+00:00')) \
+                        if isinstance(valuation["valuation_date"], str) \
+                        else valuation["valuation_date"]
+                    val_amount = float(valuation["value"])
+                    all_cash_flows.append((val_date, val_amount))  
+                    total_current_value += val_amount
         
-        # Calculate IRR and total investment for each client
-        for client in clients_result.data:
+        # Calculate IRR if we have valid cash flows
+        company_irr = 0
+        if all_cash_flows and len(all_cash_flows) >= 2:
             try:
-                # Get client's IRR and portfolio fund count
-                client_result = await calculate_client_irr(client["id"], db)
+                # Sort cash flows by date
+                all_cash_flows.sort(key=lambda x: x[0])
                 
-                # Get all products for this client to sum up total investment
-                products_result = db.table("client_products").select("id, portfolio_id").eq("client_id", client["id"]).execute()
-                client_total_investment = 0
+                dates = [cf[0] for cf in all_cash_flows]
+                amounts = [cf[1] for cf in all_cash_flows]
                 
-                for product in products_result.data:
-                    if product["portfolio_id"]:
-                        # Get all portfolio funds for this portfolio
-                        portfolio_funds_result = db.table("portfolio_funds")\
-                            .select("amount_invested")\
-                            .eq("portfolio_id", product["portfolio_id"])\
-                            .execute()
-                            
-                        # Sum up all investments in this portfolio
-                        portfolio_investment = sum(float(pf["amount_invested"] or 0) 
-                                                for pf in portfolio_funds_result.data)
-                        client_total_investment += portfolio_investment
-                
-                if client_result["irr"] != 0 and client_total_investment > 0:
-                    client_irrs.append(client_result["irr"])
-                    client_investments.append(client_total_investment)
-                    total_products += client_result["product_count"]
-                    total_portfolio_funds += client_result["portfolio_fund_count"]
-                    logger.info(f"Added client {client['id']} IRR: {client_result['irr']}% "
-                              f"with investment {client_total_investment}")
+                # Check if we have both negative and positive flows
+                if any(amount < 0 for amount in amounts) and any(amount > 0 for amount in amounts):
+                    # Use the same IRR calculation function used for individual funds
+                    irr_result = calculate_excel_style_irr(dates, amounts)
+                    company_irr = irr_result['period_irr'] * 100  # Convert to percentage
+                    logger.info(f"Calculated overall company IRR: {company_irr}%")
+                else:
+                    logger.warning("Cannot calculate IRR: cash flows don't have both investments and returns")
             except Exception as e:
-                logger.error(f"Error calculating IRR for client {client['id']}: {str(e)}")
-                continue
-        
-        # Calculate company-wide IRR as weighted average of client IRRs
-        if client_irrs and client_investments:
-            total_investment = sum(client_investments)
-            if total_investment > 0:
-                company_irr = sum(irr * (investment / total_investment) 
-                                for irr, investment in zip(client_irrs, client_investments))
-                logger.info(f"Calculated weighted company IRR: {company_irr}% "
-                          f"from {len(client_irrs)} clients with total investment {total_investment}")
-            else:
-                company_irr = 0
-        else:
-            company_irr = 0
-            total_investment = 0
+                logger.error(f"Error in IRR calculation: {str(e)}")
+                # Fall back to simple ROI if IRR calculation fails
+                if total_investment > 0:
+                    company_irr = ((total_current_value / total_investment) - 1) * 100
+                    logger.info(f"Falling back to simple ROI calculation: {company_irr}%")
+        elif total_investment > 0 and total_current_value > 0:
+            # If we don't have detailed cash flows but have totals, calculate simple ROI
+            company_irr = ((total_current_value / total_investment) - 1) * 100
+            logger.info(f"Calculated simple ROI as fallback: {company_irr}%")
         
         return {
             "company_irr": company_irr,
-            "client_count": len(client_irrs),
+            "client_count": client_count,
             "total_products": total_products,
-            "total_portfolio_funds": total_portfolio_funds,
+            "total_portfolio_funds": len(all_portfolio_fund_ids),
             "total_investment": total_investment
         }
         

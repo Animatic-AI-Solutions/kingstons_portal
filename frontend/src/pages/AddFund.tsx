@@ -56,9 +56,9 @@ const AddFund: React.FC = () => {
       return;
     }
 
-    // Validate risk factor is between 0 and 7
-    if (formData.risk_factor !== null && (formData.risk_factor < 0 || formData.risk_factor > 7)) {
-      setError('Risk factor must be between 0 and 7');
+    // Validate risk factor is between 1 and 7
+    if (formData.risk_factor !== null && (formData.risk_factor < 1 || formData.risk_factor > 7)) {
+      setError('Risk factor must be between 1 and 7');
       return;
     }
     
@@ -201,13 +201,13 @@ const AddFund: React.FC = () => {
 
             <div>
                 <label htmlFor="risk_factor" className="block text-sm font-medium text-gray-700 mb-1">
-                Risk Factor (0-7)
+                Risk Factor (1-7)
               </label>
               <input
                 type="number"
                 id="risk_factor"
                 name="risk_factor"
-                min="0"
+                min="1"
                 max="7"
                   step="1"
                 value={formData.risk_factor === null ? '' : formData.risk_factor}
@@ -215,7 +215,7 @@ const AddFund: React.FC = () => {
                   className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
               />
                 <p className="mt-1 text-xs text-gray-500">
-                  Enter a value between 0 (Conservative) and 7 (Aggressive)
+                  Enter a value between 1 (Conservative) and 7 (Aggressive)
                 </p>
             </div>
 
