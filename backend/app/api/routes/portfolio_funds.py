@@ -239,6 +239,7 @@ async def get_portfolio_funds(
     limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
     portfolio_id: Optional[int] = None,
     available_funds_id: Optional[int] = None,
+    select: Optional[str] = "*",  # Add select parameter to allow choosing fields
     db = Depends(get_db)
 ):
     """
@@ -409,9 +410,12 @@ async def update_portfolio_fund(portfolio_fund_id: int, portfolio_fund_update: P
     
     try:
         # Check if portfolio fund exists
-        check_result = db.table("portfolio_funds").select("id").eq("id", portfolio_fund_id).execute()
+        check_result = db.table("portfolio_funds").select("*").eq("id", portfolio_fund_id).execute()
         if not check_result.data or len(check_result.data) == 0:
             raise HTTPException(status_code=404, detail=f"Portfolio fund with ID {portfolio_fund_id} not found")
+            
+        existing_data = check_result.data[0]
+        logger.info(f"Updating portfolio fund {portfolio_fund_id}, current status: {existing_data.get('status', 'not set')}")
         
         # Validate portfolio_id if provided
         if "portfolio_id" in update_data and update_data["portfolio_id"] is not None:
@@ -425,20 +429,29 @@ async def update_portfolio_fund(portfolio_fund_id: int, portfolio_fund_update: P
             if not fund_check.data or len(fund_check.data) == 0:
                 raise HTTPException(status_code=404, detail=f"Fund with ID {update_data['available_funds_id']} not found")
         
+        # Log status changes explicitly
+        if "status" in update_data:
+            logger.info(f"Changing portfolio fund {portfolio_fund_id} status from '{existing_data.get('status', 'not set')}' to '{update_data['status']}'")
+        
         # Convert date objects to ISO format strings
         if 'start_date' in update_data and update_data['start_date'] is not None:
             update_data['start_date'] = update_data['start_date'].isoformat()
-        
         if 'end_date' in update_data and update_data['end_date'] is not None:
             update_data['end_date'] = update_data['end_date'].isoformat()
-        
-        # Update the portfolio fund
+            
+        # Perform the update
         result = db.table("portfolio_funds").update(update_data).eq("id", portfolio_fund_id).execute()
         
-        if result.data and len(result.data) > 0:
-            return result.data[0]
+        if not result.data or len(result.data) == 0:
+            raise HTTPException(status_code=500, detail="Failed to update portfolio fund")
+            
+        updated_fund = result.data[0]
+        logger.info(f"Successfully updated portfolio fund {portfolio_fund_id}, new status: {updated_fund.get('status', 'not set')}")
         
-        raise HTTPException(status_code=400, detail="Failed to update portfolio fund")
+        # Return the updated data
+        return updated_fund
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error updating portfolio fund: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

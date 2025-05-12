@@ -227,11 +227,11 @@ const FundDetails: React.FC = () => {
       return;
     }
 
-    // Validate risk factor is between 0 and 7
+    // Validate risk factor is between 1 and 7
     if (formData.risk_factor !== undefined && 
         formData.risk_factor !== null && 
-        (formData.risk_factor < 0 || formData.risk_factor > 7)) {
-      setError('Risk factor must be between 0 and 7');
+        (formData.risk_factor < 1 || formData.risk_factor > 7)) {
+      setError('Risk factor must be between 1 and 7');
       return;
     }
 
@@ -413,13 +413,13 @@ const FundDetails: React.FC = () => {
             </div>
             <div>
               <label htmlFor="risk_factor" className="block text-sm font-medium text-gray-700">
-                Risk Factor (0-7)
+                Risk Factor (1-7)
               </label>
               <input
                 type="number"
                 name="risk_factor"
                 id="risk_factor"
-                min="0"
+                min="1"
                 max="7"
                 step="1"
                 value={formData.risk_factor !== null && formData.risk_factor !== undefined ? formData.risk_factor : ''}

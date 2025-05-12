@@ -19,6 +19,7 @@ class PortfolioFundBase(BaseModel):
     start_date: date
     end_date: Optional[date] = None
     amount_invested: Optional[float] = 0  # Also set default to 0 instead of None
+    status: Optional[str] = 'active'  # Add status field with default 'active'
     
     model_config = ConfigDict(
         json_encoders={
@@ -38,6 +39,7 @@ class PortfolioFundUpdate(BaseModel):
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     amount_invested: Optional[float] = None  # matches double precision
+    status: Optional[str] = None  # Add status field to allow updates
     
     model_config = ConfigDict(
         json_encoders={

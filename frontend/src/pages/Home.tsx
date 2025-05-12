@@ -82,7 +82,6 @@ const Home: React.FC = () => {
                 value={metrics?.totalFUM || 0}
                 format="currency"
                 changePercentage={null}
-                timeframe="current value"
                 icon={<CurrencyIcon />}
                 colorScheme="primary"
               />
@@ -93,7 +92,6 @@ const Home: React.FC = () => {
                 value={metrics?.companyIRR || 0}
                 format="percentage"
                 changePercentage={null}
-                timeframe="current value"
                 icon={<ChartIcon />}
                 colorScheme="secondary"
               />
@@ -104,7 +102,6 @@ const Home: React.FC = () => {
                 value={metrics?.totalClients || 0}
                 format="number"
                 changePercentage={null}
-                timeframe="current count"
                 icon={<ClientsIcon />}
                 colorScheme="success"
               />
@@ -115,7 +112,6 @@ const Home: React.FC = () => {
                 value={metrics?.totalAccounts || 0}
                 format="number"
                 changePercentage={null}
-                timeframe="current count"
                 icon={<AccountsIcon />}
                 colorScheme="warning"
               />

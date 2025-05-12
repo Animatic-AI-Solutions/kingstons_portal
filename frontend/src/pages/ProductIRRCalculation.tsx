@@ -139,42 +139,100 @@ const calculateTotalAmountInvested = (holdings: Holding[]): number => {
 
 // Helper to filter active/inactive holdings
 const filterActiveHoldings = (holdings: Holding[]): Holding[] => {
-  return holdings.filter(holding => holding.status === 'active' || !holding.status);
+  // Log all holdings for debugging
+  console.log("All holdings before filtering:", holdings.map(h => ({
+    id: h.id,
+    fund_name: h.fund_name,
+    status: h.status,
+    end_date: h.end_date
+  })));
+  
+  const activeHoldings = holdings.filter(holding => holding.status === 'active' || !holding.status);
+  
+  console.log("Active holdings after filtering:", activeHoldings.map(h => ({
+    id: h.id,
+    fund_name: h.fund_name,
+    status: h.status
+  })));
+  
+  return activeHoldings;
 };
 
 const filterInactiveHoldings = (holdings: Holding[]): Holding[] => {
   const today = new Date();
   
-  return holdings.filter(holding => {
-    // Check if status is explicitly set to 'inactive'
-    const isStatusInactive = holding.status === 'inactive';
+  // Log before filtering
+  console.log("Filtering inactive holdings from:", holdings.length, "holdings");
+  
+  // Before filtering, log the exact values for debugging
+  console.log("All holdings status values:", holdings.map(h => ({ 
+    id: h.id, 
+    name: h.fund_name, 
+    statusValue: h.status, 
+    statusType: typeof h.status,
+    statusLowerCase: h.status?.toLowerCase?.(),
+    statusExactCompare: h.status === 'inactive',
+    statusLooseCompare: h.status?.toLowerCase?.() === 'inactive'
+  })));
+  
+  const inactiveHoldings = holdings.filter(holding => {
+    // Check if status is explicitly set to 'inactive' with string comparison
+    const rawStatus = holding.status;
+    const statusString = typeof rawStatus === 'string' ? rawStatus.toLowerCase() : String(rawStatus).toLowerCase();
+    const isStatusInactive = statusString === 'inactive';
     
     // Check if end_date exists and is in the past
     const hasEndDatePassed = holding.end_date && new Date(holding.end_date) <= today;
     
+    // Debug log for each holding with more details
+    console.log(`Holding ID ${holding.id} (${holding.fund_name}):`, {
+      rawStatus,
+      statusString,
+      isStatusInactive,
+      end_date: holding.end_date,
+      hasEndDatePassed,
+      isInactive: isStatusInactive || hasEndDatePassed
+    });
+    
     // Return true if either condition is met
     return isStatusInactive || hasEndDatePassed;
   });
+  
+  console.log("Found inactive holdings:", inactiveHoldings.map(h => ({
+    id: h.id,
+    fund_name: h.fund_name,
+    status: h.status,
+    end_date: h.end_date
+  })));
+  
+  return inactiveHoldings;
 };
 
 // Create a virtual "Previous Funds" entry that aggregates all inactive funds
 const createPreviousFundsEntry = (inactiveHoldings: Holding[], activityLogs: ActivityLog[]): Holding | null => {
-  if (inactiveHoldings.length === 0) return null;
+  console.log("Creating Previous Funds entry with", inactiveHoldings.length, "inactive holdings");
+  
+  if (inactiveHoldings.length === 0) {
+    console.log("No inactive holdings found, not creating Previous Funds entry");
+    return null;
+  }
   
   // Sum up all the values from inactive holdings
   const totalAmountInvested = inactiveHoldings.reduce((sum, holding) => sum + (holding.amount_invested || 0), 0);
   const totalMarketValue = inactiveHoldings.reduce((sum, holding) => sum + (holding.market_value || 0), 0);
   
-  // Calculate weighted average IRR if any inactive holdings have IRR values
+  console.log("Previous Funds totals:", { totalAmountInvested, totalMarketValue });
+  
+  // Calculate IRR as sum of all fund IRRs minus (100 * number of funds)
   const holdingsWithIRR = inactiveHoldings.filter(h => h.irr !== undefined);
-  let weightedIRR = undefined;
+  let calculatedIRR = undefined;
   
   if (holdingsWithIRR.length > 0) {
-    const totalValueWithIRR = holdingsWithIRR.reduce((sum, h) => sum + (h.market_value || 0), 0);
-    if (totalValueWithIRR > 0) {
-      weightedIRR = holdingsWithIRR.reduce((sum, h) => 
-        sum + ((h.irr || 0) * (h.market_value || 0)), 0) / totalValueWithIRR;
-    }
+    // Sum all IRRs of inactive funds
+    const totalIRR = holdingsWithIRR.reduce((sum, h) => sum + (h.irr || 0), 0);
+    // Subtract 100 times the number of funds
+    calculatedIRR = totalIRR - (100 * holdingsWithIRR.length);
+    console.log("Calculated Previous Funds IRR:", calculatedIRR, "from", holdingsWithIRR.length, "funds with IRR values");
   }
   
   // Find the most recent IRR calculation date among inactive holdings
@@ -185,12 +243,12 @@ const createPreviousFundsEntry = (inactiveHoldings: Holding[], activityLogs: Act
   
   const latestCalculationDate = sortedDates.length > 0 ? sortedDates[0] : undefined;
   
-  return {
+  const previousFundsEntry = {
     id: -1, // Special ID for the virtual fund
     fund_name: 'Previous Funds', // Distinctive name
     amount_invested: totalAmountInvested,
     market_value: totalMarketValue,
-    irr: weightedIRR,
+    irr: calculatedIRR,
     irr_calculation_date: latestCalculationDate,
     account_holding_id: -1,
     isVirtual: true, // Flag to identify this as a virtual entry
@@ -202,6 +260,9 @@ const createPreviousFundsEntry = (inactiveHoldings: Holding[], activityLogs: Act
     })),
     status: 'previous_funds' // Special status to identify this as an aggregation of inactive funds
   } as Holding;
+  
+  console.log("Created Previous Funds entry:", previousFundsEntry);
+  return previousFundsEntry;
 };
 
 const calculateTotalRegularInvestments = (activities: ActivityLog[], holdings: Holding[]): number => {
@@ -314,8 +375,10 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       // Set account data with portfolio information
       setAccount(accountResponse.data);
       
-      // Fetch portfolio funds directly using the portfolio_id
-      const portfolioFundsResponse = await api.get(`/portfolio_funds?portfolio_id=${portfolioId}`);
+      console.log('Making API call to portfolio_funds with explicit select=*');
+      // Fetch portfolio funds directly using the portfolio_id - explicitly select all fields including status
+      const portfolioFundsResponse = await api.get(`/portfolio_funds?portfolio_id=${portfolioId}&select=*`);
+      console.log('Full raw API response for portfolio_funds:', portfolioFundsResponse);
       console.log('AccountIRRCalculation: Portfolio funds data:', portfolioFundsResponse.data);
       
       // Enhanced logging for portfolio funds data
@@ -325,6 +388,29 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
           console.log(`Fund ${index + 1}: ID=${fund.id}, Name=${fund.fund_name}, Status=${fund.status}, `,
                       `End date=${fund.end_date}, Available funds ID=${fund.available_funds_id}`);
         });
+      }
+      
+      // DEBUGGING: Direct check for fund ID 66 if it exists in the response
+      const fund66 = portfolioFundsResponse.data.find((fund: any) => fund.id === 66);
+      if (fund66) {
+        try {
+          console.log('SPECIAL DEBUG: Found fund 66 in the API response, checking details directly');
+          console.log('Fund 66 from list endpoint:', fund66);
+          
+          // Make a direct API call to get just this fund's details
+          const direct66Response = await api.get('/portfolio_funds/66');
+          console.log('Direct API call for fund 66:', direct66Response.data);
+          
+          // Check if status fields match
+          if (fund66.status !== direct66Response.data.status) {
+            console.error('STATUS MISMATCH DETECTED between list API and direct API:', {
+              listStatus: fund66.status,
+              directStatus: direct66Response.data.status
+            });
+          }
+        } catch (err) {
+          console.error('Error in direct check for fund 66:', err);
+        }
       }
       
       if (!portfolioFundsResponse.data || portfolioFundsResponse.data.length === 0) {
@@ -369,10 +455,44 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
           // Ignore error, fallback to undefined
         }
         
-        // Use the status directly from the portfolio_fund record
-        // If status is not provided, default to 'active'
-        const status = portfolioFund.status || 'active';
-        console.log(`Portfolio fund ${portfolioFund.id} (${fund?.fund_name || 'Unknown'}): status = ${status}`);
+        // Use the status directly from the portfolio_fund record and make sure it's a string
+        // Log detailed info for debugging status issues
+        console.log(`Portfolio fund ${portfolioFund.id} raw data:`, {
+          id: portfolioFund.id,
+          fund_name: fund?.fund_name,
+          status: portfolioFund.status,
+          status_type: typeof portfolioFund.status,
+          raw_obj: JSON.stringify(portfolioFund),
+          end_date: portfolioFund.end_date
+        });
+        
+        // Try multiple approaches to get the status
+        let status = 'active'; // Default to active if nothing else is found
+        
+        // 1. Try direct status property
+        if (portfolioFund.status !== undefined && portfolioFund.status !== null) {
+          status = String(portfolioFund.status).toLowerCase();
+          console.log(`Using direct status from API: ${status}`);
+        } 
+        // 2. Try searching the raw object for status properties
+        else if (typeof portfolioFund === 'object') {
+          // Look for any property that might contain 'status'
+          Object.entries(portfolioFund).forEach(([key, value]) => {
+            console.log(`Checking field: ${key} = ${value}, type = ${typeof value}`);
+            if (key.toLowerCase().includes('status') && value) {
+              status = String(value).toLowerCase();
+              console.log(`Found status in field ${key}: ${status}`);
+            }
+          });
+        }
+        
+        // 3. Alternative way to check for specific API endpoints
+        console.log('Alternative check for inactive status:', {
+          endpoint: `/portfolio_funds/${portfolioFund.id}/status`,
+          portfolio_id: portfolioId
+        });
+        
+        console.log(`Portfolio fund ${portfolioFund.id} (${fund?.fund_name || 'Unknown'}): final processed status = ${status}`);
         
         return {
           id: portfolioFund.id, // Use portfolio_fund.id as the holding ID
@@ -386,7 +506,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
           irr: latestIrr,
           irr_calculation_date: latestIrrDate,
           account_holding_id: parseInt(accountId), // Use client_product_id as account_holding_id
-          status: status, // Use the status from the portfolio_fund record
+          status: status, // Use the carefully processed status value
           end_date: portfolioFund.end_date // Include the end_date from the portfolio_fund record
         };
       }));
@@ -577,27 +697,49 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                 <tbody className="bg-white divide-y divide-gray-200">
                   {/* First separate active and inactive holdings */}
                   {(() => {
+                    console.log("Starting to process holdings for display");
+                    
                     const activeHoldings = filterActiveHoldings(holdings);
                     const inactiveHoldings = filterInactiveHoldings(holdings);
+                    
+                    console.log(`After filtering: ${activeHoldings.length} active, ${inactiveHoldings.length} inactive`);
+                    
+                    // Create the Previous Funds entry if there are inactive holdings
                     const previousFundsEntry = createPreviousFundsEntry(inactiveHoldings, activityLogs);
                     
-                    // Display active holdings
+                    // Only display active holdings directly
                     const displayHoldings = [...activeHoldings];
+                    
+                    // Log inactive funds that were filtered out
+                    if (inactiveHoldings.length > 0) {
+                      console.log("Inactive holdings excluded from direct display:", 
+                        inactiveHoldings.map(h => `${h.id} (${h.fund_name}): status=${h.status}, end_date=${h.end_date}`));
+                    }
                     
                     // Add the Previous Funds entry if it exists
                     if (previousFundsEntry) {
+                      console.log("Adding Previous Funds entry to display holdings");
                       displayHoldings.push(previousFundsEntry);
+                    } else {
+                      console.log("No Previous Funds entry was created");
                     }
+                    
+                    console.log(`Final display holdings count: ${displayHoldings.length}`);
                     
                     return (
                       <>
-                        {displayHoldings.map((holding) => (
+                        {displayHoldings.map((holding) => {
+                          console.log(`Rendering holding: ${holding.id} (${holding.fund_name}), isVirtual: ${holding.isVirtual}`);
+                          return (
                           <tr key={holding.id} className={holding.isVirtual ? "bg-gray-100 border-t border-gray-300" : ""}>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center">
                                 <div className={holding.isVirtual ? "ml-4 font-medium" : "ml-4"}>
                                   <div className={`text-sm ${holding.isVirtual ? "font-semibold text-blue-800" : "font-medium text-gray-900"}`}>
                                     {holding.fund_name}
+                                    {holding.status === 'inactive' && !holding.isVirtual && (
+                                      <span className="ml-2 text-xs text-red-600 font-normal">(Inactive)</span>
+                                    )}
                                   </div>
                                   {holding.isVirtual && inactiveHoldings.length > 0 && (
                                     <div className="text-xs text-gray-500 mt-1">
@@ -666,7 +808,9 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                 }`}>
                                   {holding.irr !== undefined ? (
                                     <>
-                                      {formatPercentage(holding.irr)}
+                                      {holding.isVirtual || Math.abs(holding.irr) > 1 
+                                        ? `${holding.irr.toFixed(1)}%` 
+                                        : formatPercentage(holding.irr)}
                                       <span className="ml-1">
                                         {holding.irr >= 0 ? '▲' : '▼'}
                                       </span>
@@ -681,7 +825,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                               </div>
                             </td>
                           </tr>
-                        ))}
+                        )})}
                       </>
                     );
                   })()}
@@ -818,12 +962,24 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                 console.log(`Inactive holding: ID=${holding.id}, Fund name=${holding.fund_name}, Status=${holding.status}, End date=${holding.end_date}`);
               });
               
+              // Calculate IRR as sum of all fund IRRs minus (100 * number of funds)
+              let previousFundsIRR = undefined;
+              const holdingsWithIRR = inactiveHoldings.filter(h => h.irr !== undefined);
+              
+              if (holdingsWithIRR.length > 0) {
+                // Sum all IRRs of inactive funds
+                const totalIRR = holdingsWithIRR.reduce((sum, h) => sum + (h.irr || 0), 0);
+                // Subtract 100 times the number of funds
+                previousFundsIRR = totalIRR - (100 * holdingsWithIRR.length);
+                console.log("Calculated Previous Funds IRR for activities table:", previousFundsIRR, "from", holdingsWithIRR.length, "funds with IRR values");
+              }
+              
               // Create a virtual "Previous Funds" entry for the EditableMonthlyActivitiesTable
               const previousFundsEntry = inactiveHoldings.length > 0 ? {
                 id: -1,
                 holding_id: -1,
                 fund_name: 'Previous Funds',
-                irr: undefined,
+                irr: previousFundsIRR, // Use the calculated IRR
                 isActive: false,
                 inactiveHoldingIds: inactiveHoldings.map(h => ({
                   id: h.id,
