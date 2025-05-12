@@ -223,17 +223,16 @@ const createPreviousFundsEntry = (inactiveHoldings: Holding[], activityLogs: Act
   
   console.log("Previous Funds totals:", { totalAmountInvested, totalMarketValue });
   
-  // Calculate weighted average IRR if any inactive holdings have IRR values
+  // Calculate IRR as sum of all fund IRRs minus (100 * number of funds)
   const holdingsWithIRR = inactiveHoldings.filter(h => h.irr !== undefined);
-  let weightedIRR = undefined;
+  let calculatedIRR = undefined;
   
   if (holdingsWithIRR.length > 0) {
-    const totalValueWithIRR = holdingsWithIRR.reduce((sum, h) => sum + (h.market_value || 0), 0);
-    if (totalValueWithIRR > 0) {
-      weightedIRR = holdingsWithIRR.reduce((sum, h) => 
-        sum + ((h.irr || 0) * (h.market_value || 0)), 0) / totalValueWithIRR;
-      console.log("Calculated weighted IRR:", weightedIRR);
-    }
+    // Sum all IRRs of inactive funds
+    const totalIRR = holdingsWithIRR.reduce((sum, h) => sum + (h.irr || 0), 0);
+    // Subtract 100 times the number of funds
+    calculatedIRR = totalIRR - (100 * holdingsWithIRR.length);
+    console.log("Calculated Previous Funds IRR:", calculatedIRR, "from", holdingsWithIRR.length, "funds with IRR values");
   }
   
   // Find the most recent IRR calculation date among inactive holdings
@@ -249,7 +248,7 @@ const createPreviousFundsEntry = (inactiveHoldings: Holding[], activityLogs: Act
     fund_name: 'Previous Funds', // Distinctive name
     amount_invested: totalAmountInvested,
     market_value: totalMarketValue,
-    irr: weightedIRR,
+    irr: calculatedIRR,
     irr_calculation_date: latestCalculationDate,
     account_holding_id: -1,
     isVirtual: true, // Flag to identify this as a virtual entry
@@ -809,7 +808,9 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                 }`}>
                                   {holding.irr !== undefined ? (
                                     <>
-                                      {formatPercentage(holding.irr)}
+                                      {holding.isVirtual || Math.abs(holding.irr) > 1 
+                                        ? `${holding.irr.toFixed(1)}%` 
+                                        : formatPercentage(holding.irr)}
                                       <span className="ml-1">
                                         {holding.irr >= 0 ? '▲' : '▼'}
                                       </span>
@@ -961,12 +962,24 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                 console.log(`Inactive holding: ID=${holding.id}, Fund name=${holding.fund_name}, Status=${holding.status}, End date=${holding.end_date}`);
               });
               
+              // Calculate IRR as sum of all fund IRRs minus (100 * number of funds)
+              let previousFundsIRR = undefined;
+              const holdingsWithIRR = inactiveHoldings.filter(h => h.irr !== undefined);
+              
+              if (holdingsWithIRR.length > 0) {
+                // Sum all IRRs of inactive funds
+                const totalIRR = holdingsWithIRR.reduce((sum, h) => sum + (h.irr || 0), 0);
+                // Subtract 100 times the number of funds
+                previousFundsIRR = totalIRR - (100 * holdingsWithIRR.length);
+                console.log("Calculated Previous Funds IRR for activities table:", previousFundsIRR, "from", holdingsWithIRR.length, "funds with IRR values");
+              }
+              
               // Create a virtual "Previous Funds" entry for the EditableMonthlyActivitiesTable
               const previousFundsEntry = inactiveHoldings.length > 0 ? {
                 id: -1,
                 holding_id: -1,
                 fund_name: 'Previous Funds',
-                irr: undefined,
+                irr: previousFundsIRR, // Use the calculated IRR
                 isActive: false,
                 inactiveHoldingIds: inactiveHoldings.map(h => ({
                   id: h.id,
