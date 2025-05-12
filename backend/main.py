@@ -21,7 +21,8 @@ from app.api.routes import (
     portfolio_funds, analytics,
     available_providers,
     available_portfolios, fund_valuations,
-    client_product_portfolio_assignments, client_products, holding_activity_logs, product_holdings
+    client_product_portfolio_assignments, client_products, holding_activity_logs, product_holdings,
+    product_owners, client_group_product_owners
 )
 
 # Load environment variables from .env file
@@ -108,6 +109,8 @@ app.include_router(holding_activity_logs.router, prefix="/api", tags=["Holding A
 app.include_router(analytics.router, prefix="/api", tags=["Analytics"])
 app.include_router(client_product_portfolio_assignments.router, prefix="/api", tags=["Client product Portfolio Assignments"])
 app.include_router(fund_valuations.router, prefix="/api", tags=["Fund Valuations"])
+app.include_router(product_owners.router, prefix="/api", tags=["Product Owners"])
+app.include_router(client_group_product_owners.router, prefix="/api", tags=["Client Group Product Owners"])
 
 @app.get("/")
 async def root():

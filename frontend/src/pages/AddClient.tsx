@@ -3,22 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 interface ClientFormData {
-  forname: string;
-  surname: string;
-  relationship: string;
+  name: string;
   status: string;
   advisor: string | null;
+  type: string;
 }
 
 const AddClient: React.FC = () => {
   const navigate = useNavigate();
   const { api } = useAuth();
   const [formData, setFormData] = useState<ClientFormData>({
-    forname: '',
-    surname: '',
-    relationship: '',
+    name: '',
     status: 'active',
-    advisor: null
+    advisor: null,
+    type: 'Family'
   });
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,18 +34,8 @@ const AddClient: React.FC = () => {
     setError(null);
     
     // Validate form data
-    if (!formData.forname?.trim()) {
-      setError('First name is required');
-      return;
-    }
-    
-    if (!formData.surname?.trim()) {
-      setError('Last name is required');
-      return;
-    }
-    
-    if (!formData.relationship?.trim()) {
-      setError('Relationship status is required');
+    if (!formData.name?.trim()) {
+      setError('Client name is required');
       return;
     }
     
@@ -70,7 +58,7 @@ const AddClient: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-3">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Add New Client</h1>
+        <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Add New Client Group</h1>
         <button
           onClick={() => navigate('/clients')}
           className="bg-gray-200 text-gray-700 px-5 py-2 rounded-xl font-medium hover:bg-gray-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 font-sans tracking-wide shadow-sm"
@@ -89,52 +77,18 @@ const AddClient: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="forname" className="block text-sm font-medium text-gray-700">
-                First Name
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                Client Group Name
               </label>
               <input
                 type="text"
-                id="forname"
-                name="forname"
-                value={formData.forname}
+                id="name"
+                name="name"
+                value={formData.name}
                 onChange={handleChange}
                 required
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               />
-            </div>
-
-            <div>
-              <label htmlFor="surname" className="block text-sm font-medium text-gray-700">
-                Last Name
-              </label>
-              <input
-                type="text"
-                id="surname"
-                name="surname"
-                value={formData.surname}
-                onChange={handleChange}
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="relationship" className="block text-sm font-medium text-gray-700">
-                Relationship
-              </label>
-              <select
-                id="relationship"
-                name="relationship"
-                value={formData.relationship}
-                onChange={handleChange}
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              >
-                <option value="">Select a relationship</option>
-                <option value="Relationship">Relationship</option>
-                <option value="Single">Single</option>
-                <option value="Trust">Trust</option>
-              </select>
             </div>
 
             <div>
@@ -149,6 +103,24 @@ const AddClient: React.FC = () => {
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               />
+            </div>
+
+            <div>
+              <label htmlFor="type" className="block text-sm font-medium text-gray-700">
+                Client Group Type
+              </label>
+              <select
+                id="type"
+                name="type"
+                value={formData.type}
+                onChange={handleChange}
+                required
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              >
+                <option value="Family">Family</option>
+                <option value="Business">Business</option>
+                <option value="Trust">Trust</option>
+              </select>
             </div>
 
             <div>
@@ -176,7 +148,7 @@ const AddClient: React.FC = () => {
               disabled={isSubmitting}
               className="bg-primary-700 text-white px-5 py-2 rounded-xl font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-700 disabled:opacity-50 disabled:cursor-not-allowed font-sans tracking-wide shadow-sm"
             >
-              {isSubmitting ? 'Creating...' : 'Create Client'}
+              {isSubmitting ? 'Creating...' : 'Create Client Group'}
             </button>
           </div>
         </form>

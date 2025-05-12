@@ -3,11 +3,10 @@ from typing import Optional
 
 class ClientBase(BaseModel):
     """Base model for client data"""
-    forname: Optional[str] = Field(default="")
-    surname: Optional[str] = Field(default="")
-    relationship: Optional[str] = Field(default="")
+    name: Optional[str] = Field(default="")
     status: Optional[str] = Field(default="active")
     advisor: Optional[str] = Field(default=None)
+    type: Optional[str] = Field(default="Family")
 
     model_config = ConfigDict(
         from_attributes=True
@@ -19,11 +18,10 @@ class ClientCreate(ClientBase):
 
 class ClientUpdate(BaseModel):
     """Model for updating an existing client"""
-    forname: Optional[str] = None
-    surname: Optional[str] = None
-    relationship: Optional[str] = None
+    name: Optional[str] = None
     status: Optional[str] = None
     advisor: Optional[str] = None
+    type: Optional[str] = None
 
     model_config = ConfigDict(
         from_attributes=True

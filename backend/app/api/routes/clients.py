@@ -16,98 +16,115 @@ router = APIRouter()
 async def get_clients(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
     limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
-    show_dormant: bool = Query(False, description="Include dormant clients in the results"),
-    db = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    status: Optional[str] = Query(None, description="Filter by status"),
+    search: Optional[str] = Query(None, description="Search by name, email, account number"),
+    sort_by: Optional[str] = Query(None, description="Field to sort by"),
+    sort_order: Optional[str] = Query("asc", description="Sort order (asc or desc)"),
+    db = Depends(get_db)
 ):
     """
     What it does: Retrieves a paginated list of clients from the database.
-    Why it's needed: Provides a way to view all clients in the system with pagination to handle large datasets efficiently.
-    How it works: 
-        1. Connects to the Supabase database
-        2. Queries the 'clients' table with pagination parameters
-        3. Filters out inactive clients and optionally includes dormant clients
-        4. Returns the data as a list of Client objects
+    Why it's needed: Provides a way to view all clients in the system with optional filtering and sorting.
+    How it works:
+        1. Connects to the database
+        2. Queries the 'clients' table with pagination and optional filters
+        3. Returns the data as a list of Client objects
     Expected output: A JSON array of client objects with all their details
     """
     try:
-        logger.info(f"User {current_user['id']} fetching clients with skip={skip}, limit={limit}, show_dormant={show_dormant}")
-        query = db.table("clients").select("*").neq("status", "inactive")
+        logger.info(f"Fetching clients with skip={skip}, limit={limit}, status={status}, search={search}")
+        query = db.table("client_groups").select("*").neq("status", "inactive")
         
-        if not show_dormant:
-            query = query.neq("status", "dormant")
+        # Apply filters if provided
+        if status:
+            query = query.eq("status", status)
             
+        if search:
+            search = search.lower()
+            # Complex searches would need a more sophisticated approach
+            # This is just a simple implementation
+            search_results = []
+            raw_results = query.execute()
+            
+            if raw_results.data:
+                for client in raw_results.data:
+                    name = client.get("name", "").lower()
+                    relationship = client.get("relationship", "").lower()
+                    advisor = client.get("advisor", "").lower()
+                    
+                    if (search in name or 
+                        search in relationship or 
+                        search in advisor):
+                        search_results.append(client)
+                
+                # Apply pagination to filtered results
+                start = skip
+                end = skip + limit
+                paginated_results = search_results[start:end] if start < len(search_results) else []
+                return paginated_results
+                
+        # Apply sorting if provided
+        if sort_by:
+            # Determine sort order
+            ascending = sort_order.lower() != "desc"
+            query = query.order(sort_by, ascending=ascending)
+        
+        # Apply pagination
         result = query.range(skip, skip + limit - 1).execute()
+        
         logger.info(f"Query result: {result}")
         if not result.data:
             logger.warning("No clients found in the database")
+            
         return result.data
+        
     except Exception as e:
         logger.error(f"Error fetching clients: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to fetch clients: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.get("/clients/dormant", response_model=List[Client])
 async def get_dormant_clients(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
     limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
-    db = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    db = Depends(get_db)
 ):
     """
-    What it does: Retrieves a paginated list of all dormant clients from the database.
-    Why it's needed: Provides a way to view all dormant clients in the system with pagination to handle large datasets efficiently.
-    How it works: 
-        1. Connects to the Supabase database
-        2. Queries the 'clients' table with pagination parameters
-        3. Filters for clients with 'dormant' status
-        4. Returns the data as a list of Client objects
-    Expected output: A JSON array of dormant client objects with all their details
+    What it does: Retrieves a paginated list of dormant clients from the database.
+    Why it's needed: Provides a way to view all dormant clients separately from active ones.
+    How it works:
+        1. Connects to the database
+        2. Queries the 'clients' table for records with status="dormant"
+        3. Returns the data as a list of Client objects
+    Expected output: A JSON array of dormant client objects
     """
     try:
-        logger.info(f"User {current_user['id']} fetching dormant clients with skip={skip}, limit={limit}")
-        result = db.table("clients").select("*").eq("status", "dormant").range(skip, skip + limit - 1).execute()
-        logger.info(f"Query result: {result}")
-        if not result.data:
-            logger.warning("No dormant clients found in the database")
+        result = db.table("client_groups").select("*").eq("status", "dormant").range(skip, skip + limit - 1).execute()
         return result.data
     except Exception as e:
-        logger.error(f"Error fetching dormant clients: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to fetch dormant clients: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.post("/clients", response_model=Client)
-async def create_client(
-    client: ClientCreate, 
-    db = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
-):
+async def create_client(client: ClientCreate, db = Depends(get_db)):
     """
     What it does: Creates a new client record in the database.
-    Why it's needed: Allows adding new clients to the system.
+    Why it's needed: Provides a way to add new clients to the system.
     How it works:
-        1. Takes the client data from the request body
-        2. Validates the data against the ClientCreate model
-        3. Inserts the data into the 'clients' table
-        4. Returns the created client record
-    Expected output: A JSON object containing the newly created client's details
+        1. Validates the client data using the ClientCreate model
+        2. Inserts a new record into the 'clients' table
+        3. Returns the newly created client data
+    Expected output: A JSON object containing the created client's details
     """
     try:
-        logger.info(f"User {current_user['id']} creating new client: {client.model_dump()}")
-        result = db.table("clients").insert(client.model_dump()).execute()
-        if not result.data or len(result.data) == 0:
-            raise HTTPException(status_code=400, detail="Failed to create client")
-        return result.data[0]
-    except HTTPException:
-        raise
+        result = db.table("client_groups").insert(client.model_dump()).execute()
+        if result.data and len(result.data) > 0:
+            return result.data[0]
+        raise HTTPException(status_code=500, detail="Failed to create client")
     except Exception as e:
         logger.error(f"Error creating client: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to create client: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.get("/clients/{client_id}", response_model=Client)
-async def get_client(
-    client_id: int, 
-    db = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
-):
+async def get_client(client_id: int, db = Depends(get_db)):
     """
     What it does: Retrieves a single client by ID.
     Why it's needed: Allows viewing detailed information about a specific client.
@@ -118,8 +135,7 @@ async def get_client(
     Expected output: A JSON object containing the requested client's details
     """
     try:
-        logger.info(f"User {current_user['id']} fetching client with ID: {client_id}")
-        result = db.table("clients").select("*").eq("id", client_id).execute()
+        result = db.table("client_groups").select("*").eq("id", client_id).execute()
         if result.data and len(result.data) > 0:
             return result.data[0]
         raise HTTPException(status_code=404, detail=f"Client with ID {client_id} not found")
@@ -127,42 +143,37 @@ async def get_client(
         raise
     except Exception as e:
         logger.error(f"Error fetching client: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to fetch client: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-@router.patch("/clients/{client_id}", response_model=Client)
-async def update_client(
-    client_id: int, 
-    client_update: ClientUpdate, 
-    db = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
-):
+@router.put("/clients/{client_id}", response_model=Client)
+async def update_client(client_id: int, client_update: ClientUpdate, db = Depends(get_db)):
     """
     What it does: Updates an existing client record.
     Why it's needed: Allows modifying client information.
     How it works:
-        1. Takes the client_id from the URL path and update data from request body
+        1. Takes the client_id from the URL path and update data from the request body
         2. Verifies the client exists
-        3. Updates the client record with the new data
-        4. Returns the updated client record
+        3. Updates the client record in the database
+        4. Returns the updated client data
     Expected output: A JSON object containing the updated client's details
     """
     try:
-        logger.info(f"User {current_user['id']} updating client with ID: {client_id}")
         # Check if client exists
-        check_result = db.table("clients").select("id").eq("id", client_id).execute()
+        check_result = db.table("client_groups").select("id").eq("id", client_id).execute()
         if not check_result.data or len(check_result.data) == 0:
             raise HTTPException(status_code=404, detail=f"Client with ID {client_id} not found")
-
+        
         # Update client
-        result = db.table("clients").update(client_update.model_dump(exclude_unset=True)).eq("id", client_id).execute()
-        if not result.data or len(result.data) == 0:
-            raise HTTPException(status_code=400, detail="Failed to update client")
-        return result.data[0]
+        result = db.table("client_groups").update(client_update.model_dump(exclude_unset=True)).eq("id", client_id).execute()
+        
+        if result.data and len(result.data) > 0:
+            return result.data[0]
+        raise HTTPException(status_code=500, detail="Failed to update client")
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error updating client: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to update client: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.delete("/clients/{client_id}", response_model=dict)
 async def delete_client(
@@ -183,7 +194,7 @@ async def delete_client(
     """
     try:
         # Check if client exists
-        check_result = db.table("clients").select("id").eq("id", client_id).execute()
+        check_result = db.table("client_groups").select("id").eq("id", client_id).execute()
         if not check_result.data or len(check_result.data) == 0:
             raise HTTPException(status_code=404, detail=f"Client with ID {client_id} not found")
 
@@ -198,7 +209,7 @@ async def delete_client(
             raise HTTPException(status_code=500, detail=f"Failed to delete client products: {str(e)}")
 
         # Delete client
-        result = db.table("clients").delete().eq("id", client_id).execute()
+        result = db.table("client_groups").delete().eq("id", client_id).execute()
         if not result.data or len(result.data) == 0:
             raise HTTPException(status_code=400, detail="Failed to delete client")
 
@@ -214,7 +225,7 @@ async def delete_client(
         logger.error(f"Error deleting client: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to delete client: {str(e)}")
 
-@router.patch("/clients/{client_id}/status", response_model=Client)
+@router.put("/clients/{client_id}/status", response_model=Client)
 async def update_client_status(
     client_id: int, 
     status_update: dict, 
@@ -241,7 +252,7 @@ async def update_client_status(
             raise HTTPException(status_code=400, detail=f"Status must be one of: {', '.join(valid_statuses)}")
             
         # Check if client exists
-        check_result = db.table("clients").select("*").eq("id", client_id).execute()
+        check_result = db.table("client_groups").select("*").eq("id", client_id).execute()
         if not check_result.data or len(check_result.data) == 0:
             raise HTTPException(status_code=404, detail=f"Client with ID {client_id} not found")
         
@@ -253,7 +264,7 @@ async def update_client_status(
             return current_client
         
         # Update the client status
-        result = db.table("clients").update({"status": status_update["status"]}).eq("id", client_id).execute()
+        result = db.table("client_groups").update({"status": status_update["status"]}).eq("id", client_id).execute()
         
         if result.data and len(result.data) > 0:
             return result.data[0]
@@ -283,7 +294,7 @@ async def create_client_version(
     """
     try:
         # Check if client exists
-        check_result = db.table("clients").select("*").eq("id", client_id).execute()
+        check_result = db.table("client_groups").select("*").eq("id", client_id).execute()
         if not check_result.data or len(check_result.data) == 0:
             raise HTTPException(status_code=404, detail=f"Client with ID {client_id} not found")
         
@@ -291,7 +302,7 @@ async def create_client_version(
         current_client = check_result.data[0]
         
         # Set the current client as inactive
-        inactive_result = db.table("clients").update({"status": "inactive"}).eq("id", client_id).execute()
+        inactive_result = db.table("client_groups").update({"status": "inactive"}).eq("id", client_id).execute()
         if not inactive_result.data or len(inactive_result.data) == 0:
             raise HTTPException(status_code=400, detail=f"Failed to set client with ID {client_id} as inactive")
         
@@ -301,7 +312,7 @@ async def create_client_version(
         new_client_data.pop("created_at", None)  # Remove the created_at field
         new_client_data["status"] = "active"  # Set status to active
         
-        result = db.table("clients").insert(new_client_data).execute()
+        result = db.table("client_groups").insert(new_client_data).execute()
         if not result.data or len(result.data) == 0:
             raise HTTPException(status_code=400, detail="Failed to create new client version")
         
@@ -338,7 +349,7 @@ async def delete_client_products(
     """
     try:
         # Check if client exists
-        check_result = db.table("clients").select("id").eq("id", client_id).execute()
+        check_result = db.table("client_groups").select("id").eq("id", client_id).execute()
         if not check_result.data or len(check_result.data) == 0:
             raise HTTPException(status_code=404, detail=f"Client with ID {client_id} not found")
 
@@ -430,7 +441,7 @@ async def get_client_fum_summary(db = Depends(get_db)):
     Returns the FUM (Funds Under Management) summary for all clients from the client_fum_summary view.
     """
     try:
-        result = db.table("client_fum_summary").select("*").execute()
+        result = db.table("client_group_fum_summary").select("*").execute()
         return result.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}") 

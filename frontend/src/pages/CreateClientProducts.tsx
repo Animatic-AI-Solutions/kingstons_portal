@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { Modal } from 'antd';
 
 import { useAuth } from '../context/AuthContext';
 import { Radio, Select, Input, Checkbox, DatePicker } from 'antd';
@@ -9,15 +10,23 @@ import SearchableDropdown from '../components/ui/SearchableDropdown';
 
 interface Client {
   id: number;
-  forname: string | null;
-  surname: string | null;
-  initial_investment: number | null;
+  name: string | null;
+  status: string;
+  advisor: string | null;
+  type: string | null;
 }
 
 interface Provider {
   id: number;
   name: string;
   status: string;
+}
+
+interface ProductOwner {
+  id: number;
+  name: string;
+  status: string;
+  created_at: string;
 }
 
 interface Fund {
@@ -39,6 +48,7 @@ interface ProductItem {
   weighting: number; // Will always be 0
   start_date?: dayjs.Dayjs; // Use dayjs type
   plan_number?: string; // Add plan number field
+  product_owner_ids: number[]; // Changed from product_owner_id to product_owner_ids array
   portfolio: {
     id?: number; // Portfolio ID when created or selected
     name: string;
@@ -55,12 +65,19 @@ interface PortfolioTemplate {
   name: string | null;
 }
 
+// Interface for dropdown option
+// interface Option {
+//   id: string;
+//   name: string;
+// }
+
 const CreateClientProducts: React.FC = (): JSX.Element => {
   const navigate = useNavigate();
   const location = useLocation();
   const { api } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [providers, setProviders] = useState<Provider[]>([]);
+  const [productOwners, setProductOwners] = useState<ProductOwner[]>([]);
   const [funds, setFunds] = useState<Fund[]>([]);
   const [availableTemplates, setAvailableTemplates] = useState<PortfolioTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -102,6 +119,12 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
   
+  // Add state for the create product owner modal
+  const [showCreateProductOwnerModal, setShowCreateProductOwnerModal] = useState(false);
+  const [newProductOwnerName, setNewProductOwnerName] = useState('');
+  const [isCreatingProductOwner, setIsCreatingProductOwner] = useState(false);
+  const [currentProductId, setCurrentProductId] = useState<string>('');
+  
   // Click outside handler for dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -138,18 +161,21 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           clientsRes,
           providersRes,
           fundsRes,
-          portfoliosRes
+          portfoliosRes,
+          productOwnersRes
         ] = await Promise.all([
           api.get('/clients'),
           api.get('/available_providers'),
           api.get('/funds'),
-          api.get('/available_portfolios')
+          api.get('/available_portfolios'),
+          api.get('/api/product_owners')
         ]);
         
         setClients(clientsRes.data);
         setProviders(providersRes.data);
         setFunds(fundsRes.data);
         setAvailableTemplates(portfoliosRes.data);
+        setProductOwners(productOwnersRes.data);
         
         // Set defaults
         if (clientsRes.data.length > 0) {
@@ -230,53 +256,35 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   };
 
   const handleAddProduct = () => {
-
     if (!selectedClientId) {
       setError('Please select a client first');
-
       return;
     }
     
     // Create a new empty product with a temporary ID
     const productId = `temp-${Date.now()}`;
     const newProduct: ProductItem = {
-
-      id: `temp-${Date.now()}`,
+      id: productId,
       client_id: selectedClientId,
-
       provider_id: 0,
       product_type: '',
       product_name: `Product ${products.length + 1}`,
       status: 'active',
-
-      weighting: 0, // Always 0 for new products
-      start_date: startDate, // Use the selected start date
-
+      weighting: 0,
+      product_owner_ids: [],
       portfolio: {
-        name: `Portfolio ${products.length + 1}`,
+        name: `Portfolio for Product ${products.length + 1}`,
         selectedFunds: [],
         type: 'bespoke',
         fundWeightings: {}
       }
     };
     
-    // Update products state
     setProducts([...products, newProduct]);
     
-    // Scroll to new product after UI updates
+    // Scroll to the new product section after it's rendered
     setTimeout(() => {
-      if (productRefs.current[productId]) {
-        productRefs.current[productId]?.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'start' 
-        });
-        
-        // Focus on the first input field (product name)
-        const nameInput = productRefs.current[productId]?.querySelector('input[type="text"]');
-        if (nameInput instanceof HTMLInputElement) {
-          nameInput.focus();
-        }
-      }
+      productRefs.current[productId]?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
   };
 
@@ -480,11 +488,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   };
 
   const validateForm = (): boolean => {
-
     // Client must be selected
     if (!selectedClientId) {
       setError('Please select a client');
-
       return false;
     }
     if (products.length === 0) {
@@ -625,7 +631,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         // Now, create client product with reference to the portfolio
         if (portfolioId) {
           try {
-            await api.post('/client_products', {
+            const clientProductResponse = await api.post('/client_products', {
               client_id: selectedClientId,
               provider_id: product.provider_id,
               product_type: product.product_type,
@@ -635,7 +641,31 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               start_date: formattedStartDate,
               plan_number: product.plan_number || null
             });
-            console.log(`Created client product for portfolio ${portfolioId}`);
+            
+            const createdProductId = clientProductResponse.data.id;
+            console.log(`Created client product with ID ${createdProductId} for portfolio ${portfolioId}`);
+            
+            // If product owners were selected, create the associations
+            if (product.product_owner_ids.length > 0) {
+              try {
+                // Create associations one by one
+                for (const ownerId of product.product_owner_ids) {
+                  await api.post('/api/product_owner_products', null, {
+                    params: {
+                      product_owner_id: ownerId,
+                      product_id: createdProductId
+                    }
+                  });
+                }
+                console.log(`Created associations between product ${createdProductId} and product owners ${product.product_owner_ids.join(', ')}`);
+              } catch (err: any) {
+                console.error('Error creating product owner associations:', err);
+                if (err.response && err.response.data) {
+                  console.error('API Error details:', err.response.data);
+                }
+                // Continue if the associations couldn't be created, don't block the rest of the submission
+              }
+            }
           } catch (err: any) { // Type the error as any
             console.error('Error creating client product:', err);
             if (err.response && err.response.data) {
@@ -829,6 +859,53 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     );
   };
 
+  // Add a function to handle creating a new product owner
+  const handleCreateProductOwner = async () => {
+    if (!newProductOwnerName.trim()) {
+      showError('Please enter a name for the product owner');
+      return;
+    }
+
+    setIsCreatingProductOwner(true);
+    try {
+      // Create a new product owner
+      const response = await api.post('/api/product_owners', {
+        name: newProductOwnerName,
+        status: 'active'
+      });
+
+      const newProductOwner = response.data;
+      
+      // Add to the list of product owners
+      setProductOwners(prevOwners => [...prevOwners, newProductOwner]);
+      
+      // Add this product owner to the current product's selected owners
+      if (currentProductId) {
+        const currentProduct = products.find(p => p.id === currentProductId);
+        if (currentProduct) {
+          const updatedOwnerIds = [...currentProduct.product_owner_ids, newProductOwner.id];
+          handleProductChange(currentProductId, 'product_owner_ids', updatedOwnerIds);
+        }
+      }
+      
+      // Close the modal and reset
+      setShowCreateProductOwnerModal(false);
+      setNewProductOwnerName('');
+      showToastMessage(`Product owner "${newProductOwnerName}" created successfully!`);
+    } catch (error) {
+      console.error('Error creating product owner:', error);
+      showError('Failed to create product owner. Please try again.');
+    } finally {
+      setIsCreatingProductOwner(false);
+    }
+  };
+
+  // Add a function to open the create product owner modal
+  const openCreateProductOwnerModal = (productId: string) => {
+    setCurrentProductId(productId);
+    setShowCreateProductOwnerModal(true);
+  };
+
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -840,7 +917,6 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   }
 
   return (
-
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Toast notification */}
       {showToast && (
@@ -912,7 +988,6 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         <Link
           to={`/clients/${urlClientId}`}
           className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-
         >
           <svg className="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
             <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
@@ -922,214 +997,293 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       </div>
 
       <div className="max-w-6xl mx-auto p-4">
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-700"></div>
+          </div>
+        ) : error ? (
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
+            <p>{error}</p>
+          </div>
+        ) : (
+          <div className="bg-white shadow-md rounded-lg p-4">
+            <form onSubmit={handleSubmit}>
+              {/* Client Selection and Start Date in horizontal layout */}
+              <div className="flex gap-4 mb-4">
+                {/* Client Selection */}
+                <div className="w-1/2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Client Name <span className="text-red-500">*</span>
+                  </label>
+                  {clients.length > 0 ? (
+                    <Select
+                      showSearch
+                      value={selectedClientId || undefined}
+                      onChange={(value) => handleClientChange(value)}
+                      placeholder="Search for a client"
+                      optionFilterProp="children"
+                      filterOption={(input, option) =>
+                        (option?.children as unknown as string)
+                          .toLowerCase()
+                          .includes(input.toLowerCase())
+                      }
+                      className="w-full"
+                    >
+                      {clients.map(client => (
+                        <Select.Option key={client.id} value={client.id}>
+                          {client.name}
+                        </Select.Option>
+                      ))}
+                    </Select>
+                  ) : (
+                    <div className="text-gray-500">No clients available. Please add a client first.</div>
+                  )}
+                </div>
 
-      {isLoading ? (
-        <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-700"></div>
-        </div>
-
-      ) : error ? (
-        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
-          <p>{error}</p>
-        </div>
-
-      ) : (
-        <div className="bg-white shadow-md rounded-lg p-4">
-          <form onSubmit={handleSubmit}>
-            {/* Client Selection and Start Date in horizontal layout */}
-            <div className="flex gap-4 mb-4">
-            {/* Client Selection */}
-              <div className="w-1/2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Client Name <span className="text-red-500">*</span>
-              </label>
-              {clients.length > 0 ? (
-
-                  <Select
-                    showSearch
-                    value={selectedClientId || undefined}
-                    onChange={(value) => handleClientChange(value)}
-                    placeholder="Search for a client"
-                    optionFilterProp="children"
-                    filterOption={(input, option) =>
-                      (option?.children as unknown as string)
-                        .toLowerCase()
-                        .includes(input.toLowerCase())
-                    }
-                    className="w-full"
-                  >
-                  {clients.map(client => (
-                      <Select.Option key={client.id} value={client.id}>
-                      {client.forname} {client.surname}
-                      </Select.Option>
-                  ))}
-                  </Select>
-
-              ) : (
-                <div className="text-gray-500">No clients available. Please add a client first.</div>
-              )}
-            </div>
-
-            {/* Start Date Selection */}
-              <div className="w-1/2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                Start Date <span className="text-red-500">*</span>
-              </label>
-              <DatePicker
-                value={startDate}
-                onChange={(date) => setStartDate(date as Dayjs)}
-                  className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md h-[38px]"
-                  style={{ width: '100%' }}
-              />
+                {/* Start Date Selection */}
+                <div className="w-1/2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Start Date <span className="text-red-500">*</span>
+                  </label>
+                  <DatePicker
+                    value={startDate}
+                    onChange={(date) => setStartDate(date as Dayjs)}
+                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md h-[38px]"
+                    style={{ width: '100%' }}
+                  />
+                </div>
               </div>
-            </div>
 
-            {/* Product List */}
-            <div className="space-y-4">
-              <div className="flex justify-between items-center pb-3 border-b border-gray-200">
-                <h2 className="text-lg font-medium">Products</h2>
+              {/* Product List */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center pb-3 border-b border-gray-200">
+                  <h2 className="text-lg font-medium">Products</h2>
+                  <button
+                    type="button"
+                    onClick={handleAddProduct}
+                    className="bg-primary-700 text-white px-3 py-1.5 rounded-xl font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 shadow-sm flex items-center gap-1"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Add Client Product
+                  </button>
+                </div>
+
+                {products.length === 0 ? (
+                  <div className="text-center py-6 text-gray-500">
+                    No products added yet. Click the button above to add a product.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {products.map((product) => (
+                      <div 
+                        key={product.id} 
+                        className="border rounded-md p-6 mb-6 bg-gray-50 relative"
+                        ref={el => productRefs.current[product.id] = el}
+                        id={`product-${product.id}`}
+                      >
+                        {/* Product Header */}
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className="text-lg font-medium">{product.product_name}</h3>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveProduct(product.id)}
+                            className="text-gray-400 hover:text-red-500 transition-colors duration-200"
+                          >
+                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+
+                        {/* Product Name Field */}
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Product Name <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={product.product_name}
+                            onChange={(e) => handleProductChange(product.id, 'product_name', e.target.value)}
+                            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                            placeholder="Enter product name"
+                            required
+                          />
+                        </div>
+
+                        {/* Provider and Product Type Selection in horizontal layout */}
+                        <div className="flex gap-4 mb-3">
+                          {/* Provider Selection */}
+                          <div className="w-1/2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Provider <span className="text-red-500">*</span>
+                            </label>
+
+                            <SearchableDropdown
+                              id={`provider-select-${product.id}`}
+                              options={providers.map(p => ({ value: p.id, label: p.name }))}
+                              value={product.provider_id}
+                              onChange={val => handleProductChange(product.id, 'provider_id', Number(val))}
+                              placeholder="Select a provider"
+                              className="w-full"
+                              required
+                            />
+
+                          </div>
+
+                          {/* Product Type Selection */}
+                          <div className="w-1/2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Product Type <span className="text-red-500">*</span>
+                            </label>
+                            <SearchableDropdown
+                              id={`product-type-select-${product.id}`}
+                              options={[
+                                { value: 'ISA', label: 'ISA' },
+                                { value: 'JISA', label: 'Junior ISA' },
+                                { value: 'SIPP', label: 'SIPP' },
+                                { value: 'GIA', label: 'GIA' },
+                                { value: 'Offshore Bond', label: 'Offshore Bond' },
+                                { value: 'Onshore Bond', label: 'Onshore Bond' },
+                                { value: 'Trust', label: 'Trust' },
+                                { value: 'Other', label: 'Other' },
+                              ]}
+                              value={product.product_type}
+                              onChange={val => handleProductTypeChange(product.id, String(val))}
+                              placeholder="Select product type"
+                              className="w-full"
+                              required
+                            />
+                          </div>
+
+                          {/* Product Owner Selection */}
+                          <div className="mb-4 mt-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Product Owners
+                            </label>
+                            <div className="flex space-x-2">
+                              <div className="flex-grow">
+                                <Select
+                                  mode="multiple"
+                                  showSearch
+                                  allowClear
+                                  placeholder="Select product owners"
+                                  className="w-full"
+                                  value={product.product_owner_ids}
+                                  onChange={(selectedValues: any) => {
+                                    // Handle the create new option case
+                                    if (selectedValues.includes('create-new')) {
+                                      // Filter out the 'create-new' value
+                                      const actualOwnerIds = selectedValues.filter((v: any) => v !== 'create-new');
+                                      handleProductChange(product.id, 'product_owner_ids', actualOwnerIds);
+                                      openCreateProductOwnerModal(product.id);
+                                    } else {
+                                      handleProductChange(product.id, 'product_owner_ids', selectedValues);
+                                    }
+                                  }}
+                                >
+                                  {productOwners.map(p => (
+                                    <Select.Option key={p.id} value={p.id}>
+                                      {p.name}
+                                    </Select.Option>
+                                  ))}
+                                  <Select.Option key="create-new" value="create-new">
+                                    + Create new product owner
+                                  </Select.Option>
+                                </Select>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => openCreateProductOwnerModal(product.id)}
+                                className="bg-primary-600 text-white p-2 rounded hover:bg-primary-700 transition-colors duration-150 inline-flex items-center justify-center"
+                                title="Create new product owner"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Plan Number */}
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Plan Number
+                          </label>
+                          <input
+                            type="text"
+                            value={product.plan_number || ''}
+                            onChange={(e) => handleProductChange(product.id, 'plan_number', e.target.value)}
+                            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                            placeholder="Enter plan number"
+                          />
+                        </div>
+
+                        {/* Portfolio Configuration */}
+                        <div className="mt-6 border-t pt-6 col-span-2">
+                          <h4 className="text-lg font-medium mb-4">Portfolio Configuration</h4>
+
+                          {renderPortfolioSection(product)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Submit Button */}
+              <div className="mt-6 flex justify-end">
                 <button
-                  type="button"
-                  onClick={handleAddProduct}
-                  className="bg-primary-700 text-white px-3 py-1.5 rounded-xl font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 shadow-sm flex items-center gap-1"
+                  type="submit"
+                  disabled={isSaving}
+                  className="bg-primary-700 text-white px-4 py-2 rounded-xl font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 shadow-sm"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  Add Client Product
+                  {isSaving ? 'Saving...' : 'Save Products'}
                 </button>
               </div>
-
-              {products.length === 0 ? (
-                <div className="text-center py-6 text-gray-500">
-                  No products added yet. Click the button above to add a product.
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {products.map((product) => (
-
-                    <div 
-                      key={product.id} 
-                      className="border rounded-md p-6 mb-6 bg-gray-50 relative"
-                      ref={el => productRefs.current[product.id] = el}
-                      id={`product-${product.id}`}
-                    >
-                      {/* Product Header */}
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-medium">{product.product_name}</h3>
-
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveProduct(product.id)}
-                          className="text-gray-400 hover:text-red-500 transition-colors duration-200"
-                        >
-                          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-
-                      {/* Product Name Field */}
-                      <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Product Name <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={product.product_name}
-                          onChange={(e) => handleProductChange(product.id, 'product_name', e.target.value)}
-                          className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                          placeholder="Enter product name"
-                          required
-                        />
-                      </div>
-
-                      {/* Provider and Product Type Selection in horizontal layout */}
-                      <div className="flex gap-4 mb-3">
-                        {/* Provider Selection */}
-                        <div className="w-1/2">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Provider <span className="text-red-500">*</span>
-                          </label>
-
-                          <SearchableDropdown
-                            id={`provider-select-${product.id}`}
-                            options={providers.map(p => ({ value: p.id, label: p.name }))}
-                            value={product.provider_id}
-                            onChange={val => handleProductChange(product.id, 'provider_id', Number(val))}
-                            placeholder="Select a provider"
-                            className="w-full"
-                            required
-                          />
-
-                        </div>
-
-                        {/* Product Type Selection */}
-                        <div className="w-1/2">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Product Type <span className="text-red-500">*</span>
-                          </label>
-                          <SearchableDropdown
-                            id={`product-type-select-${product.id}`}
-                            options={[
-                              { value: 'ISA', label: 'ISA' },
-                              { value: 'JISA', label: 'Junior ISA' },
-                              { value: 'SIPP', label: 'SIPP' },
-                              { value: 'GIA', label: 'GIA' },
-                              { value: 'Offshore Bond', label: 'Offshore Bond' },
-                              { value: 'Onshore Bond', label: 'Onshore Bond' },
-                              { value: 'Trust', label: 'Trust' },
-                              { value: 'Other', label: 'Other' },
-                            ]}
-                            value={product.product_type}
-                            onChange={val => handleProductTypeChange(product.id, String(val))}
-                            placeholder="Select product type"
-                            className="w-full"
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      {/* Plan Number */}
-                      <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Plan Number
-                        </label>
-                        <input
-                          type="text"
-                          value={product.plan_number || ''}
-                          onChange={(e) => handleProductChange(product.id, 'plan_number', e.target.value)}
-                          className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                          placeholder="Enter plan number"
-                        />
-                      </div>
-
-                      {/* Portfolio Configuration */}
-                      <div className="mt-6 border-t pt-6 col-span-2">
-                        <h4 className="text-lg font-medium mb-4">Portfolio Configuration</h4>
-
-                        {renderPortfolioSection(product)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Submit Button */}
-            <div className="mt-6 flex justify-end">
-              <button
-                type="submit"
-                disabled={isSaving}
-                className="bg-primary-700 text-white px-4 py-2 rounded-xl font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 shadow-sm"
-              >
-                {isSaving ? 'Saving...' : 'Save Products'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+            </form>
+          </div>
+        )}
       </div>
+
+      {/* Create Product Owner Modal */}
+      {showCreateProductOwnerModal && (
+        <Modal
+          title="Create New Product Owner"
+          open={showCreateProductOwnerModal}
+          onCancel={() => setShowCreateProductOwnerModal(false)}
+          onOk={handleCreateProductOwner}
+          confirmLoading={isCreatingProductOwner}
+          okText="Create Product Owner"
+          maskClosable={false}
+          centered
+          className="product-owner-modal"
+        >
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Product Owner Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={newProductOwnerName}
+              onChange={(e) => setNewProductOwnerName(e.target.value)}
+              className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+              placeholder="Enter product owner name"
+              required
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleCreateProductOwner();
+                }
+              }}
+              autoFocus
+            />
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

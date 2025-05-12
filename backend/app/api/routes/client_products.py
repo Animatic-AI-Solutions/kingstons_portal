@@ -69,7 +69,7 @@ async def get_client_products(
         # Only fetch clients if we have client IDs
         clients_map = {}
         if client_ids:
-            clients_result = db.table("clients").select("*").in_("id", client_ids).execute()
+            clients_result = db.table("client_groups").select("*").in_("id", client_ids).execute()
             # Create a lookup map of client data by ID
             clients_map = {c.get("id"): c for c in clients_result.data}
         
@@ -105,9 +105,7 @@ async def get_client_products(
             client_id = product.get("client_id")
             if client_id and client_id in clients_map:
                 client = clients_map[client_id]
-                forname = client.get("forname", "")
-                surname = client.get("surname", "")
-                product["client_name"] = f"{forname} {surname}".strip()
+                product["client_name"] = client.get("name", "")
             
             # Add portfolio and template info if available
             portfolio_id = product.get("portfolio_id")
@@ -274,12 +272,10 @@ async def get_client_product(client_product_id: int, db = Depends(get_db)):
         # Fetch client data if available
         client_id = client_product.get("client_id")
         if client_id:
-            client_result = db.table("clients").select("*").eq("id", client_id).execute()
+            client_result = db.table("client_groups").select("*").eq("id", client_id).execute()
             if client_result.data and len(client_result.data) > 0:
                 client = client_result.data[0]
-                forname = client.get("forname", "")
-                surname = client.get("surname", "")
-                client_product["client_name"] = f"{forname} {surname}".strip()
+                client_product["client_name"] = client.get("name", "")
                 logger.info(f"Added client name: {client_product['client_name']}")
         
         # Fetch portfolio information if available
@@ -340,7 +336,7 @@ async def update_client_product(client_product_id: int, client_product_update: C
         
         # Validate client_id if provided
         if "client_id" in update_data and update_data["client_id"] is not None:
-            client_check = db.table("clients").select("id").eq("id", update_data["client_id"]).execute()
+            client_check = db.table("client_groups").select("id").eq("id", update_data["client_id"]).execute()
             if not client_check.data or len(client_check.data) == 0:
                 raise HTTPException(status_code=404, detail=f"Client with ID {update_data['client_id']} not found")
         

@@ -1,0 +1,312 @@
+from fastapi import APIRouter, Depends, HTTPException, Query, Path, Response, status
+from typing import List, Optional, Dict, Any
+import logging
+
+from ...db.database import get_db
+from ...models.product_owner import ProductOwner, ProductOwnerCreate, ProductOwnerUpdate
+
+router = APIRouter()
+logger = logging.getLogger(__name__)
+
+@router.get("/product_owners", response_model=List[ProductOwner])
+async def get_product_owners(
+    skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
+    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
+    status: Optional[str] = Query(None, description="Filter by status"),
+    search: Optional[str] = Query(None, description="Search by name"),
+    sort_by: Optional[str] = Query(None, description="Field to sort by"),
+    sort_order: Optional[str] = Query("asc", description="Sort order (asc or desc)"),
+    db = Depends(get_db)
+):
+    """
+    Retrieve a paginated list of product owners from the database.
+    Supports filtering, searching, and sorting.
+    """
+    try:
+        logger.info(f"Retrieving product owners with filter: status={status}, search={search}, sort_by={sort_by}, sort_order={sort_order}")
+        
+        # Start building the query
+        query = db.table("product_owners").select("*")
+        
+        # Apply status filter if provided
+        if status:
+            query = query.eq("status", status)
+        
+        # Apply search if provided
+        if search:
+            query = query.ilike("name", f"%{search}%")
+        
+        # Apply sorting if provided
+        if sort_by:
+            # Check if sort_by is a valid column
+            valid_columns = ["id", "name", "status", "created_at"]
+            if sort_by in valid_columns:
+                query = query.order(sort_by, desc=(sort_order.lower() == "desc"))
+            else:
+                logger.warning(f"Invalid sort column: {sort_by}")
+        else:
+            # Default sort by id
+            query = query.order("id", desc=False)
+        
+        # Execute the query with pagination
+        result = query.range(skip, skip + limit - 1).execute()
+        
+        if result.data:
+            return result.data
+        return []
+    
+    except Exception as e:
+        logger.error(f"Error retrieving product owners: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@router.get("/product_owners/{product_owner_id}", response_model=ProductOwner)
+async def get_product_owner(
+    product_owner_id: int = Path(..., description="The ID of the product owner to retrieve"),
+    db = Depends(get_db)
+):
+    """
+    Retrieve a specific product owner by ID.
+    """
+    try:
+        logger.info(f"Retrieving product owner with ID: {product_owner_id}")
+        
+        result = db.table("product_owners").select("*").eq("id", product_owner_id).execute()
+        
+        if not result.data:
+            raise HTTPException(status_code=404, detail=f"Product owner with ID {product_owner_id} not found")
+        
+        return result.data[0]
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving product owner {product_owner_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@router.post("/product_owners", response_model=ProductOwner, status_code=status.HTTP_201_CREATED)
+async def create_product_owner(
+    product_owner: ProductOwnerCreate,
+    db = Depends(get_db)
+):
+    """
+    Create a new product owner.
+    """
+    try:
+        logger.info(f"Creating new product owner: {product_owner.model_dump()}")
+        
+        # Insert the new product owner
+        result = db.table("product_owners").insert(product_owner.model_dump()).execute()
+        
+        if not result.data:
+            raise HTTPException(status_code=500, detail="Failed to create product owner")
+        
+        # Get the created product owner
+        created_product_owner_id = result.data[0]["id"]
+        new_product_owner = db.table("product_owners").select("*").eq("id", created_product_owner_id).execute()
+        
+        return new_product_owner.data[0]
+    
+    except Exception as e:
+        logger.error(f"Error creating product owner: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@router.patch("/product_owners/{product_owner_id}", response_model=ProductOwner)
+async def update_product_owner(
+    product_owner_update: ProductOwnerUpdate,
+    product_owner_id: int = Path(..., description="The ID of the product owner to update"),
+    db = Depends(get_db)
+):
+    """
+    Update an existing product owner.
+    """
+    try:
+        logger.info(f"Updating product owner {product_owner_id} with data: {product_owner_update.model_dump()}")
+        
+        # Check if product owner exists
+        check_result = db.table("product_owners").select("*").eq("id", product_owner_id).execute()
+        
+        if not check_result.data:
+            raise HTTPException(status_code=404, detail=f"Product owner with ID {product_owner_id} not found")
+        
+        # Filter out None values to only update provided fields
+        update_data = {k: v for k, v in product_owner_update.model_dump().items() if v is not None}
+        
+        if not update_data:
+            # No fields to update, return the original
+            return check_result.data[0]
+        
+        # Update the product owner
+        update_result = db.table("product_owners").update(update_data).eq("id", product_owner_id).execute()
+        
+        if not update_result.data:
+            raise HTTPException(status_code=500, detail="Failed to update product owner")
+        
+        # Get the updated product owner
+        updated_product_owner = db.table("product_owners").select("*").eq("id", product_owner_id).execute()
+        
+        return updated_product_owner.data[0]
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating product owner {product_owner_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@router.delete("/product_owners/{product_owner_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_product_owner(
+    product_owner_id: int = Path(..., description="The ID of the product owner to delete"),
+    db = Depends(get_db)
+):
+    """
+    Delete a product owner.
+    
+    Note: This will delete the product owner but not any associated product owner-client group
+    or product owner-product relationships. Those will need to be deleted separately.
+    """
+    try:
+        logger.info(f"Deleting product owner with ID: {product_owner_id}")
+        
+        # Check if product owner exists
+        check_result = db.table("product_owners").select("*").eq("id", product_owner_id).execute()
+        
+        if not check_result.data:
+            raise HTTPException(status_code=404, detail=f"Product owner with ID {product_owner_id} not found")
+        
+        # Delete the product owner
+        db.table("product_owners").delete().eq("id", product_owner_id).execute()
+        
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting product owner {product_owner_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@router.get("/product_owners/{product_owner_id}/client_groups", response_model=List[dict])
+async def get_product_owner_client_groups(
+    product_owner_id: int = Path(..., description="The ID of the product owner"),
+    db = Depends(get_db)
+):
+    """
+    Get all client groups associated with a product owner.
+    """
+    try:
+        logger.info(f"Retrieving client groups for product owner {product_owner_id}")
+        
+        # Check if product owner exists
+        product_owner_result = db.table("product_owners").select("*").eq("id", product_owner_id).execute()
+        
+        if not product_owner_result.data:
+            raise HTTPException(status_code=404, detail=f"Product owner with ID {product_owner_id} not found")
+        
+        # Get the associations
+        associations_result = db.table("client_group_product_owners").select("*").eq("product_owner_id", product_owner_id).execute()
+        
+        if not associations_result.data:
+            return []
+        
+        # Get the client group IDs
+        client_group_ids = [assoc["client_group_id"] for assoc in associations_result.data]
+        
+        # Get the client group details
+        client_groups_result = db.table("client_groups").select("*").in_("id", client_group_ids).execute()
+        
+        return client_groups_result.data or []
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving client groups for product owner {product_owner_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@router.get("/product_owners/{product_owner_id}/products", response_model=List[dict])
+async def get_product_owner_products(
+    product_owner_id: int = Path(..., description="The ID of the product owner"),
+    db = Depends(get_db)
+):
+    """
+    Get all products associated with a product owner.
+    """
+    try:
+        logger.info(f"Retrieving products for product owner {product_owner_id}")
+        
+        # Check if product owner exists
+        product_owner_result = db.table("product_owners").select("*").eq("id", product_owner_id).execute()
+        
+        if not product_owner_result.data:
+            raise HTTPException(status_code=404, detail=f"Product owner with ID {product_owner_id} not found")
+        
+        # Get the associations
+        associations_result = db.table("product_owner_products").select("*").eq("product_owner_id", product_owner_id).execute()
+        
+        if not associations_result.data:
+            return []
+        
+        # Get the product IDs
+        product_ids = [assoc["product_id"] for assoc in associations_result.data]
+        
+        # Get the product details
+        products_result = db.table("client_products").select("*").in_("id", product_ids).execute()
+        
+        return products_result.data or []
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving products for product owner {product_owner_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@router.post("/product_owner_products", status_code=status.HTTP_201_CREATED, response_model=Dict[str, Any])
+async def create_product_owner_product(
+    product_owner_id: int,
+    product_id: int,
+    db = Depends(get_db)
+):
+    """
+    Create a new association between a product owner and a product.
+    """
+    try:
+        logger.info(f"Creating association between product owner {product_owner_id} and product {product_id}")
+        
+        # Check if product owner exists
+        product_owner_result = db.table("product_owners").select("id").eq("id", product_owner_id).execute()
+        
+        if not product_owner_result.data:
+            raise HTTPException(status_code=404, detail=f"Product owner with ID {product_owner_id} not found")
+        
+        # Check if product exists
+        product_result = db.table("client_products").select("id").eq("id", product_id).execute()
+        
+        if not product_result.data:
+            raise HTTPException(status_code=404, detail=f"Product with ID {product_id} not found")
+        
+        # Check if the association already exists
+        existing_result = db.table("product_owner_products") \
+            .select("*") \
+            .eq("product_owner_id", product_owner_id) \
+            .eq("product_id", product_id) \
+            .execute()
+        
+        if existing_result.data:
+            # Association already exists, return it
+            return existing_result.data[0]
+        
+        # Create the association
+        new_association = {
+            "product_owner_id": product_owner_id,
+            "product_id": product_id
+        }
+        
+        result = db.table("product_owner_products").insert(new_association).execute()
+        
+        if not result.data:
+            raise HTTPException(status_code=500, detail="Failed to create association")
+        
+        return result.data[0]
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating product owner product association: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") 
