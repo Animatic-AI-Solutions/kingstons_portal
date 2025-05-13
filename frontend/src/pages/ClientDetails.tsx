@@ -6,11 +6,10 @@ import { getProviderColor } from '../services/providerColors';
 // Enhanced TypeScript interfaces
 interface Client {
   id: string;
-  forname: string | null;
-  surname: string | null;
-  relationship: string;
+  name: string | null;
   status: string;
   advisor: string | null;
+  type: string | null;
   created_at: string;
   updated_at: string;
   age?: number;
@@ -18,11 +17,10 @@ interface Client {
 }
 
 interface ClientFormData {
-  forname: string | null;
-  surname: string | null;
-  relationship: string;
+  name: string | null;
   status: string;
   advisor: string | null;
+  type: string | null;
 }
 
 interface ClientAccount {
@@ -102,7 +100,7 @@ const ClientHeader = ({
 
   return (
     <div className="mb-6 bg-white shadow-sm rounded-lg border border-gray-100 relative transition-all duration-300 hover:shadow-md">
-      <Link to="/clients" className="absolute left-4 top-4 text-primary-700 hover:text-primary-800 transition-colors duration-200">
+      <Link to="/client_groups" className="absolute left-4 top-4 text-primary-700 hover:text-primary-800 transition-colors duration-200">
         <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
         </svg>
@@ -112,7 +110,7 @@ const ClientHeader = ({
           <div className="flex items-center">
             <div className="pl-9">
               <h1 className="text-4xl font-normal text-gray-900 font-sans tracking-wide">
-                {client.forname} {client.surname}
+                {client.name}
               </h1>
               <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1">
                 <div className="text-base text-gray-600 font-sans tracking-wide">
@@ -121,7 +119,7 @@ const ClientHeader = ({
                   }`}>{client.status}</span>
                 </div>
                 <div className="text-base text-gray-600 font-sans tracking-wide">
-                  Relationship: {client.relationship}
+                  Type: {client.type || 'Family'}
                 </div>
                 <div className="text-base text-gray-600 font-sans tracking-wide">
                   Advisor: {client.advisor || 'Not assigned'}
@@ -466,11 +464,10 @@ const ClientDetails: React.FC = () => {
   const [versions, setVersions] = useState<any[]>([]);
   const [showVersionModal, setShowVersionModal] = useState(false);
   const [formData, setFormData] = useState<ClientFormData>({
-    forname: null,
-    surname: null,
-    relationship: '',
+    name: null,
     status: 'active',
-    advisor: null
+    advisor: null,
+    type: null
   });
   
   // State for expanded product cards
@@ -621,18 +618,57 @@ const ClientDetails: React.FC = () => {
     const totalFunds = clientAccounts.reduce((sum, account) => 
       sum + (account.total_value || 0), 0);
       
+    // Debug logs for total value calculation
+    console.log("FUNDS DEBUGGING - Total value calculation:");
+    console.log("Client accounts:", clientAccounts);
+    console.log("Client accounts with total_value:", clientAccounts.map(acc => ({ 
+      id: acc.id, 
+      product_name: acc.product_name, 
+      total_value: acc.total_value,
+      irr: acc.irr
+    })));
+    console.log("Calculated totalFunds:", totalFunds);
+      
     // Calculate weighted IRR
     let totalWeightedIRR = 0;
     let totalWeight = 0;
     
+    // Add array to store calculation steps for debugging
+    interface IrrCalcStep {
+      id: number;
+      product_name: string;
+      irr: number;
+      total_value: number;
+      weighted_contribution: number;
+    }
+    
+    const irrCalcSteps: IrrCalcStep[] = [];
+    
     clientAccounts.forEach(account => {
       if (account.irr !== undefined && account.total_value) {
-        totalWeightedIRR += account.irr * account.total_value;
+        const weightedIrrContribution = account.irr * account.total_value;
+        totalWeightedIRR += weightedIrrContribution;
         totalWeight += account.total_value;
+        
+        // Record the calculation step
+        irrCalcSteps.push({
+          id: account.id,
+          product_name: account.product_name,
+          irr: account.irr,
+          total_value: account.total_value,
+          weighted_contribution: weightedIrrContribution
+        });
       }
     });
     
+    // Debug logs for IRR calculation
+    console.log("IRR DEBUGGING - Weighted IRR calculation:");
+    console.log("IRR Calculation steps:", irrCalcSteps);
+    console.log("Total weighted IRR contribution:", totalWeightedIRR);
+    console.log("Total weight (sum of total_value):", totalWeight);
+    
     const avgIRR = totalWeight > 0 ? totalWeightedIRR / totalWeight : 0;
+    console.log("Final calculated average IRR:", avgIRR);
     
     return {
       totalFundsUnderManagement: totalFunds,
@@ -653,7 +689,7 @@ const ClientDetails: React.FC = () => {
       console.log(`Fetching client data for ID: ${clientId}`);
       
       // Fetch client details
-      const clientResponse = await api.get(`/clients/${clientId}`);
+      const clientResponse = await api.get(`/client_groups/${clientId}`);
       console.log("Client data received:", clientResponse.data);
       setClient(clientResponse.data);
       
@@ -662,21 +698,34 @@ const ClientDetails: React.FC = () => {
         params: { client_id: clientId }
       });
       
-      // Log the raw response to check if theme colors are included
-      console.log("Raw client products API response:", accountsResponse.data);
+      // Log the raw response to check if data includes total_value and irr
+      console.log("DETAILED CLIENT PRODUCTS DATA:", accountsResponse.data);
+      
+      // Check if products have total_value and irr data directly from API
+      const productsWithValues = accountsResponse.data.filter((product: any) => 
+        product.total_value !== undefined || product.irr !== undefined
+      );
+      console.log("Products with total_value or irr directly from API:", productsWithValues);
       
       const accounts = accountsResponse.data || [];
       
-      // Enhanced data fetching for accounts - get IRR for each account
+      // Enhanced data fetching for accounts - only get IRR if it's not already present
       const accountsWithIRR = await Promise.all(
         accounts.map(async (account: ClientAccount) => {
           try {
-            // Log provider data for debugging
-            console.log(`Provider data from API for product ${account.id}:`, {
+            // Log provider and financial data for debugging
+            console.log(`Product ${account.id} (${account.product_name}) data:`, {
               provider_id: account.provider_id,
               provider_name: account.provider_name,
-              provider_theme_color: account.provider_theme_color // Check if this value exists
+              total_value: account.total_value,
+              irr: account.irr
             });
+            
+            // If we already have IRR data, don't fetch it again
+            if (account.irr !== undefined) {
+              console.log(`Product ${account.id} already has IRR: ${account.irr}`);
+              return account;
+            }
             
             // Update analytics endpoint to use portfolio_id instead
             const portfolioId = account.portfolio_id;
@@ -685,7 +734,10 @@ const ClientDetails: React.FC = () => {
               return account;
             }
             
+            console.log(`Fetching IRR data for product ${account.id} with portfolio ${portfolioId}`);
             const irrResponse = await api.get(`/analytics/portfolio/${portfolioId}/irr`);
+            console.log(`Received IRR data for portfolio ${portfolioId}:`, irrResponse.data);
+            
             return {
               ...account,
               irr: irrResponse.data?.irr !== undefined ? irrResponse.data.irr : undefined
@@ -698,6 +750,9 @@ const ClientDetails: React.FC = () => {
       );
       
       console.log("Final client products with IRR:", accountsWithIRR);
+      console.log("Products with total_value after processing:", accountsWithIRR.filter(acc => acc.total_value !== undefined).length);
+      console.log("Products with IRR after processing:", accountsWithIRR.filter(acc => acc.irr !== undefined).length);
+      
       setClientAccounts(accountsWithIRR);
       setError(null);
     } catch (err: any) {
@@ -716,12 +771,12 @@ const ClientDetails: React.FC = () => {
   };
 
   const handleBack = () => {
-    navigate('/clients');
+    navigate('/client_groups');
   };
 
   const handleMakeDormant = async () => {
     try {
-      await api.patch(`/clients/${clientId}/status`, { status: 'dormant' });
+      await api.patch(`/client_groups/${clientId}/status`, { status: 'dormant' });
       // Refresh client data
       fetchClientData();
     } catch (err: any) {
@@ -732,7 +787,7 @@ const ClientDetails: React.FC = () => {
 
   const handleMakeActive = async () => {
     try {
-      await api.patch(`/clients/${clientId}/status`, { status: 'active' });
+      await api.patch(`/client_groups/${clientId}/status`, { status: 'active' });
       // Refresh client data
       fetchClientData();
     } catch (err: any) {
@@ -746,11 +801,10 @@ const ClientDetails: React.FC = () => {
     
     // Initialize form data with current client values
     setFormData({
-      forname: client.forname,
-      surname: client.surname,
-      relationship: client.relationship,
+      name: client.name,
       status: client.status,
-      advisor: client.advisor
+      advisor: client.advisor,
+      type: client.type
     });
     
     // Enter correction mode
@@ -764,9 +818,7 @@ const ClientDetails: React.FC = () => {
       // Only send fields that have actually changed
       const changedFields: Partial<ClientFormData> = {};
       
-      if (formData.forname !== client.forname) changedFields.forname = formData.forname;
-      if (formData.surname !== client.surname) changedFields.surname = formData.surname;
-      if (formData.relationship !== client.relationship) changedFields.relationship = formData.relationship;
+      if (formData.name !== client.name) changedFields.name = formData.name;
       if (formData.status !== client.status) changedFields.status = formData.status;
       
       // Special handling for advisor which could be null
@@ -776,10 +828,13 @@ const ClientDetails: React.FC = () => {
       ) {
         changedFields.advisor = formData.advisor === '' ? null : formData.advisor;
       }
+
+      // Handle type field change
+      if (formData.type !== client.type) changedFields.type = formData.type;
       
       // Only perform API call if there are changes
       if (Object.keys(changedFields).length > 0) {
-        await api.patch(`/clients/${clientId}`, changedFields);
+        await api.patch(`/client_groups/${clientId}`, changedFields);
         await fetchClientData();
       }
       
@@ -813,11 +868,11 @@ const ClientDetails: React.FC = () => {
   const Breadcrumbs = () => {
     return (
       <div className="flex items-center space-x-2 text-xs text-gray-500 mb-4">
-        <Link to="/clients" className="hover:text-gray-700">
+        <Link to="/client_groups" className="hover:text-gray-700">
           Clients
         </Link>
         <span>/</span>
-        <span className="text-gray-900">{client ? `${client.forname} ${client?.surname}` : 'Client Details'}</span>
+        <span className="text-gray-900">{client ? `${client.name}` : 'Client Details'}</span>
       </div>
     );
   };
@@ -899,37 +954,26 @@ const ClientDetails: React.FC = () => {
             <div className="p-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-0.5">First Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-0.5">Name</label>
                   <input
                     type="text"
-                    name="forname"
-                    value={formData.forname || ''}
+                    name="name"
+                    value={formData.name || ''}
                     onChange={handleChange}
                     className="block w-full h-10 px-3 py-2 text-base rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-200"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-0.5">Last Name</label>
-                  <input
-                    type="text"
-                    name="surname"
-                    value={formData.surname || ''}
-                    onChange={handleChange}
-                    className="block w-full h-10 px-3 py-2 text-base rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-200"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-0.5">Relationship</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-0.5">Type</label>
                   <select
-                    name="relationship"
-                    value={formData.relationship}
+                    name="type"
+                    value={formData.type || 'Family'}
                     onChange={handleChange}
                     className="block w-full h-10 px-3 py-2 text-base rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-200"
                   >
-                    <option value="Relationship">Relationship</option>
-                    <option value="Single">Single</option>
+                    <option value="Family">Family</option>
+                    <option value="Business">Business</option>
                     <option value="Trust">Trust</option>
                   </select>
                 </div>
@@ -968,7 +1012,7 @@ const ClientDetails: React.FC = () => {
             <h2 className="text-xl font-normal text-gray-900 font-sans tracking-wide">Client Products</h2>
             
             <Link
-              to={`/create-client-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.forname} ${client?.surname}`)}`}
+              to={`/create-client-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.name}`)}`}
               className="inline-flex items-center px-4 py-1.5 text-sm font-medium text-white bg-primary-700 rounded-xl shadow-sm hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-700 transition-all duration-200"
             >
               <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -997,7 +1041,7 @@ const ClientDetails: React.FC = () => {
                 <div className="text-gray-500 mb-4">No products found for this client.</div>
                 <div className="flex justify-center">
                   <Link 
-                    to={`/create-client-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.forname} ${client?.surname}`)}`}
+                    to={`/create-client-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.name}`)}`}
                     className="inline-flex items-center px-4 py-1.5 text-sm font-medium text-white bg-primary-700 rounded-xl shadow-sm hover:bg-primary-800 transition-colors duration-200"
                   >
                     <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

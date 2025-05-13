@@ -250,8 +250,8 @@ async def get_performance_data(
                 
                     if total_weight > 0:
                         # Get client name for product
-                        client_result = db.table("clients").select("forname, surname").eq("id", product["client_id"]).execute()
-                        client_name = f"{client_result.data[0]['forname']} {client_result.data[0]['surname']}" if client_result.data else "Unknown Client"
+                        client_result = db.table("client_groups").select("name").eq("id", product["client_id"]).execute()
+                        client_name = client_result.data[0]["name"] if client_result.data else "Unknown Client"
                         
                         response["performanceData"].append({
                             "id": product["id"],
@@ -271,7 +271,7 @@ async def get_performance_data(
 
         elif entity_type == "clients":
             # Get clients with their latest IRR values and total FUM
-            clients_result = db.table("clients").select("*").execute()
+            clients_result = db.table("client_groups").select("*").execute()
             
             for client in clients_result.data:
                 # Get client products
@@ -300,7 +300,7 @@ async def get_performance_data(
                                     earliest_start_date = product["start_date"]
                 
                 if total_weight > 0:
-                    client_name = f"{client['forname']} {client['surname']}"
+                    client_name = client["name"]
                     response["performanceData"].append({
                         "id": client["id"],
                         "name": client_name,
@@ -396,8 +396,8 @@ async def get_performance_data(
                             total_weight += pf["amount_invested"]
                 
                     if total_weight > 0:
-                        client_result = db.table("clients").select("forname, surname").eq("id", product["client_id"]).execute()
-                        client_name = f"{client_result.data[0]['forname']} {client_result.data[0]['surname']}" if client_result.data else "Unknown Client"
+                        client_result = db.table("client_groups").select("name").eq("id", product["client_id"]).execute()
+                        client_name = client_result.data[0]["name"] if client_result.data else "Unknown Client"
                         
                         all_performers.append({
                             "id": product["id"],
@@ -409,7 +409,7 @@ async def get_performance_data(
                         })
             
             # Get top clients
-            clients_result = db.table("clients").select("*").execute()
+            clients_result = db.table("client_groups").select("*").execute()
             for client in clients_result.data:
                 products_result = db.table("client_products").select("*").eq("client_id", client["id"]).execute()
                 
@@ -435,7 +435,7 @@ async def get_performance_data(
                                     earliest_start_date = product["start_date"]
                 
                 if total_weight > 0:
-                    client_name = f"{client['forname']} {client['surname']}"
+                    client_name = client["name"]
                     all_performers.append({
                         "id": client["id"],
                         "name": client_name,
@@ -491,7 +491,7 @@ async def get_product_client_counts(db = Depends(get_db)):
         product_types = list(set(product["product_type"] for product in products_result.data if product["product_type"]))
         
         # Get all clients and their relationship types
-        clients_result = await db.table("clients").select("id", "relationship").execute()
+        clients_result = await db.table("client_groups").select("id", "relationship").execute()
         
         if not clients_result.data:
             return {
@@ -648,10 +648,10 @@ async def calculate_company_irr(db = Depends(get_db)):
         # For IRR calculation, we need the initial investments and current valuations
         total_investment = 0
         total_current_value = 0
-        all_cash_flows = []  # Will store (date, amount) tuples for all cash flows
+        all_cash_flows = []
         
         # Get data needed for company stats
-        client_count_result = db.table("clients").select("id").eq("status", "active").execute()
+        client_count_result = db.table("client_groups").select("id").eq("status", "active").execute()
         client_count = len(client_count_result.data) if client_count_result.data else 0
         
         product_count_result = db.table("client_products").select("id").eq("status", "active").execute()
@@ -928,7 +928,7 @@ async def get_client_risks(db = Depends(get_db)):
     """
     try:
         # Get all active clients
-        clients_result = db.table("clients").select("*").eq("status", "active").execute()
+        clients_result = db.table("client_groups").select("*").eq("status", "active").execute()
         
         client_risks = []
         
@@ -995,7 +995,7 @@ async def get_client_risks(db = Depends(get_db)):
                 
                 if total_client_investment > 0:
                     client_risk = weighted_risk_sum / total_client_investment
-                    client_name = f"{client['forname']} {client['surname']}"
+                    client_name = client["name"]
                     client_risks.append({
                         "client_id": client["id"],
                         "client_name": client_name,

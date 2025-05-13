@@ -102,7 +102,7 @@ const AddAccount: React.FC = () => {
         
         // Fetch all necessary data in parallel
         const [clientsResponse, providersResponse, portfoliosResponse] = await Promise.all([
-          api.get('/clients'),
+          api.get('/client_groups'),
           api.get('/available_providers'),
           api.get('/portfolios')
         ]);
@@ -486,8 +486,8 @@ const AddAccount: React.FC = () => {
         });
         
         // Attach the portfolio to the account
-        await api.post('/client_product_portfolio_assignments', {
-          client_product_id: newAccountId,
+        await api.post('/product_portfolio_assignments', {
+          product_id: newAccountId,
           portfolio_id: portfolioResponse.data.id,
           start_date: startDate.format('YYYY-MM-DD')
         });
@@ -519,8 +519,8 @@ const AddAccount: React.FC = () => {
         }
 
         // Attach the portfolio to the account
-        await api.post('/client_product_portfolio_assignments', {
-          client_product_id: newAccountId,
+        await api.post('/product_portfolio_assignments', {
+          product_id: newAccountId,
           portfolio_id: portfolioResponse.data.id,
           start_date: startDate.format('YYYY-MM-DD')
         });

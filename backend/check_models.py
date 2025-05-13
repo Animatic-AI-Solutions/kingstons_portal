@@ -5,13 +5,13 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 try:
-    print("Importing client_product_portfolio_assignment models...")
-    from app.models.client_product_portfolio_assignment import (
-        ClientproductPortfolioAssignment, 
-        ClientproductPortfolioAssignmentCreate, 
-        ClientproductPortfolioAssignmentUpdate
+    print("Importing product_portfolio_assignment models...")
+    from backend.app.models.product_portfolio_assignment import (
+        ProductPortfolioAssignment, 
+        ProductPortfolioAssignmentCreate, 
+        ProductPortfolioAssignmentUpdate
     )
-    print("✅ Successfully imported client_product_portfolio_assignment models")
+    print("✅ Successfully imported product_portfolio_assignment models")
     
     print("Importing product_holding models...")
     from app.models.product_holding import (

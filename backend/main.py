@@ -1,6 +1,8 @@
 import os
 import sys
 
+from app.api.routes import product_portfolio_assignments
+
 # Add the backend directory to Python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -16,12 +18,13 @@ from dotenv import load_dotenv
 
 # Import all route modules for API endpoints
 from app.api.routes import (
-    clients, products, funds, portfolios, providers, 
+    client_groups, products, funds, portfolios, providers, 
     auth, profiles, product_funds,
     portfolio_funds, analytics,
     available_providers,
     available_portfolios, fund_valuations,
-    client_product_portfolio_assignments, client_products, holding_activity_logs, product_holdings
+    client_products, holding_activity_logs, product_holdings,
+    product_owners, client_group_product_owners
 )
 
 # Load environment variables from .env file
@@ -93,7 +96,7 @@ app.add_middleware(
 # The prefix "/api" is added to all routes, creating the /api/{resource} pattern
 # Tags are used to group endpoints in the auto-generated Swagger documentation
 app.include_router(auth.router, prefix="/api", tags=["Authentication"])
-app.include_router(clients.router, prefix="/api", tags=["Clients"])
+app.include_router(client_groups.router, prefix="/api", tags=["Client Groups"])
 app.include_router(products.router, prefix="/api", tags=["Products"])
 app.include_router(funds.router, prefix="/api", tags=["Funds"])
 app.include_router(portfolios.router, prefix="/api", tags=["Portfolios"])
@@ -106,8 +109,10 @@ app.include_router(client_products.router, prefix="/api", tags=["Client products
 app.include_router(product_holdings.router, prefix="/api", tags=["product Holdings"])
 app.include_router(holding_activity_logs.router, prefix="/api", tags=["Holding Activity Logs"])
 app.include_router(analytics.router, prefix="/api", tags=["Analytics"])
-app.include_router(client_product_portfolio_assignments.router, prefix="/api", tags=["Client product Portfolio Assignments"])
+app.include_router(product_portfolio_assignments.router, prefix="/api", tags=["Portfolio Assignments"])
 app.include_router(fund_valuations.router, prefix="/api", tags=["Fund Valuations"])
+app.include_router(product_owners.router, prefix="/api", tags=["Product Owners"])
+app.include_router(client_group_product_owners.router, prefix="/api", tags=["Client Group Product Owners"])
 
 @app.get("/")
 async def root():

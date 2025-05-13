@@ -605,8 +605,19 @@ async def calculate_portfolio_fund_irr(
                 activity_type = activity_logs.data[0]["activity_type"]
                 
                 if activity_type in ["Investment", "RegularInvestment", "GovernmentUplift"]:
+                    # Prevent division by zero or very small numbers
+                    if activity_amount <= 0.01:
+                        logger.warning(f"Investment amount is too small: {activity_amount}, using minimum value of 0.01")
+                        activity_amount = 0.01  # Use a small non-zero value to avoid division by zero
+                    
                     # Simple return = (Valuation / Investment) - 1
                     simple_return = (valuation / activity_amount) - 1
+                    
+                    # Cap the simple return to a reasonable range to avoid extreme IRR values
+                    if simple_return > 100:
+                        logger.warning(f"Simple return {simple_return} is too high, capping at 100 (10,000%)")
+                        simple_return = 100
+                    
                     irr_percentage = simple_return * 100
                     
                     logger.info(f"Calculated simple return: {simple_return} ({irr_percentage}%)")
@@ -703,14 +714,96 @@ async def calculate_portfolio_fund_irr(
         # Calculate IRR using numpy_financial method
         logger.info("Calling calculate_excel_style_irr with prepared data")
         try:
-            irr_result = calculate_excel_style_irr(dates, amounts)
-            logger.info(f"IRR calculation result: {irr_result}")
+            # Check if we have any investments
+            total_investment = sum(-amount for amount, date in zip(amounts, dates) 
+                          if amount < 0 and date < valuation_date)
+            
+            # Check for very small or zero investments which can cause extreme IRR values
+            if total_investment <= 0.01:
+                logger.warning(f"Total investment is too small or zero: {total_investment}")
                 
+                # Use a simple return calculation instead with a reasonable minimum investment
+                simple_return = (valuation / 0.01) - 1
+                
+                # Cap the simple return to a reasonable range
+                if simple_return > 100:
+                    logger.warning(f"Simple return {simple_return} is too high, capping at 100 (10,000%)")
+                    simple_return = 100
+                
+                irr_percentage = simple_return * 100
+                logger.info(f"Using simple return instead of IRR: {irr_percentage}%")
+                
+                # Flag that we used a simple return
+                irr_result = {
+                    'period_irr': simple_return,
+                    'is_simple_return': True
+                }
+            else:
+                # Normal case - calculate IRR using the full cash flow data
+                irr_result = calculate_excel_style_irr(dates, amounts)
+                logger.info(f"IRR calculation result: {irr_result}")
+            
             # Convert period IRR to percentage for storage
             irr_percentage = irr_result['period_irr'] * 100
-            # Round to 2 decimal places for consistency and readability
+            # Round to 2 decimal places
             irr_percentage = round(irr_percentage, 2)
-            logger.info(f"Calculated period IRR: {irr_percentage:.2f}% (type: {type(irr_percentage).__name__})")
+            logger.info(f"Calculated IRR: {irr_percentage}%")
+            
+            # Check if an IRR value already exists for this fund and date
+            existing_irr = db.table("irr_values")\
+                .select("*")\
+                .eq("fund_id", portfolio_fund_id)\
+                .eq("date", valuation_date.isoformat())\
+                .execute()
+                
+            logger.info(f"Checking for existing IRR values for fund_id={portfolio_fund_id}, date={valuation_date.isoformat()}")
+            
+            # Ensure we're storing as a float, not an integer
+            irr_value_data = {
+                "irr_result": float(irr_percentage),  # Explicitly cast to float to ensure proper storage
+                "fund_valuation_id": fund_valuation_id  # Add the fund_valuation_id reference
+            }
+            
+            # Validate IRR value against database constraints (numeric(7,2) allows max 99999.99)
+            if abs(irr_value_data["irr_result"]) > 99999.99:
+                logger.warning(f"IRR value {irr_value_data['irr_result']} exceeds database limits, capping to 99999.99")
+                irr_value_data["irr_result"] = 99999.99 if irr_value_data["irr_result"] > 0 else -99999.99
+            
+            if existing_irr.data and len(existing_irr.data) > 0:
+                # Update the existing IRR value
+                oldest_record = existing_irr.data[0]
+                irr_value_id = oldest_record["id"]
+                
+                db.table("irr_values")\
+                    .update(irr_value_data)\
+                    .eq("id", irr_value_id)\
+                    .execute()
+                    
+                logger.info(f"Updated existing IRR value with ID: {irr_value_id}")
+                    
+            else:
+                # No existing record, insert a new one
+                full_irr_data = {
+                    "fund_id": portfolio_fund_id,
+                    "irr_result": irr_value_data["irr_result"],  # Use the possibly capped value
+                    "date": valuation_date.isoformat(),
+                    "fund_valuation_id": fund_valuation_id  # Add the fund_valuation_id reference
+                }
+                
+                logger.info(f"Storing new IRR value: {full_irr_data}")
+                db.table("irr_values").insert(full_irr_data).execute()
+            
+            calculation_type = "standard_irr"
+            if irr_result.get('is_simple_return'):
+                calculation_type = "simple_return"
+                
+            return {
+                "status": "success",
+                "irr_percentage": irr_percentage,
+                "portfolio_fund_id": portfolio_fund_id,
+                "date": valuation_date.isoformat(),
+                "calculation_type": calculation_type
+            }
         except ValueError as ve:
             error_message = str(ve)
             logger.error(f"IRR calculation error: {error_message}")
@@ -718,106 +811,6 @@ async def calculate_portfolio_fund_irr(
         except Exception as e:
             logger.error(f"Unexpected error in IRR calculation: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Unexpected error in IRR calculation: {str(e)}")
-
-        # Check if an IRR value already exists for this fund and date
-        existing_irr = db.table("irr_values")\
-            .select("*")\
-            .eq("fund_id", portfolio_fund_id)\
-            .eq("date", valuation_date.isoformat())\
-            .execute()
-            
-        logger.info(f"Checking for existing IRR values for fund_id={portfolio_fund_id}, date={valuation_date.isoformat()}")
-        logger.info(f"Found existing IRR records: {len(existing_irr.data) if existing_irr.data else 0}")
-        
-        # Ensure we're storing as a float, not an integer
-        irr_value_data = {
-            "irr_result": float(irr_percentage),  # Explicitly cast to float to ensure proper storage
-            "fund_valuation_id": fund_valuation_id  # Add the fund_valuation_id reference
-        }
-        
-        # Validate IRR value against database constraints (numeric(7,2) allows max 99999.99)
-        if abs(irr_value_data["irr_result"]) > 99999.99:
-            logger.warning(f"IRR value {irr_value_data['irr_result']} exceeds database limits, capping to 99999.99")
-            irr_value_data["irr_result"] = 99999.99 if irr_value_data["irr_result"] > 0 else -99999.99
-        
-        logger.info(f"IRR data to be saved: {irr_value_data} (value type: {type(irr_value_data['irr_result']).__name__})")
-        
-        irr_value_id = None
-        
-        if existing_irr.data and len(existing_irr.data) > 0:
-            # Update the existing IRR value
-            oldest_record = existing_irr.data[0]
-            irr_value_id = oldest_record["id"]
-            
-            # Log the type and value of the existing record for debugging
-            old_value = oldest_record["irr_result"]
-            old_value_type = type(old_value).__name__ 
-            logger.info(f"Updating existing IRR value with ID: {irr_value_id}")
-            logger.info(f"Old value: {old_value} (type: {old_value_type}), New value: {irr_percentage}")
-            
-            irr_value_result = db.table("irr_values")\
-                .update(irr_value_data)\
-                .eq("id", irr_value_id)\
-                .execute()
-                
-            logger.info(f"Update result: {irr_value_result.data}")
-                
-            # Check if there are multiple IRR records for the same date (cleanup duplicates)
-            if len(existing_irr.data) > 1:
-                # Get all duplicate IDs (excluding the one we just updated)
-                duplicate_ids = [record["id"] for record in existing_irr.data[1:]]
-                logger.warning(f"Found {len(duplicate_ids)} duplicate IRR records for the same date. Cleaning up IDs: {duplicate_ids}")
-                
-                # Delete all duplicates
-                for dup_id in duplicate_ids:
-                    db.table("irr_values").delete().eq("id", dup_id).execute()
-                
-        else:
-            # No existing record, insert a new one
-            full_irr_data = {
-                "fund_id": portfolio_fund_id,
-                "irr_result": float(irr_percentage),  # Explicitly cast to float
-
-                "date": valuation_date.isoformat(),
-                "fund_valuation_id": fund_valuation_id  # Add the fund_valuation_id reference
-
-            }
-            
-            logger.info(f"Storing new IRR value: {full_irr_data}")
-            irr_value_result = db.table("irr_values").insert(full_irr_data).execute()
-            
-            if not irr_value_result.data:
-                logger.error("Failed to store IRR value")
-                raise HTTPException(status_code=500, detail="Failed to store IRR value")
-                
-            irr_value_id = irr_value_result.data[0]["id"]
-            logger.info(f"Insert result - new IRR record: {irr_value_result.data[0]}")
-            
-        logger.info(f"Successfully stored/updated IRR value with ID: {irr_value_id}")
-        
-        # Verify that the IRR value was stored correctly
-        verification = db.table("irr_values").select("*").eq("id", irr_value_id).execute()
-        if verification.data:
-            stored_value = verification.data[0]["irr_result"]
-            stored_type = type(stored_value).__name__
-            logger.info(f"Verification - stored IRR: {stored_value} (type: {stored_type})")
-            
-            # Check if the stored value matches what we tried to save
-            if abs(float(stored_value) - float(irr_percentage)) > 0.01:  # Allow small float precision differences
-                logger.warning(f"Stored IRR value {stored_value} differs from calculated value {irr_percentage}")
-        
-        response_data = {
-            "portfolio_fund_id": portfolio_fund_id,
-            "irr": irr_result['period_irr'],       # Decimal form (e.g., 0.0521)
-            "irr_percentage": irr_percentage,      # Percentage form (e.g., 5.21)
-            "irr_value_id": irr_value_id,
-            "calculation_date": valuation_date.isoformat(),
-
-            "fund_valuation_id": fund_valuation_id,
-            "days_in_period": irr_result['days_in_period']
-        }
-        logger.info(f"Returning response: {response_data}")
-        return response_data
 
     except Exception as e:
         logger.error(f"Error calculating IRR: {str(e)}")
@@ -1197,8 +1190,19 @@ def calculate_portfolio_fund_irr_sync(
                 activity_type = activity_logs.data[0]["activity_type"]
                 
                 if activity_type in ["Investment", "RegularInvestment", "GovernmentUplift"]:
+                    # Prevent division by zero or very small numbers
+                    if activity_amount <= 0.01:
+                        logger.warning(f"Investment amount is too small: {activity_amount}, using minimum value of 0.01")
+                        activity_amount = 0.01  # Use a small non-zero value to avoid division by zero
+                    
                     # Simple return = (Valuation / Investment) - 1
                     simple_return = (valuation / activity_amount) - 1
+                    
+                    # Cap the simple return to a reasonable range to avoid extreme IRR values
+                    if simple_return > 100:
+                        logger.warning(f"Simple return {simple_return} is too high, capping at 100 (10,000%)")
+                        simple_return = 100
+                    
                     irr_percentage = simple_return * 100
                     
                     logger.info(f"Calculated simple return: {simple_return} ({irr_percentage}%)")
@@ -1315,8 +1319,34 @@ def calculate_portfolio_fund_irr_sync(
         # Calculate IRR using numpy_financial method
         logger.info("Calling calculate_excel_style_irr with prepared data")
         try:
-            irr_result = calculate_excel_style_irr(dates, amounts)
-            logger.info(f"IRR calculation result: {irr_result}")
+            # Check if we have any investments
+            total_investment = sum(-amount for amount, date in zip(amounts, dates) 
+                          if amount < 0 and date < valuation_date)
+            
+            # Check for very small or zero investments which can cause extreme IRR values
+            if total_investment <= 0.01:
+                logger.warning(f"Total investment is too small or zero: {total_investment}")
+                
+                # Use a simple return calculation instead with a reasonable minimum investment
+                simple_return = (valuation / 0.01) - 1
+                
+                # Cap the simple return to a reasonable range
+                if simple_return > 100:
+                    logger.warning(f"Simple return {simple_return} is too high, capping at 100 (10,000%)")
+                    simple_return = 100
+                
+                irr_percentage = simple_return * 100
+                logger.info(f"Using simple return instead of IRR: {irr_percentage}%")
+                
+                # Flag that we used a simple return
+                irr_result = {
+                    'period_irr': simple_return,
+                    'is_simple_return': True
+                }
+            else:
+                # Normal case - calculate IRR using the full cash flow data
+                irr_result = calculate_excel_style_irr(dates, amounts)
+                logger.info(f"IRR calculation result: {irr_result}")
             
             # Convert period IRR to percentage for storage
             irr_percentage = irr_result['period_irr'] * 100
@@ -1379,7 +1409,6 @@ def calculate_portfolio_fund_irr_sync(
                 "date": valuation_date.isoformat(),
                 "calculation_type": calculation_type
             }
-            
         except ValueError as ve:
             error_message = str(ve)
             logger.error(f"IRR calculation error: {error_message}")

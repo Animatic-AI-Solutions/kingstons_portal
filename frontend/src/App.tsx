@@ -115,7 +115,7 @@ const AppContent: React.FC = () => {
           } />
           
           {/* Client Management Section - CRUD operations for clients */}
-          <Route path="/clients" element={
+          <Route path="/client_groups" element={
             <>
               <Navbar />
               <div className="flex-grow pt-6 pb-12">
@@ -125,7 +125,7 @@ const AppContent: React.FC = () => {
             </>
           } />
           
-          <Route path="/clients/add" element={
+          <Route path="/client_groups/add" element={
             <>
               <Navbar />
               <div className="flex-grow pt-6 pb-12">
@@ -135,7 +135,7 @@ const AppContent: React.FC = () => {
             </>
           } />
           
-          <Route path="/clients/:clientId" element={
+          <Route path="/client_groups/:clientId" element={
             <>
               <Navbar />
               <div className="flex-grow pt-6 pb-12">
@@ -242,8 +242,8 @@ const AppContent: React.FC = () => {
             </>
           } />
           
-          {/* Client Account Management - Creating accounts for specific clients */}
-          <Route path="/client-products/:clientId" element={
+          {/* Client Account Management - Creating accounts for specific client groups */}
+          <Route path="/client-group-products/:clientId" element={
             <>
               <Navbar />
               <div className="flex-grow pt-6 pb-12">
@@ -253,8 +253,8 @@ const AppContent: React.FC = () => {
             </>
           } />
           
-          {/* General account creation flow - Allows creating accounts without specific client context */}
-          <Route path="/create-client-products" element={
+          {/* General account creation flow - Allows creating accounts without specific client group context */}
+          <Route path="/create-client-group-products" element={
             <>
               <Navbar />
               <div className="flex-grow pt-6 pb-12">
@@ -275,6 +275,9 @@ const AppContent: React.FC = () => {
             </>
           } />
         </Route>
+        
+        {/* Default route - redirect to login */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </div>
   );

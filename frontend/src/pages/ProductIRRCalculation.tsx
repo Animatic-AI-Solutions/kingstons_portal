@@ -36,6 +36,7 @@ interface Holding {
   irr?: number;
   irr_calculation_date?: string;
   account_holding_id: number;
+  product_id?: number;
   isVirtual?: boolean;
   inactiveHoldingIds?: Array<{
     id: number;
@@ -48,7 +49,7 @@ interface Holding {
 
 interface ActivityLog {
   id: number;
-  account_holding_id: number;
+  product_id: number;
   portfolio_fund_id: number;
   activity_timestamp: string;
   activity_type: string;
@@ -56,6 +57,7 @@ interface ActivityLog {
   units_transacted?: number;
   market_value_held?: number;
   cash_flow_amount?: number;
+  account_holding_id?: number; // Keep for backward compatibility
 }
 
 interface IrrCalculationDetail {
@@ -87,9 +89,40 @@ const convertActivityLogs = (logs: ActivityLog[]): any[] => {
 
 // Helper functions to calculate activity totals by type
 const calculateActivityTotalByType = (activities: ActivityLog[], type: string, fundId: number): number => {
-  return activities
-    .filter(activity => activity.portfolio_fund_id === fundId && activity.activity_type === type)
-    .reduce((total, activity) => total + Math.abs(activity.amount), 0);
+  // Add debug logging to help diagnose filtering issues
+  console.log(`calculateActivityTotalByType: Searching for type='${type}' and fundId=${fundId}`);
+  console.log(`Total activity logs to search: ${activities.length}`);
+  
+  if (activities.length > 0) {
+    console.log('First activity log as reference:', {
+      id: activities[0].id,
+      portfolio_fund_id: activities[0].portfolio_fund_id,
+      activity_type: activities[0].activity_type,
+      amount: activities[0].amount
+    });
+  }
+  
+  const matchingActivities = activities.filter(activity => {
+    const typeMatches = activity.activity_type === type;
+    const fundMatches = activity.portfolio_fund_id === fundId;
+    
+    if (activity.portfolio_fund_id === fundId) {
+      console.log(`Found activity with matching fundId ${fundId}, type: ${activity.activity_type}, matches type filter: ${typeMatches}`);
+    }
+    
+    return typeMatches && fundMatches;
+  });
+  
+  console.log(`calculateActivityTotalByType: found ${matchingActivities.length} ${type} activities for fund ${fundId}`);
+  
+  if (matchingActivities.length > 0) {
+    console.log(`Sample activity for ${type}:`, matchingActivities[0]);
+  }
+  
+  const total = matchingActivities.reduce((total, activity) => total + Math.abs(activity.amount), 0);
+  console.log(`Total amount for ${type} activities in fund ${fundId}: ${total}`);
+  
+  return total;
 };
 
 const calculateInvestments = (activities: ActivityLog[], fundId: number): number => {
@@ -251,6 +284,7 @@ const createPreviousFundsEntry = (inactiveHoldings: Holding[], activityLogs: Act
     irr: calculatedIRR,
     irr_calculation_date: latestCalculationDate,
     account_holding_id: -1,
+    product_id: -1, // Set product_id for virtual entry
     isVirtual: true, // Flag to identify this as a virtual entry
     // Store the detailed information about inactive holdings
     inactiveHoldingIds: inactiveHoldings.map(h => ({
@@ -266,23 +300,69 @@ const createPreviousFundsEntry = (inactiveHoldings: Holding[], activityLogs: Act
 };
 
 const calculateTotalRegularInvestments = (activities: ActivityLog[], holdings: Holding[]): number => {
-  return holdings.reduce((total, holding) => total + calculateRegularInvestments(activities, holding.id), 0);
+  console.log('Calculating total regular investments...');
+  console.log(`Activities count: ${activities.length}, Holdings count: ${holdings.length}`);
+  
+  const total = holdings.reduce((total, holding) => {
+    const amount = calculateRegularInvestments(activities, holding.id);
+    console.log(`Regular investments for holding ${holding.id} (${holding.fund_name}): ${amount}`);
+    return total + amount;
+  }, 0);
+  
+  console.log(`Total regular investments: ${total}`);
+  return total;
 };
 
 const calculateTotalGovernmentUplifts = (activities: ActivityLog[], holdings: Holding[]): number => {
-  return holdings.reduce((total, holding) => total + calculateGovernmentUplifts(activities, holding.id), 0);
+  console.log('Calculating total government uplifts...');
+  
+  const total = holdings.reduce((total, holding) => {
+    const amount = calculateGovernmentUplifts(activities, holding.id);
+    console.log(`Government uplifts for holding ${holding.id} (${holding.fund_name}): ${amount}`);
+    return total + amount;
+  }, 0);
+  
+  console.log(`Total government uplifts: ${total}`);
+  return total;
 };
 
 const calculateTotalSwitchIns = (activities: ActivityLog[], holdings: Holding[]): number => {
-  return holdings.reduce((total, holding) => total + calculateSwitchIns(activities, holding.id), 0);
+  console.log('Calculating total switch ins...');
+  
+  const total = holdings.reduce((total, holding) => {
+    const amount = calculateSwitchIns(activities, holding.id);
+    console.log(`Switch ins for holding ${holding.id} (${holding.fund_name}): ${amount}`);
+    return total + amount;
+  }, 0);
+  
+  console.log(`Total switch ins: ${total}`);
+  return total;
 };
 
 const calculateTotalSwitchOuts = (activities: ActivityLog[], holdings: Holding[]): number => {
-  return holdings.reduce((total, holding) => total + calculateSwitchOuts(activities, holding.id), 0);
+  console.log('Calculating total switch outs...');
+  
+  const total = holdings.reduce((total, holding) => {
+    const amount = calculateSwitchOuts(activities, holding.id);
+    console.log(`Switch outs for holding ${holding.id} (${holding.fund_name}): ${amount}`);
+    return total + amount;
+  }, 0);
+  
+  console.log(`Total switch outs: ${total}`);
+  return total;
 };
 
 const calculateTotalWithdrawals = (activities: ActivityLog[], holdings: Holding[]): number => {
-  return holdings.reduce((total, holding) => total + calculateWithdrawals(activities, holding.id), 0);
+  console.log('Calculating total withdrawals...');
+  
+  const total = holdings.reduce((total, holding) => {
+    const amount = calculateWithdrawals(activities, holding.id);
+    console.log(`Withdrawals for holding ${holding.id} (${holding.fund_name}): ${amount}`);
+    return total + amount;
+  }, 0);
+  
+  console.log(`Total withdrawals: ${total}`);
+  return total;
 };
 
 const calculateTotalValue = (holdings: Holding[]): number => {
@@ -300,10 +380,39 @@ const calculateTotalInvestmentsPlusSwitchIns = (activities: ActivityLog[], holdi
 
 // Add this new function to filter activity logs by year
 const filterActivitiesByYear = (activities: ActivityLog[], year: number): ActivityLog[] => {
-  return activities.filter(activity => {
+  console.log(`Filtering activities for year ${year}...`);
+  console.log(`Total activities before filtering: ${activities.length}`);
+  
+  const filteredActivities = activities.filter(activity => {
+    // Convert activity_timestamp to a Date object
     const activityDate = new Date(activity.activity_timestamp);
-    return activityDate.getFullYear() === year;
+    const activityYear = activityDate.getFullYear();
+    const matches = activityYear === year;
+    return matches;
   });
+  
+  console.log(`Total activities after filtering for year ${year}: ${filteredActivities.length}`);
+  
+  if (filteredActivities.length > 0) {
+    console.log('Sample filtered activity:', filteredActivities[0]);
+  } else {
+    console.warn(`No activities found for year ${year}`);
+  }
+  
+  return filteredActivities;
+};
+
+const calculateTotalInvestments = (activities: ActivityLog[], holdings: Holding[]): number => {
+  console.log('Calculating total investments...');
+  
+  const total = holdings.reduce((total, holding) => {
+    const amount = calculateInvestments(activities, holding.id);
+    console.log(`Investments for holding ${holding.id} (${holding.fund_name}): ${amount}`);
+    return total + amount;
+  }, 0);
+  
+  console.log(`Total investments: ${total}`);
+  return total;
 };
 
 interface AccountIRRCalculationProps {
@@ -429,6 +538,31 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       console.log('AccountIRRCalculation: Funds data:', fundsResponse.data);
       console.log('AccountIRRCalculation: Activity logs received:', activitiesResponse.data);
       
+      // Add detailed debugging for activity logs to diagnose the zero values
+      if (activitiesResponse.data && activitiesResponse.data.length > 0) {
+        console.log('DETAILED ACTIVITY LOG DIAGNOSTICS:');
+        console.log(`Total activity logs: ${activitiesResponse.data.length}`);
+        
+        // Count activities by type
+        const activityCounts = activitiesResponse.data.reduce((acc: any, log: ActivityLog) => {
+          acc[log.activity_type] = (acc[log.activity_type] || 0) + 1;
+          return acc;
+        }, {});
+        console.log('Activity counts by type:', activityCounts);
+        
+        // Group by portfolio_fund_id
+        const fundGroups = activitiesResponse.data.reduce((acc: any, log: ActivityLog) => {
+          acc[log.portfolio_fund_id] = (acc[log.portfolio_fund_id] || 0) + 1;
+          return acc;
+        }, {});
+        console.log('Activities per portfolio_fund_id:', fundGroups);
+        
+        // Log a sample of activities
+        console.log('Sample of 3 activities:', activitiesResponse.data.slice(0, 3));
+      } else {
+        console.warn('No activity logs received from API!');
+      }
+      
       // Store the complete list of funds for reference
       setAllFunds(fundsResponse.data || []);
       
@@ -505,7 +639,8 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
           market_value: portfolioFund.market_value || portfolioFund.amount_invested || 0,
           irr: latestIrr,
           irr_calculation_date: latestIrrDate,
-          account_holding_id: parseInt(accountId), // Use client_product_id as account_holding_id
+          account_holding_id: parseInt(accountId), // For backward compatibility
+          product_id: parseInt(accountId), // Set product_id field to match schema
           status: status, // Use the carefully processed status value
           end_date: portfolioFund.end_date // Include the end_date from the portfolio_fund record
         };
@@ -672,212 +807,238 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                 <div className="ml-6">
                   <YearNavigator
                     selectedYear={selectedYear}
-                    onYearChange={setSelectedYear}
+                    onYearChange={(year) => {
+                      console.log(`Year changed to ${year}`);
+                      setSelectedYear(year);
+                    }}
                   />
                 </div>
               </div>
             </div>
             
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Name</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">ISIN</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Investments</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Regular Investments</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Government Uplifts</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Switch Ins</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Switch Outs</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Withdrawals</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Most Recent Value</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Most Recent IRR</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {/* First separate active and inactive holdings */}
-                  {(() => {
-                    console.log("Starting to process holdings for display");
-                    
-                    const activeHoldings = filterActiveHoldings(holdings);
-                    const inactiveHoldings = filterInactiveHoldings(holdings);
-                    
-                    console.log(`After filtering: ${activeHoldings.length} active, ${inactiveHoldings.length} inactive`);
-                    
-                    // Create the Previous Funds entry if there are inactive holdings
-                    const previousFundsEntry = createPreviousFundsEntry(inactiveHoldings, activityLogs);
-                    
-                    // Only display active holdings directly
-                    const displayHoldings = [...activeHoldings];
-                    
-                    // Log inactive funds that were filtered out
-                    if (inactiveHoldings.length > 0) {
-                      console.log("Inactive holdings excluded from direct display:", 
-                        inactiveHoldings.map(h => `${h.id} (${h.fund_name}): status=${h.status}, end_date=${h.end_date}`));
-                    }
-                    
-                    // Add the Previous Funds entry if it exists
-                    if (previousFundsEntry) {
-                      console.log("Adding Previous Funds entry to display holdings");
-                      displayHoldings.push(previousFundsEntry);
-                    } else {
-                      console.log("No Previous Funds entry was created");
-                    }
-                    
-                    console.log(`Final display holdings count: ${displayHoldings.length}`);
-                    
-                    return (
-                      <>
-                        {displayHoldings.map((holding) => {
-                          console.log(`Rendering holding: ${holding.id} (${holding.fund_name}), isVirtual: ${holding.isVirtual}`);
-                          return (
-                          <tr key={holding.id} className={holding.isVirtual ? "bg-gray-100 border-t border-gray-300" : ""}>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <div className={holding.isVirtual ? "ml-4 font-medium" : "ml-4"}>
-                                  <div className={`text-sm ${holding.isVirtual ? "font-semibold text-blue-800" : "font-medium text-gray-900"}`}>
-                                    {holding.fund_name}
-                                    {holding.status === 'inactive' && !holding.isVirtual && (
-                                      <span className="ml-2 text-xs text-red-600 font-normal">(Inactive)</span>
+            {(() => {
+              // Filter activities by the selected year
+              console.log(`Filtering activities for period overview by year: ${selectedYear}`);
+              const filteredActivities = filterActivitiesByYear(activityLogs, selectedYear);
+              console.log(`After year filtering: ${filteredActivities.length} activities for ${selectedYear}`);
+              
+              return (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Name</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">ISIN</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Investments</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Regular Investments</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Government Uplifts</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Switch Ins</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Switch Outs</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Withdrawals</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Most Recent Value</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Most Recent IRR</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {/* First separate active and inactive holdings */}
+                      {(() => {
+                        console.log("Starting to process holdings for display");
+                        
+                        const activeHoldings = filterActiveHoldings(holdings);
+                        const inactiveHoldings = filterInactiveHoldings(holdings);
+                        
+                        console.log(`After filtering: ${activeHoldings.length} active, ${inactiveHoldings.length} inactive`);
+                        
+                        // Create the Previous Funds entry if there are inactive holdings
+                        const previousFundsEntry = createPreviousFundsEntry(inactiveHoldings, filteredActivities);
+                        
+                        // Only display active holdings directly
+                        const displayHoldings = [...activeHoldings];
+                        
+                        // Log inactive funds that were filtered out
+                        if (inactiveHoldings.length > 0) {
+                          console.log("Inactive holdings excluded from direct display:", 
+                            inactiveHoldings.map(h => `${h.id} (${h.fund_name}): status=${h.status}, end_date=${h.end_date}`));
+                        }
+                        
+                        // Add the Previous Funds entry if it exists
+                        if (previousFundsEntry) {
+                          console.log("Adding Previous Funds entry to display holdings");
+                          displayHoldings.push(previousFundsEntry);
+                        } else {
+                          console.log("No Previous Funds entry was created");
+                        }
+                        
+                        console.log(`Final display holdings count: ${displayHoldings.length}`);
+                        
+                        // Sort holdings alphabetically with Cashline and Previous Funds special cases
+                        return (
+                          <>
+                            {displayHoldings.sort((a, b) => {
+                              // Previous Funds virtual entry always goes last
+                              if (a.isVirtual) return 1;
+                              if (b.isVirtual) return -1;
+                              
+                              // Cashline always goes second-to-last (before Previous Funds)
+                              if (a.fund_name === 'Cashline') return 1;
+                              if (b.fund_name === 'Cashline') return -1;
+                              
+                              // All other funds are sorted alphabetically
+                              return (a.fund_name || '').localeCompare(b.fund_name || '');
+                            }).map((holding) => {
+                              console.log(`Rendering sorted holding: ${holding.id} (${holding.fund_name}), isVirtual: ${holding.isVirtual}`);
+                              return (
+                              <tr key={holding.id} className={holding.isVirtual ? "bg-gray-100 border-t border-gray-300" : ""}>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="flex items-center">
+                                    <div className={holding.isVirtual ? "ml-4 font-medium" : "ml-4"}>
+                                      <div className={`text-sm ${holding.isVirtual ? "font-semibold text-blue-800" : "font-medium text-gray-900"}`}>
+                                        {holding.fund_name}
+                                        {holding.status === 'inactive' && !holding.isVirtual && (
+                                          <span className="ml-2 text-xs text-red-600 font-normal">(Inactive)</span>
+                                        )}
+                                      </div>
+                                      {holding.isVirtual && inactiveHoldings.length > 0 && (
+                                        <div className="text-xs text-gray-500 mt-1">
+                                          ({inactiveHoldings.length} inactive {inactiveHoldings.length === 1 ? 'fund' : 'funds'})
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm text-gray-900">{holding.isin_number || 'N/A'}</div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                    {holding.isVirtual 
+                                      ? formatCurrency(calculateTotalInvestments(filteredActivities, inactiveHoldings))
+                                      : formatCurrency(calculateInvestments(filteredActivities, holding.id))}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                    {holding.isVirtual 
+                                      ? formatCurrency(calculateTotalRegularInvestments(filteredActivities, inactiveHoldings))
+                                      : formatCurrency(calculateRegularInvestments(filteredActivities, holding.id))}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                    {holding.isVirtual
+                                      ? formatCurrency(calculateTotalGovernmentUplifts(filteredActivities, inactiveHoldings))
+                                      : formatCurrency(calculateGovernmentUplifts(filteredActivities, holding.id))}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                    {holding.isVirtual
+                                      ? formatCurrency(calculateTotalSwitchIns(filteredActivities, inactiveHoldings))
+                                      : formatCurrency(calculateSwitchIns(filteredActivities, holding.id))}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                    {holding.isVirtual
+                                      ? formatCurrency(calculateTotalSwitchOuts(filteredActivities, inactiveHoldings))
+                                      : formatCurrency(calculateSwitchOuts(filteredActivities, holding.id))}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                    {holding.isVirtual
+                                      ? formatCurrency(calculateTotalWithdrawals(filteredActivities, inactiveHoldings))
+                                      : formatCurrency(calculateWithdrawals(filteredActivities, holding.id))}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                    {formatCurrency(holding.market_value || 0)}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div>
+                                    <div className={`text-sm ${
+                                      holding.irr !== undefined 
+                                        ? (holding.irr >= 0 
+                                          ? (holding.isVirtual ? "font-medium text-green-700" : "text-green-700") 
+                                          : (holding.isVirtual ? "font-medium text-red-700" : "text-red-700"))
+                                        : "text-gray-500"
+                                    }`}>
+                                      {holding.irr !== undefined ? (
+                                        <>
+                                          {holding.isVirtual || Math.abs(holding.irr) > 1 
+                                            ? `${holding.irr.toFixed(1)}%` 
+                                            : formatPercentage(holding.irr)}
+                                          <span className="ml-1">
+                                            {holding.irr >= 0 ? '▲' : '▼'}
+                                          </span>
+                                        </>
+                                      ) : 'N/A'}
+                                    </div>
+                                    {holding.irr_calculation_date && (
+                                      <div className="text-xs text-gray-500 mt-1">
+                                        as of {formatDate(holding.irr_calculation_date)}
+                                      </div>
                                     )}
                                   </div>
-                                  {holding.isVirtual && inactiveHoldings.length > 0 && (
-                                    <div className="text-xs text-gray-500 mt-1">
-                                      ({inactiveHoldings.length} inactive {inactiveHoldings.length === 1 ? 'fund' : 'funds'})
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-900">{holding.isin_number || 'N/A'}</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
-                                {formatCurrency(holding.amount_invested)}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
-                                {holding.isVirtual 
-                                  ? formatCurrency(calculateTotalRegularInvestments(activityLogs, inactiveHoldings))
-                                  : formatCurrency(calculateRegularInvestments(activityLogs, holding.id))}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
-                                {holding.isVirtual
-                                  ? formatCurrency(calculateTotalGovernmentUplifts(activityLogs, inactiveHoldings))
-                                  : formatCurrency(calculateGovernmentUplifts(activityLogs, holding.id))}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
-                                {holding.isVirtual
-                                  ? formatCurrency(calculateTotalSwitchIns(activityLogs, inactiveHoldings))
-                                  : formatCurrency(calculateSwitchIns(activityLogs, holding.id))}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
-                                {holding.isVirtual
-                                  ? formatCurrency(calculateTotalSwitchOuts(activityLogs, inactiveHoldings))
-                                  : formatCurrency(calculateSwitchOuts(activityLogs, holding.id))}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
-                                {holding.isVirtual
-                                  ? formatCurrency(calculateTotalWithdrawals(activityLogs, inactiveHoldings))
-                                  : formatCurrency(calculateWithdrawals(activityLogs, holding.id))}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
-                                {formatCurrency(holding.market_value || 0)}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div>
-                                <div className={`text-sm ${
-                                  holding.irr !== undefined 
-                                    ? (holding.irr >= 0 
-                                      ? (holding.isVirtual ? "font-medium text-green-700" : "text-green-700") 
-                                      : (holding.isVirtual ? "font-medium text-red-700" : "text-red-700"))
-                                    : "text-gray-500"
-                                }`}>
-                                  {holding.irr !== undefined ? (
-                                    <>
-                                      {holding.isVirtual || Math.abs(holding.irr) > 1 
-                                        ? `${holding.irr.toFixed(1)}%` 
-                                        : formatPercentage(holding.irr)}
-                                      <span className="ml-1">
-                                        {holding.irr >= 0 ? '▲' : '▼'}
-                                      </span>
-                                    </>
-                                  ) : 'N/A'}
-                                </div>
-                                {holding.irr_calculation_date && (
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    as of {formatDate(holding.irr_calculation_date)}
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        )})}
-                      </>
-                    );
-                  })()}
-                  
-                  {/* Total Row */}
-                  <tr className="bg-gray-50 font-medium">
-                    <td className="px-6 py-4 whitespace-nowrap text-base font-bold text-red-600">
-                      TOTAL
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap"></td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-bold text-red-600">
-                        {formatCurrency(calculateTotalAmountInvested(holdings))}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-bold text-red-600">
-                        {formatCurrency(calculateTotalRegularInvestments(activityLogs, holdings))}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-bold text-red-600">
-                        {formatCurrency(calculateTotalGovernmentUplifts(activityLogs, holdings))}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-bold text-red-600">
-                        {formatCurrency(calculateTotalSwitchIns(activityLogs, holdings))}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-bold text-red-600">
-                        {formatCurrency(calculateTotalSwitchOuts(activityLogs, holdings))}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-bold text-red-600">
-                        {formatCurrency(calculateTotalWithdrawals(activityLogs, holdings))}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-bold text-red-600">
-                        {formatCurrency(calculateTotalValue(holdings))}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {/* No total IRR calculation */}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                                </td>
+                              </tr>
+                            )})}
+                          </>
+                        );
+                      })()}
+                      
+                      {/* Total Row */}
+                      <tr className="bg-gray-50 font-medium">
+                        <td className="px-6 py-4 whitespace-nowrap text-base font-bold text-red-600">
+                          TOTAL
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap"></td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-bold text-red-600">
+                            {formatCurrency(calculateTotalInvestments(filteredActivities, holdings))}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-bold text-red-600">
+                            {formatCurrency(calculateTotalRegularInvestments(filteredActivities, holdings))}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-bold text-red-600">
+                            {formatCurrency(calculateTotalGovernmentUplifts(filteredActivities, holdings))}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-bold text-red-600">
+                            {formatCurrency(calculateTotalSwitchIns(filteredActivities, holdings))}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-bold text-red-600">
+                            {formatCurrency(calculateTotalSwitchOuts(filteredActivities, holdings))}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-bold text-red-600">
+                            {formatCurrency(calculateTotalWithdrawals(filteredActivities, holdings))}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-bold text-red-600">
+                            {formatCurrency(calculateTotalValue(holdings))}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {/* No total IRR calculation */}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Monthly Activities Table */}
@@ -1004,10 +1165,15 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
               
               // Sort funds alphabetically, but place Cashline at the end and Previous Funds at the very end
               tableFunds.sort((a, b) => {
-                if (a.id === -1) return 1; // Previous Funds goes last
+                // Previous Funds entry always goes last
+                if (a.id === -1) return 1;
                 if (b.id === -1) return -1;
+                
+                // Cashline always goes second-to-last (before Previous Funds)
                 if (a.fund_name === 'Cashline') return 1;
                 if (b.fund_name === 'Cashline') return -1;
+                
+                // All other funds are sorted alphabetically
                 return (a.fund_name || '').localeCompare(b.fund_name || '');
               });
               

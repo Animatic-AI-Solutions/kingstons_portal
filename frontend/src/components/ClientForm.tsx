@@ -4,15 +4,15 @@ import { SearchableDropdown } from './ui';
 /**
  * Interface for client form data
  * @property {string} name - Client's full name
- * @property {string} relationship - Type of relationship (e.g., 'R', 'S', 'T')
  * @property {string} status - Client's status (active or inactive)
  * @property {string | null} advisor - The assigned advisor's name (optional)
+ * @property {string} type - Client group type (e.g., 'Family', 'Corporate', 'Trust')
  */
 interface ClientFormData {
   name: string;
-  relationship: string;
   status: string;
   advisor: string | null;
+  type: string;
 }
 
 /**
@@ -38,9 +38,9 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSubmit, initialData }) => {
   // Initialize form state with provided data or defaults
   const [formData, setFormData] = useState<ClientFormData>({
     name: initialData?.name || '',
-    relationship: initialData?.relationship || '',
     status: initialData?.status || 'active',
-    advisor: initialData?.advisor || null
+    advisor: initialData?.advisor || null,
+    type: initialData?.type || 'Family'
   });
 
   /**
@@ -70,7 +70,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSubmit, initialData }) => {
       {/* Client Name Field */}
       <div>
         <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-          Name
+          Client Group Name
         </label>
         <input
           type="text"
@@ -83,20 +83,23 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSubmit, initialData }) => {
         />
       </div>
 
-      {/* Relationship Field - Type of client relationship */}
+      {/* Type Field - Type of client group */}
       <div>
-        <label htmlFor="relationship" className="block text-sm font-medium text-gray-700">
-          Relationship
+        <label htmlFor="type" className="block text-sm font-medium text-gray-700">
+          Client Group Type
         </label>
-        <input
-          type="text"
-          name="relationship"
-          id="relationship"
-          value={formData.relationship}
+        <select
+          name="type"
+          id="type"
+          value={formData.type}
           onChange={handleChange}
           required
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-        />
+        >
+          <option value="Family">Family</option>
+          <option value="Business">Business</option>
+          <option value="Trust">Trust</option>
+        </select>
       </div>
 
       {/* Status Dropdown - Active or Inactive */}
