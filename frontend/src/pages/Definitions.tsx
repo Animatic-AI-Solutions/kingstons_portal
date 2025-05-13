@@ -309,13 +309,22 @@ const Definitions: React.FC = () => {
         const portfolioData = response.data;
         const averageRisk = calculateAverageRisk(portfolioData);
         
+        // Calculate IRR for the portfolio
+        let performance = 0;
+        try {
+          const irrResponse = await api.get(`/analytics/portfolio/${portfolioId}/irr`);
+          performance = irrResponse.data?.irr || 0;
+        } catch (err) {
+          console.warn(`Failed to fetch IRR for portfolio ${portfolioId}:`, err);
+        }
+        
         return {
           ...portfolioData,
           averageRisk,
           // Add these fields for compatibility
           type: portfolioData.type || 'Model',
           risk: getRiskLevel(averageRisk),
-          performance: 0, // Default value since API doesn't provide this
+          performance, // Use the calculated IRR
           weighted_risk: averageRisk,
           allocation_count: portfolioData.funds?.length || 0
         };
