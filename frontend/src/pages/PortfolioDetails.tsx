@@ -147,7 +147,7 @@ const PortfolioDetails: React.FC = () => {
                 const account = accountResponse.data;
                 
                 // Fetch client details
-                const clientResponse = await api.get(`/clients/${account.client_id}`);
+                const clientResponse = await api.get(`/client_groups/${account.client_id}`);
                 const client = clientResponse.data;
                 
                 // Fetch product details
@@ -180,9 +180,12 @@ const PortfolioDetails: React.FC = () => {
         console.error('Error fetching assigned accounts from endpoint:', err);
         
         try {
-          // Attempt to find assignments using the client_account_portfolio_assignments endpoint
-          const response = await api.get('/client_product_portfolio_assignments', {
-            params: { portfolio_id: portfolioId }
+          // Attempt to find assignments using the product_portfolio_assignments endpoint
+          const response = await api.get('/product_portfolio_assignments', {
+            params: {
+                portfolio_id: portfolioId,
+                active_only: true
+            }
           });
           
           if (response.data && response.data.length > 0) {
@@ -194,7 +197,7 @@ const PortfolioDetails: React.FC = () => {
                   const account = accountResponse.data;
                   
                   // Fetch client details
-                  const clientResponse = await api.get(`/clients/${account.client_id}`);
+                  const clientResponse = await api.get(`/client_groups/${account.client_id}`);
                   const client = clientResponse.data;
                   
                   // Fetch product details

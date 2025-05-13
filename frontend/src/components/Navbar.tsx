@@ -97,8 +97,8 @@ const Navbar: React.FC = () => {
                   Home
                 </Link>
                 <Link 
-                  to="/clients" 
-                  className={`px-2 py-6 text-base ${isActive('/clients') ? activeNavLinkStyle : inactiveNavLinkStyle}`}
+                  to="/client_groups" 
+                  className={`px-2 py-6 text-base ${isActive('/client_groups') ? activeNavLinkStyle : inactiveNavLinkStyle}`}
                 >
                   Clients
                 </Link>

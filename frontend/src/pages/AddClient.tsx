@@ -43,10 +43,10 @@ const AddClient: React.FC = () => {
       setIsSubmitting(true);
       
       // Create the client
-      await api.post('/clients', formData);
+      await api.post('/client_groups', formData);
       
       // Redirect to clients list
-      navigate('/clients');
+      navigate('/client_groups');
     } catch (err: any) {
       setError(`Failed to create client: ${JSON.stringify(err.response?.data || err.message)}`);
       console.error('Error creating client:', err);
@@ -60,7 +60,7 @@ const AddClient: React.FC = () => {
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Add New Client Group</h1>
         <button
-          onClick={() => navigate('/clients')}
+          onClick={() => navigate('/client_groups')}
           className="bg-gray-200 text-gray-700 px-5 py-2 rounded-xl font-medium hover:bg-gray-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 font-sans tracking-wide shadow-sm"
         >
           Cancel

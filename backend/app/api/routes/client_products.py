@@ -93,6 +93,20 @@ async def get_client_products(
         
         # Enhance the response data with provider, client, and template information
         enhanced_data = []
+        
+        # Get all product_value_irr_summary data in one bulk query for better performance
+        product_ids = [product.get("id") for product in client_products]
+        summary_data = {}
+        
+        try:
+            if product_ids:
+                summary_result = db.table("product_value_irr_summary").select("*").in_("client_product_id", product_ids).execute()
+                # Create a lookup map by client_product_id
+                summary_data = {item.get("client_product_id"): item for item in summary_result.data}
+                logger.info(f"Fetched {len(summary_result.data)} summary records for {len(product_ids)} products")
+        except Exception as e:
+            logger.error(f"Error fetching bulk summary data: {str(e)}")
+        
         for product in client_products:
             # Add provider data if available
             provider_id = product.get("provider_id")
@@ -117,6 +131,19 @@ async def get_client_products(
                     product["original_template_id"] = original_template_id
                     product["original_template_name"] = template.get("name")
                     product["template_info"] = template
+            
+            # Add total_value and irr from the summary data map
+            product_id = product.get("id")
+            if product_id in summary_data:
+                summary = summary_data[product_id]
+                product["total_value"] = summary.get("total_value")
+                product["irr"] = summary.get("irr_weighted")
+                logger.info(f"Added total_value={summary.get('total_value')} and irr={summary.get('irr_weighted')} for product {product_id}")
+            else:
+                # Set defaults if no summary data found
+                product["total_value"] = 0
+                product["irr"] = 0
+                logger.warning(f"No summary data found for product {product_id}")
             
             enhanced_data.append(product)
             
@@ -285,21 +312,33 @@ async def get_client_product(client_product_id: int, db = Depends(get_db)):
             if portfolio_result.data and len(portfolio_result.data) > 0:
                 portfolio = portfolio_result.data[0]
                 
-                # Check if portfolio was created from a template
-                original_template_id = portfolio.get("original_template_id")
-                if original_template_id:
-                    # Set the original_template_id on the client_product
-                    client_product["original_template_id"] = original_template_id
-                    
-                    # Fetch template details
-                    template_result = db.table("available_portfolios").select("*").eq("id", original_template_id).execute()
+                # Add template info if this portfolio is based on a template
+                if portfolio.get("original_template_id"):
+                    template_result = db.table("available_portfolios").select("*").eq("id", portfolio.get("original_template_id")).execute()
                     if template_result.data and len(template_result.data) > 0:
                         template = template_result.data[0]
+                        client_product["original_template_id"] = portfolio.get("original_template_id")
                         client_product["original_template_name"] = template.get("name")
                         client_product["template_info"] = template
-                        logger.info(f"Added template info: {template.get('name')} (ID: {original_template_id})")
-        
-        logger.info(f"Retrieved client product {client_product_id} with provider theme color: {client_product.get('provider_theme_color')}")
+            
+        # Fetch total_value and irr from the product_value_irr_summary view
+        try:
+            summary_result = db.table("product_value_irr_summary").select("*").eq("client_product_id", client_product_id).execute()
+            if summary_result.data and len(summary_result.data) > 0:
+                summary = summary_result.data[0]
+                client_product["total_value"] = summary.get("total_value", 0)
+                client_product["irr"] = summary.get("irr_weighted", 0)
+                logger.info(f"Added total_value={summary.get('total_value')} and irr={summary.get('irr_weighted')} for product {client_product_id}")
+            else:
+                # Set defaults if no summary data found
+                client_product["total_value"] = 0
+                client_product["irr"] = 0
+                logger.warning(f"No summary data found for product {client_product_id}")
+        except Exception as e:
+            logger.error(f"Error fetching summary data for product {client_product_id}: {str(e)}")
+            # Don't fail the entire request if summary data fails
+            client_product["total_value"] = 0
+            client_product["irr"] = 0
         
         return client_product
     except HTTPException:

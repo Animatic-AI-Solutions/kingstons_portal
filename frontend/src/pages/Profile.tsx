@@ -6,7 +6,7 @@ import { Card, Button, ProfileAvatar } from '../components/ui';
 
 const landingPageOptions = [
   { value: '/', label: 'Home' },
-  { value: '/clients', label: 'Clients' },
+  { value: '/client_groups', label: 'Clients' },
   { value: '/products', label: 'Products' },
   { value: '/definitions', label: 'Definitions' },
   { value: '/reporting', label: 'Analytics' }

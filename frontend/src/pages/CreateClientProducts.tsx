@@ -164,7 +164,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           portfoliosRes,
           productOwnersRes
         ] = await Promise.all([
-          api.get('/clients'),
+          api.get('/client_groups'),
           api.get('/available_providers'),
           api.get('/funds'),
           api.get('/available_portfolios'),
@@ -734,6 +734,20 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           </div>
         )}
         
+        {/* Portfolio Name - Moved above Portfolio Type */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Portfolio Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={product.portfolio.name}
+            onChange={(e) => handlePortfolioNameChange(product.id, e.target.value)}
+            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+            required
+          />
+        </div>
+        
         {/* Portfolio Type Selection */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -826,34 +840,6 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               </div>
             ))}
           </div>
-        </div>
-
-        {/* Plan Number */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Plan Number
-          </label>
-          <input
-            type="text"
-            value={product.plan_number || ''}
-            onChange={(e) => handleProductChange(product.id, 'plan_number', e.target.value)}
-            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-            placeholder="Enter plan number"
-          />
-        </div>
-
-        {/* Portfolio Name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Portfolio Name <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={product.portfolio.name}
-            onChange={(e) => handlePortfolioNameChange(product.id, e.target.value)}
-            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-            required
-          />
         </div>
       </div>
     );
@@ -959,7 +945,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                 <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
               </svg>
-              <Link to={`/clients/${urlClientId}`} className="ml-1 text-sm font-medium text-gray-500 hover:text-primary-700 md:ml-2">
+              <Link to={`/client_groups/${urlClientId}`} className="ml-1 text-sm font-medium text-gray-500 hover:text-primary-700 md:ml-2">
                 {clientName || 'Client Details'}
               </Link>
             </div>
@@ -986,7 +972,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Create Client Products</h1>
         </div>
         <Link
-          to={`/clients/${urlClientId}`}
+          to={`/client_groups/${urlClientId}`}
           className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
         >
           <svg className="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -1098,6 +1084,55 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                           </button>
                         </div>
 
+                        {/* Product Owner Selection - Moved above Product Name */}
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Product Owners
+                          </label>
+                          <div className="flex space-x-2">
+                            <div className="flex-grow">
+                              <Select
+                                mode="multiple"
+                                showSearch
+                                allowClear
+                                placeholder="Select product owners"
+                                className="w-full"
+                                value={product.product_owner_ids}
+                                onChange={(selectedValues: any) => {
+                                  // Handle the create new option case
+                                  if (selectedValues.includes('create-new')) {
+                                    // Filter out the 'create-new' value
+                                    const actualOwnerIds = selectedValues.filter((v: any) => v !== 'create-new');
+                                    handleProductChange(product.id, 'product_owner_ids', actualOwnerIds);
+                                    openCreateProductOwnerModal(product.id);
+                                  } else {
+                                    handleProductChange(product.id, 'product_owner_ids', selectedValues);
+                                  }
+                                }}
+                              >
+                                {productOwners.map(p => (
+                                  <Select.Option key={p.id} value={p.id}>
+                                    {p.name}
+                                  </Select.Option>
+                                ))}
+                                <Select.Option key="create-new" value="create-new">
+                                  + Create new product owner
+                                </Select.Option>
+                              </Select>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => openCreateProductOwnerModal(product.id)}
+                              className="bg-primary-600 text-white p-2 rounded hover:bg-primary-700 transition-colors duration-150 inline-flex items-center justify-center"
+                              title="Create new product owner"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+
                         {/* Product Name Field */}
                         <div className="mb-4">
                           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1157,69 +1192,6 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                               required
                             />
                           </div>
-
-                          {/* Product Owner Selection */}
-                          <div className="mb-4 mt-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Product Owners
-                            </label>
-                            <div className="flex space-x-2">
-                              <div className="flex-grow">
-                                <Select
-                                  mode="multiple"
-                                  showSearch
-                                  allowClear
-                                  placeholder="Select product owners"
-                                  className="w-full"
-                                  value={product.product_owner_ids}
-                                  onChange={(selectedValues: any) => {
-                                    // Handle the create new option case
-                                    if (selectedValues.includes('create-new')) {
-                                      // Filter out the 'create-new' value
-                                      const actualOwnerIds = selectedValues.filter((v: any) => v !== 'create-new');
-                                      handleProductChange(product.id, 'product_owner_ids', actualOwnerIds);
-                                      openCreateProductOwnerModal(product.id);
-                                    } else {
-                                      handleProductChange(product.id, 'product_owner_ids', selectedValues);
-                                    }
-                                  }}
-                                >
-                                  {productOwners.map(p => (
-                                    <Select.Option key={p.id} value={p.id}>
-                                      {p.name}
-                                    </Select.Option>
-                                  ))}
-                                  <Select.Option key="create-new" value="create-new">
-                                    + Create new product owner
-                                  </Select.Option>
-                                </Select>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => openCreateProductOwnerModal(product.id)}
-                                className="bg-primary-600 text-white p-2 rounded hover:bg-primary-700 transition-colors duration-150 inline-flex items-center justify-center"
-                                title="Create new product owner"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                </svg>
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Plan Number */}
-                        <div className="mb-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Plan Number
-                          </label>
-                          <input
-                            type="text"
-                            value={product.plan_number || ''}
-                            onChange={(e) => handleProductChange(product.id, 'plan_number', e.target.value)}
-                            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                            placeholder="Enter plan number"
-                          />
                         </div>
 
                         {/* Portfolio Configuration */}

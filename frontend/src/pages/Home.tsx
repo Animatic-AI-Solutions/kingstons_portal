@@ -27,6 +27,12 @@ const AccountsIcon = () => (
   </svg>
 );
 
+const ProductsIcon = () => (
+  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+  </svg>
+);
+
 const ErrorMessage: React.FC<{ message: string; retry: () => void }> = ({ message, retry }) => (
   <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
     <div className="flex">
@@ -106,13 +112,13 @@ const Home: React.FC = () => {
                 colorScheme="success"
               />
               
-              {/* Total Accounts */}
+              {/* Total Products */}
               <StatBox
-                title="Total Accounts"
+                title="Total Products"
                 value={metrics?.totalAccounts || 0}
                 format="number"
                 changePercentage={null}
-                icon={<AccountsIcon />}
+                icon={<ProductsIcon />}
                 colorScheme="warning"
               />
             </div>

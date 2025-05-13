@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional
 import logging
 
-from app.models.client_product_portfolio_assignment import ClientproductPortfolioAssignment, ClientproductPortfolioAssignmentCreate, ClientproductPortfolioAssignmentUpdate
+from app.models.product_portfolio_assignment import ProductPortfolioAssignment, ProductPortfolioAssignmentCreate, ProductPortfolioAssignmentUpdate
 from app.db.database import get_db
 
 # Set up logging
@@ -11,30 +11,30 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-@router.get("/client_product_portfolio_assignments", response_model=List[ClientproductPortfolioAssignment])
+@router.get("/product_portfolio_assignments", response_model=List[ProductPortfolioAssignment])
 async def get_assignments(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
     limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
-    client_product_id: Optional[int] = None,
+    product_id: Optional[int] = None,
     portfolio_id: Optional[int] = None,
     active_only: bool = False,
     db = Depends(get_db)
 ):
     """
-    What it does: Retrieves a paginated list of client product portfolio assignments with optional filtering.
-    Why it's needed: Provides a way to view which portfolios are assigned to which client products.
+    What it does: Retrieves a paginated list of product portfolio assignments with optional filtering.
+    Why it's needed: Provides a way to view which portfolios are assigned to which products.
     How it works:
         1. Connects to the Supabase database
-        2. Builds a query to the 'client_product_portfolio_assignments' table with optional filters
+        2. Builds a query to the 'product_portfolio_assignments' table with optional filters
         3. Applies pagination parameters to limit result size
-        4. Returns the data as a list of ClientproductPortfolioAssignment objects
+        4. Returns the data as a list of ProductPortfolioAssignment objects
     Expected output: A JSON array of assignment objects with all their details
     """
     try:
-        query = db.table("client_product_portfolio_assignments").select("*")
+        query = db.table("product_portfolio_assignments").select("*")
         
-        if client_product_id is not None:
-            query = query.eq("client_product_id", client_product_id)
+        if product_id is not None:
+            query = query.eq("product_id", product_id)
             
         if portfolio_id is not None:
             query = query.eq("portfolio_id", portfolio_id)
@@ -55,24 +55,24 @@ async def get_assignments(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-@router.post("/client_product_portfolio_assignments", response_model=ClientproductPortfolioAssignment)
-async def create_assignment(assignment: ClientproductPortfolioAssignmentCreate, db = Depends(get_db)):
+@router.post("/product_portfolio_assignments", response_model=ProductPortfolioAssignment)
+async def create_assignment(assignment: ProductPortfolioAssignmentCreate, db = Depends(get_db)):
     """
-    What it does: Creates a new client product portfolio assignment in the database.
-    Why it's needed: Allows assigning portfolios to client products.
+    What it does: Creates a new product portfolio assignment in the database.
+    Why it's needed: Allows assigning portfolios to products.
     How it works:
-        1. Validates the assignment data using the ClientproductPortfolioAssignmentCreate model
-        2. Validates that referenced client_product_id and portfolio_id exist
+        1. Validates the assignment data using the ProductPortfolioAssignmentCreate model
+        2. Validates that referenced product_id and portfolio_id exist
         3. If this is a new active assignment (no end_date), ends any existing active assignments for the same product
-        4. Inserts the validated data into the 'client_product_portfolio_assignments' table
+        4. Inserts the validated data into the 'product_portfolio_assignments' table
         5. Returns the newly created assignment with its generated ID
     Expected output: A JSON object containing the created assignment with all fields including ID and created_at timestamp
     """
     try:
-        # Validate client_product_id
-        product_check = db.table("client_products").select("id").eq("id", assignment.client_product_id).execute()
+        # Validate product_id
+        product_check = db.table("products").select("id").eq("id", assignment.product_id).execute()
         if not product_check.data or len(product_check.data) == 0:
-            raise HTTPException(status_code=404, detail=f"Client product with ID {assignment.client_product_id} not found")
+            raise HTTPException(status_code=404, detail=f"Client product with ID {assignment.product_id} not found")
         
         # Validate portfolio_id
         portfolio_check = db.table("portfolios").select("id").eq("id", assignment.portfolio_id).execute()
@@ -81,9 +81,9 @@ async def create_assignment(assignment: ClientproductPortfolioAssignmentCreate, 
         
         # If this is a new active assignment (no end_date), end any existing active assignments for this product
         if assignment.end_date is None:
-            current_assignments = db.table("client_product_portfolio_assignments")\
+            current_assignments = db.table("product_portfolio_assignments")\
                 .select("id")\
-                .eq("client_product_id", assignment.client_product_id)\
+                .eq("product_id", assignment.product_id)\
                 .is_("end_date", "null")\
                 .execute()
             
@@ -92,7 +92,7 @@ async def create_assignment(assignment: ClientproductPortfolioAssignmentCreate, 
                 end_date = assignment.start_date.isoformat()
                 
                 for active_assignment in current_assignments.data:
-                    db.table("client_product_portfolio_assignments")\
+                    db.table("product_portfolio_assignments")\
                         .update({"end_date": end_date})\
                         .eq("id", active_assignment["id"])\
                         .execute()
@@ -107,29 +107,29 @@ async def create_assignment(assignment: ClientproductPortfolioAssignmentCreate, 
         if 'end_date' in data_dict and data_dict['end_date'] is not None:
             data_dict['end_date'] = data_dict['end_date'].isoformat()
         
-        result = db.table("client_product_portfolio_assignments").insert(data_dict).execute()
+        result = db.table("product_portfolio_assignments").insert(data_dict).execute()
         if result.data and len(result.data) > 0:
             return result.data[0]
-        raise HTTPException(status_code=400, detail="Failed to create client product portfolio assignment")
+        raise HTTPException(status_code=400, detail="Failed to create product portfolio assignment")
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error creating assignment: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-@router.get("/client_product_portfolio_assignments/{assignment_id}", response_model=ClientproductPortfolioAssignment)
+@router.get("/product_portfolio_assignments/{assignment_id}", response_model=ProductPortfolioAssignment)
 async def get_assignment(assignment_id: int, db = Depends(get_db)):
     """
-    What it does: Retrieves a single client product portfolio assignment by ID.
+    What it does: Retrieves a single product portfolio assignment by ID.
     Why it's needed: Allows viewing detailed information about a specific assignment.
     How it works:
         1. Takes the assignment_id from the URL path
-        2. Queries the 'client_product_portfolio_assignments' table for a record with matching ID
+        2. Queries the 'product_portfolio_assignments' table for a record with matching ID
         3. Returns the assignment data or raises a 404 error if not found
     Expected output: A JSON object containing the requested assignment's details
     """
     try:
-        result = db.table("client_product_portfolio_assignments").select("*").eq("id", assignment_id).execute()
+        result = db.table("product_portfolio_assignments").select("*").eq("id", assignment_id).execute()
         if result.data and len(result.data) > 0:
             return result.data[0]
         raise HTTPException(status_code=404, detail=f"Assignment with ID {assignment_id} not found")
@@ -138,16 +138,16 @@ async def get_assignment(assignment_id: int, db = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-@router.patch("/client_product_portfolio_assignments/{assignment_id}", response_model=ClientproductPortfolioAssignment)
-async def update_assignment(assignment_id: int, assignment_update: ClientproductPortfolioAssignmentUpdate, db = Depends(get_db)):
+@router.patch("/product_portfolio_assignments/{assignment_id}", response_model=ProductPortfolioAssignment)
+async def update_assignment(assignment_id: int, assignment_update: ProductPortfolioAssignmentUpdate, db = Depends(get_db)):
     """
-    What it does: Updates an existing client product portfolio assignment's information.
+    What it does: Updates an existing product portfolio assignment's information.
     Why it's needed: Allows modifying assignment details, such as ending an active assignment.
     How it works:
-        1. Validates the update data using the ClientproductPortfolioAssignmentUpdate model
+        1. Validates the update data using the ProductPortfolioAssignmentUpdate model
         2. Removes any None values from the input (fields that aren't being updated)
         3. Verifies the assignment exists
-        4. Validates that referenced client_product_id and portfolio_id exist if provided
+        4. Validates that referenced product_id and portfolio_id exist if provided
         5. Updates only the provided fields in the database
         6. Returns the updated assignment information
     Expected output: A JSON object containing the updated assignment's details
@@ -160,17 +160,17 @@ async def update_assignment(assignment_id: int, assignment_update: Clientproduct
     
     try:
         # Check if assignment exists
-        check_result = db.table("client_product_portfolio_assignments").select("*").eq("id", assignment_id).execute()
+        check_result = db.table("product_portfolio_assignments").select("*").eq("id", assignment_id).execute()
         if not check_result.data or len(check_result.data) == 0:
             raise HTTPException(status_code=404, detail=f"Assignment with ID {assignment_id} not found")
         
         current_assignment = check_result.data[0]
         
-        # Validate client_product_id if provided
-        if "client_product_id" in update_data and update_data["client_product_id"] is not None:
-            product_check = db.table("client_products").select("id").eq("id", update_data["client_product_id"]).execute()
+        # Validate product_id if provided
+        if "product_id" in update_data and update_data["product_id"] is not None:
+            product_check = db.table("products").select("id").eq("id", update_data["product_id"]).execute()
             if not product_check.data or len(product_check.data) == 0:
-                raise HTTPException(status_code=404, detail=f"Client product with ID {update_data['client_product_id']} not found")
+                raise HTTPException(status_code=404, detail=f"Client product with ID {update_data['product_id']} not found")
         
         # Validate portfolio_id if provided
         if "portfolio_id" in update_data and update_data["portfolio_id"] is not None:
@@ -186,13 +186,13 @@ async def update_assignment(assignment_id: int, assignment_update: Clientproduct
             update_data['end_date'] = update_data['end_date'].isoformat()
         
         # If we're removing the end_date (making it active) and this is an update
-        # that doesn't change client_product_id, end any other active assignments
+        # that doesn't change product_id, end any other active assignments
         if 'end_date' in update_data and update_data['end_date'] is None and current_assignment.get('end_date') is not None:
-            client_product_id = update_data.get('client_product_id', current_assignment.get('client_product_id'))
+            product_id = update_data.get('product_id', current_assignment.get('product_id'))
             
-            other_assignments = db.table("client_product_portfolio_assignments")\
+            other_assignments = db.table("product_portfolio_assignments")\
                 .select("id")\
-                .eq("client_product_id", client_product_id)\
+                .eq("product_id", product_id)\
                 .is_("end_date", "null")\
                 .neq("id", assignment_id)\
                 .execute()
@@ -201,13 +201,13 @@ async def update_assignment(assignment_id: int, assignment_update: Clientproduct
                 end_date = update_data.get('start_date') or current_assignment.get('start_date')
                 
                 for active_assignment in other_assignments.data:
-                    db.table("client_product_portfolio_assignments")\
+                    db.table("product_portfolio_assignments")\
                         .update({"end_date": end_date})\
                         .eq("id", active_assignment["id"])\
                         .execute()
         
         # Update the assignment
-        result = db.table("client_product_portfolio_assignments").update(update_data).eq("id", assignment_id).execute()
+        result = db.table("product_portfolio_assignments").update(update_data).eq("id", assignment_id).execute()
         
         if result.data and len(result.data) > 0:
             return result.data[0]
@@ -219,10 +219,10 @@ async def update_assignment(assignment_id: int, assignment_update: Clientproduct
         logger.error(f"Error updating assignment: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-@router.delete("/client_product_portfolio_assignments/{assignment_id}", response_model=dict)
+@router.delete("/product_portfolio_assignments/{assignment_id}", response_model=dict)
 async def delete_assignment(assignment_id: int, db = Depends(get_db)):
     """
-    What it does: Deletes a client product portfolio assignment from the database.
+    What it does: Deletes a product portfolio assignment from the database.
     Why it's needed: Allows removing incorrect assignments.
     How it works:
         1. Verifies the assignment exists
@@ -232,12 +232,12 @@ async def delete_assignment(assignment_id: int, db = Depends(get_db)):
     """
     try:
         # Check if assignment exists
-        check_result = db.table("client_product_portfolio_assignments").select("id").eq("id", assignment_id).execute()
+        check_result = db.table("product_portfolio_assignments").select("id").eq("id", assignment_id).execute()
         if not check_result.data or len(check_result.data) == 0:
             raise HTTPException(status_code=404, detail=f"Assignment with ID {assignment_id} not found")
         
         # Delete the assignment
-        result = db.table("client_product_portfolio_assignments").delete().eq("id", assignment_id).execute()
+        result = db.table("product_portfolio_assignments").delete().eq("id", assignment_id).execute()
         
         return {"message": f"Assignment with ID {assignment_id} deleted successfully"}
     except HTTPException:
@@ -246,27 +246,27 @@ async def delete_assignment(assignment_id: int, db = Depends(get_db)):
         logger.error(f"Error deleting assignment: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-@router.get("/client_products/{client_product_id}/current_portfolio", response_model=ClientproductPortfolioAssignment)
-async def get_current_portfolio_assignment(client_product_id: int, db = Depends(get_db)):
+@router.get("/products/{product_id}/current_portfolio", response_model=ProductPortfolioAssignment)
+async def get_current_portfolio_assignment(product_id: int, db = Depends(get_db)):
     """
-    What it does: Retrieves the current active portfolio assignment for a client product.
-    Why it's needed: Provides a convenient way to get the active portfolio for a specific client product.
+    What it does: Retrieves the current active portfolio assignment for a product.
+    Why it's needed: Provides a convenient way to get the active portfolio for a specific product.
     How it works:
-        1. Takes the client_product_id from the URL path
-        2. Queries the 'client_product_portfolio_assignments' table for an active record (end_date is null)
+        1. Takes the product_id from the URL path
+        2. Queries the 'product_portfolio_assignments' table for an active record (end_date is null)
         3. Returns the assignment data or raises a 404 error if not found
     Expected output: A JSON object containing the current portfolio assignment's details
     """
     try:
         # Check if client product exists
-        product_check = db.table("client_products").select("id").eq("id", client_product_id).execute()
+        product_check = db.table("products").select("id").eq("id", product_id).execute()
         if not product_check.data or len(product_check.data) == 0:
-            raise HTTPException(status_code=404, detail=f"Client product with ID {client_product_id} not found")
+            raise HTTPException(status_code=404, detail=f"Client product with ID {product_id} not found")
         
         # Get current active assignment
-        result = db.table("client_product_portfolio_assignments")\
+        result = db.table("product_portfolio_assignments")\
             .select("*")\
-            .eq("client_product_id", client_product_id)\
+            .eq("product_id", product_id)\
             .is_("end_date", "null")\
             .order("start_date", desc=True)\
             .limit(1)\
@@ -275,26 +275,26 @@ async def get_current_portfolio_assignment(client_product_id: int, db = Depends(
         if result.data and len(result.data) > 0:
             return result.data[0]
             
-        raise HTTPException(status_code=404, detail=f"No active portfolio assignment found for client product with ID {client_product_id}")
+        raise HTTPException(status_code=404, detail=f"No active portfolio assignment found for client product with ID {product_id}")
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-@router.get("/portfolios/{portfolio_id}/assigned_products", response_model=List[ClientproductPortfolioAssignment])
+@router.get("/portfolios/{portfolio_id}/assigned_products", response_model=List[ProductPortfolioAssignment])
 async def get_portfolio_assigned_products(
     portfolio_id: int, 
     active_only: bool = True,
     db = Depends(get_db)
 ):
     """
-    What it does: Retrieves all client products that have this portfolio assigned.
-    Why it's needed: Provides a way to see which client products are using a specific portfolio.
+    What it does: Retrieves all products that have this portfolio assigned.
+    Why it's needed: Provides a way to see which products are using a specific portfolio.
     How it works:
         1. Takes the portfolio_id from the URL path
-        2. Queries the 'client_product_portfolio_assignments' table for records with matching portfolio_id
+        2. Queries the 'product_portfolio_assignments' table for records with matching portfolio_id
         3. Optionally filters for only active assignments (end_date is null)
-        4. Returns the data as a list of ClientproductPortfolioAssignment objects
+        4. Returns the data as a list of ProductPortfolioAssignment objects
     Expected output: A JSON array of assignment objects with all their details
     """
     try:
@@ -304,7 +304,7 @@ async def get_portfolio_assigned_products(
             raise HTTPException(status_code=404, detail=f"Portfolio with ID {portfolio_id} not found")
         
         # Build query
-        query = db.table("client_product_portfolio_assignments")\
+        query = db.table("product_portfolio_assignments")\
             .select("*")\
             .eq("portfolio_id", portfolio_id)
             

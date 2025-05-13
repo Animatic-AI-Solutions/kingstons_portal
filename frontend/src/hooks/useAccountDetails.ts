@@ -144,7 +144,7 @@ export function useAccountDetails(accountId: string | undefined) {
       {
         queryKey: ['clients'],
         queryFn: async () => {
-          const response = await api.get('/clients');
+          const response = await api.get('/client_groups');
           return response.data;
         },
         enabled,

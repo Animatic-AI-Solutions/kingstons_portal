@@ -48,13 +48,13 @@ const Products: React.FC = () => {
       const [
         summaryRes,
         productsRes,
-        clientsRes,
+        clientsRes,        // These are client groups now
         providersRes,
         portfoliosRes
       ] = await Promise.all([
         api.get('/product_value_irr_summary'),
         api.get('/client_products'),
-        api.get('/clients'),
+        api.get('/client_groups'),  // Using the updated client_groups endpoint
         api.get('/available_providers'),
         api.get('/portfolios')
       ]);
@@ -67,18 +67,17 @@ const Products: React.FC = () => {
       // Merge summary data into products
       const productsData = productsRes.data.map((product: any) => {
         const summary: any = summaryMap.get(product.id) || {};
-        const client = clientsRes.data.find((c: any) => c.id === product.client_id);
+        // Find the client group by matching product.client_id to the client group's id
+        const clientGroup = clientsRes.data.find((c: any) => c.id === product.client_id);
         const provider = product.provider_id ? providersRes.data.find((p: any) => p.id === product.provider_id) : null;
         const portfolio = product.portfolio_id ? portfoliosRes.data.find((p: any) => p.id === product.portfolio_id) : null;
         
-        // Create client name from forname and surname
-        const clientName = client ? 
-          `${client.forname || ''} ${client.surname || ''}`.trim() : 
-          'Unknown Client';
+        // Get client group name directly from the name field - client groups use a simple name field
+        const clientGroupName = clientGroup ? clientGroup.name : 'Unknown Client Group';
           
         return {
           ...product,
-          client_name: clientName,
+          client_name: clientGroupName,
           product_name: product ? product.product_name : 'Unknown Product',
           provider_name: provider ? provider.name : 'Unknown Provider',
           portfolio_name: portfolio ? portfolio.name : undefined,
@@ -113,7 +112,7 @@ const Products: React.FC = () => {
     navigate(`/products/${productId}`);
   };
 
-  const handleDeleteClientProducts = (clientName: string) => {
+  const handleDeleteClientGroupProducts = (clientName: string) => {
     // Find the client ID from products
     const clientProduct = products.find(product => product.client_name === clientName);
     if (clientProduct) {
@@ -132,7 +131,7 @@ const Products: React.FC = () => {
       setIsDeleting(true);
       
       // Call API to delete all products, portfolios, and products for this client
-      await api.delete(`/clients/${clientToDelete.id}/products`);
+      await api.delete(`/client_groups/${clientToDelete.id}/products`);
       
       // Refresh the products list
       await fetchProducts();
@@ -211,7 +210,7 @@ const Products: React.FC = () => {
   // Group products by client if the option is selected
   const groupedProducts = groupByClient
     ? filteredAndSortedProducts.reduce((groups: Record<string, Product[]>, product) => {
-        const clientName = product.client_name || 'Unknown Client';
+        const clientName = product.client_name || 'Unknown Client Group';
         if (!groups[clientName]) {
           groups[clientName] = [];
         }
@@ -221,8 +220,8 @@ const Products: React.FC = () => {
     : {};
 
   // Add a new handler function to navigate to the create client products page
-  const handleCreateClientProducts = () => {
-    navigate('/create-client-products');
+  const handleCreateClientGroupProducts = () => {
+    navigate('/create-client-group-products');
   };
 
   return (
@@ -237,16 +236,16 @@ const Products: React.FC = () => {
               onChange={(e) => setGroupByClient(e.target.checked)}
               className="form-checkbox h-5 w-5 text-blue-600"
             />
-            <span>Group by Client</span>
+            <span>Group by Client Group</span>
           </label>
             <button
-              onClick={handleCreateClientProducts}
+              onClick={handleCreateClientGroupProducts}
             className="bg-primary-700 text-white px-4 py-1.5 rounded-xl font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 shadow-sm flex items-center gap-1"
             >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
-            Add Client Products
+            Add Client Group Products
             </button>
           </div>
         </div>
@@ -296,14 +295,14 @@ const Products: React.FC = () => {
                       <p className="text-sm text-gray-500">{clientProducts.length} product(s)</p>
                     </div>
                     <button
-                      onClick={() => handleDeleteClientProducts(clientName)}
+                      onClick={() => handleDeleteClientGroupProducts(clientName)}
                       className="text-red-600 hover:text-red-800 text-sm font-medium flex items-center"
-                      title="Delete all products for this client"
+                      title="Delete all products for this client group"
                     >
                       <svg className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v10m4-10v10m5-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
-                      Delete All
+                      Delete
                     </button>
                   </div>
                   <div className="overflow-x-auto overflow-visible">
@@ -511,8 +510,8 @@ const Products: React.FC = () => {
                 <thead className="bg-gray-100">
                   <tr>
                     <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('client_name')} title="Click to sort by Client">
-                      Client
+                      <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('client_name')} title="Click to sort by Client Group">
+                      Client Group
                         <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
                           {sortField === 'client_name' ? (
                             sortOrder === 'asc' ? (
@@ -748,13 +747,13 @@ const Products: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
-              <h3 className="text-lg leading-6 font-medium text-gray-900 mt-4">Delete All products</h3>
+              <h3 className="text-lg leading-6 font-medium text-gray-900 mt-4">Delete All Products</h3>
               <div className="mt-2 px-7 py-3">
                 <p className="text-sm text-gray-500">
-                  Are you sure you want to delete all products for "{clientToDelete?.name}"?
+                  Are you sure you want to delete all products for "{clientToDelete?.name}" client group?
                 </p>
                 <p className="text-sm text-gray-500 mt-2">
-                  This will delete all products, portfolios, and products associated with this client.
+                  This will delete all products, portfolios, and products associated with this client group.
                   <span className="font-medium"> This action cannot be undone.</span>
                 </p>
               </div>

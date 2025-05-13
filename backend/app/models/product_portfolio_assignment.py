@@ -2,8 +2,8 @@ from pydantic import BaseModel, Field, ConfigDict
 from datetime import date, datetime
 from typing import Optional
 
-class ClientproductPortfolioAssignmentBase(BaseModel):
-    client_product_id: int
+class ProductPortfolioAssignmentBase(BaseModel):
+    product_id: int
     portfolio_id: int
     start_date: date
     end_date: Optional[date] = None
@@ -13,11 +13,11 @@ class ClientproductPortfolioAssignmentBase(BaseModel):
         from_attributes=True
     )
 
-class ClientproductPortfolioAssignmentCreate(ClientproductPortfolioAssignmentBase):
+class ProductPortfolioAssignmentCreate(ProductPortfolioAssignmentBase):
     pass
 
-class ClientproductPortfolioAssignmentUpdate(BaseModel):
-    client_product_id: Optional[int] = None
+class ProductPortfolioAssignmentUpdate(BaseModel):
+    product_id: Optional[int] = None
     portfolio_id: Optional[int] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
@@ -27,7 +27,7 @@ class ClientproductPortfolioAssignmentUpdate(BaseModel):
         from_attributes=True
     )
 
-class ClientproductPortfolioAssignmentInDB(ClientproductPortfolioAssignmentBase):
+class ProductPortfolioAssignmentInDB(ProductPortfolioAssignmentBase):
     id: int
     created_at: datetime
 
@@ -36,7 +36,7 @@ class ClientproductPortfolioAssignmentInDB(ClientproductPortfolioAssignmentBase)
         from_attributes=True
     )
 
-class ClientproductPortfolioAssignment(ClientproductPortfolioAssignmentInDB):
-    """Complete client product portfolio assignment model returned to frontend"""
+class ProductPortfolioAssignment(ProductPortfolioAssignmentInDB):
+    """Complete product portfolio assignment model returned to frontend"""
     pass
 

@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional
 import logging
 
-from app.models.client import ClientGroup, ClientGroupCreate, ClientGroupUpdate
+from app.models.client_group import ClientGroup, ClientGroupCreate, ClientGroupUpdate
 from app.db.database import get_db
 from app.api.routes.auth import get_current_user
 
@@ -419,18 +419,34 @@ async def get_client_group_fum_summary(db = Depends(get_db)):
     Why it's needed: Provides aggregated financial metrics for each client group for reporting.
     How it works:
         1. Queries the 'client_group_fum_summary' view which aggregates product values per client group
-        2. Joins with client_groups to get client group details
-        3. Returns a combined dataset with client group info and their total FUM
+        2. Fetches client_groups to get client group details
+        3. Merges the data and returns a combined dataset
     Expected output: A JSON array with client group info and their total FUM value
     """
     try:
-        result = db.table("client_group_fum_summary").\
-            select("client_group_fum_summary.client_group_id, client_group_fum_summary.fum, client_groups.*").\
-            eq("client_groups.status", "active").\
-            join("client_groups", "client_group_fum_summary.client_group_id", "client_groups.id").\
-            execute()
-            
-        return result.data
+        # Fetch summary data
+        summary_result = db.table("client_group_fum_summary").select("*").execute()
+        
+        # Fetch active client groups
+        client_groups_result = db.table("client_groups").select("*").eq("status", "active").execute()
+        
+        # Create a mapping of client_group_id to client group data
+        client_groups_map = {cg["id"]: cg for cg in client_groups_result.data} if client_groups_result.data else {}
+        
+        # Combine the data
+        combined_data = []
+        for summary in summary_result.data:
+            client_group_id = summary.get("client_group_id")
+            if client_group_id in client_groups_map:
+                # Merge the data
+                combined_record = {
+                    "client_group_id": client_group_id,
+                    "fum": summary.get("fum", 0),
+                    **client_groups_map[client_group_id]  # Add all client group fields
+                }
+                combined_data.append(combined_record)
+        
+        return combined_data
     except Exception as e:
         logger.error(f"Error fetching client group FUM summary: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}") 

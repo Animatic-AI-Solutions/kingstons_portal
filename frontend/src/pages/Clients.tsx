@@ -98,22 +98,22 @@ const Clients: React.FC = () => {
             params: { show_dormant: showDormant },
             withCredentials: true
           }),
-          axios.get('http://localhost:8000/client_fum_summary', { withCredentials: true })
+          axios.get('http://localhost:8000/client_group_fum_summary', { withCredentials: true })
         ]);
         clientData = clientsResponse.data;
         fumData = fumResponse.data;
       } else {
         // Use the regular api instance from context
         const [clientsResponse, fumResponse] = await Promise.all([
-          api.get('/clients', { params: { show_dormant: showDormant } }),
-          api.get('/client_fum_summary')
+          api.get('/client_groups', { params: { show_dormant: showDormant } }),
+          api.get('/client_group_fum_summary')
         ]);
         clientData = clientsResponse.data;
         fumData = fumResponse.data;
       }
 
-      // Map FUM data by client_id for quick lookup
-      const fumMap = new Map(fumData.map((row: any) => [row.client_id, row.fum]));
+      // Map FUM data by client_group_id for quick lookup
+      const fumMap = new Map(fumData.map((row: any) => [row.client_group_id, row.fum]));
 
       // Merge FUM into clients
       const clientsWithFum = clientData.map((client: Client) => ({
@@ -141,11 +141,11 @@ const Clients: React.FC = () => {
   };
 
   const handleAddClient = () => {
-    navigate('/clients/add');
+    navigate('/client_groups/add');
   };
 
   const handleClientClick = (clientId: string) => {
-    navigate(`/clients/${clientId}`);
+    navigate(`/client_groups/${clientId}`);
   };
 
   // Format currency with commas and no decimal places
