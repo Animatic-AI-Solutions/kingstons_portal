@@ -10,6 +10,7 @@ import Home from './pages/Home';
 import Terms from './pages/Terms';
 import Cookies from './pages/Cookies';
 import Profile from './pages/Profile';
+import ReportGenerator from './pages/ReportGenerator';
 
 // Auth Components - User authentication related components
 import LoginForm from './components/auth/LoginForm';
@@ -270,6 +271,16 @@ const AppContent: React.FC = () => {
               <Navbar />
               <div className="flex-grow pt-6 pb-12">
                 <Reporting />
+              </div>
+              <Footer />
+            </>
+          } />
+          
+          <Route path="/report-generator" element={
+            <>
+              <Navbar />
+              <div className="flex-grow pt-6 pb-12">
+                <ReportGenerator />
               </div>
               <Footer />
             </>

@@ -70,55 +70,61 @@ const Navbar: React.FC = () => {
 
   return (
     <nav className="bg-white shadow-md">
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
+      <div className="max-w-[1400px] mx-auto px-2 sm:px-4 lg:px-6">
         <div className="flex items-center justify-between h-20">
           <div className="flex items-center">
-            <div className="flex-shrink-0 flex items-center mr-8">
+            <div className="flex-shrink-0 flex items-center mr-4">
               <Link to="/" className="flex items-center">
                 <img
                   src="/images/Companylogo2.png"
                   alt="Kingston Logo"
-                  className="h-9 mr-3"
+                  className="h-8 mr-2"
                 />
                 <img
                   src="/images/Companyname1.png"
                   alt="Kingston"
-                  className="h-7"
+                  className="h-6"
                 />
               </Link>
             </div>
             
             {user && (
-              <div className="hidden md:flex space-x-6 ml-4">
+              <div className="hidden md:flex space-x-4 ml-2">
                 <Link 
                   to="/" 
-                  className={`px-2 py-6 text-base ${isActive('/') ? activeNavLinkStyle : inactiveNavLinkStyle}`}
+                  className={`px-2 py-6 text-sm ${isActive('/') ? activeNavLinkStyle : inactiveNavLinkStyle}`}
                 >
                   Home
                 </Link>
                 <Link 
                   to="/client_groups" 
-                  className={`px-2 py-6 text-base ${isActive('/client_groups') ? activeNavLinkStyle : inactiveNavLinkStyle}`}
+                  className={`px-2 py-6 text-sm ${isActive('/client_groups') ? activeNavLinkStyle : inactiveNavLinkStyle}`}
                 >
                   Clients
                 </Link>
                 <Link 
                   to="/products" 
-                  className={`px-2 py-6 text-base ${isActive('/products') ? activeNavLinkStyle : inactiveNavLinkStyle}`}
+                  className={`px-2 py-6 text-sm ${isActive('/products') ? activeNavLinkStyle : inactiveNavLinkStyle}`}
                 >
                   Products
                 </Link>
                 <Link 
                   to="/definitions" 
-                  className={`px-2 py-6 text-base ${isActive('/definitions') ? activeNavLinkStyle : inactiveNavLinkStyle}`}
+                  className={`px-2 py-6 text-sm ${isActive('/definitions') ? activeNavLinkStyle : inactiveNavLinkStyle}`}
                 >
                   Definitions
                 </Link>
                 <Link 
                   to="/reporting" 
-                  className={`px-2 py-6 text-base ${isActive('/reporting') ? activeNavLinkStyle : inactiveNavLinkStyle}`}
+                  className={`px-2 py-6 text-sm ${isActive('/reporting') ? activeNavLinkStyle : inactiveNavLinkStyle}`}
                 >
                   Analytics
+                </Link>
+                <Link 
+                  to="/report-generator" 
+                  className={`px-2 py-6 text-sm ${isActive('/report-generator') ? activeNavLinkStyle : inactiveNavLinkStyle}`}
+                >
+                  Report
                 </Link>
               </div>
             )}
@@ -126,18 +132,18 @@ const Navbar: React.FC = () => {
 
           {user && (
             <div className="flex items-center">
-              <form onSubmit={handleSearch} className="relative mr-4">
+              <form onSubmit={handleSearch} className="relative mr-3">
                 <div className="relative">
                   <input
                     type="text"
                     placeholder="Search..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-700 focus:border-primary-700 transition-colors"
+                    className="w-48 pl-8 pr-3 py-1.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-700 focus:border-primary-700 transition-colors text-sm"
                   />
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
                     <svg 
-                      className="h-5 w-5 text-gray-400" 
+                      className="h-4 w-4 text-gray-400" 
                       xmlns="http://www.w3.org/2000/svg" 
                       viewBox="0 0 20 20" 
                       fill="currentColor" 
@@ -154,7 +160,7 @@ const Navbar: React.FC = () => {
               </form>
               
               {/* Profile Menu */}
-              <div className="relative mr-3" ref={profileMenuRef}>
+              <div className="relative mr-2" ref={profileMenuRef}>
                 <div>
                   <ProfileAvatar
                     imageUrl={user?.profile_picture_url || '/images/Companylogo2.png'}
@@ -181,7 +187,7 @@ const Navbar: React.FC = () => {
               
               <button
                 onClick={handleLogout}
-                className="bg-primary-700 text-white px-4 py-2 rounded-full text-base font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-700"
+                className="bg-primary-700 text-white px-3 py-1.5 rounded-full text-sm font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-700"
               >
                 Logout
               </button>
