@@ -243,8 +243,44 @@ export const calculatePortfolioIRRForDate = (portfolioId: number, date: string) 
  * Fetches all providers with their theme colors
  * @returns {Promise} - API response with providers and theme colors
  */
-export const getProviderThemeColors = () => {
-  return api.get('available_providers/theme-colors');
+export const getProviderThemeColors = async () => {
+  try {
+    // Use the /api/available_providers endpoint which we know is working
+    const response = await axios({
+      method: 'get',
+      url: 'http://localhost:8000/api/available_providers',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      withCredentials: true
+    });
+    
+    // Define provider type
+    interface Provider {
+      id: number;
+      name: string;
+      theme_color?: string;
+      status?: string;
+      created_at?: string;
+    }
+    
+    // Map the response to match the expected format from the theme-colors endpoint
+    const providers = response.data as Provider[];
+    const themeColors = providers.map((provider: Provider) => ({
+      id: provider.id,
+      name: provider.name,
+      theme_color: provider.theme_color
+    }));
+    
+    // Return in the same format expected from the original endpoint
+    return {
+      data: themeColors
+    };
+  } catch (error) {
+    console.error('Error fetching provider colors:', error);
+    throw error;
+  }
 };
 
 /**
@@ -252,7 +288,16 @@ export const getProviderThemeColors = () => {
  * @returns {Promise} - API response with update results
  */
 export const initializeProviderThemeColors = () => {
-  return api.post('available_providers/update-theme-colors');
+  // Use axios directly without any interceptors
+  return axios({
+    method: 'post',
+    url: 'http://localhost:8000/api/available_providers/update-theme-colors',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    withCredentials: true // Include credentials if your API requires authentication
+  });
 };
 
 /**
@@ -260,7 +305,16 @@ export const initializeProviderThemeColors = () => {
  * @returns {Promise} - API response with available colors
  */
 export const getAvailableColors = () => {
-  return api.get('available_providers/available-colors');
+  // Use axios directly without any interceptors
+  return axios({
+    method: 'get',
+    url: 'http://localhost:8000/api/available_providers/available-colors',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    withCredentials: true // Include credentials if your API requires authentication
+  });
 };
 
 /**

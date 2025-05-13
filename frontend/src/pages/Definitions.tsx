@@ -9,10 +9,10 @@ interface Provider {
   name: string;
   status: string;
   type?: string;
-  products?: number;
   created_at: string;
   updated_at?: string;
   theme_color?: string;
+  product_count?: number;
 }
 
 // Fund interface
@@ -52,13 +52,15 @@ interface Portfolio {
   }[];
   // For calculations
   averageRisk?: number;
+  // Count of portfolios using this template
+  portfolioCount?: number;
 }
 
 type TabType = 'providers' | 'funds' | 'portfolio-templates';
 type SortOrder = 'asc' | 'desc';
-type ProviderSortField = 'name' | 'status' | 'created_at';
+type ProviderSortField = 'name' | 'status' | 'created_at' | 'product_count';
 type FundSortField = 'fund_name' | 'risk_factor' | 'isin_number' | 'fund_cost' | 'created_at';
-type PortfolioSortField = 'name' | 'weighted_risk' | 'performance' | 'created_at' | 'averageRisk';
+type PortfolioSortField = 'name' | 'weighted_risk' | 'created_at' | 'averageRisk' | 'portfolioCount';
 
 // Error helper function
 const getErrorMessage = (error: any): string => {
@@ -167,30 +169,37 @@ const EmptyState: React.FC<{ message: string }> = ({ message }) => (
 );
 
 // Error display component
-const ErrorDisplay: React.FC<{ message: string }> = ({ message }) => (
-  <div className="text-red-600 text-center py-4 rounded-md bg-red-50 p-4">
-    <svg 
-      className="mx-auto h-8 w-8 text-red-500 mb-2" 
-      fill="none" 
-      viewBox="0 0 24 24" 
-      stroke="currentColor"
-    >
-      <path 
-        strokeLinecap="round" 
-        strokeLinejoin="round" 
-        strokeWidth={2} 
-        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
-      />
-    </svg>
-    <p>{message}</p>
-    <button 
-      className="mt-2 text-sm text-red-700 underline"
-      onClick={() => window.location.reload()}
-    >
-      Retry
-    </button>
-  </div>
-);
+const ErrorDisplay: React.FC<{ message: string }> = ({ message }) => {
+  // Make sure message is a string, even if an object is passed
+  const errorMessage = typeof message === 'object' 
+    ? JSON.stringify(message, null, 2) 
+    : message;
+    
+  return (
+    <div className="text-red-600 text-center py-4 rounded-md bg-red-50 p-4">
+      <svg 
+        className="mx-auto h-8 w-8 text-red-500 mb-2" 
+        fill="none" 
+        viewBox="0 0 24 24" 
+        stroke="currentColor"
+      >
+        <path 
+          strokeLinecap="round" 
+          strokeLinejoin="round" 
+          strokeWidth={2} 
+          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
+        />
+      </svg>
+      <p>{errorMessage}</p>
+      <button 
+        className="mt-2 text-sm text-red-700 underline"
+        onClick={() => window.location.reload()}
+      >
+        Retry
+      </button>
+    </div>
+  );
+};
 
 // Create context for definitions
 interface DefinitionsContextType {
@@ -274,14 +283,13 @@ const Definitions: React.FC = () => {
   const [portfolioSortOrder, setPortfolioSortOrder] = useState<SortOrder>('asc');
   
   // Portfolio filtering state
-  const [portfolioTypeFilters, setPortfolioTypeFilters] = useState<(string | number)[]>([]);
-  const [riskRangeFilters, setRiskRangeFilters] = useState<(string | number)[]>([]);
-  const [irrRangeFilters, setIrrRangeFilters] = useState<(string | number)[]>([]);
+  const [portfolioTypeFilters, setPortfolioTypeFilters] = useState<string[]>([]);
+  const [riskRangeFilters, setRiskRangeFilters] = useState<(string|number)[]>([]);
   
   // API calls for all entity types
   const fetchProviders = useCallback(async ({ signal }: { signal?: AbortSignal } = {}) => {
-    console.log("Fetching providers...");
-    const response = await api.get('/available_providers', { signal });
+    console.log("Fetching providers with product count...");
+    const response = await api.get('/available_providers_with_count', { signal });
     const allProviders = response.data;
     return allProviders;
   }, [api]);
@@ -309,13 +317,19 @@ const Definitions: React.FC = () => {
         const portfolioData = response.data;
         const averageRisk = calculateAverageRisk(portfolioData);
         
-        // Calculate IRR for the portfolio
-        let performance = 0;
+        // Get the count of portfolios using this template
+        let portfolioCount = 0;
         try {
-          const irrResponse = await api.get(`/analytics/portfolio/${portfolioId}/irr`);
-          performance = irrResponse.data?.irr || 0;
+          const portfolioCountResponse = await api.get(`/portfolios`, {
+            params: {
+              original_template_id: portfolioId,
+              count_only: true
+            },
+            signal
+          });
+          portfolioCount = portfolioCountResponse.data.count || 0;
         } catch (err) {
-          console.warn(`Failed to fetch IRR for portfolio ${portfolioId}:`, err);
+          console.warn(`Failed to fetch portfolio count for template ${portfolioId}:`, err);
         }
         
         return {
@@ -324,9 +338,10 @@ const Definitions: React.FC = () => {
           // Add these fields for compatibility
           type: portfolioData.type || 'Model',
           risk: getRiskLevel(averageRisk),
-          performance, // Use the calculated IRR
+          performance: 0, // Default value instead of fetching
           weighted_risk: averageRisk,
-          allocation_count: portfolioData.funds?.length || 0
+          allocation_count: portfolioData.funds?.length || 0,
+          portfolioCount: portfolioCount
         };
       }
       return null;
@@ -407,15 +422,6 @@ const Definitions: React.FC = () => {
     if (risk < 5) return '3-5';
     if (risk < 7) return '5-7';
     return '7+';
-  };
-  
-  // Helper function to get IRR range
-  const getIRRRange = (portfolio: Portfolio): string => {
-    const irr = portfolio.performance || 0;
-    if (irr < 0) return 'Negative';
-    if (irr < 5) return '0-5%';
-    if (irr < 10) return '5-10%';
-    return '10%+';
   };
   
   // Use custom hooks for data fetching
@@ -691,52 +697,63 @@ const Definitions: React.FC = () => {
       });
   }, [funds, showInactive, searchQuery, fundSortField, fundSortOrder, fundStatusFilters, riskLevelFilters]);
   
-  // Apply search filter and sorting to portfolios
+  // Apply all filters for portfolios
   const filteredAndSortedPortfolios = useMemo(() => {
-    return [...portfolios]
-      .filter(portfolio => {
-        const searchMatch = searchQuery === '' || 
-          portfolio.name?.toLowerCase().includes(searchQuery.toLowerCase());
-          
-        // Apply risk range filters if any are selected
-        const riskMatch = riskRangeFilters.length === 0 || 
-          riskRangeFilters.includes(getRiskRange(portfolio));
-          
-        // Apply IRR range filters if any are selected
-        const irrMatch = irrRangeFilters.length === 0 || 
-          irrRangeFilters.includes(getIRRRange(portfolio));
-        
-        return searchMatch && riskMatch && irrMatch;
-      })
-      .sort((a, b) => {
-        // Handle numeric fields differently
-        if (['weighted_risk', 'performance', 'averageRisk'].includes(portfolioSortField)) {
-          let aField, bField;
-          if (portfolioSortField === 'weighted_risk') {
-            aField = a.weighted_risk || a.averageRisk || 0;
-            bField = b.weighted_risk || b.averageRisk || 0;
-          } else if (portfolioSortField === 'performance') {
-            aField = a.performance || 0;
-            bField = b.performance || 0;
-          } else {
-            aField = a.averageRisk || 0;
-            bField = b.averageRisk || 0;
-          }
-          
-          return portfolioSortOrder === 'asc' 
-            ? aField - bField
-            : bField - aField;
-        } else {
-          // For string values (name)
-          const aValue = String(a[portfolioSortField] || '').toLowerCase();
-          const bValue = String(b[portfolioSortField] || '').toLowerCase();
-          
-          return portfolioSortOrder === 'asc' 
-            ? aValue.localeCompare(bValue)
-            : bValue.localeCompare(aValue);
-        }
+    // Start with all portfolios
+    let filtered = portfolios;
+    
+    // Apply text search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(portfolio => 
+        portfolio.name?.toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply portfolio type filter
+    if (portfolioTypeFilters.length > 0) {
+      filtered = filtered.filter(portfolio => 
+        portfolio.type && portfolioTypeFilters.includes(portfolio.type)
+      );
+    }
+    
+    // Apply risk range filter
+    if (riskRangeFilters.length > 0) {
+      filtered = filtered.filter(portfolio => {
+        const riskRange = getRiskRange(portfolio);
+        return riskRangeFilters.includes(riskRange);
       });
-  }, [portfolios, searchQuery, portfolioSortField, portfolioSortOrder, riskRangeFilters, irrRangeFilters]);
+    }
+    
+    // Sort portfolios
+    return [...filtered].sort((a, b) => {
+      let aValue = a[portfolioSortField] || 0;
+      let bValue = b[portfolioSortField] || 0;
+      
+      // Special handling for calculated fields
+      if (portfolioSortField === 'averageRisk') {
+        aValue = a.weighted_risk || calculateAverageRisk(a);
+        bValue = b.weighted_risk || calculateAverageRisk(b);
+      }
+      
+      // Compare values
+      if (aValue < bValue) {
+        return portfolioSortOrder === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return portfolioSortOrder === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  }, [
+    portfolios, 
+    searchQuery, 
+    portfolioTypeFilters, 
+    riskRangeFilters, 
+    portfolioSortField, 
+    portfolioSortOrder, 
+    calculateAverageRisk
+  ]);
   
   // Get unique statuses for filter options
   const providerStatusOptions = useMemo(() => {
@@ -771,25 +788,11 @@ const Definitions: React.FC = () => {
   
   // Risk range filter options for portfolios
   const riskRangeOptions = useMemo(() => [
-    { value: '0-3', label: 'Low (0-3)' },
-    { value: '3-5', label: 'Moderate (3-5)' },
-    { value: '5-7', label: 'High (5-7)' },
-    { value: '7+', label: 'Very High (7+)' }
+    { value: '0-3', label: 'Low Risk (0-3)' },
+    { value: '3-5', label: 'Medium-Low Risk (3-5)' },
+    { value: '5-7', label: 'Medium-High Risk (5-7)' },
+    { value: '7+', label: 'High Risk (7+)' }
   ], []);
-  
-  // IRR range filter options
-  const irrRangeOptions = useMemo(() => [
-    { value: 'Negative', label: 'Negative' },
-    { value: '0-5%', label: '0-5%' },
-    { value: '5-10%', label: '5-10%' },
-    { value: '10%+', label: '10%+' }
-  ], []);
-
-  // Format performance with proper formatting and default value
-  const formatPortfolioPerformance = useCallback((value: number | undefined): string => {
-    const performance = value ?? 0;
-    return `${performance.toFixed(1)}%`;
-  }, []);
 
   // Display weighted risk with N/A for missing data
   const displayWeightedRisk = useCallback((portfolio: Portfolio) => {
@@ -835,12 +838,6 @@ const Definitions: React.FC = () => {
     });
     return Array.from(uniqueTypes).map(type => ({ value: type, label: type }));
   }, [portfolios]);
-
-  // Format IRR with proper formatting and default value
-  const formatIRR = useCallback((value: number | undefined): string => {
-    const performance = value ?? 0;
-    return `${performance.toFixed(1)}%`;
-  }, []);
 
   return (
     <DefinitionsContext.Provider value={contextValue}>
@@ -946,7 +943,7 @@ const Definitions: React.FC = () => {
       <div className="bg-white shadow rounded-lg overflow-hidden">
             {providersLoading ? (
               <div className="p-6">
-                <TableSkeleton columns={4} />
+                <TableSkeleton columns={3} />
               </div>
             ) : providersError ? (
               <div className="p-6">
@@ -975,7 +972,19 @@ const Definitions: React.FC = () => {
                         />
                       </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/4">Products</th>
+                    <th 
+                      className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/4 cursor-pointer hover:bg-indigo-50"
+                      onClick={() => handleProviderSortChange('product_count')}
+                    >
+                      <div className="flex items-center">
+                        <span>Products</span>
+                        {providerSortField === 'product_count' && (
+                          <span className="ml-1">
+                            {providerSortOrder === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </div>
+                    </th>
                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/4">Last Updated</th>
             </tr>
           </thead>
@@ -1004,12 +1013,14 @@ const Definitions: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm text-indigo-600 font-medium">{provider.products || 0}</div>
+                    <div className="text-sm text-gray-600">
+                      {provider.product_count !== undefined ? provider.product_count : 0}
+                    </div>
                   </td>
                   <td className="px-6 py-3 whitespace-nowrap">
                     <div className="text-sm text-gray-600">
                           {new Date(provider.created_at).toLocaleDateString()}
-            </div>
+                    </div>
                   </td>
                 </tr>
                   ))}
@@ -1145,16 +1156,13 @@ const Definitions: React.FC = () => {
               </div>
             </th>
             <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/3">
-              <div className="flex flex-col items-start gap-1">
-                <span>Average IRR</span>
-                <FilterDropdown
-                  id="irr-range-filter"
-                  options={irrRangeOptions}
-                  value={irrRangeFilters}
-                  onChange={setIrrRangeFilters}
-                  placeholder="All IRR Ranges"
-                  className="mt-1"
-                />
+              <div className="flex items-center cursor-pointer" onClick={() => handlePortfolioSortChange('portfolioCount')}>
+                <span>Portfolio Count</span>
+                {portfolioSortField === 'portfolioCount' && (
+                  <span className="ml-1">
+                    {portfolioSortOrder === 'asc' ? '↑' : '↓'}
+                  </span>
+                )}
               </div>
             </th>
           </tr>
@@ -1173,9 +1181,7 @@ const Definitions: React.FC = () => {
                         {displayWeightedRisk(portfolio)}
                       </td>
                       <td className="px-6 py-3 whitespace-nowrap">
-                        <div className={`text-sm font-medium ${(portfolio.performance || 0) >= 6 ? 'text-green-700' : 'text-amber-700'}`}>
-                          {formatIRR(portfolio.performance)}
-                        </div>
+                        <div className="text-sm text-gray-600 font-sans">{portfolio.portfolioCount || 0}</div>
                       </td>
                     </tr>
                   ))}
