@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional
 import logging
 
-from app.models.available_provider import AvailableProvider, AvailableProviderCreate, AvailableProviderUpdate, ColorOption, ProviderThemeColor
+from app.models.available_provider import AvailableProvider, AvailableProviderCreate, AvailableProviderUpdate, ColorOption, ProviderThemeColor, AvailableProviderWithProductCount
 from app.db.database import get_db
 
 # Set up logging
@@ -341,4 +341,74 @@ async def get_available_colors(db = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error fetching available colors: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch available colors: {str(e)}")
+
+@router.get("/available_providers_with_count", response_model=List[AvailableProviderWithProductCount])
+async def get_available_providers_with_product_count(
+    skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
+    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
+    status: Optional[str] = Query(None, description="Filter by status"),
+    db = Depends(get_db)
+):
+    """
+    What it does: Retrieves a paginated list of available providers with a count of associated products.
+    Why it's needed: Provides information about how many products are linked to each provider.
+    How it works:
+        1. Connects to the Supabase database
+        2. Queries the 'available_providers' table
+        3. For each provider, counts the number of products in 'client_products' that reference it
+        4. Returns the data as a list with provider details and product counts
+    Expected output: A JSON array of provider objects with all their details plus product_count
+    """
+    try:
+        logger.info(f"Fetching available providers with product counts")
+        query = db.table("available_providers").select("*")
+        
+        # Apply filters if provided
+        if status is not None:
+            query = query.eq("status", status)
+            
+        # Apply pagination
+        providers_result = query.execute()
+        
+        if not providers_result.data:
+            logger.warning("No available providers found in the database")
+            return []
+            
+        # Get all provider IDs
+        provider_ids = [provider["id"] for provider in providers_result.data]
+        
+        # Get count of products for each provider
+        product_counts = {}
+        for provider_id in provider_ids:
+            try:
+                count_result = db.table("client_products").select("id").eq("provider_id", provider_id).execute()
+                product_counts[provider_id] = len(count_result.data)
+            except Exception as count_err:
+                logger.error(f"Error counting products for provider {provider_id}: {str(count_err)}")
+                product_counts[provider_id] = 0
+            
+        # Add product count to each provider
+        providers_with_count = []
+        for provider in providers_result.data:
+            try:
+                provider_with_count = dict(provider)
+                provider_with_count["product_count"] = product_counts.get(provider["id"], 0)
+                providers_with_count.append(provider_with_count)
+            except Exception as format_err:
+                logger.error(f"Error formatting provider {provider.get('id')}: {str(format_err)}")
+                # Skip this provider if there's an error
+            
+        # Apply skip and limit after adding product counts
+        start_idx = min(skip, len(providers_with_count))
+        end_idx = min(start_idx + limit, len(providers_with_count))
+        paginated_providers = providers_with_count[start_idx:end_idx]
+        
+        return paginated_providers
+        
+    except ValueError as ve:
+        logger.error(f"Validation error: {str(ve)}")
+        raise HTTPException(status_code=422, detail=f"Validation error: {str(ve)}")
+    except Exception as e:
+        logger.error(f"Error fetching available providers with product counts: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch available providers with product counts: {str(e)}")
 

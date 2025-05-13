@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
-from typing import List, Optional
+from typing import List, Optional, Dict, Union
 import logging
 from datetime import date, datetime
 from pydantic import BaseModel
@@ -19,29 +19,46 @@ class PortfolioFromTemplate(BaseModel):
 
 router = APIRouter()
 
-@router.get("/portfolios", response_model=List[Portfolio])
+@router.get("/portfolios", response_model=Union[List[Portfolio], Dict[str, int]])
 async def get_portfolios(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
     limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
     status: Optional[str] = None,
+    original_template_id: Optional[int] = None,
+    count_only: bool = False,
     db = Depends(get_db)
 ):
     """
-    What it does: Retrieves a paginated list of portfolios with optional filtering by status.
+    What it does: Retrieves a paginated list of portfolios with optional filtering by status and template.
     Why it's needed: Provides a way to view and filter investment portfolios in the system.
     How it works:
         1. Connects to the Supabase database
         2. Builds a query to the 'portfolios' table with optional filters
-        3. Applies pagination parameters to limit result size
-        4. Returns the data as a list of Portfolio objects
-    Expected output: A JSON array of portfolio objects with all their details
+        3. If count_only is True, returns just the count of matching records
+        4. Otherwise applies pagination parameters to limit result size
+        5. Returns the data as a list of Portfolio objects or a count
+    Expected output: A JSON array of portfolio objects with all their details or a count
     """
     try:
-        query = db.table("portfolios").select("*")
+        # Start building the query
+        if count_only:
+            query = db.table("portfolios").select("id")
+        else:
+            query = db.table("portfolios").select("*")
         
+        # Apply filters
         if status is not None:
             query = query.eq("status", status)
             
+        if original_template_id is not None:
+            query = query.eq("original_template_id", original_template_id)
+        
+        # If count_only is True, return just the count
+        if count_only:
+            result = query.execute()
+            return {"count": len(result.data) if result.data else 0}
+        
+        # Otherwise, apply pagination and return the data
         # Extract values from Query objects
         skip_val = skip
         limit_val = limit

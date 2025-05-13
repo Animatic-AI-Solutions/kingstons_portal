@@ -254,6 +254,19 @@ export const createAuthenticatedApi = () => {
         console.error('Response Status:', error.response?.status);
         console.error('Response Data:', error.response?.data);
         
+        // Handle validation errors (422)
+        if (error.response?.status === 422) {
+          // Format validation errors to be more readable
+          const detail = error.response.data?.detail;
+          if (Array.isArray(detail)) {
+            // Convert FastAPI validation errors to a readable message
+            const formattedErrors = detail.map(err => {
+              return `${err.loc.join('.')}: ${err.msg}`;
+            }).join('; ');
+            error.response.data.detail = formattedErrors;
+          }
+        }
+        
         // Check if error is due to token expiration (401 Unauthorized)
         if (error.response?.status === 401) {
           console.warn('Authentication token may be expired or invalid');

@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 class AvailableProviderBase(BaseModel):
     name: Optional[str] = None
@@ -29,6 +29,10 @@ class AvailableProviderInDB(AvailableProviderBase):
 class AvailableProvider(AvailableProviderInDB):
     """Complete available provider model returned to frontend"""
     pass
+
+class AvailableProviderWithProductCount(AvailableProvider):
+    """Provider model with product count information"""
+    product_count: int = 0
 
 class ColorOption(BaseModel):
     """Model for color options used in the available-colors endpoint"""
