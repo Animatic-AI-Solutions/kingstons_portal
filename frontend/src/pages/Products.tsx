@@ -19,9 +19,10 @@ interface Product {
   irr?: number | null;
   irr_date?: string | null;
   total_value?: number;
+  product_owners?: Array<{id: number, name: string, type?: string}>;
 }
 
-type SortField = 'product_name' | 'client_name' | 'provider_name' | 'product_name' | 'status' | 'start_date' | 'irr' | 'total_value';
+type SortField = 'product_name' | 'client_name' | 'provider_name' | 'product_name' | 'status' | 'start_date' | 'irr' | 'total_value' | 'product_owners';
 type SortOrder = 'asc' | 'desc';
 
 const Products: React.FC = () => {
@@ -39,6 +40,7 @@ const Products: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [providerFilter, setProviderFilter] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [productOwnerFilter, setProductOwnerFilter] = useState<string[]>([]);
 
   const fetchProducts = async () => {
     try {
@@ -82,9 +84,48 @@ const Products: React.FC = () => {
           provider_name: provider ? provider.name : 'Unknown Provider',
           portfolio_name: portfolio ? portfolio.name : undefined,
           total_value: summary.total_value,
-          irr: summary.irr_weighted
+          irr: summary.irr_weighted,
+          product_owners: [] // Initialize empty product owners array
         };
       });
+      
+      // Fetch product owners for each product
+      for (const product of productsData) {
+        try {
+          // First fetch all product owners
+          const productOwnersResponse = await api.get('/api/product_owners');
+          
+          if (productOwnersResponse.data && productOwnersResponse.data.length > 0) {
+            const productOwners = [];
+            
+            // For each product owner, check if they own this product
+            for (const owner of productOwnersResponse.data) {
+              try {
+                // Get all products for this product owner
+                const ownerProductsResponse = await api.get(`/api/product_owners/${owner.id}/products`);
+                
+                // Check if this product is in the list of the owner's products
+                const isOwnerOfThisProduct = ownerProductsResponse.data?.some(
+                  (p: any) => p.id === product.id
+                );
+                
+                // If this owner owns this product, add it to our list
+                if (isOwnerOfThisProduct) {
+                  productOwners.push(owner);
+                }
+              } catch (err) {
+                console.error(`Error checking if owner ${owner.id} has product ${product.id}:`, err);
+              }
+            }
+            
+            product.product_owners = productOwners;
+          }
+        } catch (ownersErr) {
+          console.error(`Error fetching product owners for product ${product.id}:`, ownersErr);
+          product.product_owners = [];
+        }
+      }
+      
       setProducts(productsData);
       setError(null);
     } catch (err: any) {
@@ -165,6 +206,29 @@ const Products: React.FC = () => {
     return `${value.toFixed(1)}%`;
   };
 
+  // Update this helper function to format product owners as a vertical stack when more than one
+  const formatProductOwners = (owners?: Array<{id: number, name: string, type?: string}>): React.ReactNode => {
+    if (!owners || owners.length === 0) {
+      return 'None';
+    }
+    
+    // If there's only one owner, display as text
+    if (owners.length === 1) {
+      return owners[0].name;
+    }
+    
+    // If multiple owners, return them stacked vertically
+    return (
+      <div className="flex flex-col space-y-1">
+        {owners.map(owner => (
+          <div key={owner.id} className="text-sm">
+            {owner.name}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const filteredAndSortedProducts = products
     .filter(product => 
       (product.product_name && product.product_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -180,12 +244,25 @@ const Products: React.FC = () => {
       statusFilter.length === 0 ||
       (product.status && statusFilter.includes(product.status))
     )
+    .filter(product => 
+      productOwnerFilter.length === 0 ||
+      (product.product_owners && product.product_owners.some(owner => 
+        productOwnerFilter.includes(owner.name)
+      ))
+    )
     .sort((a, b) => {
       let aValue: any = a[sortField];
       let bValue: any = b[sortField];
       
+      // Handle special sorting for product_owners
+      if (sortField === 'product_owners') {
+        const aOwners = a.product_owners || [];
+        const bOwners = b.product_owners || [];
+        aValue = aOwners.map(o => o.name).join(', ').toLowerCase();
+        bValue = bOwners.map(o => o.name).join(', ').toLowerCase();
+      }
       // Handle string comparisons
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
+      else if (typeof aValue === 'string' && typeof bValue === 'string') {
         aValue = aValue.toLowerCase();
         bValue = bValue.toLowerCase();
       }
@@ -206,6 +283,13 @@ const Products: React.FC = () => {
     .filter(provider => provider !== undefined && provider !== null))] as string[];
     
   const statuses = ['active', 'inactive', 'dormant'];
+  
+  // Extract unique product owner names
+  const productOwners = [...new Set(
+    products.flatMap(product => 
+      (product.product_owners || []).map(owner => owner.name)
+    ).filter(name => name !== undefined && name !== null)
+  )] as string[];
 
   // Group products by client if the option is selected
   const groupedProducts = groupByClient
@@ -386,25 +470,35 @@ const Products: React.FC = () => {
                             </div>
                           </th>
                           <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                            <div className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('irr')} title="Click to sort by IRR">
-                              IRR
-                              <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                                {sortField === 'irr' ? (
-                                  sortOrder === 'asc' ? (
-                                    <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                    </svg>
+                            <div className="flex flex-col items-start">
+                              <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('product_owners')}>
+                                Product Owners
+                                <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                                  {sortField === 'product_owners' ? (
+                                    sortOrder === 'asc' ? (
+                                      <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                      </svg>
+                                    ) : (
+                                      <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                      </svg>
+                                    )
                                   ) : (
-                                    <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
                                     </svg>
-                                  )
-                                ) : (
-                                  <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
-                                  </svg>
-                                )}
+                                  )}
+                                </span>
                               </span>
+                              <FilterDropdown
+                                id="product-owner-filter-grouped"
+                                options={productOwners.map(po => ({ value: po, label: po }))}
+                                value={productOwnerFilter}
+                                onChange={vals => setProductOwnerFilter(vals.filter(v => typeof v === 'string'))}
+                                placeholder="All Product Owners"
+                                className="min-w-[140px] mt-1"
+                              />
                             </div>
                           </th>
                           <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
@@ -439,6 +533,28 @@ const Products: React.FC = () => {
                               />
                             </div>
                           </th>
+                          <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                            <div className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('irr')} title="Click to sort by IRR">
+                              IRR
+                              <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                                {sortField === 'irr' ? (
+                                  sortOrder === 'asc' ? (
+                                    <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                    </svg>
+                                  ) : (
+                                    <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                  )
+                                ) : (
+                                  <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                                  </svg>
+                                )}
+                              </span>
+                            </div>
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -468,6 +584,11 @@ const Products: React.FC = () => {
                               ) : (
                                 <div className="text-sm text-gray-500">N/A</div>
                               )}
+                            </td>
+                            <td className="px-6 py-3 whitespace-nowrap">
+                              <div className="text-sm text-gray-600">
+                                {formatProductOwners(product.product_owners)}
+                              </div>
                             </td>
                             <td className="px-6 py-3 whitespace-nowrap">
                               {product.irr !== undefined && product.irr !== null ? (
@@ -608,6 +729,38 @@ const Products: React.FC = () => {
                       </div>
                     </th>
                     <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                      <div className="flex flex-col items-start">
+                        <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('product_owners')}>
+                          Product Owners
+                          <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                            {sortField === 'product_owners' ? (
+                              sortOrder === 'asc' ? (
+                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              ) : (
+                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              )
+                            ) : (
+                              <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                              </svg>
+                            )}
+                          </span>
+                        </span>
+                        <FilterDropdown
+                          id="product-owner-filter"
+                          options={productOwners.map(po => ({ value: po, label: po }))}
+                          value={productOwnerFilter}
+                          onChange={vals => setProductOwnerFilter(vals.filter(v => typeof v === 'string'))}
+                          placeholder="All Product Owners"
+                          className="min-w-[140px] mt-1"
+                        />
+                      </div>
+                    </th>
+                    <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
                       <div className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('irr')} title="Click to sort by IRR">
                         IRR
                         <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
@@ -699,8 +852,13 @@ const Products: React.FC = () => {
                             </div>
                           ) : (
                             <div className="text-sm text-gray-500">N/A</div>
-                        )}
-                      </td>
+                          )}
+                        </td>
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <div className="text-sm text-gray-600">
+                            {formatProductOwners(product.product_owners)}
+                          </div>
+                        </td>
                         <td className="px-6 py-3 whitespace-nowrap">
                           {product.irr !== undefined && product.irr !== null ? (
                           <div>
@@ -718,16 +876,16 @@ const Products: React.FC = () => {
                           </div>
                           ) : (
                             <div className="text-sm text-gray-500">-</div>
-                        )}
-                      </td>
+                          )}
+                        </td>
                         <td className="px-6 py-3 whitespace-nowrap">
                           <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          product.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {product.status}
-                        </span>
-                      </td>
-                    </tr>
+                            product.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {product.status}
+                          </span>
+                        </td>
+                      </tr>
                     ))
                   )}
                 </tbody>

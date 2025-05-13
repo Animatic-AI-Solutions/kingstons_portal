@@ -25,7 +25,7 @@ async def get_client_groups(
     """
     What it does: Retrieves a paginated list of client groups from the database.
     Why it's needed: Provides a way to view all client groups in the system with optional filtering and sorting.
-    How it works:
+    How it works: 
         1. Connects to the database
         2. Queries the 'client_groups' table with pagination and optional filters
         3. Returns the data as a list of ClientGroup objects
@@ -91,7 +91,7 @@ async def get_dormant_client_groups(
     """
     What it does: Retrieves a paginated list of dormant client groups from the database.
     Why it's needed: Provides a way to view all dormant client groups separately from active ones.
-    How it works:
+    How it works: 
         1. Connects to the database
         2. Queries the 'client_groups' table for records with status="dormant"
         3. Returns the data as a list of ClientGroup objects
@@ -165,7 +165,7 @@ async def update_client_group(client_group_id: int, client_group_update: ClientG
         
         # Update client group
         result = db.table("client_groups").update(client_group_update.model_dump(exclude_unset=True)).eq("id", client_group_id).execute()
-        
+
         if result.data and len(result.data) > 0:
             return result.data[0]
         raise HTTPException(status_code=500, detail="Failed to update client group")
@@ -250,7 +250,7 @@ async def update_client_group_status(
         valid_statuses = ["active", "dormant", "inactive"]
         if status_update["status"] not in valid_statuses:
             raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {valid_statuses}")
-        
+            
         # Check if client group exists
         check_result = db.table("client_groups").select("id").eq("id", client_group_id).execute()
         if not check_result.data or len(check_result.data) == 0:
@@ -289,7 +289,7 @@ async def create_client_group_version(
         
         if not client_group_result.data or len(client_group_result.data) == 0:
             raise HTTPException(status_code=404, detail=f"Client group with ID {client_group_id} not found")
-            
+        
         client_group_data = client_group_result.data[0]
         
         # Include who made the version and when
@@ -307,7 +307,7 @@ async def create_client_group_version(
         
         if not version_result.data or len(version_result.data) == 0:
             raise HTTPException(status_code=500, detail="Failed to create client group version")
-            
+        
         # Return the client group data (not the version record)
         return client_group_data
         
@@ -370,11 +370,11 @@ async def delete_client_group_products(
         irr_values_deleted = 0
         if portfolio_fund_ids:
             for pf_id in portfolio_fund_ids:
-                # Delete fund valuations
+                        # Delete fund valuations
                 valuations = db.table("fund_valuations").delete().eq("portfolio_fund_id", pf_id).execute()
                 valuations_deleted += len(valuations.data) if valuations.data else 0
-                
-                # Delete IRR values
+                        
+                        # Delete IRR values
                 irr_values = db.table("irr_values").delete().eq("fund_id", pf_id).execute()
                 irr_values_deleted += len(irr_values.data) if irr_values.data else 0
         
@@ -398,7 +398,7 @@ async def delete_client_group_products(
             for product_id in product_ids:
                 product = db.table("client_products").delete().eq("id", product_id).execute()
                 products_deleted += len(product.data) if product.data else 0
-                
+
         return {
             "message": f"Successfully deleted data for client group {client_group_id}",
             "deleted_products": products_deleted,
