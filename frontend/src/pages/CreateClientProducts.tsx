@@ -599,30 +599,10 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               }
             });
             
-            // Add Cashline fund if available
-            if (cashlineFund) {
-              try {
-                // Same format update for cashline fund
-                const cashlineFundData = {
-                  portfolio_id: portfolioId,
-                  available_funds_id: cashlineFund.id, // Changed from fund_id to available_funds_id
-                  weighting: 1, // Try using 1 instead of 0
-                  status: 'active',
-                  start_date: formattedStartDate // Add start date if required by API
-                };
-                
-                console.log(`Adding Cashline fund ${cashlineFund.id} to portfolio ${portfolioId} with data:`, cashlineFundData);
-                await api.post('/portfolio_funds', cashlineFundData);
-                console.log(`Added Cashline fund ${cashlineFund.id} to portfolio ${portfolioId}`);
-              } catch (err: any) { // Type the error as any
-                console.error(`Error adding Cashline fund to portfolio:`, err);
-                if (err.response && err.response.data) {
-                  console.error('API Error details:', err.response.data);
-                }
-                // Continue if Cashline couldn't be added, don't block the rest of the submission
-              }
-            }
-
+            // We DON'T need to add the Cashline fund here as it's automatically added by the 
+            // backend when a portfolio is created (in the /portfolios POST endpoint)
+            // This was causing the Cashline fund to be added twice
+            
             // Wait for all fund additions to complete
             await Promise.all(fundPromises);
           }

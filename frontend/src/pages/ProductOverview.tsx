@@ -46,6 +46,13 @@ interface Holding {
   valuation_date?: string;
 }
 
+interface ProductOwner {
+  id: number;
+  name: string;
+  type?: string;
+  status?: string;
+}
+
 interface ProductOverviewProps {
   accountId?: string;
 }
@@ -66,6 +73,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   const [lastValuationDate, setLastValuationDate] = useState<string | null>(null);
   const [targetRisk, setTargetRisk] = useState<number | null>(null);
   const [displayedTargetRisk, setDisplayedTargetRisk] = useState<string>("N/A");
+  const [productOwners, setProductOwners] = useState<ProductOwner[]>([]);
 
   useEffect(() => {
     if (accountId) {
@@ -90,10 +98,10 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       setIsLoading(true);
       setError(null);
       
-      console.log('ProductOverview: Making API request to /client_products/' + accountId);
+      console.log('ProductOverview: Making API request to /api/client_products/' + accountId);
       
       // First fetch the account to get the portfolio_id
-      const accountResponse = await api.get(`/client_products/${accountId}`);
+      const accountResponse = await api.get(`/api/client_products/${accountId}`);
       console.log('ProductOverview: Product data received:', accountResponse.data);
       
       // Debug provider data
@@ -105,7 +113,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       // Get provider details if we have a provider_id but no provider_name
       if (accountResponse.data.provider_id && !accountResponse.data.provider_name) {
         try {
-          const providerResponse = await api.get(`/available_providers?id=eq.${accountResponse.data.provider_id}`);
+          const providerResponse = await api.get(`/api/available_providers?id=eq.${accountResponse.data.provider_id}`);
           if (providerResponse.data && providerResponse.data.length > 0 && providerResponse.data[0].name) {
             // Update the account data with provider name
             accountResponse.data.provider_name = providerResponse.data[0].name;
@@ -117,6 +125,48 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       }
       
       setAccount(accountResponse.data);
+      
+      // Fetch product owners for this product
+      try {
+        // First fetch all product owners
+        const productOwnersResponse = await api.get('/api/product_owners');
+        
+        if (productOwnersResponse.data && productOwnersResponse.data.length > 0) {
+          // Since there's no GET endpoint for product_owner_products, 
+          // we'll check each product owner to see if it owns this product
+          const productOwners = [];
+          
+          // For each product owner, check if they own this product
+          for (const owner of productOwnersResponse.data) {
+            try {
+              // Get all products for this product owner
+              const ownerProductsResponse = await api.get(`/api/product_owners/${owner.id}/products`);
+              
+              // Check if this product is in the list of the owner's products
+              const isOwnerOfThisProduct = ownerProductsResponse.data?.some(
+                (product: any) => product.id === parseInt(accountId)
+              );
+              
+              // If this owner owns this product, add it to our list
+              if (isOwnerOfThisProduct) {
+                productOwners.push(owner);
+              }
+            } catch (err) {
+              console.error(`Error checking if owner ${owner.id} has product ${accountId}:`, err);
+            }
+          }
+          
+          setProductOwners(productOwners);
+          console.log('Product owners found:', productOwners.length);
+        } else {
+          console.log('No product owners found');
+          setProductOwners([]);
+        }
+      } catch (ownersErr) {
+        console.error('Error fetching product owners:', ownersErr);
+        // Set empty array to avoid UI errors
+        setProductOwners([]);
+      }
       
       // Get the portfolio_id from the account - first try direct link, then fall back to current_portfolio
       const portfolioId = accountResponse.data.portfolio_id || accountResponse.data.current_portfolio?.id;
@@ -132,7 +182,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         portfolioFundsResponse
       ] = await Promise.all([
         api.get('/funds'),
-        portfolioId ? api.get(`/portfolio_funds?portfolio_id=${portfolioId}`) : api.get('/portfolio_funds')
+        portfolioId ? api.get(`/api/portfolio_funds?portfolio_id=${portfolioId}`) : api.get('/api/portfolio_funds')
       ]);
       
       console.log('ProductOverview: Product data received:', accountResponse.data);
@@ -141,7 +191,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       // If the product is based on a portfolio template, try to get the target risk
       if (accountResponse.data.original_template_id) {
         try {
-          const templateResponse = await api.get(`/available_portfolios/${accountResponse.data.original_template_id}`);
+          const templateResponse = await api.get(`/api/available_portfolios/${accountResponse.data.original_template_id}`);
           if (templateResponse.data && templateResponse.data.target_risk) {
             setTargetRisk(templateResponse.data.target_risk);
             
@@ -177,7 +227,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             try {
               // Try to get the latest valuation for this fund
               const valuationResponse = await api.get(
-                `/fund_valuations?portfolio_fund_id=${pf.id}&order=valuation_date.desc&limit=1`
+                `/api/fund_valuations?portfolio_fund_id=${pf.id}&order=valuation_date.desc&limit=1`
               );
               
               console.log(`DEBUG - Latest valuation for fund ${pf.id}:`, valuationResponse.data);
@@ -195,7 +245,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
               // Fetch the latest IRR for this fund
               try {
                 const irrResponse = await api.get(
-                  `/portfolio_funds/${pf.id}/irr-values`
+                  `/api/portfolio_funds/${pf.id}/irr-values`
                 );
                 
                 console.log(`DEBUG - Latest IRR for fund ${pf.id}:`, irrResponse.data);
@@ -271,63 +321,9 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         console.log('ProductOverview: Processed holdings from portfolio_funds:', processedHoldings);
         setHoldings(processedHoldings);
       } else {
-        // Fallback to product_holdings (legacy approach) if no portfolio_funds are found
-        console.log('ProductOverview: No portfolio funds found, falling back to product_holdings');
-        const holdingsResponse = await api.get(`/product_holdings?client_product_id=${accountId}`);
-        console.log('ProductOverview: Holdings data received:', holdingsResponse.data);
-        
-        // Process holdings to include fund names - legacy approach
-        const processedHoldings = holdingsResponse.data.map((holding: any) => {
-          console.log('ProductOverview: Processing holding:', holding);
-          
-          // Get the portfolio ID from the holding or from the account
-          const holdingPortfolioId = holding.portfolio_id || portfolioId;
-          
-          if (!holdingPortfolioId) {
-            console.warn('ProductOverview: No portfolio ID for holding:', holding.id);
-          return {
-            ...holding,
-            fund_name: 'Unknown Fund',
-            fund_id: null,
-            isin_number: 'N/A'
-          };
-        }
-        
-        // Find all portfolio funds for this portfolio
-        const relevantPortfolioFunds = portfolioFundsResponse.data.filter((pf: any) =>
-            pf.portfolio_id === holdingPortfolioId
-        );
-        
-          console.log('ProductOverview: Relevant portfolio funds for holding:', relevantPortfolioFunds);
-        
-          // Find a matching portfolio fund
-        // Try different matching strategies
-          let portfolioFund = relevantPortfolioFunds[0]; // Default to first fund in portfolio if no better match found
-          
-          // Try to match by fund_id if available
-          if (holding.fund_id) {
-            const matchByFundId = relevantPortfolioFunds.find((pf: any) =>
-              pf.available_funds_id === holding.fund_id
-            );
-            if (matchByFundId) portfolioFund = matchByFundId;
-          }
-          
-          console.log('ProductOverview: Matched portfolio fund:', portfolioFund);
-        
-        // Find the fund
-        const fund = portfolioFund ? fundsMap.get(portfolioFund.available_funds_id) : null;
-          console.log('ProductOverview: Matched fund:', fund);
-        
-        return {
-          ...holding,
-          fund_name: fund?.fund_name || holding.fund_name || 'Unknown Fund',
-          fund_id: fund?.id || holding.fund_id,
-          isin_number: fund?.isin_number || holding.isin_number || 'N/A'
-        };
-      });
-      
-        console.log('ProductOverview: Processed holdings with fund names:', processedHoldings);
-      setHoldings(processedHoldings || []);
+        // If no portfolio funds found, set empty holdings array
+        console.log('ProductOverview: No portfolio funds found for this product');
+        setHoldings([]);
       }
     } catch (err: any) {
       console.error('ProductOverview: Error fetching data:', err);
@@ -428,7 +424,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     if (account.original_template_id) {
       try {
         // Get the template details directly - it often already has the funds in the response
-        const templateResponse = await api.get(`/available_portfolios/${account.original_template_id}`);
+        const templateResponse = await api.get(`/api/available_portfolios/${account.original_template_id}`);
         const templateData = templateResponse.data || {};
         
         // Check if there are funds in the template response
@@ -479,7 +475,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           // Alternatively, try to get the funds through the specific endpoint
           try {
             // We need to use the by-fund endpoint to avoid validation issues
-            const fundsInTemplateResponse = await api.get(`/available_portfolios/${account.original_template_id}/funds`);
+            const fundsInTemplateResponse = await api.get(`/api/available_portfolios/${account.original_template_id}/funds`);
             const templateFunds = fundsInTemplateResponse.data || [];
             
             if (templateFunds.length === 0) {
@@ -495,7 +491,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             for (const fund of templateFunds) {
               // We may need to fetch the fund details if not already included
               if (fund.fund_id) {
-                const fundResponse = await api.get(`/funds/${fund.fund_id}`);
+                const fundResponse = await api.get(`/api/funds/${fund.fund_id}`);
                 const fundData = fundResponse.data;
                 
                 if (fundData && fundData.risk_factor !== null && fundData.risk_factor !== undefined) {
@@ -694,10 +690,21 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     setDeleteError(null);
     
     try {
-      // Delete account and related data
-      await api.delete(`/client_products/${accountId}`);
+      // First try to delete all product owner associations for this product
+      try {
+        // Using the new endpoint to delete all associations in one go
+        await api.delete(`/api/product_owner_products/product/${accountId}`);
+        console.log('Successfully deleted all product owner associations');
+      } catch (assocErr) {
+        console.error('Error deleting product owner associations:', assocErr);
+        // Continue anyway - it might work if there are no associations
+      }
       
-      // Navigate back to accounts list
+      // Now try to delete the product itself
+      await api.delete(`/api/client_products/${accountId}`);
+      console.log('Product deleted successfully');
+      
+      // Navigate back to products list
       navigate('/products', { 
         state: { 
           notification: {
@@ -708,7 +715,23 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       });
     } catch (err: any) {
       console.error('Error deleting product:', err);
-      setDeleteError(err.response?.data?.detail || 'Failed to delete product');
+      
+      // Check if this is a foreign key constraint error
+      if (err.response?.data?.detail && 
+          err.response.data.detail.includes('product_owner_products_product_id_fkey')) {
+        // This is specifically a product owner association constraint error
+        setDeleteError(
+          "Unable to delete the product because it still has product owner associations. " +
+          "Please try again or contact the system administrator."
+        );
+      } else if (err.response?.data?.detail) {
+        // Some other API error with details
+        setDeleteError(err.response.data.detail);
+      } else {
+        // Generic error
+        setDeleteError('Failed to delete product. Please try again later.');
+      }
+      
       setIsDeleting(false);
     }
   };
@@ -895,6 +918,31 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
               </div>
             </div>
           </div>
+        </div>
+        
+        {/* Product Owners Section */}
+        <div className="mt-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">Product Owners</h3>
+          {productOwners.length > 0 ? (
+            <div className="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200">
+              <ul className="divide-y divide-gray-200">
+                {productOwners.map((owner) => (
+                  <li key={owner.id} className="px-4 py-3 sm:px-6">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-900">{owner.name}</span>
+                      {owner.type && (
+                        <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                          {owner.type}
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 italic">No product owners assigned</p>
+          )}
         </div>
         
         {/* Fund Summary Table */}

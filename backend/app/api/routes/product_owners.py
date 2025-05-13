@@ -309,4 +309,34 @@ async def create_product_owner_product(
         raise
     except Exception as e:
         logger.error(f"Error creating product owner product association: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@router.delete("/product_owner_products/product/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_product_owner_products_by_product(
+    product_id: int = Path(..., description="The ID of the product to delete associations for"),
+    db = Depends(get_db)
+):
+    """
+    Delete all associations between product owners and a specific product.
+    
+    This endpoint is needed to properly clean up associations before deleting a product.
+    """
+    try:
+        logger.info(f"Deleting all product owner associations for product {product_id}")
+        
+        # Check if product exists
+        product_result = db.table("client_products").select("id").eq("id", product_id).execute()
+        
+        if not product_result.data:
+            raise HTTPException(status_code=404, detail=f"Product with ID {product_id} not found")
+        
+        # Find and delete all associations for this product
+        db.table("product_owner_products").delete().eq("product_id", product_id).execute()
+        
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting product owner associations for product {product_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") 
