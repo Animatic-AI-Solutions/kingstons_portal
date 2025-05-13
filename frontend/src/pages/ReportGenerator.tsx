@@ -1,90 +1,220 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { getProviderColor } from '../services/providerColors';
 
-// Define interfaces for our data structures
+// Interfaces for data types
 interface ClientGroup {
   id: number;
   name: string;
+  advisor?: string | null;
+  status: string;
 }
 
 interface ProductOwner {
   id: number;
   name: string;
+  type?: string;
 }
 
 interface Product {
   id: number;
   product_name: string;
-  provider_name?: string;
-  client_id?: number;
+  client_id: number;
   provider_id?: number;
+  provider_name?: string;
+  provider_theme_color?: string;
+  portfolio_id?: number;
+  status: string;
+  total_value?: number;
+}
+
+interface Fund {
+  id: number;
+  fund_name: string;
+  isin_number?: string;
+}
+
+interface PortfolioFund {
+  id: number;
+  portfolio_id: number;
+  available_funds_id: number;
+  market_value?: number;
+  fund_name?: string;
 }
 
 interface MonthlyTransaction {
-  month: string;
-  investment: number;
-  withdrawal: number;
+  year_month: string;
+  total_investment: number;
+  total_withdrawal: number;
+  total_switch_in: number;
+  total_switch_out: number;
   net_flow: number;
   valuation: number;
 }
 
+interface SelectedItem {
+  id: number;
+  name: string;
+}
+
+// Component for searchable dropdown
+const SearchableDropdown: React.FC<{
+  label: string;
+  placeholder: string;
+  items: any[];
+  selectedItems: SelectedItem[];
+  onItemAdd: (item: SelectedItem) => void;
+  onItemRemove: (id: number) => void;
+}> = ({ label, placeholder, items, selectedItems, onItemAdd, onItemRemove }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
+
+  const filteredItems = useMemo(() => {
+    if (!searchQuery.trim()) return items;
+    return items.filter(item => 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [items, searchQuery]);
+
+  const isSelected = (id: number) => {
+    return selectedItems.some(item => item.id === id);
+  };
+
+  return (
+    <div className="mb-6">
+      <div className="mb-2">
+        <label className="block text-sm font-medium text-gray-700">{label}</label>
+        {selectedItems.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2 mb-3">
+            {selectedItems.map(item => (
+              <div 
+                key={item.id}
+                className="flex items-center bg-primary-50 border border-primary-200 rounded-full px-3 py-1 text-sm"
+              >
+                <span className="truncate max-w-[180px]">{item.name}</span>
+                <button 
+                  onClick={() => onItemRemove(item.id)}
+                  className="ml-1.5 text-gray-500 hover:text-red-500"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="relative">
+          <input
+            type="text"
+            placeholder={placeholder}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => setIsOpen(true)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-700 focus:border-primary-700 transition-colors"
+          />
+          <button 
+            onClick={() => setIsOpen(!isOpen)}
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isOpen ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} />
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      {isOpen && filteredItems.length > 0 && (
+        <div className="absolute z-10 mt-1 w-full max-h-60 overflow-auto bg-white border border-gray-300 rounded-md shadow-lg">
+          <ul className="py-1">
+            {filteredItems.map(item => (
+              <li 
+                key={item.id}
+                className={`flex justify-between items-center px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer ${
+                  isSelected(item.id) ? 'bg-primary-50' : ''
+                }`}
+              >
+                <span>{item.name}</span>
+                {!isSelected(item.id) && (
+                  <button 
+                    onClick={() => {
+                      onItemAdd({ id: item.id, name: item.name });
+                      setSearchQuery('');
+                    }}
+                    className="text-primary-700 hover:text-primary-800 font-medium"
+                  >
+                    Add
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Main component
 const ReportGenerator: React.FC = () => {
   const { api } = useAuth();
   
-  // State for selected items
-  const [selectedClientGroups, setSelectedClientGroups] = useState<ClientGroup[]>([]);
-  const [selectedProductOwners, setSelectedProductOwners] = useState<ProductOwner[]>([]);
-  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
+  // State for data
+  const [clientGroups, setClientGroups] = useState<ClientGroup[]>([]);
+  const [productOwners, setProductOwners] = useState<ProductOwner[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [fundData, setFundData] = useState<Fund[]>([]);
+  const [portfolioFunds, setPortfolioFunds] = useState<PortfolioFund[]>([]);
   
-  // State for dropdown options
-  const [clientGroupOptions, setClientGroupOptions] = useState<ClientGroup[]>([]);
-  const [productOwnerOptions, setProductOwnerOptions] = useState<ProductOwner[]>([]);
-  const [productOptions, setProductOptions] = useState<Product[]>([]);
-  
-  // State for search queries
-  const [clientGroupSearch, setClientGroupSearch] = useState('');
-  const [productOwnerSearch, setProductOwnerSearch] = useState('');
-  const [productSearch, setProductSearch] = useState('');
+  // State for selections
+  const [selectedClientGroups, setSelectedClientGroups] = useState<SelectedItem[]>([]);
+  const [selectedProductOwners, setSelectedProductOwners] = useState<SelectedItem[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<SelectedItem[]>([]);
   
   // State for results
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
-  const [relatedProductOwners, setRelatedProductOwners] = useState<ProductOwner[]>([]);
+  const [relatedOwners, setRelatedOwners] = useState<ProductOwner[]>([]);
   const [totalValuation, setTotalValuation] = useState<number | null>(null);
   const [totalIRR, setTotalIRR] = useState<number | null>(null);
   const [valuationDate, setValuationDate] = useState<string | null>(null);
-  
-  // State for IRR calculation
   const [monthlyTransactions, setMonthlyTransactions] = useState<MonthlyTransaction[]>([]);
   
-  // State for loading and errors
+  // Loading and error states
   const [isLoading, setIsLoading] = useState(false);
+  const [isCalculating, setIsCalculating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dataError, setDataError] = useState<string | null>(null);
   
-  // Fetch data on component mount
+  // Fetch initial data
   useEffect(() => {
     const fetchInitialData = async () => {
       setIsLoading(true);
       try {
-        const [clientGroupsRes, productsRes] = await Promise.all([
+        const [
+          clientGroupsRes,
+          productsRes,
+          fundsRes
+        ] = await Promise.all([
           api.get('/client_groups'),
-          api.get('/client_products')
+          api.get('/client_products'),
+          api.get('/funds')
         ]);
         
-        setClientGroupOptions(clientGroupsRes.data);
-        setProductOptions(productsRes.data);
+        setClientGroups(clientGroupsRes.data);
+        setProducts(productsRes.data);
+        setFundData(fundsRes.data);
         
-        // For now, we'll use a placeholder for product owners
-        // In a real implementation, this would come from an API
-        setProductOwnerOptions([
-          { id: 1, name: 'Owner 1' },
-          { id: 2, name: 'Owner 2' },
-          { id: 3, name: 'Owner 3' }
-        ]);
+        // For product owners, we'll use client_groups since those are the entities that own products
+        setProductOwners(clientGroupsRes.data.map((group: ClientGroup) => ({
+          id: group.id,
+          name: group.name,
+          type: 'client_group'
+        })));
         
         setError(null);
       } catch (err: any) {
-        setError(err.response?.data?.detail || 'Failed to fetch initial data');
         console.error('Error fetching initial data:', err);
+        setError(err.response?.data?.detail || 'Failed to load data');
       } finally {
         setIsLoading(false);
       }
@@ -93,428 +223,486 @@ const ReportGenerator: React.FC = () => {
     fetchInitialData();
   }, [api]);
   
-  // Handle adding a client group
-  const addClientGroup = (clientGroup: ClientGroup) => {
-    if (!selectedClientGroups.some(cg => cg.id === clientGroup.id)) {
-      setSelectedClientGroups([...selectedClientGroups, clientGroup]);
+  // Add a new function for proper IRR calculation
+  const calculateIRR = (cashFlows: {date: Date, amount: number}[], maxIterations = 100, precision = 0.000001): number => {
+    // IRR calculation using Newton-Raphson method
+    // Initial guess - start with a reasonable rate (5%)
+    let rate = 0.05;
+    
+    for (let iteration = 0; iteration < maxIterations; iteration++) {
+      // Calculate NPV and its derivative at current rate
+      let npv = 0;
+      let derivativeNpv = 0;
+      const firstDate = cashFlows[0].date;
+      
+      for (let i = 0; i < cashFlows.length; i++) {
+        const daysDiff = (cashFlows[i].date.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24);
+        const yearFraction = daysDiff / 365;
+        
+        // NPV calculation
+        npv += cashFlows[i].amount / Math.pow(1 + rate, yearFraction);
+        
+        // Derivative of NPV
+        derivativeNpv += -yearFraction * cashFlows[i].amount / Math.pow(1 + rate, yearFraction + 1);
+      }
+      
+      // Break if we've reached desired precision
+      if (Math.abs(npv) < precision) {
+        return rate * 100; // Convert to percentage
+      }
+      
+      // Newton-Raphson update
+      const newRate = rate - npv / derivativeNpv;
+      
+      // Handle non-convergence
+      if (!isFinite(newRate) || isNaN(newRate)) {
+        break;
+      }
+      
+      rate = newRate;
     }
+    
+    return rate * 100; // Convert to percentage
   };
   
-  // Handle removing a client group
-  const removeClientGroup = (clientGroupId: number) => {
-    setSelectedClientGroups(selectedClientGroups.filter(cg => cg.id !== clientGroupId));
-  };
-  
-  // Handle adding a product owner
-  const addProductOwner = (productOwner: ProductOwner) => {
-    if (!selectedProductOwners.some(po => po.id === productOwner.id)) {
-      setSelectedProductOwners([...selectedProductOwners, productOwner]);
-    }
-  };
-  
-  // Handle removing a product owner
-  const removeProductOwner = (productOwnerId: number) => {
-    setSelectedProductOwners(selectedProductOwners.filter(po => po.id !== productOwnerId));
-  };
-  
-  // Handle adding a product
-  const addProduct = (product: Product) => {
-    if (!selectedProducts.some(p => p.id === product.id)) {
-      setSelectedProducts([...selectedProducts, product]);
-    }
-  };
-  
-  // Handle removing a product
-  const removeProduct = (productId: number) => {
-    setSelectedProducts(selectedProducts.filter(p => p.id !== productId));
-  };
-  
-  // Generate report based on selections
+  // Handle selection changes and generate report
   const generateReport = async () => {
     if (selectedClientGroups.length === 0 && selectedProductOwners.length === 0 && selectedProducts.length === 0) {
-      setError('Please select at least one item to generate a report');
+      setDataError('Please select at least one client group, product owner, or product');
       return;
     }
     
-    setIsLoading(true);
-    setError(null);
+    setIsCalculating(true);
+    setDataError(null);
     
     try {
-      // In a real implementation, this would call the API with the selected items
-      // and get back the calculated data
+      // Get all related products based on selections
+      const productIds: number[] = [];
+      const ownerIds: number[] = [];
       
-      // For now, we'll simulate a successful response
-      setTimeout(() => {
-        setRelatedProducts([
-          { id: 101, product_name: 'ISA Account', provider_name: 'Provider A' },
-          { id: 102, product_name: 'Pension', provider_name: 'Provider B' }
-        ]);
+      // Add directly selected products
+      if (selectedProducts.length > 0) {
+        productIds.push(...selectedProducts.map(p => p.id));
+      }
+      
+      // Add products from selected client groups
+      if (selectedClientGroups.length > 0) {
+        const clientGroupIds = selectedClientGroups.map(cg => cg.id);
+        const clientProducts = products.filter(p => clientGroupIds.includes(p.client_id));
+        productIds.push(...clientProducts.map(p => p.id));
+        ownerIds.push(...clientGroupIds);
+      }
+      
+      // Add products from selected product owners
+      if (selectedProductOwners.length > 0) {
+        const ownerProductIds = selectedProductOwners.map(po => po.id);
+        const ownerProducts = products.filter(p => ownerProductIds.includes(p.client_id));
+        productIds.push(...ownerProducts.map(p => p.id));
+        ownerIds.push(...ownerProductIds);
+      }
+      
+      // Remove duplicates
+      const uniqueProductIds = [...new Set(productIds)];
+      const uniqueOwnerIds = [...new Set(ownerIds)];
+      
+      if (uniqueProductIds.length === 0) {
+        setDataError('No products found for your selection');
+        setIsCalculating(false);
+        return;
+      }
+      
+      // Fetch portfolio funds for these products
+      const portfolioIdsResponse = await Promise.all(
+        uniqueProductIds.map(id => api.get(`/client_products/${id}`))
+      );
+      
+      const portfolioIds = portfolioIdsResponse
+        .map(res => res.data.portfolio_id)
+        .filter(id => id !== null);
+      
+      if (portfolioIds.length === 0) {
+        setDataError('No portfolios found for selected products');
+        setIsCalculating(false);
+        return;
+      }
+      
+      // Fetch portfolio funds
+      const portfolioFundsResponses = await Promise.all(
+        portfolioIds.map(id => api.get(`/portfolio_funds?portfolio_id=${id}`))
+      );
+      
+      const allPortfolioFunds = portfolioFundsResponses.flatMap(res => res.data);
+      setPortfolioFunds(allPortfolioFunds);
+      
+      // Fetch monthly transactions for all portfolio funds
+      const portfolioFundIds = allPortfolioFunds.map((pf: PortfolioFund) => pf.id);
+      
+      if (portfolioFundIds.length === 0) {
+        setDataError('No funds found for selected portfolios');
+        setIsCalculating(false);
+        return;
+      }
+      
+      // Fetch activity logs for all portfolio funds
+      const activityLogsPromises = portfolioFundIds.map(pfId => 
+        api.get(`/holding_activity_logs?portfolio_fund_id=${pfId}`)
+      );
+      
+      const activityLogsResponses = await Promise.all(activityLogsPromises);
+      const allActivityLogs = activityLogsResponses.flatMap(res => res.data);
+      
+      // Fetch valuations for all portfolio funds
+      const valuationsPromises = portfolioFundIds.map(pfId => 
+        api.get(`/fund_valuations?portfolio_fund_id=${pfId}`)
+      );
+      
+      const valuationsResponses = await Promise.all(valuationsPromises);
+      const allValuations = valuationsResponses.flatMap(res => res.data);
+      
+      // Group transactions by month
+      const transactionsByMonth = new Map<string, {
+        investments: number;
+        withdrawals: number;
+        switchIn: number;
+        switchOut: number;
+        valuation: number;
+      }>();
+      
+      // Process activity logs
+      allActivityLogs.forEach((log: any) => {
+        const date = new Date(log.date);
+        const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         
-        setRelatedProductOwners([
-          { id: 201, name: 'John Smith' },
-          { id: 202, name: 'Jane Doe' }
-        ]);
+        if (!transactionsByMonth.has(yearMonth)) {
+          transactionsByMonth.set(yearMonth, {
+            investments: 0,
+            withdrawals: 0,
+            switchIn: 0,
+            switchOut: 0,
+            valuation: 0
+          });
+        }
         
-        setTotalValuation(1250000);
-        setTotalIRR(7.35);
-        setValuationDate('2023-10-31');
+        const monthData = transactionsByMonth.get(yearMonth)!;
         
-        setMonthlyTransactions([
-          { month: '2023-01', investment: 10000, withdrawal: 0, net_flow: 10000, valuation: 10000 },
-          { month: '2023-02', investment: 5000, withdrawal: 0, net_flow: 5000, valuation: 15500 },
-          { month: '2023-03', investment: 0, withdrawal: 2000, net_flow: -2000, valuation: 14000 },
-          { month: '2023-04', investment: 0, withdrawal: 0, net_flow: 0, valuation: 14700 },
-          { month: '2023-05', investment: 20000, withdrawal: 0, net_flow: 20000, valuation: 35500 },
-          { month: '2023-06', investment: 0, withdrawal: 0, net_flow: 0, valuation: 36900 }
-        ]);
+        switch(log.activity_type) {
+          case 'Investment':
+          case 'RegularInvestment':
+          case 'GovernmentUplift':
+            monthData.investments += Math.abs(log.amount);
+            break;
+          case 'Withdrawal':
+            monthData.withdrawals += Math.abs(log.amount);
+            break;
+          case 'SwitchIn':
+            monthData.switchIn += Math.abs(log.amount);
+            break;
+          case 'SwitchOut':
+            monthData.switchOut += Math.abs(log.amount);
+            break;
+        }
+      });
+      
+      // Process valuations
+      allValuations.forEach((valuation: any) => {
+        const date = new Date(valuation.valuation_date);
+        const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         
-        setIsLoading(false);
-      }, 1500);
+        if (!transactionsByMonth.has(yearMonth)) {
+          transactionsByMonth.set(yearMonth, {
+            investments: 0,
+            withdrawals: 0,
+            switchIn: 0,
+            switchOut: 0,
+            valuation: 0
+          });
+        }
+        
+        const monthData = transactionsByMonth.get(yearMonth)!;
+        monthData.valuation += valuation.market_value || 0;
+      });
+      
+      // Convert to sorted array for display
+      const sortedTransactions = Array.from(transactionsByMonth.entries())
+        .map(([yearMonth, data]) => ({
+          year_month: yearMonth,
+          total_investment: data.investments,
+          total_withdrawal: data.withdrawals,
+          total_switch_in: data.switchIn,
+          total_switch_out: data.switchOut,
+          net_flow: data.investments - data.withdrawals + data.switchIn - data.switchOut,
+          valuation: data.valuation
+        }))
+        .sort((a, b) => a.year_month.localeCompare(b.year_month));
+      
+      setMonthlyTransactions(sortedTransactions);
+      
+      // Calculate total valuation from most recent month
+      if (sortedTransactions.length > 0) {
+        const latestMonth = sortedTransactions[sortedTransactions.length - 1];
+        setTotalValuation(latestMonth.valuation);
+        setValuationDate(latestMonth.year_month);
+        
+        // Prepare cash flows for IRR calculation
+        // Initial investment is negative (money going out)
+        // Final valuation is positive (money coming in)
+        const cashFlows: {date: Date, amount: number}[] = [];
+        
+        // Add all monthly cash flows
+        sortedTransactions.forEach((transaction, index) => {
+          const date = new Date(transaction.year_month + "-15"); // Using middle of month
+          
+          // For first month, use initial valuation (if available) or 0
+          if (index === 0) {
+            // Initial value as negative (outflow)
+            cashFlows.push({
+              date,
+              amount: -transaction.valuation || 0
+            });
+          }
+          
+          // Add net flow for each month (negative = money put in, positive = money taken out)
+          const netFlow = -(transaction.total_investment - transaction.total_withdrawal);
+          if (netFlow !== 0) {
+            cashFlows.push({
+              date,
+              amount: netFlow
+            });
+          }
+          
+          // For last month, add final valuation
+          if (index === sortedTransactions.length - 1) {
+            // Final value as positive (inflow)
+            cashFlows.push({
+              date,
+              amount: transaction.valuation || 0
+            });
+          }
+        });
+        
+        // Only calculate IRR if we have meaningful cash flows
+        if (cashFlows.length >= 2) {
+          try {
+            const irrValue = calculateIRR(cashFlows);
+            setTotalIRR(irrValue);
+          } catch (err) {
+            console.error('Error calculating IRR:', err);
+            setTotalIRR(null);
+          }
+        } else {
+          setTotalIRR(null);
+        }
+      }
+      
+      // Set related products and owners
+      const relatedProductsList = products.filter(p => uniqueProductIds.includes(p.id));
+      setRelatedProducts(relatedProductsList);
+      
+      const relatedOwnersList = productOwners.filter(po => uniqueOwnerIds.includes(po.id));
+      setRelatedOwners(relatedOwnersList);
+      
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to generate report');
       console.error('Error generating report:', err);
-      setIsLoading(false);
+      setDataError(err.response?.data?.detail || 'Failed to generate report');
+    } finally {
+      setIsCalculating(false);
     }
-  };
-  
-  // Format currency for display
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: 'GBP',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
-  
-  // Format percentage for display
-  const formatPercentage = (value: number): string => {
-    return `${value.toFixed(2)}%`;
   };
   
   // Format date for display
   const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-GB', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    const [year, month] = dateString.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1);
+    return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
   };
-
+  
+  // Format currency
+  const formatCurrency = (amount: number): string => {
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: 'GBP',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  };
+  
+  // Format percentage
+  const formatPercentage = (value: number): string => {
+    return `${value.toFixed(2)}%`;
+  };
+  
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="text-2xl font-normal text-gray-900 font-sans tracking-wide mb-6">
         Report Generator
       </h1>
       
-      <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-6 mb-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Panel - Input Selection */}
-          <div className="border-r border-gray-200 pr-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Selection Criteria</h2>
+      {error ? (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-red-700">{error}</p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Left Side - Selection Panels */}
+          <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
+            <h2 className="text-lg font-normal text-gray-900 mb-4">Select Items for Report</h2>
             
             {/* Client Groups Selection */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Client Groups
-              </label>
-              
-              {/* Display selected client groups */}
-              {selectedClientGroups.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {selectedClientGroups.map(clientGroup => (
-                    <div 
-                      key={clientGroup.id}
-                      className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md flex items-center text-sm"
-                    >
-                      <span>{clientGroup.name}</span>
-                      <button 
-                        onClick={() => removeClientGroup(clientGroup.id)}
-                        className="ml-1 text-indigo-500 hover:text-indigo-700"
-                      >
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              
-              {/* Client group search input */}
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search client groups..."
-                  value={clientGroupSearch}
-                  onChange={(e) => setClientGroupSearch(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-                
-                {/* Dropdown for client group search results */}
-                {clientGroupSearch && (
-                  <div className="absolute z-10 w-full mt-1 bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-y-auto">
-                    {clientGroupOptions
-                      .filter(cg => cg.name.toLowerCase().includes(clientGroupSearch.toLowerCase()))
-                      .map(clientGroup => (
-                        <div 
-                          key={clientGroup.id}
-                          className="px-4 py-2 hover:bg-gray-100 flex justify-between items-center cursor-pointer"
-                          onClick={() => {
-                            addClientGroup(clientGroup);
-                            setClientGroupSearch('');
-                          }}
-                        >
-                          <span>{clientGroup.name}</span>
-                          <button className="text-primary-700 hover:text-primary-900">
-                            Add
-                          </button>
-                        </div>
-                      ))}
-                  </div>
-                )}
-              </div>
-            </div>
+            <SearchableDropdown
+              label="Client Groups"
+              placeholder="Search client groups..."
+              items={clientGroups.map(cg => ({ id: cg.id, name: cg.name }))}
+              selectedItems={selectedClientGroups}
+              onItemAdd={(item) => setSelectedClientGroups([...selectedClientGroups, item])}
+              onItemRemove={(id) => setSelectedClientGroups(selectedClientGroups.filter(item => item.id !== id))}
+            />
             
             {/* Product Owners Selection */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Product Owners
-              </label>
-              
-              {/* Display selected product owners */}
-              {selectedProductOwners.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {selectedProductOwners.map(productOwner => (
-                    <div 
-                      key={productOwner.id}
-                      className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md flex items-center text-sm"
-                    >
-                      <span>{productOwner.name}</span>
-                      <button 
-                        onClick={() => removeProductOwner(productOwner.id)}
-                        className="ml-1 text-indigo-500 hover:text-indigo-700"
-                      >
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              
-              {/* Product owner search input */}
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search product owners..."
-                  value={productOwnerSearch}
-                  onChange={(e) => setProductOwnerSearch(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-                
-                {/* Dropdown for product owner search results */}
-                {productOwnerSearch && (
-                  <div className="absolute z-10 w-full mt-1 bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-y-auto">
-                    {productOwnerOptions
-                      .filter(po => po.name.toLowerCase().includes(productOwnerSearch.toLowerCase()))
-                      .map(productOwner => (
-                        <div 
-                          key={productOwner.id}
-                          className="px-4 py-2 hover:bg-gray-100 flex justify-between items-center cursor-pointer"
-                          onClick={() => {
-                            addProductOwner(productOwner);
-                            setProductOwnerSearch('');
-                          }}
-                        >
-                          <span>{productOwner.name}</span>
-                          <button className="text-primary-700 hover:text-primary-900">
-                            Add
-                          </button>
-                        </div>
-                      ))}
-                  </div>
-                )}
-              </div>
-            </div>
+            <SearchableDropdown
+              label="Product Owners"
+              placeholder="Search product owners..."
+              items={productOwners.map(po => ({ id: po.id, name: po.name }))}
+              selectedItems={selectedProductOwners}
+              onItemAdd={(item) => setSelectedProductOwners([...selectedProductOwners, item])}
+              onItemRemove={(id) => setSelectedProductOwners(selectedProductOwners.filter(item => item.id !== id))}
+            />
             
             {/* Products Selection */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Products
-              </label>
-              
-              {/* Display selected products */}
-              {selectedProducts.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {selectedProducts.map(product => (
-                    <div 
-                      key={product.id}
-                      className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md flex items-center text-sm"
-                    >
-                      <span>{product.product_name}</span>
-                      <button 
-                        onClick={() => removeProduct(product.id)}
-                        className="ml-1 text-indigo-500 hover:text-indigo-700"
-                      >
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              
-              {/* Product search input */}
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={productSearch}
-                  onChange={(e) => setProductSearch(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-                
-                {/* Dropdown for product search results */}
-                {productSearch && (
-                  <div className="absolute z-10 w-full mt-1 bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-y-auto">
-                    {productOptions
-                      .filter(p => p.product_name.toLowerCase().includes(productSearch.toLowerCase()))
-                      .map(product => (
-                        <div 
-                          key={product.id}
-                          className="px-4 py-2 hover:bg-gray-100 flex justify-between items-center cursor-pointer"
-                          onClick={() => {
-                            addProduct(product);
-                            setProductSearch('');
-                          }}
-                        >
-                          <span>{product.product_name}</span>
-                          <button className="text-primary-700 hover:text-primary-900">
-                            Add
-                          </button>
-                        </div>
-                      ))}
-                  </div>
-                )}
-              </div>
-            </div>
+            <SearchableDropdown
+              label="Products"
+              placeholder="Search products..."
+              items={products.map(p => ({ id: p.id, name: p.product_name }))}
+              selectedItems={selectedProducts}
+              onItemAdd={(item) => setSelectedProducts([...selectedProducts, item])}
+              onItemRemove={(id) => setSelectedProducts(selectedProducts.filter(item => item.id !== id))}
+            />
             
             {/* Generate Report Button */}
             <button
               onClick={generateReport}
-              disabled={isLoading}
-              className="inline-flex items-center px-4 py-1.5 text-sm font-medium text-white bg-primary-700 rounded-xl shadow-sm hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isCalculating}
+              className="mt-4 inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-xl shadow-sm hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? (
+              {isCalculating ? (
                 <>
                   <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Generating...
+                  Calculating...
                 </>
-              ) : 'Generate Report'}
+              ) : (
+                <>
+                  <svg className="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Generate Report
+                </>
+              )}
             </button>
             
-            {/* Error message */}
-            {error && (
-              <div className="mt-4 text-red-600 text-sm">
-                {error}
+            {dataError && (
+              <div className="mt-4 bg-red-50 border-l-4 border-red-500 p-3">
+                <p className="text-sm text-red-700">{dataError}</p>
               </div>
             )}
           </div>
           
-          {/* Right Panel - Results Summary */}
-          <div>
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Report Summary</h2>
+          {/* Right Side - Results Panel */}
+          <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
+            <h2 className="text-lg font-normal text-gray-900 mb-4">Report Summary</h2>
             
-            {totalValuation !== null ? (
-              <>
-                {/* Related Entities */}
-                <div className="mb-6">
-                  <h3 className="text-base font-medium text-gray-700 mb-2">Related Entities</h3>
-                  
-                  {/* Related Products */}
-                  {relatedProducts.length > 0 && (
-                    <div className="mb-4">
-                      <h4 className="text-sm font-medium text-gray-600 mb-1">Products</h4>
-                      <div className="bg-gray-50 p-3 rounded-md">
-                        <ul className="space-y-1">
+            {/* Related Items */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Related Items</h3>
+              <div className="border rounded-lg p-4 bg-gray-50">
+                {relatedProducts.length > 0 || relatedOwners.length > 0 ? (
+                  <div className="space-y-3">
+                    {relatedOwners.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-medium text-gray-500 uppercase mb-1">Product Owners</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {relatedOwners.map(owner => (
+                            <span 
+                              key={owner.id}
+                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                            >
+                              {owner.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {relatedProducts.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-medium text-gray-500 uppercase mb-1">Products</h4>
+                        <div className="flex flex-wrap gap-2">
                           {relatedProducts.map(product => (
-                            <li key={product.id} className="text-sm flex items-center">
-                              <div className="h-2 w-2 rounded-full bg-indigo-500 mr-2"></div>
-                              <span>{product.product_name}</span>
-                              {product.provider_name && (
-                                <span className="text-gray-500 ml-1">({product.provider_name})</span>
-                              )}
-                            </li>
+                            <span 
+                              key={product.id}
+                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                            >
+                              {product.product_name}
+                            </span>
                           ))}
-                        </ul>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  
-                  {/* Related Product Owners */}
-                  {relatedProductOwners.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-600 mb-1">Product Owners</h4>
-                      <div className="bg-gray-50 p-3 rounded-md">
-                        <ul className="space-y-1">
-                          {relatedProductOwners.map(owner => (
-                            <li key={owner.id} className="text-sm flex items-center">
-                              <div className="h-2 w-2 rounded-full bg-green-500 mr-2"></div>
-                              <span>{owner.name}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Total Valuation */}
-                <div className="mb-6 bg-white shadow-sm rounded-lg border border-gray-200 p-4">
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">Total Valuation</h3>
-                  <div className="text-2xl font-semibold text-gray-900">{formatCurrency(totalValuation)}</div>
-                  {valuationDate && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      as of {formatDate(valuationDate)}
-                    </div>
-                  )}
-                </div>
-                
-                {/* Total IRR */}
-                {totalIRR !== null && (
-                  <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-4">
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">Total IRR</h3>
-                    <div className={`text-2xl font-semibold flex items-center ${totalIRR >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {formatPercentage(totalIRR)}
-                      <span className="ml-2">
-                        {totalIRR >= 0 ? '▲' : '▼'}
-                      </span>
-                    </div>
+                    )}
                   </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No related items to display. Generate a report to see relationships.</p>
                 )}
-              </>
-            ) : (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
-                <p className="text-gray-500">
-                  Select criteria and generate a report to see results.
-                </p>
               </div>
-            )}
+            </div>
+            
+            {/* Valuation Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="bg-gray-50 rounded-lg p-4 border">
+                <h3 className="text-sm font-medium text-gray-700 mb-1">Total Valuation</h3>
+                {totalValuation !== null ? (
+                  <div>
+                    <div className="text-2xl font-semibold text-primary-700">{formatCurrency(totalValuation)}</div>
+                    {valuationDate && (
+                      <div className="text-xs text-gray-500 mt-1">as of {formatDate(valuationDate)}</div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500">No valuation data available</div>
+                )}
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-4 border">
+                <h3 className="text-sm font-medium text-gray-700 mb-1">Total IRR</h3>
+                {totalIRR !== null ? (
+                  <div className={`text-2xl font-semibold ${totalIRR >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatPercentage(totalIRR)}
+                    <span className="ml-1">
+                      {totalIRR >= 0 ? '▲' : '▼'}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500">No IRR data available</div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
       
-      {/* IRR Calculation Table */}
+      {/* Monthly Transactions Table */}
       {monthlyTransactions.length > 0 && (
-        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">IRR Calculation</h2>
+        <div className="mt-8 bg-white shadow-sm rounded-lg border border-gray-100 p-6">
+          <h2 className="text-lg font-normal text-gray-900 mb-4">Monthly Transactions</h2>
           
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -530,6 +718,12 @@ const ReportGenerator: React.FC = () => {
                     Withdrawal
                   </th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Switch In
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Switch Out
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Net Flow
                   </th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -538,44 +732,54 @@ const ReportGenerator: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {monthlyTransactions.map((transaction, index) => (
-                  <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {new Date(transaction.month).toLocaleDateString('en-GB', { year: 'numeric', month: 'short' })}
+                {monthlyTransactions.map((transaction) => (
+                  <tr key={transaction.year_month} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {formatDate(transaction.year_month)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                      {transaction.investment > 0 ? formatCurrency(transaction.investment) : '-'}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                      {formatCurrency(transaction.total_investment)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                      {transaction.withdrawal > 0 ? formatCurrency(transaction.withdrawal) : '-'}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                      {formatCurrency(transaction.total_withdrawal)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium">
-                      <span className={transaction.net_flow >= 0 ? 'text-green-600' : 'text-red-600'}>
-                        {formatCurrency(transaction.net_flow)}
-                      </span>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                      {formatCurrency(transaction.total_switch_in)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-indigo-600">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                      {formatCurrency(transaction.total_switch_out)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                      {formatCurrency(transaction.net_flow)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
                       {formatCurrency(transaction.valuation)}
                     </td>
                   </tr>
                 ))}
                 
                 {/* Total Row */}
-                <tr className="bg-gray-100 font-medium">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <tr className="bg-gray-50 font-medium">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     TOTAL
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                    {formatCurrency(monthlyTransactions.reduce((sum, t) => sum + t.investment, 0))}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                    {formatCurrency(monthlyTransactions.reduce((sum, t) => sum + t.total_investment, 0))}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                    {formatCurrency(monthlyTransactions.reduce((sum, t) => sum + t.withdrawal, 0))}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                    {formatCurrency(monthlyTransactions.reduce((sum, t) => sum + t.total_withdrawal, 0))}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                    {formatCurrency(monthlyTransactions.reduce((sum, t) => sum + t.total_switch_in, 0))}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                    {formatCurrency(monthlyTransactions.reduce((sum, t) => sum + t.total_switch_out, 0))}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
                     {formatCurrency(monthlyTransactions.reduce((sum, t) => sum + t.net_flow, 0))}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-indigo-600">
-                    {formatCurrency(monthlyTransactions[monthlyTransactions.length - 1].valuation)}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
+                    {totalValuation !== null ? formatCurrency(totalValuation) : '-'}
                   </td>
                 </tr>
               </tbody>
