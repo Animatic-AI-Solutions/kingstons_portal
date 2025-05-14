@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, Query, Body
 from typing import List, Optional, Dict, Union
 import logging
 from datetime import date, datetime
@@ -984,3 +984,205 @@ async def get_portfolios_with_template(
     except Exception as e:
         logger.error(f"Error fetching portfolios with template: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@router.post("/portfolios/{portfolio_id}/calculate-total-irr", response_model=dict)
+async def calculate_portfolio_total_irr(
+    portfolio_id: int,
+    year: int = Query(..., ge=1900, le=2100, description="Year for the calculations"),
+    db = Depends(get_db)
+):
+    """
+    What it does: Calculates the IRR for all active portfolio funds in a portfolio combined.
+    Why it's needed: Provides an accurate total IRR calculation based on monthly cash flows across all active funds.
+    How it works:
+        1. Gets all portfolio funds in the portfolio
+        2. Gathers activity logs for the selected year
+        3. Aggregates the monthly cash flows across all active funds
+        4. Calculates a single IRR for the combined cash flows
+        5. Returns the calculated IRR value
+    Expected output: A JSON object with the total IRR calculation result
+    """
+    try:
+        # Check if portfolio exists
+        portfolio_result = db.table("portfolios").select("*").eq("id", portfolio_id).execute()
+        if not portfolio_result.data or len(portfolio_result.data) == 0:
+            raise HTTPException(status_code=404, detail=f"Portfolio with ID {portfolio_id} not found")
+
+        # Get all portfolio funds in this portfolio - including status
+        portfolio_funds_result = db.table("portfolio_funds").select("*").eq("portfolio_id", portfolio_id).execute()
+        if not portfolio_funds_result.data or len(portfolio_funds_result.data) == 0:
+            raise HTTPException(status_code=404, detail="No portfolio funds found in this portfolio")
+        
+        portfolio_funds = portfolio_funds_result.data
+        logger.info(f"Found {len(portfolio_funds)} funds in portfolio {portfolio_id}")
+        
+        # Filter to include only active funds
+        active_portfolio_funds = [fund for fund in portfolio_funds if fund.get('status') != 'inactive']
+        
+        if not active_portfolio_funds:
+            return {
+                "status": "error",
+                "error": "No active portfolio funds found",
+                "portfolio_id": portfolio_id,
+                "irr_percentage": None,
+                "calculation_date": datetime.now().isoformat()
+            }
+        
+        logger.info(f"Filtered to {len(active_portfolio_funds)} active funds")
+        
+        # Get all portfolio fund IDs for active funds
+        active_fund_ids = [fund["id"] for fund in active_portfolio_funds]
+        
+        # Get activity logs for all these funds for the selected year
+        from datetime import datetime
+        start_date = datetime(year, 1, 1)
+        end_date = datetime(year, 12, 31, 23, 59, 59)
+        
+        activity_logs_result = db.table("holding_activity_log")\
+            .select("*")\
+            .in_("portfolio_fund_id", active_fund_ids)\
+            .gte("activity_timestamp", start_date.isoformat())\
+            .lte("activity_timestamp", end_date.isoformat())\
+            .execute()
+        
+        activity_logs = activity_logs_result.data or []
+        logger.info(f"Found {len(activity_logs)} activity logs for {year}")
+        
+        # Get the latest valuation for each active fund
+        latest_valuations = []
+        latest_valuation_date = None
+        
+        for fund_id in active_fund_ids:
+            valuation_result = db.table("fund_valuations")\
+                .select("*")\
+                .eq("portfolio_fund_id", fund_id)\
+                .order("valuation_date", desc=True)\
+                .limit(1)\
+                .execute()
+            
+            if valuation_result.data and len(valuation_result.data) > 0:
+                valuation = valuation_result.data[0]
+                latest_valuations.append(valuation)
+                
+                # Track the most recent valuation date across all funds
+                valuation_date = datetime.fromisoformat(valuation["valuation_date"].replace('Z', '+00:00'))
+                if latest_valuation_date is None or valuation_date > latest_valuation_date:
+                    latest_valuation_date = valuation_date
+        
+        if not latest_valuations:
+            return {
+                "status": "error",
+                "error": "No valuations found for active funds",
+                "portfolio_id": portfolio_id,
+                "irr_percentage": None,
+                "calculation_date": datetime.now().isoformat()
+            }
+            
+        logger.info(f"Found {len(latest_valuations)} valuations with latest date {latest_valuation_date}")
+        
+        # Aggregate cash flows by month
+        monthly_cash_flows = {}
+        
+        # Process all activity logs into monthly buckets
+        for activity in activity_logs:
+            # Convert timestamp to month-year key
+            activity_date = datetime.fromisoformat(activity["activity_timestamp"].replace('Z', '+00:00'))
+            month_key = f"{activity_date.year}-{activity_date.month:02d}"
+            
+            if month_key not in monthly_cash_flows:
+                monthly_cash_flows[month_key] = {
+                    "date": datetime(activity_date.year, activity_date.month, 15),  # Middle of month
+                    "amount": 0
+                }
+            
+            # Add to net cash flow (negative for investments, positive for withdrawals)
+            amount = float(activity["amount"])
+            
+            if activity["activity_type"] in ["Investment", "RegularInvestment", "GovernmentUplift", "SwitchIn"]:
+                monthly_cash_flows[month_key]["amount"] -= amount  # Money going in (negative)
+            elif activity["activity_type"] in ["Withdrawal", "SwitchOut"]:
+                monthly_cash_flows[month_key]["amount"] += amount  # Money coming out (positive)
+        
+        # Add the total current value from all latest valuations as the final cash flow
+        total_current_value = sum(float(v["value"]) for v in latest_valuations)
+        
+        if total_current_value <= 0:
+            return {
+                "status": "error",
+                "error": "Total current value is zero or negative",
+                "portfolio_id": portfolio_id,
+                "irr_percentage": None,
+                "calculation_date": datetime.now().isoformat()
+            }
+        
+        # Add final valuation cash flow
+        final_month_key = f"{latest_valuation_date.year}-{latest_valuation_date.month:02d}"
+        
+        if final_month_key not in monthly_cash_flows:
+            monthly_cash_flows[final_month_key] = {
+                "date": latest_valuation_date,
+                "amount": total_current_value  # Add as positive (money coming in)
+            }
+        else:
+            # If we already have activities in this month, add valuation
+            monthly_cash_flows[final_month_key]["amount"] += total_current_value
+        
+        # Sort the monthly cash flows by date
+        sorted_cash_flows = sorted(monthly_cash_flows.values(), key=lambda x: x["date"])
+        
+        # Check if we have at least two cash flows
+        if len(sorted_cash_flows) < 2:
+            return {
+                "status": "error",
+                "error": "Insufficient cash flows for IRR calculation (need at least two months)",
+                "portfolio_id": portfolio_id,
+                "irr_percentage": None,
+                "calculation_date": datetime.now().isoformat()
+            }
+        
+        # Prepare data for IRR calculation
+        dates = [cf["date"] for cf in sorted_cash_flows]
+        amounts = [cf["amount"] for cf in sorted_cash_flows]
+        
+        logger.info(f"Prepared {len(dates)} monthly cash flows for IRR calculation")
+        logger.info(f"Dates: {dates}")
+        logger.info(f"Amounts: {amounts}")
+        
+        # Calculate IRR using numpy_financial
+        try:
+            import numpy_financial as npf
+            from app.api.routes.portfolio_funds import calculate_excel_style_irr
+            
+            # Use the same Excel-style IRR calculation used for individual funds
+            irr_result = calculate_excel_style_irr(dates, amounts)
+            irr_percentage = irr_result['period_irr'] * 100
+            
+            # Round to 2 decimal places
+            irr_percentage = round(irr_percentage, 2)
+            
+            logger.info(f"Total IRR calculation successful: {irr_percentage}%")
+            
+            return {
+                "status": "success",
+                "portfolio_id": portfolio_id,
+                "irr_percentage": irr_percentage,
+                "calculation_date": datetime.now().isoformat(),
+                "valuation_date": latest_valuation_date.isoformat(),
+                "total_current_value": total_current_value
+            }
+            
+        except Exception as e:
+            logger.error(f"Error calculating total IRR: {str(e)}")
+            return {
+                "status": "error",
+                "error": f"Error calculating IRR: {str(e)}",
+                "portfolio_id": portfolio_id,
+                "irr_percentage": None,
+                "calculation_date": datetime.now().isoformat()
+            }
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error calculating total IRR: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error calculating total IRR: {str(e)}")

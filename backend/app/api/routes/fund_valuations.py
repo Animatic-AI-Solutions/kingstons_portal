@@ -301,3 +301,41 @@ async def get_latest_valuation_date():
     """
     # Simply return today's date to unblock the frontend
     return {"latest_date": datetime.now().strftime("%Y-%m-%d")} 
+
+@router.get("/latest_fund_valuations")
+async def get_latest_fund_valuations(
+    portfolio_fund_id: Optional[int] = Query(None),
+    portfolio_id: Optional[int] = Query(None),
+    db = Depends(get_db)
+):
+    """
+    Get the latest fund valuations from the latest_fund_valuations view.
+    Can be filtered by portfolio_fund_id or portfolio_id.
+    """
+    try:
+        query = db.table("latest_fund_valuations").select("*")
+        
+        if portfolio_fund_id is not None:
+            query = query.eq("portfolio_fund_id", portfolio_fund_id)
+        
+        result = query.execute()
+        
+        # If we need to filter by portfolio_id, we need to do a join with portfolio_funds
+        if portfolio_id is not None and not portfolio_fund_id:
+            # Get all portfolio_fund_ids for this portfolio
+            portfolio_funds = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
+            
+            if portfolio_funds.data and len(portfolio_funds.data) > 0:
+                # Extract the IDs
+                fund_ids = [fund["id"] for fund in portfolio_funds.data]
+                
+                # Filter the valuations to only include these funds
+                result.data = [valuation for valuation in result.data if valuation["portfolio_fund_id"] in fund_ids]
+            else:
+                # No portfolio funds found for this portfolio
+                result.data = []
+        
+        return result.data
+    except Exception as e:
+        logger.error(f"Error getting latest fund valuations: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
