@@ -234,6 +234,16 @@ export const calculatePortfolioIRRForDate = (portfolioId: number, date: string) 
 };
 
 /**
+ * Calculate total IRR across all active funds in a portfolio for a specific year
+ * @param {number} portfolioId - Portfolio ID
+ * @param {number} year - Year for which to calculate the IRR
+ * @returns {Promise} - API response with the total IRR calculation result
+ */
+export const calculatePortfolioTotalIRR = (portfolioId: number, year: number) => {
+  return api.post(`portfolios/${portfolioId}/calculate-total-irr?year=${year}`);
+};
+
+/**
  * PROVIDER API ENDPOINTS
  * 
  * Functions for managing provider data

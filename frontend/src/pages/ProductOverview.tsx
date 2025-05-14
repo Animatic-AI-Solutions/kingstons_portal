@@ -44,6 +44,10 @@ interface Holding {
   irr?: number;
   fund_id?: number;
   valuation_date?: string;
+  isVirtual?: boolean;
+  status?: string;
+  end_date?: string;
+  riskFactor?: number;
 }
 
 interface ProductOwner {
@@ -314,12 +318,107 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             // For market value, use the fetched valuation if available, otherwise fall back to amount_invested
             market_value: pf.market_value !== undefined ? pf.market_value : pf.amount_invested || 0,
             valuation_date: pf.valuation_date,
-            irr: pf.irr_result !== undefined ? pf.irr_result : null
+            irr: pf.irr_result !== undefined ? pf.irr_result : null,
+            status: pf.status || 'active', // Set status with default to active
+            end_date: pf.end_date,
+            riskFactor: undefined
           };
         });
         
         console.log('ProductOverview: Processed holdings from portfolio_funds:', processedHoldings);
-        setHoldings(processedHoldings);
+        
+        // Check if we have any inactive funds
+        const activeHoldings = processedHoldings.filter(
+          h => h.status !== 'inactive' && (!h.end_date || new Date(h.end_date) > new Date())
+        );
+        
+        const inactiveHoldings = processedHoldings.filter(
+          h => h.status === 'inactive' || (h.end_date && new Date(h.end_date) <= new Date())
+        );
+        
+        console.log(`After filtering: ${activeHoldings.length} active, ${inactiveHoldings.length} inactive`);
+        
+        // Create a virtual "Previous Funds" entry if there are inactive holdings
+        const createPreviousFundsEntry = (inactiveHoldings: Holding[]): Holding | null => {
+          console.log("Creating Previous Funds entry with", inactiveHoldings.length, "inactive holdings");
+          
+          if (inactiveHoldings.length === 0) {
+            console.log("No inactive holdings found, not creating Previous Funds entry");
+            return null;
+          }
+          
+          // Sum up all the values from inactive holdings
+          const totalAmountInvested = inactiveHoldings.reduce((sum, holding) => sum + (holding.amount_invested || 0), 0);
+          
+          // Calculate average risk factor from inactive funds
+          let totalRiskFactor = 0;
+          let fundsWithRiskFactor = 0;
+          
+          inactiveHoldings.forEach(holding => {
+            const fundId = holding.fund_id || 0;
+            if (fundId) {
+              const fund = Array.from(fundsData.values()).find(f => f.id === fundId);
+              if (fund && fund.risk_factor !== undefined && fund.risk_factor !== null) {
+                totalRiskFactor += fund.risk_factor;
+                fundsWithRiskFactor++;
+              }
+            }
+          });
+          
+          // Calculate average risk factor if we have any
+          const averageRiskFactor = fundsWithRiskFactor > 0 ? totalRiskFactor / fundsWithRiskFactor : undefined;
+          
+          console.log("Previous Funds totals:", { 
+            totalAmountInvested,
+            totalRiskFactor,
+            fundsWithRiskFactor,
+            averageRiskFactor
+          });
+          
+          // Create the Previous Funds entry with all required properties for a Holding
+          return {
+            id: -1, // Virtual ID for Previous Funds
+            fund_name: 'Previous Funds',
+            isin_number: '',
+            amount_invested: totalAmountInvested,
+            market_value: 0, // We'll display N/A for this
+            isVirtual: true, // Mark as virtual
+            status: 'inactive',
+            fund_id: 0, 
+            target_weighting: undefined,
+            valuation_date: undefined,
+            irr: undefined,
+            riskFactor: averageRiskFactor
+          } as Holding; // Explicitly cast to Holding type to fix TypeScript errors
+        };
+        
+        // Create previous funds entry if we have inactive holdings
+        const previousFundsEntry = createPreviousFundsEntry(inactiveHoldings);
+        
+        // Only display active holdings directly
+        const displayHoldings: Holding[] = [...activeHoldings]; // Explicitly type as Holding[]
+        
+        // Add the Previous Funds entry if it exists
+        if (previousFundsEntry) {
+          console.log("Adding Previous Funds entry to display holdings");
+          displayHoldings.push(previousFundsEntry);
+        }
+        
+        // Sort holdings - normal sort with Cashline and Previous Funds special cases
+        const sortedHoldings = displayHoldings.sort((a: Holding, b: Holding) => { // Explicitly type parameters
+          // Previous Funds virtual entry always goes last
+          if (a.isVirtual) return 1;
+          if (b.isVirtual) return -1;
+          
+          // Cashline always goes second-to-last (before Previous Funds)
+          if (a.fund_name === 'Cashline') return 1;
+          if (b.fund_name === 'Cashline') return -1;
+          
+          // All other funds are sorted alphabetically
+          return (a.fund_name || '').localeCompare(b.fund_name || '');
+        });
+        
+        setHoldings(sortedHoldings);
       } else {
         // If no portfolio funds found, set empty holdings array
         console.log('ProductOverview: No portfolio funds found for this product');
@@ -965,37 +1064,70 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
               <tbody className="bg-white divide-y divide-gray-200">
                 {holdings.length > 0 ? (
                   holdings.map((holding) => (
-                    <tr key={holding.id} className="hover:bg-indigo-50 transition-colors duration-150">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{holding.fund_name}</td>
+                    <tr key={holding.id} className={`hover:bg-indigo-50 transition-colors duration-150 ${holding.isVirtual ? "bg-gray-100 border-t border-gray-300" : ""}`}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className={`text-sm ${holding.isVirtual ? "font-semibold text-blue-800" : "font-medium text-gray-900"}`}>
+                            {holding.fund_name}
+                            {holding.isVirtual && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                (Inactive funds)
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">{holding.isin_number || 'N/A'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {holding.market_value !== undefined && holding.market_value !== null
-                          ? (
-                            <div>
-                              <div>{formatCurrency(holding.market_value)}</div>
-                              {holding.valuation_date && (
-                                <div className="text-xs text-gray-500 mt-1">
-                                  as of {formatDate(holding.valuation_date)}
-                                </div>
-                              )}
-                            </div>
-                          ) 
-                          : 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {liveWeightings.has(holding.id)
-                          ? `${liveWeightings.get(holding.id)?.toFixed(1)}%` 
-                          : 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">{getFundRiskRating(holding.fund_id || 0, fundsData)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {holding.irr !== undefined && holding.irr !== null ? (
-                          <span className={`${holding.irr >= 0 ? 'text-green-700' : 'text-red-700'} font-medium`}>
-                            {formatPercentage(holding.irr)}
-                            <span className="ml-1">{holding.irr >= 0 ? '▲' : '▼'}</span>
-                          </span>
+                        {holding.isVirtual ? (
+                          <span className="text-blue-800 font-medium">N/A</span>
                         ) : (
-                          <span className="text-gray-500">N/A</span>
+                          holding.market_value !== undefined && holding.market_value !== null
+                            ? (
+                              <div>
+                                <div>{formatCurrency(holding.market_value)}</div>
+                                {holding.valuation_date && (
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    as of {formatDate(holding.valuation_date)}
+                                  </div>
+                                )}
+                              </div>
+                            ) 
+                            : 'N/A'
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {holding.isVirtual ? (
+                          <span className="text-blue-800 font-medium">N/A</span>
+                        ) : (
+                          liveWeightings.has(holding.id)
+                            ? `${liveWeightings.get(holding.id)?.toFixed(1)}%` 
+                            : 'N/A'
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {holding.isVirtual ? (
+                          holding.riskFactor !== undefined ? (
+                            <span className="text-blue-800 font-medium">{holding.riskFactor.toFixed(1)}</span>
+                          ) : (
+                            <span className="text-blue-800 font-medium">N/A</span>
+                          )
+                        ) : (
+                          getFundRiskRating(holding.fund_id || 0, fundsData)
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {holding.isVirtual ? (
+                          <span className="text-blue-800 font-medium">N/A</span>
+                        ) : (
+                          holding.irr !== undefined && holding.irr !== null ? (
+                            <span className={`${holding.irr >= 0 ? 'text-green-700' : 'text-red-700'} font-medium`}>
+                              {formatPercentage(holding.irr)}
+                              <span className="ml-1">{holding.irr >= 0 ? '▲' : '▼'}</span>
+                            </span>
+                          ) : (
+                            <span className="text-gray-500">N/A</span>
+                          )
                         )}
                       </td>
                     </tr>
@@ -1003,7 +1135,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                 ) : (
                   <tr>
                     <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
-                      No funds found for this product.
+                      No funds found in this product.
                     </td>
                   </tr>
                 )}
