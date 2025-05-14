@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getProviderColor } from '../services/providerColors';
+import { MultiSelectSearchableDropdown } from '../components/ui/SearchableDropdown';
+import { getLatestFundIRR } from '../services/api';
 
 // Interfaces for data types
 interface ClientGroup {
@@ -59,104 +61,67 @@ interface SelectedItem {
   name: string;
 }
 
-// Component for searchable dropdown
-const SearchableDropdown: React.FC<{
-  label: string;
-  placeholder: string;
-  items: any[];
-  selectedItems: SelectedItem[];
-  onItemAdd: (item: SelectedItem) => void;
-  onItemRemove: (id: number) => void;
-}> = ({ label, placeholder, items, selectedItems, onItemAdd, onItemRemove }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+// Add new interface for product period summary
+interface ProductPeriodSummary {
+  id: number;
+  product_name: string;
+  start_date: string | null;
+  total_investment: number;
+  total_withdrawal: number;
+  total_switch_in: number;
+  total_switch_out: number;
+  net_flow: number;
+  current_valuation: number;
+  irr: number | null;
+  provider_name?: string;
+  provider_theme_color?: string;
+  funds?: FundSummary[]; // Add funds array to store individual fund data
+}
 
-  const filteredItems = useMemo(() => {
-    if (!searchQuery.trim()) return items;
-    return items.filter(item => 
-      item.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [items, searchQuery]);
+// New interface for fund-level summary data
+interface FundSummary {
+  id: number;
+  available_funds_id: number;
+  fund_name: string;
+  total_investment: number;
+  total_withdrawal: number;
+  total_switch_in: number;
+  total_switch_out: number;
+  net_flow: number;
+  current_valuation: number;
+  irr: number | null;
+  isin_number?: string;
+  status: string;
+  isVirtual?: boolean;
+  inactiveFundCount?: number;
+}
 
-  const isSelected = (id: number) => {
-    return selectedItems.some(item => item.id === id);
-  };
-
-  return (
-    <div className="mb-6 relative" ref={containerRef}>
-      <div className="mb-2">
-        <label className="block text-sm font-medium text-gray-700">{label}</label>
-        {selectedItems.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-2 mb-3">
-            {selectedItems.map(item => (
-              <div 
-                key={item.id}
-                className="flex items-center bg-primary-50 border border-primary-200 rounded-full px-3 py-1 text-sm"
-              >
-                <span className="truncate max-w-[180px]">{item.name}</span>
-                <button 
-                  onClick={() => onItemRemove(item.id)}
-                  className="ml-1.5 text-gray-500 hover:text-red-500"
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-        <div className="relative">
-          <input
-            type="text"
-            placeholder={placeholder}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={() => setIsOpen(true)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-700 focus:border-primary-700 transition-colors"
-          />
-          <button 
-            onClick={() => setIsOpen(!isOpen)}
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
-          >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isOpen ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} />
-            </svg>
-          </button>
-        </div>
-      </div>
-      
-      {isOpen && filteredItems.length > 0 && (
-        <div className="absolute z-10 mt-1 w-full max-h-60 overflow-auto bg-white border border-gray-300 rounded-md shadow-lg">
-          <ul className="py-1">
-            {filteredItems.map(item => (
-              <li 
-                key={item.id}
-                className={`flex justify-between items-center px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer ${
-                  isSelected(item.id) ? 'bg-primary-50' : ''
-                }`}
-              >
-                <span className="truncate">{item.name}</span>
-                {!isSelected(item.id) && (
-                  <button 
-                    onClick={() => {
-                      onItemAdd({ id: item.id, name: item.name });
-                      setSearchQuery('');
-                    }}
-                    className="text-primary-700 hover:text-primary-800 font-medium ml-2 flex-shrink-0"
-                  >
-                    Add
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  );
-};
+// Main component
+const ReportGenerator: React.FC = (): React.ReactNode => {
+  const { api } = useAuth();
+  
+  // State for data
+  const [clientGroups, setClientGroups] = useState<ClientGroup[]>([]);
+  const [productOwners, setProductOwners] = useState<ProductOwner[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [fundData, setFundData] = useState<Fund[]>([]);
+  const [portfolioFunds, setPortfolioFunds] = useState<PortfolioFund[]>([]);
+  
+  // State for selections
+  const [selectedClientGroupIds, setSelectedClientGroupIds] = useState<(string | number)[]>([]);
+  const [selectedProductOwnerIds, setSelectedProductOwnerIds] = useState<(string | number)[]>([]);
+  const [selectedProductIds, setSelectedProductIds] = useState<(string | number)[]>([]);
+  
+  // State for results
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [displayedProductOwners, setDisplayedProductOwners] = useState<ProductOwner[]>([]);
+  const [totalValuation, setTotalValuation] = useState<number | null>(null);
+  const [totalIRR, setTotalIRR] = useState<number | null>(null);
+  const [valuationDate, setValuationDate] = useState<string | null>(null);
+  const [monthlyTransactions, setMonthlyTransactions] = useState<MonthlyTransaction[]>([]);
+  
+  // New state for product-specific period summaries
+  const [productSummaries, setProductSummaries] = useState<ProductPeriodSummary[]>([]);
 
 // Fallback formatters - replace with your actual implementations if they exist elsewhere
 const formatDateFallback = (dateString: string | null): string => {
@@ -185,30 +150,6 @@ const formatPercentageFallback = (value: number | null): string => {
   if (value === null || value === undefined) return '-';
   return `${value.toFixed(2)}%`;
 };
-
-// Main component
-const ReportGenerator: React.FC = (): React.ReactNode => {
-  const { api } = useAuth();
-  
-  // State for data
-  const [clientGroups, setClientGroups] = useState<ClientGroup[]>([]);
-  const [productOwners, setProductOwners] = useState<ProductOwner[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [fundData, setFundData] = useState<Fund[]>([]);
-  const [portfolioFunds, setPortfolioFunds] = useState<PortfolioFund[]>([]);
-  
-  // State for selections
-  const [selectedClientGroups, setSelectedClientGroups] = useState<SelectedItem[]>([]);
-  const [selectedProductOwners, setSelectedProductOwners] = useState<SelectedItem[]>([]);
-  const [selectedProducts, setSelectedProducts] = useState<SelectedItem[]>([]);
-  
-  // State for results
-  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
-  const [displayedProductOwners, setDisplayedProductOwners] = useState<ProductOwner[]>([]);
-  const [totalValuation, setTotalValuation] = useState<number | null>(null);
-  const [totalIRR, setTotalIRR] = useState<number | null>(null);
-  const [valuationDate, setValuationDate] = useState<string | null>(null);
-  const [monthlyTransactions, setMonthlyTransactions] = useState<MonthlyTransaction[]>([]);
   
   // Loading and error states
   const [isLoading, setIsLoading] = useState(false);
@@ -265,9 +206,9 @@ const ReportGenerator: React.FC = (): React.ReactNode => {
       const ownerIdSet = new Set<number>();
 
       // Add directly selected product owners
-      if (selectedProductOwners.length > 0) {
-        selectedProductOwners.forEach(spo => {
-          const fullOwner = productOwners.find(po => po.id === spo.id);
+      if (selectedProductOwnerIds.length > 0) {
+        selectedProductOwnerIds.forEach(spo => {
+          const fullOwner = productOwners.find(po => po.id === Number(spo));
           if (fullOwner && !ownerIdSet.has(fullOwner.id)) {
             ownersToDisplay.push(fullOwner);
             ownerIdSet.add(fullOwner.id);
@@ -276,34 +217,36 @@ const ReportGenerator: React.FC = (): React.ReactNode => {
       }
 
       // Add product owners related to selected client groups
-      if (selectedClientGroups.length > 0) {
-        for (const scg of selectedClientGroups) {
+      if (selectedClientGroupIds.length > 0) {
+        for (const scg of selectedClientGroupIds) {
           try {
-            const response = await api.get(`/client_group_product_owners?client_group_id=${scg.id}`);
+            const response = await api.get(`/client_group_product_owners?client_group_id=${Number(scg)}`);
             if (response.data && response.data.length > 0) {
               const groupOwnerIds = response.data.map((assoc: any) => assoc.product_owner_id);
-              for (const ownerId of groupOwnerIds) {
-                const fullOwner = productOwners.find(po => po.id === ownerId);
-                if (fullOwner && !ownerIdSet.has(fullOwner.id)) {
-                  ownersToDisplay.push(fullOwner);
-                  ownerIdSet.add(fullOwner.id);
+              groupOwnerIds.forEach((id: number) => {
+                if (!ownerIdSet.has(id)) {
+                  const owner = productOwners.find(po => po.id === id);
+                  if (owner) {
+                    ownersToDisplay.push(owner);
+                    ownerIdSet.add(id);
+                  }
                 }
-              }
+              });
             }
           } catch (err) {
-            console.error(`Failed to fetch product owners for client group ${scg.id}:`, err);
+            console.error(`Failed to fetch product owners for client group ${Number(scg)}:`, err);
           }
         }
       }
       setDisplayedProductOwners(ownersToDisplay);
     };
 
-    if (productOwners.length > 0 || selectedClientGroups.length > 0) { // Run if product owners are loaded or client groups are selected
+    if (productOwners.length > 0 || selectedClientGroupIds.length > 0) { // Run if product owners are loaded or client groups are selected
       updateDisplayedOwners();
     } else {
       setDisplayedProductOwners([]); // Clear if no selections and no owners loaded
     }
-  }, [selectedProductOwners, selectedClientGroups, productOwners, api]);
+  }, [selectedProductOwnerIds, selectedClientGroupIds, productOwners, api]);
 
   // NEW useEffect for instant "Related Products" display (REQ 3)
   useEffect(() => {
@@ -312,8 +255,8 @@ const ReportGenerator: React.FC = (): React.ReactNode => {
       const displayedProductIds = new Set<number>();
 
       // 1. Directly selected products
-      for (const sp of selectedProducts) {
-        const product = products.find(p => p.id === sp.id);
+      for (const sp of selectedProductIds) {
+        const product = products.find(p => p.id === Number(sp));
         if (product && !displayedProductIds.has(product.id)) {
           productsToDisplay.push(product);
           displayedProductIds.add(product.id);
@@ -321,8 +264,8 @@ const ReportGenerator: React.FC = (): React.ReactNode => {
       }
 
       // 2. Products from selected client groups
-      if (selectedClientGroups.length > 0) {
-        const clientGroupIds = selectedClientGroups.map(cg => cg.id);
+      if (selectedClientGroupIds.length > 0) {
+        const clientGroupIds = selectedClientGroupIds.map(cg => Number(cg));
         const clientGroupProds = products.filter(p => p.client_id && clientGroupIds.includes(p.client_id));
         clientGroupProds.forEach(p => {
           if (!displayedProductIds.has(p.id)) {
@@ -333,10 +276,10 @@ const ReportGenerator: React.FC = (): React.ReactNode => {
       }
 
       // 3. Products from selected product owners
-      if (selectedProductOwners.length > 0) {
-        for (const spo of selectedProductOwners) {
+      if (selectedProductOwnerIds.length > 0) {
+        for (const spo of selectedProductOwnerIds) {
           try {
-            const response = await api.get(`/product_owners/${spo.id}/products`);
+            const response = await api.get(`/product_owners/${Number(spo)}/products`);
             if (response.data && Array.isArray(response.data)) {
               const ownerSpecificProducts = response.data as Product[];
               ownerSpecificProducts.forEach(p => {
@@ -347,7 +290,7 @@ const ReportGenerator: React.FC = (): React.ReactNode => {
               });
             }
           } catch (err) {
-            console.error(`Failed to fetch products for PO ${spo.id} (report gen):`, err);
+            console.error(`Failed to fetch products for PO ${Number(spo)} (report gen):`, err);
             // Optionally, show a partial error or decide if report can proceed
           }
         }
@@ -357,12 +300,12 @@ const ReportGenerator: React.FC = (): React.ReactNode => {
     
     // Run when selections change or the main product list is available
     // products.length check ensures we don't run with an empty lookup list
-    if (products.length > 0 || selectedProductOwners.length > 0 ) { // also run if product owners selected, as they fetch their own products
+    if (products.length > 0 || selectedProductOwnerIds.length > 0 ) { // also run if product owners selected, as they fetch their own products
         updateRelatedProducts();
     } else {
         setRelatedProducts([]); // Clear if no relevant selections
     }
-  }, [selectedProducts, selectedClientGroups, selectedProductOwners, products, api]);
+  }, [selectedProductIds, selectedClientGroupIds, selectedProductOwnerIds, products, api]);
 
   const calculateIRR = (cashFlows: {date: Date, amount: number}[], maxIterations = 100, precision = 0.000001): number | null => {
     if (cashFlows.length < 2 || cashFlows.filter(cf => cf.amount !== 0).length < 2) {
@@ -395,7 +338,7 @@ const ReportGenerator: React.FC = (): React.ReactNode => {
   };
 
   const generateReport = async () => {
-    if (selectedClientGroups.length === 0 && selectedProductOwners.length === 0 && selectedProducts.length === 0) {
+    if (selectedClientGroupIds.length === 0 && selectedProductOwnerIds.length === 0 && selectedProductIds.length === 0) {
       setDataError('Please select at least one client group, product owner, or product to generate a report.');
       return;
     }
@@ -406,6 +349,7 @@ const ReportGenerator: React.FC = (): React.ReactNode => {
     setTotalValuation(null);
     setValuationDate(null);
     setTotalIRR(null);
+    setProductSummaries([]);
     
     try {
       // --- Step 1: Consolidate all Product IDs for the Report (REQ 1) ---
@@ -414,22 +358,22 @@ const ReportGenerator: React.FC = (): React.ReactNode => {
       const additionalProductsData: Product[] = []; 
 
       // 1a. Add directly selected products
-      if (selectedProducts.length > 0) {
-        selectedProducts.forEach(p => productIdsForReport.add(p.id));
+      if (selectedProductIds.length > 0) {
+        selectedProductIds.forEach(p => productIdsForReport.add(Number(p)));
       }
       
       // 1b. Add products from selected client groups
-      if (selectedClientGroups.length > 0) {
-        const clientGroupIds = selectedClientGroups.map(cg => cg.id);
+      if (selectedClientGroupIds.length > 0) {
+        const clientGroupIds = selectedClientGroupIds.map(cg => Number(cg));
         const clientGroupAttachedProducts = products.filter(p => p.client_id && clientGroupIds.includes(p.client_id));
         clientGroupAttachedProducts.forEach(p => productIdsForReport.add(p.id));
       }
       
       // 1c. Add products from selected product owners
-      if (selectedProductOwners.length > 0) {
-        for (const spo of selectedProductOwners) {
+      if (selectedProductOwnerIds.length > 0) {
+        for (const spo of selectedProductOwnerIds) {
           try {
-            const response = await api.get(`/product_owners/${spo.id}/products`);
+            const response = await api.get(`/product_owners/${Number(spo)}/products`);
             if (response.data && Array.isArray(response.data)) {
               const ownerSpecificProducts = response.data as Product[];
               ownerSpecificProducts.forEach(p => {
@@ -441,7 +385,7 @@ const ReportGenerator: React.FC = (): React.ReactNode => {
               });
             }
           } catch (err) {
-            console.error(`Failed to fetch products for PO ${spo.id} (report gen):`, err);
+            console.error(`Failed to fetch products for PO ${Number(spo)} (report gen):`, err);
             // Optionally, show a partial error or decide if report can proceed
           }
         }
@@ -460,50 +404,40 @@ const ReportGenerator: React.FC = (): React.ReactNode => {
       // Combine main products list with any additionally fetched products for a full lookup
       const comprehensiveProductList = [...products, ...additionalProductsData.filter(ap => !products.find(mp => mp.id === ap.id))];
 
-      const portfolioIds = uniqueProductIds.map(productId => {
-        const productDetails = comprehensiveProductList.find(p => p.id === productId);
-        return productDetails?.portfolio_id;
-      }).filter(id => id != null) as number[];
-      
-      if (portfolioIds.length === 0) {
-        setDataError('No portfolios associated with the selected products.');
-        setIsCalculating(false);
-        return;
-      }
-      const uniquePortfolioIds = [...new Set(portfolioIds)];
-      console.log("Unique Portfolio IDs for report:", uniquePortfolioIds);
-      
-      // --- Step 3: Fetch all PortfolioFunds for these Portfolios ---
-      const portfolioFundsResponses = await Promise.all(
-        uniquePortfolioIds.map(id => api.get(`/portfolio_funds?portfolio_id=${id}`))
-      );
-      const allPortfolioFunds = portfolioFundsResponses.flatMap(res => res.data as PortfolioFund[]);
-      
-      if (allPortfolioFunds.length === 0) {
-        setDataError('No funds found for the selected portfolios.');
-        setIsCalculating(false);
-        return;
-      }
-      console.log("Total PortfolioFunds fetched:", allPortfolioFunds.length);
+      // Create array to store each product's summary data
+      const productSummaryResults: ProductPeriodSummary[] = [];
+      let overallValuation = 0;
+      let latestValuationDate: string | null = null;
 
-      // --- Step 4: Identify Inactive PortfolioFunds (REQ 2) ---
+      // Process each product individually
+      for (const productId of uniqueProductIds) {
+        const productDetails = comprehensiveProductList.find(p => p.id === productId);
+        if (!productDetails) continue;
+        
+        const portfolioId = productDetails.portfolio_id;
+        if (!portfolioId) continue;
+        
+        // Get portfolio funds for this product
+        const portfolioFundsResponse = await api.get(`/portfolio_funds?portfolio_id=${portfolioId}`);
+        const productPortfolioFunds = portfolioFundsResponse.data as PortfolioFund[];
+        
+        if (productPortfolioFunds.length === 0) continue;
+        
+        // Identify inactive funds
       const inactiveFundIds = new Set<number>();
-      allPortfolioFunds.forEach(fund => {
+        productPortfolioFunds.forEach(fund => {
         if (fund.id && fund.status && fund.status !== 'active') {
           inactiveFundIds.add(fund.id);
         }
       });
-      console.log("Inactive PortfolioFund IDs:", Array.from(inactiveFundIds));
-
-      // --- Step 5: Fetch Activity Logs and Valuations ---
-      const uniquePortfolioFundIdsForAPI = [...new Set(allPortfolioFunds.map(pf => pf.id))];
-
-      const activityLogsPromises = uniquePortfolioFundIdsForAPI.map(pfId => 
-        api.get(`/holding_activity_logs?portfolio_fund_id=${pfId}`)
+        
+        // Get activity logs for all fund IDs
+        const activityLogsPromises = productPortfolioFunds.map(pf => 
+          api.get(`/holding_activity_logs?portfolio_fund_id=${pf.id}`)
       );
       const allActivityLogs = (await Promise.all(activityLogsPromises)).flatMap(res => res.data);
-      console.log("Total Activity Logs fetched:", allActivityLogs.length);
 
+        // Get latest valuations
       const latestValuationsViewResponse = await api.get('/all_latest_fund_valuations');
       const latestValuationFromViewMap = new Map<number, { value: number, valuation_date: string }>();
       if (latestValuationsViewResponse.data && Array.isArray(latestValuationsViewResponse.data)) {
@@ -513,182 +447,266 @@ const ReportGenerator: React.FC = (): React.ReactNode => {
               }
           });
       }
-      console.log("Latest Valuations from View loaded:", latestValuationFromViewMap.size);
-      
-      // Fetch all historical valuations for the monthly table
-      const historicalValuationsPromises = uniquePortfolioFundIdsForAPI.map(pfId => 
-        api.get(`/fund_valuations?portfolio_fund_id=${pfId}`)
-      );
-      const allHistoricalValuations = (await Promise.all(historicalValuationsPromises)).flatMap(res => res.data);
-      console.log("Total Historical Valuations fetched:", allHistoricalValuations.length);
-
-      // --- Step 6: Process Transactions and Valuations by Month ---
-      const transactionsByMonthMap = new Map<string, {
-        investments: number; withdrawals: number; switchIn: number; switchOut: number; valuation: number;
-      }>();
-      
-      allActivityLogs.forEach((log: any) => {
-        if (!log.activity_timestamp || !log.amount) return; // Skip logs without timestamp or amount
-        const parsedAmount = parseFloat(log.amount);
-        if (parsedAmount === 0) return; // Skip zero amount logs
-
-        const date = new Date(log.activity_timestamp);
-        const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         
-        if (!transactionsByMonthMap.has(yearMonth)) {
-          transactionsByMonthMap.set(yearMonth, { investments: 0, withdrawals: 0, switchIn: 0, switchOut: 0, valuation: 0 });
-        }
-        const monthData = transactionsByMonthMap.get(yearMonth)!;
+        // Calculate all-time summary for this product
+        let totalInvestment = 0;
+        let totalWithdrawal = 0;
+        let totalSwitchIn = 0;
+        let totalSwitchOut = 0;
+        let productValuation = 0;
+        let productStartDate: string | null = null;
+        
+        // Process activity logs
+      allActivityLogs.forEach((log: any) => {
+          if (!log.activity_timestamp || !log.amount) return;
+        const parsedAmount = parseFloat(log.amount);
+          if (parsedAmount === 0) return;
+          
+          // Track the earliest activity date as the product's start date
+          if (!productStartDate || new Date(log.activity_timestamp) < new Date(productStartDate)) {
+            productStartDate = log.activity_timestamp;
+          }
         
         switch(log.activity_type) {
-          case 'Investment': case 'RegularInvestment': case 'GovernmentUplift': monthData.investments += parsedAmount; break;
-          case 'Withdrawal': monthData.withdrawals += parsedAmount; break; // Assuming withdrawals are positive in DB
-          case 'SwitchIn': monthData.switchIn += parsedAmount; break;
-          case 'SwitchOut': monthData.switchOut += parsedAmount; break;
-        }
-      });
-
-      // Group historical valuations by month and sum them up
-      const monthlyHistoricalValuationSums = new Map<string, number>(); // yearMonth -> total historical value
-      const distinctValuationDatesByMonth = new Map<string, Date>(); // To find the latest date in a historical month
-
-      allHistoricalValuations.forEach((v: any) => {
-          if (!v.valuation_date || v.portfolio_fund_id == null || v.value == null) return;
-          const valDate = new Date(v.valuation_date);
-          const yearMonth = `${valDate.getFullYear()}-${String(valDate.getMonth() + 1).padStart(2, '0')}`;
-          
-          const currentVal = parseFloat(v.value);
-          // This logic assumes we sum all valuation records within a month.
-          // If you need only month-end, the query or processing here needs adjustment.
-          // For simplicity, we sum them now. A more precise approach would be to pick one valuation per fund per month (e.g., latest).
-          monthlyHistoricalValuationSums.set(yearMonth, (monthlyHistoricalValuationSums.get(yearMonth) || 0) + currentVal);
-
-          if (!distinctValuationDatesByMonth.has(yearMonth) || valDate > distinctValuationDatesByMonth.get(yearMonth)!) {
-            distinctValuationDatesByMonth.set(yearMonth, valDate);
+            case 'Investment': case 'RegularInvestment': case 'GovernmentUplift': 
+              totalInvestment += parsedAmount; 
+              break;
+            case 'Withdrawal': 
+              totalWithdrawal += parsedAmount; 
+              break;
+            case 'SwitchIn': 
+              totalSwitchIn += parsedAmount; 
+              break;
+            case 'SwitchOut': 
+              totalSwitchOut += parsedAmount; 
+              break;
           }
-      });
-      
-      const allReportYearMonths = new Set<string>([...transactionsByMonthMap.keys(), ...monthlyHistoricalValuationSums.keys()]);
-      const sortedReportYearMonths = Array.from(allReportYearMonths).sort();
-      const latestReportCycleMonth = sortedReportYearMonths.length > 0 ? sortedReportYearMonths[sortedReportYearMonths.length - 1] : null;
-
-      // Populate valuations in transactionsByMonthMap
-      sortedReportYearMonths.forEach(yearMonth => {
-        if (!transactionsByMonthMap.has(yearMonth)) { // Ensure month entry exists if only valuations occurred
-            transactionsByMonthMap.set(yearMonth, { investments: 0, withdrawals: 0, switchIn: 0, switchOut: 0, valuation: 0 });
-        }
-        const monthData = transactionsByMonthMap.get(yearMonth)!;
-        
-        if (yearMonth === latestReportCycleMonth) { // For the LATEST month in the report cycle
-            let latestMonthValuation = 0;
-            uniquePortfolioFundIdsForAPI.forEach(pfId => {
-                if (inactiveFundIds.has(pfId)) { // REQ 2: Inactive funds = 0 for current valuation
-                    latestMonthValuation += 0;
-                } else {
-                    const latestValData = latestValuationFromViewMap.get(pfId);
-                    latestMonthValuation += latestValData ? latestValData.value : 0;
-                }
-            });
-            monthData.valuation = latestMonthValuation;
-        } else { // For HISTORICAL months
-            monthData.valuation = monthlyHistoricalValuationSums.get(yearMonth) || 0;
-        }
-      });
-      
-      // --- Step 7: Final Report Data Assembly & State Updates ---
-      const finalMonthlyTransactions = sortedReportYearMonths.map(yearMonth => {
-        const data = transactionsByMonthMap.get(yearMonth)!;
-        return {
-          year_month: yearMonth,
-          total_investment: data.investments,
-          total_withdrawal: data.withdrawals,
-          total_switch_in: data.switchIn,
-          total_switch_out: data.switchOut,
-          net_flow: data.investments - data.withdrawals + data.switchIn - data.switchOut, // Note: sign of withdrawal matters
-          valuation: data.valuation
-        };
-      });
-      setMonthlyTransactions(finalMonthlyTransactions);
-
-      // Calculate overall "Total Valuation" for the summary box (REQ 2 applied)
-      let summaryTotalValuation = 0;
-      let mostRecentValuationDateForActiveFunds: Date | null = null;
-
-      uniquePortfolioFundIdsForAPI.forEach(pfId => {
-          if (!inactiveFundIds.has(pfId)) { // Only sum active funds for the summary
-              const latestVal = latestValuationFromViewMap.get(pfId);
-              if (latestVal) {
-                  summaryTotalValuation += latestVal.value;
-                  const currentValDate = new Date(latestVal.valuation_date);
-                  if (!mostRecentValuationDateForActiveFunds || currentValDate > mostRecentValuationDateForActiveFunds) {
-                      mostRecentValuationDateForActiveFunds = currentValDate;
-                  }
-              }
-          }
-      });
-      setTotalValuation(summaryTotalValuation);
-      
-      let formattedValuationDate: string | null = latestReportCycleMonth; // Default/fallback
-      if (mostRecentValuationDateForActiveFunds) { // Check if it's not null
-          // Now TypeScript knows it's a Date object here
-          formattedValuationDate = `${mostRecentValuationDateForActiveFunds.getFullYear()}-${String(mostRecentValuationDateForActiveFunds.getMonth() + 1).padStart(2, '0')}`;
-      }
-      setValuationDate(formattedValuationDate);
-      
-      // IRR Calculation (REQ 2 applied for terminal value)
-      if (finalMonthlyTransactions.length > 0) {
-          const cashFlows: {date: Date, amount: number}[] = [];
-        finalMonthlyTransactions.forEach((transaction, index) => {
-            const [yearStr, monthStr] = transaction.year_month.split('-');
-            const year = parseInt(yearStr);
-            const month = parseInt(monthStr) - 1; // JS months are 0-indexed
-
-            // Initial investment: Using net_flow for the first period.
-            // If valuation is positive, it's an "investment" (outflow).
-            // If net_flow is positive (more money in), it's an outflow from investor's perspective.
-            if (index === 0) {
-                let initialOutlay = -(transaction.total_investment); // Or more complex logic if needed
-                if (transaction.valuation > 0 && transaction.total_investment === 0 && transaction.total_withdrawal ===0 ) {
-                   initialOutlay = -transaction.valuation; // If first entry is just a valuation
-                }
-                 if (initialOutlay !==0) cashFlows.push({ date: new Date(year, month, 1), amount: initialOutlay });
-            }
-            
-            // Net flows for periods between the first and last.
-            // Positive net_flow (investment) is negative for IRR calc.
-            // Negative net_flow (withdrawal) is positive for IRR calc.
-            if (index > 0 && index < finalMonthlyTransactions.length -1 ) {
-                 if(transaction.net_flow !== 0) cashFlows.push({ date: new Date(year, month, 1), amount: -transaction.net_flow });
-            }
-
-            // Terminal value: Use the summaryTotalValuation (which respects inactive funds)
-            if (index === finalMonthlyTransactions.length - 1) {
-                 // Add any final period net flow before the terminal valuation
-                 if(transaction.net_flow !== 0 && index !== 0) { // avoid double counting if only one period
-                    cashFlows.push({ date: new Date(year, month, 1), amount: -transaction.net_flow });
-                 }
-                 // Add terminal valuation
-                 if(summaryTotalValuation !== 0) cashFlows.push({ date: new Date(year, month, 28), amount: summaryTotalValuation });
-            }
         });
         
-        console.log("Cash Flows for IRR:", cashFlows);
-        if (cashFlows.filter(cf => cf.amount !==0).length >= 2) { // Need at least two non-zero cashflows
-            // Ensure first cashflow is negative for typical IRR scenarios
-            const firstNonZeroIndex = cashFlows.findIndex(cf => cf.amount !== 0);
-            if(firstNonZeroIndex !== -1 && cashFlows[firstNonZeroIndex].amount > 0) {
-                // If first significant cashflow is positive, IRR might be problematic or require adjustment
-                console.warn("First significant cashflow is positive, IRR might be unusual.");
+        // Calculate current valuation (only from active funds)
+        let mostRecentValuationDate: string | null = null;
+        productPortfolioFunds.forEach(pf => {
+          if (!inactiveFundIds.has(pf.id)) {
+            const latestVal = latestValuationFromViewMap.get(pf.id);
+            if (latestVal) {
+              productValuation += latestVal.value;
+              
+              // Track the most recent valuation date
+              if (!mostRecentValuationDate || new Date(latestVal.valuation_date) > new Date(mostRecentValuationDate)) {
+                mostRecentValuationDate = latestVal.valuation_date;
+              }
             }
-            try {
-                 const irrValue = calculateIRR(cashFlows); // Your existing calculateIRR function
-                setTotalIRR(irrValue);
-            } catch(irrError){
-                 console.error("Error calculating IRR:", irrError);
-              setTotalIRR(null);
+          }
+        });
+        
+        // Update overall valuation date (take the latest across all products)
+        if (mostRecentValuationDate) {
+          if (!latestValuationDate || new Date(mostRecentValuationDate) > new Date(latestValuationDate)) {
+            latestValuationDate = mostRecentValuationDate;
+          }
+        }
+        
+        // Process fund-level data for this product
+        const fundSummaries: FundSummary[] = [];
+        
+        // Get fund details to access fund names
+        const fundIdsToFetch = productPortfolioFunds.map(pf => pf.available_funds_id);
+        const fundsResponse = await api.get('/funds');
+        const fundsData = fundsResponse.data || [];
+        
+        // Create a map for quick lookup
+        const fundDetailsMap = new Map<number, any>();
+        fundsData.forEach((fund: any) => {
+          if (fund.id) {
+            fundDetailsMap.set(fund.id, fund);
+          }
+        });
+        
+        // Collect activity data per fund
+        for (const portfolioFund of productPortfolioFunds) {
+          // Skip if no valid ID
+          if (!portfolioFund.id) continue;
+          
+          // Get fund details
+          const fundDetails = fundDetailsMap.get(portfolioFund.available_funds_id);
+          const fundName = fundDetails?.fund_name || `Fund ${portfolioFund.available_funds_id}`;
+          const isinNumber = fundDetails?.isin_number;
+          
+          // Get activity logs for this fund
+          const fundLogs = allActivityLogs.filter(log => 
+            log.portfolio_fund_id === portfolioFund.id
+          );
+          
+          // Calculate totals for this fund
+          let fundInvestment = 0;
+          let fundWithdrawal = 0;
+          let fundSwitchIn = 0;
+          let fundSwitchOut = 0;
+          
+          fundLogs.forEach(log => {
+            if (!log.amount) return;
+            const amount = parseFloat(log.amount);
+            
+            switch(log.activity_type) {
+              case 'Investment': case 'RegularInvestment': case 'GovernmentUplift': 
+                fundInvestment += amount; 
+                break;
+              case 'Withdrawal': 
+                fundWithdrawal += amount; 
+                break;
+              case 'SwitchIn': 
+                fundSwitchIn += amount; 
+                break;
+              case 'SwitchOut': 
+                fundSwitchOut += amount; 
+                break;
             }
+          });
+          
+          // Get current valuation
+          let fundValuation = 0;
+          if (!inactiveFundIds.has(portfolioFund.id)) {
+            const latestVal = latestValuationFromViewMap.get(portfolioFund.id);
+              if (latestVal) {
+              fundValuation = latestVal.value;
+            }
+          }
+          
+          // Fetch latest IRR for this fund from API
+          let fundIRR: number | null = null;
+          try {
+            const irrResponse = await getLatestFundIRR(portfolioFund.id);
+            if (irrResponse.data && irrResponse.data.irr !== undefined) {
+              fundIRR = irrResponse.data.irr;
+            }
+          } catch (err) {
+            console.warn(`No IRR data available for fund: ${portfolioFund.id}`, err);
+            fundIRR = null;
+          }
+          
+          // Add to fund summaries
+          fundSummaries.push({
+            id: portfolioFund.id,
+            available_funds_id: portfolioFund.available_funds_id,
+            fund_name: fundName,
+            total_investment: fundInvestment,
+            total_withdrawal: fundWithdrawal,
+            total_switch_in: fundSwitchIn,
+            total_switch_out: fundSwitchOut,
+            net_flow: fundInvestment - fundWithdrawal + fundSwitchIn - fundSwitchOut,
+            current_valuation: fundValuation,
+            irr: fundIRR,
+            isin_number: isinNumber,
+            status: portfolioFund.status || 'active'
+          });
+        }
+        
+        // Calculate product IRR as weighted average of fund IRRs
+        let productIRR: number | null = null;
+        if (fundSummaries.length > 0) {
+          let totalIRRWeight = 0;
+          let weightedIRRSum = 0;
+          let validIRRCount = 0;
+          
+          // Calculate weighted average based on valuation
+          fundSummaries.forEach(fund => {
+            if (fund.irr !== null && fund.current_valuation > 0) {
+              weightedIRRSum += fund.irr * fund.current_valuation;
+              totalIRRWeight += fund.current_valuation;
+              validIRRCount++;
+            }
+          });
+          
+          // If we have valid IRRs, calculate the weighted average
+          if (validIRRCount > 0 && totalIRRWeight > 0) {
+            productIRR = weightedIRRSum / totalIRRWeight;
+          }
+        }
+
+        // Helper function to create a virtual "Previous Funds" entry
+        const createPreviousFundsEntry = (inactiveFunds: FundSummary[]): FundSummary | null => {
+          if (inactiveFunds.length === 0) return null;
+          
+          // Sum up all values from inactive funds
+          const totalInvestment = inactiveFunds.reduce((sum, fund) => sum + fund.total_investment, 0);
+          const totalWithdrawal = inactiveFunds.reduce((sum, fund) => sum + fund.total_withdrawal, 0);
+          const totalSwitchIn = inactiveFunds.reduce((sum, fund) => sum + fund.total_switch_in, 0);
+          const totalSwitchOut = inactiveFunds.reduce((sum, fund) => sum + fund.total_switch_out, 0);
+          const totalValuation = inactiveFunds.reduce((sum, fund) => sum + fund.current_valuation, 0);
+          
+          // Create a virtual entry with aggregated values
+          return {
+            id: -1, // Special ID for virtual fund
+            available_funds_id: -1,
+            fund_name: 'Previous Funds',
+            total_investment: totalInvestment,
+            total_withdrawal: totalWithdrawal,
+            total_switch_in: totalSwitchIn,
+            total_switch_out: totalSwitchOut,
+            net_flow: totalInvestment - totalWithdrawal + totalSwitchIn - totalSwitchOut,
+            current_valuation: totalValuation,
+            irr: null, // Don't calculate IRR for Previous Funds
+            isVirtual: true, // Flag to identify this as a virtual entry
+            status: 'virtual',
+            inactiveFundCount: inactiveFunds.length // Add count of inactive funds
+          };
+        };
+        
+        // Separate active and inactive funds
+        const activeFunds = fundSummaries.filter(fund => fund.status === 'active');
+        const inactiveFunds = fundSummaries.filter(fund => fund.status !== 'active');
+        
+        // Create the Previous Funds entry if there are inactive funds
+        const previousFundsEntry = createPreviousFundsEntry(inactiveFunds);
+        
+        // Prepare final fund list - active funds first, then Previous Funds if it exists
+        const finalFundList = [...activeFunds];
+        if (previousFundsEntry) {
+          finalFundList.push(previousFundsEntry);
+        }
+        
+        // Add to summary results with fund data
+        productSummaryResults.push({
+          id: productId,
+          product_name: productDetails.product_name,
+          start_date: productStartDate,
+          total_investment: totalInvestment,
+          total_withdrawal: totalWithdrawal,
+          total_switch_in: totalSwitchIn,
+          total_switch_out: totalSwitchOut,
+          net_flow: totalInvestment - totalWithdrawal + totalSwitchIn - totalSwitchOut,
+          current_valuation: productValuation,
+          irr: productIRR,
+          provider_name: productDetails.provider_name,
+          provider_theme_color: productDetails.provider_theme_color,
+          funds: finalFundList
+        });
+        
+        // Add to overall valuation
+        overallValuation += productValuation;
+      }
+      
+      // Set state with summary data
+      setProductSummaries(productSummaryResults);
+      setTotalValuation(overallValuation);
+      setValuationDate(latestValuationDate);
+      
+      // Calculate overall IRR (simplified approach)
+      if (productSummaryResults.length > 0) {
+        // Weighted average IRR
+        let totalValueWithIRR = 0;
+        let valueSum = 0;
+        
+        productSummaryResults.forEach(summary => {
+          if (summary.irr !== null && summary.current_valuation > 0) {
+            totalValueWithIRR += summary.irr * summary.current_valuation;
+            valueSum += summary.current_valuation;
+          }
+        });
+        
+        if (valueSum > 0) {
+          setTotalIRR(totalValueWithIRR / valueSum);
           } else {
-            console.warn("Not enough distinct cash flows to calculate IRR.");
             setTotalIRR(null);
           }
         } else {
@@ -709,7 +727,6 @@ const ReportGenerator: React.FC = (): React.ReactNode => {
     { key: 'total_withdrawal', label: 'Withdrawal' },
     { key: 'total_switch_in', label: 'Switch In' },
     { key: 'total_switch_out', label: 'Switch Out' },
-    { key: 'net_flow', label: 'Net Flow' },
     { key: 'valuation', label: 'Valuation' },
   ];
 
@@ -762,36 +779,33 @@ const ReportGenerator: React.FC = (): React.ReactNode => {
           <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
             <h2 className="text-lg font-normal text-gray-900 mb-4">Select Items for Report</h2>
             
-            <SearchableDropdown
-              label="Client Groups"
+            <MultiSelectSearchableDropdown
+              id="client-groups-dropdown"
+              options={clientGroups.map(cg => ({ value: cg.id, label: cg.name }))}
+              values={selectedClientGroupIds}
+              onChange={setSelectedClientGroupIds}
               placeholder="Search client groups..."
-              items={clientGroups.map(cg => ({ id: cg.id, name: cg.name }))}
-              selectedItems={selectedClientGroups}
-            onItemAdd={(item) => setSelectedClientGroups(prev => [...prev, item])}
-            onItemRemove={(id) => setSelectedClientGroups(prev => prev.filter(item => item.id !== id))}
             />
             
-            <SearchableDropdown
-              label="Product Owners"
+            <MultiSelectSearchableDropdown
+              id="product-owners-dropdown"
+              options={productOwners.map(po => ({ value: po.id, label: po.name }))}
+              values={selectedProductOwnerIds}
+              onChange={setSelectedProductOwnerIds}
               placeholder="Search product owners..."
-              items={productOwners.map(po => ({ id: po.id, name: po.name }))}
-              selectedItems={selectedProductOwners}
-            onItemAdd={(item) => setSelectedProductOwners(prev => [...prev, item])}
-            onItemRemove={(id) => setSelectedProductOwners(prev => prev.filter(item => item.id !== id))}
             />
             
-            <SearchableDropdown
-              label="Products"
+            <MultiSelectSearchableDropdown
+              id="products-dropdown"
+              options={products.map(p => ({ value: p.id, label: p.product_name }))}
+              values={selectedProductIds}
+              onChange={setSelectedProductIds}
               placeholder="Search products..."
-              items={products.map(p => ({ id: p.id, name: p.product_name }))}
-              selectedItems={selectedProducts}
-            onItemAdd={(item) => setSelectedProducts(prev => [...prev, item])}
-            onItemRemove={(id) => setSelectedProducts(prev => prev.filter(item => item.id !== id))}
             />
             
             <button
               onClick={generateReport}
-            disabled={isCalculating || isLoading} // Disable if initial load is also happening
+              disabled={isCalculating || isLoading}
               className="mt-4 inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-xl shadow-sm hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
             {isCalculating ? 'Calculating...' : 'Generate Report'}
@@ -873,58 +887,185 @@ const ReportGenerator: React.FC = (): React.ReactNode => {
           </div>
         </div>
       
-      {/* Monthly Transactions Table (Pivoted) */}
-      {monthlyTransactions.length > 0 && (
-         <div className="mt-8 bg-white shadow-sm rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Monthly Transactions</h2>
+      {/* Product Period Summary Tables */}
+      {productSummaries.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-2xl font-normal text-gray-900 font-sans tracking-wide mb-4">
+            Product Period Overview
+          </h2>
+          
+          {productSummaries.map(product => (
+            <div key={product.id} className="mb-8 bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                {product.provider_theme_color && (
+                  <div 
+                    className="w-4 h-4 rounded-full" 
+                    style={{ backgroundColor: product.provider_theme_color }}
+                  />
+                )}
+                <h3 className="text-xl font-semibold text-gray-800">
+                  {product.product_name}
+                  {product.provider_name && (
+                    <span className="text-sm font-normal text-gray-500 ml-2">
+                      ({product.provider_name})
+                    </span>
+                  )}
+                </h3>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div className="bg-gray-50 rounded-lg p-3 border">
+                  <div className="text-xs font-medium text-gray-500 uppercase mb-1">Current Valuation</div>
+                  <div className="text-lg font-semibold text-primary-700">
+                    {formatCurrencyFallback(product.current_valuation)}
+                  </div>
+                </div>
+                
+                <div className="bg-gray-50 rounded-lg p-3 border">
+                  <div className="text-xs font-medium text-gray-500 uppercase mb-1">IRR</div>
+                  {product.irr !== null ? (
+                    <div className={`text-lg font-semibold ${product.irr >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {formatPercentageFallback(product.irr)}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-500">Not available</div>
+                  )}
+                </div>
+                
+                <div className="bg-gray-50 rounded-lg p-3 border">
+                  <div className="text-xs font-medium text-gray-500 uppercase mb-1">Start Date</div>
+                  <div className="text-lg font-semibold text-gray-700">
+                    {product.start_date ? new Date(product.start_date).toLocaleDateString() : 'N/A'}
+                  </div>
+                </div>
+                
+                <div className="bg-gray-50 rounded-lg p-3 border">
+                  <div className="text-xs font-medium text-gray-500 uppercase mb-1">Net Investment</div>
+                  <div className="text-lg font-semibold text-gray-700">
+                    {formatCurrencyFallback(product.net_flow)}
+                  </div>
+                </div>
+              </div>
+              
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-300 table-fixed">
+                <table className="min-w-full divide-y divide-gray-300">
               <thead className="bg-gray-100">
                 <tr>
-                  <th scope="col" className="w-1/5 px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-blue-300 sticky left-0 bg-gray-100 z-10">
-                    Transaction Type
+                      <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                        Fund Name
                   </th>
-                  {columnMonths.map(month => (
-                    <th key={month} scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-blue-300">
-                      {formatDateFallback(month)}
+                      <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                        Investment
                     </th>
-                  ))}
-                  <th scope="col" className="w-1/6 px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-blue-300 sticky right-0 bg-gray-100 z-10">
-                    Total
+                      <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                        Withdrawal
+                      </th>
+                      <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                        Switch In
+                      </th>
+                      <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                        Switch Out
+                      </th>
+                      <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                        Current Value
+                      </th>
+                      <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                        IRR
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {pivotedTableData.map((row) => {
-                  const isValuationRow = row.transactionType === 'Valuation';
-                  return (
-                    <tr 
-                      key={row.transactionType as string} 
-                      className={`hover:bg-blue-50 transition-colors duration-150 group ${
-                        isValuationRow ? 'border-t-2 border-gray-400 font-semibold' : ''
-                      }`}
-                    >
-                      <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-800 sticky left-0 bg-white group-hover:bg-blue-50 z-5 ${
-                        isValuationRow ? 'font-semibold text-blue-700' : 'font-medium'
-                      }`}>
-                        {row.transactionType as string}
+                    {product.funds && product.funds.length > 0 ? (
+                      product.funds.map(fund => (
+                        <tr key={fund.id} className={`hover:bg-blue-50 ${fund.isVirtual ? 'bg-gray-100 font-medium' : ''}`}>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-800">
+                            {fund.fund_name}
+                            {fund.isVirtual && fund.inactiveFundCount && (
+                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-800">
+                                {fund.inactiveFundCount} {fund.inactiveFundCount === 1 ? 'fund' : 'funds'}
+                              </span>
+                            )}
+                            {fund.isin_number && (
+                              <span className="block text-xs text-gray-500">{fund.isin_number}</span>
+                            )}
                       </td>
-                      {columnMonths.map(month => (
-                        <td key={month} className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 text-right">
-                          {formatCurrencyFallback(row[month] as number)}
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                            {formatCurrencyFallback(fund.total_investment)}
                         </td>
-                      ))}
-                      <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-800 text-right sticky right-0 bg-white group-hover:bg-blue-50 z-5 ${
-                         isValuationRow ? 'font-semibold text-blue-700' : 'font-medium'
-                      }`}>
-                        {formatCurrencyFallback(row.total as number)}
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                            {formatCurrencyFallback(fund.total_withdrawal)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                            {formatCurrencyFallback(fund.total_switch_in)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                            {formatCurrencyFallback(fund.total_switch_out)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-primary-700 text-right">
+                            {formatCurrencyFallback(fund.current_valuation)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                            {fund.isVirtual ? (
+                              <span className="text-gray-500">-</span>
+                            ) : fund.irr !== null ? (
+                              <span className={fund.irr >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                {formatPercentageFallback(fund.irr)}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
                       </td>
                     </tr>
-                  );
-                })}
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={7} className="px-4 py-4 text-center text-sm text-gray-500">
+                          No fund data available
+                        </td>
+                      </tr>
+                    )}
+                    
+                    {/* Product Total Row */}
+                    <tr className="bg-gray-100 font-semibold border-t-2 border-gray-400">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">
+                        PRODUCT TOTAL
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                        {formatCurrencyFallback(product.total_investment)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                        {formatCurrencyFallback(product.total_withdrawal)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                        {formatCurrencyFallback(product.total_switch_in)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                        {formatCurrencyFallback(product.total_switch_out)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-primary-700 text-right">
+                        {formatCurrencyFallback(product.current_valuation)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                        {product.irr !== null ? (
+                          <span className={product.irr >= 0 ? 'text-green-600' : 'text-red-600'}>
+                            {formatPercentageFallback(product.irr)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                    </tr>
               </tbody>
             </table>
           </div>
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {isCalculating && (
+        <div className="mt-6 flex justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-700"></div>
         </div>
       )}
     </div>

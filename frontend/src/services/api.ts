@@ -124,6 +124,15 @@ export const getFundIRRValues = (portfolioFundId: number) => {
 };
 
 /**
+ * Fetches the latest IRR value for a specific portfolio fund
+ * @param {number} portfolioFundId - Portfolio-Fund relationship ID
+ * @returns {Promise} - API response with the latest IRR value
+ */
+export const getLatestFundIRR = (portfolioFundId: number) => {
+  return api.get(`portfolio_funds/${portfolioFundId}/latest-irr`);
+};
+
+/**
  * Updates an existing IRR value
  * @param {number} irrValueId - IRR value record ID
  * @param {Object} data - Updated IRR data
@@ -356,6 +365,50 @@ export const getPortfoliosWithTemplate = (params?: {
  */
 export const getPortfolioWithTemplate = (portfolioId: number) => {
   return api.get(`portfolios/${portfolioId}`);
+};
+
+/**
+ * Fetches fund under management summary for all client groups
+ * @returns {Promise} - API response with client group FUM data
+ */
+export const getClientGroupFUMSummary = () => {
+  return api.get('client_group_fum_summary');
+};
+
+/**
+ * Fetches fund under management summary for a specific client group
+ * @param {number} clientGroupId - Client group ID
+ * @returns {Promise} - API response with client group FUM data
+ */
+export const getClientGroupFUMById = (clientGroupId: number) => {
+  return api.get(`client_group_fum_summary/${clientGroupId}`);
+};
+
+/**
+ * Fetches weighted IRR calculation for a specific client group
+ * @param {number} clientGroupId - Client group ID
+ * @returns {Promise} - API response with client group IRR data
+ */
+export const getClientGroupIRR = (clientGroupId: number) => {
+  return api.get(`client_groups/${clientGroupId}/irr`);
+};
+
+/**
+ * Fetches funds under management for a specific product
+ * @param {number} productId - Product ID
+ * @returns {Promise} - API response with product FUM data
+ */
+export const getProductFUM = (productId: number) => {
+  return api.get(`client_products/${productId}/fum`);
+};
+
+/**
+ * Fetches weighted IRR calculation for a specific product
+ * @param {number} productId - Product ID
+ * @returns {Promise} - API response with product IRR data
+ */
+export const getProductIRR = (productId: number) => {
+  return api.get(`client_products/${productId}/irr`);
 };
 
 export default api; 
