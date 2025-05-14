@@ -509,3 +509,145 @@ async def delete_client_product(client_product_id: int, db = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error deleting client product and associated records: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@router.get("/client_products/{product_id}/fum", response_model=dict)
+async def get_product_fum(product_id: int, db = Depends(get_db)):
+    """
+    What it does: Calculates the total funds under management for a specific product
+    Why it's needed: Provides an accurate sum of all valuations for a product's portfolio funds
+    How it works:
+        1. Gets the product to find its associated portfolio
+        2. Gets all active portfolio funds for that portfolio
+        3. Gets the latest valuation for each fund
+        4. Sums up the valuations
+    Expected output: A JSON object with the total FUM value
+    """
+    try:
+        # Get the product to find its portfolio ID
+        product_result = db.table("client_products").select("portfolio_id").eq("id", product_id).execute()
+        
+        if not product_result.data or len(product_result.data) == 0:
+            raise HTTPException(status_code=404, detail=f"Product with ID {product_id} not found")
+            
+        portfolio_id = product_result.data[0].get("portfolio_id")
+        if not portfolio_id:
+            logger.info(f"Product {product_id} has no associated portfolio")
+            return {"product_id": product_id, "fum": 0}
+            
+        # Get all active portfolio funds for this portfolio
+        funds_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).eq("status", "active").execute()
+        
+        if not funds_result.data or len(funds_result.data) == 0:
+            logger.info(f"No active funds found for portfolio {portfolio_id}")
+            return {"product_id": product_id, "fum": 0}
+            
+        total_fum = 0
+        
+        # For each fund, get its latest valuation
+        for fund in funds_result.data:
+            fund_id = fund.get("id")
+            valuation_result = db.table("fund_valuations").select("value").eq("portfolio_fund_id", fund_id).order("valuation_date", desc=True).limit(1).execute()
+            
+            if valuation_result.data and len(valuation_result.data) > 0:
+                valuation = valuation_result.data[0].get("value", 0)
+                total_fum += valuation
+                logger.info(f"Fund {fund_id} valuation: {valuation}")
+                
+        logger.info(f"Total FUM for product {product_id}: {total_fum}")
+        return {"product_id": product_id, "fum": total_fum}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error calculating FUM for product {product_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@router.get("/client_products/{product_id}/irr", response_model=dict)
+async def get_product_irr(product_id: int, db = Depends(get_db)):
+    """
+    What it does: Calculates the IRR for a product based on all activities across its portfolio funds
+    Why it's needed: Provides an accurate IRR calculation that considers all fund activities
+    How it works:
+        1. Gets the product to find its associated portfolio
+        2. Gets all active portfolio funds for that portfolio
+        3. Gets all activities for those funds grouped by month
+        4. Calculates a weighted IRR based on valuations
+    Expected output: A JSON object with the calculated IRR value
+    """
+    try:
+        logger.info(f"Calculating weighted IRR for product {product_id}")
+        
+        # Get the product to find its portfolio ID
+        product_result = db.table("client_products").select("portfolio_id,product_name").eq("id", product_id).execute()
+        
+        if not product_result.data or len(product_result.data) == 0:
+            raise HTTPException(status_code=404, detail=f"Product with ID {product_id} not found")
+            
+        portfolio_id = product_result.data[0].get("portfolio_id")
+        product_name = product_result.data[0].get("product_name", "Unknown Product")
+        
+        if not portfolio_id:
+            logger.info(f"Product {product_id} ({product_name}) has no associated portfolio")
+            return {"product_id": product_id, "product_name": product_name, "irr": 0, "irr_decimal": 0}
+            
+        # Get all active portfolio funds for this portfolio
+        funds_result = db.table("portfolio_funds").select("id,available_funds_id").eq("portfolio_id", portfolio_id).eq("status", "active").execute()
+        
+        if not funds_result.data or len(funds_result.data) == 0:
+            logger.info(f"No active funds found for portfolio {portfolio_id} (product {product_id})")
+            return {"product_id": product_id, "product_name": product_name, "irr": 0, "irr_decimal": 0}
+            
+        total_weighted_irr = 0
+        total_valuation = 0
+        fund_irr_data = []
+        
+        # For each fund, get its latest IRR and valuation
+        for fund in funds_result.data:
+            fund_id = fund.get("id")
+            
+            # Get latest IRR
+            irr_result = db.table("irr_values").select("irr_result").eq("fund_id", fund_id).order("date", desc=True).limit(1).execute()
+            
+            # Get latest valuation
+            valuation_result = db.table("fund_valuations").select("value").eq("portfolio_fund_id", fund_id).order("valuation_date", desc=True).limit(1).execute()
+            
+            # Extract values or use defaults
+            irr_value = irr_result.data[0].get("irr_result", 0) if irr_result.data and len(irr_result.data) > 0 else 0
+            valuation = valuation_result.data[0].get("value", 0) if valuation_result.data and len(valuation_result.data) > 0 else 0
+            
+            # Only include funds with positive valuations in weighted calculation
+            if valuation > 0:
+                fund_irr_data.append({
+                    "fund_id": fund_id,
+                    "irr": irr_value,
+                    "valuation": valuation
+                })
+                
+                weighted_irr = irr_value * valuation
+                total_weighted_irr += weighted_irr
+                total_valuation += valuation
+                
+                logger.info(f"Added fund {fund_id} to IRR calculation: IRR={irr_value}%, valuation={valuation}, weighted contribution={weighted_irr}")
+        
+        # Calculate final weighted IRR
+        final_irr = 0
+        if total_valuation > 0:
+            final_irr = total_weighted_irr / total_valuation
+            logger.info(f"Calculated product IRR: {final_irr}% (total weighted sum: {total_weighted_irr}, total valuation: {total_valuation})")
+        else:
+            logger.info(f"No valid fund valuations found for IRR calculation (product {product_id})")
+            
+        return {
+            "product_id": product_id,
+            "product_name": product_name,
+            "irr": final_irr,
+            "irr_decimal": final_irr / 100,
+            "fund_data": fund_irr_data,
+            "total_valuation": total_valuation
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error calculating IRR for product {product_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

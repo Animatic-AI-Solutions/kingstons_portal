@@ -175,6 +175,44 @@ async def update_client_group(client_group_id: int, client_group_update: ClientG
         logger.error(f"Error updating client group: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
+@router.patch("/client_groups/{client_group_id}", response_model=ClientGroup)
+async def patch_client_group(client_group_id: int, client_group_update: dict, db = Depends(get_db)):
+    """
+    What it does: Partially updates an existing client group record.
+    Why it's needed: Allows modifying specific fields of client group information without sending the entire object.
+    How it works:
+        1. Takes the client_group_id from the URL path and partial update data from the request body
+        2. Verifies the client group exists
+        3. Updates only the provided fields in the client group record
+        4. Returns the updated client group data
+    Expected output: A JSON object containing the updated client group's details
+    """
+    try:
+        # Check if client group exists
+        check_result = db.table("client_groups").select("id").eq("id", client_group_id).execute()
+        if not check_result.data or len(check_result.data) == 0:
+            raise HTTPException(status_code=404, detail=f"Client group with ID {client_group_id} not found")
+        
+        # Remove any None values from the update data
+        update_data = {k: v for k, v in client_group_update.items() if v is not None}
+        
+        if not update_data:
+            raise HTTPException(status_code=400, detail="No valid update data provided")
+        
+        logger.info(f"Patching client group {client_group_id} with data: {update_data}")
+        
+        # Update client group with only the provided fields
+        result = db.table("client_groups").update(update_data).eq("id", client_group_id).execute()
+        
+        if result.data and len(result.data) > 0:
+            return result.data[0]
+        raise HTTPException(status_code=500, detail="Failed to update client group")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error patching client group: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
 @router.delete("/client_groups/{client_group_id}", response_model=dict)
 async def delete_client_group(
     client_group_id: int, 
@@ -449,4 +487,131 @@ async def get_client_group_fum_summary(db = Depends(get_db)):
         return combined_data
     except Exception as e:
         logger.error(f"Error fetching client group FUM summary: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@router.get("/client_group_fum_summary/{client_group_id}", response_model=dict)
+async def get_client_group_fum_by_id(client_group_id: int, db = Depends(get_db)):
+    """
+    What it does: Retrieves the funds under management (FUM) summary for a specific client group.
+    Why it's needed: Provides quick access to the total FUM value for a single client group.
+    How it works:
+        1. Queries the 'client_group_fum_summary' view with a filter for the specified client group
+        2. Returns the summary data for that client group
+    Expected output: A JSON object with the client group's FUM value
+    """
+    try:
+        # Fetch FUM summary data for the specific client group
+        summary_result = db.table("client_group_fum_summary").select("*").eq("client_group_id", client_group_id).execute()
+        
+        if not summary_result.data or len(summary_result.data) == 0:
+            # If no data found, check if the client group exists
+            client_group = db.table("client_groups").select("id").eq("id", client_group_id).execute()
+            
+            if not client_group.data or len(client_group.data) == 0:
+                raise HTTPException(status_code=404, detail=f"Client group with ID {client_group_id} not found")
+            
+            # Client group exists but has no FUM data
+            return {"client_group_id": client_group_id, "fum": 0}
+        
+        # Return the first (and should be only) result
+        return summary_result.data[0]
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching FUM summary for client group {client_group_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@router.get("/client_groups/{client_group_id}/irr", response_model=dict)
+async def get_client_group_irr(client_group_id: int, db = Depends(get_db)):
+    """
+    What it does: Calculates the weighted IRR for a client group based on all active portfolio funds.
+    Why it's needed: Provides an accurate IRR calculation aggregated across all products and funds.
+    How it works:
+        1. Finds all active products for the client group
+        2. For each product, finds its active portfolio funds
+        3. Retrieves latest IRR values and fund valuations
+        4. Calculates weighted average IRR based on fund valuations
+    Expected output: A JSON object with the calculated IRR value
+    """
+    try:
+        logger.info(f"Calculating weighted IRR for client group {client_group_id}")
+        
+        # Step 1: Check if client group exists
+        client_check = db.table("client_groups").select("id").eq("id", client_group_id).execute()
+        if not client_check.data or len(client_check.data) == 0:
+            raise HTTPException(status_code=404, detail=f"Client group with ID {client_group_id} not found")
+        
+        # Step 2: Find all active products for this client group
+        products_result = db.table("client_products").select("id,portfolio_id,product_name").eq("client_id", client_group_id).eq("status", "active").execute()
+        
+        if not products_result.data or len(products_result.data) == 0:
+            logger.info(f"No active products found for client group {client_group_id}")
+            return {"client_group_id": client_group_id, "irr": 0, "irr_decimal": 0}
+        
+        total_weighted_irr = 0
+        total_valuation = 0
+        fund_irr_data = []
+        
+        # Step 3: For each product, find all active portfolio funds
+        for product in products_result.data:
+            portfolio_id = product.get("portfolio_id")
+            if not portfolio_id:
+                logger.info(f"Product {product.get('id')} has no portfolio attached")
+                continue
+                
+            # Find active portfolio funds
+            funds_result = db.table("portfolio_funds").select("id,available_funds_id").eq("portfolio_id", portfolio_id).eq("status", "active").execute()
+            
+            if not funds_result.data or len(funds_result.data) == 0:
+                logger.info(f"No active funds found for product {product.get('id')} with portfolio {portfolio_id}")
+                continue
+                
+            # Step 4: For each fund, get latest IRR and valuation
+            for fund in funds_result.data:
+                fund_id = fund.get("id")
+                
+                # Get latest IRR
+                irr_result = db.table("irr_values").select("irr_result").eq("fund_id", fund_id).order("date", desc=True).limit(1).execute()
+                
+                # Get latest valuation
+                valuation_result = db.table("fund_valuations").select("value").eq("portfolio_fund_id", fund_id).order("valuation_date", desc=True).limit(1).execute()
+                
+                # Extract values or use defaults
+                irr_value = irr_result.data[0].get("irr_result", 0) if irr_result.data and len(irr_result.data) > 0 else 0
+                valuation = valuation_result.data[0].get("value", 0) if valuation_result.data and len(valuation_result.data) > 0 else 0
+                
+                # Only include funds with positive valuations in weighted calculation
+                if valuation > 0:
+                    fund_irr_data.append({
+                        "fund_id": fund_id,
+                        "irr": irr_value,
+                        "valuation": valuation
+                    })
+                    
+                    weighted_irr = irr_value * valuation
+                    total_weighted_irr += weighted_irr
+                    total_valuation += valuation
+                    
+                    logger.info(f"Added fund {fund_id} to IRR calculation: IRR={irr_value}%, valuation={valuation}, weighted contribution={weighted_irr}")
+        
+        # Step 5: Calculate final weighted IRR
+        final_irr = 0
+        if total_valuation > 0:
+            final_irr = total_weighted_irr / total_valuation
+            logger.info(f"Calculated client group IRR: {final_irr}% (total weighted sum: {total_weighted_irr}, total valuation: {total_valuation})")
+        else:
+            logger.info(f"No valid fund valuations found for IRR calculation")
+            
+        return {
+            "client_group_id": client_group_id,
+            "irr": final_irr,
+            "irr_decimal": final_irr / 100,
+            "fund_data": fund_irr_data,
+            "total_valuation": total_valuation
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error calculating IRR for client group {client_group_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}") 

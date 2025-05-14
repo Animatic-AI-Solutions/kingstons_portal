@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getProviderColor } from '../services/providerColors';
+import { getClientGroupFUMById, getClientGroupIRR, getProductFUM, getProductIRR } from '../services/api';
 
 // Enhanced TypeScript interfaces
 interface Client {
@@ -62,6 +63,9 @@ interface ProductFund {
   switch_in?: number;
   switch_out?: number;
   irr?: number;
+  status?: string;
+  is_virtual_entry?: boolean;
+  inactive_fund_count?: number;
 }
 
 // Extracted component for client header
@@ -200,7 +204,9 @@ const ProductCard: React.FC<{
     using_color: themeColor,
     original_template_id: account.original_template_id,
     original_template_name: account.original_template_name,
-    template_info: account.template_info
+    template_info: account.template_info,
+    fum: account.total_value,
+    irr: account.irr
   });
   
   // Memoize style objects for performance
@@ -245,15 +251,28 @@ const ProductCard: React.FC<{
     return `${(value).toFixed(2)}%`;
   };
 
+  // Calculate total market value from funds if available
+  const totalFundValue = useMemo(() => {
+    if (funds && funds.length > 0) {
+      return funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.market_value || 0), 0);
+    }
+    return null;
+  }, [funds]);
+
+  // Use either the calculated fund total or the API-provided total_value
+  const displayValue = totalFundValue !== null && totalFundValue > 0 
+    ? totalFundValue 
+    : (account.total_value || 0);
+
   return (
     <div 
       className="block bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
       style={styles.cardStyle}
     >
       {/* Main Content */}
-      <Link 
-        to={`/products/${account.id}/overview`} 
-        className="block p-4"
+      <div 
+        className="block p-4 cursor-pointer"
+        onClick={() => window.location.href = `/products/${account.id}/overview`}
       >
         <div className="flex items-center justify-between" style={styles.headerStyle}>
           {/* Left side - Product Info */}
@@ -284,7 +303,7 @@ const ProductCard: React.FC<{
           {/* Right side - Key Metrics */}
           <div className="text-right">
             <div className="text-xl font-light text-gray-900">
-              {formatCurrency(account.total_value || 0)}
+              {formatCurrency(displayValue)}
             </div>
             {account.irr !== undefined && (
               <div className="flex items-center justify-end mt-1">
@@ -353,6 +372,7 @@ const ProductCard: React.FC<{
           <div className="flex items-center">
             <Link
               to={`/products/${account.id}/irr-calculation`}
+              onClick={(e) => e.stopPropagation()}
               className="inline-flex items-center mr-3 px-2 py-0.5 text-xs font-medium text-white bg-primary-700 rounded-lg shadow-sm hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-700 transition-all duration-200"
               style={{ backgroundColor: themeColor }}
             >
@@ -376,7 +396,7 @@ const ProductCard: React.FC<{
             </span>
           </div>
         </div>
-      </Link>
+      </div>
       
       {/* Expandable Fund Table */}
       {isExpanded && (
@@ -406,8 +426,22 @@ const ProductCard: React.FC<{
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {funds.map((fund) => (
-                    <tr key={fund.id} className="hover:bg-gray-50">
-                      <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-gray-900">{fund.fund_name}</td>
+                    <tr 
+                      key={fund.id} 
+                      className={`${fund.is_virtual_entry ? 'bg-gray-50' : 'hover:bg-gray-50'}`}
+                    >
+                      <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-gray-900">
+                        {fund.is_virtual_entry ? (
+                          <div className="flex items-center">
+                            <span>{fund.fund_name.split('(')[0]}</span>
+                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                              {fund.inactive_fund_count}
+                            </span>
+                          </div>
+                        ) : (
+                          fund.fund_name
+                        )}
+                      </td>
                       <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(fund.investments || 0)}</td>
                       <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(fund.withdrawals || 0)}</td>
                       <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(fund.switch_in || 0)}</td>
@@ -424,20 +458,20 @@ const ProductCard: React.FC<{
                   <tr className="bg-gray-50 font-medium">
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-gray-900">TOTAL</td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
-                      {formatCurrency(funds.reduce((sum, fund) => sum + (fund.investments || 0), 0))}
+                      {formatCurrency(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.investments || 0), 0))}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
-                      {formatCurrency(funds.reduce((sum, fund) => sum + (fund.withdrawals || 0), 0))}
+                      {formatCurrency(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.withdrawals || 0), 0))}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
-                      {formatCurrency(funds.reduce((sum, fund) => sum + (fund.switch_in || 0), 0))}
+                      {formatCurrency(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.switch_in || 0), 0))}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
-                      {formatCurrency(funds.reduce((sum, fund) => sum + (fund.switch_out || 0), 0))}
+                      {formatCurrency(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.switch_out || 0), 0))}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">-</td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
-                      {formatCurrency(funds.reduce((sum, fund) => sum + (fund.market_value || 0), 0))}
+                      {formatCurrency(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.market_value || 0), 0))}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">-</td>
                   </tr>
@@ -469,6 +503,11 @@ const ClientDetails: React.FC = () => {
     advisor: null,
     type: null
   });
+  
+  // Create the ref to store FUM value from the database view
+  const clientFUMFromView = useRef<number | null>(null);
+  // Create a ref to store IRR value from the database calculation
+  const clientIRRFromAPI = useRef<number | null>(null);
   
   // State for expanded product cards
   const [expandedProducts, setExpandedProducts] = useState<number[]>([]);
@@ -527,9 +566,15 @@ const ClientDetails: React.FC = () => {
       // Get fund details with portfolio info
       const portfolioFunds = portfolioFundsResponse.data;
       
-      // For each fund, get its activities
-      const fundsWithActivities = await Promise.all(
-        portfolioFunds.map(async (pf: any) => {
+      // Separate active and inactive funds
+      const activeFunds = portfolioFunds.filter((pf: any) => pf.status === 'active');
+      const inactiveFunds = portfolioFunds.filter((pf: any) => pf.status !== 'active');
+      
+      console.log(`Product ${accountId}: Found ${activeFunds.length} active funds and ${inactiveFunds.length} inactive funds`);
+      
+      // Process active funds
+      const activeFundsWithActivities = await Promise.all(
+        activeFunds.map(async (pf: any) => {
           // Get all activity logs for this fund - no date restrictions for all-time data
           const activitiesResponse = await api.get('/holding_activity_logs', {
             params: { portfolio_fund_id: pf.id }
@@ -557,6 +602,18 @@ const ClientDetails: React.FC = () => {
             .filter((activity: any) => activity.activity_type === 'SwitchOut')
             .reduce((sum: number, activity: any) => sum + Math.abs(activity.amount), 0);
             
+          // Get latest valuation
+          let marketValue = pf.market_value || 0;
+          try {
+            const valuationResponse = await api.get(`/fund_valuations/latest/${pf.id}`);
+            if (valuationResponse.data && valuationResponse.data.value) {
+              marketValue = valuationResponse.data.value;
+              console.log(`Fund ${pf.id} latest valuation: ${marketValue}`);
+            }
+          } catch (err) {
+            console.warn(`Failed to fetch valuation for fund ${pf.id}`, err);
+          }
+            
           // Try to get latest IRR
           let irrValue;
           try {
@@ -574,18 +631,110 @@ const ClientDetails: React.FC = () => {
             fund_name: fund?.fund_name || 'Unknown Fund',
             isin_number: fund?.isin_number || 'N/A',
             amount_invested: pf.amount_invested || 0,
-            market_value: pf.market_value || 0,
+            market_value: marketValue,
             investments,
             withdrawals,
             switch_in: switchIn,
             switch_out: switchOut,
-            irr: irrValue
+            irr: irrValue,
+            status: 'active'
           };
         })
       );
       
-      // Store the funds data
-      setExpandedProductFunds(prev => ({ ...prev, [accountId]: fundsWithActivities }));
+      // Handle inactive funds if they exist
+      let allFunds: ProductFund[] = [...activeFundsWithActivities];
+      
+      if (inactiveFunds.length > 0) {
+        // Process inactive funds
+        const inactiveFundsData = await Promise.all(
+          inactiveFunds.map(async (pf: any) => {
+            // Get basic fund data
+            const fund = fundsMap.get(pf.available_funds_id);
+            
+            // Get all activity logs for this fund
+            const activitiesResponse = await api.get('/holding_activity_logs', {
+              params: { portfolio_fund_id: pf.id }
+            });
+            
+            const activities = activitiesResponse.data || [];
+            
+            // Calculate activity totals by type
+            const investments = activities
+              .filter((activity: any) => 
+                activity.activity_type === 'Investment' || 
+                activity.activity_type === 'RegularInvestment' || 
+                activity.activity_type === 'GovernmentUplift')
+              .reduce((sum: number, activity: any) => sum + Math.abs(activity.amount), 0);
+              
+            const withdrawals = activities
+              .filter((activity: any) => activity.activity_type === 'Withdrawal')
+              .reduce((sum: number, activity: any) => sum + Math.abs(activity.amount), 0);
+              
+            const switchIn = activities
+              .filter((activity: any) => activity.activity_type === 'SwitchIn')
+              .reduce((sum: number, activity: any) => sum + Math.abs(activity.amount), 0);
+              
+            const switchOut = activities
+              .filter((activity: any) => activity.activity_type === 'SwitchOut')
+              .reduce((sum: number, activity: any) => sum + Math.abs(activity.amount), 0);
+              
+            // Get latest valuation
+            let marketValue = pf.market_value || 0;
+            try {
+              const valuationResponse = await api.get(`/fund_valuations/latest/${pf.id}`);
+              if (valuationResponse.data && valuationResponse.data.value) {
+                marketValue = valuationResponse.data.value;
+              }
+            } catch (err) {
+              console.warn(`Failed to fetch valuation for inactive fund ${pf.id}`, err);
+            }
+            
+            return {
+              id: pf.id,
+              fund_name: fund?.fund_name || 'Unknown Fund',
+              isin_number: fund?.isin_number || 'N/A',
+              amount_invested: pf.amount_invested || 0,
+              market_value: marketValue,
+              investments,
+              withdrawals,
+              switch_in: switchIn,
+              switch_out: switchOut,
+              status: 'inactive'
+            };
+          })
+        );
+        
+        // Create aggregated "Previous Funds" entry
+        if (inactiveFundsData.length > 0) {
+          const totalInvestments = inactiveFundsData.reduce((sum, fund) => sum + (fund.investments || 0), 0);
+          const totalWithdrawals = inactiveFundsData.reduce((sum, fund) => sum + (fund.withdrawals || 0), 0);
+          const totalSwitchIn = inactiveFundsData.reduce((sum, fund) => sum + (fund.switch_in || 0), 0);
+          const totalSwitchOut = inactiveFundsData.reduce((sum, fund) => sum + (fund.switch_out || 0), 0);
+          const totalMarketValue = inactiveFundsData.reduce((sum, fund) => sum + (fund.market_value || 0), 0);
+          
+          // Add the "Previous Funds" virtual entry to the list of funds
+          allFunds.push({
+            id: -1, // Virtual ID for the aggregated entry
+            fund_name: `Previous Funds (${inactiveFundsData.length})`,
+            isin_number: 'Multiple',
+            amount_invested: 0,
+            market_value: totalMarketValue,
+            investments: totalInvestments,
+            withdrawals: totalWithdrawals,
+            switch_in: totalSwitchIn,
+            switch_out: totalSwitchOut,
+            is_virtual_entry: true,
+            inactive_fund_count: inactiveFundsData.length,
+            status: 'inactive'
+          });
+          
+          console.log(`Created Previous Funds entry for ${inactiveFundsData.length} inactive funds with total value: ${totalMarketValue}`);
+        }
+      }
+      
+      // Store the combined funds data
+      setExpandedProductFunds(prev => ({ ...prev, [accountId]: allFunds }));
     } catch (err) {
       console.error(`Error fetching fund details for account ${accountId}:`, err);
       setExpandedProductFunds(prev => ({ ...prev, [accountId]: [] }));
@@ -615,8 +764,10 @@ const ClientDetails: React.FC = () => {
 
   // Calculate totals with memoization for performance
   const { totalFundsUnderManagement, totalIRR } = useMemo(() => {
-    const totalFunds = clientAccounts.reduce((sum, account) => 
-      sum + (account.total_value || 0), 0);
+    // If we have the FUM directly from the database view, use that value
+    const totalFunds = clientFUMFromView.current !== null 
+      ? clientFUMFromView.current 
+      : clientAccounts.reduce((sum, account) => sum + (account.total_value || 0), 0);
       
     // Debug logs for total value calculation
     console.log("FUNDS DEBUGGING - Total value calculation:");
@@ -627,59 +778,69 @@ const ClientDetails: React.FC = () => {
       total_value: acc.total_value,
       irr: acc.irr
     })));
+    console.log("FUM from view:", clientFUMFromView.current);
     console.log("Calculated totalFunds:", totalFunds);
+    
+    // If we have the IRR directly from the API, use that value
+    let finalIRR = clientIRRFromAPI.current;
+    
+    // Only calculate weighted IRR if we don't have it from the API
+    if (finalIRR === null) {
+      // Calculate weighted IRR from client accounts
+      let totalWeightedIRR = 0;
+      let totalWeight = 0;
       
-    // Calculate weighted IRR
-    let totalWeightedIRR = 0;
-    let totalWeight = 0;
-    
-    // Add array to store calculation steps for debugging
-    interface IrrCalcStep {
-      id: number;
-      product_name: string;
-      irr: number;
-      total_value: number;
-      weighted_contribution: number;
-    }
-    
-    const irrCalcSteps: IrrCalcStep[] = [];
-    
-    clientAccounts.forEach(account => {
-      if (account.irr !== undefined && account.total_value) {
-        const weightedIrrContribution = account.irr * account.total_value;
-        totalWeightedIRR += weightedIrrContribution;
-        totalWeight += account.total_value;
-        
-        // Record the calculation step
-        irrCalcSteps.push({
-          id: account.id,
-          product_name: account.product_name,
-          irr: account.irr,
-          total_value: account.total_value,
-          weighted_contribution: weightedIrrContribution
-        });
+      // Add array to store calculation steps for debugging
+      interface IrrCalcStep {
+        id: number;
+        product_name: string;
+        irr: number;
+        total_value: number;
+        weighted_contribution: number;
       }
-    });
-    
-    // Debug logs for IRR calculation
-    console.log("IRR DEBUGGING - Weighted IRR calculation:");
-    console.log("IRR Calculation steps:", irrCalcSteps);
-    console.log("Total weighted IRR contribution:", totalWeightedIRR);
-    console.log("Total weight (sum of total_value):", totalWeight);
-    
-    const avgIRR = totalWeight > 0 ? totalWeightedIRR / totalWeight : 0;
-    console.log("Final calculated average IRR:", avgIRR);
+      
+      const irrCalcSteps: IrrCalcStep[] = [];
+      
+      clientAccounts.forEach(account => {
+        if (account.irr !== undefined && account.total_value) {
+          const weightedIrrContribution = account.irr * account.total_value;
+          totalWeightedIRR += weightedIrrContribution;
+          totalWeight += account.total_value;
+          
+          // Record the calculation step
+          irrCalcSteps.push({
+            id: account.id,
+            product_name: account.product_name,
+            irr: account.irr,
+            total_value: account.total_value,
+            weighted_contribution: weightedIrrContribution
+          });
+        }
+      });
+      
+      // Debug logs for IRR calculation
+      console.log("IRR DEBUGGING - Weighted IRR calculation:");
+      console.log("IRR from API:", clientIRRFromAPI.current);
+      console.log("IRR Calculation steps:", irrCalcSteps);
+      console.log("Total weighted IRR contribution:", totalWeightedIRR);
+      console.log("Total weight (sum of total_value):", totalWeight);
+      
+      finalIRR = totalWeight > 0 ? totalWeightedIRR / totalWeight : 0;
+      console.log("Final calculated average IRR:", finalIRR);
+    } else {
+      console.log("Using IRR from API:", finalIRR);
+    }
     
     return {
       totalFundsUnderManagement: totalFunds,
-      totalIRR: avgIRR
+      totalIRR: finalIRR || 0
     };
-  }, [clientAccounts]);
+  }, [clientAccounts, clientFUMFromView.current, clientIRRFromAPI.current]);
 
   // Data fetching with error retry
   useEffect(() => {
     if (clientId) {
-    fetchClientData();
+      fetchClientData();
     }
   }, [clientId]);
 
@@ -692,6 +853,36 @@ const ClientDetails: React.FC = () => {
       const clientResponse = await api.get(`/client_groups/${clientId}`);
       console.log("Client data received:", clientResponse.data);
       setClient(clientResponse.data);
+      
+      // Fetch FUM summary data for this client group directly from the DB view
+      try {
+        const fumResponse = await getClientGroupFUMById(Number(clientId));
+        console.log("Client group FUM summary:", fumResponse.data);
+        if (fumResponse.data && fumResponse.data.fum) {
+          // Store the FUM value directly to override calculated value from products
+          const fumValue = parseFloat(fumResponse.data.fum);
+          console.log("Setting client group FUM value:", fumValue);
+          // We'll use this later to override the calculated value
+          clientFUMFromView.current = fumValue;
+        }
+      } catch (fumErr) {
+        console.error("Error fetching client group FUM summary:", fumErr);
+      }
+      
+      // Fetch IRR calculation for this client group
+      try {
+        const irrResponse = await getClientGroupIRR(Number(clientId));
+        console.log("Client group IRR calculation:", irrResponse.data);
+        if (irrResponse.data && irrResponse.data.irr !== undefined) {
+          // Store the IRR value directly to override calculated value from products
+          const irrValue = parseFloat(irrResponse.data.irr);
+          console.log("Setting client group IRR value:", irrValue);
+          // We'll use this later to override the calculated value
+          clientIRRFromAPI.current = irrValue;
+        }
+      } catch (irrErr) {
+        console.error("Error fetching client group IRR calculation:", irrErr);
+      }
       
       // Fetch client products (was client_accounts previously)
       const accountsResponse = await api.get('/client_products', {
@@ -709,8 +900,8 @@ const ClientDetails: React.FC = () => {
       
       const accounts = accountsResponse.data || [];
       
-      // Enhanced data fetching for accounts - only get IRR if it's not already present
-      const accountsWithIRR = await Promise.all(
+      // Enhanced data fetching for accounts - get specific FUM and IRR for each product
+      const accountsWithFumAndIRR = await Promise.all(
         accounts.map(async (account: ClientAccount) => {
           try {
             // Log provider and financial data for debugging
@@ -721,39 +912,43 @@ const ClientDetails: React.FC = () => {
               irr: account.irr
             });
             
-            // If we already have IRR data, don't fetch it again
-            if (account.irr !== undefined) {
-              console.log(`Product ${account.id} already has IRR: ${account.irr}`);
-              return account;
+            // Fetch FUM data for this product
+            try {
+              const fumResponse = await getProductFUM(account.id);
+              console.log(`Product ${account.id} FUM data:`, fumResponse.data);
+              if (fumResponse.data && fumResponse.data.fum !== undefined) {
+                account.total_value = fumResponse.data.fum;
+                console.log(`Updated product ${account.id} total_value to: ${account.total_value}`);
+              }
+            } catch (fumErr) {
+              console.warn(`Failed to fetch FUM for product ${account.id}`, fumErr);
             }
             
-            // Update analytics endpoint to use portfolio_id instead
-            const portfolioId = account.portfolio_id;
-            if (!portfolioId) {
-              console.warn(`No portfolio_id found for product ${account.id}`);
-              return account;
+            // Fetch IRR data for this product
+            try {
+              const irrResponse = await getProductIRR(account.id);
+              console.log(`Product ${account.id} IRR data:`, irrResponse.data);
+              if (irrResponse.data && irrResponse.data.irr !== undefined) {
+                account.irr = irrResponse.data.irr;
+                console.log(`Updated product ${account.id} IRR to: ${account.irr}`);
+              }
+            } catch (irrErr) {
+              console.warn(`Failed to fetch IRR for product ${account.id}`, irrErr);
             }
             
-            console.log(`Fetching IRR data for product ${account.id} with portfolio ${portfolioId}`);
-            const irrResponse = await api.get(`/analytics/portfolio/${portfolioId}/irr`);
-            console.log(`Received IRR data for portfolio ${portfolioId}:`, irrResponse.data);
-            
-            return {
-              ...account,
-              irr: irrResponse.data?.irr !== undefined ? irrResponse.data.irr : undefined
-            };
+            return account;
           } catch (err) {
-            console.warn(`Failed to fetch IRR for product ${account.id}`, err);
+            console.warn(`Error enhancing product data for ${account.id}`, err);
             return account;
           }
         })
       );
       
-      console.log("Final client products with IRR:", accountsWithIRR);
-      console.log("Products with total_value after processing:", accountsWithIRR.filter(acc => acc.total_value !== undefined).length);
-      console.log("Products with IRR after processing:", accountsWithIRR.filter(acc => acc.irr !== undefined).length);
+      console.log("Final client products with FUM and IRR:", accountsWithFumAndIRR);
+      console.log("Products with total_value after processing:", accountsWithFumAndIRR.filter(acc => acc.total_value !== undefined).length);
+      console.log("Products with IRR after processing:", accountsWithFumAndIRR.filter(acc => acc.irr !== undefined).length);
       
-      setClientAccounts(accountsWithIRR);
+      setClientAccounts(accountsWithFumAndIRR);
       setError(null);
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || 'Failed to fetch client data';
