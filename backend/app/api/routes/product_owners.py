@@ -9,55 +9,48 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 @router.get("/product_owners", response_model=List[ProductOwner])
-async def get_product_owners(
+async def get_product_owners_list(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
     limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
-    status: Optional[str] = Query(None, description="Filter by status"),
+    status: Optional[str] = Query(None, description="Filter by status (e.g., 'active')"),
     search: Optional[str] = Query(None, description="Search by name"),
-    sort_by: Optional[str] = Query(None, description="Field to sort by"),
-    sort_order: Optional[str] = Query("asc", description="Sort order (asc or desc)"),
     db = Depends(get_db)
 ):
     """
-    Retrieve a paginated list of product owners from the database.
-    Supports filtering, searching, and sorting.
+    Retrieves a list of product owners, with optional filtering and pagination.
+    Excludes 'inactive' product owners by default if no specific status is provided.
     """
     try:
-        logger.info(f"Retrieving product owners with filter: status={status}, search={search}, sort_by={sort_by}, sort_order={sort_order}")
+        logger.info(f"Fetching product owners with skip={skip}, limit={limit}, status={status}, search={search}")
         
-        # Start building the query
-        query = db.table("product_owners").select("*")
-        
-        # Apply status filter if provided
+        query = db.table("product_owners").select("id, name, status, created_at") # Select specific fields
+
         if status:
             query = query.eq("status", status)
-        
-        # Apply search if provided
+        else:
+            # Default to excluding inactive if no specific status is requested
+            query = query.neq("status", "inactive")
+            
         if search:
+            # Basic search by name (case-insensitive)
             query = query.ilike("name", f"%{search}%")
         
-        # Apply sorting if provided
-        if sort_by:
-            # Check if sort_by is a valid column
-            valid_columns = ["id", "name", "status", "created_at"]
-            if sort_by in valid_columns:
-                query = query.order(sort_by, desc=(sort_order.lower() == "desc"))
-            else:
-                logger.warning(f"Invalid sort column: {sort_by}")
-        else:
-            # Default sort by id
-            query = query.order("id", desc=False)
+        # Apply pagination
+        query = query.range(skip, skip + limit - 1)
         
-        # Execute the query with pagination
-        result = query.range(skip, skip + limit - 1).execute()
+        # Add ordering, e.g., by name
+        query = query.order("name", desc=False)
         
-        if result.data:
-            return result.data
-        return []
-    
+        result = query.execute()
+        
+        if not result.data:
+            logger.warning("No product owners found with the given criteria.")
+            return []
+            
+        return result.data
     except Exception as e:
-        logger.error(f"Error retrieving product owners: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        logger.error(f"Error fetching product owners: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.get("/product_owners/{product_owner_id}", response_model=ProductOwner)
 async def get_product_owner(

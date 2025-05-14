@@ -1,10 +1,11 @@
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
+from datetime import datetime
 
 class ProductOwnerBase(BaseModel):
     """Base model for product owner data"""
-    name: Optional[str] = Field(default="")
-    status: Optional[str] = Field(default="active")
+    name: Optional[str] = None
+    status: Optional[str] = 'active'
 
     model_config = ConfigDict(
         from_attributes=True
@@ -23,13 +24,15 @@ class ProductOwnerUpdate(BaseModel):
         from_attributes=True
     )
 
-class ProductOwnerInDB(ProductOwnerBase):
+class ProductOwnerInDBBase(ProductOwnerBase):
     """Model for product owner as stored in database"""
     id: int
-    created_at: str
+    created_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True
+    )
 
-class ProductOwner(ProductOwnerInDB):
+class ProductOwner(ProductOwnerInDBBase):
     """Complete product owner model returned to frontend"""
     pass 
