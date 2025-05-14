@@ -192,8 +192,6 @@ const filterActiveHoldings = (holdings: Holding[]): Holding[] => {
 };
 
 const filterInactiveHoldings = (holdings: Holding[]): Holding[] => {
-  const today = new Date();
-  
   // Log before filtering
   console.log("Filtering inactive holdings from:", holdings.length, "holdings");
   
@@ -203,32 +201,27 @@ const filterInactiveHoldings = (holdings: Holding[]): Holding[] => {
     name: h.fund_name, 
     statusValue: h.status, 
     statusType: typeof h.status,
-    statusLowerCase: h.status?.toLowerCase?.(),
-    statusExactCompare: h.status === 'inactive',
-    statusLooseCompare: h.status?.toLowerCase?.() === 'inactive'
+    statusLowerCase: h.status?.toLowerCase?.()
   })));
   
   const inactiveHoldings = holdings.filter(holding => {
-    // Check if status is explicitly set to 'inactive' with string comparison
+    // ONLY check if status is explicitly set to 'inactive' with string comparison
     const rawStatus = holding.status;
     const statusString = typeof rawStatus === 'string' ? rawStatus.toLowerCase() : String(rawStatus).toLowerCase();
     const isStatusInactive = statusString === 'inactive';
-    
-    // Check if end_date exists and is in the past
-    const hasEndDatePassed = holding.end_date && new Date(holding.end_date) <= today;
     
     // Debug log for each holding with more details
     console.log(`Holding ID ${holding.id} (${holding.fund_name}):`, {
       rawStatus,
       statusString,
       isStatusInactive,
+      // Still log end_date for reference but don't use it
       end_date: holding.end_date,
-      hasEndDatePassed,
-      isInactive: isStatusInactive || hasEndDatePassed
+      isInactive: isStatusInactive // Only using status now
     });
     
-    // Return true if either condition is met
-    return isStatusInactive || hasEndDatePassed;
+    // ONLY return true if status is inactive
+    return isStatusInactive;
   });
   
   console.log("Found inactive holdings:", inactiveHoldings.map(h => ({
@@ -579,6 +572,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
         // Fetch latest IRR for this fund
         let latestIrr: number | undefined = undefined;
         let latestIrrDate: string | undefined = undefined;
+        let valuationDate: string | undefined = undefined;
         try {
           const irrResp = await api.get(`/portfolio_funds/${portfolioFund.id}/latest-irr`);
           if (irrResp.data && irrResp.data.irr !== undefined) {
@@ -586,7 +580,28 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
             latestIrrDate = irrResp.data.calculation_date;
           }
         } catch (err) {
-          // Ignore error, fallback to undefined
+          console.warn(`No IRR data available for fund ${portfolioFund.id}`);
+        }
+        
+        // Fetch latest valuation for this fund
+        try {
+          console.log(`Fetching latest valuation for fund ${portfolioFund.id}`);
+          const valuationResponse = await api.get(
+            `/api/fund_valuations?portfolio_fund_id=${portfolioFund.id}&order=valuation_date.desc&limit=1`
+          );
+          
+          // If we have a valuation, use it
+          if (valuationResponse.data && valuationResponse.data.length > 0) {
+            const valuation = valuationResponse.data[0];
+            // Store the value in the portfolio fund
+            console.log(`Found valuation for fund ${portfolioFund.id}:`, valuation);
+            portfolioFund.market_value = valuation.value;
+            valuationDate = valuation.valuation_date;
+          } else {
+            console.log(`No valuations found for fund ${portfolioFund.id}`);
+          }
+        } catch (err) {
+          console.error(`Error fetching valuation for fund ${portfolioFund.id}:`, err);
         }
         
         // Use the status directly from the portfolio_fund record and make sure it's a string
@@ -639,6 +654,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
           market_value: portfolioFund.market_value || portfolioFund.amount_invested || 0,
           irr: latestIrr,
           irr_calculation_date: latestIrrDate,
+          valuation_date: valuationDate, // Include the valuation date from the fund_valuations table
           account_holding_id: parseInt(accountId), // For backward compatibility
           product_id: parseInt(accountId), // Set product_id field to match schema
           status: status, // Use the carefully processed status value
