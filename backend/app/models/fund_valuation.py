@@ -85,4 +85,33 @@ class FundValuationInDB(FundValuationBase):
 
 class FundValuation(FundValuationInDB):
     """Complete fund valuation model returned to frontend"""
-    pass 
+    pass
+
+# New model for the latest_fund_valuations view
+class LatestFundValuationViewItem(BaseModel):
+    id: int
+    portfolio_fund_id: int
+    valuation_date: datetime 
+    value: DecimalWithPrecision
+
+    # Re-include the validator and config if necessary, or ensure it inherits from a base with them
+    @field_validator('valuation_date', mode='before')
+    @classmethod
+    def parse_date(cls, value):
+        if isinstance(value, str):
+            try:
+                return datetime.fromisoformat(value.replace('Z', '+00:00'))
+            except ValueError:
+                try:
+                    return datetime.strptime(value, "%Y-%m-%d")
+                except ValueError:
+                    raise ValueError("Invalid date format. Expected YYYY-MM-DD or ISO format")
+        return value
+
+    model_config = ConfigDict(
+        json_encoders={
+            datetime: lambda dt: dt.isoformat(),
+            Decimal: lambda d: float(d) if d is not None else None
+        },
+        from_attributes=True
+    ) 

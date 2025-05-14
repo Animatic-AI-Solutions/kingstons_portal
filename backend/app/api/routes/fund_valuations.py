@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import List, Optional
 from datetime import datetime
 from app.db.database import get_db
-from app.models.fund_valuation import FundValuationCreate, FundValuationUpdate, FundValuation
+from app.models.fund_valuation import FundValuationCreate, FundValuationUpdate, FundValuation, LatestFundValuationViewItem
 import logging
 
 router = APIRouter()
@@ -121,6 +121,25 @@ async def get_latest_fund_valuation(
         raise
     except Exception as e:
         logger.error(f"Error getting latest fund valuation: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@router.get("/all_latest_fund_valuations", response_model=List[LatestFundValuationViewItem])
+async def get_all_latest_fund_valuations_from_view(
+    db = Depends(get_db)
+):
+    """
+    Get all latest fund valuations from the public.latest_fund_valuations view.
+    """
+    try:
+        # The view is already named 'latest_fund_valuations'
+        result = db.table("latest_fund_valuations").select("*").execute()
+        
+        if not result.data:
+            return []
+            
+        return result.data
+    except Exception as e:
+        logger.error(f"Error getting all latest fund valuations from view: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.get("/fund_valuations/exists/{portfolio_fund_id}")

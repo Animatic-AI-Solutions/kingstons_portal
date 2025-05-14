@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getProviderColor } from '../services/providerColors';
 
@@ -158,117 +158,32 @@ const SearchableDropdown: React.FC<{
   );
 };
 
-// Add the IRR calculation method back as a fallback
-const calculateIRR = (cashFlows: {date: Date, amount: number}[], maxIterations = 100, precision = 0.000001): number | null => {
-  // Check if we have enough cash flows
-  if (cashFlows.length < 2) {
-    console.error("IRR calculation requires at least two cash flows");
-    return null;
-  }
-  
-  // Sort cash flows by date to ensure chronological order
-  const sortedFlows = [...cashFlows].sort((a, b) => a.date.getTime() - b.date.getTime());
-  
-  // Check if all dates are the same
-  const allSameDate = sortedFlows.every(flow => 
-    flow.date.getFullYear() === sortedFlows[0].date.getFullYear() && 
-    flow.date.getMonth() === sortedFlows[0].date.getMonth()
-  );
-  
-  // If all dates are the same, use simple return calculation
-  if (allSameDate) {
-    console.log("All cash flow dates are in the same month - using simple return calculation");
-    // Calculate simple return: (ending_value - initial_investment) / initial_investment
-    const totalOutflow = sortedFlows.reduce((sum, flow) => flow.amount < 0 ? sum + flow.amount : sum, 0);
-    const totalInflow = sortedFlows.reduce((sum, flow) => flow.amount > 0 ? sum + flow.amount : sum, 0);
-    
-    if (Math.abs(totalOutflow) < 0.01) {
-      console.error("Cannot calculate return: total investment amount is near zero");
-      return null;
-    }
-    
-    const simpleReturn = totalInflow / Math.abs(totalOutflow) - 1;
-    return simpleReturn * 100; // Convert to percentage
-  }
-  
-  // Group cash flows by month
-  const startDate = sortedFlows[0].date;
-  const endDate = sortedFlows[sortedFlows.length - 1].date;
-  
-  // Calculate total number of months between start and end
-  const totalMonths = 
-    ((endDate.getFullYear() - startDate.getFullYear()) * 12) + 
-    (endDate.getMonth() - startDate.getMonth());
-  
-  // For very short periods (less than a month), use simple IRR calculation
-  if (totalMonths < 1) {
-    console.log("Investment period is less than one month - using simple IRR calculation");
-    const initialInvestment = sortedFlows[0].amount;
-    const finalValue = sortedFlows[sortedFlows.length - 1].amount;
-    
-    if (Math.abs(initialInvestment) < 0.01) {
-      console.error("Initial investment is too small or zero");
-      return null;
-    }
-    
-    // Calculate simple return
-    const simpleReturn = finalValue / Math.abs(initialInvestment) - 1;
-    
-    // Annualize the return based on days
-    const days = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
-    const annualizedReturn = (1 + simpleReturn) ** (365 / Math.max(1, days)) - 1;
-    
-    return annualizedReturn * 100; // Convert to percentage
-  }
-  
-  // Group cash flows by month
-  const monthlyAmounts: number[] = Array(totalMonths + 1).fill(0);
-  
-  for (const flow of sortedFlows) {
-    const monthIndex = 
-      ((flow.date.getFullYear() - startDate.getFullYear()) * 12) + 
-      (flow.date.getMonth() - startDate.getMonth());
-    
-    if (monthIndex < 0 || monthIndex >= monthlyAmounts.length) {
-      console.error(`Invalid month index: ${monthIndex} for date ${flow.date.toISOString()}`);
-      continue;
-    }
-    
-    monthlyAmounts[monthIndex] += flow.amount;
-  }
-  
-  // Newton-Raphson method for IRR calculation
-  let rate = 0.05; // Initial guess: 5%
-  
-  for (let iteration = 0; iteration < maxIterations; iteration++) {
-    let npv = 0;
-    let derivativeNpv = 0;
-    
-    for (let i = 0; i < monthlyAmounts.length; i++) {
-      const t = i / 12; // Convert month index to years
-      npv += monthlyAmounts[i] / Math.pow(1 + rate, t);
-      derivativeNpv += -t * monthlyAmounts[i] / Math.pow(1 + rate, t + 1);
-    }
-    
-    // Break if we've reached desired precision
-    if (Math.abs(npv) < precision) {
-      return rate * 100; // Convert to percentage
-    }
-    
-    // Newton-Raphson update
-    const newRate = rate - npv / derivativeNpv;
-    
-    // Handle non-convergence
-    if (!isFinite(newRate) || isNaN(newRate)) {
-      console.error("IRR calculation did not converge");
-      return null;
-    }
-    
-    rate = newRate;
-  }
-  
-  console.warn("IRR calculation reached maximum iterations without converging");
-  return rate * 100; // Return best approximation
+// Fallback formatters - replace with your actual implementations if they exist elsewhere
+const formatDateFallback = (dateString: string | null): string => {
+  if (!dateString) return '-';
+  const parts = dateString.split('-');
+  if (parts.length !== 2) return dateString; // Expect YYYY-MM
+  const year = parseInt(parts[0]);
+  const month = parseInt(parts[1]);
+  if (isNaN(year) || isNaN(month)) return dateString;
+  const dateObj = new Date(year, month - 1);
+  if (isNaN(dateObj.getTime())) return dateString;
+  return dateObj.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+};
+
+const formatCurrencyFallback = (amount: number | null): string => {
+  if (amount === null || amount === undefined) return '-';
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency: 'GBP',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(amount);
+};
+
+const formatPercentageFallback = (value: number | null): string => {
+  if (value === null || value === undefined) return '-';
+  return `${value.toFixed(2)}%`;
 };
 
 // Main component
@@ -289,7 +204,7 @@ const ReportGenerator: React.FC = (): React.ReactNode => {
   
   // State for results
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
-  const [relatedOwners, setRelatedOwners] = useState<ProductOwner[]>([]);
+  const [displayedProductOwners, setDisplayedProductOwners] = useState<ProductOwner[]>([]);
   const [totalValuation, setTotalValuation] = useState<number | null>(null);
   const [totalIRR, setTotalIRR] = useState<number | null>(null);
   const [valuationDate, setValuationDate] = useState<string | null>(null);
@@ -308,29 +223,33 @@ const ReportGenerator: React.FC = (): React.ReactNode => {
       try {
         const [
           clientGroupsRes,
-          productsRes,
-          fundsRes
+          allProductsRes,
+          fundsRes,
+          actualProductOwnersRes
         ] = await Promise.all([
           api.get('/client_groups'),
           api.get('/client_products'),
-          api.get('/funds')
+          api.get('/funds'),
+          api.get('/product_owners')
         ]);
         
-        setClientGroups(clientGroupsRes.data);
-        setProducts(productsRes.data);
-        setFundData(fundsRes.data);
+        setClientGroups(clientGroupsRes.data || []);
+        setProducts(allProductsRes.data || []);
+        setFundData(fundsRes.data || []);
         
-        // For product owners, we'll use client_groups since those are the entities that own products
-        setProductOwners(clientGroupsRes.data.map((group: ClientGroup) => ({
-          id: group.id,
-          name: group.name,
-          type: 'client_group'
-        })));
+        if (actualProductOwnersRes && actualProductOwnersRes.data) {
+          setProductOwners(actualProductOwnersRes.data.map((owner: any) => ({
+            id: owner.id,
+            name: owner.name,
+          })) || []);
+        } else {
+          setProductOwners([]);
+        }
         
         setError(null);
       } catch (err: any) {
         console.error('Error fetching initial data:', err);
-        setError(err.response?.data?.detail || 'Failed to load data');
+        setError(err.response?.data?.detail || 'Failed to load initial data');
       } finally {
         setIsLoading(false);
       }
@@ -339,757 +258,543 @@ const ReportGenerator: React.FC = (): React.ReactNode => {
     fetchInitialData();
   }, [api]);
   
-  // First, add a function to directly fetch the latest IRR values from the API
-  const fetchLatestIRRValues = async (portfolioFundIds: number[]) => {
-    try {
-      // Create an array of promises for fetching IRR values for each portfolio fund
-      const irrPromises = portfolioFundIds.map(pfId => 
-        api.get(`/portfolio_funds/${pfId}/latest-irr`)
-      );
-      
-      // Execute all promises in parallel
-      const irrResponses = await Promise.all(irrPromises);
-      
-      // Extract the IRR values from the responses
-      const irrValues = irrResponses.map(response => response.data);
-      return irrValues;
-    } catch (error) {
-      console.error("Error fetching IRR values:", error);
-      return [];
+  // useEffect to update Product Owners displayed in "Related Items"
+  useEffect(() => {
+    const updateDisplayedOwners = async () => {
+      let ownersToDisplay: ProductOwner[] = [];
+      const ownerIdSet = new Set<number>();
+
+      // Add directly selected product owners
+      if (selectedProductOwners.length > 0) {
+        selectedProductOwners.forEach(spo => {
+          const fullOwner = productOwners.find(po => po.id === spo.id);
+          if (fullOwner && !ownerIdSet.has(fullOwner.id)) {
+            ownersToDisplay.push(fullOwner);
+            ownerIdSet.add(fullOwner.id);
+          }
+        });
+      }
+
+      // Add product owners related to selected client groups
+      if (selectedClientGroups.length > 0) {
+        for (const scg of selectedClientGroups) {
+          try {
+            const response = await api.get(`/client_group_product_owners?client_group_id=${scg.id}`);
+            if (response.data && response.data.length > 0) {
+              const groupOwnerIds = response.data.map((assoc: any) => assoc.product_owner_id);
+              for (const ownerId of groupOwnerIds) {
+                const fullOwner = productOwners.find(po => po.id === ownerId);
+                if (fullOwner && !ownerIdSet.has(fullOwner.id)) {
+                  ownersToDisplay.push(fullOwner);
+                  ownerIdSet.add(fullOwner.id);
+                }
+              }
+            }
+          } catch (err) {
+            console.error(`Failed to fetch product owners for client group ${scg.id}:`, err);
+          }
+        }
+      }
+      setDisplayedProductOwners(ownersToDisplay);
+    };
+
+    if (productOwners.length > 0 || selectedClientGroups.length > 0) { // Run if product owners are loaded or client groups are selected
+      updateDisplayedOwners();
+    } else {
+      setDisplayedProductOwners([]); // Clear if no selections and no owners loaded
     }
-  };
+  }, [selectedProductOwners, selectedClientGroups, productOwners, api]);
+
+  // NEW useEffect for instant "Related Products" display (REQ 3)
+  useEffect(() => {
+    const updateRelatedProducts = async () => {
+      let productsToDisplay: Product[] = [];
+      const displayedProductIds = new Set<number>();
+
+      // 1. Directly selected products
+      for (const sp of selectedProducts) {
+        const product = products.find(p => p.id === sp.id);
+        if (product && !displayedProductIds.has(product.id)) {
+          productsToDisplay.push(product);
+          displayedProductIds.add(product.id);
+        }
+      }
+
+      // 2. Products from selected client groups
+      if (selectedClientGroups.length > 0) {
+        const clientGroupIds = selectedClientGroups.map(cg => cg.id);
+        const clientGroupProds = products.filter(p => p.client_id && clientGroupIds.includes(p.client_id));
+        clientGroupProds.forEach(p => {
+          if (!displayedProductIds.has(p.id)) {
+            productsToDisplay.push(p);
+            displayedProductIds.add(p.id);
+          }
+        });
+      }
+
+      // 3. Products from selected product owners
+      if (selectedProductOwners.length > 0) {
+        for (const spo of selectedProductOwners) {
+          try {
+            const response = await api.get(`/product_owners/${spo.id}/products`);
+            if (response.data && Array.isArray(response.data)) {
+              const ownerSpecificProducts = response.data as Product[];
+              ownerSpecificProducts.forEach(p => {
+                if (!displayedProductIds.has(p.id)) {
+                  productsToDisplay.push(p); // Add the full product object
+                  displayedProductIds.add(p.id);
+                }
+              });
+            }
+          } catch (err) {
+            console.error(`Failed to fetch products for PO ${spo.id} (report gen):`, err);
+            // Optionally, show a partial error or decide if report can proceed
+          }
+        }
+      }
+      setRelatedProducts(productsToDisplay);
+    };
+    
+    // Run when selections change or the main product list is available
+    // products.length check ensures we don't run with an empty lookup list
+    if (products.length > 0 || selectedProductOwners.length > 0 ) { // also run if product owners selected, as they fetch their own products
+        updateRelatedProducts();
+    } else {
+        setRelatedProducts([]); // Clear if no relevant selections
+    }
+  }, [selectedProducts, selectedClientGroups, selectedProductOwners, products, api]);
+
+  const calculateIRR = (cashFlows: {date: Date, amount: number}[], maxIterations = 100, precision = 0.000001): number | null => {
+    if (cashFlows.length < 2 || cashFlows.filter(cf => cf.amount !== 0).length < 2) {
+      console.warn("IRR calculation requires at least two non-zero cash flows.");
+      return null;
+    }
+    const sortedFlows = [...cashFlows].sort((a, b) => a.date.getTime() - b.date.getTime());
+    const firstFlowDate = sortedFlows[0].date;
   
-  // Modify the generateReport function to use the API first and fall back to calculation
+    let rate = 0.1; // Initial guess
+    for (let i = 0; i < maxIterations; i++) {
+      let npv = 0;
+      let derivative = 0;
+      for (const flow of sortedFlows) {
+        const years = (flow.date.getTime() - firstFlowDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+        npv += flow.amount / Math.pow(1 + rate, years);
+        if (rate > -1) { 
+          derivative += -years * flow.amount / Math.pow(1 + rate, years + 1);
+        } else {
+          return null; 
+        }
+      }
+      if (Math.abs(npv) < precision) return rate * 100; 
+      if (derivative === 0) return null; 
+      rate -= npv / derivative;
+      if (rate < -0.99) rate = -0.99; 
+    }
+    console.warn("IRR did not converge after max iterations.");
+    return null; 
+  };
+
   const generateReport = async () => {
     if (selectedClientGroups.length === 0 && selectedProductOwners.length === 0 && selectedProducts.length === 0) {
-      setDataError('Please select at least one client group, product owner, or product');
+      setDataError('Please select at least one client group, product owner, or product to generate a report.');
       return;
     }
     
     setIsCalculating(true);
     setDataError(null);
+    setMonthlyTransactions([]);
+    setTotalValuation(null);
+    setValuationDate(null);
+    setTotalIRR(null);
     
     try {
-      // Get all related products based on selections
-      const productIds: number[] = [];
-      const ownerIds: number[] = [];
-      
-      // Add directly selected products
+      // --- Step 1: Consolidate all Product IDs for the Report (REQ 1) ---
+      const productIdsForReport = new Set<number>();
+      // This will store full product objects fetched for product owners if they are not in the main 'products' list
+      const additionalProductsData: Product[] = []; 
+
+      // 1a. Add directly selected products
       if (selectedProducts.length > 0) {
-        productIds.push(...selectedProducts.map(p => p.id));
+        selectedProducts.forEach(p => productIdsForReport.add(p.id));
       }
       
-      // Add products from selected client groups
+      // 1b. Add products from selected client groups
       if (selectedClientGroups.length > 0) {
         const clientGroupIds = selectedClientGroups.map(cg => cg.id);
-        const clientProducts = products.filter(p => clientGroupIds.includes(p.client_id));
-        productIds.push(...clientProducts.map(p => p.id));
-        ownerIds.push(...clientGroupIds);
+        const clientGroupAttachedProducts = products.filter(p => p.client_id && clientGroupIds.includes(p.client_id));
+        clientGroupAttachedProducts.forEach(p => productIdsForReport.add(p.id));
       }
       
-      // Add products from selected product owners
+      // 1c. Add products from selected product owners
       if (selectedProductOwners.length > 0) {
-        const ownerProductIds = selectedProductOwners.map(po => po.id);
-        const ownerProducts = products.filter(p => ownerProductIds.includes(p.client_id));
-        productIds.push(...ownerProducts.map(p => p.id));
-        ownerIds.push(...ownerProductIds);
+        for (const spo of selectedProductOwners) {
+          try {
+            const response = await api.get(`/product_owners/${spo.id}/products`);
+            if (response.data && Array.isArray(response.data)) {
+              const ownerSpecificProducts = response.data as Product[];
+              ownerSpecificProducts.forEach(p => {
+                productIdsForReport.add(p.id);
+                // If this product isn't in our main 'products' list, store its details
+                if (!products.find(mainP => mainP.id === p.id)) {
+                    additionalProductsData.push(p);
+                }
+              });
+            }
+          } catch (err) {
+            console.error(`Failed to fetch products for PO ${spo.id} (report gen):`, err);
+            // Optionally, show a partial error or decide if report can proceed
+          }
+        }
       }
       
-      // Remove duplicates
-      const uniqueProductIds = [...new Set(productIds)];
-      const uniqueOwnerIds = [...new Set(ownerIds)];
+      const uniqueProductIds = Array.from(productIdsForReport);
       
       if (uniqueProductIds.length === 0) {
-        setDataError('No products found for your selection');
+        setDataError('No products found for your selection to generate the report.');
         setIsCalculating(false);
         return;
       }
-      
-      // Fetch portfolio funds for these products
-      const portfolioIdsResponse = await Promise.all(
-        uniqueProductIds.map(id => api.get(`/client_products/${id}`))
-      );
-      
-      const portfolioIds = portfolioIdsResponse
-        .map(res => res.data.portfolio_id)
-        .filter(id => id !== null);
+      console.log("Unique Product IDs for report:", uniqueProductIds);
+
+      // --- Step 2: Get Portfolio IDs for all selected products ---
+      // Combine main products list with any additionally fetched products for a full lookup
+      const comprehensiveProductList = [...products, ...additionalProductsData.filter(ap => !products.find(mp => mp.id === ap.id))];
+
+      const portfolioIds = uniqueProductIds.map(productId => {
+        const productDetails = comprehensiveProductList.find(p => p.id === productId);
+        return productDetails?.portfolio_id;
+      }).filter(id => id != null) as number[];
       
       if (portfolioIds.length === 0) {
-        setDataError('No portfolios found for selected products');
+        setDataError('No portfolios associated with the selected products.');
         setIsCalculating(false);
         return;
       }
+      const uniquePortfolioIds = [...new Set(portfolioIds)];
+      console.log("Unique Portfolio IDs for report:", uniquePortfolioIds);
       
-      // Fetch portfolio funds
+      // --- Step 3: Fetch all PortfolioFunds for these Portfolios ---
       const portfolioFundsResponses = await Promise.all(
-        portfolioIds.map(id => api.get(`/portfolio_funds?portfolio_id=${id}`))
+        uniquePortfolioIds.map(id => api.get(`/portfolio_funds?portfolio_id=${id}`))
       );
+      const allPortfolioFunds = portfolioFundsResponses.flatMap(res => res.data as PortfolioFund[]);
       
-      const allPortfolioFunds = portfolioFundsResponses.flatMap(res => res.data);
-      
-      // Instead of filtering out inactive funds, identify them for later use
+      if (allPortfolioFunds.length === 0) {
+        setDataError('No funds found for the selected portfolios.');
+        setIsCalculating(false);
+        return;
+      }
+      console.log("Total PortfolioFunds fetched:", allPortfolioFunds.length);
+
+      // --- Step 4: Identify Inactive PortfolioFunds (REQ 2) ---
       const inactiveFundIds = new Set<number>();
       allPortfolioFunds.forEach(fund => {
-        if (fund.status !== 'active' && fund.status !== undefined && fund.status !== null) {
+        if (fund.id && fund.status && fund.status !== 'active') {
           inactiveFundIds.add(fund.id);
         }
       });
-      
-      console.log("All Portfolio Funds:", allPortfolioFunds.length);
-      console.log("Inactive Portfolio Funds:", inactiveFundIds.size);
-      
-      if (inactiveFundIds.size > 0) {
-        const inactiveFunds = allPortfolioFunds.filter(fund => inactiveFundIds.has(fund.id));
-        
-        // Group inactive funds by status
-        const fundsByStatus = new Map<string, PortfolioFund[]>();
-        inactiveFunds.forEach(fund => {
-          const status = fund.status || 'unknown';
-          if (!fundsByStatus.has(status)) {
-            fundsByStatus.set(status, []);
-          }
-          fundsByStatus.get(status)!.push(fund);
-        });
-        
-        console.warn("Inactive funds by status (valuations will be set to zero):");
-        fundsByStatus.forEach((funds, status) => {
-          console.warn(`Status: ${status}, Count: ${funds.length}, Fund IDs: ${funds.map(f => f.id).join(', ')}`);
-        });
-      }
-      
-      setPortfolioFunds(allPortfolioFunds);
-      
-      // After fetching portfolio funds
-      console.log("Portfolio Funds:", allPortfolioFunds);
-      
-      // Check for duplicate portfolio funds
-      const portfolioFundMap = new Map();
-      const duplicateFunds: PortfolioFund[] = [];
-      
-      allPortfolioFunds.forEach(fund => {
-        if (portfolioFundMap.has(fund.id)) {
-          duplicateFunds.push(fund);
-        } else {
-          portfolioFundMap.set(fund.id, fund);
-        }
-      });
-      
-      if (duplicateFunds.length > 0) {
-        console.warn(`Found ${duplicateFunds.length} duplicate portfolio funds:`, duplicateFunds);
-      } else {
-        console.log("No duplicate portfolio funds detected");
-      }
-      
-      // Fetch monthly transactions for all portfolio funds
-      const portfolioFundIds = [...portfolioFundMap.keys()]; // Use unique fund IDs only
-      
-      if (portfolioFundIds.length === 0) {
-        setDataError('No funds found for selected portfolios');
-        setIsCalculating(false);
-        return;
-      }
-      
-      console.log("Portfolio Fund IDs:", portfolioFundIds);
-      
-      // Fetch activity logs for all portfolio funds
-      const activityLogsPromises = portfolioFundIds.map(pfId => 
+      console.log("Inactive PortfolioFund IDs:", Array.from(inactiveFundIds));
+
+      // --- Step 5: Fetch Activity Logs and Valuations ---
+      const uniquePortfolioFundIdsForAPI = [...new Set(allPortfolioFunds.map(pf => pf.id))];
+
+      const activityLogsPromises = uniquePortfolioFundIdsForAPI.map(pfId => 
         api.get(`/holding_activity_logs?portfolio_fund_id=${pfId}`)
       );
-      
-      const activityLogsResponses = await Promise.all(activityLogsPromises);
-      const allActivityLogs = activityLogsResponses.flatMap(res => res.data);
-      
-      console.log("All Activity Logs:", allActivityLogs.length);
-      
-      // Include all activity logs, but track which ones are for inactive funds
-      const inactiveFundActivityLogs = allActivityLogs.filter(log => 
-        inactiveFundIds.has(log.portfolio_fund_id)
-      );
-      
-      if (inactiveFundActivityLogs.length > 0) {
-        console.log(`Activity logs for inactive funds: ${inactiveFundActivityLogs.length}. These will be included in monthly transactions.`);
+      const allActivityLogs = (await Promise.all(activityLogsPromises)).flatMap(res => res.data);
+      console.log("Total Activity Logs fetched:", allActivityLogs.length);
+
+      const latestValuationsViewResponse = await api.get('/all_latest_fund_valuations');
+      const latestValuationFromViewMap = new Map<number, { value: number, valuation_date: string }>();
+      if (latestValuationsViewResponse.data && Array.isArray(latestValuationsViewResponse.data)) {
+          latestValuationsViewResponse.data.forEach((val: any) => {
+              if (val.portfolio_fund_id != null && val.value != null && val.valuation_date != null) {
+                  latestValuationFromViewMap.set(val.portfolio_fund_id, { value: parseFloat(val.value), valuation_date: val.valuation_date });
+              }
+          });
       }
+      console.log("Latest Valuations from View loaded:", latestValuationFromViewMap.size);
       
-      // Log some sample activity logs to see their structure
-      if (allActivityLogs.length > 0) {
-        console.log("Sample activity log:", allActivityLogs[0]);
-        
-        // Count activity logs by month and status (active/inactive)
-        const logsByMonthAndStatus = new Map<string, {active: number, inactive: number}>();
-        allActivityLogs.forEach(log => {
-          if (log.activity_timestamp) {
-            const date = new Date(log.activity_timestamp);
-            const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            
-            if (!logsByMonthAndStatus.has(yearMonth)) {
-              logsByMonthAndStatus.set(yearMonth, {active: 0, inactive: 0});
-            }
-            
-            const monthData = logsByMonthAndStatus.get(yearMonth)!;
-            if (inactiveFundIds.has(log.portfolio_fund_id)) {
-              monthData.inactive++;
-            } else {
-              monthData.active++;
-            }
-          }
-        });
-        
-        console.log("Activity logs by month and status:", 
-          Object.fromEntries(
-            Array.from(logsByMonthAndStatus.entries()).map(([month, data]) => 
-              [month, {active: data.active, inactive: data.inactive}]
-            )
-          )
-        );
-        
-        // Track investment amounts by product and month for debugging
-        const investmentsByProductAndMonth = new Map<string, number>();
-        
-        allActivityLogs.forEach(log => {
-          if (log.activity_timestamp && (log.activity_type === 'Investment' || log.activity_type === 'RegularInvestment' || log.activity_type === 'GovernmentUplift')) {
-            const date = new Date(log.activity_timestamp);
-            const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            const portfolioFundId = log.portfolio_fund_id;
-            const key = `${yearMonth}-${portfolioFundId}`;
-            const amount = parseFloat(log.amount) || 0;
-            
-            if (amount > 0) {
-              investmentsByProductAndMonth.set(key, (investmentsByProductAndMonth.get(key) || 0) + amount);
-              console.log(`Investment: ${yearMonth}, PF ID: ${portfolioFundId}, Amount: ${amount}, Running total: ${investmentsByProductAndMonth.get(key)}, Inactive: ${inactiveFundIds.has(portfolioFundId)}`);
-            }
-          }
-        });
-        
-        console.log("Investments by product and month:", Object.fromEntries(investmentsByProductAndMonth));
-      }
-      
-      // Fetch valuations for all portfolio funds
-      const valuationsPromises = portfolioFundIds.map(pfId => 
+      // Fetch all historical valuations for the monthly table
+      const historicalValuationsPromises = uniquePortfolioFundIdsForAPI.map(pfId => 
         api.get(`/fund_valuations?portfolio_fund_id=${pfId}`)
       );
-      
-      const valuationsResponses = await Promise.all(valuationsPromises);
-      const allValuations = valuationsResponses.flatMap(res => res.data);
-      
-      console.log("All Valuations:", allValuations.length);
-      
-      // Include all valuations, but track which ones are for inactive funds
-      const inactiveFundValuations = allValuations.filter(v => 
-        inactiveFundIds.has(v.portfolio_fund_id)
-      );
-      
-      if (inactiveFundValuations.length > 0) {
-        console.log(`Valuations for inactive funds: ${inactiveFundValuations.length}. These will be set to 0 in the latest month.`);
-      }
-      
-      // Group transactions by month, summing across all entities
-      const transactionsByMonth = new Map<string, {
-        investments: number;
-        withdrawals: number;
-        switchIn: number;
-        switchOut: number;
-        valuation: number;
+      const allHistoricalValuations = (await Promise.all(historicalValuationsPromises)).flatMap(res => res.data);
+      console.log("Total Historical Valuations fetched:", allHistoricalValuations.length);
+
+      // --- Step 6: Process Transactions and Valuations by Month ---
+      const transactionsByMonthMap = new Map<string, {
+        investments: number; withdrawals: number; switchIn: number; switchOut: number; valuation: number;
       }>();
       
-      // Process activity logs
-      if (allActivityLogs.length === 0) {
-        console.warn("No activity logs found for the selected funds");
-      } else {
-        // Check for potential duplicate activity logs
-        const potentialDuplicates = new Map<string, any[]>();
-        
-        allActivityLogs.forEach(log => {
-          if (!log.activity_timestamp) return;
-          
-          // Create a key based on fund ID, date and amount
-          const date = new Date(log.activity_timestamp);
-          const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD format
-          const key = `${log.portfolio_fund_id}-${dateStr}-${log.amount}-${log.activity_type}`;
-          
-          if (!potentialDuplicates.has(key)) {
-            potentialDuplicates.set(key, []);
-          }
-          
-          potentialDuplicates.get(key)!.push(log);
-        });
-        
-        // Check for duplicates
-        let duplicatesFound = 0;
-        potentialDuplicates.forEach((logs, key) => {
-          if (logs.length > 1) {
-            console.warn(`Potential duplicate logs found for key ${key}:`, logs);
-            duplicatesFound++;
-          }
-        });
-        
-        if (duplicatesFound > 0) {
-          console.warn(`Found ${duplicatesFound} potential duplicate activity log groups`);
-        } else {
-          console.log("No duplicate activity logs detected");
-        }
-      }
-      
-      // Group by month and sum all activity
       allActivityLogs.forEach((log: any) => {
-        if (!log.activity_timestamp) {
-          console.warn("Activity log without date:", log);
-          return;
-        }
-        
-        // Skip logs with no amount or zero amount
-        if (!log.amount || parseFloat(log.amount) === 0) {
-          console.debug(`Skipping log with zero/null amount: ${log.activity_type}`, log);
-          return;
-        }
-        
+        if (!log.activity_timestamp || !log.amount) return; // Skip logs without timestamp or amount
+        const parsedAmount = parseFloat(log.amount);
+        if (parsedAmount === 0) return; // Skip zero amount logs
+
         const date = new Date(log.activity_timestamp);
         const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         
-        if (!transactionsByMonth.has(yearMonth)) {
-          transactionsByMonth.set(yearMonth, {
-            investments: 0,
-            withdrawals: 0,
-            switchIn: 0,
-            switchOut: 0,
-            valuation: 0
-          });
+        if (!transactionsByMonthMap.has(yearMonth)) {
+          transactionsByMonthMap.set(yearMonth, { investments: 0, withdrawals: 0, switchIn: 0, switchOut: 0, valuation: 0 });
         }
+        const monthData = transactionsByMonthMap.get(yearMonth)!;
         
-        const monthData = transactionsByMonth.get(yearMonth)!;
-        
-        // Sum all activity by type
         switch(log.activity_type) {
-          case 'Investment':
-          case 'RegularInvestment':
-          case 'GovernmentUplift':
-            monthData.investments += Math.abs(parseFloat(log.amount) || 0);
-            break;
-          case 'Withdrawal':
-            monthData.withdrawals += Math.abs(parseFloat(log.amount) || 0);
-            break;
-          case 'SwitchIn':
-            monthData.switchIn += Math.abs(parseFloat(log.amount) || 0);
-            break;
-          case 'SwitchOut':
-            monthData.switchOut += Math.abs(parseFloat(log.amount) || 0);
-            break;
-          default:
-            console.warn(`Unknown activity type: ${log.activity_type} for log:`, log);
+          case 'Investment': case 'RegularInvestment': case 'GovernmentUplift': monthData.investments += parsedAmount; break;
+          case 'Withdrawal': monthData.withdrawals += parsedAmount; break; // Assuming withdrawals are positive in DB
+          case 'SwitchIn': monthData.switchIn += parsedAmount; break;
+          case 'SwitchOut': monthData.switchOut += parsedAmount; break;
         }
       });
-      
-      // Find the latest valuation for each month
-      const latestValuationDatesByMonth = new Map<string, Date>();
-      
-      allValuations.forEach((valuation: any) => {
-        if (!valuation.valuation_date) {
-          console.warn("Valuation without date:", valuation);
-          return;
-        }
-        
-        const date = new Date(valuation.valuation_date);
-        const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        
-        const existingLatestDate = latestValuationDatesByMonth.get(yearMonth);
-        if (!existingLatestDate || date > existingLatestDate) {
-          latestValuationDatesByMonth.set(yearMonth, date);
-        }
-      });
-      
-      // Track the latest valuation for each portfolio fund in each month
-      const monthlyFundValuations = new Map<string, Map<number, number>>();
-      
-      // Group valuations by month and portfolio fund ID
-      allValuations.forEach((v: any) => {
-        if (!v.valuation_date || !v.portfolio_fund_id) {
-          console.warn("Valuation missing date or portfolio fund ID:", v);
-          return;
-        }
-        
-        const valuationDate = new Date(v.valuation_date);
-        const yearMonth = `${valuationDate.getFullYear()}-${String(valuationDate.getMonth() + 1).padStart(2, '0')}`;
-        const pfId = v.portfolio_fund_id;
-        
-        // Initialize month if needed
-        if (!monthlyFundValuations.has(yearMonth)) {
-          monthlyFundValuations.set(yearMonth, new Map<number, number>());
-        }
-        
-        const fundValuationsForMonth = monthlyFundValuations.get(yearMonth)!;
-        
-        // For inactive funds, set valuation to zero
-        if (inactiveFundIds.has(pfId)) {
-          // Use zero valuation for inactive funds
-          fundValuationsForMonth.set(pfId, 0);
-        } 
-        // For active funds, use the market value
-        else if (!fundValuationsForMonth.has(pfId) || valuationDate >= latestValuationDatesByMonth.get(yearMonth)!) {
-          fundValuationsForMonth.set(pfId, v.market_value || 0);
-        }
-      });
-      
-      // Sum valuations for each month across all portfolio funds
-      for (const [yearMonth, fundValuations] of monthlyFundValuations.entries()) {
-        // Initialize month in transactions if needed
-        if (!transactionsByMonth.has(yearMonth)) {
-          transactionsByMonth.set(yearMonth, {
-            investments: 0,
-            withdrawals: 0,
-            switchIn: 0,
-            switchOut: 0,
-            valuation: 0
-          });
-        }
-        
-        // For the latest month, add all inactive funds with zero valuation if they're not already there
-        if (yearMonth === Array.from(monthlyFundValuations.keys()).sort().pop()) {
-          inactiveFundIds.forEach(fundId => {
-            if (!fundValuations.has(fundId)) {
-              fundValuations.set(fundId, 0);
-              console.log(`Added missing inactive fund ${fundId} to latest month ${yearMonth} with zero valuation`);
-            } else {
-              fundValuations.set(fundId, 0);
-              console.log(`Reset valuation to zero for inactive fund ${fundId} in latest month ${yearMonth}`);
-            }
-          });
-        }
-        
-        // Sum valuations across all funds for this month
-        const totalValuation = Array.from(fundValuations.entries())
-          .reduce((sum, [fundId, value]) => {
-            // Double-check: if it's an inactive fund in the latest month, ensure it's zero
-            if (yearMonth === Array.from(monthlyFundValuations.keys()).sort().pop() && inactiveFundIds.has(fundId)) {
-              return sum; // Don't add inactive funds to the latest month's valuation
-            }
-            return sum + value;
-          }, 0);
-        
-        // Update the month data
-        const monthData = transactionsByMonth.get(yearMonth)!;
-        monthData.valuation = totalValuation;
-        
-        console.log(`Month ${yearMonth} - Portfolio Funds with valuations: ${fundValuations.size}, Total: ${totalValuation}`);
-      }
-      
-      console.log("Transactions by Month:", Object.fromEntries(transactionsByMonth));
-      
-      // Group investments by product ID for debugging
-      const investmentsByProduct = new Map<number, {
-        investments: number;
-        portfolioFunds: number[];
-        productName: string;
-      }>();
-      
-      // Set related products and owners
-      const relatedProductsList = products.filter(p => uniqueProductIds.includes(p.id));
-      
-      // Get product names
-      const productIdToName = new Map<number, string>();
-      relatedProductsList.forEach(p => {
-        productIdToName.set(p.id, p.product_name);
-      });
-      
-      // Count activities by product
-      allActivityLogs.forEach(log => {
-        if (!log.activity_timestamp || !log.portfolio_fund_id) return;
-        
-        // Only count investments
-        if (['Investment', 'RegularInvestment', 'GovernmentUplift'].includes(log.activity_type)) {
-          // Find which product this portfolio fund belongs to
-          const portfolioFund = allPortfolioFunds.find(pf => pf.id === log.portfolio_fund_id);
-          if (!portfolioFund) return;
+
+      // Group historical valuations by month and sum them up
+      const monthlyHistoricalValuationSums = new Map<string, number>(); // yearMonth -> total historical value
+      const distinctValuationDatesByMonth = new Map<string, Date>(); // To find the latest date in a historical month
+
+      allHistoricalValuations.forEach((v: any) => {
+          if (!v.valuation_date || v.portfolio_fund_id == null || v.value == null) return;
+          const valDate = new Date(v.valuation_date);
+          const yearMonth = `${valDate.getFullYear()}-${String(valDate.getMonth() + 1).padStart(2, '0')}`;
           
-          // Find the product that owns this portfolio
-          const product = relatedProductsList.find(p => p.portfolio_id === portfolioFund.portfolio_id);
-          if (!product) return;
-          
-          const productId = product.id;
-          const amount = parseFloat(log.amount) || 0;
-          
-          if (!investmentsByProduct.has(productId)) {
-            investmentsByProduct.set(productId, {
-              investments: 0,
-              portfolioFunds: [],
-              productName: productIdToName.get(productId) || `Product ID ${productId}`
+          const currentVal = parseFloat(v.value);
+          // This logic assumes we sum all valuation records within a month.
+          // If you need only month-end, the query or processing here needs adjustment.
+          // For simplicity, we sum them now. A more precise approach would be to pick one valuation per fund per month (e.g., latest).
+          monthlyHistoricalValuationSums.set(yearMonth, (monthlyHistoricalValuationSums.get(yearMonth) || 0) + currentVal);
+
+          if (!distinctValuationDatesByMonth.has(yearMonth) || valDate > distinctValuationDatesByMonth.get(yearMonth)!) {
+            distinctValuationDatesByMonth.set(yearMonth, valDate);
+          }
+      });
+      
+      const allReportYearMonths = new Set<string>([...transactionsByMonthMap.keys(), ...monthlyHistoricalValuationSums.keys()]);
+      const sortedReportYearMonths = Array.from(allReportYearMonths).sort();
+      const latestReportCycleMonth = sortedReportYearMonths.length > 0 ? sortedReportYearMonths[sortedReportYearMonths.length - 1] : null;
+
+      // Populate valuations in transactionsByMonthMap
+      sortedReportYearMonths.forEach(yearMonth => {
+        if (!transactionsByMonthMap.has(yearMonth)) { // Ensure month entry exists if only valuations occurred
+            transactionsByMonthMap.set(yearMonth, { investments: 0, withdrawals: 0, switchIn: 0, switchOut: 0, valuation: 0 });
+        }
+        const monthData = transactionsByMonthMap.get(yearMonth)!;
+        
+        if (yearMonth === latestReportCycleMonth) { // For the LATEST month in the report cycle
+            let latestMonthValuation = 0;
+            uniquePortfolioFundIdsForAPI.forEach(pfId => {
+                if (inactiveFundIds.has(pfId)) { // REQ 2: Inactive funds = 0 for current valuation
+                    latestMonthValuation += 0;
+                } else {
+                    const latestValData = latestValuationFromViewMap.get(pfId);
+                    latestMonthValuation += latestValData ? latestValData.value : 0;
+                }
             });
-          }
-          
-          const productData = investmentsByProduct.get(productId)!;
-          productData.investments += amount;
-          if (!productData.portfolioFunds.includes(log.portfolio_fund_id)) {
-            productData.portfolioFunds.push(log.portfolio_fund_id);
-          }
+            monthData.valuation = latestMonthValuation;
+        } else { // For HISTORICAL months
+            monthData.valuation = monthlyHistoricalValuationSums.get(yearMonth) || 0;
         }
       });
       
-      // Log investments by product
-      console.log("Investments by product:");
-      investmentsByProduct.forEach((data, productId) => {
-        console.log(`Product ${data.productName} (ID: ${productId}): £${data.investments.toFixed(2)}, Fund IDs: ${data.portfolioFunds.join(', ')}`);
-      });
-      
-      // Convert to sorted array for display
-      const sortedTransactions = Array.from(transactionsByMonth.entries())
-        .map(([yearMonth, data]) => ({
+      // --- Step 7: Final Report Data Assembly & State Updates ---
+      const finalMonthlyTransactions = sortedReportYearMonths.map(yearMonth => {
+        const data = transactionsByMonthMap.get(yearMonth)!;
+        return {
           year_month: yearMonth,
           total_investment: data.investments,
           total_withdrawal: data.withdrawals,
           total_switch_in: data.switchIn,
           total_switch_out: data.switchOut,
-          net_flow: data.investments - data.withdrawals + data.switchIn - data.switchOut,
+          net_flow: data.investments - data.withdrawals + data.switchIn - data.switchOut, // Note: sign of withdrawal matters
           valuation: data.valuation
-        }))
-        .sort((a, b) => a.year_month.localeCompare(b.year_month));
+        };
+      });
+      setMonthlyTransactions(finalMonthlyTransactions);
+
+      // Calculate overall "Total Valuation" for the summary box (REQ 2 applied)
+      let summaryTotalValuation = 0;
+      let mostRecentValuationDateForActiveFunds: Date | null = null;
+
+      uniquePortfolioFundIdsForAPI.forEach(pfId => {
+          if (!inactiveFundIds.has(pfId)) { // Only sum active funds for the summary
+              const latestVal = latestValuationFromViewMap.get(pfId);
+              if (latestVal) {
+                  summaryTotalValuation += latestVal.value;
+                  const currentValDate = new Date(latestVal.valuation_date);
+                  if (!mostRecentValuationDateForActiveFunds || currentValDate > mostRecentValuationDateForActiveFunds) {
+                      mostRecentValuationDateForActiveFunds = currentValDate;
+                  }
+              }
+          }
+      });
+      setTotalValuation(summaryTotalValuation);
       
-      console.log("Sorted Transactions:", sortedTransactions);
-      
-      setMonthlyTransactions(sortedTransactions);
-      
-      // Check if we have transactions to work with
-      if (sortedTransactions.length === 0) {
-        console.warn("No transactions found for the selected items");
-        setDataError('No transactions found for the selected items');
-        setIsCalculating(false);
-        return;
+      let formattedValuationDate: string | null = latestReportCycleMonth; // Default/fallback
+      if (mostRecentValuationDateForActiveFunds) { // Check if it's not null
+          // Now TypeScript knows it's a Date object here
+          formattedValuationDate = `${mostRecentValuationDateForActiveFunds.getFullYear()}-${String(mostRecentValuationDateForActiveFunds.getMonth() + 1).padStart(2, '0')}`;
       }
+      setValuationDate(formattedValuationDate);
       
-      // Calculate total valuation from most recent month
-      if (sortedTransactions.length > 0) {
-        const latestMonth = sortedTransactions[sortedTransactions.length - 1];
-        
-        // For the latest month, validate the valuation excludes inactive funds
-        const latestMonthKey = latestMonth.year_month;
-        const latestMonthFundValuations = monthlyFundValuations.get(latestMonthKey);
-        
-        if (latestMonthFundValuations) {
-          // Calculate total excluding inactive funds
-          const validatedTotalValuation = Array.from(latestMonthFundValuations.entries())
-            .filter(([fundId, _]) => !inactiveFundIds.has(fundId))
-            .reduce((sum, [_, value]) => sum + value, 0);
-          
-          console.log(`Latest month (${latestMonthKey}) total valuation: ${validatedTotalValuation} (excluding ${inactiveFundIds.size} inactive funds)`);
-          
-          // Update the total valuation
-          setTotalValuation(validatedTotalValuation);
-        } else {
-          setTotalValuation(latestMonth.valuation);
-        }
-        
-        setValuationDate(latestMonth.year_month);
-        
-        // Calculate IRR using our consolidated monthly transaction data
-        if (sortedTransactions.length > 1) {
+      // IRR Calculation (REQ 2 applied for terminal value)
+      if (finalMonthlyTransactions.length > 0) {
           const cashFlows: {date: Date, amount: number}[] = [];
-          
-          // Process each monthly transaction into a cash flow
-          sortedTransactions.forEach((transaction, index) => {
-            // Create date object for the middle of the month
-            const [year, month] = transaction.year_month.split('-');
-            const date = new Date(parseInt(year), parseInt(month) - 1, 15);
-            
-            // Skip transactions with zero or invalid values
-            if (isNaN(date.getTime())) {
-              console.warn(`Invalid date for transaction: ${transaction.year_month}`);
-              return;
-            }
-            
-            // The first month's valuation is considered an outflow (initial investment)
+        finalMonthlyTransactions.forEach((transaction, index) => {
+            const [yearStr, monthStr] = transaction.year_month.split('-');
+            const year = parseInt(yearStr);
+            const month = parseInt(monthStr) - 1; // JS months are 0-indexed
+
+            // Initial investment: Using net_flow for the first period.
+            // If valuation is positive, it's an "investment" (outflow).
+            // If net_flow is positive (more money in), it's an outflow from investor's perspective.
             if (index === 0) {
-              if (transaction.valuation > 0) {
-                // Initial investment is negative (money going out)
-                cashFlows.push({
-                  date,
-                  amount: -transaction.valuation
-                });
-                console.log(`Added initial investment: ${-transaction.valuation} on ${date.toISOString()}`);
-              } else {
-                console.warn(`First month has zero valuation: ${transaction.year_month}`);
-                
-                // Fall back to using the first month's net flow as the initial investment
-                if (transaction.net_flow > 0) {
-                  cashFlows.push({
-                    date,
-                    amount: -transaction.net_flow
-                  });
-                  console.log(`Added initial net flow as investment: ${-transaction.net_flow} on ${date.toISOString()}`);
+                let initialOutlay = -(transaction.total_investment); // Or more complex logic if needed
+                if (transaction.valuation > 0 && transaction.total_investment === 0 && transaction.total_withdrawal ===0 ) {
+                   initialOutlay = -transaction.valuation; // If first entry is just a valuation
                 }
-              }
+                 if (initialOutlay !==0) cashFlows.push({ date: new Date(year, month, 1), amount: initialOutlay });
             }
             
-            // For intermediate months, add net flow
-            if (index > 0 && index < sortedTransactions.length - 1) {
-              // Add net monthly cash flow (if any)
-              // Investments are negative (money going out), withdrawals are positive (money coming in)
-              const netFlow = -(transaction.net_flow);
-              if (Math.abs(netFlow) > 0.01) {
-                cashFlows.push({
-                  date,
-                  amount: netFlow
-                });
-                console.log(`Added net flow: ${netFlow} on ${date.toISOString()}`);
-              }
+            // Net flows for periods between the first and last.
+            // Positive net_flow (investment) is negative for IRR calc.
+            // Negative net_flow (withdrawal) is positive for IRR calc.
+            if (index > 0 && index < finalMonthlyTransactions.length -1 ) {
+                 if(transaction.net_flow !== 0) cashFlows.push({ date: new Date(year, month, 1), amount: -transaction.net_flow });
             }
-            
-            // For the last month, add the final valuation as a positive cash flow
-            if (index === sortedTransactions.length - 1) {
-              if (transaction.valuation > 0) {
-                // Add a small time offset to the date to avoid same-day cash flows
-                const finalDate = new Date(date);
-                finalDate.setDate(finalDate.getDate() + 1);
-                
-                // Final valuation is positive (money coming in)
-                cashFlows.push({
-                  date: finalDate,
-                  amount: transaction.valuation
-                });
-                console.log(`Added final valuation: ${transaction.valuation} on ${finalDate.toISOString()}`);
-              } else {
-                console.warn(`Last month has zero valuation: ${transaction.year_month}`);
-              }
+
+            // Terminal value: Use the summaryTotalValuation (which respects inactive funds)
+            if (index === finalMonthlyTransactions.length - 1) {
+                 // Add any final period net flow before the terminal valuation
+                 if(transaction.net_flow !== 0 && index !== 0) { // avoid double counting if only one period
+                    cashFlows.push({ date: new Date(year, month, 1), amount: -transaction.net_flow });
+                 }
+                 // Add terminal valuation
+                 if(summaryTotalValuation !== 0) cashFlows.push({ date: new Date(year, month, 28), amount: summaryTotalValuation });
             }
-          });
-          
-          console.log("Cash Flows for IRR calculation:", cashFlows);
-          
-          // Only calculate IRR if we have meaningful cash flows
-          if (cashFlows.length >= 2) {
+        });
+        
+        console.log("Cash Flows for IRR:", cashFlows);
+        if (cashFlows.filter(cf => cf.amount !==0).length >= 2) { // Need at least two non-zero cashflows
+            // Ensure first cashflow is negative for typical IRR scenarios
+            const firstNonZeroIndex = cashFlows.findIndex(cf => cf.amount !== 0);
+            if(firstNonZeroIndex !== -1 && cashFlows[firstNonZeroIndex].amount > 0) {
+                // If first significant cashflow is positive, IRR might be problematic or require adjustment
+                console.warn("First significant cashflow is positive, IRR might be unusual.");
+            }
             try {
-              const irrValue = calculateIRR(cashFlows);
-              
-              if (irrValue !== null) {
+                 const irrValue = calculateIRR(cashFlows); // Your existing calculateIRR function
                 setTotalIRR(irrValue);
-                console.log(`Calculated IRR: ${irrValue}%`);
-              } else {
-                console.error("IRR calculation failed to produce a valid result");
-                setTotalIRR(null);
-              }
-            } catch (err) {
-              console.error('Error calculating IRR:', err);
+            } catch(irrError){
+                 console.error("Error calculating IRR:", irrError);
               setTotalIRR(null);
             }
           } else {
-            console.warn(`Not enough cash flows to calculate IRR: ${cashFlows.length} flows`);
+            console.warn("Not enough distinct cash flows to calculate IRR.");
             setTotalIRR(null);
           }
         } else {
-          console.warn("Only one month of data available, can't calculate IRR");
           setTotalIRR(null);
-        }
       }
-      
-      // Set related products and owners
-      setRelatedProducts(relatedProductsList);
-      
-      const relatedOwnersList = productOwners.filter(po => uniqueOwnerIds.includes(po.id));
-      setRelatedOwners(relatedOwnersList);
       
     } catch (err: any) {
       console.error('Error generating report:', err);
-      setDataError(err.response?.data?.detail || 'Failed to generate report');
+      setDataError(err.response?.data?.detail || 'Failed to generate report. Check console for details.');
     } finally {
       setIsCalculating(false);
     }
   };
   
-  // Format date for display
-  const formatDate = (dateString: string): string => {
-    const [year, month] = dateString.split('-');
-    const date = new Date(parseInt(year), parseInt(month) - 1);
-    return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
-  };
-  
-  // Format currency
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: 'GBP',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(amount);
-  };
-  
-  // Format percentage
-  const formatPercentage = (value: number): string => {
-    return `${value.toFixed(2)}%`;
-  };
-  
+  // Pivoted Table Data Preparation (ensure this is BEFORE the return statement with JSX)
+  const transactionRowLabels = [
+    { key: 'total_investment', label: 'Investment' },
+    { key: 'total_withdrawal', label: 'Withdrawal' },
+    { key: 'total_switch_in', label: 'Switch In' },
+    { key: 'total_switch_out', label: 'Switch Out' },
+    { key: 'net_flow', label: 'Net Flow' },
+    { key: 'valuation', label: 'Valuation' },
+  ];
+
+  const columnMonths = useMemo(() => {
+    if (!monthlyTransactions || monthlyTransactions.length === 0) return [];
+    // Ensure months are sorted chronologically, as they might come from a Set initially
+    return monthlyTransactions.map(mt => mt.year_month).sort((a, b) => a.localeCompare(b));
+  }, [monthlyTransactions]);
+
+  const pivotedTableData = useMemo(() => {
+    if (!monthlyTransactions || monthlyTransactions.length === 0 || columnMonths.length === 0) return [];
+    
+    const dataMap = new Map<string, MonthlyTransaction>();
+    monthlyTransactions.forEach(mt => dataMap.set(mt.year_month, mt));
+
+    return transactionRowLabels.map(rowType => {
+      const row: { [key: string]: string | number } = { transactionType: rowType.label };
+      let totalForRow = 0;
+      columnMonths.forEach(month => {
+        const monthData = dataMap.get(month);
+        const value = monthData ? monthData[rowType.key as keyof MonthlyTransaction] as number : 0;
+        row[month] = value;
+        // Only sum transaction types for the 'Total' column, not month-end valuations
+        if (rowType.key !== 'valuation') { 
+          totalForRow += value;
+        }
+      });
+      // For the 'Valuation' row, the 'Total' column should reflect the latest portfolio valuation summary.
+      // It should NOT be a sum of all monthly valuations.
+      row['total'] = rowType.key === 'valuation' ? (totalValuation ?? 0) : totalForRow;
+      return row;
+    });
+  }, [monthlyTransactions, columnMonths, transactionRowLabels, totalValuation]); // Added totalValuation dependency
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="text-2xl font-normal text-gray-900 font-sans tracking-wide mb-6">
         Report Generator
       </h1>
       
-      {error ? (
+      {/* Error display for initial load errors */}
+      {error && (
         <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div className="ml-3">
               <p className="text-red-700">{error}</p>
             </div>
-          </div>
-        </div>
-      ) : (
+      )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Left Side - Selection Panels */}
           <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
             <h2 className="text-lg font-normal text-gray-900 mb-4">Select Items for Report</h2>
             
-            {/* Client Groups Selection */}
             <SearchableDropdown
               label="Client Groups"
               placeholder="Search client groups..."
               items={clientGroups.map(cg => ({ id: cg.id, name: cg.name }))}
               selectedItems={selectedClientGroups}
-              onItemAdd={(item) => setSelectedClientGroups([...selectedClientGroups, item])}
-              onItemRemove={(id) => setSelectedClientGroups(selectedClientGroups.filter(item => item.id !== id))}
+            onItemAdd={(item) => setSelectedClientGroups(prev => [...prev, item])}
+            onItemRemove={(id) => setSelectedClientGroups(prev => prev.filter(item => item.id !== id))}
             />
             
-            {/* Product Owners Selection */}
             <SearchableDropdown
               label="Product Owners"
               placeholder="Search product owners..."
               items={productOwners.map(po => ({ id: po.id, name: po.name }))}
               selectedItems={selectedProductOwners}
-              onItemAdd={(item) => setSelectedProductOwners([...selectedProductOwners, item])}
-              onItemRemove={(id) => setSelectedProductOwners(selectedProductOwners.filter(item => item.id !== id))}
+            onItemAdd={(item) => setSelectedProductOwners(prev => [...prev, item])}
+            onItemRemove={(id) => setSelectedProductOwners(prev => prev.filter(item => item.id !== id))}
             />
             
-            {/* Products Selection */}
             <SearchableDropdown
               label="Products"
               placeholder="Search products..."
               items={products.map(p => ({ id: p.id, name: p.product_name }))}
               selectedItems={selectedProducts}
-              onItemAdd={(item) => setSelectedProducts([...selectedProducts, item])}
-              onItemRemove={(id) => setSelectedProducts(selectedProducts.filter(item => item.id !== id))}
+            onItemAdd={(item) => setSelectedProducts(prev => [...prev, item])}
+            onItemRemove={(id) => setSelectedProducts(prev => prev.filter(item => item.id !== id))}
             />
             
-            {/* Generate Report Button */}
             <button
               onClick={generateReport}
-              disabled={isCalculating}
+            disabled={isCalculating || isLoading} // Disable if initial load is also happening
               className="mt-4 inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-xl shadow-sm hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isCalculating ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Calculating...
-                </>
-              ) : (
-                <>
-                  <svg className="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  Generate Report
-                </>
-              )}
+            {isCalculating ? 'Calculating...' : 'Generate Report'}
             </button>
             
             {dataError && (
@@ -1103,37 +808,29 @@ const ReportGenerator: React.FC = (): React.ReactNode => {
           <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
             <h2 className="text-lg font-normal text-gray-900 mb-4">Report Summary</h2>
             
-            {/* Related Items */}
             <div className="mb-6">
               <h3 className="text-sm font-medium text-gray-700 mb-2">Related Items</h3>
-              <div className="border rounded-lg p-4 bg-gray-50">
-                {relatedProducts.length > 0 || relatedOwners.length > 0 ? (
+            <div className="border rounded-lg p-4 bg-gray-50 min-h-[100px]">
+              {(displayedProductOwners.length > 0 || relatedProducts.length > 0) ? (
                   <div className="space-y-3">
-                    {relatedOwners.length > 0 && (
+                  {displayedProductOwners.length > 0 && (
                       <div>
                         <h4 className="text-xs font-medium text-gray-500 uppercase mb-1">Product Owners</h4>
                         <div className="flex flex-wrap gap-2">
-                          {relatedOwners.map(owner => (
-                            <span 
-                              key={owner.id}
-                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                            >
+                        {displayedProductOwners.map(owner => (
+                          <span key={owner.id} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                               {owner.name}
                             </span>
                           ))}
                         </div>
                       </div>
                     )}
-                    
                     {relatedProducts.length > 0 && (
                       <div>
                         <h4 className="text-xs font-medium text-gray-500 uppercase mb-1">Products</h4>
                         <div className="flex flex-wrap gap-2">
                           {relatedProducts.map(product => (
-                            <span 
-                              key={product.id}
-                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
-                            >
+                          <span key={product.id} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                               {product.product_name}
                             </span>
                           ))}
@@ -1142,24 +839,23 @@ const ReportGenerator: React.FC = (): React.ReactNode => {
                     )}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500">No related items to display. Generate a report to see relationships.</p>
+                <p className="text-sm text-gray-500">Select items to see related entities.</p>
                 )}
               </div>
             </div>
             
-            {/* Valuation Summary */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div className="bg-gray-50 rounded-lg p-4 border">
                 <h3 className="text-sm font-medium text-gray-700 mb-1">Total Valuation</h3>
                 {totalValuation !== null ? (
                   <div>
-                    <div className="text-2xl font-semibold text-primary-700">{formatCurrency(totalValuation)}</div>
+                    <div className="text-2xl font-semibold text-primary-700">{formatCurrencyFallback(totalValuation)}</div>
                     {valuationDate && (
-                      <div className="text-xs text-gray-500 mt-1">as of {formatDate(valuationDate)}</div>
+                      <div className="text-xs text-gray-500 mt-1">as of {formatDateFallback(valuationDate)}</div>
                     )}
                   </div>
                 ) : (
-                  <div className="text-sm text-gray-500">No valuation data available</div>
+                <div className="text-sm text-gray-500">{isCalculating ? 'Calculating...' : 'No valuation data'}</div>
                 )}
               </div>
               
@@ -1167,103 +863,65 @@ const ReportGenerator: React.FC = (): React.ReactNode => {
                 <h3 className="text-sm font-medium text-gray-700 mb-1">Total IRR</h3>
                 {totalIRR !== null ? (
                   <div className={`text-2xl font-semibold ${totalIRR >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {formatPercentage(totalIRR)}
-                    <span className="ml-1">
-                      {totalIRR >= 0 ? '▲' : '▼'}
-                    </span>
+                    {formatPercentageFallback(totalIRR)}
                   </div>
                 ) : (
-                  <div className="text-sm text-gray-500">No IRR data available</div>
+                <div className="text-sm text-gray-500">{isCalculating ? 'Calculating...' : 'No IRR data'}</div>
                 )}
               </div>
             </div>
           </div>
         </div>
-      )}
       
-      {/* Monthly Transactions Table */}
+      {/* Monthly Transactions Table (Pivoted) */}
       {monthlyTransactions.length > 0 && (
-        <div className="mt-8 bg-white shadow-sm rounded-lg border border-gray-100 p-6">
-          <h2 className="text-lg font-normal text-gray-900 mb-4">Monthly Transactions</h2>
-          
+         <div className="mt-8 bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Monthly Transactions</h2>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-gray-300 table-fixed">
+              <thead className="bg-gray-100">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Month
+                  <th scope="col" className="w-1/5 px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-blue-300 sticky left-0 bg-gray-100 z-10">
+                    Transaction Type
                   </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Investment
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Withdrawal
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Switch In
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Switch Out
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Net Flow
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Valuation
+                  {columnMonths.map(month => (
+                    <th key={month} scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-blue-300">
+                      {formatDateFallback(month)}
+                    </th>
+                  ))}
+                  <th scope="col" className="w-1/6 px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-blue-300 sticky right-0 bg-gray-100 z-10">
+                    Total
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {monthlyTransactions.map((transaction) => (
-                  <tr key={transaction.year_month} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {formatDate(transaction.year_month)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                      {formatCurrency(transaction.total_investment)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                      {formatCurrency(transaction.total_withdrawal)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                      {formatCurrency(transaction.total_switch_in)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                      {formatCurrency(transaction.total_switch_out)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                      {formatCurrency(transaction.net_flow)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
-                      {formatCurrency(transaction.valuation)}
-                    </td>
-                  </tr>
-                ))}
-                
-                {/* Total Row */}
-                <tr className="bg-gray-50 font-medium">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    TOTAL
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                    {formatCurrency(monthlyTransactions.reduce((sum, t) => sum + t.total_investment, 0))}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                    {formatCurrency(monthlyTransactions.reduce((sum, t) => sum + t.total_withdrawal, 0))}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                    {formatCurrency(monthlyTransactions.reduce((sum, t) => sum + t.total_switch_in, 0))}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                    {formatCurrency(monthlyTransactions.reduce((sum, t) => sum + t.total_switch_out, 0))}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                    {formatCurrency(monthlyTransactions.reduce((sum, t) => sum + t.net_flow, 0))}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
-                    {totalValuation !== null ? formatCurrency(totalValuation) : '-'}
-                  </td>
-                </tr>
+                {pivotedTableData.map((row) => {
+                  const isValuationRow = row.transactionType === 'Valuation';
+                  return (
+                    <tr 
+                      key={row.transactionType as string} 
+                      className={`hover:bg-blue-50 transition-colors duration-150 group ${
+                        isValuationRow ? 'border-t-2 border-gray-400 font-semibold' : ''
+                      }`}
+                    >
+                      <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-800 sticky left-0 bg-white group-hover:bg-blue-50 z-5 ${
+                        isValuationRow ? 'font-semibold text-blue-700' : 'font-medium'
+                      }`}>
+                        {row.transactionType as string}
+                      </td>
+                      {columnMonths.map(month => (
+                        <td key={month} className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 text-right">
+                          {formatCurrencyFallback(row[month] as number)}
+                        </td>
+                      ))}
+                      <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-800 text-right sticky right-0 bg-white group-hover:bg-blue-50 z-5 ${
+                         isValuationRow ? 'font-semibold text-blue-700' : 'font-medium'
+                      }`}>
+                        {formatCurrencyFallback(row.total as number)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
