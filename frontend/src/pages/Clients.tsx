@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { SearchableDropdown } from '../components/ui';
@@ -21,6 +21,7 @@ type SortOrder = 'asc' | 'desc';
 
 const Clients: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { api } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('name');
@@ -38,6 +39,9 @@ const Clients: React.FC = () => {
   
   // Add typeFilter state in the component state declarations
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
   // Function to calculate and set dropdown positions
   const updateAdvisorDropdownPosition = () => {
@@ -66,7 +70,21 @@ const Clients: React.FC = () => {
 
   useEffect(() => {
     fetchClients();
-  }, [showDormant]);
+    
+    // Check for success message in location state
+    if (location.state && location.state.message) {
+      setSuccessMessage(location.state.message);
+      // Clear the message from location state after displaying it
+      window.history.replaceState({}, document.title);
+      
+      // Auto-hide the message after 5 seconds
+      const timer = setTimeout(() => {
+        setSuccessMessage(null);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [location]);
 
   // Handle click outside to close the filter dropdowns
   useEffect(() => {
@@ -95,7 +113,7 @@ const Clients: React.FC = () => {
         // Fallback to direct axios request if api is not properly initialized
         const [clientsResponse, fumResponse] = await Promise.all([
           axios.get('http://localhost:8000/clients', {
-            params: { show_dormant: showDormant },
+            params: { show_dormant: true },
             withCredentials: true
           }),
           axios.get('http://localhost:8000/client_group_fum_summary', { withCredentials: true })
@@ -105,7 +123,7 @@ const Clients: React.FC = () => {
       } else {
         // Use the regular api instance from context
         const [clientsResponse, fumResponse] = await Promise.all([
-          api.get('/client_groups', { params: { show_dormant: showDormant } }),
+          api.get('/client_groups', { params: { show_dormant: true } }),
           api.get('/client_group_fum_summary')
         ]);
         clientData = clientsResponse.data;
@@ -172,6 +190,10 @@ const Clients: React.FC = () => {
       typeFilter.length === 0 ||
       (client.type && typeFilter.includes(client.type))
     )
+    .filter(client =>
+      statusFilter.length === 0 ||
+      (client.status && statusFilter.includes(client.status))
+    )
     .sort((a, b) => {
       if (sortField === 'fum') {
         const aValue = a.fum || 0;
@@ -193,21 +215,13 @@ const Clients: React.FC = () => {
     .filter(advisor => advisor !== null))] as string[];
 
   const types = ['Family', 'Business', 'Trust'];
+  const statuses = [{value: 'active', label: 'Active'}, {value: 'dormant', label: 'Dormant'}];
 
   return (
     <div className="container mx-auto px-4 py-3">
       <div className="flex justify-between items-center mb-3">
         <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Client Groups</h1>
         <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={showDormant}
-              onChange={(e) => setShowDormant(e.target.checked)}
-              className="form-checkbox h-5 w-5 text-blue-600"
-            />
-            <span>Show Dormant Client Groups</span>
-          </label>
           <button
             onClick={handleAddClient}
             className="bg-primary-700 text-white px-4 py-1.5 rounded-xl font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 shadow-sm flex items-center gap-1"
@@ -219,6 +233,24 @@ const Clients: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Success message */}
+      {successMessage && (
+        <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-green-700 text-base">
+                {successMessage}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white shadow rounded-lg p-4 overflow-visible">
         {/* Search and Sort Controls */}
@@ -365,6 +397,14 @@ const Clients: React.FC = () => {
                             )}
                           </span>
                         </span>
+                        <FilterDropdown
+                          id="status-filter"
+                          options={statuses}
+                          value={statusFilter}
+                          onChange={(vals) => setStatusFilter(vals.filter(v => typeof v === 'string'))}
+                          placeholder="All Statuses"
+                          className="min-w-[140px] mt-1"
+                        />
                       </div>
                     </th>
                     <th className="w-[30%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">

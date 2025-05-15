@@ -249,7 +249,7 @@ const Definitions: React.FC = () => {
     // Read from URL query params if available
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
-    if (tabParam === 'portfolios') return 'portfolio-templates';
+    if (tabParam === 'portfolio-templates') return 'portfolio-templates';
     if (tabParam === 'funds') return 'funds';
     if (tabParam === 'providers') return 'providers';
     return 'providers'; // Default
@@ -259,8 +259,7 @@ const Definitions: React.FC = () => {
 
   // Update URL when tab changes
   useEffect(() => {
-    const tabParam = activeTab === 'portfolio-templates' ? 'portfolios' : activeTab;
-    navigate(`/definitions?tab=${tabParam}`, { replace: true });
+    navigate(`/definitions?tab=${activeTab}`, { replace: true });
   }, [activeTab, navigate]);
   
   // Provider sorting state
@@ -661,10 +660,22 @@ const Definitions: React.FC = () => {
         fundStatusFilters.length === 0 || 
         (fund.status && fundStatusFilters.includes(fund.status))  
       )
-      .filter(fund => 
-        riskLevelFilters.length === 0 ||
-        riskLevelFilters.includes(getFundRiskLevel(fund))
-      )
+      .filter(fund => {
+        if (riskLevelFilters.length === 0) return true;
+        
+        // Check if 'Unrated' is selected
+        const unratedSelected = riskLevelFilters.includes('Unrated');
+        if (unratedSelected && (fund.risk_factor === null || fund.risk_factor === undefined)) {
+          return true;
+        }
+        
+        // Check for numeric risk factors
+        if (fund.risk_factor !== null && fund.risk_factor !== undefined) {
+          return riskLevelFilters.includes(fund.risk_factor);
+        }
+        
+        return false;
+      })
       .sort((a, b) => {
         if (fundSortField === 'risk_factor' || fundSortField === 'fund_cost') {
           // For numeric values
@@ -777,21 +788,24 @@ const Definitions: React.FC = () => {
     return Array.from(statuses).map(status => ({ value: status, label: status }));
   }, [funds]);
   
-  // Risk level options for funds
-  const riskLevelOptions = useMemo(() => [
+  // Risk factor options for funds filter
+  const riskFactorFilterOptions = useMemo(() => [
     { value: 'Unrated', label: 'Unrated' },
-    { value: 'Low', label: 'Low Risk (0-3)' },
-    { value: 'Medium', label: 'Medium Risk (3-5)' },
-    { value: 'High', label: 'High Risk (5-7)' },
-    { value: 'Very High', label: 'Very High Risk (7+)' }
+    { value: 1, label: '1' },
+    { value: 2, label: '2' },
+    { value: 3, label: '3' },
+    { value: 4, label: '4' },
+    { value: 5, label: '5' },
+    { value: 6, label: '6' },
+    { value: 7, label: '7' }
   ], []);
   
   // Risk range filter options for portfolios
   const riskRangeOptions = useMemo(() => [
-    { value: '0-3', label: 'Low Risk (0-3)' },
+    { value: '0-3', label: 'Low Risk (1-3)' },
     { value: '3-5', label: 'Medium-Low Risk (3-5)' },
     { value: '5-7', label: 'Medium-High Risk (5-7)' },
-    { value: '7+', label: 'High Risk (7+)' }
+    { value: '7+', label: 'High Risk (7)' }
   ], []);
 
   // Display weighted risk with N/A for missing data
@@ -911,7 +925,7 @@ const Definitions: React.FC = () => {
               aria-controls="portfolios-panel"
               id="portfolios-tab"
           >
-            Portfolios
+            Portfolio Templates
           </button>
         </nav>
       </div>
@@ -940,7 +954,7 @@ const Definitions: React.FC = () => {
       {/* Tab Panels */}
       <div id="providers-panel" role="tabpanel" aria-labelledby="providers-tab">
         <TabTransition isVisible={activeTab === 'providers'}>
-      <div className="bg-white shadow rounded-lg overflow-hidden">
+          <div className="bg-white shadow rounded-lg overflow-hidden">
             {providersLoading ? (
               <div className="p-6">
                 <TableSkeleton columns={3} />
@@ -949,92 +963,90 @@ const Definitions: React.FC = () => {
               <div className="p-6">
                 <ErrorDisplay message={providersError} />
               </div>
-            ) : filteredAndSortedProviders.length === 0 ? (
-              <div className="p-6">
-                <EmptyState message="No providers found" />
-              </div>
             ) : (
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-100">
-            <tr>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/4">Provider</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/4">
-                      <div className="flex flex-col items-start gap-1">
-                        <span>Status</span>
-                        <FilterDropdown
-                          id="provider-status-filter"
-                          options={providerStatusOptions}
-                          value={providerStatusFilters}
-                          onChange={setProviderStatusFilters}
-                          placeholder="All Statuses"
-                          className="mt-1"
-                        />
-                      </div>
-                    </th>
-                    <th 
-                      className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/4 cursor-pointer hover:bg-indigo-50"
-                      onClick={() => handleProviderSortChange('product_count')}
-                    >
-                      <div className="flex items-center">
-                        <span>Products</span>
-                        {providerSortField === 'product_count' && (
-                          <span className="ml-1">
-                            {providerSortOrder === 'asc' ? '↑' : '↓'}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/4">Last Updated</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredAndSortedProviders.map(provider => (
-                <tr 
-                  key={provider.id} 
-                  className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
-                  onClick={() => handleItemClick('providers', provider.id)}
-                >
-                  <td className="px-6 py-3 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div 
-                        className="h-3 w-3 rounded-full mr-2 flex-shrink-0" 
-                        style={{ backgroundColor: provider.theme_color || getProviderColor(provider.name) }}
-                        aria-hidden="true"
-                      ></div>
-                      <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{provider.name}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-3 whitespace-nowrap">
-                    <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      provider.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {provider.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-3 whitespace-nowrap">
-                    <div className="text-sm text-gray-600">
-                      {provider.product_count !== undefined ? provider.product_count : 0}
-                    </div>
-                  </td>
-                  <td className="px-6 py-3 whitespace-nowrap">
-                    <div className="text-sm text-gray-600">
-                          {new Date(provider.created_at).toLocaleDateString()}
-                    </div>
-                  </td>
-                </tr>
-                  ))}
-          </tbody>
-        </table>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/3">Provider</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/3">
+                        <div className="flex flex-col items-start gap-1">
+                          <span>Status</span>
+                          <FilterDropdown
+                            id="provider-status-filter"
+                            options={providerStatusOptions}
+                            value={providerStatusFilters}
+                            onChange={setProviderStatusFilters}
+                            placeholder="All Statuses"
+                            className="mt-1"
+                          />
+                        </div>
+                      </th>
+                      <th 
+                        className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/3 cursor-pointer hover:bg-indigo-50"
+                        onClick={() => handleProviderSortChange('product_count')}
+                      >
+                        <div className="flex items-center">
+                          <span>Products</span>
+                          {providerSortField === 'product_count' && (
+                            <span className="ml-1">
+                              {providerSortOrder === 'asc' ? '↑' : '↓'}
+                            </span>
+                          )}
+                        </div>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredAndSortedProviders.length > 0 ? (
+                      filteredAndSortedProviders.map(provider => (
+                        <tr 
+                          key={provider.id} 
+                          className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
+                          onClick={() => handleItemClick('providers', provider.id)}
+                        >
+                          <td className="px-6 py-3 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div 
+                                className="h-3 w-3 rounded-full mr-2 flex-shrink-0" 
+                                style={{ backgroundColor: provider.theme_color || getProviderColor(provider.name) }}
+                                aria-hidden="true"
+                              ></div>
+                              <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{provider.name}</div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-3 whitespace-nowrap">
+                            <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              provider.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {provider.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-3 whitespace-nowrap">
+                            <div className="text-sm text-gray-600">
+                              {provider.product_count !== undefined ? provider.product_count : 0}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={3} className="p-6">
+                          <EmptyState message="No providers found" />
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-          )}
-        </div>
-      </TabTransition>
-    </div>
+        </TabTransition>
+      </div>
 
     <div id="funds-panel" role="tabpanel" aria-labelledby="funds-tab">
       <TabTransition isVisible={activeTab === 'funds'}>
-    <div className="bg-white shadow rounded-lg overflow-hidden">
+        <div className="bg-white shadow rounded-lg overflow-hidden">
           {fundsLoading ? (
             <div className="p-6">
               <TableSkeleton columns={5} />
@@ -1043,79 +1055,83 @@ const Definitions: React.FC = () => {
             <div className="p-6">
               <ErrorDisplay message={fundsError} />
             </div>
-          ) : filteredAndSortedFunds.length === 0 ? (
-            <div className="p-6">
-              <EmptyState message="No funds found" />
-            </div>
           ) : (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-100">
-          <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5">Name</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5">ISIN</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5">
-                    <div className="flex flex-col items-start gap-1">
-                      <span>Risk Factor</span>
-                      <FilterDropdown
-                        id="risk-level-filter"
-                        options={riskLevelOptions}
-                        value={riskLevelFilters}
-                        onChange={setRiskLevelFilters}
-                        placeholder="All Risk Levels"
-                        className="mt-1"
-                      />
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5">Fund Cost</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5">
-                    <div className="flex flex-col items-start gap-1">
-                      <span>Status</span>
-                      <FilterDropdown
-                        id="fund-status-filter"
-                        options={fundStatusOptions}
-                        value={fundStatusFilters}
-                        onChange={setFundStatusFilters}
-                        placeholder="All Statuses"
-                        className="mt-1"
-                      />
-                    </div>
-                  </th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredAndSortedFunds.map(fund => (
-                    <tr 
-                      key={fund.id} 
-                  className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
-                      onClick={() => handleItemClick('funds', fund.id)}
-                >
-                  <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{fund.fund_name}</div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5">Name</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5">ISIN</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5">
+                      <div className="flex flex-col items-start gap-1">
+                        <span>Risk Factor</span>
+                        <FilterDropdown
+                          id="risk-level-filter"
+                          options={riskFactorFilterOptions} 
+                          value={riskLevelFilters}
+                          onChange={setRiskLevelFilters}
+                          placeholder="All Risk Factors" 
+                          className="mt-1"
+                        />
+                      </div>
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5">Fund Cost</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5">
+                      <div className="flex flex-col items-start gap-1">
+                        <span>Status</span>
+                        <FilterDropdown
+                          id="fund-status-filter"
+                          options={fundStatusOptions}
+                          value={fundStatusFilters}
+                          onChange={setFundStatusFilters}
+                          placeholder="All Statuses"
+                          className="mt-1"
+                        />
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredAndSortedFunds.length > 0 ? (
+                    filteredAndSortedFunds.map(fund => (
+                      <tr 
+                        key={fund.id} 
+                        className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
+                        onClick={() => handleItemClick('funds', fund.id)}
+                      >
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{fund.fund_name}</div>
+                        </td>
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <div className="text-sm text-gray-600 font-sans">{fund.isin_number || 'N/A'}</div>
+                        </td>
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <div className="text-sm text-gray-600 font-sans">{fund.risk_factor !== null ? fund.risk_factor : 'N/A'}</div>
+                        </td>
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <div className="text-sm text-gray-600 font-sans">
+                            {fund.fund_cost !== null ? `${fund.fund_cost.toFixed(1)}%` : 'N/A'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            fund.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {fund.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="p-6">
+                        <EmptyState message="No funds found" />
                       </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm text-gray-600 font-sans">{fund.isin_number || 'N/A'}</div>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm text-gray-600 font-sans">{fund.risk_factor !== null ? fund.risk_factor : 'N/A'}</div>
-                  </td>
-                  <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm text-gray-600 font-sans">
-                          {fund.fund_cost !== null ? `${fund.fund_cost.toFixed(1)}%` : 'N/A'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-3 whitespace-nowrap">
-                    <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          fund.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
-                          {fund.status}
-                    </span>
-                  </td>
-                </tr>
-                  ))}
-        </tbody>
-      </table>
-          </div>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </TabTransition>
@@ -1123,7 +1139,7 @@ const Definitions: React.FC = () => {
 
     <div id="portfolios-panel" role="tabpanel" aria-labelledby="portfolios-tab">
       <TabTransition isVisible={activeTab === 'portfolio-templates'}>
-    <div className="bg-white shadow rounded-lg overflow-hidden">
+        <div className="bg-white shadow rounded-lg overflow-hidden">
           {portfoliosLoading ? (
             <div className="p-6">
               <TableSkeleton columns={3} />
@@ -1132,67 +1148,71 @@ const Definitions: React.FC = () => {
             <div className="p-6">
               <ErrorDisplay message={portfoliosError} />
             </div>
-          ) : filteredAndSortedPortfolios.length === 0 ? (
-            <div className="p-6">
-              <EmptyState message="No portfolio templates found" />
-            </div>
           ) : (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/3">Name</th>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/3">
-              <div className="flex flex-col items-start gap-1">
-                <span>Weighted Risk</span>
-                <FilterDropdown
-                  id="risk-range-filter"
-                  options={riskRangeOptions}
-                  value={riskRangeFilters}
-                  onChange={setRiskRangeFilters}
-                  placeholder="All Risk Ranges"
-                  className="mt-1"
-                />
-              </div>
-            </th>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/3">
-              <div className="flex items-center cursor-pointer" onClick={() => handlePortfolioSortChange('portfolioCount')}>
-                <span>Portfolio Count</span>
-                {portfolioSortField === 'portfolioCount' && (
-                  <span className="ml-1">
-                    {portfolioSortOrder === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
-              </div>
-            </th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredAndSortedPortfolios.map(portfolio => (
-                    <tr 
-                      key={portfolio.id} 
-                      className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
-                      onClick={() => handleItemClick('portfolio-templates', portfolio.id)}
-                    >
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{portfolio.name}</div>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        {displayWeightedRisk(portfolio)}
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm text-gray-600 font-sans">{portfolio.portfolioCount || 0}</div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/3">Name</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/3">
+                      <div className="flex flex-col items-start gap-1">
+                        <span>Weighted Risk</span>
+                        <FilterDropdown
+                          id="risk-range-filter"
+                          options={riskRangeOptions}
+                          value={riskRangeFilters}
+                          onChange={setRiskRangeFilters}
+                          placeholder="All Risk Ranges"
+                          className="mt-1"
+                        />
+                      </div>
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/3">
+                      <div className="flex items-center cursor-pointer" onClick={() => handlePortfolioSortChange('portfolioCount')}>
+                        <span>Portfolio Count</span>
+                        {portfolioSortField === 'portfolioCount' && (
+                          <span className="ml-1">
+                            {portfolioSortOrder === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredAndSortedPortfolios.length > 0 ? (
+                    filteredAndSortedPortfolios.map(portfolio => (
+                      <tr 
+                        key={portfolio.id} 
+                        className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
+                        onClick={() => handleItemClick('portfolio-templates', portfolio.id)}
+                      >
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{portfolio.name}</div>
+                        </td>
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          {displayWeightedRisk(portfolio)}
+                        </td>
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <div className="text-sm text-gray-600 font-sans">{portfolio.portfolioCount || 0}</div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={3} className="p-6">
+                        <EmptyState message="No portfolio templates found" />
                       </td>
                     </tr>
-                  ))}
-        </tbody>
-      </table>
-          </div>
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </TabTransition>
-          </div>
-        </div>
+    </div>
+</div>
 </DefinitionsContext.Provider>
 );
 };
