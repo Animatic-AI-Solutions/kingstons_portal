@@ -1,10 +1,29 @@
 import os
 import sys
+import logging
 
-from app.api.routes import product_portfolio_assignments
+# Configure root logger
+logging.basicConfig(
+    level=logging.DEBUG if os.getenv("DEBUG", "False").lower() == "true" else logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+logger = logging.getLogger("main")
+
+logger.info("Application startup initiated")
+logger.info(f"Python version: {sys.version}")
+logger.info(f"Current working directory: {os.getcwd()}")
 
 # Add the backend directory to Python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+logger.info(f"Added to Python path: {os.path.dirname(os.path.abspath(__file__))}")
+
+try:
+    from app.api.routes import product_portfolio_assignments
+    logger.info("Successfully imported product_portfolio_assignments")
+except Exception as e:
+    logger.error(f"Error importing product_portfolio_assignments: {str(e)}")
+    raise
 
 import uvicorn
 from fastapi import FastAPI
@@ -16,6 +35,8 @@ from typing import Any
 import json
 from datetime import date, datetime
 from dotenv import load_dotenv
+
+logger.info("All modules imported successfully")
 
 # Import all route modules for API endpoints
 from app.api.routes import (
@@ -29,7 +50,19 @@ from app.api.routes import (
 )
 
 # Load environment variables from .env file
-load_dotenv()
+logger.info("Loading environment variables from .env file...")
+dotenv_path = os.path.join(os.getcwd(), ".env")
+if os.path.exists(dotenv_path):
+    logger.info(f"Found .env file at: {dotenv_path}")
+    load_dotenv(dotenv_path)
+    logger.info("Loaded environment variables from .env file")
+else:
+    logger.warning(f".env file not found at {dotenv_path}. Looking for environment variables in system.")
+    load_dotenv()  # Try to load from default locations
+    
+# Log available environment variables (safely)
+env_keys = [k for k in os.environ.keys() if not any(secret in k.upper() for secret in ["KEY", "SECRET", "PASSWORD", "TOKEN"])]
+logger.info(f"Available environment variables (excluding sensitive ones): {sorted(env_keys)}")
 
 # Custom JSON encoder class to handle date objects
 class CustomJSONEncoder(json.JSONEncoder):

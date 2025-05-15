@@ -53,11 +53,16 @@ FROM python:3.11-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
+
 # Default environment variables (can be overridden at runtime)
 ENV API_HOST=0.0.0.0
 ENV API_PORT=8000
-ENV WORKERS=4
-ENV DEBUG=False
+# Reduced from 4 to 1 worker
+ENV WORKERS=1
+# Added 2-minute timeout (in seconds)
+ENV TIMEOUT=120
+# Set to True for more detailed logging
+ENV DEBUG=True
 
 WORKDIR /app
 
@@ -138,15 +143,20 @@ RUN echo '#!/bin/bash' > ./start.sh && \
     echo '# Use PORT from environment (for platforms like Render) or fall back to API_PORT' >> ./start.sh && \
     echo 'PORT=${PORT:-$API_PORT}' >> ./start.sh && \
     echo '# Use workers from environment' >> ./start.sh && \
-    echo 'WORKERS=${WORKERS:-4}' >> ./start.sh && \
+    echo 'WORKERS=${WORKERS:-1}' >> ./start.sh && \
+    echo '# Use timeout from environment' >> ./start.sh && \
+    echo 'TIMEOUT=${TIMEOUT:-120}' >> ./start.sh && \
     echo '# Start gunicorn with the right configuration' >> ./start.sh && \
-    echo 'echo "Starting server on 0.0.0.0:$PORT with $WORKERS workers"' >> ./start.sh && \
+    echo 'echo "Starting server on 0.0.0.0:$PORT with $WORKERS workers and $TIMEOUT seconds timeout"' >> ./start.sh && \
     echo '# List directory contents for debugging' >> ./start.sh && \
     echo 'echo "Contents of current directory:"' >> ./start.sh && \
     echo 'ls -la' >> ./start.sh && \
     echo 'echo "Contents of static_frontend directory:"' >> ./start.sh && \
     echo 'ls -la static_frontend || echo "static_frontend directory not found!"' >> ./start.sh && \
-    echo 'exec gunicorn -w $WORKERS -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:$PORT' >> ./start.sh && \
+    echo 'echo "Starting application with DEBUG=$DEBUG..."' >> ./start.sh && \
+    echo 'echo "Environment variables (sanitized):"' >> ./start.sh && \
+    echo 'env | grep -v KEY | grep -v SECRET | grep -v PASSWORD | grep -v TOKEN' >> ./start.sh && \
+    echo 'exec gunicorn -w $WORKERS -t $TIMEOUT --log-level debug -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:$PORT' >> ./start.sh && \
     chmod +x ./start.sh
 
 # Command to run the application
