@@ -17,6 +17,18 @@ export interface Fund {
   category?: string;
 }
 
+export interface Provider {
+  id: string;
+  name: string;
+  amount: number;
+}
+
+export interface Template {
+  id: string;
+  name: string;
+  amount: number;
+}
+
 // Define type for API response data
 interface PerformanceDataItem {
   id: number;
@@ -31,12 +43,22 @@ interface FundDistributionResponse {
   funds: Fund[];
 }
 
+interface ProviderDistributionResponse {
+  providers: Provider[];
+}
+
+interface TemplateDistributionResponse {
+  templates: Template[];
+}
+
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 export const useDashboardData = () => {
   const { api } = useAuth();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [funds, setFunds] = useState<Fund[]>([]);
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
   const [lastFetched, setLastFetched] = useState<number>(0);
@@ -79,6 +101,44 @@ export const useDashboardData = () => {
         setFunds([]);
       }
       
+      // Fetch provider distribution data
+      const providersResponse = await api.get<ProviderDistributionResponse>('/analytics/provider_distribution');
+      
+      // Use the providers data directly from the response
+      if (providersResponse.data?.providers) {
+        setProviders(providersResponse.data.providers);
+      } else {
+        // If the endpoint isn't implemented yet, create mock data based on fund data
+        // This is a temporary solution until the backend endpoint is available
+        const providerMap = new Map<string, number>();
+        
+        fundsResponse.data?.funds?.forEach(fund => {
+          // Extract provider name from fund name (this is a fallback strategy)
+          // In a real implementation, the API would provide proper provider data
+          const providerName = fund.name.split(' ')[0]; // Simplified - assuming first word is provider
+          const currentAmount = providerMap.get(providerName) || 0;
+          providerMap.set(providerName, currentAmount + fund.amount);
+        });
+        
+        const mockProviders: Provider[] = Array.from(providerMap).map(([name, amount], index) => ({
+          id: `provider-${index}`,
+          name,
+          amount
+        }));
+        
+        setProviders(mockProviders);
+      }
+      
+      // Fetch portfolio template distribution data
+      const templatesResponse = await api.get<TemplateDistributionResponse>('/analytics/portfolio_template_distribution');
+      
+      // Use the templates data directly from the response
+      if (templatesResponse.data?.templates) {
+        setTemplates(templatesResponse.data.templates);
+      } else {
+        setTemplates([]);
+      }
+      
       // Update last fetched timestamp
       setLastFetched(now);
       setError(null);
@@ -100,6 +160,8 @@ export const useDashboardData = () => {
   return {
     metrics,
     funds,
+    providers,
+    templates,
     loading,
     error,
     refetch: () => fetchData(true),

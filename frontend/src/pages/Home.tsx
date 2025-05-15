@@ -55,33 +55,46 @@ const ErrorMessage: React.FC<{ message: string; retry: () => void }> = ({ messag
 );
 
 const Home: React.FC = () => {
-  const { metrics, funds, loading, error, refetch } = useDashboardData();
+  const { metrics, funds, providers, templates, loading, error, refetch } = useDashboardData();
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
       {loading && !metrics ? (
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Stats grid - 2/3 width */}
-          <div className="lg:w-2/3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="flex flex-col gap-6">
+          {/* Stats grid - full width */}
+          <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[...Array(4)].map((_, i) => (
                 <StatBoxSkeleton key={i} />
               ))}
             </div>
           </div>
           
-          {/* Pie chart - 1/3 width */}
-          <div className="lg:w-1/3 mt-6 lg:mt-0">
-            <ChartSkeleton />
+          {/* Charts row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+            {/* Fund distribution chart */}
+            <div>
+              <ChartSkeleton />
+            </div>
+            
+            {/* Provider distribution chart */}
+            <div>
+              <ChartSkeleton />
+            </div>
+            
+            {/* Portfolio Template distribution chart */}
+            <div>
+              <ChartSkeleton />
+            </div>
           </div>
         </div>
       ) : error ? (
         <ErrorMessage message={error.message} retry={refetch} />
       ) : (
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Stats grid - 2/3 width */}
-          <div className="lg:w-2/3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="flex flex-col gap-6">
+          {/* Stats grid - full width */}
+          <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* Total Funds Under Management */}
               <StatBox
                 title="Total Funds Under Management"
@@ -102,9 +115,9 @@ const Home: React.FC = () => {
                 colorScheme="secondary"
               />
               
-              {/* Total Clients */}
+              {/* Total Client Groups */}
               <StatBox
-                title="Total Clients"
+                title="Total Client Groups"
                 value={metrics?.totalClients || 0}
                 format="number"
                 changePercentage={null}
@@ -124,15 +137,60 @@ const Home: React.FC = () => {
             </div>
           </div>
           
-          {/* Pie chart - 1/3 width */}
-          <div className="lg:w-1/3 mt-6 lg:mt-0">
-            <Suspense fallback={<ChartSkeleton />}>
-              <FundDistributionChart
-                data={funds}
-                threshold={5}
-                title="Percentage of FUM in each Fund"
-              />
-            </Suspense>
+          {/* Charts row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+            {/* Fund distribution chart */}
+            <div>
+              {loading ? (
+                <ChartSkeleton />
+              ) : (
+                <Suspense fallback={<ChartSkeleton />}>
+                  <FundDistributionChart
+                    data={funds}
+                    threshold={5}
+                    title="Percentage of FUM in each Fund"
+                  />
+                </Suspense>
+              )}
+            </div>
+            
+            {/* Provider distribution chart */}
+            <div>
+              {loading ? (
+                <ChartSkeleton />
+              ) : (
+                <Suspense fallback={<ChartSkeleton />}>
+                  <FundDistributionChart
+                    data={providers.map(provider => ({
+                      id: provider.id,
+                      name: provider.name,
+                      amount: provider.amount
+                    }))}
+                    threshold={5}
+                    title="Percentage of FUM by Provider"
+                  />
+                </Suspense>
+              )}
+            </div>
+            
+            {/* Portfolio Template distribution chart */}
+            <div>
+              {loading ? (
+                <ChartSkeleton />
+              ) : (
+                <Suspense fallback={<ChartSkeleton />}>
+                  <FundDistributionChart
+                    data={templates.map(template => ({
+                      id: template.id,
+                      name: template.name,
+                      amount: template.amount
+                    }))}
+                    threshold={5}
+                    title="Percentage of FUM by Portfolio Template"
+                  />
+                </Suspense>
+              )}
+            </div>
           </div>
         </div>
       )}

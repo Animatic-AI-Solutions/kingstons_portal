@@ -49,6 +49,15 @@ interface ClientAccount {
     name: string;
     created_at: string;
   };
+  product_owners?: ProductOwner[];
+}
+
+// Add ProductOwner interface
+interface ProductOwner {
+  id: number;
+  name: string;
+  status: string;
+  created_at: string;
 }
 
 // Add interface for ProductFund
@@ -326,7 +335,7 @@ const ProductCard: React.FC<{
 
         {/* Bottom row - Additional Info */}
         <div className="mt-3 flex justify-between items-center">
-          <div className="flex items-center">
+          <div className="flex items-center flex-wrap">
             {account.risk_rating && (
               <div className="flex items-center mr-3">
                 <span className="text-sm font-medium text-gray-900 mr-2">
@@ -340,6 +349,29 @@ const ProductCard: React.FC<{
                       backgroundColor: themeColor
                     }}
                   />
+                </div>
+              </div>
+            )}
+            
+            {/* Product Owners */}
+            {account.product_owners && account.product_owners.length > 0 && (
+              <div className="flex items-center ml-2">
+                <span className="text-sm font-medium text-gray-500 mr-1">
+                  Owner{account.product_owners.length > 1 ? 's' : ''}:
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {account.product_owners.map(owner => (
+                    <span 
+                      key={owner.id}
+                      className="px-2 py-0.5 text-xs font-medium rounded-full"
+                      style={{ 
+                        backgroundColor: `${themeColor}15`, 
+                        color: themeColor
+                      }}
+                    >
+                      {owner.name}
+                    </span>
+                  ))}
                 </div>
               </div>
             )}
@@ -936,6 +968,41 @@ const ClientDetails: React.FC = () => {
               console.warn(`Failed to fetch IRR for product ${account.id}`, irrErr);
             }
             
+            // Add product owners for each account
+            try {
+              // First fetch all product owners
+              const productOwnersResponse = await api.get('/product_owners');
+              
+              if (productOwnersResponse.data && productOwnersResponse.data.length > 0) {
+                const productOwners = [];
+                
+                // For each product owner, check if they own this product
+                for (const owner of productOwnersResponse.data) {
+                  try {
+                    // Get all products for this product owner
+                    const ownerProductsResponse = await api.get(`/product_owners/${owner.id}/products`);
+                    
+                    // Check if this product is in the list of the owner's products
+                    const isOwnerOfThisProduct = ownerProductsResponse.data?.some(
+                      (p: any) => p.id === account.id
+                    );
+                    
+                    // If this owner owns this product, add it to our list
+                    if (isOwnerOfThisProduct) {
+                      productOwners.push(owner);
+                    }
+                  } catch (err) {
+                    console.error(`Error checking if owner ${owner.id} has product ${account.id}:`, err);
+                  }
+                }
+                
+                account.product_owners = productOwners;
+              }
+            } catch (ownersErr) {
+              console.error(`Error fetching product owners for account ${account.id}:`, ownersErr);
+              account.product_owners = [];
+            }
+            
             return account;
           } catch (err) {
             console.warn(`Error enhancing product data for ${account.id}`, err);
@@ -1056,6 +1123,20 @@ const ClientDetails: React.FC = () => {
       setShowVersionModal(true);
     } catch (err: any) {
       console.error('Error fetching version history:', err);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      if (!client) return;
+      
+      if (window.confirm(`Are you sure you want to delete client ${client.name}? This will also delete all associated products, portfolios, and funds. This action cannot be undone.`)) {
+        await api.delete(`/client_groups/${clientId}`);
+        navigate('/client_groups', { state: { message: `Client ${client.name} deleted successfully` } });
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to delete client');
+      console.error('Error deleting client:', err);
     }
   };
 
@@ -1274,6 +1355,12 @@ const ClientDetails: React.FC = () => {
             className="px-4 py-1.5 text-sm font-medium text-white bg-yellow-600 rounded-xl shadow-sm hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
           >
             Version History
+          </button>
+          <button
+            onClick={handleDelete}
+            className="px-4 py-1.5 text-sm font-medium text-white bg-red-600 rounded-xl shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+          >
+            Delete Client
           </button>
         </div>
       </div>

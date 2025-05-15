@@ -84,6 +84,73 @@ async def get_fund_distribution(
         logger.error(f"Error fetching fund distribution: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
+@router.get("/analytics/provider_distribution")
+async def get_provider_distribution(
+    limit: int = Query(20, ge=1, le=100, description="Maximum number of providers to return"),
+    db = Depends(get_db)
+):
+    """
+    What it does: Returns the distribution of providers based on the total FUM they manage.
+    Why it's needed: Provides data for the provider distribution pie chart on the dashboard.
+    How it works: 
+        1. Fetches all providers
+        2. For each provider, calculates the total current value across all products using latest valuations
+        3. Returns providers sorted by total FUM (descending)
+    Expected output: A list of providers with their names and total FUM values
+    """
+    try:
+        logger.info(f"Fetching provider distribution data with limit: {limit}")
+        
+        # Get all providers
+        providers_result = db.table("available_providers").select("id,name").execute()
+        
+        if not providers_result.data:
+            logger.warning("No providers found in the database")
+            return {"providers": []}
+        
+        provider_data = []
+        
+        # For each provider, calculate total FUM
+        for provider in providers_result.data:
+            # Get all products for this provider
+            products_result = db.table("client_products").select("id,portfolio_id").eq("provider_id", provider["id"]).execute()
+            
+            total_value = 0
+            
+            for product in products_result.data:
+                if product["portfolio_id"]:
+                    # Get all portfolio_funds for this product's portfolio
+                    pf_result = db.table("portfolio_funds").select("id").eq("portfolio_id", product["portfolio_id"]).execute()
+                    
+                    for pf in pf_result.data:
+                        # Get the latest valuation for this portfolio fund
+                        valuation_result = db.table("latest_fund_valuations").select("value").eq("portfolio_fund_id", pf["id"]).execute()
+                        
+                        if valuation_result.data and len(valuation_result.data) > 0:
+                            total_value += valuation_result.data[0]["value"] or 0
+                        else:
+                            # Fallback to amount_invested if no valuation exists
+                            amount_result = db.table("portfolio_funds").select("amount_invested").eq("id", pf["id"]).execute()
+                            if amount_result.data:
+                                total_value += amount_result.data[0]["amount_invested"] or 0
+            
+            # Only include providers with values > 0
+            if total_value > 0:
+                provider_data.append({
+                    "id": str(provider["id"]),  # Convert to string to match the Fund interface
+                    "name": provider["name"],
+                    "amount": total_value
+                })
+        
+        # Sort by amount (descending) and limit results
+        provider_data.sort(key=lambda x: x["amount"], reverse=True)
+        provider_data = provider_data[:limit]
+        
+        return {"providers": provider_data}
+    except Exception as e:
+        logger.error(f"Error fetching provider distribution: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
 @router.get("/analytics/dashboard_stats")
 async def get_dashboard_stats(db = Depends(get_db)):
     """
@@ -1085,3 +1152,105 @@ async def calculate_portfolio_irr(portfolio_id: int, db = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error calculating portfolio IRR: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error calculating portfolio IRR: {str(e)}") 
+
+@router.get("/analytics/portfolio_template_distribution")
+async def get_portfolio_template_distribution(
+    limit: int = Query(20, ge=1, le=100, description="Maximum number of portfolio templates to return"),
+    db = Depends(get_db)
+):
+    """
+    What it does: Returns the distribution of portfolio templates based on the total FUM they manage.
+    Why it's needed: Provides data for the portfolio template distribution pie chart on the dashboard.
+    How it works: 
+        1. Fetches all portfolio templates (available_portfolios)
+        2. For each template, finds all portfolios linked to it via original_template_id
+        3. For each portfolio, calculates the total current value across all funds using latest valuations
+        4. Returns portfolio templates sorted by total FUM (descending)
+    Expected output: A list of portfolio templates with their names and total FUM values
+    """
+    try:
+        logger.info(f"Fetching portfolio template distribution data with limit: {limit}")
+        
+        # Get all portfolio templates
+        templates_result = db.table("available_portfolios").select("id,name").execute()
+        
+        if not templates_result.data:
+            logger.warning("No portfolio templates found in the database")
+            return {"templates": []}
+        
+        # Add a category for portfolios without a template (bespoke)
+        template_data = [
+            {
+                "id": "bespoke",
+                "name": "Bespoke Portfolios",
+                "amount": 0
+            }
+        ]
+        
+        # For each template, calculate total FUM
+        for template in templates_result.data:
+            # Find all portfolios that use this template
+            portfolios_result = db.table("portfolios").select("id").eq("original_template_id", template["id"]).execute()
+            
+            total_value = 0
+            
+            for portfolio in portfolios_result.data:
+                # Get all portfolio_funds for this portfolio
+                pf_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio["id"]).execute()
+                
+                for pf in pf_result.data:
+                    # Get the latest valuation for this portfolio fund
+                    valuation_result = db.table("latest_fund_valuations").select("value").eq("portfolio_fund_id", pf["id"]).execute()
+                    
+                    if valuation_result.data and len(valuation_result.data) > 0:
+                        total_value += valuation_result.data[0]["value"] or 0
+                    else:
+                        # Fallback to amount_invested if no valuation exists
+                        amount_result = db.table("portfolio_funds").select("amount_invested").eq("id", pf["id"]).execute()
+                        if amount_result.data:
+                            total_value += amount_result.data[0]["amount_invested"] or 0
+            
+            # Only include templates with values > 0
+            if total_value > 0:
+                template_data.append({
+                    "id": str(template["id"]),
+                    "name": template["name"],
+                    "amount": total_value
+                })
+        
+        # Now handle portfolios without a template (bespoke)
+        # Find all portfolios with null original_template_id
+        bespoke_portfolios_result = db.table("portfolios").select("id").is_("original_template_id", "null").execute()
+        
+        bespoke_total = 0
+        for portfolio in bespoke_portfolios_result.data:
+            # Get all portfolio_funds for this bespoke portfolio
+            pf_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio["id"]).execute()
+            
+            for pf in pf_result.data:
+                # Get the latest valuation for this portfolio fund
+                valuation_result = db.table("latest_fund_valuations").select("value").eq("portfolio_fund_id", pf["id"]).execute()
+                
+                if valuation_result.data and len(valuation_result.data) > 0:
+                    bespoke_total += valuation_result.data[0]["value"] or 0
+                else:
+                    # Fallback to amount_invested if no valuation exists
+                    amount_result = db.table("portfolio_funds").select("amount_invested").eq("id", pf["id"]).execute()
+                    if amount_result.data:
+                        bespoke_total += amount_result.data[0]["amount_invested"] or 0
+        
+        # Update the bespoke category amount
+        template_data[0]["amount"] = bespoke_total
+        
+        # Remove bespoke category if it's 0
+        if bespoke_total == 0:
+            template_data = template_data[1:]
+        
+        # Sort by amount (descending) and limit results
+        template_data.sort(key=lambda x: x["amount"], reverse=True)
+        template_data = template_data[:limit]
+        
+        return {"templates": template_data}
+    except Exception as e:
+        logger.error(f"Error fetching portfolio template distribution: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}") 

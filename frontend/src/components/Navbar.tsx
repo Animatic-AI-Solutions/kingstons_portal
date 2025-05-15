@@ -100,7 +100,7 @@ const Navbar: React.FC = () => {
                   to="/client_groups" 
                   className={`px-2 py-6 text-sm ${isActive('/client_groups') ? activeNavLinkStyle : inactiveNavLinkStyle}`}
                 >
-                  Clients
+                  Client Groups
                 </Link>
                 <Link 
                   to="/products" 

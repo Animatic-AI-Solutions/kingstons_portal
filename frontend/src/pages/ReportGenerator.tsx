@@ -343,6 +343,13 @@ const formatPercentageFallback = (value: number | null): string => {
       return;
     }
     
+    // Check for duplicate product selections
+    const uniqueSelectedProductIds = new Set(selectedProductIds);
+    if (uniqueSelectedProductIds.size !== selectedProductIds.length) {
+      setDataError('You have selected some products multiple times. Please ensure each product is only selected once.');
+      return;
+    }
+    
     setIsCalculating(true);
     setDataError(null);
     setMonthlyTransactions([]);
