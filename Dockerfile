@@ -67,14 +67,18 @@ ENV DEBUG=True
 
 WORKDIR /app
 
-# Install system dependencies if any (e.g., for packages that need compilation)
-# RUN apt-get update && apt-get install -y --no-install-recommends some-package && rm -rf /var/lib/apt/lists/*
+# Install system dependencies if needed
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc python3-dev && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy backend requirements first to leverage Docker cache
 COPY backend/requirements.txt ./backend/requirements.txt
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r backend/requirements.txt
+RUN pip install --no-cache-dir -r backend/requirements.txt && \
+    pip install --no-cache-dir gunicorn && \
+    pip list
 
 # Copy the backend code
 COPY backend/ ./backend/
@@ -147,6 +151,8 @@ RUN echo '#!/bin/bash' > ./start.sh && \
     echo 'WORKERS=${WORKERS:-1}' >> ./start.sh && \
     echo '# Use timeout from environment' >> ./start.sh && \
     echo 'TIMEOUT=${TIMEOUT:-120}' >> ./start.sh && \
+    echo '# Verify gunicorn is installed' >> ./start.sh && \
+    echo 'which gunicorn || { echo "Error: gunicorn not found"; pip install gunicorn; }' >> ./start.sh && \
     echo '# Start gunicorn with the right configuration' >> ./start.sh && \
     echo 'echo "Starting server on 0.0.0.0:$PORT with $WORKERS workers and $TIMEOUT seconds timeout"' >> ./start.sh && \
     echo '# List directory contents for debugging' >> ./start.sh && \
