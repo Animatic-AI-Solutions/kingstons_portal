@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+import glob
 
 # Configure root logger
 logging.basicConfig(
@@ -170,37 +171,23 @@ async def api_root():
 # Check if static_frontend directory exists before mounting
 static_frontend_path = "static_frontend"
 if os.path.exists(static_frontend_path) and os.path.isdir(static_frontend_path):
-    # Mount the static files directory (static files will be served directly by FastAPI)
-    app.mount("/assets", StaticFiles(directory=f"{static_frontend_path}/assets"), name="assets")
+    # Check for source map files 
+    source_map_files = glob.glob(f"{static_frontend_path}/**/*.map", recursive=True)
+    logger.info(f"Found {len(source_map_files)} source map files in the static frontend directory")
+    if source_map_files:
+        logger.info(f"Sample source map files: {source_map_files[:5]}")
     
-    # Root handler serves the index.html for all non-API paths to support client-side routing
-    @app.get("/")
-    async def serve_index():
-        """Serve the frontend index.html file for the root path"""
-        index_file = f"{static_frontend_path}/index.html"
-        if os.path.exists(index_file):
-            return FileResponse(index_file)
-        return {"message": "Frontend not found"}
+    # Mount the main static files directory
+    app.mount("/", StaticFiles(directory=static_frontend_path, html=True), name="frontend")
     
-    # Catch-all route for client-side routing (SPA)
-    @app.get("/{catch_all:path}")
-    async def serve_spa(catch_all: str):
-        """
-        Serve the frontend SPA for any path not caught by other routes.
-        This enables client-side routing to work properly.
-        """
-        # Skip if the path starts with /api or /docs
-        if catch_all.startswith("api/") or catch_all == "docs" or catch_all.startswith("docs/") or catch_all.startswith("openapi.json"):
-            # Let FastAPI handle the API and documentation routes
-            return {"detail": "Not Found"}
-        
-        # For all other routes, return the index.html to enable client-side routing
-        index_file = f"{static_frontend_path}/index.html"
-        if os.path.exists(index_file):
-            return FileResponse(index_file)
-        return {"message": "Frontend not found"}
+    # Mount the assets directory separately to maintain compatibility
+    assets_path = f"{static_frontend_path}/assets"
+    if os.path.exists(assets_path):
+        app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
+        logger.info(f"Mounted assets directory at /assets")
 else:
     # If static_frontend doesn't exist, fall back to the original root endpoint
+    logger.warning(f"Static frontend directory not found at {static_frontend_path}")
     @app.get("/")
     async def root():
         """
