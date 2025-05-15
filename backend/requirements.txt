@@ -1,5 +1,6 @@
 fastapi==0.104.1
 uvicorn==0.24.0
+gunicorn==21.2.0
 python-dotenv==1.0.0
 supabase==2.3.1
 pydantic==2.5.2
@@ -18,6 +19,9 @@ pyxirr
 gotrue==2.8.0
 
 pydantic-settings==2.1.0
+
+# Needed for deployment
+aiofiles==23.2.1 # For serving static files
 
 # Email service libraries (choose one based on your preferred email provider)
 # sendgrid==6.10.0  # Uncomment if using SendGrid for email service

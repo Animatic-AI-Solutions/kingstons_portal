@@ -9,7 +9,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.encoders import jsonable_encoder
 from typing import Any
 import json
@@ -56,7 +57,7 @@ app.json_encoder = CustomJSONEncoder
 app.add_middleware(
     CORSMiddleware,
     # List of allowed frontend origins that can access this API
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # Frontend development server URLs
+    allow_origins=["http://localhost:3000", "http://localhost:5173", "*"],  # Added wildcard for deployment
     allow_credentials=True,
     # HTTP methods that are allowed for CORS requests
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
@@ -114,8 +115,9 @@ app.include_router(fund_valuations.router, prefix="/api", tags=["Fund Valuations
 app.include_router(product_owners.router, prefix="/api", tags=["Product Owners"])
 app.include_router(client_group_product_owners.router, prefix="/api", tags=["Client Group Product Owners"])
 
-@app.get("/")
-async def root():
+# Root endpoint to serve API info - this is now only accessible via /api/
+@app.get("/api")
+async def api_root():
     """
     Root endpoint for the API.
     
@@ -130,6 +132,51 @@ async def root():
         "message": "Welcome to the Wealth Management System API",
         "docs": "/docs"
     }
+
+# Serve the static frontend assets - for Docker deployment
+# Check if static_frontend directory exists before mounting
+static_frontend_path = "static_frontend"
+if os.path.exists(static_frontend_path) and os.path.isdir(static_frontend_path):
+    # Mount the static files directory (static files will be served directly by FastAPI)
+    app.mount("/assets", StaticFiles(directory=f"{static_frontend_path}/assets"), name="assets")
+    
+    # Root handler serves the index.html for all non-API paths to support client-side routing
+    @app.get("/")
+    async def serve_index():
+        """Serve the frontend index.html file for the root path"""
+        index_file = f"{static_frontend_path}/index.html"
+        if os.path.exists(index_file):
+            return FileResponse(index_file)
+        return {"message": "Frontend not found"}
+    
+    # Catch-all route for client-side routing (SPA)
+    @app.get("/{catch_all:path}")
+    async def serve_spa(catch_all: str):
+        """
+        Serve the frontend SPA for any path not caught by other routes.
+        This enables client-side routing to work properly.
+        """
+        # Skip if the path starts with /api or /docs
+        if catch_all.startswith("api/") or catch_all == "docs" or catch_all.startswith("docs/") or catch_all.startswith("openapi.json"):
+            # Let FastAPI handle the API and documentation routes
+            return {"detail": "Not Found"}
+        
+        # For all other routes, return the index.html to enable client-side routing
+        index_file = f"{static_frontend_path}/index.html"
+        if os.path.exists(index_file):
+            return FileResponse(index_file)
+        return {"message": "Frontend not found"}
+else:
+    # If static_frontend doesn't exist, fall back to the original root endpoint
+    @app.get("/")
+    async def root():
+        """
+        Root endpoint fallback when static frontend is not available.
+        """
+        return {
+            "message": "Welcome to the Wealth Management System API (Frontend not available)",
+            "docs": "/docs"
+        }
 
 if __name__ == "__main__":
     """
