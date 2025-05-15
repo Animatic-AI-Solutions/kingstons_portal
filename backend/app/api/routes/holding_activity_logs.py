@@ -829,7 +829,7 @@ async def process_activity_for_fund_updates(activity_data: dict, db) -> None:
                     'portfolio_fund_id': related_fund_id,
                     'activity_timestamp': activity_data['activity_timestamp'],
                     'activity_type': 'SwitchIn',
-                    'amount': amount,
+                    'amount': amount,  # Keep the same absolute amount for consistency
                     'related_fund': portfolio_fund_id,
                     'product_id': activity_data.get('product_id')
                 }

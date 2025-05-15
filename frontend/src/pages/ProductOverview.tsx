@@ -22,6 +22,7 @@ interface Account {
   original_template_id?: number;
   original_template_name?: string;
   target_risk?: number;
+  portfolio_id?: number;
   current_portfolio?: {
     id: number;
     portfolio_name: string;
@@ -57,6 +58,19 @@ interface ProductOwner {
   status?: string;
 }
 
+interface Provider {
+  id: number;
+  name: string;
+  status?: string;
+  theme_color?: string;
+}
+
+interface Portfolio {
+  id: number;
+  portfolio_name: string;
+  status?: string;
+}
+
 interface ProductOverviewProps {
   accountId?: string;
 }
@@ -78,6 +92,19 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   const [targetRisk, setTargetRisk] = useState<number | null>(null);
   const [displayedTargetRisk, setDisplayedTargetRisk] = useState<string>("N/A");
   const [productOwners, setProductOwners] = useState<ProductOwner[]>([]);
+  
+  // Edit mode state and form data
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
+  const [formData, setFormData] = useState({
+    product_name: '',
+    provider_id: '',
+    portfolio_id: '',
+    product_type: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     if (accountId) {
@@ -96,6 +123,39 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       });
     }
   }, [account, api]);
+
+  // Initialize form data when account data is loaded
+  useEffect(() => {
+    if (account) {
+      setFormData({
+        product_name: account.product_name || '',
+        provider_id: account.provider_id?.toString() || '',
+        portfolio_id: account.current_portfolio?.id?.toString() || account.portfolio_id?.toString() || '',
+        product_type: account.product_type || ''
+      });
+    }
+  }, [account]);
+
+  // Fetch providers and portfolios for edit form
+  useEffect(() => {
+    const fetchFormOptions = async () => {
+      try {
+        const [providersRes, portfoliosRes] = await Promise.all([
+          api.get('/available_providers'),
+          api.get('/portfolios')
+        ]);
+        
+        setProviders(providersRes.data || []);
+        setPortfolios(portfoliosRes.data || []);
+      } catch (err) {
+        console.error('Error fetching form options:', err);
+      }
+    };
+
+    if (isEditMode) {
+      fetchFormOptions();
+    }
+  }, [isEditMode, api]);
 
   const fetchData = async (accountId: string) => {
     try {
@@ -125,6 +185,21 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           }
         } catch (providerErr) {
           console.error('Error fetching provider details:', providerErr);
+        }
+      }
+      
+      // Get client name if we have a client_id but client_name is missing
+      if (accountResponse.data.client_id && (!accountResponse.data.client_name || accountResponse.data.client_name === '')) {
+        try {
+          console.log('Fetching client name for client_id:', accountResponse.data.client_id);
+          const clientResponse = await api.get(`/api/client_groups/${accountResponse.data.client_id}`);
+          if (clientResponse.data && clientResponse.data.name) {
+            // Update the account data with client name
+            accountResponse.data.client_name = clientResponse.data.name;
+            console.log('Updated client name from API:', clientResponse.data.name);
+          }
+        } catch (clientErr) {
+          console.error('Error fetching client details:', clientErr);
         }
       }
       
@@ -887,33 +962,201 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     );
   };
 
+  // Toggle edit mode
+  const toggleEditMode = () => {
+    setIsEditMode(!isEditMode);
+    setFormError(null);
+    
+    // Reset form data when entering edit mode
+    if (!isEditMode && account) {
+      setFormData({
+        product_name: account.product_name || '',
+        provider_id: account.provider_id?.toString() || '',
+        portfolio_id: account.current_portfolio?.id?.toString() || account.portfolio_id?.toString() || '',
+        product_type: account.product_type || ''
+      });
+    }
+  };
+
+  // Handle form input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!accountId) return;
+    
+    try {
+      setIsSubmitting(true);
+      setFormError(null);
+      
+      // Prepare the data for update
+      const updateData = {
+        product_name: formData.product_name,
+        provider_id: formData.provider_id ? parseInt(formData.provider_id) : null,
+        portfolio_id: formData.portfolio_id ? parseInt(formData.portfolio_id) : null,
+        product_type: formData.product_type
+      };
+      
+      // Send the update request
+      await api.patch(`/api/client_products/${accountId}`, updateData);
+      
+      // Refresh the data
+      await fetchData(accountId);
+      
+      // Exit edit mode
+      setIsEditMode(false);
+      
+    } catch (err: any) {
+      console.error('Error updating product:', err);
+      setFormError(err.response?.data?.detail || 'Failed to update product');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Product Edit Form Component
+  const ProductEditForm = () => {
+    return (
+      <div className="bg-white shadow-sm rounded-lg border border-gray-100 mb-6 p-4">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-medium text-gray-900">Edit Product Details</h3>
+          <button
+            onClick={toggleEditMode}
+            className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+        </div>
+        
+        {formError && (
+          <div className="mb-4 p-2 text-sm text-red-700 bg-red-100 rounded-md">
+            {formError}
+          </div>
+        )}
+        
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label htmlFor="product_name" className="block text-sm font-medium text-gray-700 mb-1">
+                Product Name
+              </label>
+              <input
+                type="text"
+                id="product_name"
+                name="product_name"
+                value={formData.product_name}
+                onChange={handleInputChange}
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                required
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="provider_id" className="block text-sm font-medium text-gray-700 mb-1">
+                Provider
+              </label>
+              <select
+                id="provider_id"
+                name="provider_id"
+                value={formData.provider_id}
+                onChange={handleInputChange}
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+              >
+                <option value="">Select Provider</option>
+                {providers.map(provider => (
+                  <option key={provider.id} value={provider.id}>
+                    {provider.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label htmlFor="portfolio_id" className="block text-sm font-medium text-gray-700 mb-1">
+                Portfolio
+              </label>
+              <select
+                id="portfolio_id"
+                name="portfolio_id"
+                value={formData.portfolio_id}
+                onChange={handleInputChange}
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+              >
+                <option value="">Select Portfolio</option>
+                {portfolios.map(portfolio => (
+                  <option key={portfolio.id} value={portfolio.id}>
+                    {portfolio.portfolio_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label htmlFor="product_type" className="block text-sm font-medium text-gray-700 mb-1">
+                Product Type
+              </label>
+              <input
+                type="text"
+                id="product_type"
+                name="product_type"
+                value={formData.product_type}
+                onChange={handleInputChange}
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+              />
+            </div>
+          </div>
+          
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            >
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-16">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600"></div>
+      <div className="flex justify-center items-center py-6">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-700"></div>
       </div>
     );
   }
 
   if (error || !account) {
     return (
-      <div className="bg-red-50 border-l-4 border-red-500 p-4 mt-8">
+      <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
         <div className="flex">
           <div className="flex-shrink-0">
-            <svg className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
             </svg>
           </div>
           <div className="ml-3">
-            <p className="text-red-700 text-base">
-              {error || 'Failed to load product details. Please try again later.'}
-            </p>
-            <button
-              onClick={() => navigate('/products')}
-              className="mt-2 text-red-700 underline"
-            >
-              Return to Products
-            </button>
+            <p className="text-sm text-red-700">{error || 'Failed to load product details. Please try again later.'}</p>
           </div>
         </div>
       </div>
@@ -923,127 +1166,106 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   return (
     <>
       <DeleteConfirmationModal />
-      <div className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-xl font-semibold mb-4">Product Overview</h2>
-        
-        {/* Product Details */}
-        <div className="mb-8 bg-gray-50 p-4 rounded-lg">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="flex flex-col space-y-6">
+        {/* Product Header */}
+        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center">
+              <h2 className="text-xl font-semibold text-gray-900">{account.product_name}</h2>
+              {account.status && (
+                <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  account.status === 'active' ? 'bg-green-100 text-green-800' :
+                  account.status === 'dormant' ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-gray-100 text-gray-800'
+                }`}>
+                  {account.status.charAt(0).toUpperCase() + account.status.slice(1)}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center space-x-2">
+              {/* Edit Button */}
+              <button
+                type="button"
+                onClick={toggleEditMode}
+                className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                <svg className="-ml-0.5 mr-1.5 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsDeleteModalOpen(true)}
+                className="inline-flex items-center px-3 py-1.5 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50"
+              >
+                <svg className="-ml-0.5 mr-1.5 h-4 w-4 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Delete
+              </button>
+            </div>
+          </div>
+          
+          {/* Edit Form (conditionally displayed) */}
+          {isEditMode && <ProductEditForm />}
+
+          {/* Product Info Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-md">
             <div>
-              <h3 className="text-lg font-semibold mb-2">Product Details</h3>
-              <div className="space-y-2">
-                <div>
-                  <span className="text-gray-600 font-medium">Product Name:</span>{" "}
-                  <span className="text-gray-900">{account.product_name}</span>
-                </div>
-                <div>
-                  <span className="text-gray-600 font-medium">Status:</span>{" "}
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    account.status === 'active' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {account.status ? account.status.charAt(0).toUpperCase() + account.status.slice(1) : "Unknown"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-600 font-medium">Provider:</span>{" "}
-                  <span className="text-gray-900">
-                    {account.provider_name ? account.provider_name : 
-                     account.provider_id ? `Provider ID: ${account.provider_id}` : 
-                     "No Provider"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-600 font-medium">Template:</span>{" "}
-                  <span className="text-gray-900">
-                    {account.original_template_id 
-                      ? (account.template_info?.name || account.original_template_name || `Template #${account.original_template_id}`)
-                      : "Bespoke"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-600 font-medium">Start Date:</span>{" "}
-                  <span className="text-gray-900">
-                    {account.start_date ? formatDate(account.start_date) : "N/A"}
-                  </span>
-                </div>
+              <div className="text-sm font-medium text-gray-500">Client Name</div>
+              <div className="text-base font-medium text-gray-900 mt-1">{account.client_name || 'N/A'}</div>
+            </div>
+            
+            <div>
+              <div className="text-sm font-medium text-gray-500">Provider</div>
+              <div className="text-base font-medium text-gray-900 mt-1">{account.provider_name || 'N/A'}</div>
+            </div>
+            
+            <div>
+              <div className="text-sm font-medium text-gray-500">Product Type</div>
+              <div className="text-base font-medium text-gray-900 mt-1">{account.product_type || 'N/A'}</div>
+            </div>
+            
+            <div>
+              <div className="text-sm font-medium text-gray-500">Portfolio Template</div>
+              <div className="text-base font-medium text-gray-900 mt-1">
+                {account.original_template_name || account.template_info?.name || 'N/A'}
               </div>
             </div>
+            
             <div>
-              <h3 className="text-lg font-semibold mb-2">Risk Profile</h3>
-              <div className="space-y-4">
-                <div>
-                  <span className="text-gray-600 font-medium">Target Risk:</span>{" "}
-                  <span className="text-gray-900 font-semibold">
-                    {displayedTargetRisk}
-                  </span>
-                  {displayedTargetRisk !== "N/A" && (
-                    <div className="mt-1 bg-gray-200 h-2 w-full rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-blue-600" 
-                        style={{ 
-                          width: `${Math.min(100, (Number(displayedTargetRisk) / 10) * 100)}%` 
-                        }}
-                      ></div>
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <span className="text-gray-600 font-medium">Current Risk:</span>{" "}
-                  <span className="text-gray-900 font-semibold">
-                    {calculateLiveRisk()}
-                  </span>
-                  {calculateLiveRisk() !== "N/A" && (
-                    <div className="mt-1 bg-gray-200 h-2 w-full rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-green-600" 
-                        style={{ 
-                          width: `${Math.min(100, (Number(calculateLiveRisk()) / 10) * 100)}%` 
-                        }}
-                      ></div>
-                    </div>
-                  )}
-                </div>
-                {calculateLiveRisk() !== "N/A" && displayedTargetRisk !== "N/A" && 
-                  Number(calculateLiveRisk()) !== Number(displayedTargetRisk) && (
-                  <div className="mt-2 text-amber-600 text-sm font-medium flex items-center">
-                    <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                    Current risk differs from target risk. Consider rebalancing.
-                  </div>
-                )}
+              <div className="text-sm font-medium text-gray-500">Target Risk</div>
+              <div className="text-base font-medium text-gray-900 mt-1">{displayedTargetRisk}</div>
+            </div>
+            
+            <div>
+              <div className="text-sm font-medium text-gray-500">Start Date</div>
+              <div className="text-base font-medium text-gray-900 mt-1">
+                {account.start_date ? formatDate(account.start_date) : 'N/A'}
               </div>
             </div>
           </div>
         </div>
-        
+
         {/* Product Owners Section */}
-        <div className="mt-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Product Owners</h3>
-          {productOwners.length > 0 ? (
-            <div className="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200">
-              <ul className="divide-y divide-gray-200">
-                {productOwners.map((owner) => (
-                  <li key={owner.id} className="px-4 py-3 sm:px-6">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-900">{owner.name}</span>
-                      {owner.type && (
-                        <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
-                          {owner.type}
-                        </span>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500 italic">No product owners assigned</p>
-          )}
-        </div>
-        
+        {productOwners.length > 0 && (
+          <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Product Owners</h3>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+              {productOwners.map(owner => (
+                <li key={owner.id} className="flex items-center p-2 bg-gray-50 rounded">
+                  <svg className="h-5 w-5 text-primary-600 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <span className="text-sm font-medium">{owner.name}</span>
+                  {owner.type && <span className="ml-2 text-xs text-gray-500">({owner.type})</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {/* Fund Summary Table */}
         <div className="mb-8">
           <div className="flex items-center mb-4">
@@ -1141,30 +1363,6 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                 )}
               </tbody>
             </table>
-          </div>
-        </div>
-        
-        {/* Danger Zone */}
-        <div className="p-3 mt-2 border-t border-gray-200">
-          <div className="flex justify-between items-center p-2 border border-red-200 rounded-md bg-red-50 shadow-sm">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 h-5 w-5 rounded-md bg-red-100 flex items-center justify-center mr-2">
-                <svg className="h-3 w-3 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <span className="text-sm font-medium text-red-700 my-auto">Danger Zone</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsDeleteModalOpen(true)}
-              className="inline-flex items-center px-3 py-1.5 border border-red-300 text-xs font-medium rounded text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200 shadow-sm"
-            >
-              <svg className="h-3 w-3 mr-1 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              Delete Product
-            </button>
           </div>
         </div>
       </div>
