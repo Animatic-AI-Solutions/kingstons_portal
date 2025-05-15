@@ -20,7 +20,8 @@ RUN ls -la
 RUN echo "Checking Vite config for output directory..."
 RUN grep -r "outDir\|build\.outDir" --include="*.js" --include="*.ts" ./ || echo "No custom outDir specified, using default."
 
-# Build the frontend with verbose output
+# Build the frontend with minification disabled (via vite.config.ts)
+RUN echo "Building frontend with minification disabled..."
 RUN npm run build || (echo "Frontend build failed!" && exit 1)
 
 # List top level directories to find build output
@@ -154,3 +155,9 @@ RUN echo '#!/bin/bash' > ./start.sh && \
     echo 'echo "Contents of static_frontend directory:"' >> ./start.sh && \
     echo 'ls -la static_frontend || echo "static_frontend directory not found!"' >> ./start.sh && \
     echo 'echo "Starting application with DEBUG=$DEBUG..."' >> ./start.sh && \
+    echo 'exec gunicorn main:app --bind 0.0.0.0:$PORT --workers $WORKERS --timeout $TIMEOUT --log-level debug' >> ./start.sh
+
+RUN chmod +x ./start.sh
+
+# Command to run when container starts
+CMD ["./start.sh"]
