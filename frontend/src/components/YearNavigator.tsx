@@ -12,18 +12,14 @@ const YearNavigator: React.FC<YearNavigatorProps> = ({ selectedYear, onYearChang
   // Calculate the start year of a 5-year block that includes the reference year
   // Always displays the current year and 4 years before it in the first block
   const getBlockStartYear = (year: number): number => {
-    // The start year is the current year minus the remainder of the 5-year block
-    // This ensures that current year is always the last year in a block
-    const yearsFromCurrentYear = currentYear - year;
-    const blockOffset = yearsFromCurrentYear % 5;
-    
-    // If the year is the current year or up to 4 years before it, start from (currentYear - 4)
-    // Otherwise, calculate the appropriate block
+    // If year is current year or up to 4 years before it, return current year - 4
     if (year > currentYear - 5) {
       return currentYear - 4;
-    } else {
-      return year - (year % 5);
     }
+    
+    // Otherwise, calculate the appropriate block start year
+    // This should be the year minus (year mod 5), ensuring we start at years like 2020, 2015, 2010, etc.
+    return year - (year % 5);
   };
   
   // Initialize with a block that includes the selected year
@@ -47,18 +43,22 @@ const YearNavigator: React.FC<YearNavigatorProps> = ({ selectedYear, onYearChang
   // Navigate to next 5 years, but never beyond the block containing the current year
   const handleNext = () => {
     const nextStartYear = startYear + 5;
-    // Only allow navigation to next block if it doesn't exceed the block containing current year
+    
+    // Only allow navigation to next block if it doesn't exceed the current year
     if (nextStartYear <= currentYear - 4) {
       setStartYear(nextStartYear);
     } else {
-      setStartYear(currentYear - 4); // Go to the block containing current year
+      // Go to the block containing current year
+      setStartYear(currentYear - 4);
     }
   };
   
-  // Check if we can navigate forward (only if not already at the current year block)
+  // Check if we can navigate forward
+  // We can only navigate forward if we're not already showing the most recent years
   const canNavigateNext = startYear < currentYear - 4;
   
-  // Check if we can navigate backward (if we're not at the minimum year already)
+  // Check if we can navigate backward
+  // We can navigate backward if we're not already at the minimum year (1970)
   const canNavigatePrevious = startYear > 1970;
   
   // Update startYear when selectedYear changes

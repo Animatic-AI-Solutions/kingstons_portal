@@ -1200,6 +1200,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                         <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Withdrawals</th>
                         <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Most Recent Value</th>
                         <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Most Recent IRR</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -1267,23 +1268,6 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                         </div>
                                       )}
                                     </div>
-                                    {/* Add Deactivate button for active non-virtual funds */}
-                                    {!holding.isVirtual && holding.status !== 'inactive' && (
-                                      <button
-                                        onClick={() => {
-                                          setFundToDeactivate({
-                                            id: holding.id,
-                                            name: holding.fund_name || 'Unknown Fund',
-                                            market_value: holding.market_value || 0
-                                          });
-                                          setShowDeactivationConfirm(true);
-                                        }}
-                                        className="ml-2 px-2 py-1 text-xs font-medium rounded text-red-600 border border-red-200 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-                                        title="Deactivate Fund"
-                                      >
-                                        Deactivate
-                                      </button>
-                                    )}
                                   </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
@@ -1380,6 +1364,24 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                     )}
                                   </div>
                                 </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  {!holding.isVirtual && holding.status !== 'inactive' && (
+                                    <button
+                                      onClick={() => {
+                                        setFundToDeactivate({
+                                          id: holding.id,
+                                          name: holding.fund_name || 'Unknown Fund',
+                                          market_value: holding.market_value || 0
+                                        });
+                                        setShowDeactivationConfirm(true);
+                                      }}
+                                      className="px-2 py-1 text-xs font-medium rounded text-red-600 border border-red-200 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                                      title="Deactivate Fund"
+                                    >
+                                      Deactivate
+                                    </button>
+                                  )}
+                                </td>
                               </tr>
                             )})}
                           </>
@@ -1451,6 +1453,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                             );
                           })()}
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap"></td>
                       </tr>
                     </tbody>
                   </table>
