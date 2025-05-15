@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Button, Modal, notification } from 'antd';
+import { ExclamationCircleOutlined, DeleteOutlined } from '@ant-design/icons';
 
 interface Fund {
   id: number;
@@ -19,6 +21,7 @@ interface Portfolio {
   created_at: string;
   funds?: Fund[];
   averageRisk?: number;
+  product_count?: number;
 }
 
 type SortField = 'name' | 'created_at' | 'averageRisk';
@@ -33,6 +36,9 @@ const Portfolios: React.FC = () => {
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [portfolioToDelete, setPortfolioToDelete] = useState<Portfolio | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchPortfolios();
@@ -60,6 +66,7 @@ const Portfolios: React.FC = () => {
   const fetchPortfolioDetails = async (portfolioId: number): Promise<Portfolio | null> => {
     try {
       const response = await api.get(`/available_portfolios/${portfolioId}`);
+      const productCountResponse = await api.get(`/available_portfolios/${portfolioId}/product_count`);
       
       if (response.data) {
         console.log(`Fetched details for portfolio ${portfolioId}:`, response.data);
@@ -70,7 +77,8 @@ const Portfolios: React.FC = () => {
         
         return {
           ...portfolioData,
-          averageRisk
+          averageRisk,
+          product_count: productCountResponse.data.count
         };
       }
       return null;
@@ -129,12 +137,60 @@ const Portfolios: React.FC = () => {
     navigate('/definitions/portfolio-templates/add');
   };
 
-  const handlePortfolioClick = (portfolioId: number) => {
+  const handlePortfolioClick = (e: React.MouseEvent, portfolioId: number) => {
+    if ((e.target as HTMLElement).closest('.delete-button-class')) {
+        return;
+    }
     if (portfolioId) {
       navigate(`/definitions/portfolio-templates/${portfolioId}`);
     } else {
       console.error('Attempted to navigate to portfolio template with undefined ID');
     }
+  };
+
+  const showDeleteModal = (portfolio: Portfolio) => {
+    setPortfolioToDelete(portfolio);
+    setIsDeleteModalVisible(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!portfolioToDelete) return;
+
+    if (portfolioToDelete.product_count && portfolioToDelete.product_count > 0) {
+      notification.error({
+        message: 'Deletion Failed',
+        description: `This template is linked to ${portfolioToDelete.product_count} product(s) and cannot be deleted.`,
+      });
+      setIsDeleteModalVisible(false);
+      setPortfolioToDelete(null);
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await api.delete(`/available_portfolios/${portfolioToDelete.id}`);
+      notification.success({
+        message: 'Portfolio Template Deleted',
+        description: `Template "${portfolioToDelete.name}" has been successfully deleted.`,
+      });
+      fetchPortfolios();
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to delete portfolio template');
+      notification.error({
+        message: 'Deletion Failed',
+        description: err.response?.data?.detail || 'An unexpected error occurred.',
+      });
+      console.error('Error deleting portfolio template:', err);
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteModalVisible(false);
+      setPortfolioToDelete(null);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setIsDeleteModalVisible(false);
+    setPortfolioToDelete(null);
   };
 
   const filteredAndSortedPortfolios = portfolios
@@ -240,6 +296,9 @@ const Portfolios: React.FC = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Created Date
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -247,27 +306,29 @@ const Portfolios: React.FC = () => {
                     <tr 
                       key={portfolio.id} 
                       className="hover:bg-purple-50 transition-colors duration-150 cursor-pointer"
-                      onClick={() => handlePortfolioClick(portfolio.id)}
+                      onClick={(e) => handlePortfolioClick(e, portfolio.id)}
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{portfolio.name || 'Unnamed Template'}</div>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {portfolio.name}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900 font-medium">
-                          {portfolio.averageRisk && portfolio.averageRisk > 0 ? (
-                            <>
-                              {portfolio.averageRisk}
-                              <span className="ml-1 text-xs text-gray-500">(0-7)</span>
-                            </>
-                          ) : (
-                            'N/A'
-                          )}
-                        </div>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {portfolio.averageRisk?.toFixed(1) || 'N/A'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">
-                          {new Date(portfolio.created_at).toLocaleDateString()}
-                        </div>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(portfolio.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 delete-button-class">
+                        <Button
+                          icon={<DeleteOutlined />}
+                          danger
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            showDeleteModal(portfolio);
+                          }}
+                          disabled={portfolio.product_count !== undefined && portfolio.product_count > 0}
+                        >
+                          Delete
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -277,6 +338,29 @@ const Portfolios: React.FC = () => {
           )}
         </div>
       </div>
+
+      {portfolioToDelete && (
+        <Modal
+          title="Confirm Delete"
+          visible={isDeleteModalVisible}
+          onOk={handleDeleteConfirm}
+          onCancel={handleDeleteCancel}
+          confirmLoading={isDeleting}
+          okText="Delete"
+          cancelText="Cancel"
+          okButtonProps={{ danger: true }}
+        >
+          <p>
+            Are you sure you want to delete the portfolio template "{portfolioToDelete.name}"?
+          </p>
+          {portfolioToDelete.product_count !== undefined && portfolioToDelete.product_count > 0 && (
+            <p className="text-red-500 mt-2">
+              <ExclamationCircleOutlined style={{ marginRight: 8 }} />
+              This template is currently linked to {portfolioToDelete.product_count} product(s) and cannot be deleted.
+            </p>
+          )}
+        </Modal>
+      )}
     </div>
   );
 };
