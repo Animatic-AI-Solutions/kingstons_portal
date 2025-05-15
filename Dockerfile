@@ -143,26 +143,8 @@ EXPOSE 8000
 # Change to the backend directory
 WORKDIR /app/backend
 
-# Create start script that reads environment variables
-RUN echo '#!/bin/bash' > ./start.sh && \
-    echo '# Use PORT from environment (for platforms like Render) or fall back to API_PORT' >> ./start.sh && \
-    echo 'PORT=${PORT:-$API_PORT}' >> ./start.sh && \
-    echo '# Use workers from environment' >> ./start.sh && \
-    echo 'WORKERS=${WORKERS:-1}' >> ./start.sh && \
-    echo '# Use timeout from environment' >> ./start.sh && \
-    echo 'TIMEOUT=${TIMEOUT:-120}' >> ./start.sh && \
-    echo '# Verify gunicorn is installed' >> ./start.sh && \
-    echo 'which gunicorn || { echo "Error: gunicorn not found"; pip install gunicorn; }' >> ./start.sh && \
-    echo '# Start gunicorn with the right configuration' >> ./start.sh && \
-    echo 'echo "Starting server on 0.0.0.0:$PORT with $WORKERS workers and $TIMEOUT seconds timeout"' >> ./start.sh && \
-    echo '# List directory contents for debugging' >> ./start.sh && \
-    echo 'echo "Contents of current directory:"' >> ./start.sh && \
-    echo 'ls -la' >> ./start.sh && \
-    echo 'echo "Contents of static_frontend directory:"' >> ./start.sh && \
-    echo 'ls -la static_frontend || echo "static_frontend directory not found!"' >> ./start.sh && \
-    echo 'echo "Starting application with DEBUG=$DEBUG..."' >> ./start.sh && \
-    echo 'exec gunicorn main:app --bind 0.0.0.0:$PORT --workers $WORKERS --timeout $TIMEOUT --log-level debug' >> ./start.sh
-
+# Copy the start.sh script from the host
+COPY backend/start.sh ./start.sh
 RUN chmod +x ./start.sh
 
 # Command to run when container starts
