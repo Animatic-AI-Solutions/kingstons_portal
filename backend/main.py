@@ -1,7 +1,6 @@
 import os
 import sys
 import logging
-import glob
 
 # Configure root logger
 logging.basicConfig(
@@ -51,19 +50,7 @@ from app.api.routes import (
 )
 
 # Load environment variables from .env file
-logger.info("Loading environment variables from .env file...")
-dotenv_path = os.path.join(os.getcwd(), ".env")
-if os.path.exists(dotenv_path):
-    logger.info(f"Found .env file at: {dotenv_path}")
-    load_dotenv(dotenv_path)
-    logger.info("Loaded environment variables from .env file")
-else:
-    logger.warning(f".env file not found at {dotenv_path}. Looking for environment variables in system.")
-    load_dotenv()  # Try to load from default locations
-    
-# Log available environment variables (safely)
-env_keys = [k for k in os.environ.keys() if not any(secret in k.upper() for secret in ["KEY", "SECRET", "PASSWORD", "TOKEN"])]
-logger.info(f"Available environment variables (excluding sensitive ones): {sorted(env_keys)}")
+load_dotenv()
 
 # Custom JSON encoder class to handle date objects
 class CustomJSONEncoder(json.JSONEncoder):
@@ -91,7 +78,7 @@ app.json_encoder = CustomJSONEncoder
 app.add_middleware(
     CORSMiddleware,
     # List of allowed frontend origins that can access this API
-    allow_origins=["http://localhost:3000", "http://localhost:5173", "*"],  # Added wildcard for deployment
+    allow_origins=["*"],
     allow_credentials=True,
     # HTTP methods that are allowed for CORS requests
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
@@ -149,7 +136,6 @@ app.include_router(fund_valuations.router, prefix="/api", tags=["Fund Valuations
 app.include_router(product_owners.router, prefix="/api", tags=["Product Owners"])
 app.include_router(client_group_product_owners.router, prefix="/api", tags=["Client Group Product Owners"])
 
-# Root endpoint to serve API info - this is now only accessible via /api/
 @app.get("/api")
 async def api_root():
     """
@@ -171,32 +157,35 @@ async def api_root():
 # Check if static_frontend directory exists before mounting
 static_frontend_path = "static_frontend"
 if os.path.exists(static_frontend_path) and os.path.isdir(static_frontend_path):
-    # Check for source map files 
-    source_map_files = glob.glob(f"{static_frontend_path}/**/*.map", recursive=True)
-    logger.info(f"Found {len(source_map_files)} source map files in the static frontend directory")
-    if source_map_files:
-        logger.info(f"Sample source map files: {source_map_files[:5]}")
+    # Mount the static files directory (static files will be served directly by FastAPI)
+    app.mount("/assets", StaticFiles(directory=f"{static_frontend_path}/assets"), name="assets")
     
-    # Mount the main static files directory
-    app.mount("/", StaticFiles(directory=static_frontend_path, html=True), name="frontend")
-    
-    # Mount the assets directory separately to maintain compatibility
-    assets_path = f"{static_frontend_path}/assets"
-    if os.path.exists(assets_path):
-        app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
-        logger.info(f"Mounted assets directory at /assets")
-else:
-    # If static_frontend doesn't exist, fall back to the original root endpoint
-    logger.warning(f"Static frontend directory not found at {static_frontend_path}")
+    # Root handler serves the index.html for all non-API paths to support client-side routing
     @app.get("/")
-    async def root():
+    async def serve_index():
+        """Serve the frontend index.html file for the root path"""
+        index_file = f"{static_frontend_path}/index.html"
+        if os.path.exists(index_file):
+            return FileResponse(index_file)
+        return {"message": "Frontend not found"}
+    
+    # Catch-all route for client-side routing (SPA)
+    @app.get("/{catch_all:path}")
+    async def serve_spa(catch_all: str):
         """
-        Root endpoint fallback when static frontend is not available.
+        Serve the frontend SPA for any path not caught by other routes.
+        This enables client-side routing to work properly.
         """
-        return {
-            "message": "Welcome to the Wealth Management System API (Frontend not available)",
-            "docs": "/docs"
-        }
+        # Skip if the path starts with /api or /docs
+        if catch_all.startswith("api/") or catch_all == "docs" or catch_all.startswith("docs/") or catch_all.startswith("openapi.json"):
+            # Let FastAPI handle the API and documentation routes
+            return {"detail": "Not Found"}
+        
+        # For all other routes, return the index.html to enable client-side routing
+        index_file = f"{static_frontend_path}/index.html"
+        if os.path.exists(index_file):
+            return FileResponse(index_file)
+        return {"message": "Frontend not found"}
 
 if __name__ == "__main__":
     """

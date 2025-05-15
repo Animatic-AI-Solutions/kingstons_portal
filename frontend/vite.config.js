@@ -10,7 +10,7 @@ export default defineConfig({
   ],
   build: {
     outDir: 'build',
-    sourcemap: 'true', // Ensure source maps are generated
+    sourcemap: true,
     // Optimize chunks
     rollupOptions: {
       output: {
@@ -39,8 +39,7 @@ export default defineConfig({
     minify: 'terser',
     terserOptions: {
       compress: {
-        // Remove drop_console to keep console logs for debugging
-        // drop_console: true,
+        drop_console: true,
         drop_debugger: true,
       },
     },

@@ -32,10 +32,6 @@ RUN echo "Checking dist directory:" && ls -la dist 2>/dev/null || echo "dist dir
 RUN echo "Checking build directory:" && ls -la build 2>/dev/null || echo "build directory not found!"
 RUN echo "Checking output directory:" && ls -la output 2>/dev/null || echo "output directory not found!"
 
-# Check for source map files
-RUN echo "Checking for source map files:"
-RUN find . -name "*.map" | grep . || echo "No source map files found!"
-
 # Try to detect the build output directory
 RUN BUILD_DIR="dist"; \
     if [ -d "dist" ]; then \
@@ -101,10 +97,6 @@ RUN echo '#!/bin/sh' > /app/copy-frontend.sh && \
     echo '  echo "Copying from $BUILD_DIR directory"' >> /app/copy-frontend.sh && \
     echo '  cp -r /app/frontend/$BUILD_DIR/* /app/backend/static_frontend/' >> /app/copy-frontend.sh && \
     echo '  echo "Frontend assets copied successfully."' >> /app/copy-frontend.sh && \
-    echo '  # Count and list source map files' >> /app/copy-frontend.sh && \
-    echo '  echo "Source map files:"' >> /app/copy-frontend.sh && \
-    echo '  find /app/backend/static_frontend -name "*.map" | wc -l' >> /app/copy-frontend.sh && \
-    echo '  find /app/backend/static_frontend -name "*.map" | head -5' >> /app/copy-frontend.sh && \
     echo 'else' >> /app/copy-frontend.sh && \
     echo '  echo "WARNING: No frontend build artifacts found in $BUILD_DIR directory"' >> /app/copy-frontend.sh && \
     echo '  # Try other common directories as a fallback' >> /app/copy-frontend.sh && \
@@ -161,14 +153,4 @@ RUN echo '#!/bin/bash' > ./start.sh && \
     echo 'ls -la' >> ./start.sh && \
     echo 'echo "Contents of static_frontend directory:"' >> ./start.sh && \
     echo 'ls -la static_frontend || echo "static_frontend directory not found!"' >> ./start.sh && \
-    echo 'echo "Source map files available:"' >> ./start.sh && \
-    echo 'find static_frontend -name "*.map" | wc -l' >> ./start.sh && \
     echo 'echo "Starting application with DEBUG=$DEBUG..."' >> ./start.sh && \
-    echo 'echo "Environment variables (sanitized):"' >> ./start.sh && \
-    echo 'env | grep -v KEY | grep -v SECRET | grep -v PASSWORD | grep -v TOKEN' >> ./start.sh && \
-    echo 'exec gunicorn -w $WORKERS -t $TIMEOUT --log-level debug -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:$PORT' >> ./start.sh && \
-    chmod +x ./start.sh
-
-# Command to run the application
-# The script allows flexible configuration through environment variables
-CMD ["./start.sh"] 
