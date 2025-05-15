@@ -48,7 +48,11 @@ const AddPortfolioTemplate: React.FC = () => {
       const response = await api.get('/funds', {
         params: { status: 'active' }
       });
-      setAvailableFunds(response.data);
+      // Sort funds alphabetically by fund_name
+      const sortedFunds = response.data.sort((a: Fund, b: Fund) => 
+        a.fund_name.localeCompare(b.fund_name)
+      );
+      setAvailableFunds(sortedFunds);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to fetch funds');
       console.error('Error fetching funds:', err);
