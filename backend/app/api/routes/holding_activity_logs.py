@@ -520,183 +520,47 @@ async def create_holding_activity_log(
     db = Depends(get_db)
 ):
     """
-    What it does: Creates a new holding activity log in the database and updates:
-    1. Fund weightings within the portfolio(s) using the most recent common valuation month if available
-    2. product weightings for the client(s) using the most recent common valuation month if available
-    3. Recalculates IRR values for the fund(s) with dates after the activity timestamp, but only if valuations have been edited
-    Why it's needed: Allows adding new holding activity logs and keeps all weightings and IRR values in sync.
+    What it does: Creates a new holding activity log in the database.
+    Why it's needed: Allows recording investment and withdrawal activities for portfolio funds.
     How it works:
-        1. Validates the holding activity log data
-        2. Records the activity without modifying fund values
-        3. Tracks affected portfolios and funds
-        4. If skip_fund_update is False, processes the activity to update fund amounts
-        5. Recalculates fund weightings in affected portfolio(s) using the most recent common valuation month
-        6. Recalculates product weightings for affected client(s) using the most recent common valuation month
-        7. Recalculates IRR values with dates after the activity timestamp, but only for edited valuations
-        8. Returns the newly created holding activity log
+        1. Validates the input data
+        2. Inserts the activity in the database
+        3. Updates the fund's amount_invested if applicable
+        4. Recalculates IRR values if needed
+        5. Returns the created activity record
+    Expected output: The newly created holding activity log object
     """
     try:
-        # Add debug logging to check input parameters - properly format date objects
-        activity_timestamp = None
-        if holding_activity_log.activity_timestamp:
-            activity_timestamp = holding_activity_log.activity_timestamp.isoformat() if isinstance(holding_activity_log.activity_timestamp, date) else str(holding_activity_log.activity_timestamp)
-        
-        logger.info(f"Creating holding activity log with data: "
-                  f"product_id={getattr(holding_activity_log, 'product_id', None)} "
-                  f"product_holding_id={getattr(holding_activity_log, 'product_holding_id', None)} "
-                  f"account_holding_id={getattr(holding_activity_log, 'account_holding_id', None)} "
-                  f"portfolio_fund_id={holding_activity_log.portfolio_fund_id} "
-                  f"activity_timestamp={activity_timestamp} "
-                  f"activity_type={holding_activity_log.activity_type} "
-                  f"amount={holding_activity_log.amount} "
-                  f"related_fund={holding_activity_log.related_fund}")
-                  
-        logger.info(f"Skip fund update: {skip_fund_update}")
-        
-        # Specifically check for related_fund
-        has_related_fund = hasattr(holding_activity_log, 'related_fund')
-        related_fund_value = getattr(holding_activity_log, 'related_fund', None)
-        logger.info(f"Has related_fund attribute: {has_related_fund}, Value: {related_fund_value}")
-        
-        # Validate product_id and get client_id
-        client_id = None
-        affected_client_ids = set()  # Set to track all affected clients
-        
-        # Handle the various ways we might get product_id
-        if hasattr(holding_activity_log, 'product_id') and holding_activity_log.product_id is not None:
-            # Use product_id directly if available (new structure)
-            logger.info(f"Using provided product_id: {holding_activity_log.product_id}")
-            product_id = holding_activity_log.product_id
+        # Process backward compatibility for account_holding_id to product_id
+        if holding_activity_log.account_holding_id and not holding_activity_log.product_id:
+            holding_activity_log.product_id = holding_activity_log.account_holding_id
             
-        elif hasattr(holding_activity_log, 'account_holding_id') and holding_activity_log.account_holding_id:
-            # For backward compatibility with account_holding_id
-            logger.info(f"Using account_holding_id as product_id: {holding_activity_log.account_holding_id}")
-            product_id = holding_activity_log.account_holding_id
-            holding_activity_log.product_id = product_id
+        # Get the data dictionary from the model
+        log_data = holding_activity_log.model_dump()
+        
+        # Debug
+        logger.info(f"Creating activity log with data: {log_data}")
+        
+        # Ensure activity_timestamp is properly serialized if it's a date object
+        if "activity_timestamp" in log_data and isinstance(log_data["activity_timestamp"], date):
+            log_data["activity_timestamp"] = log_data["activity_timestamp"].isoformat()
             
-        elif hasattr(holding_activity_log, 'product_holding_id') and holding_activity_log.product_holding_id:
-            # For backward compatibility with product_holding_id - this needs to be updated
-            # In the new schema, there's no product_holdings table anymore
-            logger.info(f"product_holding_id is no longer supported as product_holdings table has been removed")
-            raise HTTPException(status_code=400, 
-                    detail="product_holding_id is no longer supported. Please use product_id instead.")
-        else:
-            # No valid product identifier found
-            raise HTTPException(status_code=400, 
-                detail="Missing required field: either product_id or account_holding_id is required")
-                
-        # Now that we have a product_id, get the client_id
-        client_product = db.table("client_products")\
-            .select("client_id, portfolio_id")\
-            .eq("id", product_id)\
-            .execute()
-            
-        if not client_product.data:
-            raise HTTPException(status_code=404, 
-                detail=f"Client product with ID {product_id} not found")
-        
-        client_id = client_product.data[0]["client_id"]
-        affected_client_ids.add(client_id)
-        
-        affected_portfolio_ids = set()  # Set to track all affected portfolios
-        affected_portfolio_fund_ids = set()  # Set to track all affected portfolio funds
-        
-        # Validate portfolio_fund_id and get portfolio information
-        portfolio_fund = db.table("portfolio_funds")\
-            .select("*")\
-            .eq("id", holding_activity_log.portfolio_fund_id)\
-            .execute()
-            
-        if not portfolio_fund.data:
-            raise HTTPException(status_code=404, 
-                detail=f"Portfolio fund with ID {holding_activity_log.portfolio_fund_id} not found")
-        
-        source_portfolio_id = portfolio_fund.data[0]["portfolio_id"]
-        source_portfolio_fund_id = holding_activity_log.portfolio_fund_id
-        affected_portfolio_ids.add(source_portfolio_id)
-        affected_portfolio_fund_ids.add(source_portfolio_fund_id)
-        
-        # For Switch activities, get related fund info
-        if (holding_activity_log.activity_type in ['SwitchIn', 'SwitchOut']) and hasattr(holding_activity_log, 'related_fund') and holding_activity_log.related_fund:
-            related_fund_id = holding_activity_log.related_fund
-            related_fund = db.table("portfolio_funds")\
-                .select("*")\
-                .eq("id", related_fund_id)\
-                .execute()
-                
-            if not related_fund.data:
-                raise HTTPException(status_code=404, 
-                    detail=f"Related portfolio fund with ID {related_fund_id} not found")
-                    
-            # The related fund
-            related_fund_portfolio_id = related_fund.data[0]["portfolio_id"]
-            affected_portfolio_ids.add(related_fund_portfolio_id)
-            affected_portfolio_fund_ids.add(related_fund_id)
-            
-            # If related fund is in a different product, get its client_id
-            if related_fund_portfolio_id != source_portfolio_id:
-                # Instead of querying product_holdings, directly check client_products
-                    related_products = db.table("client_products")\
-                        .select("client_id")\
-                    .eq("portfolio_id", related_fund_portfolio_id)\
-                        .execute()
-                        
-                    if related_products.data:
-                        affected_client_ids.add(related_products.data[0]["client_id"])
-        
-        # Legacy support for Switch type
-        if holding_activity_log.activity_type == 'Switch' and hasattr(holding_activity_log, 'target_portfolio_fund_id'):
-            target_fund = db.table("portfolio_funds")\
-                .select("*")\
-                .eq("id", holding_activity_log.target_portfolio_fund_id)\
-                .execute()
-                
-            if not target_fund.data:
-                raise HTTPException(status_code=404, 
-                    detail=f"Target portfolio fund with ID {holding_activity_log.target_portfolio_fund_id} not found")
-                    
-            target_portfolio_id = target_fund.data[0]["portfolio_id"]
-            affected_portfolio_ids.add(target_portfolio_id)
-            affected_portfolio_fund_ids.add(holding_activity_log.target_portfolio_fund_id)
-            
-            # If target fund is in a different product, get its client_id
-            if target_portfolio_id != source_portfolio_id:
-                # Instead of querying product_holdings, directly check client_products
-                    target_products = db.table("client_products")\
-                        .select("client_id")\
-                    .eq("portfolio_id", target_portfolio_id)\
-                        .execute()
-                        
-                    if target_products.data:
-                        affected_client_ids.add(target_products.data[0]["client_id"])
-        
-        # Get the data dictionary with proper datetime serialization
-        data_dict = holding_activity_log.model_dump()
-        
-        # Remove account_holding_id and product_holding_id from data_dict if present
-        # since they're not in the database schema
-        if 'account_holding_id' in data_dict:
-            account_holding_id_value = data_dict.pop('account_holding_id')
-            logger.info(f"Removed account_holding_id={account_holding_id_value} from data dict as it's not in the schema")
-            
-        if 'product_holding_id' in data_dict:
-            product_holding_id_value = data_dict.pop('product_holding_id')
-            logger.info(f"Removed product_holding_id={product_holding_id_value} from data dict as it's not in the schema")
-        
         # Ensure amount is a float if present
-        if data_dict.get('amount') is not None:
+        if 'amount' in log_data and log_data['amount'] is not None:
             try:
-                data_dict['amount'] = float(data_dict['amount'])
+                log_data['amount'] = float(log_data['amount'])
             except (ValueError, TypeError):
                 raise HTTPException(status_code=422, detail="Invalid amount format")
         
-        # Ensure activity_timestamp is properly serialized
-        if 'activity_timestamp' in data_dict and data_dict['activity_timestamp'] is not None:
-            if isinstance(data_dict['activity_timestamp'], date):
-                data_dict['activity_timestamp'] = data_dict['activity_timestamp'].isoformat()
+        # Remove account_holding_id and product_holding_id if present as they're not in the database schema
+        if 'account_holding_id' in log_data:
+            log_data.pop('account_holding_id')
+            
+        if 'product_holding_id' in log_data:
+            log_data.pop('product_holding_id')
         
-        # Insert the activity log
-        result = db.table("holding_activity_log").insert(data_dict).execute()
+        # Insert the new activity log
+        result = db.table("holding_activity_log").insert(log_data).execute()
         
         if not result.data:
             raise HTTPException(status_code=400, detail="Failed to create holding activity log")
@@ -713,7 +577,7 @@ async def create_holding_activity_log(
                 # Don't process fund updates for SwitchOut, they're handled by SwitchIn
             else:
                 # Process fund updates for all other activities
-                await process_activity_for_fund_updates(data_dict, db)
+                await process_activity_for_fund_updates(log_data, db)
                 logger.info(f"Updated fund amounts for activity: {result.data[0]['id']}")
         else:
             logger.info(f"skip_fund_update is {skip_fund_update}, skipping fund amount updates for activity: {result.data[0]['id']}")
@@ -1111,6 +975,23 @@ async def update_holding_activity_log(
                 update_data['amount'] = float(update_data['amount'])
             except (ValueError, TypeError):
                 raise HTTPException(status_code=422, detail="Invalid amount format")
+        
+        # Ensure activity_timestamp is properly serialized if it's a date object
+        if "activity_timestamp" in update_data and isinstance(update_data["activity_timestamp"], date):
+            update_data["activity_timestamp"] = update_data["activity_timestamp"].isoformat()
+        
+        # Remove account_holding_id if present as it's not in the database schema
+        if 'account_holding_id' in update_data:
+            account_holding_id = update_data.pop('account_holding_id')
+            # If account_holding_id is provided but product_id isn't, use account_holding_id as product_id
+            if 'product_id' not in update_data:
+                update_data['product_id'] = account_holding_id
+            logger.info(f"Removed account_holding_id={account_holding_id} from update data (not in schema)")
+        
+        # Remove product_holding_id if present as it's not in the database schema either
+        if 'product_holding_id' in update_data:
+            product_holding_id = update_data.pop('product_holding_id')
+            logger.info(f"Removed product_holding_id={product_holding_id} from update data (not in schema)")
                 
         # Track portfolios and clients affected by this update
         affected_portfolio_ids = set()
