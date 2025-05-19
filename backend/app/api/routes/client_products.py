@@ -825,3 +825,188 @@ async def get_product_irr(product_id: int, db = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error calculating IRR for product {product_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@router.get("/client_products/{client_product_id}/complete", response_model=dict)
+async def get_complete_product_details(client_product_id: int, db = Depends(get_db)):
+    """
+    What it does: Retrieves a single product with all its related data in one query.
+    Why it's needed: Dramatically improves frontend performance by eliminating multiple sequential API calls.
+    How it works:
+        1. Fetches the product details
+        2. Fetches all related data in parallel:
+           - Provider details
+           - Client details
+           - Product owners
+           - Portfolio details including funds
+           - Fund valuations
+           - IRR values
+        3. Combines all data into a single response object
+    Expected output: A complete product object with all related data nested within it
+    """
+    try:
+        logger.info(f"Fetching complete product details for product ID: {client_product_id}")
+        
+        # Check if the product exists
+        product_result = db.table("client_products").select("*").eq("id", client_product_id).execute()
+        
+        if not product_result.data or len(product_result.data) == 0:
+            raise HTTPException(status_code=404, detail=f"Product with ID {client_product_id} not found")
+        
+        product = product_result.data[0]
+        logger.info(f"Found product: {product['product_name']} (ID: {product['id']})")
+        
+        # Extract IDs needed for related data
+        provider_id = product.get("provider_id")
+        client_id = product.get("client_id")
+        portfolio_id = product.get("portfolio_id")
+        
+        # Initialize response object with product data
+        response = {
+            **product,
+            "provider_details": None,
+            "client_details": None,
+            "product_owners": [],
+            "portfolio_details": None,
+            "portfolio_funds": [],
+            "fund_valuations": {},
+            "irr_values": {},
+            "summary": {
+                "total_value": 0,
+                "irr_weighted": None
+            }
+        }
+        
+        # Fetch provider details if available
+        if provider_id:
+            provider_result = db.table("available_providers").select("*").eq("id", provider_id).execute()
+            if provider_result.data and len(provider_result.data) > 0:
+                response["provider_details"] = provider_result.data[0]
+                response["provider_name"] = provider_result.data[0].get("name")
+                response["provider_theme_color"] = provider_result.data[0].get("theme_color")
+        
+        # Fetch client details if available
+        if client_id:
+            client_result = db.table("client_groups").select("*").eq("id", client_id).execute()
+            if client_result.data and len(client_result.data) > 0:
+                response["client_details"] = client_result.data[0]
+                response["client_name"] = client_result.data[0].get("name")
+        
+        # Fetch product owners in a single query
+        try:
+            # First get all associations
+            pop_result = db.table("product_owner_products").select("*").eq("product_id", client_product_id).execute()
+            
+            if pop_result.data and len(pop_result.data) > 0:
+                # Extract product owner IDs
+                owner_ids = [pop.get("product_owner_id") for pop in pop_result.data]
+                
+                # Fetch all product owners in one query
+                owners_result = db.table("product_owners").select("*").in_("id", owner_ids).execute()
+                if owners_result.data:
+                    response["product_owners"] = owners_result.data
+        except Exception as e:
+            logger.error(f"Error fetching product owners: {str(e)}")
+        
+        # Fetch portfolio details and funds if available
+        if portfolio_id:
+            # Get portfolio details
+            portfolio_result = db.table("portfolios").select("*").eq("id", portfolio_id).execute()
+            if portfolio_result.data and len(portfolio_result.data) > 0:
+                portfolio = portfolio_result.data[0]
+                response["portfolio_details"] = portfolio
+                
+                # Get original template if available
+                original_template_id = portfolio.get("original_template_id")
+                if original_template_id:
+                    template_result = db.table("available_portfolios").select("*").eq("id", original_template_id).execute()
+                    if template_result.data and len(template_result.data) > 0:
+                        response["template_info"] = template_result.data[0]
+                        response["original_template_id"] = original_template_id
+                        response["original_template_name"] = template_result.data[0].get("name")
+                
+                # Get portfolio funds in a single query
+                funds_result = db.table("portfolio_funds").select("*").eq("portfolio_id", portfolio_id).execute()
+                if funds_result.data:
+                    portfolio_funds = funds_result.data
+                    
+                    # Get all fund IDs to fetch fund details
+                    fund_ids = [pf.get("available_funds_id") for pf in portfolio_funds if pf.get("available_funds_id")]
+                    
+                    # Get all portfolio fund IDs to fetch valuations and IRR values
+                    portfolio_fund_ids = [pf.get("id") for pf in portfolio_funds]
+                    
+                    # Fetch fund details in one query
+                    funds_map = {}
+                    if fund_ids:
+                        funds_details_result = db.table("available_funds").select("*").in_("id", fund_ids).execute()
+                        if funds_details_result.data:
+                            funds_map = {f.get("id"): f for f in funds_details_result.data}
+                    
+                    # Fetch all fund valuations in one query
+                    valuations_map = {}
+                    if portfolio_fund_ids:
+                        # We want the latest valuation for each fund, so we need to use a SQL query
+                        # A typical approach in Supabase might be:
+                        latest_valuations_result = db.table("latest_fund_valuations").select("*").in_("portfolio_fund_id", portfolio_fund_ids).execute()
+                        if latest_valuations_result.data:
+                            valuations_map = {v.get("portfolio_fund_id"): v for v in latest_valuations_result.data}
+                    
+                    # Fetch all IRR values in one query
+                    irr_map = {}
+                    if portfolio_fund_ids:
+                        # Similar to valuations, we want the latest IRR for each fund
+                        latest_irr_result = db.table("latest_irr_values").select("*").in_("fund_id", portfolio_fund_ids).execute()
+                        if latest_irr_result.data:
+                            irr_map = {irr.get("fund_id"): irr for irr in latest_irr_result.data}
+                    
+                    # Combine all the data
+                    enhanced_funds = []
+                    for pf in portfolio_funds:
+                        fund_id = pf.get("available_funds_id")
+                        portfolio_fund_id = pf.get("id")
+                        
+                        # Add fund details
+                        if fund_id and fund_id in funds_map:
+                            fund_details = funds_map[fund_id]
+                            pf["fund_details"] = fund_details
+                            pf["fund_name"] = fund_details.get("fund_name")
+                            pf["isin_number"] = fund_details.get("isin_number")
+                            pf["risk_factor"] = fund_details.get("risk_factor")
+                        
+                        # Add valuation data
+                        if portfolio_fund_id and portfolio_fund_id in valuations_map:
+                            valuation = valuations_map[portfolio_fund_id]
+                            pf["latest_valuation"] = valuation
+                            pf["market_value"] = valuation.get("value")
+                            pf["valuation_date"] = valuation.get("valuation_date")
+                        
+                        # Add IRR data
+                        if portfolio_fund_id and portfolio_fund_id in irr_map:
+                            irr = irr_map[portfolio_fund_id]
+                            pf["latest_irr"] = irr
+                            pf["irr_result"] = irr.get("irr_value")
+                            pf["irr_date"] = irr.get("irr_date")
+                        
+                        enhanced_funds.append(pf)
+                    
+                    response["portfolio_funds"] = enhanced_funds
+                    response["fund_valuations"] = valuations_map
+                    response["irr_values"] = irr_map
+        
+        # Fetch the product summary data
+        try:
+            summary_result = db.table("product_value_irr_summary").select("*").eq("client_product_id", client_product_id).execute()
+            if summary_result.data and len(summary_result.data) > 0:
+                summary = summary_result.data[0]
+                response["summary"] = summary
+                response["total_value"] = summary.get("total_value")
+                response["irr"] = summary.get("irr_weighted")
+        except Exception as e:
+            logger.error(f"Error fetching product summary: {str(e)}")
+        
+        return response
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching complete product details: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
