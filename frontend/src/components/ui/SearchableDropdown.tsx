@@ -363,12 +363,12 @@ export const MultiSelectSearchableDropdown: React.FC<MultiSelectSearchableDropdo
     <div ref={dropdownRef} className={`relative ${className}`}>
       <div className="flex flex-wrap gap-2 mb-1">
         {selectedOptions.map(option => (
-          <span key={option.value} className="flex items-center bg-primary-50 border border-primary-200 rounded-full px-3 py-1 text-sm">
-            <span className="truncate max-w-[120px]">{option.label}</span>
+          <span key={option.value} className="flex items-center bg-primary-50 border border-primary-200 text-primary-700 rounded-md px-2.5 py-1 text-sm">
+            <span className="truncate max-w-[180px]">{option.label}</span>
             <button
               type="button"
               onClick={() => handleRemove(option.value)}
-              className="ml-1.5 text-gray-500 hover:text-red-500"
+              className="ml-1.5 text-primary-400 hover:text-primary-600 transition-colors"
               tabIndex={-1}
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -378,11 +378,12 @@ export const MultiSelectSearchableDropdown: React.FC<MultiSelectSearchableDropdo
           </span>
         ))}
       </div>
+      
       <button
         type="button"
         id={id}
-        className={`flex justify-between items-center w-full px-3 py-2 text-left border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
-          disabled ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white hover:bg-gray-50'
+        className={`flex justify-between items-center w-full px-3 py-2.5 text-left border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all ${
+          disabled ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'hover:border-primary-400'
         }`}
         onClick={toggleDropdown}
         onKeyDown={e => {
@@ -395,20 +396,21 @@ export const MultiSelectSearchableDropdown: React.FC<MultiSelectSearchableDropdo
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
-        <span className="block truncate text-gray-500">{selectedOptions.length === 0 ? placeholder : ''}</span>
+        <span className="block truncate text-gray-500">{selectedOptions.length === 0 ? placeholder : `${selectedOptions.length} selected`}</span>
         <span className="ml-2 pointer-events-none">
-          <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <svg className={`h-5 w-5 text-gray-400 transition-transform ${isOpen ? 'transform rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
             <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
           </svg>
         </span>
       </button>
+      
       {isOpen && (
         <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
           <div className="sticky top-0 z-10 bg-white px-2 py-2">
             <input
               ref={searchInputRef}
               type="text"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
               placeholder="Search..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
@@ -422,9 +424,9 @@ export const MultiSelectSearchableDropdown: React.FC<MultiSelectSearchableDropdo
               filteredOptions.map((option, index) => (
                 <li
                   key={option.value}
-                  className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-indigo-100 ${
-                    values.includes(option.value) ? 'bg-indigo-50 text-indigo-700' : 'text-gray-900'
-                  } ${index === focusedIndex ? 'bg-indigo-100' : ''}`}
+                  className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-primary-50 ${
+                    values.includes(option.value) ? 'bg-primary-50 text-primary-700' : 'text-gray-900'
+                  } ${index === focusedIndex ? 'bg-primary-100' : ''}`}
                   onClick={() => handleSelect(option.value)}
                   onMouseEnter={() => setFocusedIndex(index)}
                   role="option"
@@ -436,7 +438,7 @@ export const MultiSelectSearchableDropdown: React.FC<MultiSelectSearchableDropdo
                     {option.label}
                   </span>
                   {values.includes(option.value) && (
-                    <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-600">
+                    <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-primary-600">
                       <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
