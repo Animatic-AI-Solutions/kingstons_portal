@@ -2249,14 +2249,26 @@ async def recalculate_fund_irr_for_date(
         month = valuation_date.month
         year = valuation_date.year
         
-        irr_result = calculate_portfolio_fund_irr_sync(
+        # Pass update_only=True to only update existing IRR records instead of creating new ones
+        irr_result = await calculate_portfolio_fund_irr(
             portfolio_fund_id=portfolio_fund_id,
             month=month,
             year=year,
             valuation=valuation_amount,
             db=db,
-            fund_valuation_id=fund_valuation_id
+            update_only=True
         )
+        
+        if not irr_result:
+            # If no existing IRR record found and update_only=True, we need to create a new one
+            irr_result = await calculate_portfolio_fund_irr(
+                portfolio_fund_id=portfolio_fund_id,
+                month=month,
+                year=year,
+                valuation=valuation_amount,
+                db=db,
+                update_only=False
+            )
         
         return {
             "status": "success",

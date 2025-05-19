@@ -124,8 +124,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           // Fallback to empty array
           setFundValuations([]);
         }
-      } catch (err) {
+      } catch (err: any) {
         // Set to empty array on error
+        console.error("Error fetching fund valuations:", err.message);
         setFundValuations([]);
       } finally {
         setIsLoadingValuations(false);
@@ -320,7 +321,104 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     return '';
   };
 
-  // Handle cell value change
+  // New function to evaluate mathematical expressions
+  const evaluateExpression = (expression: string): string => {
+    // If it's empty or already a valid number, return as is
+    if (!expression || expression.trim() === '') return '';
+    
+    // If it's already a number, just return it
+    if (!isNaN(Number(expression))) return expression;
+    
+    try {
+      // Check if the input contains any mathematical operators
+      if (/[+\-*/()]/.test(expression)) {
+        // Clean the expression to ensure it's safe to evaluate
+        // Only allow numbers, operators, decimals, and parentheses
+        const cleanExpression = expression.replace(/[^0-9.+\-*/()]/g, '');
+        
+        // Use Function constructor to safely evaluate the expression
+        // This avoids using eval() which can be dangerous
+        const result = new Function(`return ${cleanExpression}`)();
+        
+        // Check if the result is a valid number
+        if (typeof result === 'number' && !isNaN(result) && isFinite(result)) {
+          return result.toString();
+        }
+      }
+      
+      // If no operators or evaluation failed, return the original value
+      return expression;
+    } catch (error) {
+      // If evaluation fails (syntax error), return the original expression
+      console.log('Error evaluating expression:', error);
+      return expression;
+    }
+  };
+
+  // Update the handleCellBlur function to evaluate expressions
+  const handleCellBlur = (fundId: number, month: string, activityType: string) => {
+    // Find the current edit for this cell
+    const cellEditIndex = pendingEdits.findIndex(
+      edit => edit.fundId === fundId && 
+              edit.month === month && 
+              edit.activityType === activityType
+    );
+    
+    // If we have a pending edit for this cell, evaluate any expression
+    if (cellEditIndex !== -1) {
+      const currentEdit = pendingEdits[cellEditIndex];
+      const evaluatedValue = evaluateExpression(currentEdit.value);
+      
+      // If the value changed after evaluation, update the pending edit
+      if (evaluatedValue !== currentEdit.value) {
+        const updatedEdits = [...pendingEdits];
+        updatedEdits[cellEditIndex] = {
+          ...currentEdit,
+          value: evaluatedValue
+        };
+        setPendingEdits(updatedEdits);
+      }
+    }
+    
+    // Only show the fund selection modal for Switch In/Out cells with a value
+    if ((activityType === 'Switch In' || activityType === 'Switch Out')) {
+      // Get the current value from pendingEdits
+      const cellEdit = pendingEdits.find(
+        edit => edit.fundId === fundId && 
+                edit.month === month && 
+                edit.activityType === activityType
+      );
+      
+      if (!cellEdit || !cellEdit.value || cellEdit.value.trim() === '') {
+        return; // No value or empty value, no need to show modal
+      }
+      
+      // Check if the value actually changed from the original
+      let originalValue = '';
+      const activity = getActivity(fundId, month, activityType);
+      
+      if (activity) {
+        originalValue = Math.abs(parseFloat(activity.amount)).toString();
+      }
+      
+      // Only show the modal if the value is different from the original
+      // or if this is a new entry (no original activity)
+      const valueChanged = !activity || originalValue !== cellEdit.value;
+      
+      if (valueChanged) {
+        setSwitchSelectionData({
+          originFundId: activityType === 'Switch Out' ? fundId : 0,
+          destinationFundId: activityType === 'Switch In' ? fundId : 0,
+          month,
+          amount: parseFloat(cellEdit.value),
+          isEditingOrigin: activityType === 'Switch Out'
+        });
+        setShowSwitchFundModal(true);
+      }
+    }
+  };
+
+  // Update the handleCellValueChange function to allow mathematical operators
   const handleCellValueChange = (fundId: number, month: string, activityType: string, value: string) => {
     // Find the fund to check if it's the Previous Funds entry
     const fund = funds.find(f => f.id === fundId);
@@ -330,9 +428,10 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       return;
     }
 
+    // Allow necessary characters for math expressions
     const sanitizedValue = value.trim() === '' 
       ? '' 
-      : value.replace(/[^0-9.]/g, ''); // Allow only numbers and decimal points
+      : value; // Allow any characters for input, we'll evaluate on blur
     
     // Get existing activity or valuation
     let existingId = undefined;
@@ -389,46 +488,6 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       };
       
       setPendingEdits([...pendingEdits, newEdit]);
-    }
-  };
-
-  // Update the handleCellBlur function to check if the value actually changed
-  const handleCellBlur = (fundId: number, month: string, activityType: string) => {
-    // Only show the fund selection modal for Switch In/Out cells with a value
-    if ((activityType === 'Switch In' || activityType === 'Switch Out')) {
-      // Get the current value from pendingEdits
-      const cellEdit = pendingEdits.find(
-        edit => edit.fundId === fundId && 
-                edit.month === month && 
-                edit.activityType === activityType
-      );
-      
-      if (!cellEdit || !cellEdit.value || cellEdit.value.trim() === '') {
-        return; // No value or empty value, no need to show modal
-      }
-      
-      // Check if the value actually changed from the original
-      let originalValue = '';
-      const activity = getActivity(fundId, month, activityType);
-      
-      if (activity) {
-        originalValue = Math.abs(parseFloat(activity.amount)).toString();
-      }
-      
-      // Only show the modal if the value is different from the original
-      // or if this is a new entry (no original activity)
-      const valueChanged = !activity || originalValue !== cellEdit.value;
-      
-      if (valueChanged) {
-        setSwitchSelectionData({
-          originFundId: activityType === 'Switch Out' ? fundId : 0,
-          destinationFundId: activityType === 'Switch In' ? fundId : 0,
-          month,
-          amount: parseFloat(cellEdit.value),
-          isEditingOrigin: activityType === 'Switch Out'
-        });
-        setShowSwitchFundModal(true);
-      }
     }
   };
 
@@ -541,6 +600,51 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     return date.toLocaleDateString('en-GB', { year: 'numeric', month: 'short' }).toUpperCase();
   };
 
+  // Helper function to recalculate IRR for a specific fund and month
+  const recalculateIRRForFundAndMonth = async (fundId: number, month: string): Promise<void> => {
+    try {
+      // Parse the month string to get year and month
+      const [year, monthNum] = month.split('-');
+      
+      // Ensure month number is padded with leading zero if needed
+      const paddedMonth = monthNum.padStart(2, '0');
+      
+      // Format the date - we'll use the first day of the month as that's what the backend expects
+      const formattedDate = `${year}-${paddedMonth}-01`;
+      
+      console.log(`Triggering IRR recalculation for fund ${fundId} and date ${formattedDate}`);
+      
+      // Call the portfolio_funds endpoint to recalculate IRR
+      try {
+        const response = await api.post(`portfolio_funds/${fundId}/recalculate_irr`, {
+          valuation_date: formattedDate  // Use valuation_date as shown in the logs
+        });
+        
+        console.log(`IRR recalculation completed for fund ${fundId}, month ${month}:`, response.data);
+        
+        // Verify the IRR update was successful by fetching the latest IRR value
+        try {
+          await new Promise(resolve => setTimeout(resolve, 200));
+          const irrResponse = await api.get(`portfolio_funds/${fundId}/latest-irr`);
+          console.log(`Verified latest IRR for fund ${fundId}:`, irrResponse.data);
+        } catch (verifyErr) {
+          console.error(`Error verifying IRR for fund ${fundId}:`, verifyErr);
+        }
+        
+        return;
+      } catch (apiErr: any) {
+        // Log API-specific errors but don't throw
+        console.error(`API error recalculating IRR for fund ${fundId}, month ${month}:`, 
+          apiErr.response?.data?.detail || apiErr.message);
+      }
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.detail || err.message;
+      console.error(`Error recalculating IRR for fund ${fundId}, month ${month}:`, errorMessage);
+      // Don't throw the error - we don't want to interrupt the overall save process
+      // Just log it for debugging
+    }
+  };
+
   // Save all pending edits
   const saveChanges = async () => {
     setIsSubmitting(true);
@@ -624,7 +728,46 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           
           if (edit.isNew) {
             // Create new activity
-            await api.post('holding_activity_logs', activityData);
+            try {
+              await api.post('holding_activity_logs', activityData);
+              
+              // Check if we have a valuation for this month
+              const valuation = getFundValuation(edit.fundId, edit.month);
+              
+              // Only recalculate IRR if we have a valuation for this month
+              if (valuation) {
+                console.log(`Found valuation for ${edit.month}, recalculating IRR`);
+                
+                // Add a small delay to ensure activity is processed before IRR calculation
+                await new Promise(resolve => setTimeout(resolve, 300));
+                
+                // Try to recalculate IRR for the current month
+                try {
+                  await recalculateIRRForFundAndMonth(edit.fundId, edit.month);
+                  
+                  // Only proceed to future months if current month succeeded
+                  const affectedMonthIndex = months.findIndex(m => m === edit.month);
+                  if (affectedMonthIndex !== -1) {
+                    for (let i = affectedMonthIndex + 1; i < months.length; i++) {
+                      // Check if future month has a valuation
+                      const futureValuation = getFundValuation(edit.fundId, months[i]);
+                      if (futureValuation) {
+                        await recalculateIRRForFundAndMonth(edit.fundId, months[i]);
+                      }
+                    }
+                  }
+                } catch (irrError) {
+                  console.error(`Error recalculating IRR: ${irrError}`);
+                  // Continue with save process even if IRR calc fails
+                }
+              } else {
+                console.log(`No valuation found for ${edit.month}, skipping IRR recalculation`);
+              }
+            } catch (err: any) { // Fix: Properly type the error as 'any'
+              setError(err.message || `Failed to process ${edit.activityType} activity`);
+              setIsSubmitting(false);
+              return;
+            }
           } else if (edit.originalActivityId) {
             // For existing activities, we need to ensure the amount_invested is updated correctly.
             // First we get the original activity to see the original amount
@@ -860,9 +1003,42 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         }
       }
       
+      // After all processing is done, we need to ensure all IRR values are updated
+      // Collect all funds that need IRR recalculation
+      const fundsToRecalculateIRR = new Set<number>();
+      
+      // Add all funds from processed edits
+      for (const edit of pendingEdits) {
+        if (edit.fundId) {
+          fundsToRecalculateIRR.add(edit.fundId);
+        }
+        if (edit.linkedFundId) {
+          fundsToRecalculateIRR.add(edit.linkedFundId);
+        }
+      }
+      
+      // Force an additional delay to ensure all valuation records are committed
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Recalculate IRR for all impacted funds for all months
+      for (const fundId of fundsToRecalculateIRR) {
+        for (const month of months) {
+          // Check if there's a valuation for this month before trying to recalculate IRR
+          const valuation = getFundValuation(fundId, month);
+          if (valuation) {
+            await recalculateIRRForFundAndMonth(fundId, month);
+          }
+        }
+      }
+      
       // Clear pending edits and refresh data
       setPendingEdits([]);
-      onActivitiesUpdated();
+      
+      // Add a larger delay before triggering the data refresh to ensure
+      // all IRR calculations have completed on the backend
+      setTimeout(() => {
+        onActivitiesUpdated();
+      }, 800);
       
     } catch (err: any) {
       setError(err.message || 'An error occurred while saving changes');
@@ -1187,33 +1363,14 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       }, 0);
   };
 
-  // Helper function to recalculate IRR for a specific fund and month
-  const recalculateIRRForFundAndMonth = async (fundId: number, month: string): Promise<void> => {
-    try {
-      // Parse the month string to get year and month
-      const [year, monthNum] = month.split('-');
-      // Format the date as YYYY-MM-DD which the backend expects
-      const formattedDate = `${year}-${monthNum.padStart(2, '0')}-01`;
-      
-      console.log(`Triggering IRR recalculation for fund ${fundId} and month ${month}`);
-      
-      // Call the portfolio_funds endpoint to recalculate IRR
-      // We need to pass valuation_date in the request body
-      const response = await api.post(`portfolio_funds/${fundId}/recalculate_irr`, {
-        valuation_date: formattedDate
-      });
-      
-      console.log(`IRR recalculation completed:`, response.data);
-    } catch (err: any) {
-      console.error(`Error recalculating IRR for fund ${fundId}, month ${month}:`, err);
-      // Don't throw the error - we don't want to interrupt the overall save process
-      // Just log it for debugging
-    }
-  };
-
   // Format cell value for display - more compact for the table view
   const formatCellValue = (value: string): string => {
     if (!value || value.trim() === '') return '';
+    
+    // If it contains math operators, return it as-is for editing
+    if (/[+\-*/()]/.test(value)) {
+      return value;
+    }
     
     // Try to parse as number
     const num = parseFloat(value);
@@ -1348,6 +1505,25 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         } else {
           await api.post('holding_activity_logs', switchInActivity);
         }
+        
+        // Recalculate IRR for both funds for this month and future months
+        // since this is a new switch operation
+        const recalculateIRR = async (fundId: number) => {
+          // First recalculate IRR for the current month
+          await recalculateIRRForFundAndMonth(fundId, month);
+          
+          // Then recalculate IRR for all future months
+          const affectedMonthIndex = months.findIndex(m => m === month);
+          if (affectedMonthIndex !== -1) {
+            for (let i = affectedMonthIndex + 1; i < months.length; i++) {
+              await recalculateIRRForFundAndMonth(fundId, months[i]);
+            }
+          }
+        };
+        
+        // Recalculate for both source and target funds
+        await recalculateIRR(sourceId);
+        await recalculateIRR(targetId);
       } 
       // For updating existing switch activities
       else {
@@ -1376,6 +1552,17 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           };
           
           await api.post('holding_activity_logs?skip_fund_update=true', switchOutActivity);
+          
+          // Recalculate IRR for source fund since this is a new activity
+          await recalculateIRRForFundAndMonth(sourceId, month);
+          
+          // Also recalculate for future months
+          const affectedMonthIndex = months.findIndex(m => m === month);
+          if (affectedMonthIndex !== -1) {
+            for (let i = affectedMonthIndex + 1; i < months.length; i++) {
+              await recalculateIRRForFundAndMonth(sourceId, months[i]);
+            }
+          }
         }
         
         // Update Switch In activity - this will apply the updated amounts to both funds
@@ -1402,6 +1589,17 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           };
           
           await api.post('holding_activity_logs', switchInActivity);
+          
+          // Recalculate IRR for target fund since this is a new activity
+          await recalculateIRRForFundAndMonth(targetId, month);
+          
+          // Also recalculate for future months
+          const affectedMonthIndex = months.findIndex(m => m === month);
+          if (affectedMonthIndex !== -1) {
+            for (let i = affectedMonthIndex + 1; i < months.length; i++) {
+              await recalculateIRRForFundAndMonth(targetId, months[i]);
+            }
+          }
         }
       }
       
@@ -1670,6 +1868,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                     fontSize: '0.875rem',
                                     opacity: fund.isActive === false || fund.isInactiveBreakdown ? 0.7 : 1
                                   }}
+                                  inputMode="text"
                                 />
                               </div>
                                 {linkedFundName && !fund.isInactiveBreakdown && (
