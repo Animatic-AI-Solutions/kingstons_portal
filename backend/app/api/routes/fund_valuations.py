@@ -44,7 +44,7 @@ async def create_fund_valuation(
             logger.info(f"Found existing valuation with ID {valuation_id}, updating instead of creating new one")
             
             update_result = db.table("fund_valuations") \
-                .update({"value": value, "updated_at": datetime.now().isoformat()}) \
+                .update({"value": value}) \
                 .eq("id", valuation_id) \
                 .execute()
             
@@ -214,6 +214,7 @@ async def update_fund_valuation(
     """
     Update a fund valuation.
     Zero-value valuations are now allowed and will be saved.
+    Empty string values will delete the valuation.
     """
     try:
         # Check if fund valuation exists
@@ -223,10 +224,17 @@ async def update_fund_valuation(
         if not existing_result.data or len(existing_result.data) == 0:
             raise HTTPException(status_code=404, detail="Fund valuation not found")
         
+        # Check if value is empty string and delete if so
+        if hasattr(fund_valuation, 'value') and isinstance(fund_valuation.value, str) and fund_valuation.value.strip() == "":
+            logger.info(f"Deleting fund valuation {valuation_id} due to empty value")
+            delete_result = db.table("fund_valuations").delete().eq("id", valuation_id).execute()
+            if not delete_result.data:
+                raise HTTPException(status_code=500, detail="Failed to delete fund valuation")
+            # Return the deleted record
+            return existing_result.data[0]
+            
         # Prepare update data (only include fields that are provided)
-        update_data = {
-            "updated_at": datetime.now().isoformat()  # Always set updated_at
-        }
+        update_data = {}  # Removed updated_at as it doesn't exist in the schema
         
         if fund_valuation.portfolio_fund_id is not None:
             # Verify that portfolio fund exists
@@ -242,7 +250,7 @@ async def update_fund_valuation(
         if fund_valuation.value is not None:
             update_data["value"] = float(fund_valuation.value)
         
-        if len(update_data) == 1 and "updated_at" in update_data:
+        if len(update_data) == 0:
             # No actual updates provided, return existing data
             return existing_result.data[0]
         

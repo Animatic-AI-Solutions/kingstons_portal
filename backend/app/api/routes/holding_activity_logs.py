@@ -16,6 +16,45 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+# Helper function to check if a value is effectively empty
+def is_effectively_empty(value):
+    """
+    Checks if a value should be considered empty.
+    
+    Args:
+        value: The value to check
+        
+    Returns:
+        bool: True if the value is None or an empty string, False otherwise
+             Note that 0, "0", and 0.0 are NOT considered empty
+    """
+    logger.info(f"Checking if value is effectively empty: '{value}', Type: {type(value)}, Repr: {repr(value)}")
+    
+    if value is None:
+        logger.info(f"Value is None, considering empty")
+        return True
+        
+    if isinstance(value, str) and value.strip() == "":
+        logger.info(f"Value is empty string, considering empty")
+        return True
+        
+    # Handle Decimal types that might be invalid
+    try:
+        from decimal import Decimal, InvalidOperation
+        if isinstance(value, Decimal) and (str(value).strip() == ""):
+            logger.info(f"Value is empty Decimal string, considering empty")
+            return True
+    except Exception as e:
+        logger.info(f"Error checking decimal: {str(e)}")
+        
+    # Zero is a valid value, not empty
+    if value == 0 or value == "0" or value == 0.0:
+        logger.info(f"Value is zero (valid value), not considering empty")
+        return False
+        
+    logger.info(f"Value has content, not considering empty")
+    return False
+
 async def check_valuation_exists_for_month(portfolio_fund_id: int, activity_date: date, db) -> bool:
     """
     Check if a valuation record exists for a specific portfolio fund and month.
@@ -349,8 +388,9 @@ async def recalculate_product_weightings(client_id: int, db) -> None:
 
 async def has_valuation_been_edited(portfolio_fund_id: int, activity_date: date, db) -> bool:
     """
-    Check if a valuation exists for the given portfolio fund and month of the activity date,
-    and if it has been edited since its creation.
+    Check if a valuation exists for the given portfolio fund and month of the activity date.
+    Since the database schema doesn't have an updated_at column to track edits, 
+    we'll assume all valuations might have been edited to ensure IRR values are recalculated.
     """
     try:
         year = activity_date.year
@@ -371,18 +411,11 @@ async def has_valuation_been_edited(portfolio_fund_id: int, activity_date: date,
             # No valuation exists for this month
             return False
             
-        # Check if the valuation has been edited (created_at != updated_at)
-        valuation_data = valuation.data[0]
+        # Since we can't determine if the valuation has been edited without an updated_at column,
+        # we'll return True to ensure IRR values are recalculated
+        logger.info(f"Assuming valuation for {year}-{month} may have been edited (no updated_at tracking)")
+        return True
         
-        # If updated_at doesn't exist or matches created_at, it hasn't been edited
-        if "updated_at" not in valuation_data or valuation_data["updated_at"] is None:
-            return False
-            
-        created_at = datetime.fromisoformat(valuation_data["created_at"].replace('Z', '+00:00'))
-        updated_at = datetime.fromisoformat(valuation_data["updated_at"].replace('Z', '+00:00'))
-        
-        # If they're different by more than a few milliseconds, it has been edited
-        return (updated_at - created_at).total_seconds() > 1
     except Exception as e:
         logger.error(f"Error checking if valuation has been edited: {str(e)}")
         return False
@@ -513,6 +546,93 @@ async def recalculate_irr_values_after_activity(portfolio_fund_id: int, activity
     except Exception as e:
         logger.error(f"Error in selective IRR recalculation: {str(e)}")
 
+async def recalculate_existing_irr_values(portfolio_fund_id: int, activity_date: date, db) -> None:
+    """
+    What it does: Recalculates only existing IRR values for a portfolio fund on or after a given date.
+    Why it's needed: Updates IRR values after activity changes without creating new records.
+    How it works:
+        1. Gets all existing IRR values for the fund with dates on or after the activity date
+        2. For each IRR value, retrieves the original valuation amount
+        3. Recalculates the IRR using the updated cash flow history but same valuation amount
+        4. Updates the existing IRR values without creating new records
+    """
+    try:
+        logger.info(f"Starting recalculation of existing IRR values for portfolio_fund_id: {portfolio_fund_id} on/after {activity_date}")
+        
+        # Check if portfolio fund exists
+        check_result = db.table("portfolio_funds").select("*").eq("id", portfolio_fund_id).execute()
+        if not check_result.data or len(check_result.data) == 0:
+            logger.error(f"Portfolio fund not found with ID: {portfolio_fund_id}")
+            return
+        
+        # Format date if needed
+        activity_date_str = activity_date.isoformat() if isinstance(activity_date, date) else activity_date
+        
+        # Get existing IRR values for this fund with dates on or after the activity date
+        irr_values = db.table("irr_values")\
+            .select("*")\
+            .eq("fund_id", portfolio_fund_id)\
+            .gte("date", activity_date_str)\
+            .execute()
+            
+        if not irr_values.data:
+            logger.info(f"No IRR values found for portfolio_fund_id: {portfolio_fund_id} on/after {activity_date_str}")
+            return
+        
+        logger.info(f"Found {len(irr_values.data)} existing IRR values to recalculate")
+        
+        # Recalculate each IRR value with the original valuation amount
+        update_count = 0
+        for irr_value in irr_values.data:
+            try:
+                # Get the valuation ID and amount
+                fund_valuation_id = irr_value.get("fund_valuation_id")
+                
+                if not fund_valuation_id:
+                    logger.warning(f"Skipping IRR record ID {irr_value.get('id')} - missing fund_valuation_id")
+                    continue
+                
+                # Get the valuation that this IRR was based on
+                valuation = db.table("fund_valuations")\
+                    .select("value", "valuation_date")\
+                    .eq("id", fund_valuation_id)\
+                .execute()
+                
+                if not valuation.data or len(valuation.data) == 0:
+                    logger.warning(f"Skipping IRR record ID {irr_value.get('id')} - original valuation not found")
+                    continue
+                
+                valuation_amount = float(valuation.data[0]["value"])
+                valuation_date = datetime.fromisoformat(valuation.data[0]["valuation_date"].replace('Z', '+00:00'))
+                
+                logger.info(f"Recalculating IRR for valuation date: {valuation_date.isoformat()}, amount: {valuation_amount}")
+                
+                # Skip if valuation is zero or negative
+                if valuation_amount <= 0:
+                    logger.warning(f"Skipping IRR calculation for invalid valuation: {valuation_amount}")
+                    continue
+                
+                # Recalculate IRR for this date and valuation, update only
+                await calculate_portfolio_fund_irr(
+                    portfolio_fund_id=portfolio_fund_id,
+                    month=valuation_date.month,
+                    year=valuation_date.year,
+                    valuation=valuation_amount,
+                    db=db,
+                    update_only=True  # Only update existing record, don't create new
+                )
+                
+                update_count += 1
+                logger.info(f"Successfully recalculated existing IRR for date: {valuation_date.isoformat()}")
+                
+            except Exception as e:
+                logger.error(f"Error recalculating IRR value: {str(e)}")
+                continue
+        
+        logger.info(f"Completed recalculation of existing IRR values for portfolio_fund_id: {portfolio_fund_id}, updated {update_count} values")
+    except Exception as e:
+        logger.error(f"Error in recalculating existing IRR values: {str(e)}")
+
 @router.post("/holding_activity_logs", response_model=HoldingActivityLog)
 async def create_holding_activity_log(
     holding_activity_log: HoldingActivityLogCreate, 
@@ -535,6 +655,23 @@ async def create_holding_activity_log(
         if holding_activity_log.account_holding_id and not holding_activity_log.product_id:
             holding_activity_log.product_id = holding_activity_log.account_holding_id
             
+        # Check if amount is effectively empty (None, empty string, etc.)
+        if is_effectively_empty(holding_activity_log.amount):
+            logger.info(f"Skipping creation of activity with empty amount")
+            # Return a response that looks like a holding activity log but indicates it wasn't created
+            # This prevents errors in the frontend
+            return {
+                "id": -1,  # Use -1 to indicate this is not a real record
+                "portfolio_fund_id": holding_activity_log.portfolio_fund_id,
+                "product_id": holding_activity_log.product_id,
+                "activity_timestamp": holding_activity_log.activity_timestamp.isoformat() if isinstance(holding_activity_log.activity_timestamp, date) else holding_activity_log.activity_timestamp,
+                "activity_type": holding_activity_log.activity_type,
+                "amount": None,
+                "related_fund": holding_activity_log.related_fund,
+                "created_at": datetime.now().isoformat(),
+                "message": "Activity not created due to empty amount field"
+            }
+            
         # Get the data dictionary from the model
         log_data = holding_activity_log.model_dump()
         
@@ -544,7 +681,7 @@ async def create_holding_activity_log(
         # Ensure activity_timestamp is properly serialized if it's a date object
         if "activity_timestamp" in log_data and isinstance(log_data["activity_timestamp"], date):
             log_data["activity_timestamp"] = log_data["activity_timestamp"].isoformat()
-            
+        
         # Ensure amount is a float if present
         if 'amount' in log_data and log_data['amount'] is not None:
             try:
@@ -558,6 +695,36 @@ async def create_holding_activity_log(
             
         if 'product_holding_id' in log_data:
             log_data.pop('product_holding_id')
+        
+        # Initialize tracking variables for affected entities
+        affected_portfolio_ids = set()
+        affected_client_ids = set()
+        affected_portfolio_fund_ids = set()
+        
+        # Add current portfolio_fund_id to affected funds
+        portfolio_fund_id = holding_activity_log.portfolio_fund_id
+        if portfolio_fund_id:
+            affected_portfolio_fund_ids.add(portfolio_fund_id)
+            
+            # Get the portfolio associated with this fund
+            portfolio_result = db.table("portfolio_funds")\
+                .select("portfolio_id")\
+                .eq("id", portfolio_fund_id)\
+                .execute()
+                
+            if portfolio_result.data and len(portfolio_result.data) > 0:
+                portfolio_id = portfolio_result.data[0]["portfolio_id"]
+                affected_portfolio_ids.add(portfolio_id)
+                
+                # Get client associated with this portfolio
+                client_result = db.table("client_products")\
+                    .select("client_id")\
+                    .eq("portfolio_id", portfolio_id)\
+                    .execute()
+                    
+                if client_result.data and len(client_result.data) > 0:
+                    client_id = client_result.data[0]["client_id"]
+                    affected_client_ids.add(client_id)
         
         # Insert the new activity log
         result = db.table("holding_activity_log").insert(log_data).execute()
@@ -589,30 +756,35 @@ async def create_holding_activity_log(
         for client_id in affected_client_ids:
             await recalculate_product_weightings(client_id, db)
         
-        # Recalculate IRR values for affected portfolio funds
+        # Recalculate existing IRR values for affected portfolio funds
         for portfolio_fund_id in affected_portfolio_fund_ids:
             activity_timestamp = holding_activity_log.activity_timestamp if holding_activity_log.activity_timestamp else datetime.now()
             
             # Handle different timestamp types
             if isinstance(activity_timestamp, date):
-                # Convert date to datetime for the recalculation function
-                activity_timestamp = datetime.combine(activity_timestamp, datetime.min.time())
+                # Use date directly
+                activity_date = activity_timestamp
+            elif isinstance(activity_timestamp, datetime):
+                activity_date = activity_timestamp.date()
             elif isinstance(activity_timestamp, str):
                 try:
                     # Try to parse as ISO format first
-                    activity_timestamp = datetime.fromisoformat(activity_timestamp.replace('Z', '+00:00'))
+                    dt = datetime.fromisoformat(activity_timestamp.replace('Z', '+00:00'))
+                    activity_date = dt.date()
                 except ValueError:
                     # Try to parse as date format
                     try:
-                        activity_timestamp = datetime.strptime(activity_timestamp, "%Y-%m-%d")
+                        dt = datetime.strptime(activity_timestamp, "%Y-%m-%d")
+                        activity_date = dt.date()
                     except ValueError:
-                        # If all parsing fails, use current time as fallback
-                        logger.warning(f"Could not parse activity timestamp: {activity_timestamp}, using current time")
-                        activity_timestamp = datetime.now()
-                
-            await recalculate_irr_values_after_activity(
+                        # If all parsing fails, use current date as fallback
+                        logger.warning(f"Could not parse activity timestamp: {activity_timestamp}, using current date")
+                        activity_date = date.today()
+                        
+            logger.info(f"Recalculating existing IRR values for portfolio_fund_id: {portfolio_fund_id} after {activity_date}")
+            await recalculate_existing_irr_values(
                 portfolio_fund_id=portfolio_fund_id,
-                activity_timestamp=activity_timestamp,
+                activity_date=activity_date,
                 db=db
             )
         
@@ -649,12 +821,36 @@ async def process_activity_for_fund_updates(activity_data: dict, db) -> None:
         fund = fund_response.data[0]
         current_amount = fund.get('amount_invested') or 0
         
-        # Check for zero amount in the activity
-        if not activity_data.get('amount'):
+        # Log incoming activity details
+        logger.info(f"Processing activity for fund updates. Fund ID: {portfolio_fund_id}, Activity type: {activity_data.get('activity_type')}")
+        logger.info(f"Amount field value: {activity_data.get('amount')}, Type: {type(activity_data.get('amount'))}")
+        logger.info(f"Current fund amount_invested: {current_amount}")
+        
+        # Check for zero or empty amount in the activity
+        if activity_data.get('amount') is None:
+            logger.info(f"Skipping fund update for empty amount activity (type: {activity_data.get('activity_type')})")
+            return
+            
+        # Try to convert the amount to a number
+        from decimal import Decimal
+        
+        try:
+            # Handle Decimal objects specifically
+            if isinstance(activity_data['amount'], Decimal):
+                amount = float(activity_data['amount'])
+            else:
+                amount = float(activity_data['amount'])
+            logger.info(f"Converted amount to float: {amount}")
+        except (ValueError, TypeError) as e:
+            logger.error(f"Failed to convert amount '{activity_data['amount']}' to float: {str(e)}")
+            # Skip processing if amount can't be converted to float
+            return
+            
+        # Skip zero amount activities
+        if amount == 0:
             logger.info(f"Skipping fund update for zero amount activity (type: {activity_data.get('activity_type')})")
             return
             
-        amount = float(activity_data['amount'])
         activity_type = activity_data['activity_type']
         new_amount = current_amount
         
@@ -795,14 +991,14 @@ async def delete_holding_activity_log(holding_activity_log_id: int, db = Depends
     What it does: Deletes a holding activity log and updates:
     1. Fund weightings within the portfolio(s) using the most recent common valuation month if available
     2. product weightings for the client(s) using the most recent common valuation month if available
-    3. Recalculates IRR values for the fund(s) with dates after the activity timestamp, but only if valuations have been edited
+    3. Recalculates existing IRR values for the fund(s) with dates after the activity timestamp
     Why it's needed: Allows removing activity logs while keeping all weightings and IRR values in sync.
     How it works:
         1. Retrieves the activity log and validates that it exists
         2. Tracks affected portfolios and funds for recalculation
         3. Recalculates fund weightings in affected portfolio(s) using the most recent common valuation month
         4. Recalculates product weightings for affected client(s) using the most recent common valuation month
-        5. Recalculates IRR values with dates after the activity timestamp, but only for edited valuations
+        5. Recalculates existing IRR values with dates after the activity timestamp
         6. Deletes the holding activity log
     """
     try:
@@ -888,6 +1084,32 @@ async def delete_holding_activity_log(holding_activity_log_id: int, db = Depends
                 client_id = client_product.data[0]["client_id"]
                 affected_client_ids.add(client_id)
         
+        # Properly handle activity_timestamp for IRR recalculation
+        activity_timestamp = activity_data.get("activity_timestamp")
+        activity_date = None
+        
+        if activity_timestamp:
+            if isinstance(activity_timestamp, date):
+                activity_date = activity_timestamp
+            elif isinstance(activity_timestamp, str):
+                try:
+                    # Try to parse as date format first
+                    activity_date = date.fromisoformat(activity_timestamp)
+                except ValueError:
+                    # Try to parse as datetime format
+                    try:
+                        dt = datetime.fromisoformat(activity_timestamp.replace('Z', '+00:00'))
+                        activity_date = dt.date()
+                    except ValueError:
+                        # If all parsing fails, use current date as fallback
+                        logger.warning(f"Could not parse activity timestamp: {activity_timestamp}, using current date")
+                        activity_date = date.today()
+        else:
+            # If no timestamp, use current date
+            activity_date = date.today()
+            
+        logger.info(f"Activity date for recalculation: {activity_date}")
+        
         # Delete the holding activity log
         db.table("holding_activity_log").delete().eq("id", holding_activity_log_id).execute()
         logger.info(f"Successfully deleted activity log with ID: {holding_activity_log_id}")
@@ -900,25 +1122,12 @@ async def delete_holding_activity_log(holding_activity_log_id: int, db = Depends
         for client_id in affected_client_ids:
             await recalculate_product_weightings(client_id, db)
         
-        # Properly handle activity_timestamp for IRR recalculation
-        activity_timestamp = activity_data.get("activity_timestamp")
-        if isinstance(activity_timestamp, str):
-            try:
-                activity_timestamp = datetime.strptime(activity_timestamp, "%Y-%m-%d")
-            except ValueError:
-                # Try to parse with more formats if needed
-                try:
-                    activity_timestamp = datetime.fromisoformat(activity_timestamp.replace('Z', '+00:00'))
-                except ValueError:
-                    # If parsing fails, log and use current time as fallback
-                    logger.warning(f"Could not parse activity timestamp: {activity_timestamp}, using current time")
-                    activity_timestamp = datetime.now()
-        
-        # Recalculate IRR values for affected funds
+        # Recalculate existing IRR values for affected funds
         for portfolio_fund_id in affected_portfolio_fund_ids:
-            await recalculate_irr_values_after_activity(
+            logger.info(f"Recalculating existing IRR values for portfolio_fund_id: {portfolio_fund_id} after {activity_date}")
+            await recalculate_existing_irr_values(
                 portfolio_fund_id=portfolio_fund_id, 
-                activity_timestamp=activity_timestamp,
+                activity_date=activity_date,
                 db=db
             )
         
@@ -928,6 +1137,83 @@ async def delete_holding_activity_log(holding_activity_log_id: int, db = Depends
     except Exception as e:
         logger.error(f"Error deleting activity log: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+async def get_holding_activity_log_by_id(activity_id: int, db) -> dict:
+    """
+    Helper function to get a holding activity log by ID.
+    Returns the activity log data as a dictionary, or None if not found.
+    """
+    try:
+        result = db.table("holding_activity_log").select("*").eq("id", activity_id).execute()
+        
+        if not result.data or len(result.data) == 0:
+            return None
+            
+        return result.data[0]
+    except Exception as e:
+        logger.error(f"Error getting holding activity log by ID: {str(e)}")
+        return None
+
+async def reverse_activity_effect(activity_data: dict, db) -> None:
+    """
+    Reverses the effect of an activity on the fund amount_invested.
+    For example, if the activity was an Investment that added 100, this will subtract 100.
+    """
+    try:
+        activity_type = activity_data.get("activity_type")
+        portfolio_fund_id = activity_data.get("portfolio_fund_id")
+        
+        # Convert amount to float to handle Decimal objects
+        from decimal import Decimal
+        raw_amount = activity_data.get("amount", 0)
+        
+        if isinstance(raw_amount, Decimal):
+            amount = float(raw_amount)
+        else:
+            amount = float(raw_amount) if raw_amount is not None else 0
+        
+        if not portfolio_fund_id or not activity_type or amount == 0:
+            logger.warning(f"Cannot reverse activity effect: missing required data")
+            return
+            
+        # Get current fund data
+        fund_response = db.table("portfolio_funds")\
+            .select("*")\
+            .eq("id", portfolio_fund_id)\
+            .execute()
+            
+        if not fund_response.data:
+            logger.error(f"Portfolio fund {portfolio_fund_id} not found")
+            return
+            
+        fund = fund_response.data[0]
+        current_amount = float(fund.get('amount_invested') or 0)
+        new_amount = current_amount
+        
+        # Reverse effect based on activity type
+        if activity_type in ["Investment", "RegularInvestment", "GovernmentUplift", "SwitchIn"]:
+            # These normally increase the amount, so we subtract
+            new_amount = current_amount - amount
+            if new_amount < 0:
+                new_amount = 0
+            logger.info(f"Reversing {activity_type}: {current_amount} - {amount} = {new_amount}")
+            
+        elif activity_type in ["Withdrawal", "Fee", "Distribution", "SwitchOut"]:
+            # These normally decrease the amount, so we add
+            new_amount = current_amount + amount
+            logger.info(f"Reversing {activity_type}: {current_amount} + {amount} = {new_amount}")
+        
+        # Update the fund amount
+        if new_amount != current_amount:
+            db.table("portfolio_funds")\
+                .update({"amount_invested": new_amount})\
+                .eq("id", portfolio_fund_id)\
+                .execute()
+                
+            logger.info(f"Reversed activity effect: updated fund {portfolio_fund_id} amount_invested from {current_amount} to {new_amount}")
+            
+    except Exception as e:
+        logger.error(f"Error reversing activity effect: {str(e)}")
 
 @router.patch("/holding_activity_logs/{activity_id}", response_model=HoldingActivityLog)
 async def update_holding_activity_log(
@@ -941,158 +1227,125 @@ async def update_holding_activity_log(
     What it does: Updates an existing holding activity log and updates related entities based on activity changes.
     Why it's needed: Allows modifying holding activity logs while keeping fund amounts and IRR values in sync.
     How it works:
-        1. Validates the activity update data
-        2. Optionally reverses the effect of the original activity
-        3. Updates the activity with new values
-        4. Processes the updated activity to modify fund amounts
-        5. Recalculates valuations and IRR values as needed
-        6. Returns the updated activity log
+        1. Validates the input data
+        2. Updates the activity record
+        3. Updates the fund's amount_invested if applicable
+        4. Recalculates IRR values if needed
+        5. Returns the updated activity record
     """
+    # Debug: Add a very obvious log entry to verify this function is being called
+    logger.error("====== UPDATE_HOLDING_ACTIVITY_LOG CALLED ======")
+    logger.error(f"Activity ID: {activity_id}, Request data: {holding_activity_log}")
+    
     try:
-        # Get the existing activity
-        existing_result = db.table("holding_activity_log")\
-            .select("*")\
-            .eq("id", activity_id)\
-            .execute()
+        # Log the incoming data
+        logger.info(f"Received update request for activity {activity_id}")
+        logger.info(f"Raw update data: {holding_activity_log}")
+        
+        # Use model_dump() instead of dict() for Pydantic v2
+        update_data_dict = None
+        try:
+            update_data_dict = holding_activity_log.model_dump(exclude_unset=True)
+            logger.info(f"Raw update data with model_dump(): {update_data_dict}")
+            logger.info(f"Amount field present in model_dump: {'amount' in update_data_dict}")
+            if 'amount' in update_data_dict:
+                logger.info(f"Amount in model_dump: {update_data_dict['amount']}, Type: {type(update_data_dict['amount'])}")
+        except AttributeError:
+            # Fallback to dict() for older Pydantic
+            update_data_dict = holding_activity_log.dict(exclude_unset=True)
+            logger.info(f"Raw update data dict: {update_data_dict}")
+            logger.info(f"Amount field present: {'amount' in update_data_dict}")
+            if 'amount' in update_data_dict:
+                logger.info(f"Amount value: {update_data_dict['amount']}, Type: {type(update_data_dict['amount'])}")
+        
+        # Check if activity exists
+        existing_activity = await get_holding_activity_log_by_id(activity_id, db)
+        
+        if not existing_activity:
+            raise HTTPException(status_code=404, detail="Holding activity log not found")
             
-        if not existing_result.data:
-            raise HTTPException(status_code=404, detail=f"Holding activity log with ID {activity_id} not found")
+        # Store activity data for later use
+        portfolio_fund_id = existing_activity.get("portfolio_fund_id")
+        activity_date = datetime.fromisoformat(existing_activity.get("activity_timestamp")).date()
         
-        existing_activity = existing_result.data[0]
-        
-        # Get the data dictionary from the update model
-        update_data = {k: v for k, v in holding_activity_log.model_dump().items() if v is not None}
-        
-        # Debug
-        logger.info(f"Updating activity {activity_id} with data: {update_data}")
-        logger.info(f"Existing activity: {existing_activity}")
-        logger.info(f"Reverse before update: {reverse_before_update}")
-        logger.info(f"Skip fund update: {skip_fund_update}")
-        
-        # Ensure amount is a float if present
-        if 'amount' in update_data and update_data['amount'] is not None:
-            try:
-                update_data['amount'] = float(update_data['amount'])
-            except (ValueError, TypeError):
-                raise HTTPException(status_code=422, detail="Invalid amount format")
-        
-        # Ensure activity_timestamp is properly serialized if it's a date object
-        if "activity_timestamp" in update_data and isinstance(update_data["activity_timestamp"], date):
-            update_data["activity_timestamp"] = update_data["activity_timestamp"].isoformat()
-        
-        # Remove account_holding_id if present as it's not in the database schema
-        if 'account_holding_id' in update_data:
-            account_holding_id = update_data.pop('account_holding_id')
-            # If account_holding_id is provided but product_id isn't, use account_holding_id as product_id
-            if 'product_id' not in update_data:
-                update_data['product_id'] = account_holding_id
-            logger.info(f"Removed account_holding_id={account_holding_id} from update data (not in schema)")
-        
-        # Remove product_holding_id if present as it's not in the database schema either
-        if 'product_holding_id' in update_data:
-            product_holding_id = update_data.pop('product_holding_id')
-            logger.info(f"Removed product_holding_id={product_holding_id} from update data (not in schema)")
-                
-        # Track portfolios and clients affected by this update
+        # Track affected portfolios and funds for recalculation
         affected_portfolio_ids = set()
-        affected_portfolio_fund_ids = set()
+        affected_funds = set()
         affected_client_ids = set()
+        affected_portfolio_fund_ids = set()
         
-        # Get original portfolio fund
-        original_fund_id = existing_activity['portfolio_fund_id']
-        original_fund_result = db.table("portfolio_funds")\
-            .select("portfolio_id")\
-            .eq("id", original_fund_id)\
-            .execute()
+        # Add portfolio_fund_id to affected funds
+        if portfolio_fund_id:
+            affected_portfolio_fund_ids.add(portfolio_fund_id)
             
-        if original_fund_result.data:
-            original_portfolio_id = original_fund_result.data[0]['portfolio_id']
-            affected_portfolio_ids.add(original_portfolio_id)
-            affected_portfolio_fund_ids.add(original_fund_id)
-        
-        # Get original product id (for direct link in the updated schema)
-        original_product_id = existing_activity.get('product_id')
-        
-        if original_product_id:
-            # Get client_id from client_products
-            client_result = db.table("client_products")\
-                    .select("client_id")\
-                .eq("id", original_product_id)\
-            .execute()
-            
-            if client_result.data:
-                affected_client_ids.add(client_result.data[0]['client_id'])
-        
-        # If portfolio_fund_id is being changed, add the new fund and portfolio to affected lists
-        if 'portfolio_fund_id' in update_data and update_data['portfolio_fund_id'] != original_fund_id:
-            new_fund_result = db.table("portfolio_funds")\
-            .select("portfolio_id")\
-                .eq("id", update_data['portfolio_fund_id'])\
-            .execute()
-            
-            if new_fund_result.data:
-                new_portfolio_id = new_fund_result.data[0]['portfolio_id']
-                affected_portfolio_ids.add(new_portfolio_id)
-                affected_portfolio_fund_ids.add(update_data['portfolio_fund_id'])
-        
-        # If product_id is being changed, add the new client to the affected list
-        if 'product_id' in update_data and update_data['product_id'] != original_product_id:
-            new_client_result = db.table("client_products")\
-                .select("client_id")\
-                .eq("id", update_data['product_id'])\
-                .execute()
-                
-            if new_client_result.data:
-                affected_client_ids.add(new_client_result.data[0]['client_id'])
-        
-        # Handle related funds for Switch activities
-        if existing_activity.get('activity_type') in ['SwitchIn', 'SwitchOut'] and existing_activity.get('related_fund'):
-            related_fund_id = existing_activity['related_fund']
-            related_fund_result = db.table("portfolio_funds")\
+            # Get the portfolio associated with this fund
+            portfolio_result = db.table("portfolio_funds")\
                 .select("portfolio_id")\
-                .eq("id", related_fund_id)\
+                .eq("id", portfolio_fund_id)\
                 .execute()
                 
-            if related_fund_result.data:
-                related_portfolio_id = related_fund_result.data[0]['portfolio_id']
-                affected_portfolio_ids.add(related_portfolio_id)
-                affected_portfolio_fund_ids.add(related_fund_id)
+            if portfolio_result.data and len(portfolio_result.data) > 0:
+                portfolio_id = portfolio_result.data[0]["portfolio_id"]
+                affected_portfolio_ids.add(portfolio_id)
                 
-                # Get client for the related fund's portfolio
-                related_client_result = db.table("client_products")\
+                # Get client associated with this portfolio
+                client_result = db.table("client_products")\
                     .select("client_id")\
-                    .eq("portfolio_id", related_portfolio_id)\
+                    .eq("portfolio_id", portfolio_id)\
                     .execute()
                     
-                if related_client_result.data:
-                    affected_client_ids.add(related_client_result.data[0]['client_id'])
-                    
-        # If the activity type is changing to/from a switch type, or the related fund is changing
-        if ('activity_type' in update_data and update_data['activity_type'] in ['SwitchIn', 'SwitchOut']) or \
-           (existing_activity.get('activity_type') in ['SwitchIn', 'SwitchOut'] and 'related_fund' in update_data):
-            
-            # If there's a new related fund
-            if 'related_fund' in update_data and update_data['related_fund']:
-                new_related_fund_id = update_data['related_fund']
-                new_related_fund_result = db.table("portfolio_funds")\
-                    .select("portfolio_id")\
-                    .eq("id", new_related_fund_id)\
-                                .execute()
-                            
-                if new_related_fund_result.data:
-                    new_related_portfolio_id = new_related_fund_result.data[0]['portfolio_id']
-                    affected_portfolio_ids.add(new_related_portfolio_id)
-                    affected_portfolio_fund_ids.add(new_related_fund_id)
-                    
-                    # Get client for the new related fund's portfolio
-                    new_related_client_result = db.table("client_products")\
-                        .select("client_id")\
-                        .eq("portfolio_id", new_related_portfolio_id)\
-                        .execute()
-                        
-                    if new_related_client_result.data:
-                        affected_client_ids.add(new_related_client_result.data[0]['client_id'])
+                if client_result.data and len(client_result.data) > 0:
+                    client_id = client_result.data[0]["client_id"]
+                    affected_client_ids.add(client_id)
         
+        # Check if the amount field is effectively empty (None, empty string, etc.)
+        if 'amount' in update_data_dict and is_effectively_empty(update_data_dict['amount']):
+            logger.info(f"Amount field is effectively empty ({update_data_dict['amount']}), deleting activity {activity_id}")
+            
+            # Store the activity data before deleting for the response
+            activity_to_delete = existing_activity
+            
+            # Call the delete function to handle all the necessary cleanup
+            deletion_result = await delete_holding_activity_log(activity_id, db)
+            
+            # Return a proper response that matches the HoldingActivityLog model
+            # We'll construct it from the deleted activity data
+            deleted_activity = {
+                **activity_to_delete,
+                "message": "Activity was deleted due to empty amount field"
+            }
+            
+            return deleted_activity
+            
+        # Remove None values from update data (excluding amount which was handled above)
+        update_data = {k: v for k, v in update_data_dict.items() if v is not None}
+        
+        # Remove fields that can't be updated directly
+        if 'account_holding_id' in update_data:
+            update_data.pop('account_holding_id')
+        if 'product_holding_id' in update_data:
+            update_data.pop('product_holding_id')
+        
+        # Handle date serialization for activity_timestamp
+        if 'activity_timestamp' in update_data and isinstance(update_data['activity_timestamp'], date):
+            update_data['activity_timestamp'] = update_data['activity_timestamp'].isoformat()
+
+        # Convert Decimal to float for JSON serialization
+        if 'amount' in update_data:
+            if update_data['amount'] is not None:
+                from decimal import Decimal
+                if isinstance(update_data['amount'], Decimal):
+                    update_data['amount'] = float(update_data['amount'])
+                    logger.info(f"Converted Decimal amount to float: {update_data['amount']}")
+
+        # Log final update data being sent to the database
+        logger.info(f"Final update_data being sent to database: {update_data}")
+        
+        if reverse_before_update and not skip_fund_update:
+            # Reverse the effect of the current activity before applying the new one
+            logger.info(f"Reversing the effect of activity {activity_id} before update")
+            await reverse_activity_effect(existing_activity, db)
+
         # Update the activity log
         result = db.table("holding_activity_log").update(update_data).eq("id", activity_id).execute()
         
@@ -1186,30 +1439,35 @@ async def update_holding_activity_log(
         for client_id in affected_client_ids:
             await recalculate_product_weightings(client_id, db)
         
-        # Recalculate IRR values for affected portfolio funds
+        # Recalculate existing IRR values for affected portfolio funds
         for portfolio_fund_id in affected_portfolio_fund_ids:
             activity_timestamp = holding_activity_log.activity_timestamp if holding_activity_log.activity_timestamp else datetime.now()
             
             # Handle different timestamp types
             if isinstance(activity_timestamp, date):
-                # Convert date to datetime for the recalculation function
-                activity_timestamp = datetime.combine(activity_timestamp, datetime.min.time())
+                # Use date directly
+                activity_date = activity_timestamp
+            elif isinstance(activity_timestamp, datetime):
+                activity_date = activity_timestamp.date()
             elif isinstance(activity_timestamp, str):
                 try:
                     # Try to parse as ISO format first
-                    activity_timestamp = datetime.fromisoformat(activity_timestamp.replace('Z', '+00:00'))
+                    dt = datetime.fromisoformat(activity_timestamp.replace('Z', '+00:00'))
+                    activity_date = dt.date()
                 except ValueError:
                     # Try to parse as date format
                     try:
-                        activity_timestamp = datetime.strptime(activity_timestamp, "%Y-%m-%d")
+                        dt = datetime.strptime(activity_timestamp, "%Y-%m-%d")
+                        activity_date = dt.date()
                     except ValueError:
-                        # If all parsing fails, use current time as fallback
-                        logger.warning(f"Could not parse activity timestamp: {activity_timestamp}, using current time")
-                        activity_timestamp = datetime.now()
-                
-            await recalculate_irr_values_after_activity(
+                        # If all parsing fails, use current date as fallback
+                        logger.warning(f"Could not parse activity timestamp: {activity_timestamp}, using current date")
+                        activity_date = date.today()
+                        
+            logger.info(f"Recalculating existing IRR values for portfolio_fund_id: {portfolio_fund_id} after {activity_date}")
+            await recalculate_existing_irr_values(
                 portfolio_fund_id=portfolio_fund_id,
-                activity_timestamp=activity_timestamp,
+                activity_date=activity_date,
                 db=db
             )
         

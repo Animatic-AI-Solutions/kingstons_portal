@@ -8,6 +8,9 @@ from typing_extensions import Annotated
 def validate_decimal_places(value: Decimal) -> Decimal:
     if value is None:
         return None
+    # Handle empty string case
+    if isinstance(value, str) and value.strip() == "":
+        return None
     return Decimal(str(round(value, 5)))
 
 DecimalWithPrecision = Annotated[Decimal, AfterValidator(validate_decimal_places)]
@@ -21,6 +24,14 @@ class HoldingActivityLogBase(BaseModel):
     amount: Optional[DecimalWithPrecision] = None
     related_fund: Optional[int] = None  # Used for Switch activities to reference the related fund
     account_holding_id: Optional[int] = None  # For backward compatibility - redirects to product_id
+    
+    @field_validator('amount', mode='before')
+    @classmethod
+    def validate_amount_empty_string(cls, value):
+        # Handle empty string by converting to None
+        if isinstance(value, str) and value.strip() == "":
+            return None
+        return value
     
     @field_validator('activity_timestamp', mode='before')
     @classmethod
@@ -53,6 +64,14 @@ class HoldingActivityLogUpdate(BaseModel):
     amount: Optional[DecimalWithPrecision] = None
     related_fund: Optional[int] = None
     account_holding_id: Optional[int] = None
+    
+    @field_validator('amount', mode='before')
+    @classmethod
+    def validate_amount_empty_string(cls, value):
+        # Handle empty string by converting to None
+        if isinstance(value, str) and value.strip() == "":
+            return None
+        return value
     
     @field_validator('activity_timestamp', mode='before')
     @classmethod
