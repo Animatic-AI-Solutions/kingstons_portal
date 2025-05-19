@@ -334,11 +334,17 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       ? '' 
       : value.replace(/[^0-9.]/g, ''); // Allow only numbers and decimal points
     
-    // Get existing activity
+    // Get existing activity or valuation
+    let existingId = undefined;
+    if (activityType === 'Current Value') {
+      // For Current Value, check if a valuation exists
+      const valuation = getFundValuation(fundId, month);
+      existingId = valuation?.id;
+    } else {
+      // For regular activities, get the activity ID
       const activity = getActivity(fundId, month, activityType);
-    
-    // Get the activity ID if it exists
-    const activityId = activity?.id;
+      existingId = activity?.id;
+    }
     
     // Check for existing pending edit
     const existingEditIndex = pendingEdits.findIndex(
@@ -349,15 +355,15 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     if (existingEditIndex !== -1) {
       const newEdits = [...pendingEdits];
     
-      // If the value is empty and the original activity existed, mark for deletion
-      if (sanitizedValue === '' && activityId) {
+      // If the value is empty and the original existed, mark for deletion
+      if (sanitizedValue === '' && existingId) {
         newEdits[existingEditIndex] = {
           ...newEdits[existingEditIndex],
           value: sanitizedValue,
           toDelete: true
         };
-      } else if (sanitizedValue === '' && !activityId) {
-        // If the value is empty and there was no original activity, remove the edit
+      } else if (sanitizedValue === '' && !existingId) {
+        // If the value is empty and there was no original, remove the edit
         newEdits.splice(existingEditIndex, 1);
       } else {
         // Otherwise update the value
@@ -369,17 +375,17 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       }
       
       setPendingEdits(newEdits);
-      }
-    // If there's no existing edit and the value differs from the current activity
+    }
+    // If there's no existing edit and the value differs from the current value
     else if (sanitizedValue !== getCellValue(fundId, month, activityType)) {
-    const newEdit: CellEdit = {
-      fundId,
-      month,
-      activityType,
+      const newEdit: CellEdit = {
+        fundId,
+        month,
+        activityType,
         value: sanitizedValue,
-        isNew: !activityId,
-        originalActivityId: activityId,
-        toDelete: sanitizedValue === '' && !!activityId
+        isNew: !existingId,
+        originalActivityId: existingId,
+        toDelete: sanitizedValue === '' && !!existingId
       };
       
       setPendingEdits([...pendingEdits, newEdit]);
@@ -643,10 +649,30 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       }
       
       // 3. Process "Current Value" edits
-      for (const edit of nonEmptyEdits) {
+      for (const edit of pendingEdits) {
         if (edit.activityType !== 'Current Value') continue;
         
         try {
+          // Check if the value is empty
+          if (edit.value.trim() === '') {
+            // Check if we have a valuation for this month
+            const valuation = getFundValuation(edit.fundId, edit.month);
+            if (valuation) {
+              console.log(`Updating Current Value ${valuation.id} with empty value to trigger deletion`);
+              // Update with empty string to trigger deletion on backend
+              const response = await api.patch(`fund_valuations/${valuation.id}`, {
+                value: ''
+              });
+              console.log(`Update response for empty Current Value:`, response.data);
+              
+              // Trigger IRR recalculation for this fund and month
+              await recalculateIRRForFundAndMonth(edit.fundId, edit.month);
+            } else {
+              console.log(`No existing valuation found for fund ${edit.fundId}, month ${edit.month} to delete`);
+            }
+            continue;
+          }
+          
           const amount = parseFloat(edit.value);
           if (isNaN(amount) || amount < 0) {
             throw new Error(`Invalid amount: ${edit.value} for Current Value`);
@@ -671,6 +697,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
               value: amount
             });
           }
+          
+          // Trigger IRR recalculation for this fund and month
+          await recalculateIRRForFundAndMonth(edit.fundId, edit.month);
         } catch (err: any) {
           setError(err.message || 'Failed to save valuation');
           setIsSubmitting(false);
@@ -686,16 +715,36 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           const switchIn = pair.switchIn;
           const switchOut = pair.switchOut;
           
-          // If both edits are empty, delete both activities
+          // If both edits are empty, update both activities with empty values
           if ((!switchIn || switchIn.value.trim() === '') && 
               (!switchOut || switchOut.value.trim() === '')) {
-            // Delete both activities if they exist
+            // Update both activities with empty values if they exist
             if (switchIn?.originalActivityId) {
-              await api.delete(`holding_activity_logs/${switchIn.originalActivityId}`);
+              const [year, month] = switchIn.month.split('-');
+              const formattedDate = `${year}-${month}-01`;
+              
+              await api.patch(`holding_activity_logs/${switchIn.originalActivityId}`, {
+                portfolio_fund_id: switchIn.fundId,
+                account_holding_id: accountHoldingId,
+                activity_type: convertActivityTypeForBackend('Switch In'),
+                activity_timestamp: formattedDate,
+                amount: "",  // Empty string to trigger our is_effectively_empty check
+                related_fund: switchIn.linkedFundId
+              });
             }
             
             if (switchOut?.originalActivityId) {
-              await api.delete(`holding_activity_logs/${switchOut.originalActivityId}`);
+              const [year, month] = switchOut.month.split('-');
+              const formattedDate = `${year}-${month}-01`;
+              
+              await api.patch(`holding_activity_logs/${switchOut.originalActivityId}`, {
+                portfolio_fund_id: switchOut.fundId,
+                account_holding_id: accountHoldingId,
+                activity_type: convertActivityTypeForBackend('Switch Out'),
+                activity_timestamp: formattedDate,
+                amount: "",  // Empty string to trigger our is_effectively_empty check
+                related_fund: switchOut.linkedFundId
+              });
             }
             
             // Also check for existing activities that might not be in the edits
@@ -704,15 +753,39 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
             
             if (sourceId && targetId) {
               const month = (switchIn || switchOut)?.month || '';
+              const [year, monthNum] = month.split('-');
+              const formattedDate = `${year}-${monthNum}-01`;
               
               const existingSwitchIn = getActivity(targetId, month, 'Switch In');
               if (existingSwitchIn?.id && existingSwitchIn.id !== switchIn?.originalActivityId) {
-                await api.delete(`holding_activity_logs/${existingSwitchIn.id}`);
+                const switchInData = {
+                  portfolio_fund_id: targetId,
+                  account_holding_id: accountHoldingId,
+                  activity_type: convertActivityTypeForBackend('Switch In'),
+                  activity_timestamp: formattedDate,
+                  amount: "",  // Empty string to trigger our is_effectively_empty check
+                  related_fund: sourceId
+                };
+                
+                console.log(`Updating existing SwitchIn activity ${existingSwitchIn.id} with empty value:`, switchInData);
+                const response = await api.patch(`holding_activity_logs/${existingSwitchIn.id}`, switchInData);
+                console.log(`Existing SwitchIn update response:`, response.data);
               }
               
               const existingSwitchOut = getActivity(sourceId, month, 'Switch Out');
               if (existingSwitchOut?.id && existingSwitchOut.id !== switchOut?.originalActivityId) {
-                await api.delete(`holding_activity_logs/${existingSwitchOut.id}`);
+                const switchOutData = {
+                  portfolio_fund_id: sourceId,
+                  account_holding_id: accountHoldingId,
+                  activity_type: convertActivityTypeForBackend('Switch Out'),
+                  activity_timestamp: formattedDate,
+                  amount: "",  // Empty string to trigger our is_effectively_empty check
+                  related_fund: targetId
+                };
+                
+                console.log(`Updating existing SwitchOut activity ${existingSwitchOut.id} with empty value:`, switchOutData);
+                const response = await api.patch(`holding_activity_logs/${existingSwitchOut.id}`, switchOutData);
+                console.log(`Existing SwitchOut update response:`, response.data);
               }
             }
           }
@@ -747,29 +820,41 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       }
       
       // 5. Process deletions from empty cells that had activities
-      for (const edit of emptyEdits) {
+      for (const edit of pendingEdits.filter(e => e.toDelete || (e.value.trim() === '' && e.originalActivityId))) {
         // Skip switch activities as they were processed together
         if (edit.activityType === 'Switch In' || edit.activityType === 'Switch Out') {
           continue;
         }
         
-        // Skip "Current Value" activities as they're handled differently
+        // Skip "Current Value" activities as they're handled differently and already processed above
         if (edit.activityType === 'Current Value') {
-          // Delete valuation if it exists
-          const valuation = getFundValuation(edit.fundId, edit.month);
-          if (valuation) {
-            await api.delete(`fund_valuations/${valuation.id}`);
-          }
           continue;
         }
         
         try {
           if (edit.originalActivityId) {
-            // Delete existing activity
-            await api.delete(`holding_activity_logs/${edit.originalActivityId}`);
+            // MODIFICATION: Instead of deleting, update with empty amount
+            // This will trigger our backend logic to handle empty values
+            const [year, month] = edit.month.split('-');
+            const formattedDate = `${year}-${month}-01`;
+            
+            const emptyActivityData = {
+              portfolio_fund_id: edit.fundId,
+              account_holding_id: accountHoldingId,
+              activity_type: convertActivityTypeForBackend(edit.activityType),
+              activity_timestamp: formattedDate,
+              amount: ""  // Empty string to trigger our is_effectively_empty check
+            };
+            
+            console.log(`Updating activity ${edit.originalActivityId} with empty value:`, emptyActivityData);
+            
+            // Use regular update to trigger the empty value handling
+            const response = await api.patch(`holding_activity_logs/${edit.originalActivityId}`, emptyActivityData);
+            console.log(`Update response:`, response.data);
           }
         } catch (err: any) {
-          setError(err.message || 'Failed to delete activity');
+          console.error(`Error updating empty activity:`, err);
+          setError(err.message || 'Failed to update empty activity');
           setIsSubmitting(false);
           return;
         }
@@ -1102,6 +1187,30 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       }, 0);
   };
 
+  // Helper function to recalculate IRR for a specific fund and month
+  const recalculateIRRForFundAndMonth = async (fundId: number, month: string): Promise<void> => {
+    try {
+      // Parse the month string to get year and month
+      const [year, monthNum] = month.split('-');
+      // Format the date as YYYY-MM-DD which the backend expects
+      const formattedDate = `${year}-${monthNum.padStart(2, '0')}-01`;
+      
+      console.log(`Triggering IRR recalculation for fund ${fundId} and month ${month}`);
+      
+      // Call the portfolio_funds endpoint to recalculate IRR
+      // We need to pass valuation_date in the request body
+      const response = await api.post(`portfolio_funds/${fundId}/recalculate_irr`, {
+        valuation_date: formattedDate
+      });
+      
+      console.log(`IRR recalculation completed:`, response.data);
+    } catch (err: any) {
+      console.error(`Error recalculating IRR for fund ${fundId}, month ${month}:`, err);
+      // Don't throw the error - we don't want to interrupt the overall save process
+      // Just log it for debugging
+    }
+  };
+
   // Format cell value for display - more compact for the table view
   const formatCellValue = (value: string): string => {
     if (!value || value.trim() === '') return '';
@@ -1147,16 +1256,38 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     const formattedDate = `${month.split('-')[0]}-${month.split('-')[1]}-01`;
     
     try {
-      // Case 1: Deletion (empty values)
+      // Case 1: Empty values - update with empty values instead of deleting
       if (amount < 0) {
-        // Delete Switch In activity if it exists
+        // Update Switch In activity with empty value if it exists
         if (switchIn?.originalActivityId) {
-          await api.delete(`holding_activity_logs/${switchIn.originalActivityId}`);
+          const switchInData = {
+            portfolio_fund_id: switchIn.fundId,
+            account_holding_id: accountHoldingId,
+            activity_type: convertActivityTypeForBackend('Switch In'),
+            activity_timestamp: formattedDate,
+            amount: "",  // Empty string to trigger our is_effectively_empty check
+            related_fund: switchIn.linkedFundId
+          };
+          
+          console.log(`Updating SwitchIn activity ${switchIn.originalActivityId} with empty value:`, switchInData);
+          const response = await api.patch(`holding_activity_logs/${switchIn.originalActivityId}`, switchInData);
+          console.log(`SwitchIn update response:`, response.data);
         }
         
-        // Delete Switch Out activity if it exists
+        // Update Switch Out activity with empty value if it exists
         if (switchOut?.originalActivityId) {
-          await api.delete(`holding_activity_logs/${switchOut.originalActivityId}`);
+          const switchOutData = {
+            portfolio_fund_id: switchOut.fundId,
+            account_holding_id: accountHoldingId,
+            activity_type: convertActivityTypeForBackend('Switch Out'),
+            activity_timestamp: formattedDate,
+            amount: "",  // Empty string to trigger our is_effectively_empty check
+            related_fund: switchOut.linkedFundId
+          };
+          
+          console.log(`Updating SwitchOut activity ${switchOut.originalActivityId} with empty value:`, switchOutData);
+          const response = await api.patch(`holding_activity_logs/${switchOut.originalActivityId}`, switchOutData);
+          console.log(`SwitchOut update response:`, response.data);
         }
         
         return;
