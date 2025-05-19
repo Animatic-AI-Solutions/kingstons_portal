@@ -133,6 +133,45 @@ export const getLatestFundIRR = (portfolioFundId: number) => {
 };
 
 /**
+ * Fetches IRR values for multiple portfolio funds in a single request
+ * @param {number[]} fundIds - Array of portfolio fund IDs to fetch IRR values for
+ * @returns {Promise} - API response with IRR values grouped by fund ID
+ */
+export const getBatchFundIRRValues = (fundIds: number[]) => {
+  return api.post('portfolio_funds/batch/irr-values', { fund_ids: fundIds });
+};
+
+/**
+ * Fetches pre-aggregated IRR history data organized by month/year
+ * @param {Object} params - Request parameters
+ * @param {number[]} [params.fundIds] - Array of portfolio fund IDs
+ * @param {number} [params.portfolioId] - Portfolio ID to filter funds (if fund_ids not provided)
+ * @param {boolean} [params.includeFundDetails=true] - Whether to include detailed fund information
+ * @returns {Promise} - API response with pre-formatted IRR history data
+ */
+export const getAggregatedIRRHistory = (params: {
+  fundIds?: number[];
+  portfolioId?: number;
+  includeFundDetails?: boolean;
+}) => {
+  const payload: any = {};
+  
+  if (params.fundIds && params.fundIds.length > 0) {
+    payload.fund_ids = params.fundIds;
+  }
+  
+  if (params.portfolioId) {
+    payload.portfolio_id = params.portfolioId;
+  }
+  
+  if (params.includeFundDetails !== undefined) {
+    payload.include_fund_details = params.includeFundDetails;
+  }
+  
+  return api.post('portfolio_funds/aggregated-irr-history', payload);
+};
+
+/**
  * Updates an existing IRR value
  * @param {number} irrValueId - IRR value record ID
  * @param {Object} data - Updated IRR data

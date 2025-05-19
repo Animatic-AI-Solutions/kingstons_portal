@@ -1,13 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { getFundIRRValues, updateIRRValue, deleteIRRValue } from '../services/api';
+import { updateIRRValue, deleteIRRValue, getAggregatedIRRHistory } from '../services/api';
 import { formatDate, formatCurrency, formatPercentage } from '../utils/formatters';
 
 interface IRRValue {
   id: number;
   fund_id: number;
-  value: number;
+  irr: number;
   date: string;
-  valuation: number;
+  created_at: string;
+  fund_valuation_id?: number;
+}
+
+// Interface for the aggregated response format
+interface AggregatedIRRData {
+  columns: string[];
+  funds: {
+    id: number;
+    name: string;
+    details?: {
+      risk_level?: number;
+      fund_type?: string;
+      weighting?: number;
+      start_date?: string;
+      status?: string;
+      available_fund?: {
+        id: number;
+        name: string;
+        description?: string;
+        provider?: string;
+      };
+    };
+    values: {
+      [monthYear: string]: number;
+    };
+  }[];
+  portfolio_info?: {
+    id: number;
+    portfolio_name: string;
+    target_risk_level?: number;
+  };
 }
 
 interface IRRHistoryModalProps {
@@ -42,8 +73,72 @@ const IRRHistoryModal: React.FC<IRRHistoryModalProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const response = await getFundIRRValues(portfolioFundId);
-      setIrrValues(response.data);
+      // Use the aggregated endpoint with a single fund ID
+      const response = await getAggregatedIRRHistory({ fundIds: [portfolioFundId] });
+      const aggregatedData: AggregatedIRRData = response.data;
+      
+      if (aggregatedData.funds.length > 0) {
+        const fund = aggregatedData.funds[0];
+        
+        // Convert the aggregated format to the flat format expected by this component
+        const irrValues: IRRValue[] = [];
+        
+        // Get each month's data
+        Object.entries(fund.values).forEach(([monthYear, irrValue]) => {
+          // Need to convert from month/year format back to date
+          const [month, year] = monthYear.split(' ');
+          const monthIndex = new Date(Date.parse(`${month} 1, ${year}`)).getMonth();
+          const date = new Date(parseInt(year), monthIndex, 1).toISOString().split('T')[0];
+          
+          // Create synthetic IRR value object
+          // Note: We don't have all the details like ID or fund_valuation_id here
+          // So we'll need to fetch additional details for edit/delete operations
+          irrValues.push({
+            id: -1, // Placeholder, will be replaced with real data when editing
+            fund_id: portfolioFundId,
+            irr: irrValue,
+            date: date,
+            created_at: new Date().toISOString()
+          });
+        });
+        
+        // If we have any values, we need to get the actual record IDs for CRUD operations
+        if (irrValues.length > 0) {
+          // We still need to make a separate call to get the actual IRR values with IDs
+          // because we need the IDs for updating/deleting
+          try {
+            const detailsResponse = await fetch(`/api/portfolio_funds/${portfolioFundId}/irr-values`);
+            const detailsData = await detailsResponse.json();
+            
+            // Create a map of date -> IRR value with ID
+            const dateToIrrMap = new Map();
+            detailsData.forEach((irr: IRRValue) => {
+              const dateKey = irr.date.split('T')[0];
+              dateToIrrMap.set(dateKey, irr);
+            });
+            
+            // Update our synthetic values with real IDs
+            irrValues.forEach(irr => {
+              const realIrr = dateToIrrMap.get(irr.date);
+              if (realIrr) {
+                irr.id = realIrr.id;
+                irr.created_at = realIrr.created_at;
+                irr.fund_valuation_id = realIrr.fund_valuation_id;
+              }
+            });
+          } catch (err) {
+            console.error('Error fetching detailed IRR records:', err);
+            // Continue with partial data - editing might not work
+          }
+        }
+        
+        // Sort by date (newest first)
+        irrValues.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        
+        setIrrValues(irrValues);
+      } else {
+        setIrrValues([]);
+      }
     } catch (err: any) {
       console.error('Error fetching IRR values:', err);
       setError('Failed to load IRR history');
@@ -56,7 +151,7 @@ const IRRHistoryModal: React.FC<IRRHistoryModalProps> = ({
     setEditingValue(irrValue);
     // Format date for the date input (YYYY-MM-DD)
     setEditedDate(irrValue.date.split('T')[0]);
-    setEditedValuation(irrValue.valuation.toString());
+    setEditedValuation(irrValue.fund_valuation_id?.toString() || '');
   };
 
   const handleSave = async () => {
@@ -65,7 +160,7 @@ const IRRHistoryModal: React.FC<IRRHistoryModalProps> = ({
     try {
       const updateData = {
         date: editedDate,
-        valuation: parseFloat(editedValuation)
+        fund_valuation_id: editingValue.fund_valuation_id ? parseInt(editedValuation) : undefined
       };
       
       await updateIRRValue(editingValue.id, updateData);
@@ -171,11 +266,11 @@ const IRRHistoryModal: React.FC<IRRHistoryModalProps> = ({
                         className="border rounded p-1 w-full"
                       />
                     ) : (
-                      formatCurrency(irrValue.valuation)
+                      irrValue.fund_valuation_id ? formatCurrency(irrValue.fund_valuation_id) : '-'
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {formatPercentage(irrValue.value / 100)}
+                    {formatPercentage(irrValue.irr / 100)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     {editingValue?.id === irrValue.id ? (

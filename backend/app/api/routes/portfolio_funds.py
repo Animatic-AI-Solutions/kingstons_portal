@@ -1469,6 +1469,281 @@ async def get_fund_irr_values(portfolio_fund_id: int, db = Depends(get_db)):
         logger.error(f"Error fetching IRR values: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error fetching IRR values: {str(e)}")
 
+@router.post("/portfolio_funds/batch/irr-values", response_model=dict)
+async def get_batch_irr_values(
+    fund_ids: List[int] = Body(..., description="List of portfolio fund IDs to fetch IRR values for"),
+    db = Depends(get_db)
+):
+    """
+    What it does: Retrieves IRR values for multiple portfolio funds in a single batch request.
+    Why it's needed: Optimizes performance by reducing multiple API calls to a single request.
+    How it works:
+        1. Accepts a list of portfolio fund IDs
+        2. Validates each fund exists
+        3. Queries the irr_values table for all entries for these funds in a single query
+        4. Groups and formats the data by fund ID for the frontend
+    Expected output: A JSON object with fund IDs as keys and arrays of IRR values as values
+    """
+    try:
+        logger.info(f"Fetching batch IRR values for {len(fund_ids)} portfolio funds: {fund_ids}")
+        
+        if not fund_ids:
+            logger.warning("No fund IDs provided for batch IRR values")
+            return {"data": {}}
+            
+        # Check that all funds exist
+        funds_check = db.table("portfolio_funds")\
+            .select("id")\
+            .in_("id", fund_ids)\
+            .execute()
+            
+        found_fund_ids = [fund["id"] for fund in funds_check.data] if funds_check.data else []
+        missing_fund_ids = [fund_id for fund_id in fund_ids if fund_id not in found_fund_ids]
+        
+        if missing_fund_ids:
+            logger.warning(f"Some portfolio funds not found: {missing_fund_ids}")
+            
+        # Get all IRR values for the valid funds in a single query
+        irr_values = db.table("irr_values")\
+            .select("*")\
+            .in_("fund_id", found_fund_ids)\
+            .order("date")\
+            .execute()
+            
+        # Group by fund_id
+        result = {}
+        
+        if irr_values.data:
+            for irr in irr_values.data:
+                fund_id = irr["fund_id"]
+                
+                # Format as needed for frontend
+                formatted_irr = {
+                    "id": irr["id"],
+                    "date": irr["date"],
+                    "irr": float(irr["irr_result"]),
+                    "fund_id": fund_id,
+                    "created_at": irr["created_at"],
+                    "fund_valuation_id": irr["fund_valuation_id"]
+                }
+                
+                # Initialize the array if this is the first entry for this fund
+                if fund_id not in result:
+                    result[fund_id] = []
+                    
+                result[fund_id].append(formatted_irr)
+                
+        # Initialize empty arrays for funds with no IRR values
+        for fund_id in found_fund_ids:
+            if fund_id not in result:
+                result[fund_id] = []
+                
+        logger.info(f"Successfully fetched batch IRR values for {len(result)} funds")
+        return {"data": result}
+    except Exception as e:
+        logger.error(f"Error fetching batch IRR values: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error fetching batch IRR values: {str(e)}")
+
+@router.post("/portfolio_funds/aggregated-irr-history", response_model=dict)
+async def get_aggregated_irr_history(
+    fund_ids: List[int] = Body(None, description="List of portfolio fund IDs to fetch IRR history for"),
+    portfolio_id: Optional[int] = Body(None, description="Optional portfolio ID to filter funds"),
+    include_fund_details: bool = Body(True, description="Include detailed fund information"),
+    db = Depends(get_db)
+):
+    """
+    What it does: Retrieves pre-aggregated IRR history for multiple funds, organized by month/year.
+    Why it's needed: Reduces frontend processing by providing data already structured for display.
+    How it works:
+        1. Accepts a list of portfolio fund IDs or portfolio ID
+        2. Gets fund information including names, risk levels, and other details
+        3. Retrieves all IRR values for the specified funds
+        4. Pre-processes the data by extracting all unique month/years
+        5. Organizes IRR values by fund and month/year in a table-ready format
+    Expected output: A JSON object with columns (date labels) and rows (fund data with IRR values)
+    """
+    try:
+        logger.info(f"Fetching aggregated IRR history for {len(fund_ids) if fund_ids else 0} funds, portfolio_id: {portfolio_id}")
+        
+        # If portfolio_id is provided, get all funds in that portfolio
+        if portfolio_id and not fund_ids:
+            portfolio_funds = db.table("portfolio_funds")\
+                .select("*")\
+                .eq("portfolio_id", portfolio_id)\
+                .execute()
+            
+            if portfolio_funds.data:
+                fund_ids = [fund["id"] for fund in portfolio_funds.data]
+                logger.info(f"Found {len(fund_ids)} funds in portfolio {portfolio_id}")
+            else:
+                logger.warning(f"No funds found in portfolio {portfolio_id}")
+                return {
+                    "columns": [],
+                    "funds": [],
+                    "portfolio_info": None
+                }
+                
+            # Get the portfolio name for context
+            portfolio_info = None
+            try:
+                portfolio_result = db.table("portfolios")\
+                    .select("id, portfolio_name, target_risk_level")\
+                    .eq("id", portfolio_id)\
+                    .execute()
+                
+                if portfolio_result.data:
+                    portfolio_info = portfolio_result.data[0]
+            except Exception as e:
+                logger.warning(f"Error fetching portfolio info: {str(e)}")
+        
+        if not fund_ids:
+            logger.warning("No fund IDs provided for IRR history")
+            return {
+                "columns": [],
+                "funds": [],
+                "portfolio_info": None
+            }
+        
+        # Get fund details including names
+        fund_details = {}
+        funds_data = db.table("portfolio_funds")\
+            .select("*")\
+            .in_("id", fund_ids)\
+            .execute()
+        
+        # Collect available_funds_ids
+        available_fund_ids = []
+        portfolio_fund_map = {}
+        
+        for fund in funds_data.data if funds_data.data else []:
+            fund_id = fund["id"]
+            available_fund_id = fund["available_funds_id"]
+            available_fund_ids.append(available_fund_id)
+            portfolio_fund_map[fund_id] = fund
+        
+        # Get available fund details in a single query
+        available_funds_map = {}
+        if available_fund_ids:
+            available_funds = db.table("available_funds")\
+                .select("*")\
+                .in_("id", available_fund_ids)\
+                .execute()
+            
+            if available_funds.data:
+                available_funds_map = {
+                    fund["id"]: fund for fund in available_funds.data
+                }
+        
+        # Merge portfolio_funds with available_funds data
+        for fund_id, portfolio_fund in portfolio_fund_map.items():
+            available_fund_id = portfolio_fund["available_funds_id"]
+            available_fund = available_funds_map.get(available_fund_id, {})
+            
+            # Add to fund details
+            fund_details[fund_id] = {
+                "id": fund_id,
+                "name": available_fund.get("fund_name", "Unknown Fund"),
+                "risk_level": available_fund.get("risk_level", None),
+                "fund_type": available_fund.get("fund_type", None),
+                "weighting": portfolio_fund.get("weighting", 0),
+                "start_date": portfolio_fund.get("start_date", None),
+                "status": portfolio_fund.get("status", "active"),
+                "available_fund": {
+                    "id": available_fund_id,
+                    "name": available_fund.get("fund_name", "Unknown Fund"),
+                    "description": available_fund.get("description", None),
+                    "provider": available_fund.get("provider", None),
+                }
+            }
+        
+        # Get all IRR values for the specified funds
+        irr_values = db.table("irr_values")\
+            .select("*")\
+            .in_("fund_id", fund_ids)\
+            .order("date")\
+            .execute()
+        
+        if not irr_values.data:
+            logger.info("No IRR values found for the specified funds")
+            return {
+                "columns": [],
+                "funds": [
+                    {
+                        "id": fund_id,
+                        "name": fund_details.get(fund_id, {}).get("name", "Unknown Fund"),
+                        "details": fund_details.get(fund_id, {}) if include_fund_details else None,
+                        "values": {}
+                    }
+                    for fund_id in fund_ids if fund_id in fund_details
+                ],
+                "portfolio_info": portfolio_info
+            }
+        
+        # Extract all unique month/years from the IRR values
+        months_set = set()
+        
+        # Data structure to hold fund IRR values by month/year
+        funds_data = {}
+        
+        # Process all IRR values
+        for irr in irr_values.data:
+            fund_id = irr["fund_id"]
+            date_str = irr["date"]
+            
+            # Format date as month/year (e.g., "Jan 2023")
+            date_obj = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+            month_year = date_obj.strftime("%b %Y")
+            
+            # Add to unique months set
+            months_set.add(month_year)
+            
+            # Initialize fund data if not exists
+            if fund_id not in funds_data:
+                funds_data[fund_id] = {
+                    "id": fund_id,
+                    "name": fund_details.get(fund_id, {}).get("name", "Unknown Fund"),
+                    "details": fund_details.get(fund_id, {}) if include_fund_details else None,
+                    "values": {}
+                }
+            
+            # Store IRR value for this month/year
+            funds_data[fund_id]["values"][month_year] = float(irr["irr_result"])
+        
+        # Convert months set to sorted list (newest first)
+        months_list = sorted(list(months_set), key=lambda d: datetime.strptime(d, "%b %Y"), reverse=True)
+        
+        # Add any missing funds (those with no IRR values)
+        for fund_id in fund_ids:
+            if fund_id in fund_details and fund_id not in funds_data:
+                funds_data[fund_id] = {
+                    "id": fund_id,
+                    "name": fund_details[fund_id]["name"],
+                    "details": fund_details.get(fund_id, {}) if include_fund_details else None,
+                    "values": {}
+                }
+        
+        # Convert funds_data dict to list
+        funds_list = list(funds_data.values())
+        
+        # Sort funds alphabetically by name
+        funds_list.sort(key=lambda f: f["name"])
+        
+        # Return pre-processed data
+        result = {
+            "columns": months_list,
+            "funds": funds_list,
+            "portfolio_info": portfolio_info
+        }
+        
+        logger.info(f"Successfully aggregated IRR history for {len(funds_list)} funds across {len(months_list)} months")
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error aggregating IRR history: {str(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Error aggregating IRR history: {str(e)}")
+
 @router.patch("/irr-values/{irr_value_id}", response_model=dict)
 async def update_irr_value(
     irr_value_id: int, 

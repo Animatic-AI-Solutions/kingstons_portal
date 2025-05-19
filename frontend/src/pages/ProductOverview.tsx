@@ -729,7 +729,9 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         state: { 
           notification: {
             type: 'success',
-            message: 'Product deleted successfully'
+            message: account?.portfolio_id 
+              ? `Product and associated portfolio #${account.portfolio_id} deleted successfully` 
+              : 'Product deleted successfully'
           }
         }
       });
@@ -770,11 +772,16 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
               </svg>
             </div>
             <div className="ml-3">
-              <h3 className="text-lg font-medium text-gray-900">Delete Product</h3>
+              <h3 className="text-lg font-medium text-gray-900">Delete Product and Portfolio</h3>
               <div className="mt-2">
                 <p className="text-sm text-gray-500">
-                  Are you sure you want to delete this product? This action cannot be undone.
+                  Are you sure you want to delete this product? This action will also delete the associated portfolio and cannot be undone.
                 </p>
+                {account?.portfolio_id && (
+                  <p className="mt-2 text-sm font-medium text-red-600">
+                    Warning: Portfolio #{account.portfolio_id} will also be deleted along with all funds, valuations, and IRR data.
+                  </p>
+                )}
                 {deleteError && (
                   <p className="mt-2 text-sm text-red-600">
                     Error: {deleteError}
@@ -800,7 +807,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                 isDeleting ? 'bg-red-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'
               }`}
             >
-              {isDeleting ? 'Deleting...' : 'Delete Product'}
+              {isDeleting ? 'Deleting...' : 'Delete Product and Portfolio'}
             </button>
           </div>
         </div>
@@ -1048,7 +1055,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                 <svg className="-ml-0.5 mr-1.5 h-4 w-4 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
-                Delete
+                Delete Product & Portfolio
               </button>
             </div>
           </div>
