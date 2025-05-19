@@ -175,206 +175,37 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       setIsLoading(true);
       setError(null);
       
-      console.log('ProductOverview: Making API request to /api/client_products/' + accountId);
+      console.log('ProductOverview: Making API request to optimized endpoint for product data');
       
-      // First fetch the account to get the portfolio_id
-      const accountResponse = await api.get(`/api/client_products/${accountId}`);
-      console.log('ProductOverview: Product data received:', accountResponse.data);
+      // Use the new optimized endpoint that returns all data in one request
+      const completeProductResponse = await api.get(`/api/client_products/${accountId}/complete`);
+      const completeData = completeProductResponse.data;
       
-      // Debug provider data
-      console.log('DEBUG - Provider data in account:', {
-        provider_id: accountResponse.data.provider_id,
-        provider_name: accountResponse.data.provider_name
-      });
+      console.log('ProductOverview: Complete product data received:', completeData);
       
-      // Get provider details if we have a provider_id but no provider_name
-      if (accountResponse.data.provider_id && !accountResponse.data.provider_name) {
-        try {
-          const providerResponse = await api.get(`/api/available_providers?id=eq.${accountResponse.data.provider_id}`);
-          if (providerResponse.data && providerResponse.data.length > 0 && providerResponse.data[0].name) {
-            // Update the account data with provider name
-            accountResponse.data.provider_name = providerResponse.data[0].name;
-            console.log('DEBUG - Updated provider name from API:', providerResponse.data[0].name);
+      // Set account data directly from the response
+      setAccount(completeData);
+      
+      // Set product owners directly from the response
+      setProductOwners(completeData.product_owners || []);
+      console.log('Product owners loaded:', completeData.product_owners?.length || 0);
+      
+      // Set fund data map
+      const fundsMap = new Map<number, any>();
+      if (completeData.portfolio_funds) {
+        // Each portfolio fund has fund_details embedded in it
+        completeData.portfolio_funds.forEach((pf: any) => {
+          if (pf.fund_details) {
+            fundsMap.set(pf.fund_details.id, pf.fund_details);
           }
-        } catch (providerErr) {
-          console.error('Error fetching provider details:', providerErr);
-        }
+        });
       }
-      
-      // Get client name if we have a client_id but client_name is missing
-      if (accountResponse.data.client_id && (!accountResponse.data.client_name || accountResponse.data.client_name === '')) {
-        try {
-          console.log('Fetching client name for client_id:', accountResponse.data.client_id);
-          const clientResponse = await api.get(`/api/client_groups/${accountResponse.data.client_id}`);
-          if (clientResponse.data && clientResponse.data.name) {
-            // Update the account data with client name
-            accountResponse.data.client_name = clientResponse.data.name;
-            console.log('Updated client name from API:', clientResponse.data.name);
-          }
-        } catch (clientErr) {
-          console.error('Error fetching client details:', clientErr);
-        }
-      }
-      
-      setAccount(accountResponse.data);
-      
-      // Fetch product owners for this product
-      try {
-        // First fetch all product owners
-        const productOwnersResponse = await api.get('/api/product_owners');
-        
-        if (productOwnersResponse.data && productOwnersResponse.data.length > 0) {
-          // Since there's no GET endpoint for product_owner_products, 
-          // we'll check each product owner to see if it owns this product
-          const productOwners = [];
-          
-          // For each product owner, check if they own this product
-          for (const owner of productOwnersResponse.data) {
-            try {
-              // Get all products for this product owner
-              const ownerProductsResponse = await api.get(`/api/product_owners/${owner.id}/products`);
-              
-              // Check if this product is in the list of the owner's products
-              const isOwnerOfThisProduct = ownerProductsResponse.data?.some(
-                (product: any) => product.id === parseInt(accountId)
-              );
-              
-              // If this owner owns this product, add it to our list
-              if (isOwnerOfThisProduct) {
-                productOwners.push(owner);
-              }
-            } catch (err) {
-              console.error(`Error checking if owner ${owner.id} has product ${accountId}:`, err);
-            }
-          }
-          
-          setProductOwners(productOwners);
-          console.log('Product owners found:', productOwners.length);
-        } else {
-          console.log('No product owners found');
-          setProductOwners([]);
-        }
-      } catch (ownersErr) {
-        console.error('Error fetching product owners:', ownersErr);
-        // Set empty array to avoid UI errors
-        setProductOwners([]);
-      }
-      
-      // Get the portfolio_id from the account - first try direct link, then fall back to current_portfolio
-      const portfolioId = accountResponse.data.portfolio_id || accountResponse.data.current_portfolio?.id;
-      console.log('ProductOverview: Portfolio ID from product:', portfolioId);
-      
-      if (!portfolioId) {
-        console.warn('ProductOverview: No portfolio ID found for this product');
-      }
-      
-      // Now fetch the remaining data in parallel
-      const [
-        fundsResponse,
-        portfolioFundsResponse
-      ] = await Promise.all([
-        api.get('/funds'),
-        portfolioId ? api.get(`/api/portfolio_funds?portfolio_id=${portfolioId}`) : api.get('/api/portfolio_funds')
-      ]);
-      
-      console.log('ProductOverview: Product data received:', accountResponse.data);
-      setAccount(accountResponse.data);
-      
-      // If the product is based on a portfolio template, try to get the target risk
-      if (accountResponse.data.original_template_id) {
-        try {
-          const templateResponse = await api.get(`/api/available_portfolios/${accountResponse.data.original_template_id}`);
-          if (templateResponse.data && templateResponse.data.target_risk) {
-            setTargetRisk(templateResponse.data.target_risk);
-            
-            // Update the account object with target risk
-            setAccount(prev => {
-              if (!prev) return prev;
-              return {
-                ...prev,
-                target_risk: templateResponse.data.target_risk
-              };
-            });
-          }
-        } catch (templateErr) {
-          console.error('Error fetching portfolio template:', templateErr);
-        }
-      }
-      
-      // Create a map of funds for quick lookups
-      const fundsMap = new Map<number, any>(
-        fundsResponse.data.map((fund: any) => [fund.id, fund])
-      );
-      
-      // Save funds data for risk factor display
       setFundsData(fundsMap);
       
-      console.log('ProductOverview: Portfolio funds data:', portfolioFundsResponse.data);
-      
-      // With the new schema, portfolio_funds directly contain all the fund info we need
-      if (portfolioId && portfolioFundsResponse.data.length > 0) {
-        // Process portfolio funds and fetch their latest valuations if needed
-        const portfolioFundsWithValuations = await Promise.all(
-          portfolioFundsResponse.data.map(async (pf: any) => {
-            try {
-              // Try to get the latest valuation for this fund
-              const valuationResponse = await api.get(
-                `/api/fund_valuations?portfolio_fund_id=${pf.id}&order=valuation_date.desc&limit=1`
-              );
-              
-              console.log(`DEBUG - Latest valuation for fund ${pf.id}:`, valuationResponse.data);
-              
-              // If we have a valuation, use it
-              if (valuationResponse.data && valuationResponse.data.length > 0) {
-                const valuation = valuationResponse.data[0];
-                // Store the value in the portfolio fund (it could be zero, but that's valid)
-                pf.market_value = valuation.value;
-                pf.valuation_date = valuation.valuation_date;
-              } else {
-                console.log(`DEBUG - No valuations found for fund ${pf.id}`);
-              }
-              
-              // Fetch the latest IRR for this fund
-              try {
-                const irrResponse = await api.get(
-                  `/api/portfolio_funds/${pf.id}/irr-values`
-                );
-                
-                console.log(`DEBUG - Latest IRR for fund ${pf.id}:`, irrResponse.data);
-                
-                if (irrResponse.data && irrResponse.data.length > 0) {
-                  // Sort by date descending to ensure we get the most recent
-                  const sortedIrrValues = [...irrResponse.data].sort(
-                    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-                  );
-                  pf.irr_result = sortedIrrValues[0].irr;
-                }
-              } catch (irrErr) {
-                console.error(`Error fetching IRR for fund ${pf.id}:`, irrErr);
-              }
-              
-              return pf;
-            } catch (err) {
-              console.error(`Error fetching valuation for fund ${pf.id}:`, err);
-              return pf;
-            }
-          })
-        );
-        
-        console.log('DEBUG - Portfolio funds with valuations:', portfolioFundsWithValuations);
-        
-        const processedHoldings = portfolioFundsWithValuations.map((pf: any) => {
-          // Find fund details
-          const fund = fundsMap.get(pf.available_funds_id);
-          
-          // Debug weighting value
-          console.log('DEBUG - Fund weighting:', {
-            fund_name: fund?.fund_name,
-            weighting_raw: pf.weighting,
-            weighting_type: typeof pf.weighting
-          });
-          
-          // Standardize weighting value - convert to percentage if decimal
+      // Process holdings from portfolio_funds
+      if (completeData.portfolio_funds && completeData.portfolio_funds.length > 0) {
+        const processedHoldings = completeData.portfolio_funds.map((pf: any) => {
+          // Standardize weighting value
           let standardizedWeighting = pf.weighting;
           if (standardizedWeighting !== null && standardizedWeighting !== undefined) {
             let numValue = typeof standardizedWeighting === 'string' 
@@ -387,41 +218,30 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             }
           }
           
-          // Log market value for debugging
-          console.log('DEBUG - Fund market value:', {
-            fund_name: fund?.fund_name,
-            fund_id: pf.available_funds_id,
-            market_value: pf.market_value,
-            amount_invested: pf.amount_invested,
-            valuation_date: pf.valuation_date
-          });
-          
           return {
             id: pf.id,
-            fund_name: fund?.fund_name || 'Unknown Fund',
-            fund_id: fund?.id,
-            isin_number: fund?.isin_number || 'N/A',
+            fund_name: pf.fund_name || 'Unknown Fund',
+            fund_id: pf.available_funds_id,
+            isin_number: pf.isin_number || 'N/A',
             target_weighting: standardizedWeighting,
             amount_invested: pf.amount_invested || 0,
-            // For market value, use the fetched valuation if available, otherwise fall back to amount_invested
             market_value: pf.market_value !== undefined ? pf.market_value : pf.amount_invested || 0,
             valuation_date: pf.valuation_date,
-            irr: pf.irr_result !== undefined ? pf.irr_result : null,
-            status: pf.status || 'active', // Set status with default to active
+            irr: pf.irr_result,
+            status: pf.status || 'active',
             end_date: pf.end_date,
-            riskFactor: undefined
           };
         });
         
-        console.log('ProductOverview: Processed holdings from portfolio_funds:', processedHoldings);
+        console.log('ProductOverview: Processed holdings:', processedHoldings);
         
-        // Check if we have any inactive funds
+        // Filter active and inactive holdings
         const activeHoldings = processedHoldings.filter(
-          h => h.status !== 'inactive' && (!h.end_date || new Date(h.end_date) > new Date())
+          (h: Holding) => h.status !== 'inactive' && (!h.end_date || new Date(h.end_date) > new Date())
         );
         
         const inactiveHoldings = processedHoldings.filter(
-          h => h.status === 'inactive' || (h.end_date && new Date(h.end_date) <= new Date())
+          (h: Holding) => h.status === 'inactive' || (h.end_date && new Date(h.end_date) <= new Date())
         );
         
         console.log(`After filtering: ${activeHoldings.length} active, ${inactiveHoldings.length} inactive`);
@@ -477,14 +297,13 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             valuation_date: undefined,
             irr: undefined,
             riskFactor: averageRiskFactor
-          } as Holding; // Explicitly cast to Holding type to fix TypeScript errors
+          } as Holding;
         };
         
-        // Create previous funds entry if we have inactive holdings
         const previousFundsEntry = createPreviousFundsEntry(inactiveHoldings);
         
         // Only display active holdings directly
-        const displayHoldings: Holding[] = [...activeHoldings]; // Explicitly type as Holding[]
+        const displayHoldings = [...activeHoldings];
         
         // Add the Previous Funds entry if it exists
         if (previousFundsEntry) {
@@ -492,8 +311,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           displayHoldings.push(previousFundsEntry);
         }
         
-        // Sort holdings - normal sort with Cashline and Previous Funds special cases
-        const sortedHoldings = displayHoldings.sort((a: Holding, b: Holding) => { // Explicitly type parameters
+        // Sort holdings
+        const sortedHoldings = displayHoldings.sort((a, b) => {
           // Previous Funds virtual entry always goes last
           if (a.isVirtual) return 1;
           if (b.isVirtual) return -1;
@@ -512,6 +331,14 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         console.log('ProductOverview: No portfolio funds found for this product');
         setHoldings([]);
       }
+      
+      // Set target risk if available from template
+      if (completeData.template_info?.target_risk) {
+        setTargetRisk(completeData.template_info.target_risk);
+      } else if (completeData.target_risk) {
+        setTargetRisk(completeData.target_risk);
+      }
+      
     } catch (err: any) {
       console.error('ProductOverview: Error fetching data:', err);
       setError(err.response?.data?.detail || 'Failed to fetch product details');
@@ -902,7 +729,9 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         state: { 
           notification: {
             type: 'success',
-            message: 'Product deleted successfully'
+            message: account?.portfolio_id 
+              ? `Product and associated portfolio #${account.portfolio_id} deleted successfully` 
+              : 'Product deleted successfully'
           }
         }
       });
@@ -943,11 +772,16 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
               </svg>
             </div>
             <div className="ml-3">
-              <h3 className="text-lg font-medium text-gray-900">Delete Product</h3>
+              <h3 className="text-lg font-medium text-gray-900">Delete Product and Portfolio</h3>
               <div className="mt-2">
                 <p className="text-sm text-gray-500">
-                  Are you sure you want to delete this product? This action cannot be undone.
+                  Are you sure you want to delete this product? This action will also delete the associated portfolio and cannot be undone.
                 </p>
+                {account?.portfolio_id && (
+                  <p className="mt-2 text-sm font-medium text-red-600">
+                    Warning: Portfolio #{account.portfolio_id} will also be deleted along with all funds, valuations, and IRR data.
+                  </p>
+                )}
                 {deleteError && (
                   <p className="mt-2 text-sm text-red-600">
                     Error: {deleteError}
@@ -973,7 +807,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                 isDeleting ? 'bg-red-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'
               }`}
             >
-              {isDeleting ? 'Deleting...' : 'Delete Product'}
+              {isDeleting ? 'Deleting...' : 'Delete Product and Portfolio'}
             </button>
           </div>
         </div>
@@ -1221,7 +1055,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                 <svg className="-ml-0.5 mr-1.5 h-4 w-4 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
-                Delete
+                Delete Product & Portfolio
               </button>
             </div>
           </div>

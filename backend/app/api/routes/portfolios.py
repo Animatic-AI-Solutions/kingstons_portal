@@ -1186,3 +1186,241 @@ async def calculate_portfolio_total_irr(
     except Exception as e:
         logger.error(f"Error calculating total IRR: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error calculating total IRR: {str(e)}")
+
+@router.get("/portfolios/{portfolio_id}/complete", response_model=dict)
+async def get_complete_portfolio(
+    portfolio_id: int,
+    db = Depends(get_db)
+):
+    """
+    What it does: Retrieves a complete portfolio with all related data in a single query.
+    Why it's needed: Dramatically improves frontend performance by eliminating multiple sequential API calls.
+    How it works:
+        1. Fetches portfolio details
+        2. Fetches all portfolio funds with their details
+        3. Fetches the latest valuation for each fund
+        4. Fetches the latest IRR value for each fund
+        5. Returns all data in a structured response
+    Expected output: A JSON object containing the portfolio with all its funds, valuations, and IRR data
+    """
+    try:
+        logger.info(f"Fetching complete portfolio data for ID: {portfolio_id}")
+        
+        # First get the portfolio details
+        portfolio_result = db.table("portfolios").select("*").eq("id", portfolio_id).execute()
+        
+        if not portfolio_result.data or len(portfolio_result.data) == 0:
+            raise HTTPException(status_code=404, detail=f"Portfolio with ID {portfolio_id} not found")
+        
+        portfolio = portfolio_result.data[0]
+        logger.info(f"Found portfolio: {portfolio['portfolio_name']} (ID: {portfolio_id})")
+        
+        # If portfolio has an original_template_id, get the template info
+        template_info = None
+        if portfolio.get("original_template_id"):
+            template_result = db.table("available_portfolios") \
+                .select("*") \
+                .eq("id", portfolio["original_template_id"]) \
+                .execute()
+                
+            if template_result.data and len(template_result.data) > 0:
+                template_info = template_result.data[0]
+                portfolio["template_info"] = template_info
+        
+        # Get all portfolio funds
+        portfolio_funds_result = db.table("portfolio_funds").select("*").eq("portfolio_id", portfolio_id).execute()
+        if not portfolio_funds_result.data:
+            portfolio_funds = []
+        else:
+            portfolio_funds = portfolio_funds_result.data
+            logger.info(f"Found {len(portfolio_funds)} funds in portfolio {portfolio_id}")
+            
+            # Get all fund IDs to fetch related data in batch
+            portfolio_fund_ids = [fund["id"] for fund in portfolio_funds]
+            available_fund_ids = [fund["available_funds_id"] for fund in portfolio_funds if fund.get("available_funds_id")]
+            
+            # Fetch fund details in bulk
+            available_funds_map = {}
+            if available_fund_ids:
+                funds_result = db.table("available_funds").select("*").in_("id", available_fund_ids).execute()
+                if funds_result.data:
+                    available_funds_map = {fund["id"]: fund for fund in funds_result.data}
+            
+            # Fetch latest valuations for all funds in one query using the view
+            valuations_map = {}
+            try:
+                valuations_result = db.table("latest_fund_valuations").select("*").in_("portfolio_fund_id", portfolio_fund_ids).execute()
+                if valuations_result.data:
+                    valuations_map = {val["portfolio_fund_id"]: val for val in valuations_result.data}
+                    logger.info(f"Found {len(valuations_result.data)} valuations for portfolio funds")
+            except Exception as e:
+                logger.error(f"Error fetching latest valuations: {str(e)}")
+            
+            # Fetch latest IRR values for all funds in one query using the view
+            irr_map = {}
+            try:
+                irr_result = db.table("latest_irr_values").select("*").in_("fund_id", portfolio_fund_ids).execute()
+                if irr_result.data:
+                    irr_map = {irr["fund_id"]: irr for irr in irr_result.data}
+                    logger.info(f"Found {len(irr_result.data)} IRR values for portfolio funds")
+            except Exception as e:
+                logger.error(f"Error fetching latest IRR values: {str(e)}")
+            
+            # Enhance each portfolio fund with its related data
+            for fund in portfolio_funds:
+                fund_id = fund["id"]
+                available_fund_id = fund.get("available_funds_id")
+                
+                # Add fund details
+                if available_fund_id and available_fund_id in available_funds_map:
+                    fund_details = available_funds_map[available_fund_id]
+                    fund["fund_details"] = fund_details
+                    fund["fund_name"] = fund_details.get("fund_name")
+                    fund["isin_number"] = fund_details.get("isin_number")
+                    fund["risk_factor"] = fund_details.get("risk_factor")
+                
+                # Add latest valuation
+                if fund_id in valuations_map:
+                    valuation = valuations_map[fund_id]
+                    fund["latest_valuation"] = valuation
+                    fund["market_value"] = valuation.get("value")
+                    fund["valuation_date"] = valuation.get("valuation_date")
+                
+                # Add latest IRR
+                if fund_id in irr_map:
+                    irr = irr_map[fund_id]
+                    fund["latest_irr"] = irr
+                    fund["irr_result"] = irr.get("irr_value")
+                    fund["irr_date"] = irr.get("irr_date")
+        
+        # Construct the complete response
+        response = {
+            "portfolio": portfolio,
+            "template_info": template_info,
+            "portfolio_funds": portfolio_funds,
+            "valuations_map": valuations_map,
+            "irr_map": irr_map
+        }
+        
+        return response
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching complete portfolio data: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@router.get("/portfolios/{portfolio_id}/activity_logs", response_model=dict)
+async def get_portfolio_activity_logs(
+    portfolio_id: int,
+    year: Optional[int] = None,
+    month: Optional[int] = None,
+    activity_type: Optional[str] = None,
+    summary: bool = False,
+    db = Depends(get_db)
+):
+    """
+    What it does: Retrieves all activity logs for a portfolio with optional filtering and summarization.
+    Why it's needed: Optimizes frontend performance by providing filtered and/or summarized activity data.
+    How it works:
+        1. Fetches all activity logs for the portfolio's funds
+        2. Applies optional filtering by year, month, and activity type
+        3. If summary=True, provides aggregated statistics by activity type and fund
+        4. Returns organized data for efficient frontend processing
+    Expected output: A JSON object containing activity logs and optionally summary statistics
+    """
+    try:
+        logger.info(f"Fetching activity logs for portfolio ID: {portfolio_id}")
+        
+        # First check if the portfolio exists
+        portfolio_result = db.table("portfolios").select("id").eq("id", portfolio_id).execute()
+        if not portfolio_result.data or len(portfolio_result.data) == 0:
+            raise HTTPException(status_code=404, detail=f"Portfolio with ID {portfolio_id} not found")
+        
+        # Get all portfolio funds
+        portfolio_funds_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
+        if not portfolio_funds_result.data:
+            return {"activity_logs": [], "summary": {}}
+        
+        # Extract portfolio fund IDs
+        portfolio_fund_ids = [fund["id"] for fund in portfolio_funds_result.data]
+        
+        # Build the activity logs query
+        query = db.table("holding_activity_log").select("*").in_("portfolio_fund_id", portfolio_fund_ids)
+        
+        # Apply filters if provided
+        if year:
+            # Filter by year
+            start_date = datetime(year, 1, 1).isoformat()
+            end_date = datetime(year + 1, 1, 1).isoformat()
+            query = query.gte("activity_timestamp", start_date).lt("activity_timestamp", end_date)
+        
+        if month and year:
+            # Filter by specific month
+            start_date = datetime(year, month, 1).isoformat()
+            # Calculate end date (handle December)
+            if month == 12:
+                end_date = datetime(year + 1, 1, 1).isoformat()
+            else:
+                end_date = datetime(year, month + 1, 1).isoformat()
+            query = query.gte("activity_timestamp", start_date).lt("activity_timestamp", end_date)
+        
+        if activity_type:
+            query = query.eq("activity_type", activity_type)
+        
+        # Order by timestamp descending
+        query = query.order("activity_timestamp", desc=True)
+        
+        # Execute the query
+        activity_result = query.execute()
+        activity_logs = activity_result.data or []
+        logger.info(f"Found {len(activity_logs)} activity logs for portfolio {portfolio_id}")
+        
+        # Prepare the response
+        response = {
+            "activity_logs": activity_logs,
+            "summary": {}
+        }
+        
+        # Generate summary data if requested
+        if summary and activity_logs:
+            # Count by activity type
+            activity_type_counts = {}
+            for log in activity_logs:
+                activity_type = log.get("activity_type", "Unknown")
+                activity_type_counts[activity_type] = activity_type_counts.get(activity_type, 0) + 1
+            
+            # Total by activity type
+            activity_type_totals = {}
+            for log in activity_logs:
+                activity_type = log.get("activity_type", "Unknown")
+                amount = log.get("amount", 0)
+                activity_type_totals[activity_type] = activity_type_totals.get(activity_type, 0) + amount
+            
+            # Activity summary by fund
+            fund_activity_summary = {}
+            for log in activity_logs:
+                fund_id = log.get("portfolio_fund_id")
+                activity_type = log.get("activity_type", "Unknown")
+                amount = log.get("amount", 0)
+                
+                if fund_id not in fund_activity_summary:
+                    fund_activity_summary[fund_id] = {}
+                
+                if activity_type not in fund_activity_summary[fund_id]:
+                    fund_activity_summary[fund_id][activity_type] = 0
+                
+                fund_activity_summary[fund_id][activity_type] += amount
+            
+            # Add summary to response
+            response["summary"] = {
+                "activity_type_counts": activity_type_counts,
+                "activity_type_totals": activity_type_totals,
+                "fund_activity_summary": fund_activity_summary
+            }
+        
+        return response
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching portfolio activity logs: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

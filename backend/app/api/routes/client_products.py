@@ -12,6 +12,180 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+@router.get("/client_products_with_owners", response_model=List[dict])
+async def get_client_products_with_owners(
+    skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
+    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
+    client_id: Optional[int] = None,
+    status: Optional[str] = None,
+    db = Depends(get_db)
+):
+    """
+    What it does: Retrieves a paginated list of client products with their owners already populated.
+    Why it's needed: Improves frontend performance by eliminating multiple sequential API calls.
+    How it works:
+        1. Connects to the Supabase database
+        2. Builds a query to get client products with filtering
+        3. In one operation, fetches related data: providers, clients, templates, portfolios
+        4. For each product, fetches its owners in a single batch operation
+        5. Returns a complete product list with all related data
+    Expected output: A JSON array of client product objects with all their details including owners
+    """
+    try:
+        # Build the base query for client_products
+        query = db.table("client_products").select("*")
+        
+        # Apply filters if provided
+        if client_id is not None:
+            query = query.eq("client_id", client_id)
+            
+        if status is not None:
+            query = query.eq("status", status)
+        
+        # Get the client products with pagination
+        result = query.range(skip, skip + limit - 1).execute()
+        client_products = result.data
+        
+        if not client_products:
+            return []
+        
+        # Fetch all needed providers and clients in bulk
+        provider_ids = [p.get("provider_id") for p in client_products if p.get("provider_id") is not None]
+        client_ids = [p.get("client_id") for p in client_products if p.get("client_id") is not None]
+        portfolio_ids = [p.get("portfolio_id") for p in client_products if p.get("portfolio_id") is not None]
+        product_ids = [p.get("id") for p in client_products]
+        
+        # Fetch all data in parallel using bulk queries
+        # Only fetch providers if we have provider IDs
+        providers_map = {}
+        if provider_ids:
+            providers_result = db.table("available_providers").select("*").in_("id", provider_ids).execute()
+            # Create a lookup map of provider data by ID
+            providers_map = {p.get("id"): p for p in providers_result.data}
+            
+        # Only fetch clients if we have client IDs
+        clients_map = {}
+        if client_ids:
+            clients_result = db.table("client_groups").select("*").in_("id", client_ids).execute()
+            # Create a lookup map of client data by ID
+            clients_map = {c.get("id"): c for c in clients_result.data}
+        
+        # Fetch portfolio information to get template info
+        portfolios_map = {}
+        template_ids = set()
+        if portfolio_ids:
+            portfolios_result = db.table("portfolios").select("*").in_("id", portfolio_ids).execute()
+            if portfolios_result.data:
+                portfolios_map = {p.get("id"): p for p in portfolios_result.data}
+                # Collect all template IDs to fetch in bulk
+                template_ids = {p.get("original_template_id") for p in portfolios_result.data 
+                              if p.get("original_template_id") is not None}
+        
+        # Fetch all needed templates in bulk
+        templates_map = {}
+        if template_ids:
+            templates_result = db.table("available_portfolios").select("*").in_("id", list(template_ids)).execute()
+            if templates_result.data:
+                templates_map = {t.get("id"): t for t in templates_result.data}
+        
+        # Get all product_value_irr_summary data in one bulk query for better performance
+        summary_data = {}
+        try:
+            if product_ids:
+                summary_result = db.table("product_value_irr_summary").select("*").in_("client_product_id", product_ids).execute()
+                # Create a lookup map by client_product_id
+                summary_data = {item.get("client_product_id"): item for item in summary_result.data}
+        except Exception as e:
+            logger.error(f"Error fetching bulk summary data: {str(e)}")
+        
+        # EFFICIENT PRODUCT OWNER FETCHING - This is the key improvement
+        # 1. Get all product_owner_products associations in one query
+        product_owner_associations = {}
+        try:
+            pop_result = db.table("product_owner_products").select("*").in_("product_id", product_ids).execute()
+            if pop_result.data:
+                # Group by product_id for efficient lookup
+                for assoc in pop_result.data:
+                    product_id = assoc.get("product_id")
+                    if product_id not in product_owner_associations:
+                        product_owner_associations[product_id] = []
+                    product_owner_associations[product_id].append(assoc.get("product_owner_id"))
+        except Exception as e:
+            logger.error(f"Error fetching product owner associations: {str(e)}")
+        
+        # 2. Get all product owner details in one query
+        product_owner_ids = []
+        for owners in product_owner_associations.values():
+            product_owner_ids.extend(owners)
+        
+        product_owners_map = {}
+        if product_owner_ids:
+            try:
+                owners_result = db.table("product_owners").select("*").in_("id", list(set(product_owner_ids))).execute()
+                if owners_result.data:
+                    product_owners_map = {owner.get("id"): owner for owner in owners_result.data}
+            except Exception as e:
+                logger.error(f"Error fetching product owners: {str(e)}")
+        
+        # Enhance the response data with all related information
+        enhanced_products = []
+        
+        for product in client_products:
+            product_id = product.get("id")
+            
+            # Add provider data if available
+            provider_id = product.get("provider_id")
+            if provider_id and provider_id in providers_map:
+                provider = providers_map[provider_id]
+                product["provider_name"] = provider.get("name")
+                product["provider_theme_color"] = provider.get("theme_color")
+            
+            # Add client name if available
+            client_id = product.get("client_id")
+            if client_id and client_id in clients_map:
+                client = clients_map[client_id]
+                product["client_name"] = client.get("name", "")
+            
+            # Add portfolio and template info if available
+            portfolio_id = product.get("portfolio_id")
+            if portfolio_id and portfolio_id in portfolios_map:
+                portfolio = portfolios_map[portfolio_id]
+                original_template_id = portfolio.get("original_template_id")
+                if original_template_id and original_template_id in templates_map:
+                    template = templates_map[original_template_id]
+                    product["original_template_id"] = original_template_id
+                    product["original_template_name"] = template.get("name")
+                    product["template_info"] = template
+            
+            # Add total_value and irr from the summary data map
+            if product_id in summary_data:
+                summary = summary_data[product_id]
+                product["total_value"] = summary.get("total_value")
+                product["irr"] = summary.get("irr_weighted")
+            else:
+                # Set defaults if no summary data found
+                product["total_value"] = 0
+                product["irr"] = 0
+            
+            # Add product owners - this is the key improvement
+            product_owners = []
+            if product_id in product_owner_associations:
+                owner_ids = product_owner_associations[product_id]
+                for owner_id in owner_ids:
+                    if owner_id in product_owners_map:
+                        product_owners.append(product_owners_map[owner_id])
+            
+            product["product_owners"] = product_owners
+            
+            enhanced_products.append(product)
+        
+        logger.info(f"Retrieved {len(enhanced_products)} client products with all related data including owners")
+        
+        return enhanced_products
+    except Exception as e:
+        logger.error(f"Error fetching client products with owners: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
 @router.get("/client_products", response_model=List[Clientproduct])
 async def get_client_products(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
@@ -650,4 +824,189 @@ async def get_product_irr(product_id: int, db = Depends(get_db)):
         raise
     except Exception as e:
         logger.error(f"Error calculating IRR for product {product_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@router.get("/client_products/{client_product_id}/complete", response_model=dict)
+async def get_complete_product_details(client_product_id: int, db = Depends(get_db)):
+    """
+    What it does: Retrieves a single product with all its related data in one query.
+    Why it's needed: Dramatically improves frontend performance by eliminating multiple sequential API calls.
+    How it works:
+        1. Fetches the product details
+        2. Fetches all related data in parallel:
+           - Provider details
+           - Client details
+           - Product owners
+           - Portfolio details including funds
+           - Fund valuations
+           - IRR values
+        3. Combines all data into a single response object
+    Expected output: A complete product object with all related data nested within it
+    """
+    try:
+        logger.info(f"Fetching complete product details for product ID: {client_product_id}")
+        
+        # Check if the product exists
+        product_result = db.table("client_products").select("*").eq("id", client_product_id).execute()
+        
+        if not product_result.data or len(product_result.data) == 0:
+            raise HTTPException(status_code=404, detail=f"Product with ID {client_product_id} not found")
+        
+        product = product_result.data[0]
+        logger.info(f"Found product: {product['product_name']} (ID: {product['id']})")
+        
+        # Extract IDs needed for related data
+        provider_id = product.get("provider_id")
+        client_id = product.get("client_id")
+        portfolio_id = product.get("portfolio_id")
+        
+        # Initialize response object with product data
+        response = {
+            **product,
+            "provider_details": None,
+            "client_details": None,
+            "product_owners": [],
+            "portfolio_details": None,
+            "portfolio_funds": [],
+            "fund_valuations": {},
+            "irr_values": {},
+            "summary": {
+                "total_value": 0,
+                "irr_weighted": None
+            }
+        }
+        
+        # Fetch provider details if available
+        if provider_id:
+            provider_result = db.table("available_providers").select("*").eq("id", provider_id).execute()
+            if provider_result.data and len(provider_result.data) > 0:
+                response["provider_details"] = provider_result.data[0]
+                response["provider_name"] = provider_result.data[0].get("name")
+                response["provider_theme_color"] = provider_result.data[0].get("theme_color")
+        
+        # Fetch client details if available
+        if client_id:
+            client_result = db.table("client_groups").select("*").eq("id", client_id).execute()
+            if client_result.data and len(client_result.data) > 0:
+                response["client_details"] = client_result.data[0]
+                response["client_name"] = client_result.data[0].get("name")
+        
+        # Fetch product owners in a single query
+        try:
+            # First get all associations
+            pop_result = db.table("product_owner_products").select("*").eq("product_id", client_product_id).execute()
+            
+            if pop_result.data and len(pop_result.data) > 0:
+                # Extract product owner IDs
+                owner_ids = [pop.get("product_owner_id") for pop in pop_result.data]
+                
+                # Fetch all product owners in one query
+                owners_result = db.table("product_owners").select("*").in_("id", owner_ids).execute()
+                if owners_result.data:
+                    response["product_owners"] = owners_result.data
+        except Exception as e:
+            logger.error(f"Error fetching product owners: {str(e)}")
+        
+        # Fetch portfolio details and funds if available
+        if portfolio_id:
+            # Get portfolio details
+            portfolio_result = db.table("portfolios").select("*").eq("id", portfolio_id).execute()
+            if portfolio_result.data and len(portfolio_result.data) > 0:
+                portfolio = portfolio_result.data[0]
+                response["portfolio_details"] = portfolio
+                
+                # Get original template if available
+                original_template_id = portfolio.get("original_template_id")
+                if original_template_id:
+                    template_result = db.table("available_portfolios").select("*").eq("id", original_template_id).execute()
+                    if template_result.data and len(template_result.data) > 0:
+                        response["template_info"] = template_result.data[0]
+                        response["original_template_id"] = original_template_id
+                        response["original_template_name"] = template_result.data[0].get("name")
+                
+                # Get portfolio funds in a single query
+                funds_result = db.table("portfolio_funds").select("*").eq("portfolio_id", portfolio_id).execute()
+                if funds_result.data:
+                    portfolio_funds = funds_result.data
+                    
+                    # Get all fund IDs to fetch fund details
+                    fund_ids = [pf.get("available_funds_id") for pf in portfolio_funds if pf.get("available_funds_id")]
+                    
+                    # Get all portfolio fund IDs to fetch valuations and IRR values
+                    portfolio_fund_ids = [pf.get("id") for pf in portfolio_funds]
+                    
+                    # Fetch fund details in one query
+                    funds_map = {}
+                    if fund_ids:
+                        funds_details_result = db.table("available_funds").select("*").in_("id", fund_ids).execute()
+                        if funds_details_result.data:
+                            funds_map = {f.get("id"): f for f in funds_details_result.data}
+                    
+                    # Fetch all fund valuations in one query
+                    valuations_map = {}
+                    if portfolio_fund_ids:
+                        # We want the latest valuation for each fund, so we need to use a SQL query
+                        # A typical approach in Supabase might be:
+                        latest_valuations_result = db.table("latest_fund_valuations").select("*").in_("portfolio_fund_id", portfolio_fund_ids).execute()
+                        if latest_valuations_result.data:
+                            valuations_map = {v.get("portfolio_fund_id"): v for v in latest_valuations_result.data}
+                    
+                    # Fetch all IRR values in one query
+                    irr_map = {}
+                    if portfolio_fund_ids:
+                        # Similar to valuations, we want the latest IRR for each fund
+                        latest_irr_result = db.table("latest_irr_values").select("*").in_("fund_id", portfolio_fund_ids).execute()
+                        if latest_irr_result.data:
+                            irr_map = {irr.get("fund_id"): irr for irr in latest_irr_result.data}
+                    
+                    # Combine all the data
+                    enhanced_funds = []
+                    for pf in portfolio_funds:
+                        fund_id = pf.get("available_funds_id")
+                        portfolio_fund_id = pf.get("id")
+                        
+                        # Add fund details
+                        if fund_id and fund_id in funds_map:
+                            fund_details = funds_map[fund_id]
+                            pf["fund_details"] = fund_details
+                            pf["fund_name"] = fund_details.get("fund_name")
+                            pf["isin_number"] = fund_details.get("isin_number")
+                            pf["risk_factor"] = fund_details.get("risk_factor")
+                        
+                        # Add valuation data
+                        if portfolio_fund_id and portfolio_fund_id in valuations_map:
+                            valuation = valuations_map[portfolio_fund_id]
+                            pf["latest_valuation"] = valuation
+                            pf["market_value"] = valuation.get("value")
+                            pf["valuation_date"] = valuation.get("valuation_date")
+                        
+                        # Add IRR data
+                        if portfolio_fund_id and portfolio_fund_id in irr_map:
+                            irr = irr_map[portfolio_fund_id]
+                            pf["latest_irr"] = irr
+                            pf["irr_result"] = irr.get("irr_value")
+                            pf["irr_date"] = irr.get("irr_date")
+                        
+                        enhanced_funds.append(pf)
+                    
+                    response["portfolio_funds"] = enhanced_funds
+                    response["fund_valuations"] = valuations_map
+                    response["irr_values"] = irr_map
+        
+        # Fetch the product summary data
+        try:
+            summary_result = db.table("product_value_irr_summary").select("*").eq("client_product_id", client_product_id).execute()
+            if summary_result.data and len(summary_result.data) > 0:
+                summary = summary_result.data[0]
+                response["summary"] = summary
+                response["total_value"] = summary.get("total_value")
+                response["irr"] = summary.get("irr_weighted")
+        except Exception as e:
+            logger.error(f"Error fetching product summary: {str(e)}")
+        
+        return response
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching complete product details: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

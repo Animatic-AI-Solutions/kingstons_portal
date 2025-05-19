@@ -695,7 +695,13 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
     valuation_date?: string;
     status: string;
   } | null>(null);
-
+  const [latestValuationDate, setLatestValuationDate] = useState<string | null>(null);
+  const [isTotalIrrLoading, setIsTotalIrrLoading] = useState(false);
+  const [totalIrr, setTotalIrr] = useState<number | null>(null);
+  const [totalIrrCalculationDate, setTotalIrrCalculationDate] = useState<string | undefined>(undefined);
+  const [totalIrrError, setTotalIrrError] = useState<string | null>(null);
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
+  
   useEffect(() => {
     if (accountId) {
       console.log('AccountIRRCalculation: Fetching data for accountId:', accountId);
@@ -707,27 +713,65 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
 
   useEffect(() => {
     if (account?.portfolio_id && !isLoading && holdings.length > 0) {
-      fetchTotalIRR();
+      console.log(`ProductIRRCalculation: Year changed to ${selectedYear}, recalculating total IRR`);
+      fetchTotalIRR().catch(err => {
+        console.error('Error calculating total IRR after year change:', err);
+      });
     }
   }, [account?.portfolio_id, selectedYear, holdings.length]);
+
+  // Generate list of available years for filtering
+  useEffect(() => {
+    if (activityLogs.length > 0) {
+      const currentYear = new Date().getFullYear();
+      // Start from earliest activity log year or account start year
+      let earliestYear = currentYear;
+      
+      if (account?.start_date) {
+        const accountStartYear = new Date(account.start_date).getFullYear();
+        earliestYear = Math.min(earliestYear, accountStartYear);
+      }
+      
+      // Check activity logs for even earlier dates
+      activityLogs.forEach(log => {
+        if (log.activity_timestamp) {
+          const logYear = new Date(log.activity_timestamp).getFullYear();
+          earliestYear = Math.min(earliestYear, logYear);
+        }
+      });
+      
+      // Generate list of years from earliest to current
+      const years: number[] = [];
+      for (let year = earliestYear; year <= currentYear; year++) {
+        years.push(year);
+      }
+      
+      setAvailableYears(years.reverse()); // Most recent first
+      
+      // If selectedYear isn't set, default to current year
+      if (!selectedYear) {
+        setSelectedYear(currentYear);
+      }
+    }
+  }, [activityLogs, account?.start_date, selectedYear]);
 
   const fetchData = async (accountId: string) => {
     try {
       setIsLoading(true);
       setError(null);
       
-      console.log('AccountIRRCalculation: Making API request to /client_products/' + accountId);
+      console.log('ProductIRRCalculation: Starting optimized data fetch for account ID:', accountId);
       
       // First fetch the account/product to get the portfolio_id
       const accountResponse = await api.get(`/client_products/${accountId}`);
-      console.log('AccountIRRCalculation: Account/product data received:', accountResponse.data);
+      console.log('ProductIRRCalculation: Account/product data received:', accountResponse.data);
       
       // Get the portfolio_id from the account
       const portfolioId = accountResponse.data.portfolio_id;
-      console.log('AccountIRRCalculation: Using portfolio ID:', portfolioId);
+      console.log('ProductIRRCalculation: Using portfolio ID:', portfolioId);
       
       if (!portfolioId) {
-        console.error('AccountIRRCalculation: No portfolio ID found for this product');
+        console.error('ProductIRRCalculation: No portfolio ID found for this product');
         setError('No portfolio is associated with this product. Please assign a portfolio first.');
         setIsLoading(false);
         // Set account even if there's an error so we can show product info
@@ -747,234 +791,123 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       // Set account data with portfolio information
       setAccount(accountResponse.data);
       
-      console.log('Making API call to portfolio_funds with explicit select=*');
-      // Fetch portfolio funds directly using the portfolio_id - explicitly select all fields including status
-      const portfolioFundsResponse = await api.get(`/portfolio_funds?portfolio_id=${portfolioId}&select=*`);
-      console.log('Full raw API response for portfolio_funds:', portfolioFundsResponse);
-      console.log('AccountIRRCalculation: Portfolio funds data:', portfolioFundsResponse.data);
+      // Use the new optimized endpoints to get all data at once
+      console.log('ProductIRRCalculation: Fetching complete portfolio data with new optimized endpoint');
       
-      // Enhanced logging for portfolio funds data
-      if (portfolioFundsResponse.data && portfolioFundsResponse.data.length > 0) {
-        console.log('Detailed portfolio funds data:');
-        portfolioFundsResponse.data.forEach((fund: any, index: number) => {
-          console.log(`Fund ${index + 1}: ID=${fund.id}, Name=${fund.fund_name}, Status=${fund.status}, `,
-                      `End date=${fund.end_date}, Available funds ID=${fund.available_funds_id}`);
-        });
-      }
-      
-      // DEBUGGING: Direct check for fund ID 66 if it exists in the response
-      const fund66 = portfolioFundsResponse.data.find((fund: any) => fund.id === 66);
-      if (fund66) {
-        try {
-          console.log('SPECIAL DEBUG: Found fund 66 in the API response, checking details directly');
-          console.log('Fund 66 from list endpoint:', fund66);
-          
-          // Make a direct API call to get just this fund's details
-          const direct66Response = await api.get('/portfolio_funds/66');
-          console.log('Direct API call for fund 66:', direct66Response.data);
-          
-          // Check if status fields match
-          if (fund66.status !== direct66Response.data.status) {
-            console.error('STATUS MISMATCH DETECTED between list API and direct API:', {
-              listStatus: fund66.status,
-              directStatus: direct66Response.data.status
-            });
-          }
-        } catch (err) {
-          console.error('Error in direct check for fund 66:', err);
-        }
-      }
-      
-      if (!portfolioFundsResponse.data || portfolioFundsResponse.data.length === 0) {
-        console.warn('AccountIRRCalculation: No portfolio funds found for portfolio ID:', portfolioId);
-        setError('This portfolio has no funds assigned to it. Please add funds to the portfolio first.');
-        setIsLoading(false);
-        return;
-      }
-      
-      // Get funds and activity logs
-      const [fundsResponse, activitiesResponse] = await Promise.all([
-        api.get('/funds'),
-        api.get(`/holding_activity_logs?portfolio_id=${portfolioId}`)
+      const [completePortfolioResponse, activityLogsResponse] = await Promise.all([
+        api.get(`/portfolios/${portfolioId}/complete`),
+        api.get(`/portfolios/${portfolioId}/activity_logs`)
       ]);
       
-      console.log('AccountIRRCalculation: Funds data:', fundsResponse.data);
-      console.log('AccountIRRCalculation: Activity logs received:', activitiesResponse.data);
+      const completeData = completePortfolioResponse.data;
+      const activityData = activityLogsResponse.data;
       
-      // Add detailed debugging for activity logs to diagnose the zero values
-      if (activitiesResponse.data && activitiesResponse.data.length > 0) {
-        console.log('DETAILED ACTIVITY LOG DIAGNOSTICS:');
-        console.log(`Total activity logs: ${activitiesResponse.data.length}`);
-        
-        // Count activities by type
-        const activityCounts = activitiesResponse.data.reduce((acc: any, log: ActivityLog) => {
-          acc[log.activity_type] = (acc[log.activity_type] || 0) + 1;
-          return acc;
-        }, {});
-        console.log('Activity counts by type:', activityCounts);
-        
-        // Group by portfolio_fund_id
-        const fundGroups = activitiesResponse.data.reduce((acc: any, log: ActivityLog) => {
-          acc[log.portfolio_fund_id] = (acc[log.portfolio_fund_id] || 0) + 1;
-          return acc;
-        }, {});
-        console.log('Activities per portfolio_fund_id:', fundGroups);
-        
-        // Log a sample of activities
-        console.log('Sample of 3 activities:', activitiesResponse.data.slice(0, 3));
-      } else {
-        console.warn('No activity logs received from API!');
-      }
-      
-      // Store the complete list of funds for reference
-      setAllFunds(fundsResponse.data || []);
-      
-      // Create a map of funds for quick lookups
-      const fundsMap = new Map<number, any>(
-        fundsResponse.data.map((fund: any) => [fund.id, fund])
-      );
+      console.log('ProductIRRCalculation: Complete portfolio data received:', completeData);
+      console.log('ProductIRRCalculation: Complete activity logs received:', activityData);
       
       // Process portfolio funds as holdings
-      const processedHoldings = await Promise.all(portfolioFundsResponse.data.map(async (portfolioFund: any, index: number) => {
-        // Get fund details
-        const fund = fundsMap.get(portfolioFund.available_funds_id);
-        
-        // Fetch latest IRR for this fund
-        let latestIrr: number | undefined = undefined;
-        let latestIrrDate: string | undefined = undefined;
-        let valuationDate: string | undefined = undefined;
-        try {
-          const irrResp = await api.get(`/portfolio_funds/${portfolioFund.id}/latest-irr`);
-          if (irrResp.data && irrResp.data.irr !== undefined) {
-            latestIrr = irrResp.data.irr;
-            latestIrrDate = irrResp.data.calculation_date;
-          }
-        } catch (err) {
-          console.warn(`No IRR data available for fund ${portfolioFund.id}`);
-        }
-        
-        // Fetch latest valuation for this fund
-        try {
-          console.log(`Fetching latest valuation for fund ${portfolioFund.id}`);
-          const valuationResponse = await api.get(
-            `/api/fund_valuations?portfolio_fund_id=${portfolioFund.id}&order=valuation_date.desc&limit=1`
-          );
+      const processedHoldings: Holding[] = [];
+      
+      if (completeData.portfolio_funds && completeData.portfolio_funds.length > 0) {
+        completeData.portfolio_funds.forEach((portfolioFund: any) => {
+          const holding: Holding = {
+            id: portfolioFund.id,
+            fund_id: portfolioFund.available_funds_id,
+            fund_name: portfolioFund.fund_name,
+            isin_number: portfolioFund.isin_number,
+            amount_invested: portfolioFund.amount_invested || 0,
+            market_value: portfolioFund.market_value || 0,
+            irr: portfolioFund.irr_result,
+            irr_calculation_date: portfolioFund.irr_date,
+            account_holding_id: portfolioFund.id,
+            product_id: accountResponse.data.id,
+            status: portfolioFund.status || 'active',
+            valuation_date: portfolioFund.valuation_date,
+            target_weighting: portfolioFund.weighting?.toString()
+          };
           
-          // If we have a valuation, use it
-          if (valuationResponse.data && valuationResponse.data.length > 0) {
-            const valuation = valuationResponse.data[0];
-            // Store the value in the portfolio fund
-            console.log(`Found valuation for fund ${portfolioFund.id}:`, valuation);
-            portfolioFund.market_value = valuation.value;
-            portfolioFund.valuation_date = valuation.valuation_date; // Store directly on the portfolioFund object
-            valuationDate = valuation.valuation_date;
-          } else {
-            console.log(`No valuations found for fund ${portfolioFund.id}`);
-          }
-        } catch (err) {
-          console.error(`Error fetching valuation for fund ${portfolioFund.id}:`, err);
-        }
-        
-        // Use the status directly from the portfolio_fund record and make sure it's a string
-        // Log detailed info for debugging status issues
-        console.log(`Portfolio fund ${portfolioFund.id} raw data:`, {
-          id: portfolioFund.id,
-          fund_name: fund?.fund_name,
-          status: portfolioFund.status,
-          status_type: typeof portfolioFund.status,
-          raw_obj: JSON.stringify(portfolioFund),
-          end_date: portfolioFund.end_date
+          processedHoldings.push(holding);
         });
-        
-        // Try multiple approaches to get the status
-        let status = 'active'; // Default to active if nothing else is found
-        
-        // 1. Try direct status property
-        if (portfolioFund.status !== undefined && portfolioFund.status !== null) {
-          status = String(portfolioFund.status).toLowerCase();
-          console.log(`Using direct status from API: ${status}`);
-        } 
-        // 2. Try searching the raw object for status properties
-        else if (typeof portfolioFund === 'object') {
-          // Look for any property that might contain 'status'
-          Object.entries(portfolioFund).forEach(([key, value]) => {
-            console.log(`Checking field: ${key} = ${value}, type = ${typeof value}`);
-            if (key.toLowerCase().includes('status') && value) {
-              status = String(value).toLowerCase();
-              console.log(`Found status in field ${key}: ${status}`);
-            }
-          });
+      }
+      
+      // Set state with the processed data
+      setHoldings(processedHoldings);
+      setAllFunds(completeData.all_funds || []);
+      setActivityLogs(activityData.activity_logs || []);
+      
+      // Find the latest valuation date
+      let latestDate: string | null = null;
+      processedHoldings.forEach(holding => {
+        if (holding.valuation_date && (!latestDate || holding.valuation_date > latestDate)) {
+          latestDate = holding.valuation_date;
         }
-        
-        // 3. Alternative way to check for specific API endpoints
-        console.log('Alternative check for inactive status:', {
-          endpoint: `/portfolio_funds/${portfolioFund.id}/status`,
-          portfolio_id: portfolioId
-        });
-        
-        console.log(`Portfolio fund ${portfolioFund.id} (${fund?.fund_name || 'Unknown'}): final processed status = ${status}`);
-        
-        return {
-          id: portfolioFund.id, // Use portfolio_fund.id as the holding ID
-          portfolio_id: portfolioId,
-          fund_id: portfolioFund.available_funds_id,
-          fund_name: fund?.fund_name || 'Unknown Fund',
-          isin_number: fund?.isin_number || 'N/A',
-          target_weighting: portfolioFund.weighting,
-          amount_invested: portfolioFund.amount_invested || 0,
-          market_value: portfolioFund.market_value || portfolioFund.amount_invested || 0,
-          irr: latestIrr,
-          irr_calculation_date: latestIrrDate,
-          valuation_date: portfolioFund.valuation_date || valuationDate, // Prioritize the property set directly on the object
-          account_holding_id: parseInt(accountId), // For backward compatibility
-          product_id: parseInt(accountId), // Set product_id field to match schema
-          status: status, // Use the carefully processed status value
-          end_date: portfolioFund.end_date // Include the end_date from the portfolio_fund record
-        };
-      }));
+      });
       
-      console.log('AccountIRRCalculation: Processed holdings:', processedHoldings);
-      setHoldings(processedHoldings || []);
-      setActivityLogs(activitiesResponse.data || []);
+      if (latestDate) {
+        setLatestValuationDate(latestDate);
+      }
       
-    } catch (err: any) {
-      console.error('AccountIRRCalculation: Error fetching data:', err);
-      setError(err.response?.data?.detail || 'Failed to fetch product details');
-    } finally {
+      setIsLoading(false);
+      
+      // Calculate the total IRR once data is loaded
+      if (accountResponse.data.portfolio_id) {
+        console.log('ProductIRRCalculation: Calculating total IRR after data load');
+        await fetchTotalIRR();
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setError('Failed to load data. Please try again later.');
       setIsLoading(false);
     }
   };
 
   const fetchTotalIRR = async () => {
+    if (!account?.portfolio_id || !selectedYear) {
+      console.warn('Cannot fetch total IRR: missing portfolio ID or year');
+      return Promise.resolve();
+    }
+
     try {
-      if (!account?.portfolio_id) {
-        console.error('No portfolio ID available for IRR calculation');
-        return;
-      }
+      console.log(`ProductIRRCalculation: Fetching total IRR for portfolio ${account.portfolio_id} for year ${selectedYear}`);
+      setIsTotalIrrLoading(true);
       
-      console.log(`Fetching total IRR for portfolio ${account.portfolio_id}, year ${selectedYear}`);
-      const response = await calculatePortfolioTotalIRR(account.portfolio_id, selectedYear);
-      console.log('Total IRR response:', response.data);
-      
-      if (response.data.status === 'success') {
-        setTotalIRRData({
-          irr_percentage: response.data.irr_percentage,
-          valuation_date: response.data.valuation_date,
-          status: 'success'
-        });
-      } else {
-        console.warn('Total IRR calculation failed:', response.data.error);
-        setTotalIRRData({
-          irr_percentage: null,
-          status: 'error'
-        });
-      }
-    } catch (err) {
-      console.error('Error fetching total IRR:', err);
-      setTotalIRRData({
-        irr_percentage: null,
-        status: 'error'
+      // Use the new optimized endpoint with year filter
+      const response = await api.get(`/portfolios/${account.portfolio_id}/activity_logs`, {
+        params: {
+          year: selectedYear,
+          summary: true
+        }
       });
+      
+      console.log('ProductIRRCalculation: Filtered activity logs received:', response.data);
+      
+      // Use existing logs for funds that don't have activities in the year
+      const yearFilteredLogs = response.data.activity_logs || [];
+      
+      // Store the original logs for reference
+      const originalActivityLogs = [...activityLogs];
+      
+      // Set filtered activity logs for the calculations
+      setActivityLogs(yearFilteredLogs);
+      
+      // Calculate the portfolio's total IRR
+      const calculatedValue = calculateTotalIRR(yearFilteredLogs, holdings);
+      console.log('ProductIRRCalculation: Calculated total IRR:', calculatedValue);
+      
+      // Update state with calculated values
+      setTotalIrr(calculatedValue.irr !== null ? calculatedValue.irr : null);
+      setTotalIrrCalculationDate(calculatedValue.irr_calculation_date);
+      
+      // Restore the original logs
+      setActivityLogs(originalActivityLogs);
+      
+      setIsTotalIrrLoading(false);
+      return Promise.resolve();
+    } catch (error) {
+      console.error('Error calculating total IRR:', error);
+      setTotalIrrError('Failed to calculate total IRR');
+      setIsTotalIrrLoading(false);
+      return Promise.reject(error);
     }
   };
 
@@ -1162,6 +1095,76 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
         </div>
       ) : (
         <div className="space-y-8">
+          {/* Total IRR Section - Moved to top */}
+          <div className="col-span-12 bg-white shadow-sm rounded-lg border border-gray-200 p-4 mb-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-800">Total IRR for {selectedYear}</h2>
+              <div className="flex space-x-2">
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                  className="border border-gray-300 rounded p-1 text-sm"
+                >
+                  {availableYears.map((year: number) => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={fetchTotalIRR}
+                  className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
+                  disabled={isTotalIrrLoading}
+                >
+                  {isTotalIrrLoading ? 'Calculating...' : 'Refresh'}
+                </button>
+              </div>
+            </div>
+            
+            {totalIrrError && (
+              <div className="text-red-600 mb-2">{totalIrrError}</div>
+            )}
+            
+            <div className="grid grid-cols-12 gap-4">
+              <div className="col-span-12 md:col-span-6 bg-gray-50 p-4 rounded-lg">
+                <div className="text-center">
+                  <div className="text-lg font-semibold text-gray-500 mb-1">Total IRR</div>
+                  <div className="text-3xl font-bold text-blue-600">
+                    {isTotalIrrLoading ? (
+                      <span className="text-gray-400">Calculating...</span>
+                    ) : totalIrr !== null ? (
+                      `${formatPercentage(totalIrr)}`
+                    ) : (
+                      <span className="text-gray-400">N/A</span>
+                    )}
+                  </div>
+                  {totalIrrCalculationDate && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      Calculated as of {formatDate(totalIrrCalculationDate)}
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="col-span-12 md:col-span-6 bg-gray-50 p-4 rounded-lg">
+                <div className="text-sm mb-3 text-gray-500">Performance Summary</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <div className="text-xs text-gray-500">Market Value</div>
+                    <div className="font-semibold">{formatCurrency(calculateTotalValue(filterActiveHoldings(holdings)))}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500">Total Invested</div>
+                    <div className="font-semibold">{formatCurrency(calculateTotalAmountInvested(filterActiveHoldings(holdings)))}</div>
+                  </div>
+                  {latestValuationDate && (
+                    <div className="col-span-2 text-xs text-gray-500 mt-2">
+                      Last valuation date: {formatDate(latestValuationDate)}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Current Holdings Summary */}
           <div className="mb-8">
             <div className="flex justify-between items-center mb-4">
@@ -1430,21 +1433,21 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {/* Total IRR calculation from backend */}
+                          {/* Total IRR calculation from properly calculated data */}
                           {(() => {
-                            return totalIRRData?.irr_percentage !== null ? (
+                            return totalIrr !== null ? (
                               <div>
                                 <div className={`text-sm font-bold ${
-                                  (totalIRRData?.irr_percentage || 0) >= 0 ? 'text-green-700' : 'text-red-700'
+                                  totalIrr >= 0 ? 'text-green-700' : 'text-red-700'
                                 }`}>
-                                  {formatPercentage(totalIRRData?.irr_percentage || 0)}
+                                  {formatPercentage(totalIrr)}
                                   <span className="ml-1">
-                                    {(totalIRRData?.irr_percentage || 0) >= 0 ? '▲' : '▼'}
+                                    {totalIrr >= 0 ? '▲' : '▼'}
                                   </span>
                                 </div>
-                                {totalIRRData?.valuation_date && (
+                                {totalIrrCalculationDate && (
                                   <div className="text-xs text-gray-500 mt-1">
-                                    as of {formatDate(totalIRRData.valuation_date)}
+                                    as of {formatDate(totalIrrCalculationDate)}
                                   </div>
                                 )}
                               </div>
@@ -1613,6 +1616,8 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
               );
             })()}
           </div>
+
+          {/* Total IRR Section has been moved to the top of the page */}
         </div>
       )}
 
