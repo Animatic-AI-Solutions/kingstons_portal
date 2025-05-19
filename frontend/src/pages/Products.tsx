@@ -45,85 +45,32 @@ const Products: React.FC = () => {
   const fetchProducts = async () => {
     try {
       setIsLoading(true);
-      console.log("Fetching products data from summary view...");
-      // Fetch product summary data from the new view endpoint
+      console.log("Fetching products data with optimized endpoint...");
+      
+      // Use the new optimized endpoint that returns products with owners
+      // This eliminates the N+1 query problem
       const [
-        summaryRes,
-        productsRes,
-        clientsRes,        // These are client groups now
-        providersRes,
-        portfoliosRes
+        productsWithOwnersRes,
+        providersRes
       ] = await Promise.all([
-        api.get('/product_value_irr_summary'),
-        api.get('/client_products'),
-        api.get('/client_groups'),  // Using the updated client_groups endpoint
-        api.get('/available_providers'),
-        api.get('/portfolios')
+        api.get('/client_products_with_owners'),
+        api.get('/available_providers')
       ]);
       
-      // Map summary data by client_product_id for quick lookup
-      const summaryMap = new Map(
-        summaryRes.data.map((row: any) => [row.client_product_id, row])
-      );
+      // Set products directly from the optimized endpoint response
+      // The backend now handles all the data joining
+      const productsData = productsWithOwnersRes.data || [];
       
-      // Merge summary data into products
-      const productsData = productsRes.data.map((product: any) => {
-        const summary: any = summaryMap.get(product.id) || {};
-        // Find the client group by matching product.client_id to the client group's id
-        const clientGroup = clientsRes.data.find((c: any) => c.id === product.client_id);
-        const provider = product.provider_id ? providersRes.data.find((p: any) => p.id === product.provider_id) : null;
-        const portfolio = product.portfolio_id ? portfoliosRes.data.find((p: any) => p.id === product.portfolio_id) : null;
-        
-        // Get client group name directly from the name field - client groups use a simple name field
-        const clientGroupName = clientGroup ? clientGroup.name : 'Unknown Client Group';
-          
-        return {
-          ...product,
-          client_name: clientGroupName,
-          product_name: product ? product.product_name : 'Unknown Product',
-          provider_name: provider ? provider.name : 'Unknown Provider',
-          portfolio_name: portfolio ? portfolio.name : undefined,
-          total_value: summary.total_value,
-          irr: summary.irr_weighted,
-          product_owners: [] // Initialize empty product owners array
-        };
-      });
-      
-      // Fetch product owners for each product
-      for (const product of productsData) {
-        try {
-          // First fetch all product owners
-          const productOwnersResponse = await api.get('/api/product_owners');
-          
-          if (productOwnersResponse.data && productOwnersResponse.data.length > 0) {
-            const productOwners = [];
-            
-            // For each product owner, check if they own this product
-            for (const owner of productOwnersResponse.data) {
-              try {
-                // Get all products for this product owner
-                const ownerProductsResponse = await api.get(`/api/product_owners/${owner.id}/products`);
-                
-                // Check if this product is in the list of the owner's products
-                const isOwnerOfThisProduct = ownerProductsResponse.data?.some(
-                  (p: any) => p.id === product.id
-                );
-                
-                // If this owner owns this product, add it to our list
-                if (isOwnerOfThisProduct) {
-                  productOwners.push(owner);
-                }
-              } catch (err) {
-                console.error(`Error checking if owner ${owner.id} has product ${product.id}:`, err);
-              }
-            }
-            
-            product.product_owners = productOwners;
-          }
-        } catch (ownersErr) {
-          console.error(`Error fetching product owners for product ${product.id}:`, ownersErr);
-          product.product_owners = [];
-        }
+      // Log summary for debugging
+      console.log(`Received ${productsData.length} products with their owners already populated`);
+      if (productsData.length > 0) {
+        const sampleProduct = productsData[0];
+        console.log('Sample product:', {
+          id: sampleProduct.id,
+          name: sampleProduct.product_name,
+          client: sampleProduct.client_name,
+          ownerCount: sampleProduct.product_owners?.length || 0
+        });
       }
       
       setProducts(productsData);
