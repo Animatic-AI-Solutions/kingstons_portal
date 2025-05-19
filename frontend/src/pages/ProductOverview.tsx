@@ -92,6 +92,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   const [targetRisk, setTargetRisk] = useState<number | null>(null);
   const [displayedTargetRisk, setDisplayedTargetRisk] = useState<string>("N/A");
   const [productOwners, setProductOwners] = useState<ProductOwner[]>([]);
+  const [liveRiskValue, setLiveRiskValue] = useState<number | null>(null);
   
   // Edit mode state and form data
   const [isEditMode, setIsEditMode] = useState(false);
@@ -123,6 +124,18 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       });
     }
   }, [account, api]);
+
+  // Calculate live risk whenever holdings change
+  useEffect(() => {
+    if (holdings.length > 0) {
+      const liveRisk = calculateLiveRisk();
+      if (liveRisk !== "N/A") {
+        setLiveRiskValue(parseFloat(liveRisk));
+      } else {
+        setLiveRiskValue(null);
+      }
+    }
+  }, [holdings]);
 
   // Initialize form data when account data is loaded
   useEffect(() => {
@@ -584,13 +597,9 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   const calculateTargetRisk = async (): Promise<string> => {
     if (!account) return "N/A";
     
-    // First check if we've already fetched a target risk
-    if (targetRisk !== null) {
-      return targetRisk.toString();
-    }
-    
     // If account has target_risk already set, use that
     if (account.target_risk !== undefined && account.target_risk !== null) {
+      setTargetRisk(account.target_risk);
       return account.target_risk.toString();
     }
     
@@ -706,6 +715,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       }
     }
     
+    setTargetRisk(null);
     return "N/A";
   };
 
@@ -735,7 +745,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
 
   // Calculate live risk as weighted average of fund risk factors based on valuations
   const calculateLiveRisk = (): string => {
-    if (holdings.length === 0) return "N/A";
+    if (holdings.length === 0 || fundsData.size === 0) return "N/A";
     
     // Check if all valuations are from the same date
     const commonDate = findCommonValuationDate(holdings);
@@ -772,10 +782,18 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     // Calculate total value
     totalValue = holdingsToUse.reduce((sum, h) => sum + h.market_value, 0);
     
+    if (totalValue <= 0) {
+      console.log('Total portfolio value is zero or negative');
+      return "N/A";
+    }
+    
     // Now calculate weighted risk
     for (const holding of holdingsToUse) {
       const fundId = holding.fund_id;
       const value = holding.market_value;
+      
+      if (!fundId) continue;
+      
       const fund = Array.from(fundsData.values()).find(f => f.id === fundId);
       
       if (fund && fund.risk_factor !== undefined && fund.risk_factor !== null) {
@@ -787,15 +805,16 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           fund_id: fundId,
           risk_factor: fund.risk_factor,
           value: value,
-          contribution: fund.risk_factor * value,
-          included: true,
-          valuation_date: holding.valuation_date
+          weight: value / totalValue,
+          contribution: fund.risk_factor * (value / totalValue)
         });
       }
     }
     
-    // If no funds have valid risk factors, return N/A
-    if (fundsWithValidValuations === 0) return "N/A";
+    if (fundsWithValidValuations === 0) {
+      console.log('No funds with valid risk factors found');
+      return "N/A";
+    }
     
     // Calculate weighted average and round to 1 decimal place
     const weightedAverage = weightedRiskSum / totalValue;
@@ -1245,6 +1264,68 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                 {account.start_date ? formatDate(account.start_date) : 'N/A'}
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Risk Comparison Bars */}
+        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Risk Profile Comparison</h3>
+          <div className="flex flex-col space-y-4">
+            {/* Target Risk Bar */}
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <div className="text-sm font-medium text-gray-700">Target Risk (Portfolio Template)</div>
+                <div className="text-sm font-semibold">{displayedTargetRisk}</div>
+              </div>
+              {targetRisk !== null && !isNaN(targetRisk) && (
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div 
+                    className="bg-blue-600 h-2.5 rounded-full" 
+                    style={{ width: `${Math.min(targetRisk * 10, 100)}%` }}
+                  ></div>
+                </div>
+              )}
+            </div>
+            
+            {/* Live Risk Bar */}
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <div className="text-sm font-medium text-gray-700">Current Risk (Based on Latest Valuations)</div>
+                <div className="text-sm font-semibold">{liveRiskValue !== null && !isNaN(liveRiskValue) ? liveRiskValue.toFixed(1) : 'N/A'}</div>
+              </div>
+              {liveRiskValue !== null && !isNaN(liveRiskValue) && (
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div 
+                    className="bg-green-600 h-2.5 rounded-full" 
+                    style={{ width: `${Math.min(liveRiskValue * 10, 100)}%` }}
+                  ></div>
+                </div>
+              )}
+            </div>
+            
+            {/* Risk Difference Indicator */}
+            {targetRisk !== null && liveRiskValue !== null && 
+             !isNaN(targetRisk) && !isNaN(liveRiskValue) && (
+              <div className="pt-2 border-t border-gray-200 mt-2">
+                <div className="flex items-center">
+                  <div className="text-sm font-medium text-gray-700">Difference:</div>
+                  <div className={`ml-2 text-sm font-semibold ${
+                    Math.abs(liveRiskValue - targetRisk) < 0.5 ? 'text-green-600' : 
+                    Math.abs(liveRiskValue - targetRisk) < 1.0 ? 'text-yellow-600' : 'text-red-600'
+                  }`}>
+                    {(liveRiskValue - targetRisk).toFixed(1)}
+                    {liveRiskValue > targetRisk ? ' higher' : liveRiskValue < targetRisk ? ' lower' : ' (on target)'}
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {Math.abs(liveRiskValue - targetRisk) < 0.5 
+                    ? 'The portfolio is well-aligned with its target risk profile.'
+                    : Math.abs(liveRiskValue - targetRisk) < 1.0
+                    ? 'The portfolio is slightly off target. Consider minor rebalancing.'
+                    : 'The portfolio has significantly deviated from its target risk. Rebalancing recommended.'}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
