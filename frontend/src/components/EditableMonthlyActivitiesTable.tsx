@@ -631,9 +631,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       
       // Call the portfolio_funds endpoint to recalculate IRR
       try {
-        const response = await api.post(`portfolio_funds/${fundId}/recalculate_irr`, {
-          valuation_date: formattedDate  // Use valuation_date as shown in the logs
-        });
+        const response = await api.post(`portfolio_funds/${fundId}/recalculate_irr?valuation_date=${formattedDate}`);
         
         console.log(`IRR recalculation completed for fund ${fundId}, month ${month}:`, response.data);
         
@@ -744,7 +742,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           if (edit.isNew) {
             // Create new activity
             try {
-              await api.post('holding_activity_logs', activityData);
+            await api.post('holding_activity_logs', activityData);
               
               // Check if we have a valuation for this month
               const valuation = getFundValuation(edit.fundId, edit.month);
@@ -1052,7 +1050,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       // Add a larger delay before triggering the data refresh to ensure
       // all IRR calculations have completed on the backend
       setTimeout(() => {
-        onActivitiesUpdated();
+      onActivitiesUpdated();
       }, 800);
       
     } catch (err: any) {
@@ -1403,7 +1401,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     if (isNaN(num)) return value;
     
     // For non-decimal values, format without decimal places
-    return num.toFixed(0);
+      return num.toFixed(0);
   };
 
   // Format the total for display with correct signs
@@ -1863,7 +1861,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                         
                                         // Continue with normal handling
                                         handleCellValueChange(fund.id, month, activityType, value);
-                                        // Adjust width to fit content
+                                    // Adjust width to fit content
                                         e.target.style.width = (value.length + 1) + 'ch';
                                       }
                                   }}

@@ -2086,8 +2086,8 @@ async def calculate_portfolio_fund_irr(
                 
             logger.info(f"Raw monthly IRR calculation result: {monthly_irr}")
             
-            # Convert monthly IRR to annualized IRR
-            annual_irr = (1 + monthly_irr) ** 12 - 1
+            # Convert monthly IRR to annualized IRR (simple multiplication method)
+            annual_irr = monthly_irr * 12
             logger.info(f"Annualized IRR (monthly_irr * 12): {annual_irr}")
             
             # Calculate days in period for context

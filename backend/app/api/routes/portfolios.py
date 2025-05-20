@@ -996,10 +996,11 @@ async def calculate_portfolio_total_irr(
     Why it's needed: Provides an accurate total IRR calculation based on monthly cash flows across all active funds.
     How it works:
         1. Gets all portfolio funds in the portfolio
-        2. Gathers activity logs for the selected year
+        2. Gathers ALL historical activity logs (not just from selected year)
         3. Aggregates the monthly cash flows across all active funds
-        4. Calculates a single IRR for the combined cash flows
-        5. Returns the calculated IRR value
+        4. Properly handles internal transfers (Switch operations) between funds in the portfolio
+        5. Calculates a single IRR for the combined cash flows
+        6. Returns the calculated IRR value
     Expected output: A JSON object with the total IRR calculation result
     """
     try:
@@ -1033,20 +1034,15 @@ async def calculate_portfolio_total_irr(
         # Get all portfolio fund IDs for active funds
         active_fund_ids = [fund["id"] for fund in active_portfolio_funds]
         
-        # Get activity logs for all these funds for the selected year
-        from datetime import datetime
-        start_date = datetime(year, 1, 1)
-        end_date = datetime(year, 12, 31, 23, 59, 59)
-        
+        # Get ALL historical activity logs for these funds
+        # CHANGED: Removed the date filter to include all historical data
         activity_logs_result = db.table("holding_activity_log")\
             .select("*")\
             .in_("portfolio_fund_id", active_fund_ids)\
-            .gte("activity_timestamp", start_date.isoformat())\
-            .lte("activity_timestamp", end_date.isoformat())\
             .execute()
         
         activity_logs = activity_logs_result.data or []
-        logger.info(f"Found {len(activity_logs)} activity logs for {year}")
+        logger.info(f"Found {len(activity_logs)} historical activity logs")
         
         # Get the latest valuation for each active fund
         latest_valuations = []
@@ -1083,6 +1079,9 @@ async def calculate_portfolio_total_irr(
         # Aggregate cash flows by month
         monthly_cash_flows = {}
         
+        # CHANGED: Create a set of portfolio fund IDs to identify internal transfers
+        portfolio_fund_id_set = set(active_fund_ids)
+        
         # Process all activity logs into monthly buckets
         for activity in activity_logs:
             # Convert timestamp to month-year key
@@ -1095,13 +1094,29 @@ async def calculate_portfolio_total_irr(
                     "amount": 0
                 }
             
-            # Add to net cash flow (negative for investments, positive for withdrawals)
             amount = float(activity["amount"])
+            activity_type = activity["activity_type"]
+            related_fund = activity.get("related_fund")
             
-            if activity["activity_type"] in ["Investment", "RegularInvestment", "GovernmentUplift", "SwitchIn"]:
-                monthly_cash_flows[month_key]["amount"] -= amount  # Money going in (negative)
-            elif activity["activity_type"] in ["Withdrawal", "SwitchOut"]:
-                monthly_cash_flows[month_key]["amount"] += amount  # Money coming out (positive)
+            # CHANGED: Handle SwitchIn/SwitchOut operations between portfolio funds
+            # If it's a switch between funds in the same portfolio, ignore it as it's an internal transfer
+            if (activity_type == "SwitchIn" or activity_type == "SwitchOut") and related_fund in portfolio_fund_id_set:
+                logger.info(f"Ignoring internal switch: {activity_type} for {amount} between funds in same portfolio")
+                continue
+            
+            # Only consider external cash flows
+            if activity_type in ["Investment", "RegularInvestment", "GovernmentUplift"]:
+                # Money going in (negative for IRR calculation)
+                monthly_cash_flows[month_key]["amount"] -= amount
+            elif activity_type == "Withdrawal":
+                # Money coming out (positive for IRR calculation)
+                monthly_cash_flows[month_key]["amount"] += amount
+            elif activity_type == "SwitchIn" and related_fund not in portfolio_fund_id_set:
+                # Money coming in from outside the portfolio (negative for IRR)
+                monthly_cash_flows[month_key]["amount"] -= amount
+            elif activity_type == "SwitchOut" and related_fund not in portfolio_fund_id_set:
+                # Money going out to funds outside the portfolio (positive for IRR)
+                monthly_cash_flows[month_key]["amount"] += amount
         
         # Add the total current value from all latest valuations as the final cash flow
         total_current_value = sum(float(v["value"]) for v in latest_valuations)
