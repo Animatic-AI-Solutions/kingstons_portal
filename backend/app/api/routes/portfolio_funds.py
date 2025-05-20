@@ -2086,8 +2086,8 @@ async def calculate_portfolio_fund_irr(
                 
             logger.info(f"Raw monthly IRR calculation result: {monthly_irr}")
             
-            # Convert monthly IRR to annualized IRR
-            annual_irr = (1 + monthly_irr) ** 12 - 1
+            # Convert monthly IRR to annualized IRR (simple multiplication method)
+            annual_irr = monthly_irr * 12
             logger.info(f"Annualized IRR (monthly_irr * 12): {annual_irr}")
             
             # Calculate days in period for context
@@ -2249,14 +2249,26 @@ async def recalculate_fund_irr_for_date(
         month = valuation_date.month
         year = valuation_date.year
         
-        irr_result = calculate_portfolio_fund_irr_sync(
+        # Pass update_only=True to only update existing IRR records instead of creating new ones
+        irr_result = await calculate_portfolio_fund_irr(
             portfolio_fund_id=portfolio_fund_id,
             month=month,
             year=year,
             valuation=valuation_amount,
             db=db,
-            fund_valuation_id=fund_valuation_id
+            update_only=True
         )
+        
+        if not irr_result:
+            # If no existing IRR record found and update_only=True, we need to create a new one
+            irr_result = await calculate_portfolio_fund_irr(
+                portfolio_fund_id=portfolio_fund_id,
+                month=month,
+                year=year,
+                valuation=valuation_amount,
+                db=db,
+                update_only=False
+            )
         
         return {
             "status": "success",

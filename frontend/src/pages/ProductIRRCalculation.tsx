@@ -861,7 +861,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
     }
   };
 
-  const fetchTotalIRR = async () => {
+    const fetchTotalIRR = async () => {
     if (!account?.portfolio_id || !selectedYear) {
       console.warn('Cannot fetch total IRR: missing portfolio ID or year');
       return Promise.resolve();
@@ -870,42 +870,31 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
     try {
       console.log(`ProductIRRCalculation: Fetching total IRR for portfolio ${account.portfolio_id} for year ${selectedYear}`);
       setIsTotalIrrLoading(true);
+      setTotalIrrError(null);
       
-      // Use the new optimized endpoint with year filter
-      const response = await api.get(`/portfolios/${account.portfolio_id}/activity_logs`, {
-        params: {
-          year: selectedYear,
-          summary: true
-        }
-      });
+      // Use the backend endpoint for portfolio total IRR calculation
+      const response = await calculatePortfolioTotalIRR(account.portfolio_id, selectedYear);
       
-      console.log('ProductIRRCalculation: Filtered activity logs received:', response.data);
+      console.log('ProductIRRCalculation: Total IRR response from backend:', response.data);
       
-      // Use existing logs for funds that don't have activities in the year
-      const yearFilteredLogs = response.data.activity_logs || [];
-      
-      // Store the original logs for reference
-      const originalActivityLogs = [...activityLogs];
-      
-      // Set filtered activity logs for the calculations
-      setActivityLogs(yearFilteredLogs);
-      
-      // Calculate the portfolio's total IRR
-      const calculatedValue = calculateTotalIRR(yearFilteredLogs, holdings);
-      console.log('ProductIRRCalculation: Calculated total IRR:', calculatedValue);
-      
-      // Update state with calculated values
-      setTotalIrr(calculatedValue.irr !== null ? calculatedValue.irr : null);
-      setTotalIrrCalculationDate(calculatedValue.irr_calculation_date);
-      
-      // Restore the original logs
-      setActivityLogs(originalActivityLogs);
+      if (response.data.status === 'success') {
+        // Backend calculation was successful
+        setTotalIrr(response.data.irr_percentage || null);
+        setTotalIrrCalculationDate(response.data.valuation_date);
+        console.log(`ProductIRRCalculation: Using backend calculated IRR: ${response.data.irr_percentage}%`);
+      } else {
+        // Backend calculation failed
+        console.error('Backend IRR calculation error:', response.data.error);
+        setTotalIrrError(response.data.error || 'Failed to calculate total IRR');
+        setTotalIrr(null);
+      }
       
       setIsTotalIrrLoading(false);
       return Promise.resolve();
     } catch (error) {
       console.error('Error calculating total IRR:', error);
       setTotalIrrError('Failed to calculate total IRR');
+      setTotalIrr(null);
       setIsTotalIrrLoading(false);
       return Promise.reject(error);
     }
