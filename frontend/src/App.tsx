@@ -40,6 +40,8 @@ import PortfolioTemplateDetails from './pages/PortfolioTemplateDetails';
 import AddProvider from './pages/AddProvider';
 import AddFund from './pages/AddFund';
 import AddPortfolioTemplate from './pages/AddPortfolioTemplate';
+import AddPortfolioGeneration from './pages/AddPortfolioGeneration';
+import EditPortfolioGeneration from './pages/EditPortfolioGeneration';
 import CreateClientProducts from './pages/CreateClientProducts';
 
 // Reporting Pages - Analytics and performance reporting
@@ -238,6 +240,26 @@ const AppContent: React.FC = () => {
               <Navbar />
               <div className="flex-grow pt-6 pb-12">
                 <AddPortfolioTemplate />
+              </div>
+              <Footer />
+            </>
+          } />
+          
+          <Route path="/add-generation/:portfolioId" element={
+            <>
+              <Navbar />
+              <div className="flex-grow pt-6 pb-12">
+                <AddPortfolioGeneration />
+              </div>
+              <Footer />
+            </>
+          } />
+          
+          <Route path="/edit-generation/:portfolioId/:generationId" element={
+            <>
+              <Navbar />
+              <div className="flex-grow pt-6 pb-12">
+                <EditPortfolioGeneration />
               </div>
               <Footer />
             </>

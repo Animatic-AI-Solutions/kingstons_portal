@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 interface Fund {
@@ -12,9 +12,7 @@ interface Fund {
   created_at?: string;
 }
 
-interface TemplatePortfolioFormData {
-  name: string;
-  status: string;
+interface GenerationFormData {
   generation_name: string;
   description: string;
 }
@@ -24,27 +22,66 @@ interface PortfolioFund {
   target_weighting: number;
 }
 
-const AddPortfolioTemplate: React.FC = () => {
+interface PortfolioTemplate {
+  id: number;
+  name: string;
+  created_at: string;
+}
+
+const AddPortfolioGeneration: React.FC = () => {
+  const { portfolioId } = useParams<{ portfolioId: string }>();
   const navigate = useNavigate();
   const { api } = useAuth();
-  const [formData, setFormData] = useState<TemplatePortfolioFormData>({
-    name: '',
-    status: 'active',
+  
+  const [formData, setFormData] = useState<GenerationFormData>({
     generation_name: '',
     description: ''
   });
+  
+  const [portfolio, setPortfolio] = useState<PortfolioTemplate | null>(null);
   const [availableFunds, setAvailableFunds] = useState<Fund[]>([]);
   const [selectedFunds, setSelectedFunds] = useState<number[]>([]);
   const [fundWeightings, setFundWeightings] = useState<Record<string, number>>({});
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingFunds, setIsLoadingFunds] = useState(false);
+  const [isLoadingPortfolio, setIsLoadingPortfolio] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [latestGenerationId, setLatestGenerationId] = useState<number | null>(null);
+  const [isLoadingLatestFunds, setIsLoadingLatestFunds] = useState(false);
 
   useEffect(() => {
-    // Only fetch funds since products are no longer needed for templates
-    fetchAllFunds();
-  }, []);
+    if (portfolioId) {
+      fetchPortfolioDetails();
+      fetchAllFunds();
+    }
+  }, [portfolioId]);
+
+  useEffect(() => {
+    // When latestGenerationId is available, fetch the funds from that generation
+    if (latestGenerationId) {
+      fetchLatestGenerationFunds(latestGenerationId);
+    }
+  }, [latestGenerationId]);
+
+  const fetchPortfolioDetails = async () => {
+    try {
+      setIsLoadingPortfolio(true);
+      const response = await api.get(`/available_portfolios/${portfolioId}`);
+      setPortfolio(response.data);
+      
+      // If there's a current generation, store its ID for fund loading
+      if (response.data.generation_id) {
+        setLatestGenerationId(response.data.generation_id);
+      }
+      
+    } catch (err: any) {
+      console.error('Error fetching portfolio details:', err);
+      setError('Failed to fetch portfolio template details');
+    } finally {
+      setIsLoadingPortfolio(false);
+    }
+  };
 
   const fetchAllFunds = async () => {
     try {
@@ -58,10 +95,37 @@ const AddPortfolioTemplate: React.FC = () => {
       );
       setAvailableFunds(sortedFunds);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to fetch funds');
+      setError('Failed to fetch funds');
       console.error('Error fetching funds:', err);
     } finally {
       setIsLoadingFunds(false);
+    }
+  };
+
+  const fetchLatestGenerationFunds = async (generationId: number) => {
+    try {
+      setIsLoadingLatestFunds(true);
+      const response = await api.get(`/available_portfolios/${portfolioId}`, {
+        params: { generation_id: generationId }
+      });
+      
+      if (response.data && response.data.funds && response.data.funds.length > 0) {
+        // Process the funds to pre-populate selection and weightings
+        const fundIds = response.data.funds.map((fund: any) => fund.fund_id);
+        const weightings: Record<string, number> = {};
+        
+        response.data.funds.forEach((fund: any) => {
+          weightings[fund.fund_id.toString()] = fund.target_weighting;
+        });
+        
+        setSelectedFunds(fundIds);
+        setFundWeightings(weightings);
+      }
+    } catch (err: any) {
+      console.error('Error fetching latest generation funds:', err);
+      setError('Failed to load funds from latest generation');
+    } finally {
+      setIsLoadingLatestFunds(false);
     }
   };
 
@@ -83,7 +147,7 @@ const AddPortfolioTemplate: React.FC = () => {
         setFundWeightings(newWeightings);
         return newSelected;
       } else {
-        // Set empty weighting (0) for newly selected fund instead of default 0
+        // Set empty weighting (0) for newly selected fund
         setFundWeightings(prev => ({
           ...prev,
           [fundId.toString()]: 0
@@ -114,19 +178,18 @@ const AddPortfolioTemplate: React.FC = () => {
           target_weighting: fundWeightings[fundId.toString()] || 0
         }));
         
-        // Create the portfolio template
-        const portfolioResponse = await api.post('/available_portfolios', {
-          name: formData.name,
+        // Create the portfolio generation
+        await api.post(`/available_portfolios/${portfolioId}/generations`, {
           generation_name: formData.generation_name,
           description: formData.description,
           funds: fundsData
         });
         
-        navigate('/definitions?tab=portfolios');
+        // Navigate back to the template details page
+        navigate(`/portfolio-templates/${portfolioId}`);
       } catch (err: any) {
-        console.error('Error creating portfolio template:', err);
+        console.error('Error creating portfolio generation:', err);
         if (err.response?.data?.detail) {
-          // Safely handle detail that might be an array or string
           const detail = err.response.data.detail;
           if (Array.isArray(detail)) {
             setError(detail.map(item => item.msg || String(item)).join(', '));
@@ -134,7 +197,7 @@ const AddPortfolioTemplate: React.FC = () => {
             setError(String(detail));
           }
         } else {
-          setError('Failed to create portfolio template');
+          setError('Failed to create portfolio generation');
         }
       } finally {
         setIsSubmitting(false);
@@ -143,11 +206,12 @@ const AddPortfolioTemplate: React.FC = () => {
   };
 
   const validateForm = () => {
-    if (!formData.name.trim()) {
-      setError('Portfolio template name is required');
+    if (!formData.generation_name.trim()) {
+      setError('Generation name is required');
       return false;
     }
     
+    // Validate fund weightings
     if (selectedFunds.length === 0) {
       setError('Please select at least one fund');
       return false;
@@ -189,6 +253,14 @@ const AddPortfolioTemplate: React.FC = () => {
     );
   }, [availableFunds, searchQuery]);
 
+  if (isLoadingPortfolio) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-700"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Breadcrumb Navigation */}
@@ -212,12 +284,22 @@ const AddPortfolioTemplate: React.FC = () => {
               </Link>
             </div>
           </li>
+          <li>
+            <div className="flex items-center">
+              <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
+              </svg>
+              <Link to={`/portfolio-templates/${portfolioId}`} className="ml-1 text-sm font-medium text-gray-500 hover:text-primary-700 md:ml-2">
+                {portfolio?.name || 'Template'}
+              </Link>
+            </div>
+          </li>
           <li aria-current="page">
             <div className="flex items-center">
               <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                 <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
               </svg>
-              <span className="ml-1 text-sm font-medium text-primary-700 md:ml-2">Add Portfolio Template</span>
+              <span className="ml-1 text-sm font-medium text-primary-700 md:ml-2">Add Generation</span>
             </div>
           </li>
         </ol>
@@ -228,13 +310,15 @@ const AddPortfolioTemplate: React.FC = () => {
         <div className="flex items-center">
           <div className="bg-primary-100 p-2 rounded-lg mr-3 flex items-center justify-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
           </div>
-          <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Create Portfolio Template</h1>
+          <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">
+            Add Generation to {portfolio?.name || 'Template Portfolio'}
+          </h1>
         </div>
         <Link
-          to="/definitions?tab=portfolios"
+          to={`/portfolio-templates/${portfolioId}`}
           className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
         >
           <svg className="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -246,7 +330,7 @@ const AddPortfolioTemplate: React.FC = () => {
 
       {/* Main Content */}
       <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
-          {error && (
+        {error && (
           <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-0">
             <div className="flex">
               <div className="flex-shrink-0">
@@ -258,50 +342,16 @@ const AddPortfolioTemplate: React.FC = () => {
                 <p className="text-red-700 text-sm font-medium">{error}</p>
               </div>
             </div>
-            </div>
-          )}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="p-4 border-b border-gray-200 bg-gray-50">
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col md:flex-row gap-4 md:items-end">
-                <div className="flex-1">
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Template Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                    placeholder="e.g., Conservative ISA Template"
-                  />
-                </div>
-                <div className="w-full md:w-1/4">
-                  <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                    Status
-                  </label>
-                  <select
-                    id="status"
-                    name="status"
-                    value={formData.status}
-                    onChange={handleChange}
-                    required
-                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                </div>
-              </div>
-              
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="w-full md:w-1/2">
                   <label htmlFor="generation_name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Generation Name
+                    Generation Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -309,12 +359,10 @@ const AddPortfolioTemplate: React.FC = () => {
                     name="generation_name"
                     value={formData.generation_name}
                     onChange={handleChange}
-                    placeholder="e.g., Initial Version 2024"
+                    required
                     className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                    placeholder="e.g., Q2 2023 Conservative Allocation"
                   />
-                  <p className="mt-1 text-xs text-gray-500">
-                    A name for this specific version of the template
-                  </p>
                 </div>
                 <div className="w-full md:w-1/2">
                   <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
@@ -326,19 +374,35 @@ const AddPortfolioTemplate: React.FC = () => {
                     value={formData.description}
                     onChange={handleChange}
                     rows={2}
-                    placeholder="Enter a detailed description of this portfolio template generation"
                     className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                    placeholder="Enter a detailed description of this portfolio generation"
                   />
                 </div>
               </div>
+              
+              {latestGenerationId && (
+                <div className="mt-2">
+                  <div className="flex items-center">
+                    <div className="text-sm text-gray-600">
+                      {isLoadingLatestFunds ? 
+                        <span className="flex items-center">
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-primary-700" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Loading funds from latest generation...
+                        </span> :
+                        <span>Funds and weightings from the latest generation have been pre-loaded below. You can adjust them as needed.</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-            <p className="mt-2 text-sm text-gray-500">
-              Define a new portfolio template by selecting funds and setting their target weightings. The total weighting must equal 100%.
-            </p>
           </div>
 
-          <div className="p-5">
           {/* Fund Selection Section */}
+          <div className="p-5">
             <div className="rounded-lg border border-gray-200 shadow-sm overflow-hidden">
               <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 sm:px-6 flex justify-between items-center">
                 <h3 className="text-base font-medium text-gray-900">Select Funds</h3>
@@ -360,11 +424,11 @@ const AddPortfolioTemplate: React.FC = () => {
               </div>
               
               <div className="p-4">
-            {isLoadingFunds ? (
+                {isLoadingFunds ? (
                   <div className="flex justify-center items-center py-12">
                     <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-700"></div>
-              </div>
-            ) : availableFunds.length === 0 ? (
+                  </div>
+                ) : availableFunds.length === 0 ? (
                   <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
                     <div className="flex">
                       <div className="flex-shrink-0">
@@ -374,7 +438,7 @@ const AddPortfolioTemplate: React.FC = () => {
                       </div>
                       <div className="ml-3">
                         <p className="text-sm text-yellow-700">
-                          No funds available. Please add funds before creating a portfolio template.
+                          No funds available. Please add funds before creating a portfolio generation.
                         </p>
                       </div>
                     </div>
@@ -411,31 +475,31 @@ const AddPortfolioTemplate: React.FC = () => {
                       </div>
                     </div>
 
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-100">
-                      <tr>
+                          <tr>
                             <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                          Select
-                        </th>
+                              Select
+                            </th>
                             <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                          Fund Name
-                        </th>
+                              Fund Name
+                            </th>
                             <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                          ISIN
-                        </th>
+                              ISIN
+                            </th>
                             <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                          Risk Factor
-                        </th>
+                              Risk Factor
+                            </th>
                             <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                          Status
-                        </th>
+                              Status
+                            </th>
                             <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                          Target Weighting (%)
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                              Target Weighting (%)
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
                           {filteredFunds.map((fund) => (
                             <tr 
                               key={fund.id} 
@@ -443,20 +507,20 @@ const AddPortfolioTemplate: React.FC = () => {
                               onClick={() => handleFundSelection(fund.id)}
                             >
                               <td className="px-6 py-3 whitespace-nowrap">
-                            <input
-                              type="checkbox"
-                              checked={selectedFunds.includes(fund.id)}
+                                <input
+                                  type="checkbox"
+                                  checked={selectedFunds.includes(fund.id)}
                                   onChange={() => {}} // Handled by row click
                                   onClick={(e) => e.stopPropagation()} // Prevent double triggers
                                   className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                            />
-                          </td>
+                                />
+                              </td>
                               <td className="px-6 py-3 whitespace-nowrap">
                                 <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{fund.fund_name}</div>
-                          </td>
+                              </td>
                               <td className="px-6 py-3 whitespace-nowrap">
                                 <div className="text-sm text-gray-600 font-sans">{fund.isin_number || 'N/A'}</div>
-                          </td>
+                              </td>
                               <td className="px-6 py-3 whitespace-nowrap">
                                 <div className="text-sm text-gray-600 font-sans">
                                   {fund.risk_factor !== undefined && fund.risk_factor !== null ? (
@@ -471,45 +535,45 @@ const AddPortfolioTemplate: React.FC = () => {
                                     </span>
                                   ) : 'N/A'}
                                 </div>
-                          </td>
+                              </td>
                               <td className="px-6 py-3 whitespace-nowrap">
                                 <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              fund.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                            }`}>
-                              {fund.status}
-                            </span>
-                          </td>
+                                  fund.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                }`}>
+                                  {fund.status}
+                                </span>
+                              </td>
                               <td className="px-6 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                            {selectedFunds.includes(fund.id) && (
+                                {selectedFunds.includes(fund.id) && (
                                   <div className="flex items-center">
-                              <input
-                                type="number"
-                                min="0"
-                                max="100"
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      max="100"
                                       step="0.1"
                                       value={fundWeightings[fund.id.toString()] === 0 ? '' : fundWeightings[fund.id.toString()]}
-                                onChange={(e) => handleWeightingChange(
-                                  fund.id,
-                                  parseFloat(e.target.value) || 0
-                                )}
+                                      onChange={(e) => handleWeightingChange(
+                                        fund.id,
+                                        parseFloat(e.target.value) || 0
+                                      )}
                                       placeholder="Enter %"
                                       className="w-20 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                              />
+                                    />
                                     <span className="ml-2 text-gray-500">%</span>
                                   </div>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    
                     <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg">
-                  <div className="text-sm text-gray-500">
-                    {selectedFunds.length} fund(s) selected
-                  </div>
-                  <div className={`text-sm ${
+                      <div className="text-sm text-gray-500">
+                        {selectedFunds.length} fund(s) selected
+                      </div>
+                      <div className={`text-sm ${
                         Math.abs(totalWeighting - 100) < 0.01
                           ? 'text-green-600 font-medium' 
                           : totalWeighting > 100
@@ -519,11 +583,11 @@ const AddPortfolioTemplate: React.FC = () => {
                         Total weighting: {totalWeighting.toFixed(2)}%
                         {selectedFunds.length > 0 && Math.abs(totalWeighting - 100) > 0.01 && 
                           <span className="ml-2 text-sm">(Must equal 100%)</span>
-                    }
+                        }
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            )}
+                )}
               </div>
             </div>
           </div>
@@ -531,7 +595,7 @@ const AddPortfolioTemplate: React.FC = () => {
           {/* Footer Actions */}
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
             <Link
-              to="/definitions?tab=portfolios"
+              to={`/portfolio-templates/${portfolioId}`}
               className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
             >
               Cancel
@@ -549,10 +613,10 @@ const AddPortfolioTemplate: React.FC = () => {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Saving...
+                  Creating...
                 </span>
               ) : (
-                'Save Template'
+                'Create Generation'
               )}
             </button>
           </div>
@@ -562,4 +626,4 @@ const AddPortfolioTemplate: React.FC = () => {
   );
 };
 
-export default AddPortfolioTemplate;
+export default AddPortfolioGeneration; 

@@ -7,6 +7,9 @@ interface PortfolioTemplate {
   name: string;
   created_at: string;
   funds: PortfolioTemplateFund[];
+  generation_id?: number;
+  generation_version?: number;
+  generation_name?: string;
 }
 
 interface PortfolioTemplateFund {
@@ -24,24 +27,56 @@ interface PortfolioTemplateFund {
   };
 }
 
+interface Generation {
+  id: number;
+  version_number: number;
+  generation_name: string;
+  description?: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface NewGenerationFormData {
+  generation_name: string;
+  description: string;
+  copy_from_generation_id?: number;
+}
+
 const PortfolioTemplateDetails: React.FC = () => {
   const { portfolioId } = useParams<{ portfolioId: string }>();
   const navigate = useNavigate();
   const { api } = useAuth();
   const [template, setTemplate] = useState<PortfolioTemplate | null>(null);
+  const [generations, setGenerations] = useState<Generation[]>([]);
+  const [selectedGeneration, setSelectedGeneration] = useState<Generation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showAddGenerationModal, setShowAddGenerationModal] = useState(false);
+  const [newGenerationFormData, setNewGenerationFormData] = useState<NewGenerationFormData>({
+    generation_name: '',
+    description: ''
+  });
+  const [isSubmittingGeneration, setIsSubmittingGeneration] = useState(false);
 
   useEffect(() => {
     if (portfolioId && portfolioId !== 'undefined') {
       fetchPortfolioTemplate();
+      fetchGenerations();
     } else {
       setError('No portfolio template ID provided');
       setIsLoading(false);
     }
   }, [portfolioId]);
+
+  // When a generation is selected, fetch the funds for that generation
+  useEffect(() => {
+    if (selectedGeneration && selectedGeneration.id) {
+      fetchFundsForGeneration(selectedGeneration.id);
+    }
+  }, [selectedGeneration]);
 
   const fetchPortfolioTemplate = async () => {
     try {
@@ -68,6 +103,36 @@ const PortfolioTemplateDetails: React.FC = () => {
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchGenerations = async () => {
+    try {
+      const response = await api.get(`/available_portfolios/${portfolioId}/generations`);
+      console.log('Generations data received:', response.data);
+      
+      if (response.data && response.data.length > 0) {
+        setGenerations(response.data);
+        // Select the first generation by default
+        setSelectedGeneration(response.data[0]);
+      }
+    } catch (err: any) {
+      console.error('Error fetching generations:', err);
+    }
+  };
+
+  const fetchFundsForGeneration = async (generationId: number) => {
+    try {
+      // This will update the template state with the funds for the selected generation
+      const response = await api.get(`/available_portfolios/${portfolioId}`, {
+        params: { generation_id: generationId }
+      });
+      
+      if (response.data) {
+        setTemplate(response.data);
+      }
+    } catch (err: any) {
+      console.error('Error fetching funds for generation:', err);
     }
   };
 
@@ -112,6 +177,47 @@ const PortfolioTemplateDetails: React.FC = () => {
   const formatPercentage = (value: number | null) => {
     if (value === null || value === undefined) return 'N/A';
     return `${value.toFixed(2)}%`;
+  };
+
+  const handleGenerationSelect = (generation: Generation) => {
+    setSelectedGeneration(generation);
+  };
+
+  const handleActivateGeneration = async (generationId: number) => {
+    if (!generationId) return;
+    
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Call the API to activate the generation
+      await api.patch(`/available_portfolios/${portfolioId}/generations/${generationId}`, {
+        status: 'active'
+      });
+      
+      // Refresh the generations list
+      await fetchGenerations();
+      
+      // Show success message (could be implemented with a toast notification)
+      console.log('Generation activated successfully');
+      
+    } catch (err: any) {
+      console.error('Error activating generation:', err);
+      if (err.response?.data?.detail) {
+        setError(typeof err.response.data.detail === 'string' 
+          ? err.response.data.detail 
+          : 'Failed to activate generation');
+      } else {
+        setError('Failed to activate generation');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString();
   };
 
   if (isLoading) {
@@ -214,73 +320,189 @@ const PortfolioTemplateDetails: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-gray-500">Created Date</p>
               <p className="mt-1 text-base text-gray-900">
-                {template?.created_at ? new Date(template.created_at).toLocaleDateString() : 'N/A'}
+                {formatDate(template?.created_at)}
               </p>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">Number of Funds</p>
               <p className="mt-1 text-base text-gray-900">{template?.funds?.length || 0}</p>
             </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">Number of Generations</p>
+              <p className="mt-1 text-base text-gray-900">{generations?.length || 0}</p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Funds List */}
-      <div className="bg-white shadow rounded-lg">
-        <div className="p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Template Funds</h2>
-          {template?.funds && template.funds.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Fund Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      ISIN
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Target Weighting
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Risk Factor
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {template.funds.slice().sort((a, b) => 
-                    (a.available_funds?.fund_name || '').localeCompare(b.available_funds?.fund_name || '')
-                  ).map((fund) => (
-                    <tr key={fund.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {fund.available_funds ? (
-                          <Link to={`/definitions/funds/${fund.available_funds.id}`} className="text-indigo-600 hover:text-indigo-800">
-                            {fund.available_funds.fund_name}
-                          </Link>
-                        ) : (
-                          `Fund ID: ${fund.fund_id}`
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {fund.available_funds?.isin_number || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatPercentage(fund.target_weighting)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {fund.available_funds?.risk_factor || 'N/A'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      {/* Generations Tabs */}
+      {generations.length > 0 && (
+        <div className="bg-white shadow rounded-lg mb-6">
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Portfolio Generations</h2>
+              <Link
+                to={`/add-generation/${portfolioId}`}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-sm flex items-center"
+              >
+                <svg className="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Add Generation
+              </Link>
             </div>
-          ) : (
-            <div className="text-gray-500 text-center py-4">No funds in this template</div>
-          )}
+            
+            <div className="border-b border-gray-200">
+              <nav className="-mb-px flex space-x-2 overflow-x-auto">
+                {generations.map((generation) => (
+                  <button
+                    key={generation.id}
+                    onClick={() => handleGenerationSelect(generation)}
+                    className={`${
+                      selectedGeneration?.id === generation.id
+                        ? 'border-indigo-500 text-indigo-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    } whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm`}
+                  >
+                    {generation.generation_name || `Version ${generation.version_number}`}
+                    {generation.status !== 'active' && (
+                      <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
+                        generation.status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {generation.status}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </nav>
+            </div>
+            
+            {selectedGeneration && (
+              <div className="mt-4">
+                <div className="p-4 bg-gray-50 rounded-lg mb-6">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
+                    <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                      Generation Details
+                      <span className={`ml-3 px-3 py-1 text-xs rounded-full ${
+                        selectedGeneration.status === 'active' ? 'bg-green-100 text-green-800' :
+                        selectedGeneration.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {selectedGeneration.status.charAt(0).toUpperCase() + selectedGeneration.status.slice(1)}
+                      </span>
+                    </h3>
+                    
+                    <div className="mt-2 md:mt-0 flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-3">
+                      <Link
+                        to={`/edit-generation/${portfolioId}/${selectedGeneration.id}`}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm flex items-center"
+                      >
+                        <svg className="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                        Edit Generation
+                      </Link>
+                      
+                      {selectedGeneration.status === 'draft' && (
+                        <button
+                          onClick={() => handleActivateGeneration(selectedGeneration.id)}
+                          className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 text-sm flex items-center"
+                        >
+                          <svg className="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Activate Generation
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Generation Name</p>
+                      <p className="mt-1 text-base text-gray-900">{selectedGeneration.generation_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Version Number</p>
+                      <p className="mt-1 text-base text-gray-900">{selectedGeneration.version_number}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Created Date</p>
+                      <p className="mt-1 text-base text-gray-900">{formatDate(selectedGeneration.created_at)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Last Updated</p>
+                      <p className="mt-1 text-base text-gray-900">{formatDate(selectedGeneration.updated_at)}</p>
+                    </div>
+                  </div>
+                  {selectedGeneration.description && (
+                    <div className="mt-2 mb-4">
+                      <p className="text-sm font-medium text-gray-500">Description</p>
+                      <p className="mt-1 text-base text-gray-700">{selectedGeneration.description}</p>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Funds List - now included within the generation section */}
+                <div className="mt-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Funds for {selectedGeneration.generation_name || `Version ${selectedGeneration.version_number}`}
+                  </h3>
+                  {template?.funds && template.funds.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Fund Name
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              ISIN
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Target Weighting
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Risk Factor
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {template.funds.slice().sort((a, b) => 
+                            (a.available_funds?.fund_name || '').localeCompare(b.available_funds?.fund_name || '')
+                          ).map((fund) => (
+                            <tr key={fund.id}>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                {fund.available_funds ? (
+                                  <Link to={`/definitions/funds/${fund.available_funds.id}`} className="text-indigo-600 hover:text-indigo-800">
+                                    {fund.available_funds.fund_name}
+                                  </Link>
+                                ) : (
+                                  `Fund ID: ${fund.fund_id}`
+                                )}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {fund.available_funds?.isin_number || 'N/A'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {formatPercentage(fund.target_weighting)}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {fund.available_funds?.risk_factor || 'N/A'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-gray-500 text-center py-4 bg-gray-50 rounded-lg">No funds in this template generation</div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
