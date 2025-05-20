@@ -16,8 +16,8 @@
 .grid-layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  overflow-y: auto;
 }
 
 /* Carousel background image styles */
@@ -31,6 +31,8 @@
   .grid-layout {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr;
+    min-height: 100vh;
+    overflow-y: auto;
   }
 }
 
