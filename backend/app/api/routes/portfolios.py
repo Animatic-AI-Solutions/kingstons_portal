@@ -305,9 +305,10 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
     Why it's needed: Allows creating portfolios using predefined templates.
     How it works:
         1. Gets the template details from available_portfolios
-        2. Creates a new portfolio with the provided name
-        3. Copies the fund allocations from the template
-        4. Returns the newly created portfolio
+        2. Gets the latest active generation of the template
+        3. Creates a new portfolio with the provided name
+        4. Copies the fund allocations from the template generation
+        5. Returns the newly created portfolio
     Expected output: A JSON object containing the created portfolio details
     """
     try:
@@ -323,6 +324,21 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
             raise HTTPException(status_code=404, detail=f"Template with ID {template_data.template_id} not found")
         
         template = template_response.data[0]
+        
+        # Get the latest active generation of this template
+        latest_generation_response = db.table("template_portfolio_generations") \
+            .select("*") \
+            .eq("available_portfolio_id", template_data.template_id) \
+            .eq("status", "active") \
+            .order("version_number", desc=True) \
+            .limit(1) \
+            .execute()
+            
+        if not latest_generation_response.data or len(latest_generation_response.data) == 0:
+            raise HTTPException(status_code=404, detail="No active generations found for this template")
+        
+        latest_generation = latest_generation_response.data[0]
+        logger.info(f"Using template generation: {latest_generation['id']} (version {latest_generation['version_number']})")
         
         # Create a new portfolio with today's date as start_date
         today = date.today().isoformat()
@@ -340,10 +356,10 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
             
         new_portfolio = portfolio_result.data[0]
         
-        # Get the template's funds
+        # Get the template's funds from the latest generation
         template_funds_response = db.table("available_portfolio_funds") \
             .select("*") \
-            .eq("portfolio_id", template_data.template_id) \
+            .eq("template_portfolio_generation_id", latest_generation["id"]) \
             .execute()
             
         if not template_funds_response.data:
@@ -364,7 +380,7 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
                     
             # Filter to just duplicates    
             duplicates = {fund_id: count for fund_id, count in duplicate_funds.items() if count > 1}
-            logger.warning(f"Found duplicate funds in template {template_data.template_id}: {duplicates}")
+            logger.warning(f"Found duplicate funds in template generation {latest_generation['id']}: {duplicates}")
             
             # Get fund names for better logging
             for fund_id in duplicates.keys():
