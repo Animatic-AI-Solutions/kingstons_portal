@@ -323,6 +323,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
   // New function to evaluate mathematical expressions
   const evaluateExpression = (expression: string): string => {
+    // Special case: if expression is "0", we should keep it as "0"
+    if (expression === "0") return "0";
+    
     // If it's empty or already a valid number, return as is
     if (!expression || expression.trim() === '') return '';
     
@@ -342,11 +345,25 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         
         // Check if the result is a valid number
         if (typeof result === 'number' && !isNaN(result) && isFinite(result)) {
-          return result.toString();
+          // Handle zero case explicitly
+          if (result === 0) return "0";
+          
+          // Check if the original expression had a decimal point
+          const hadDecimalPoint = expression.includes('.');
+          
+          // Preserve decimal format if the original expression had one
+          // or if the result has a fractional part
+          if (hadDecimalPoint || result % 1 !== 0) {
+            // Format with 2 decimal places if result has a fractional part
+            return result % 1 !== 0 ? result.toFixed(2) : result.toFixed(1);
+          } else {
+            // Return as an integer otherwise
+            return result.toFixed(0);
+          }
         }
       }
       
-      // If no operators or evaluation failed, return the original value
+      // If no operators or evaluation failed, return the original expression
       return expression;
     } catch (error) {
       // If evaluation fails (syntax error), return the original expression
@@ -428,10 +445,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       return;
     }
 
-    // Allow necessary characters for math expressions
-    const sanitizedValue = value.trim() === '' 
-      ? '' 
-      : value; // Allow any characters for input, we'll evaluate on blur
+    // Allow necessary characters for math expressions and ensure zeros are handled correctly
+    const sanitizedValue = value === "0" ? "0" : (value.trim() === '' ? '' : value);
     
     // Get existing activity or valuation
     let existingId = undefined;
@@ -1365,6 +1380,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
   // Format cell value for display - more compact for the table view
   const formatCellValue = (value: string): string => {
+    // Special case: if value is "0", we should display it
+    if (value === "0") return "0";
+    
     if (!value || value.trim() === '') return '';
     
     // If it contains math operators, return it as-is for editing
@@ -1372,17 +1390,20 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       return value;
     }
     
+    // Preserve decimal point and trailing zeros during editing
+    // This is important for financial values where the user might want to 
+    // explicitly differentiate between e.g., "10" and "10.0"
+    if (value.includes('.')) {
+      // If the string representation has a decimal point, preserve it exactly as typed
+      return value;
+    }
+    
     // Try to parse as number
     const num = parseFloat(value);
     if (isNaN(num)) return value;
     
-    // Format without thousands separators
-    const hasDecimal = num % 1 !== 0;
-    if (hasDecimal) {
-      return num.toFixed(2);
-    } else {
-      return num.toFixed(0);
-    }
+    // For non-decimal values, format without decimal places
+    return num.toFixed(0);
   };
 
   // Format the total for display with correct signs
@@ -1828,9 +1849,22 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                   onChange={(e) => {
                                       // Only allow changes for active funds that aren't part of a breakdown
                                       if (fund.isActive !== false && !fund.isInactiveBreakdown) {
-                                    handleCellValueChange(fund.id, month, activityType, e.target.value);
-                                    // Adjust width to fit content
-                                    e.target.style.width = (e.target.value.length + 1) + 'ch';
+                                        // Check for decimal place restriction - only allow up to 2 decimal places
+                                        const value = e.target.value;
+                                        // If it has a decimal point, check if it has more than 2 decimal places
+                                        if (value.includes('.')) {
+                                          const parts = value.split('.');
+                                          // If there are more than 2 decimal places, truncate to 2
+                                          if (parts[1] && parts[1].length > 2) {
+                                            // Don't update if trying to add more than 2 decimal places
+                                            return;
+                                          }
+                                        }
+                                        
+                                        // Continue with normal handling
+                                        handleCellValueChange(fund.id, month, activityType, value);
+                                        // Adjust width to fit content
+                                        e.target.style.width = (value.length + 1) + 'ch';
                                       }
                                   }}
                                     onBlur={(e) => {
