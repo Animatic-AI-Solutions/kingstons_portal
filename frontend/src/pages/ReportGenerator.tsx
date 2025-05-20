@@ -66,7 +66,6 @@ interface ProductPeriodSummary {
   id: number;
   product_name: string;
   start_date: string | null;
-  end_date: string | null;
   total_investment: number;
   total_withdrawal: number;
   total_switch_in: number;
@@ -978,7 +977,6 @@ const formatPercentageFallback = (value: number | null): string => {
           id: productId,
           product_name: productDetails.product_name,
           start_date: productStartDate,
-          end_date: mostRecentValuationDate,
           total_investment: totalInvestment,
           total_withdrawal: totalWithdrawal,
           total_switch_in: totalSwitchIn,
@@ -1448,15 +1446,9 @@ const formatPercentageFallback = (value: number | null): string => {
                 </div>
                 
                 <div className="bg-gray-50 rounded-lg p-3 border">
-                  <div className="text-xs font-medium text-gray-500 uppercase mb-1">Valuation Period</div>
+                  <div className="text-xs font-medium text-gray-500 uppercase mb-1">Last Valuation Period</div>
                   <div className="text-lg font-semibold text-gray-700">
-                    {product.start_date && product.end_date ? (
-                      <>
-                        {new Date(product.start_date).toLocaleDateString()} - {new Date(product.end_date).toLocaleDateString()}
-                      </>
-                    ) : (
-                      'N/A'
-                    )}
+                    {product.start_date ? new Date(product.start_date).toLocaleDateString() : 'N/A'}
                   </div>
                 </div>
                 

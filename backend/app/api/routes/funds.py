@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, Query, Path
 from typing import List, Optional
 import logging
+from datetime import date
 
 from app.models.fund import FundBase, FundCreate, FundUpdate, FundInDB, FundWithProvider
 from app.db.database import get_db
@@ -200,3 +201,110 @@ async def delete_fund(fund_id: int, db: SupabaseClient = Depends(get_db)):
         raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/funds/{fund_id}/products-with-owners", response_model=List[dict])
+async def get_fund_products_with_owners(
+    fund_id: int = Path(..., description="The ID of the fund"),
+    db = Depends(get_db)
+):
+    """
+    What it does: Gets all products and their owners that use a specific fund
+    Why it's needed: Shows which products are using a particular fund and who owns them
+    How it works:
+        1. Gets all portfolio_funds that use this fund
+        2. Gets the portfolios for these portfolio_funds
+        3. Gets the products using these portfolios
+        4. Gets the owners for each product
+        5. Returns a combined list with all information
+    Expected output: A list of products with their owners that use this fund
+    """
+    try:
+        # First check if the fund exists
+        fund_result = db.table("available_funds").select("*").eq("id", fund_id).execute()
+        if not fund_result.data:
+            raise HTTPException(status_code=404, detail=f"Fund with ID {fund_id} not found")
+
+        # Get all portfolio_funds that use this fund
+        portfolio_funds = db.table("portfolio_funds").select("*").eq("available_funds_id", fund_id).eq("status", "active").execute()
+        
+        if not portfolio_funds.data:
+            return []
+            
+        # Get all portfolio IDs
+        portfolio_ids = [pf["portfolio_id"] for pf in portfolio_funds.data]
+        
+        # Get all products that use these portfolios
+        products_result = db.table("client_products").select("*").in_("portfolio_id", portfolio_ids).execute()
+        
+        if not products_result.data:
+            return []
+            
+        # Get all product IDs
+        product_ids = [p["id"] for p in products_result.data]
+        
+        # Get all product owner associations
+        owner_assocs = db.table("product_owner_products").select("*").in_("product_id", product_ids).execute()
+        
+        # Create a map of product ID to owner IDs
+        product_owner_map = {}
+        if owner_assocs.data:
+            for assoc in owner_assocs.data:
+                product_id = assoc["product_id"]
+                if product_id not in product_owner_map:
+                    product_owner_map[product_id] = []
+                product_owner_map[product_id].append(assoc["product_owner_id"])
+                
+        # Get all unique owner IDs
+        owner_ids = []
+        for owners in product_owner_map.values():
+            owner_ids.extend(owners)
+        owner_ids = list(set(owner_ids))
+        
+        # Get all owner details
+        owners_result = db.table("product_owners").select("*").in_("id", owner_ids).execute()
+        owner_map = {owner["id"]: owner for owner in owners_result.data} if owners_result.data else {}
+        
+        # Create portfolio map for quick lookup
+        portfolios_result = db.table("portfolios").select("*").in_("id", portfolio_ids).execute()
+        portfolio_map = {p["id"]: p for p in portfolios_result.data} if portfolios_result.data else {}
+        
+        # Build the final response
+        products_with_owners = []
+        for product in products_result.data:
+            product_id = product["id"]
+            portfolio_id = product["portfolio_id"]
+            
+            # Get portfolio info
+            portfolio = portfolio_map.get(portfolio_id, {})
+            
+            # Get portfolio fund info
+            portfolio_fund = next(
+                (pf for pf in portfolio_funds.data if pf["portfolio_id"] == portfolio_id),
+                {}
+            )
+            
+            # Get owner info
+            owner_ids = product_owner_map.get(product_id, [])
+            owners = [owner_map.get(owner_id) for owner_id in owner_ids if owner_id in owner_map]
+            
+            # Build product entry
+            product_entry = {
+                "product_id": product_id,
+                "product_name": product["product_name"],
+                "product_type": product["product_type"],
+                "status": product["status"],
+                "portfolio_name": portfolio.get("portfolio_name", ""),
+                "weighting": portfolio_fund.get("weighting", 0),
+                "start_date": product["start_date"],
+                "product_owner_name": owners[0]["name"] if owners else "No Owner"
+            }
+            
+            products_with_owners.append(product_entry)
+            
+        return products_with_owners
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting products with owners for fund {fund_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
