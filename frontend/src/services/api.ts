@@ -450,4 +450,17 @@ export const getProductIRR = (productId: number) => {
   return api.get(`client_products/${productId}/irr`);
 };
 
+/**
+ * FUND API ENDPOINTS
+ */
+
+/**
+ * Fetches all products and their owners that use a specific fund
+ * @param {number} fundId - Fund ID to get products for
+ * @returns {Promise} - API response with products and their owners
+ */
+export const getFundProductsWithOwners = (fundId: number) => {
+  return api.get(`funds/${fundId}/products-with-owners`);
+};
+
 export default api; 
