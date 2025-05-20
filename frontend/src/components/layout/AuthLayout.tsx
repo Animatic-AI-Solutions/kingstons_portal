@@ -52,8 +52,8 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
   return (
     <div className="grid-layout">
       {/* Left side - Authentication content */}
-      <div className="flex items-center justify-center p-6 md:p-12 bg-white">
-        <div className="w-full max-w-md">
+      <div className="flex items-center justify-center p-6 md:p-12 bg-white overflow-y-auto">
+        <div className="w-full max-w-md py-8">
           {children}
         </div>
       </div>
