@@ -162,9 +162,6 @@ const ClientHeader = ({
             <div className="flex justify-end items-center">
               <span className={`text-2xl font-semibold ${totalIRR >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                 {formatPercentage(totalIRR)}
-                <span className="ml-1">
-                  {totalIRR >= 0 ? '▲' : '▼'}
-                </span>
               </span>
             </div>
           </div>
@@ -320,9 +317,6 @@ const ProductCard: React.FC<{
                   account.irr >= 0 ? 'text-green-600' : 'text-red-600'
                 }`}>
                   {formatPercentage(account.irr)}
-                  <span className="ml-1">
-                    {account.irr >= 0 ? '▲' : '▼'}
-                  </span>
                 </span>
                 <div 
                   className="ml-2 h-2 w-2 rounded-full"
