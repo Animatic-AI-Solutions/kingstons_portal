@@ -186,9 +186,6 @@ const Reporting: React.FC = () => {
           <div className="px-6 py-6">
             <p className={`text-4xl font-bold ${companyIRR >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {formatPercentage(companyIRR)}
-              <span className="ml-2">
-                {companyIRR >= 0 ? '▲' : '▼'}
-              </span>
             </p>
             <p className="text-sm text-gray-500 mt-2">Internal rate of return (All Time)</p>
           </div>
@@ -342,9 +339,6 @@ const Reporting: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className={`text-base font-medium ${item.irr >= 0 ? 'text-green-600' : 'text-red-600'} flex items-center`}>
                         {formatPercentage(item.irr)}
-                        <span className="ml-1">
-                          {item.irr >= 0 ? '▲' : '▼'}
-                        </span>
                       </div>
                     </td>
                   </tr>
@@ -399,9 +393,6 @@ const Reporting: React.FC = () => {
                     <p className="text-gray-500 text-sm">Average IRR</p>
                     <p className={`font-bold text-xl ${group.avgIrr >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {formatPercentage(group.avgIrr)}
-                      <span className="ml-1 text-sm">
-                        {group.avgIrr >= 0 ? '▲' : '▼'}
-                      </span>
                     </p>
                   </div>
                   <div>

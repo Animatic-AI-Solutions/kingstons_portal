@@ -418,11 +418,6 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
                         <td key={`${fundId}-${monthYear}`} className="px-6 py-4 whitespace-nowrap text-sm">
                           <span className={irrClass}>
                             {formatPercentage(irrValue)}
-                            {irrValue !== undefined && (
-                              <span className="ml-1">
-                                {irrValue >= 0 ? '▲' : '▼'}
-                              </span>
-                            )}
                           </span>
                         </td>
                       );

@@ -1260,7 +1260,6 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           holding.irr !== undefined && holding.irr !== null ? (
                             <span className={`${holding.irr >= 0 ? 'text-green-700' : 'text-red-700'} font-medium`}>
                               {formatPercentage(holding.irr)}
-                              <span className="ml-1">{holding.irr >= 0 ? '▲' : '▼'}</span>
                             </span>
                           ) : (
                             <span className="text-gray-500">N/A</span>
