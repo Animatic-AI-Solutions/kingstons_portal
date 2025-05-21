@@ -128,7 +128,7 @@ describe('AccountDetails Component', () => {
     expect(screen.getByText('John Smith')).toBeInTheDocument();
     expect(screen.getByText('Vanguard')).toBeInTheDocument();
     expect(screen.getByText('IRA')).toBeInTheDocument();
-    expect(screen.getByText('$150,000')).toBeInTheDocument();
+    expect(screen.getByText('£150,000')).toBeInTheDocument();
     expect(screen.getByText('8.5%')).toBeInTheDocument();
   });
 
@@ -156,8 +156,8 @@ describe('AccountDetails Component', () => {
     expect(screen.getByText('Total Bond Market Index')).toBeInTheDocument();
     expect(screen.getByText('1,250.75')).toBeInTheDocument();
     expect(screen.getByText('4,500.25')).toBeInTheDocument();
-    expect(screen.getByText('$100,000')).toBeInTheDocument();
-    expect(screen.getByText('$50,000')).toBeInTheDocument();
+    expect(screen.getByText('£100,000')).toBeInTheDocument();
+    expect(screen.getByText('£50,000')).toBeInTheDocument();
     
     // Click on Activity Log tab
     const activityTab = screen.getByRole('tab', { name: /activity log/i });
@@ -169,7 +169,7 @@ describe('AccountDetails Component', () => {
     });
     expect(screen.getAllByText('Purchase').length).toBe(2);
     expect(screen.getByText('Valuation')).toBeInTheDocument();
-    expect(screen.getByText('$103,187')).toBeInTheDocument();
+    expect(screen.getByText('£103,187')).toBeInTheDocument();
     expect(screen.getByText('Initial purchase')).toBeInTheDocument();
     expect(screen.getByText('Quarterly valuation')).toBeInTheDocument();
   });

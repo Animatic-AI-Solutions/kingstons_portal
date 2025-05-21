@@ -126,7 +126,7 @@ describe('Clients Component', () => {
     });
     
     // Check if the FUM is displayed in the correct format
-    expect(screen.getByText('$250,000')).toBeInTheDocument();
-    expect(screen.getByText('$175,000')).toBeInTheDocument();
+    expect(screen.getByText('£250,000')).toBeInTheDocument();
+    expect(screen.getByText('£175,000')).toBeInTheDocument();
   });
 });
