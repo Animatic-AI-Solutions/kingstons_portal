@@ -98,7 +98,7 @@ describe('ClientDetails Component', () => {
     expect(screen.getByText('John Smith')).toBeInTheDocument();
     expect(screen.getByText('Sarah Johnson')).toBeInTheDocument();
     expect(screen.getByText('Retail')).toBeInTheDocument(); // 'R' relationship displayed as 'Retail'
-    expect(screen.getByText('$250,000')).toBeInTheDocument();
+    expect(screen.getByText('£250,000')).toBeInTheDocument();
     expect(screen.getByText('8.5%')).toBeInTheDocument();
   });
 
@@ -136,9 +136,9 @@ describe('ClientDetails Component', () => {
     expect(screen.getByText('IRA')).toBeInTheDocument();
     expect(screen.getByText('529 Plan')).toBeInTheDocument();
     expect(screen.getByText('Savings Account')).toBeInTheDocument();
-    expect(screen.getAllByText('$150,000')[0]).toBeInTheDocument();
-    expect(screen.getAllByText('$75,000')[0]).toBeInTheDocument();
-    expect(screen.getAllByText('$25,000')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('£150,000')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('£75,000')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('£25,000')[0]).toBeInTheDocument();
     expect(screen.getAllByText('8.5%')[0]).toBeInTheDocument();
     expect(screen.getByText('6.2%')).toBeInTheDocument();
     expect(screen.getByText('1.5%')).toBeInTheDocument();

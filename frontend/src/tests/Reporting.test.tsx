@@ -110,7 +110,7 @@ describe('Reporting Component', () => {
     });
     
     // Check if the company metrics are displayed
-    expect(screen.getByText('$5,250,000')).toBeInTheDocument(); // Total FUM
+    expect(screen.getByText('£5,250,000')).toBeInTheDocument(); // Total FUM
     expect(screen.getByText('7.8%')).toBeInTheDocument(); // IRR All Time
     expect(screen.getByText('45')).toBeInTheDocument(); // Client Count
     expect(screen.getByText('72')).toBeInTheDocument(); // Account Count
