@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from typing import List, Optional
 import logging
 from datetime import date
@@ -1009,4 +1009,42 @@ async def get_complete_product_details(client_product_id: int, db = Depends(get_
         raise
     except Exception as e:
         logger.error(f"Error fetching complete product details: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@router.post("/client_products/{client_product_id}/notes")
+async def update_product_notes(client_product_id: int, request: Request, db = Depends(get_db)):
+    """
+    What it does: Updates the notes field of a client product.
+    Why it's needed: Handles auto-saving of notes when the user navigates away from the page.
+    How it works:
+        1. Receives a POST request with notes data from sendBeacon or onBlur
+        2. Parses the JSON body from the request
+        3. Updates only the notes field in the database
+        4. Returns a success response
+    Expected output: A success message if the update was successful
+    """
+    try:
+        # Parse the request body as JSON
+        body = await request.json()
+        notes = body.get("notes")
+
+        if notes is None:
+            raise HTTPException(status_code=400, detail="Notes field is required")
+
+        # Check if client product exists
+        check_result = db.table("client_products").select("id").eq("id", client_product_id).execute()
+        if not check_result.data or len(check_result.data) == 0:
+            raise HTTPException(status_code=404, detail=f"Client product with ID {client_product_id} not found")
+
+        # Update only the notes field
+        result = db.table("client_products").update({"notes": notes}).eq("id", client_product_id).execute()
+
+        if not result.data or len(result.data) == 0:
+            raise HTTPException(status_code=400, detail="Failed to update notes")
+
+        return {"message": "Notes updated successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating product notes: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

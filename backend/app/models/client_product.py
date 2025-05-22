@@ -37,6 +37,7 @@ class ClientproductUpdate(BaseModel):
     provider_id: Optional[int] = None
     product_type: Optional[str] = None
     portfolio_id: Optional[int] = None
+    notes: Optional[str] = None
 
     model_config = ConfigDict(
         from_attributes=True

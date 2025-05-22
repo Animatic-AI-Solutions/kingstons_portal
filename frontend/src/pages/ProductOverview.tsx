@@ -23,6 +23,7 @@ interface Account {
   original_template_name?: string;
   target_risk?: number;
   portfolio_id?: number;
+  notes?: string;
   current_portfolio?: {
     id: number;
     portfolio_name: string;
@@ -93,6 +94,9 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   const [displayedTargetRisk, setDisplayedTargetRisk] = useState<string>("N/A");
   const [productOwners, setProductOwners] = useState<ProductOwner[]>([]);
   const [liveRiskValue, setLiveRiskValue] = useState<number | null>(null);
+  const [initialNotes, setInitialNotes] = useState<string>('');
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
+  const [notesError, setNotesError] = useState<string | null>(null);
   
   // Edit mode state and form data
   const [isEditMode, setIsEditMode] = useState(false);
@@ -102,7 +106,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     product_name: '',
     provider_id: '',
     portfolio_id: '',
-    product_type: ''
+    product_type: '',
+    notes: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -144,10 +149,24 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         product_name: account.product_name || '',
         provider_id: account.provider_id?.toString() || '',
         portfolio_id: account.current_portfolio?.id?.toString() || account.portfolio_id?.toString() || '',
-        product_type: account.product_type || ''
+        product_type: account.product_type || '',
+        notes: account.notes || ''
       });
+      setInitialNotes(account.notes || '');
     }
   }, [account]);
+
+  // Auto-save notes on component unmount
+  useEffect(() => {
+    return () => {
+      if (accountId && formData.notes !== initialNotes) {
+        console.log('ProductOverview: Unmounting, attempting to save notes...');
+        // Using sendBeacon for more reliable data sending during page unload
+        const data = new Blob([JSON.stringify({ notes: formData.notes })], { type: 'application/json' });
+        navigator.sendBeacon(`/api/client_products/${accountId}/notes`, data);
+      }
+    };
+  }, [api, accountId, formData.notes, initialNotes]);
 
   // Fetch providers and portfolios for edit form
   useEffect(() => {
@@ -826,13 +845,14 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         product_name: account.product_name || '',
         provider_id: account.provider_id?.toString() || '',
         portfolio_id: account.current_portfolio?.id?.toString() || account.portfolio_id?.toString() || '',
-        product_type: account.product_type || ''
+        product_type: account.product_type || '',
+        notes: account.notes || ''
       });
     }
   };
 
   // Handle form input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -840,7 +860,33 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     }));
   };
 
-  // Handle form submission
+  // Handle notes change with auto-save
+  const handleNotesChange = async (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newNotes = e.target.value;
+    setFormData(prev => ({ ...prev, notes: newNotes }));
+    
+    // Clear any previous error
+    setNotesError(null);
+  };
+
+  // Save notes when textarea loses focus
+  const handleNotesBlur = async () => {
+    if (!accountId || formData.notes === initialNotes) return;
+
+    try {
+      setIsSavingNotes(true);
+      await api.patch(`/api/client_products/${accountId}`, { notes: formData.notes });
+      setInitialNotes(formData.notes);
+      console.log('Notes saved successfully');
+    } catch (err) {
+      console.error('Error saving notes:', err);
+      setNotesError('Failed to save notes. Your changes may not be preserved.');
+    } finally {
+      setIsSavingNotes(false);
+    }
+  };
+
+  // Update the existing handleSubmit to set initialNotes after a successful save
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -850,21 +896,17 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       setIsSubmitting(true);
       setFormError(null);
       
-      // Prepare the data for update
       const updateData = {
         product_name: formData.product_name,
         provider_id: formData.provider_id ? parseInt(formData.provider_id) : null,
         portfolio_id: formData.portfolio_id ? parseInt(formData.portfolio_id) : null,
-        product_type: formData.product_type
+        product_type: formData.product_type,
+        notes: formData.notes
       };
       
-      // Send the update request
       await api.patch(`/api/client_products/${accountId}`, updateData);
-      
-      // Refresh the data
       await fetchData(accountId);
-      
-      // Exit edit mode
+      setInitialNotes(formData.notes);
       setIsEditMode(false);
       
     } catch (err: any) {
@@ -1035,31 +1077,62 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                 </span>
               )}
             </div>
-            <div className="flex items-center space-x-2">
-              {/* Edit Button */}
-              <button
-                type="button"
-                onClick={toggleEditMode}
-                className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-              >
-                <svg className="-ml-0.5 mr-1.5 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                Edit
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsDeleteModalOpen(true)}
-                className="inline-flex items-center px-3 py-1.5 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50"
-              >
-                <svg className="-ml-0.5 mr-1.5 h-4 w-4 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                Delete Product & Portfolio
-              </button>
+            <div className="flex space-x-2">
+              {isEditMode ? (
+                <button
+                  type="submit"
+                  form="product-edit-form"
+                  disabled={isSubmitting}
+                  className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${
+                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {isSubmitting ? 'Saving...' : 'Save Changes'}
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={toggleEditMode}
+                    className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => setIsDeleteModalOpen(true)}
+                    className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                  >
+                    Delete
+                  </button>
+                </>
+              )}
             </div>
           </div>
-          
+
+          {/* Notes Section - Always Editable */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm font-medium text-gray-500">Notes</div>
+              {isSavingNotes && (
+                <span className="text-xs text-gray-500">Saving...</span>
+              )}
+            </div>
+            <div className="relative">
+              <textarea
+                id="notes"
+                name="notes"
+                value={formData.notes}
+                onChange={handleNotesChange}
+                onBlur={handleNotesBlur}
+                rows={3}
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                placeholder="Enter any additional notes about this product..."
+              />
+              {notesError && (
+                <div className="mt-1 text-xs text-red-600">{notesError}</div>
+              )}
+            </div>
+          </div>
+
           {/* Edit Form (conditionally displayed) */}
           {isEditMode && <ProductEditForm />}
 

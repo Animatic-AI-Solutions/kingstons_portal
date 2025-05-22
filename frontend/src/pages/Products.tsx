@@ -20,9 +20,12 @@ interface Product {
   irr_date?: string | null;
   total_value?: number;
   product_owners?: Array<{id: number, name: string, type?: string}>;
+  original_template_id?: number;
+  original_template_name?: string;
+  template_info?: any;
 }
 
-type SortField = 'product_name' | 'client_name' | 'provider_name' | 'product_name' | 'status' | 'start_date' | 'irr' | 'total_value' | 'product_owners';
+type SortField = 'product_name' | 'provider_name' | 'client_name' | 'total_value' | 'status' | 'irr' | 'product_owners' | 'original_template_name';
 type SortOrder = 'asc' | 'desc';
 
 const Products: React.FC = () => {
@@ -383,39 +386,34 @@ const Products: React.FC = () => {
                                     </svg>
                                   )}
                                 </span>
-                                  </span>
-                              <FilterDropdown
-                                id="provider-filter"
-                                options={providers.map(p => ({ value: p, label: p }))}
-                                value={providerFilter}
-                                onChange={vals => setProviderFilter(vals.filter(v => typeof v === 'string'))}
-                                placeholder="All Providers"
-                                className="min-w-[140px] mt-1"
-                              />
-                            </div>
-                          </th>
-                          <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                            <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('total_value')} title="Click to sort by Value">
-                            Value
-                              <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                                {sortField === 'total_value' ? (
-                                  sortOrder === 'asc' ? (
-                                    <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                    </svg>
-                                  ) : (
-                                    <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                  )
-                                ) : (
-                                  <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
-                                  </svg>
-                                )}
                               </span>
                             </div>
                           </th>
+                          <th className="w-[15%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                            <div className="flex flex-col items-start">
+                              <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('original_template_name')}>
+                                Template Portfolio
+                                <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                                  {sortField === 'original_template_name' ? (
+                                    sortOrder === 'asc' ? (
+                                      <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                      </svg>
+                                    ) : (
+                                      <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                      </svg>
+                                    )
+                                  ) : (
+                                    <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                                    </svg>
+                                  )}
+                                </span>
+                              </span>
+                            </div>
+                          </th>
+                          <th className="w-[15%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">Value</th>
                           <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
                             <div className="flex flex-col items-start">
                               <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('product_owners')}>
@@ -438,70 +436,10 @@ const Products: React.FC = () => {
                                   )}
                                 </span>
                               </span>
-                              <FilterDropdown
-                                id="product-owner-filter-grouped"
-                                options={productOwners.map(po => ({ value: po, label: po }))}
-                                value={productOwnerFilter}
-                                onChange={vals => setProductOwnerFilter(vals.filter(v => typeof v === 'string'))}
-                                placeholder="All Product Owners"
-                                className="min-w-[140px] mt-1"
-                              />
                             </div>
                           </th>
-                          <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                            <div className="flex flex-col items-start">
-                              <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('status')}>
-                                Status
-                                <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                                  {sortField === 'status' ? (
-                                    sortOrder === 'asc' ? (
-                                      <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                      </svg>
-                                    ) : (
-                                      <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                      </svg>
-                                    )
-                                  ) : (
-                                    <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
-                                    </svg>
-                                  )}
-                                </span>
-                                  </span>
-                              <FilterDropdown
-                                id="status-filter"
-                                options={statuses.map(s => ({ value: s, label: s }))}
-                                value={statusFilter}
-                                onChange={vals => setStatusFilter(vals.filter(v => typeof v === 'string'))}
-                                placeholder="All Statuses"
-                                className="min-w-[140px] mt-1"
-                              />
-                            </div>
-                          </th>
-                          <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                            <div className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('irr')} title="Click to sort by IRR">
-                              IRR
-                              <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                                {sortField === 'irr' ? (
-                                  sortOrder === 'asc' ? (
-                                    <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                    </svg>
-                                  ) : (
-                                    <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                  )
-                                ) : (
-                                  <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
-                                  </svg>
-                                )}
-                              </span>
-                            </div>
-                          </th>
+                          <th className="w-[15%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">IRR</th>
+                          <th className="w-[15%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">Status</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -522,6 +460,9 @@ const Products: React.FC = () => {
                                 ></div>
                                 <div className="text-sm text-gray-600 font-sans">{product.provider_name || 'Unknown'}</div>
                               </div>
+                            </td>
+                            <td className="px-6 py-3 whitespace-nowrap">
+                              <div className="text-sm text-gray-600 font-sans">{product.original_template_name || 'Bespoke'}</div>
                             </td>
                             <td className="px-6 py-3 whitespace-nowrap">
                               {product.total_value !== undefined ? (
@@ -642,22 +583,37 @@ const Products: React.FC = () => {
                               </svg>
                             )}
                           </span>
-                            </span>
-                        <FilterDropdown
-                          id="provider-filter"
-                          options={providers.map(p => ({ value: p, label: p }))}
-                          value={providerFilter}
-                          onChange={vals => setProviderFilter(vals.filter(v => typeof v === 'string'))}
-                          placeholder="All Providers"
-                          className="min-w-[140px] mt-1"
-                        />
+                        </span>
                       </div>
                     </th>
                     <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('total_value')} title="Click to sort by Value">
-                      Value
+                      <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('original_template_name')} title="Click to sort by Template Portfolio">
+                        Template Portfolio
                         <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                          {sortField === 'total_value' ? (
+                          {sortField === 'original_template_name' ? (
+                            sortOrder === 'asc' ? (
+                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
+                            ) : (
+                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            )
+                          ) : (
+                            <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                            </svg>
+                          )}
+                        </span>
+                      </div>
+                    </th>
+                    <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">Value</th>
+                    <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                      <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('product_owners')} title="Click to sort by Product Owners">
+                        Product Owners
+                        <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                          {sortField === 'product_owners' ? (
                             sortOrder === 'asc' ? (
                               <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
@@ -676,39 +632,7 @@ const Products: React.FC = () => {
                       </div>
                     </th>
                     <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      <div className="flex flex-col items-start">
-                        <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('product_owners')}>
-                          Product Owners
-                          <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                            {sortField === 'product_owners' ? (
-                              sortOrder === 'asc' ? (
-                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                </svg>
-                              ) : (
-                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                              )
-                            ) : (
-                              <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
-                              </svg>
-                            )}
-                          </span>
-                        </span>
-                        <FilterDropdown
-                          id="product-owner-filter"
-                          options={productOwners.map(po => ({ value: po, label: po }))}
-                          value={productOwnerFilter}
-                          onChange={vals => setProductOwnerFilter(vals.filter(v => typeof v === 'string'))}
-                          placeholder="All Product Owners"
-                          className="min-w-[140px] mt-1"
-                        />
-                      </div>
-                    </th>
-                    <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      <div className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('irr')} title="Click to sort by IRR">
+                      <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('irr')} title="Click to sort by IRR">
                         IRR
                         <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
                           {sortField === 'irr' ? (
@@ -730,35 +654,25 @@ const Products: React.FC = () => {
                       </div>
                     </th>
                     <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      <div className="flex flex-col items-start">
-                        <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('status')}>
-                          Status
-                          <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                            {sortField === 'status' ? (
-                              sortOrder === 'asc' ? (
-                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                </svg>
-                              ) : (
-                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                              )
-                            ) : (
-                              <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                      <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('status')} title="Click to sort by Status">
+                        Status
+                        <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                          {sortField === 'status' ? (
+                            sortOrder === 'asc' ? (
+                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
                               </svg>
-                            )}
-                          </span>
-                            </span>
-                        <FilterDropdown
-                          id="status-filter"
-                          options={statuses.map(s => ({ value: s, label: s }))}
-                          value={statusFilter}
-                          onChange={vals => setStatusFilter(vals.filter(v => typeof v === 'string'))}
-                          placeholder="All Statuses"
-                          className="min-w-[140px] mt-1"
-                        />
+                            ) : (
+                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            )
+                          ) : (
+                            <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                            </svg>
+                          )}
+                        </span>
                       </div>
                     </th>
                   </tr>
@@ -791,6 +705,9 @@ const Products: React.FC = () => {
                             ></div>
                             <div className="text-sm text-gray-600 font-sans">{product.provider_name || 'Unknown'}</div>
                           </div>
+                        </td>
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <div className="text-sm text-gray-600 font-sans">{product.original_template_name || 'Bespoke'}</div>
                         </td>
                         <td className="px-6 py-3 whitespace-nowrap">
                           {product.total_value !== undefined ? (

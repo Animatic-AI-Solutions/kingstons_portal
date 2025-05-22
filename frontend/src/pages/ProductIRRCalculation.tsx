@@ -24,6 +24,7 @@ interface Account {
   product_type?: string;
   portfolio_id?: number;
   portfolio_name?: string;
+  notes?: string;
 }
 
 interface Holding {
@@ -1084,6 +1085,36 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
         </div>
       ) : (
         <div className="space-y-8">
+          {/* Notes Section */}
+          <div className="col-span-12 bg-white shadow-sm rounded-lg border border-gray-200 p-4 mb-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Notes</h3>
+            </div>
+            <div className="relative">
+              <textarea
+                value={account?.notes || ''}
+                onChange={(e) => {
+                  if (account) {
+                    const updatedAccount = { ...account, notes: e.target.value };
+                    setAccount(updatedAccount);
+                    // Use sendBeacon to save the notes when the user types
+                    const blob = new Blob([JSON.stringify({ notes: e.target.value })], { type: 'application/json' });
+                    navigator.sendBeacon(`/api/client_products/${account.id}/notes`, blob);
+                  }
+                }}
+                onBlur={(e) => {
+                  if (account) {
+                    // Also save on blur for browsers that don't support sendBeacon
+                    api.post(`client_products/${account.id}/notes`, { notes: e.target.value })
+                      .catch(error => console.error('Failed to save notes:', error));
+                  }
+                }}
+                placeholder="Enter any notes about this product..."
+                className="w-full h-24 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              />
+            </div>
+          </div>
+
           {/* Total IRR Section - Moved to top */}
           <div className="col-span-12 bg-white shadow-sm rounded-lg border border-gray-200 p-4 mb-4">
             <div className="flex justify-between items-center mb-4">

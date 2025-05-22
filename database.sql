@@ -200,6 +200,7 @@ create table public.client_products (
   provider_id bigint null,
   product_type text null,
   portfolio_id bigint null,
+  notes text null,
   constraint client_products_pkey primary key (id),
   constraint client_products_client_id_fkey foreign KEY (client_id) references client_groups (id),
   constraint client_products_portfolio_id_fkey foreign KEY (portfolio_id) references portfolios (id),
