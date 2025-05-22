@@ -1492,8 +1492,8 @@ const formatPercentageFallback = (value: number | null): string => {
   const transactionRowLabels = [
     { key: 'total_investment', label: 'Investment' },
     { key: 'total_withdrawal', label: 'Withdrawal' },
-    { key: 'total_switch_in', label: 'Switch In' },
-    { key: 'total_switch_out', label: 'Switch Out' },
+    { key: 'total_switch_in', label: 'Fund Switch In' },
+    { key: 'total_switch_out', label: 'Fund Switch Out' },
     { key: 'valuation', label: 'Valuation' },
   ];
 
@@ -1940,10 +1940,10 @@ const formatPercentageFallback = (value: number | null): string => {
                       Withdrawal
                     </th>
                     <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                      Switch In
+                      Fund Switch In
                     </th>
                     <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                      Switch Out
+                      Fund Switch Out
                     </th>
                     <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
                       Current Value
@@ -2067,10 +2067,10 @@ const formatPercentageFallback = (value: number | null): string => {
                         Withdrawal
                       </th>
                       <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                        Switch In
+                        Fund Switch In
                       </th>
                       <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                        Switch Out
+                        Fund Switch Out
                       </th>
                       <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
                         Current Value

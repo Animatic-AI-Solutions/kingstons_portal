@@ -28,8 +28,8 @@ const SwitchFundSelectionModal: React.FC<SwitchFundSelectionModalProps> = ({
   );
   
   const title = isSwitchOut 
-    ? 'Select Destination Fund for Switch Out' 
-    : 'Select Origin Fund for Switch In';
+    ? 'Select Destination Fund for Fund Switch Out' 
+    : 'Select Origin Fund for Fund Switch In';
     
   const promptText = isSwitchOut
     ? 'Select the fund this amount will be switched to:'

@@ -324,30 +324,30 @@ const calculateTotalGovernmentUplifts = (activities: ActivityLog[], holdings: Ho
 };
 
 const calculateTotalSwitchIns = (activities: ActivityLog[], holdings: Holding[]): number => {
-  console.log('Calculating total switch ins...');
+  console.log('Calculating total fund switch ins...');
   
   const activeHoldings = holdings.filter(h => h.status !== 'inactive' && !h.isVirtual);
   const total = activeHoldings.reduce((total, holding) => {
     const amount = calculateSwitchIns(activities, holding.id);
-    console.log(`Switch ins for holding ${holding.id} (${holding.fund_name}): ${amount}`);
+    console.log(`Fund switch ins for holding ${holding.id} (${holding.fund_name}): ${amount}`);
     return total + amount;
   }, 0);
   
-  console.log(`Total switch ins: ${total}`);
+  console.log(`Total fund switch ins: ${total}`);
   return total;
 };
 
 const calculateTotalSwitchOuts = (activities: ActivityLog[], holdings: Holding[]): number => {
-  console.log('Calculating total switch outs...');
+  console.log('Calculating total fund switch outs...');
   
   const activeHoldings = holdings.filter(h => h.status !== 'inactive' && !h.isVirtual);
   const total = activeHoldings.reduce((total, holding) => {
     const amount = calculateSwitchOuts(activities, holding.id);
-    console.log(`Switch outs for holding ${holding.id} (${holding.fund_name}): ${amount}`);
+    console.log(`Fund switch outs for holding ${holding.id} (${holding.fund_name}): ${amount}`);
     return total + amount;
   }, 0);
   
-  console.log(`Total switch outs: ${total}`);
+  console.log(`Total fund switch outs: ${total}`);
   return total;
 };
 
@@ -636,14 +636,14 @@ const calculateInactiveFundsGovernmentUplifts = (activities: ActivityLog[], inac
   }, 0);
 };
 
-// Calculate the total switch ins for inactive funds
+// Calculate the total fund switch ins for inactive funds
 const calculateInactiveFundsSwitchIns = (activities: ActivityLog[], inactiveHoldings: Holding[]): number => {
   return inactiveHoldings.reduce((total, holding) => {
     return total + calculateSwitchIns(activities, holding.id);
   }, 0);
 };
 
-// Calculate the total switch outs for inactive funds
+// Calculate the total fund switch outs for inactive funds
 const calculateInactiveFundsSwitchOuts = (activities: ActivityLog[], inactiveHoldings: Holding[]): number => {
   return inactiveHoldings.reduce((total, holding) => {
     return total + calculateSwitchOuts(activities, holding.id);
@@ -1218,8 +1218,8 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                         <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Investments</th>
                         <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Regular Investments</th>
                         <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Government Uplifts</th>
-                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Switch Ins</th>
-                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Switch Outs</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Fund Switch Ins</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Fund Switch Outs</th>
                         <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Withdrawals</th>
                         <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Most Recent Value</th>
                         <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Most Recent IRR</th>
