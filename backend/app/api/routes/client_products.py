@@ -915,15 +915,34 @@ async def get_complete_product_details(client_product_id: int, db = Depends(get_
                 portfolio = portfolio_result.data[0]
                 response["portfolio_details"] = portfolio
                 
-                # Get original template if available
-                original_template_id = portfolio.get("original_template_id")
-                if original_template_id:
-                    template_result = db.table("available_portfolios").select("*").eq("id", original_template_id).execute()
-                    if template_result.data and len(template_result.data) > 0:
-                        response["template_info"] = template_result.data[0]
-                        response["original_template_id"] = original_template_id
-                        response["original_template_name"] = template_result.data[0].get("name")
-                
+                # Get original template generation if available
+                original_template_generation_id = portfolio.get("original_template_id")
+                if original_template_generation_id:
+                    # Fetch from template_portfolio_generations table
+                    generation_result = db.table("template_portfolio_generations") \
+                        .select("*, available_portfolios(name)") \
+                        .eq("id", original_template_generation_id) \
+                        .maybe_single() \
+                        .execute()
+                    
+                    if generation_result.data:
+                        generation_info = generation_result.data
+                        response["template_info"] = generation_info # Contains generation name, version, etc.
+                        response["original_template_id"] = original_template_generation_id
+                        # Use generation_name for original_template_name
+                        response["original_template_name"] = generation_info.get("generation_name")
+                        # If the parent template name is needed and fetched via a join (e.g., available_portfolios(name)):
+                        if generation_info.get("available_portfolios") and isinstance(generation_info.get("available_portfolios"), dict):
+                            response["parent_template_name"] = generation_info.get("available_portfolios").get("name")
+                        else:
+                            response["parent_template_name"] = None # Or fetch separately if needed
+                        
+                        # Assuming target_risk might be on the generation itself or on the parent template
+                        # For now, let's assume it could be on the generation_info object
+                        if "target_risk" in generation_info: # Check if target_risk exists on generation
+                            response["target_risk"] = generation_info.get("target_risk")
+                        # Else, you might need to fetch it from the parent `available_portfolios` or handle it differently
+
                 # Get portfolio funds in a single query
                 funds_result = db.table("portfolio_funds").select("*").eq("portfolio_id", portfolio_id).execute()
                 if funds_result.data:

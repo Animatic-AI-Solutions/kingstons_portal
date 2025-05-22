@@ -41,9 +41,11 @@ interface Holding {
   fund_name?: string;
   isin_number?: string;
   target_weighting?: string;
+  template_weighting?: number;
   amount_invested: number;
   market_value: number;
   irr?: number;
+  irr_date?: string;
   fund_id?: number;
   valuation_date?: string;
   isVirtual?: boolean;
@@ -94,9 +96,6 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   const [displayedTargetRisk, setDisplayedTargetRisk] = useState<string>("N/A");
   const [productOwners, setProductOwners] = useState<ProductOwner[]>([]);
   const [liveRiskValue, setLiveRiskValue] = useState<number | null>(null);
-  const [initialNotes, setInitialNotes] = useState<string>('');
-  const [isSavingNotes, setIsSavingNotes] = useState(false);
-  const [notesError, setNotesError] = useState<string | null>(null);
   
   // Edit mode state and form data
   const [isEditMode, setIsEditMode] = useState(false);
@@ -106,8 +105,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     product_name: '',
     provider_id: '',
     portfolio_id: '',
-    product_type: '',
-    notes: ''
+    product_type: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -149,24 +147,10 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         product_name: account.product_name || '',
         provider_id: account.provider_id?.toString() || '',
         portfolio_id: account.current_portfolio?.id?.toString() || account.portfolio_id?.toString() || '',
-        product_type: account.product_type || '',
-        notes: account.notes || ''
+        product_type: account.product_type || ''
       });
-      setInitialNotes(account.notes || '');
     }
   }, [account]);
-
-  // Auto-save notes on component unmount
-  useEffect(() => {
-    return () => {
-      if (accountId && formData.notes !== initialNotes) {
-        console.log('ProductOverview: Unmounting, attempting to save notes...');
-        // Using sendBeacon for more reliable data sending during page unload
-        const data = new Blob([JSON.stringify({ notes: formData.notes })], { type: 'application/json' });
-        navigator.sendBeacon(`/api/client_products/${accountId}/notes`, data);
-      }
-    };
-  }, [api, accountId, formData.notes, initialNotes]);
 
   // Fetch providers and portfolios for edit form
   useEffect(() => {
@@ -221,6 +205,39 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       }
       setFundsData(fundsMap);
       
+      // Fetch template weightings if original_template_id exists
+      let templateWeightings = new Map<number, number>();
+      if (completeData.original_template_id) {
+        try {
+          // Get the generation template details using the new endpoint
+          const generationResponse = await api.get(`/api/available_portfolios/generations/${completeData.original_template_id}`);
+          const generationData = generationResponse.data || {};
+          
+          // Get the funds associated with this generation using path parameter
+          const templateFundsResponse = await api.get(`/api/available_portfolios/available_portfolio_funds/generation/${completeData.original_template_id}`);
+          const templateFunds = templateFundsResponse.data || [];
+          
+          // Check if funds array exists in the response
+          if (templateFunds && Array.isArray(templateFunds) && templateFunds.length > 0) {
+            console.log('Template generation funds found:', templateFunds.length);
+            
+            // Create a map of fund_id to template weighting
+            templateFunds.forEach((tf: any) => {
+              if (tf.fund_id && tf.target_weighting !== undefined && tf.target_weighting !== null) {
+                templateWeightings.set(tf.fund_id, tf.target_weighting);
+                console.log(`Added template weighting for fund ${tf.fund_id}: ${tf.target_weighting}%`);
+              }
+            });
+            
+            console.log('Fetched template weightings:', Object.fromEntries([...templateWeightings.entries()]));
+          } else {
+            console.warn('No funds found in template generation data');
+          }
+        } catch (err) {
+          console.error('Error fetching template generation weightings:', err);
+        }
+      }
+      
       // Process holdings from portfolio_funds
       if (completeData.portfolio_funds && completeData.portfolio_funds.length > 0) {
         const processedHoldings = completeData.portfolio_funds.map((pf: any) => {
@@ -237,16 +254,21 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             }
           }
           
+          // Get template weighting for this fund if available
+          const templateWeighting = pf.available_funds_id ? templateWeightings.get(pf.available_funds_id) : undefined;
+          
           return {
             id: pf.id,
             fund_name: pf.fund_name || 'Unknown Fund',
             fund_id: pf.available_funds_id,
             isin_number: pf.isin_number || 'N/A',
             target_weighting: standardizedWeighting,
+            template_weighting: templateWeighting,
             amount_invested: pf.amount_invested || 0,
             market_value: pf.market_value !== undefined ? pf.market_value : pf.amount_invested || 0,
             valuation_date: pf.valuation_date,
             irr: pf.irr_result,
+            irr_date: pf.irr_calculation_date || pf.irr_date,
             status: pf.status || 'active',
             end_date: pf.end_date,
           };
@@ -452,30 +474,58 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     // If we have a template ID, fetch the template and calculate the weighted risk
     if (account.original_template_id) {
       try {
-        // Get the template details directly - it often already has the funds in the response
-        const templateResponse = await api.get(`/api/available_portfolios/${account.original_template_id}`);
-        const templateData = templateResponse.data || {};
+        // Get the generation by ID using the new endpoint
+        const generationResponse = await api.get(`/api/available_portfolios/generations/${account.original_template_id}`);
+        const generationData = generationResponse.data || {};
         
-        // Check if there are funds in the template response
-        if (templateData.funds && templateData.funds.length > 0) {
+        // Get the funds associated with this generation using path parameter
+        const templateFundsResponse = await api.get(`/api/available_portfolios/available_portfolio_funds/generation/${account.original_template_id}`);
+        const templateFunds = templateFundsResponse.data || [];
+        
+        // Check if there are funds in the response
+        if (templateFunds && Array.isArray(templateFunds) && templateFunds.length > 0) {
           let totalWeight = 0;
           let weightedRiskSum = 0;
           let validFundsCount = 0;
           
+          // We need to fetch fund details for each fund to get risk factors
+          const fundDetailsPromises = templateFunds.map((fund: any) => {
+            if (fund.fund_id) {
+              return api.get(`/api/funds/${fund.fund_id}`);
+            }
+            return Promise.resolve(null);
+          });
+          
+          const fundDetailsResponses = await Promise.all(fundDetailsPromises);
+          const fundDetails = fundDetailsResponses
+            .filter((response: any) => response !== null)
+            .map((response: any) => response.data);
+          
+          // Create a map for quick lookup
+          const fundDetailsMap = new Map();
+          fundDetails.forEach((fund: any) => {
+            if (fund && fund.id) {
+              fundDetailsMap.set(fund.id, fund);
+            }
+          });
+          
           // Calculate weighted average of risk factors
-          for (const fund of templateData.funds) {
-            // The risk factor may already be in the fund data via the available_funds nested object
-            if (fund.available_funds && 
-                fund.available_funds.risk_factor !== undefined && 
-                fund.available_funds.risk_factor !== null) {
+          for (const fund of templateFunds) {
+            if (fund.fund_id) {
+              const fundDetail = fundDetailsMap.get(fund.fund_id);
               
-              const risk = fund.available_funds.risk_factor;
-              const weight = fund.target_weighting || 0;
-              
-              weightedRiskSum += risk * weight;
-              totalWeight += weight;
-              validFundsCount++;
-              console.log(`Fund ${fund.available_funds.fund_name}: risk=${risk}, weight=${weight}`);
+              if (fundDetail && 
+                  fundDetail.risk_factor !== undefined && 
+                  fundDetail.risk_factor !== null) {
+                
+                const risk = fundDetail.risk_factor;
+                const weight = fund.target_weighting || 0;
+                
+                weightedRiskSum += risk * weight;
+                totalWeight += weight;
+                validFundsCount++;
+                console.log(`Fund ${fundDetail.fund_name}: risk=${risk}, weight=${weight}`);
+              }
             }
           }
           
@@ -499,62 +549,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             return calculatedRisk.toFixed(1);
           }
         } else {
-          console.warn("No funds found in template response, trying alternative endpoint");
-          
-          // Alternatively, try to get the funds through the specific endpoint
-          try {
-            // We need to use the by-fund endpoint to avoid validation issues
-            const fundsInTemplateResponse = await api.get(`/api/available_portfolios/${account.original_template_id}/funds`);
-            const templateFunds = fundsInTemplateResponse.data || [];
-            
-            if (templateFunds.length === 0) {
-              console.warn("No funds found in template");
-              return "N/A";
-            }
-            
-            let totalWeight = 0;
-            let weightedRiskSum = 0;
-            let validFundsCount = 0;
-            
-            // Calculate weighted average of risk factors
-            for (const fund of templateFunds) {
-              // We may need to fetch the fund details if not already included
-              if (fund.fund_id) {
-                const fundResponse = await api.get(`/api/funds/${fund.fund_id}`);
-                const fundData = fundResponse.data;
-                
-                if (fundData && fundData.risk_factor !== null && fundData.risk_factor !== undefined) {
-                  const weight = fund.target_weighting || 0;
-                  weightedRiskSum += fundData.risk_factor * weight;
-                  totalWeight += weight;
-                  validFundsCount++;
-                  console.log(`Fund ${fundData.fund_name}: risk=${fundData.risk_factor}, weight=${weight}`);
-                }
-              }
-            }
-            
-            // If we found valid funds with risk factors, calculate the weighted average
-            if (validFundsCount > 0 && totalWeight > 0) {
-              const calculatedRisk = weightedRiskSum / totalWeight;
-              
-              // Cache the calculated risk
-              setTargetRisk(calculatedRisk);
-              
-              // Also update the account object
-              setAccount(prev => {
-                if (!prev) return prev;
-                return {
-                  ...prev,
-                  target_risk: calculatedRisk
-                };
-              });
-              
-              console.log(`Calculated target risk: ${calculatedRisk.toFixed(1)} from ${validFundsCount} funds (alt method)`);
-              return calculatedRisk.toFixed(1);
-            }
-          } catch (innerErr) {
-            console.error("Error fetching template funds via alternative endpoint:", innerErr);
-          }
+          console.warn("No funds found in template generation response");
+          return "N/A";
         }
       } catch (err) {
         console.error("Error calculating target risk:", err);
@@ -845,8 +841,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         product_name: account.product_name || '',
         provider_id: account.provider_id?.toString() || '',
         portfolio_id: account.current_portfolio?.id?.toString() || account.portfolio_id?.toString() || '',
-        product_type: account.product_type || '',
-        notes: account.notes || ''
+        product_type: account.product_type || ''
       });
     }
   };
@@ -858,32 +853,6 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       ...prev,
       [name]: value
     }));
-  };
-
-  // Handle notes change with auto-save
-  const handleNotesChange = async (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newNotes = e.target.value;
-    setFormData(prev => ({ ...prev, notes: newNotes }));
-    
-    // Clear any previous error
-    setNotesError(null);
-  };
-
-  // Save notes when textarea loses focus
-  const handleNotesBlur = async () => {
-    if (!accountId || formData.notes === initialNotes) return;
-
-    try {
-      setIsSavingNotes(true);
-      await api.patch(`/api/client_products/${accountId}`, { notes: formData.notes });
-      setInitialNotes(formData.notes);
-      console.log('Notes saved successfully');
-    } catch (err) {
-      console.error('Error saving notes:', err);
-      setNotesError('Failed to save notes. Your changes may not be preserved.');
-    } finally {
-      setIsSavingNotes(false);
-    }
   };
 
   // Update the existing handleSubmit to set initialNotes after a successful save
@@ -900,13 +869,11 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         product_name: formData.product_name,
         provider_id: formData.provider_id ? parseInt(formData.provider_id) : null,
         portfolio_id: formData.portfolio_id ? parseInt(formData.portfolio_id) : null,
-        product_type: formData.product_type,
-        notes: formData.notes
+        product_type: formData.product_type
       };
       
       await api.patch(`/api/client_products/${accountId}`, updateData);
       await fetchData(accountId);
-      setInitialNotes(formData.notes);
       setIsEditMode(false);
       
     } catch (err: any) {
@@ -1062,117 +1029,106 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     <>
       <DeleteConfirmationModal />
       <div className="flex flex-col space-y-6">
-        {/* Product Header */}
-        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center">
-              <h2 className="text-xl font-semibold text-gray-900">{account.product_name}</h2>
-              {account.status && (
-                <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  account.status === 'active' ? 'bg-green-100 text-green-800' :
-                  account.status === 'dormant' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {account.status.charAt(0).toUpperCase() + account.status.slice(1)}
-                </span>
-              )}
-            </div>
-            <div className="flex space-x-2">
-              {isEditMode ? (
+        {/* Page Header and Edit/Delete Buttons */}
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">{account.product_name}</h2>
+          </div>
+          <div className="flex space-x-3">
+            {isEditMode ? (
+              <button
+                onClick={() => {
+                  setIsEditMode(false);
+                  // Reset form data if canceling edit
+                  if (account) {
+                    setFormData({
+                      product_name: account.product_name || '',
+                      provider_id: account.provider_id?.toString() || '',
+                      portfolio_id: account.current_portfolio?.id?.toString() || account.portfolio_id?.toString() || '',
+                      product_type: account.product_type || ''
+                    });
+                  }
+                }}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              >
+                Cancel
+              </button>
+            ) : (
+              <>
                 <button
-                  type="submit"
-                  form="product-edit-form"
-                  disabled={isSubmitting}
-                  className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${
-                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
+                  onClick={toggleEditMode}
+                  className="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                 >
-                  {isSubmitting ? 'Saving...' : 'Save Changes'}
+                  Edit Product
                 </button>
-              ) : (
-                <>
-                  <button
-                    onClick={toggleEditMode}
-                    className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => setIsDeleteModalOpen(true)}
-                    className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                  >
-                    Delete
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Notes Section - Always Editable */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-sm font-medium text-gray-500">Notes</div>
-              {isSavingNotes && (
-                <span className="text-xs text-gray-500">Saving...</span>
-              )}
-            </div>
-            <div className="relative">
-              <textarea
-                id="notes"
-                name="notes"
-                value={formData.notes}
-                onChange={handleNotesChange}
-                onBlur={handleNotesBlur}
-                rows={3}
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                placeholder="Enter any additional notes about this product..."
-              />
-              {notesError && (
-                <div className="mt-1 text-xs text-red-600">{notesError}</div>
-              )}
-            </div>
-          </div>
-
-          {/* Edit Form (conditionally displayed) */}
-          {isEditMode && <ProductEditForm />}
-
-          {/* Product Info Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-md">
-            <div>
-              <div className="text-sm font-medium text-gray-500">Client Name</div>
-              <div className="text-base font-medium text-gray-900 mt-1">{account.client_name || 'N/A'}</div>
-            </div>
-            
-            <div>
-              <div className="text-sm font-medium text-gray-500">Provider</div>
-              <div className="text-base font-medium text-gray-900 mt-1">{account.provider_name || 'N/A'}</div>
-            </div>
-            
-            <div>
-              <div className="text-sm font-medium text-gray-500">Product Type</div>
-              <div className="text-base font-medium text-gray-900 mt-1">{account.product_type || 'N/A'}</div>
-            </div>
-            
-            <div>
-              <div className="text-sm font-medium text-gray-500">Portfolio Template</div>
-              <div className="text-base font-medium text-gray-900 mt-1">
-                {account.original_template_name || account.template_info?.name || 'N/A'}
-              </div>
-            </div>
-            
-            <div>
-              <div className="text-sm font-medium text-gray-500">Target Risk</div>
-              <div className="text-base font-medium text-gray-900 mt-1">{displayedTargetRisk}</div>
-            </div>
-            
-            <div>
-              <div className="text-sm font-medium text-gray-500">Start Date</div>
-              <div className="text-base font-medium text-gray-900 mt-1">
-                {account.start_date ? formatDate(account.start_date) : 'N/A'}
-              </div>
-            </div>
+                <button
+                  onClick={() => setIsDeleteModalOpen(true)}
+                  className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                >
+                  Delete
+                </button>
+              </>
+            )}
           </div>
         </div>
+
+        {/* Edit Form (conditionally displayed) */}
+        {isEditMode && <ProductEditForm />}
+
+        {/* Product Info Grid - Ensure this div is properly closed after adding Product Owners */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-md">
+          <div>
+            <div className="text-sm font-medium text-gray-500">Client Name</div>
+            <div className="text-base font-medium text-gray-900 mt-1">{account.client_name || 'N/A'}</div>
+          </div>
+          
+          <div>
+            <div className="text-sm font-medium text-gray-500">Provider</div>
+            <div className="text-base font-medium text-gray-900 mt-1">{account.provider_name || 'N/A'}</div>
+          </div>
+          
+          <div>
+            <div className="text-sm font-medium text-gray-500">Product Type</div>
+            <div className="text-base font-medium text-gray-900 mt-1">{account.product_type || 'N/A'}</div>
+          </div>
+          
+          <div>
+            <div className="text-sm font-medium text-gray-500">Portfolio Template</div>
+            <div className="text-base font-medium text-gray-900 mt-1">
+              {account.original_template_name || account.template_info?.name || 'N/A'}
+            </div>
+          </div>
+          
+          <div>
+            <div className="text-sm font-medium text-gray-500">Target Risk</div>
+            <div className="text-base font-medium text-gray-900 mt-1">{displayedTargetRisk}</div>
+          </div>
+          
+          <div>
+            <div className="text-sm font-medium text-gray-500">Start Date</div>
+            <div className="text-base font-medium text-gray-900 mt-1">
+              {account.start_date ? formatDate(account.start_date) : 'N/A'}
+            </div>
+          </div>
+
+          {/* Product Owners Section - Moved into the grid */}
+          {productOwners.length > 0 && (
+            <div className="md:col-span-3 bg-white shadow-sm rounded-lg border border-gray-100 p-4 mt-4">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Product Owners</h3>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                {productOwners.map(owner => (
+                  <li key={owner.id} className="flex items-center p-2 bg-gray-50 rounded">
+                    <svg className="h-5 w-5 text-primary-600 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span className="text-sm font-medium">{owner.name}</span>
+                    {owner.type && <span className="ml-2 text-xs text-gray-500">({owner.type})</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div> {/* This is the closing div for "Product Info Grid" */}
 
         {/* Risk Comparison Bars */}
         <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
@@ -1181,7 +1137,9 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             {/* Target Risk Bar */}
             <div>
               <div className="flex justify-between items-center mb-1">
-                <div className="text-sm font-medium text-gray-700">Target Risk (Portfolio Template)</div>
+                <div className="text-sm font-medium text-gray-700">
+                  Target Risk ({account.original_template_name || account.template_info?.name || 'Portfolio Template'})
+                </div>
                 <div className="text-sm font-semibold">{displayedTargetRisk}</div>
               </div>
               {targetRisk !== null && !isNaN(targetRisk) && (
@@ -1197,7 +1155,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             {/* Live Risk Bar */}
             <div>
               <div className="flex justify-between items-center mb-1">
-                <div className="text-sm font-medium text-gray-700">Current Risk (Based on Latest Valuations)</div>
+                <div className="text-sm font-medium text-gray-700">Current Risk (Based on Valuations)</div>
                 <div className="text-sm font-semibold">{liveRiskValue !== null && !isNaN(liveRiskValue) ? liveRiskValue.toFixed(1) : 'N/A'}</div>
               </div>
               {liveRiskValue !== null && !isNaN(liveRiskValue) && (
@@ -1236,24 +1194,6 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           </div>
         </div>
 
-        {/* Product Owners Section */}
-        {productOwners.length > 0 && (
-          <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Product Owners</h3>
-            <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-              {productOwners.map(owner => (
-                <li key={owner.id} className="flex items-center p-2 bg-gray-50 rounded">
-                  <svg className="h-5 w-5 text-primary-600 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  <span className="text-sm font-medium">{owner.name}</span>
-                  {owner.type && <span className="ml-2 text-xs text-gray-500">({owner.type})</span>}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
         {/* Fund Summary Table */}
         <div className="mb-8">
           <div className="flex items-center mb-4">
@@ -1265,10 +1205,13 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                 <tr>
                   <th className="px-6 py-3 text-left text-sm font-semibold">Fund Name</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold">ISIN Number</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Latest Valuation</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold">Valuation</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold">Weighting</th>
+                  {account.original_template_id && (
+                    <th className="px-6 py-3 text-left text-sm font-semibold">Target Weighting</th>
+                  )}
                   <th className="px-6 py-3 text-left text-sm font-semibold">Risk Factor</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Last IRR</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold">IRR</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -1315,6 +1258,19 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             : 'N/A'
                         )}
                       </td>
+                      {account.original_template_id && (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {holding.isVirtual ? (
+                            <span className="text-blue-800 font-medium">N/A</span>
+                          ) : (
+                            holding.template_weighting !== undefined 
+                              ? `${typeof holding.template_weighting === 'number' && holding.template_weighting <= 1 
+                                  ? (holding.template_weighting * 100).toFixed(1) 
+                                  : parseFloat(String(holding.template_weighting)).toFixed(1)}%` 
+                              : 'N/A'
+                          )}
+                        </td>
+                      )}
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {holding.isVirtual ? (
                           holding.riskFactor !== undefined ? (
@@ -1331,9 +1287,16 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           <span className="text-blue-800 font-medium">N/A</span>
                         ) : (
                           holding.irr !== undefined && holding.irr !== null ? (
-                            <span className={`${holding.irr >= 0 ? 'text-green-700' : 'text-red-700'} font-medium`}>
-                              {formatPercentage(holding.irr)}
-                            </span>
+                            <div>
+                              <span className={`${holding.irr >= 0 ? 'text-green-700' : 'text-red-700'} font-medium`}>
+                                {formatPercentage(holding.irr)}
+                              </span>
+                              {holding.irr_date && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  as of {formatDate(holding.irr_date)}
+                                </div>
+                              )}
+                            </div>
                           ) : (
                             <span className="text-gray-500">N/A</span>
                           )
@@ -1343,7 +1306,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
+                    <td colSpan={account.original_template_id ? 7 : 6} className="px-6 py-4 text-center text-sm text-gray-500">
                       No funds found in this product.
                     </td>
                   </tr>
@@ -1352,7 +1315,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             </table>
           </div>
         </div>
-      </div>
+      </div> {/* This is the closing div for the main content wrapper started after isEditMode && <ProductEditForm /> and before Product Info Grid. */}
     </>
   );
 };

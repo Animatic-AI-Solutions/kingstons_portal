@@ -55,6 +55,7 @@ interface ProductItem {
     selectedFunds: number[];
     type: 'template' | 'bespoke';
     templateId?: number;
+    generationId?: number; // Added field to store the selected generation ID
     fundWeightings: Record<string, string>;
   };
 }
@@ -63,6 +64,16 @@ interface PortfolioTemplate {
   id: number;
   created_at: string;
   name: string | null;
+}
+
+interface PortfolioGeneration {
+  id: number;
+  version_number: number;
+  generation_name: string;
+  description?: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // Interface for dropdown option
@@ -80,6 +91,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   const [productOwners, setProductOwners] = useState<ProductOwner[]>([]);
   const [funds, setFunds] = useState<Fund[]>([]);
   const [availableTemplates, setAvailableTemplates] = useState<PortfolioTemplate[]>([]);
+  const [templateGenerations, setTemplateGenerations] = useState<Record<string, PortfolioGeneration[]>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showErrorPopup, setShowErrorPopup] = useState(false);
@@ -111,6 +123,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   
   // Add a state for tracking template loading per product
   const [templateLoading, setTemplateLoading] = useState<Record<string, boolean>>({});
+  const [generationLoading, setGenerationLoading] = useState<Record<string, boolean>>({});
   
   // Add refs for product sections
   const productRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -436,15 +449,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     setTemplateLoading(prev => ({ ...prev, [productId]: true }));
     
     try {
-      // Fetch template details
-      const response = await api.get(`/available_portfolios/${templateId}`);
-      const templateData = response.data;
-      
-      // Get funds in the template
-      const templateFunds = templateData.funds || [];
-      const fundIds = templateFunds.map((fund: any) => fund.fund_id);
-      
-      // Update the product's portfolio with template information
+      // First, clear any existing generation selection for this product
       const updatedProducts = products.map(product => {
         if (product.id === productId) {
           return {
@@ -452,9 +457,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             portfolio: {
               ...product.portfolio,
               templateId: parseInt(templateId),
-              name: `${templateData.name || `Template ${templateId}`} for ${product.product_name}`,
-              selectedFunds: fundIds,
-              fundWeightings: {}
+              generationId: undefined, // Clear the generation selection
+              selectedFunds: [], // Clear the selected funds
+              name: product.portfolio.name // Keep the existing portfolio name
             }
           };
         }
@@ -462,12 +467,77 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       });
       
       setProducts(updatedProducts);
+
+      // Fetch generations for this template
+      const generationsResponse = await api.get(`/available_portfolios/${templateId}/generations`);
+      const generationsData = generationsResponse.data;
+      
+      // Store the generations for this template
+      setTemplateGenerations(prev => ({
+        ...prev,
+        [templateId]: generationsData
+      }));
+
+      // Log what we've fetched
+      console.log(`Fetched ${generationsData.length} generations for template ${templateId}`);
     } catch (err) {
-      console.error('Error loading template:', err);
-      showError('Failed to load template details. Please try again.');
+      console.error('Error loading template generations:', err);
+      showError('Failed to load template generations. Please try again.');
     } finally {
       // Clear loading state for this product
       setTemplateLoading(prev => ({ ...prev, [productId]: false }));
+    }
+  };
+
+  // Add new function to handle generation selection
+  const handleGenerationSelection = async (productId: string, generationId: string): Promise<void> => {
+    if (!generationId) {
+      return;
+    }
+
+    // Set loading state just for this specific product
+    setGenerationLoading(prev => ({ ...prev, [productId]: true }));
+    
+    try {
+      // Find the product
+      const product = products.find(p => p.id === productId);
+      if (!product || !product.portfolio.templateId) {
+        throw new Error('Product or template ID not found');
+      }
+
+      // Fetch template details with specific generation ID
+      const response = await api.get(`/available_portfolios/${product.portfolio.templateId}?generation_id=${generationId}`);
+      const templateData = response.data;
+      
+      // Get funds in the template generation
+      const templateFunds = templateData.funds || [];
+      const fundIds = templateFunds.map((fund: any) => fund.fund_id);
+      
+      // Update the product's portfolio with generation information
+      const updatedProducts = products.map(p => {
+        if (p.id === productId) {
+          return {
+            ...p,
+            portfolio: {
+              ...p.portfolio,
+              generationId: parseInt(generationId),
+              // Update name if it hasn't been customized
+              name: p.portfolio.name || `${templateData.name || `Template ${p.portfolio.templateId}`} for ${p.product_name}`,
+              selectedFunds: fundIds,
+              fundWeightings: {}
+            }
+          };
+        }
+        return p;
+      });
+      
+      setProducts(updatedProducts);
+    } catch (err) {
+      console.error('Error loading generation details:', err);
+      showError('Failed to load generation details. Please try again.');
+    } finally {
+      // Clear loading state for this product
+      setGenerationLoading(prev => ({ ...prev, [productId]: false }));
     }
   };
 
@@ -519,6 +589,10 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           showError(`Please select a template portfolio for product "${product.product_name}"`);
           return false;
         }
+        if (!product.portfolio.generationId) {
+          showError(`Please select a generation for the template portfolio in product "${product.product_name}"`);
+          return false;
+        }
       } else {
         if (product.portfolio.selectedFunds.length === 0) {
           showError(`Please select at least one fund for the portfolio in product "${product.product_name}"`);
@@ -553,16 +627,17 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         let portfolioId: number | undefined;
 
         // First, create the portfolio if needed
-        if (product.portfolio.type === 'template' && product.portfolio.templateId) {
-          // Create portfolio from template
+        if (product.portfolio.type === 'template' && product.portfolio.templateId && product.portfolio.generationId) {
+          // Create portfolio from template generation
           const templateResponse = await api.post('/portfolios/from_template', {
             template_id: product.portfolio.templateId,
+            generation_id: product.portfolio.generationId, // Send the generation ID to the API
             portfolio_name: product.portfolio.name,
             status: 'active',
             start_date: formattedStartDate
           });
           portfolioId = templateResponse.data.id;
-          console.log(`Created portfolio from template with ID: ${portfolioId}`);
+          console.log(`Created portfolio from template generation with ID: ${portfolioId}`);
         } else if (product.portfolio.type === 'bespoke') {
           // Create a bespoke portfolio
           const portfolioResponse = await api.post('/portfolios', {
@@ -704,11 +779,15 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
 
   const renderPortfolioSection = (product: ProductItem): JSX.Element => {
     const isLoadingTemplate = templateLoading[product.id] === true;
+    const isLoadingGeneration = generationLoading[product.id] === true;
+    const isEitherLoading = isLoadingTemplate || isLoadingGeneration;
+    const templateId = product.portfolio.templateId;
+    const generations = templateId ? templateGenerations[templateId.toString()] || [] : [];
     
     return (
       <div className="portfolio-section">
-        {/* Show loading overlay when template is loading */}
-        {isLoadingTemplate && (
+        {/* Show loading overlay when template or generation is loading */}
+        {isEitherLoading && (
           <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-10">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
           </div>
@@ -736,7 +815,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           <Radio.Group
             value={product.portfolio.type}
             onChange={(e) => handlePortfolioTypeChange(product.id, e.target.value as 'template' | 'bespoke')}
-            disabled={isLoadingTemplate}
+            disabled={isEitherLoading}
           >
             <Radio value="bespoke">Bespoke Portfolio</Radio>
             <Radio value="template">Template Portfolio</Radio>
@@ -757,8 +836,33 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               placeholder="Select a template"
               className="w-full"
               required
-              disabled={isLoadingTemplate}
+              disabled={isEitherLoading}
             />
+          </div>
+        )}
+
+        {/* Generation Selection - Show after template is selected */}
+        {product.portfolio.type === 'template' && product.portfolio.templateId && generations.length > 0 && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Generation <span className="text-red-500">*</span>
+            </label>
+            <SearchableDropdown
+              id={`generation-select-${product.id}`}
+              options={generations.map(g => ({ 
+                value: g.id.toString(), 
+                label: g.generation_name || `Version ${g.version_number}` 
+              }))}
+              value={product.portfolio.generationId?.toString() ?? ''}
+              onChange={val => handleGenerationSelection(product.id, String(val))}
+              placeholder="Select a generation"
+              className="w-full"
+              required
+              disabled={isEitherLoading}
+            />
+            <div className="text-xs text-gray-500 mt-1">
+              Select a specific generation of this template
+            </div>
           </div>
         )}
 
@@ -805,7 +909,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             value={fundSearchTerm}
             onChange={(e) => handleFundSearch(e.target.value)}
             style={{ marginBottom: '1rem' }}
-            disabled={isLoadingTemplate}
+            disabled={isEitherLoading}
           />
           <div className="fund-list max-h-60 overflow-y-auto border rounded-md p-2">
             {filteredFunds.map(fund => (
@@ -813,7 +917,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                 <Checkbox
                   checked={product.portfolio.selectedFunds.includes(fund.id)}
                   onChange={() => handleFundSelection(product.id, fund.id)}
-                  disabled={isLoadingTemplate}
+                  disabled={isEitherLoading}
                 >
                   {fund.fund_name} ({fund.isin_number})
                 </Checkbox>

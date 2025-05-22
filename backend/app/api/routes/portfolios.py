@@ -15,7 +15,10 @@ logger = logging.getLogger(__name__)
 
 class PortfolioFromTemplate(BaseModel):
     template_id: int
+    generation_id: Optional[int] = None  # Added generation_id field
     portfolio_name: str
+    status: str = "active"
+    start_date: Optional[str] = None
 
 router = APIRouter()
 
@@ -305,14 +308,14 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
     Why it's needed: Allows creating portfolios using predefined templates.
     How it works:
         1. Gets the template details from available_portfolios
-        2. Gets the latest active generation of the template
+        2. Gets the specified generation or the latest active generation of the template
         3. Creates a new portfolio with the provided name
         4. Copies the fund allocations from the template generation
         5. Returns the newly created portfolio
     Expected output: A JSON object containing the created portfolio details
     """
     try:
-        logger.info(f"Creating portfolio from template {template_data.template_id}")
+        logger.info(f"Creating portfolio from template {template_data.template_id} with generation {template_data.generation_id}")
         
         # Get template details
         template_response = db.table("available_portfolios") \
@@ -324,29 +327,43 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
             raise HTTPException(status_code=404, detail=f"Template with ID {template_data.template_id} not found")
         
         template = template_response.data[0]
+        generation = None
         
-        # Get the latest active generation of this template
-        latest_generation_response = db.table("template_portfolio_generations") \
-            .select("*") \
-            .eq("available_portfolio_id", template_data.template_id) \
-            .eq("status", "active") \
-            .order("version_number", desc=True) \
-            .limit(1) \
-            .execute()
+        # Get the specific generation if provided, otherwise get the latest active generation
+        if template_data.generation_id:
+            generation_response = db.table("template_portfolio_generations") \
+                .select("*") \
+                .eq("id", template_data.generation_id) \
+                .execute()
+                
+            if not generation_response.data or len(generation_response.data) == 0:
+                raise HTTPException(status_code=404, detail=f"Generation with ID {template_data.generation_id} not found")
             
-        if not latest_generation_response.data or len(latest_generation_response.data) == 0:
-            raise HTTPException(status_code=404, detail="No active generations found for this template")
+            generation = generation_response.data[0]
+            logger.info(f"Using specified generation: {generation['id']} (version {generation['version_number']})")
+        else:
+            # Get the latest active generation of this template
+            latest_generation_response = db.table("template_portfolio_generations") \
+                .select("*") \
+                .eq("available_portfolio_id", template_data.template_id) \
+                .eq("status", "active") \
+                .order("version_number", desc=True) \
+                .limit(1) \
+                .execute()
+                
+            if not latest_generation_response.data or len(latest_generation_response.data) == 0:
+                raise HTTPException(status_code=404, detail="No active generations found for this template")
+            
+            generation = latest_generation_response.data[0]
+            logger.info(f"Using latest generation: {generation['id']} (version {generation['version_number']})")
         
-        latest_generation = latest_generation_response.data[0]
-        logger.info(f"Using template generation: {latest_generation['id']} (version {latest_generation['version_number']})")
-        
-        # Create a new portfolio with today's date as start_date
-        today = date.today().isoformat()
+        # Create a new portfolio with today's date as start_date if not provided
+        start_date = template_data.start_date if template_data.start_date else date.today().isoformat()
         portfolio_data = {
             "portfolio_name": template_data.portfolio_name,
-            "status": "active",
-            "start_date": today,  # Set to today's date
-            "original_template_id": template_data.template_id  # Add template ID reference
+            "status": template_data.status,
+            "start_date": start_date,
+            "original_template_id": generation['id']  # Use generation ID instead of template ID
         }
         
         portfolio_result = db.table("portfolios").insert(portfolio_data).execute()
@@ -356,10 +373,10 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
             
         new_portfolio = portfolio_result.data[0]
         
-        # Get the template's funds from the latest generation
+        # Get the template's funds from the generation
         template_funds_response = db.table("available_portfolio_funds") \
             .select("*") \
-            .eq("template_portfolio_generation_id", latest_generation["id"]) \
+            .eq("template_portfolio_generation_id", generation["id"]) \
             .execute()
             
         if not template_funds_response.data:
@@ -380,7 +397,7 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
                     
             # Filter to just duplicates    
             duplicates = {fund_id: count for fund_id, count in duplicate_funds.items() if count > 1}
-            logger.warning(f"Found duplicate funds in template generation {latest_generation['id']}: {duplicates}")
+            logger.warning(f"Found duplicate funds in template generation {generation['id']}: {duplicates}")
             
             # Get fund names for better logging
             for fund_id in duplicates.keys():
@@ -404,7 +421,7 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
                 "portfolio_id": new_portfolio["id"],
                 "available_funds_id": fund_id,
                 "weighting": fund["target_weighting"],
-                "start_date": today,  # Use the same start_date as the portfolio
+                "start_date": start_date,  # Use the same start_date as the portfolio
                 "amount_invested": 0  # Initial amount is zero
             }
             
@@ -438,7 +455,7 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
                     "portfolio_id": new_portfolio["id"],
                     "available_funds_id": cashline_fund["id"],
                     "weighting": 0,  # 0% weighting
-                    "start_date": today,
+                    "start_date": start_date,
                     "amount_invested": 0  # No initial investment
                 }
                 

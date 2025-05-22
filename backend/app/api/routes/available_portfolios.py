@@ -527,59 +527,40 @@ async def delete_available_portfolio(portfolio_id: int, db = Depends(get_db)):
 
 @router.get("/available_portfolio_funds", response_model=List[dict])
 async def get_available_portfolio_funds(
-    portfolio_id: Optional[str] = None,
-    fund_id: Optional[str] = None,
+    template_portfolio_generation_id: Optional[int] = None,
+    fund_id: Optional[int] = None,
     db = Depends(get_db)
 ):
     """
-    Get portfolio funds with optional filtering by portfolio_id or fund_id.
+    Get portfolio funds with optional filtering by template_portfolio_generation_id or fund_id.
     
     Args:
-        portfolio_id: Optional filter by portfolio ID (as string)
-        fund_id: Optional filter by fund ID (as string)
+        template_portfolio_generation_id: Optional filter by template portfolio generation ID (as int)
+        fund_id: Optional filter by fund ID (as int)
         
     Returns:
         List of portfolio funds
     """
     try:
-        # Add detailed logging for debugging
         logger.info("=== get_available_portfolio_funds called ===")
-        logger.info(f"portfolio_id: {portfolio_id}, type: {type(portfolio_id)}")
-        logger.info(f"fund_id: {fund_id}, type: {type(fund_id)}")
+        logger.info(f"template_portfolio_generation_id: {template_portfolio_generation_id}")
+        logger.info(f"fund_id: {fund_id}")
         
-        # Convert string parameters to integers if provided
-        portfolio_id_int = None
-        fund_id_int = None
-        
-        if portfolio_id:
-            try:
-                portfolio_id_int = int(portfolio_id)
-                logger.info(f"Converted portfolio_id to int: {portfolio_id_int}")
-            except ValueError:
-                logger.error(f"Invalid portfolio_id: {portfolio_id}")
-                raise HTTPException(status_code=422, detail="portfolio_id must be a valid integer")
-                
-        if fund_id:
-            try:
-                fund_id_int = int(fund_id)
-                logger.info(f"Converted fund_id to int: {fund_id_int}")
-            except ValueError:
-                logger.error(f"Invalid fund_id: {fund_id}")
-                raise HTTPException(status_code=422, detail="fund_id must be a valid integer")
-        
-        # Build query
         query = db.table("available_portfolio_funds").select("*")
         
-        if portfolio_id_int is not None:
-            query = query.eq("portfolio_id", portfolio_id_int)
+        if template_portfolio_generation_id is not None:
+            query = query.eq("template_portfolio_generation_id", template_portfolio_generation_id)
             
-        if fund_id_int is not None:
-            query = query.eq("fund_id", fund_id_int)
+        if fund_id is not None:
+            query = query.eq("fund_id", fund_id)
         
-        logger.info(f"Executing query with portfolio_id={portfolio_id_int}, fund_id={fund_id_int}")
+        logger.info(f"Executing query with template_portfolio_generation_id={template_portfolio_generation_id}, fund_id={fund_id}")
         result = query.execute()
         logger.info(f"Query result: {result.data}")
         
+        if not result.data:
+             return []
+
         return result.data
     except HTTPException:
         raise
@@ -886,4 +867,54 @@ async def update_generation(
         raise
     except Exception as e:
         logger.error(f"Error updating generation: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e)) 
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/generations/{generation_id}", response_model=GenerationDetail)
+async def get_generation_by_id(generation_id: int, db = Depends(get_db)):
+    """Get a specific generation by ID"""
+    try:
+        # Get the generation details
+        generation_response = db.table('template_portfolio_generations')\
+            .select('*')\
+            .eq('id', generation_id)\
+            .single()\
+            .execute()
+        
+        if not generation_response.data:
+            raise HTTPException(status_code=404, detail=f"Generation with ID {generation_id} not found")
+        
+        return generation_response.data
+    except Exception as e:
+        logger.error(f"Error fetching generation {generation_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/available_portfolio_funds/generation/{generation_id}", response_model=List[dict])
+async def get_available_portfolio_funds_by_generation(
+    generation_id: int,
+    db = Depends(get_db)
+):
+    """
+    Get portfolio funds for a specific generation ID using a path parameter to avoid validation issues.
+    
+    Args:
+        generation_id: The generation ID to search for (as part of the URL path)
+        
+    Returns:
+        List of portfolio funds for this generation
+    """
+    try:
+        logger.info(f"=== get_available_portfolio_funds_by_generation called with generation_id: {generation_id} ===")
+        
+        # Build query with the generation_id in the path parameter
+        query = db.table("available_portfolio_funds").select("*").eq("template_portfolio_generation_id", generation_id)
+        logger.info(f"Executing query for generation_id={generation_id}")
+        
+        result = query.execute()
+        logger.info(f"Query result: {result.data}")
+        
+        return result.data or []
+    except Exception as e:
+        logger.error(f"Error fetching portfolio funds for generation ID {generation_id}: {str(e)}")
+        logger.error(f"Error type: {type(e)}")
+        logger.error(f"Error args: {e.args}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch portfolio funds: {str(e)}") 

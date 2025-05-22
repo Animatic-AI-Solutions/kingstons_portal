@@ -166,7 +166,7 @@ CREATE TABLE public.portfolios (
     created_at timestamp WITH time zone NOT NULL DEFAULT now(),
     original_template_id bigint NULL, -- Added FK
     CONSTRAINT portfolios_pkey PRIMARY KEY (id),
-    CONSTRAINT portfolios_original_template_id_fkey FOREIGN KEY (original_template_id) REFERENCES public.available_portfolios (id) -- Constraint for added FK
+    CONSTRAINT portfolios_original_template_id_fkey FOREIGN KEY (original_template_id) REFERENCES public.template_portfolio_generations (id) -- Constraint for added FK
 ) TABLESPACE pg_default;
 
 -- Funds associated with portfolio template generations

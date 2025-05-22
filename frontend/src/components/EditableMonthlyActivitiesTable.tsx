@@ -200,35 +200,18 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     setMonths(sortedMonths);
   }, [selectedYear]);
   
-  // Add effect to focus the first cell after rendering
+  // No longer auto-focusing the first cell to avoid disrupting user flow
   useEffect(() => {
     if (funds.length > 0 && months.length > 0) {
-      // Wait for the DOM to be fully rendered
-      setTimeout(() => {
-        const firstFund = funds[0];
-        const firstMonth = months[0];
-        const firstActivityType = ACTIVITY_TYPES[0];
-        
-        // Try to find and focus the first input
-        const firstCell = document.getElementById(`cell-${firstFund.id}-${firstMonth}-${firstActivityType}`);
-        if (firstCell) {
-          const input = firstCell.querySelector('input');
-          if (input && !input.disabled) {
-            input.focus();
-            // Make sure the first cell is visible
-            firstCell.scrollIntoView({
-              behavior: 'auto',
-              block: 'nearest',
-              inline: 'nearest'
-            });
-            setFocusedCell({
-              fundId: firstFund.id,
-              activityType: firstActivityType,
-              monthIndex: 0
-            });
-          }
-        }
-      }, 100);
+      // Just initialize focusedCell without actually focusing the input
+      const firstFund = funds[0];
+      const firstActivityType = ACTIVITY_TYPES[0];
+      
+      setFocusedCell({
+        fundId: firstFund.id,
+        activityType: firstActivityType,
+        monthIndex: 0
+      });
     }
   }, [funds, months]);
 
