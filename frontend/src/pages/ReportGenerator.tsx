@@ -891,6 +891,9 @@ const formatPercentageFallback = (value: number | null): string => {
       let overallValuation = 0;
       let latestValuationDate: string | null = null;
 
+      // Track all missing valuations across products
+      const allMissingValuations: {productName: string, fundName: string}[] = [];
+
       // Process each product individually
       for (const productId of uniqueProductIds) {
         const productDetails = comprehensiveProductList.find(p => p.id === productId);
@@ -905,13 +908,24 @@ const formatPercentageFallback = (value: number | null): string => {
         
         if (productPortfolioFunds.length === 0) continue;
         
-        // Identify inactive funds
+        // Identify active funds
       const inactiveFundIds = new Set<number>();
+        const activeFundIds = new Set<number>();
         productPortfolioFunds.forEach(fund => {
-        if (fund.id && fund.status && fund.status !== 'active') {
+          if (fund.id) {
+            if (fund.status && fund.status !== 'active') {
           inactiveFundIds.add(fund.id);
+            } else {
+              activeFundIds.add(fund.id);
+            }
+          }
+        });
+        
+        // Skip product if it has no active funds
+        if (activeFundIds.size === 0) {
+          console.log(`Skipping product ${productDetails.product_name} as it has no active funds`);
+          continue;
         }
-      });
         
         // Get activity logs for all fund IDs
         const activityLogsPromises = productPortfolioFunds.map(pf => 
@@ -1009,7 +1023,7 @@ const formatPercentageFallback = (value: number | null): string => {
               }
               
               // If no valid valuation found for this date, track this fund
-              if (!selectedValuationFound) {
+              if (!selectedValuationFound && !inactiveFundIds.has(fundId)) {
                   // Find the fund name for better error messaging
                   const fundInfo = productPortfolioFunds.find(pf => pf.id === fundId);
                   const fundName = fundInfo?.fund_name || `Fund ID: ${fundId}`;
@@ -1019,14 +1033,15 @@ const formatPercentageFallback = (value: number | null): string => {
           }
       });
       
-      // If we're using a selected date and any funds are missing valuations, display an error and abort
+      // If we're using a selected date and any funds are missing valuations, store them for error reporting
       if (selectedValuationDate && missingValuationFunds.length > 0) {
-          // Get fund names for the error message
-          const fundNames = missingValuationFunds.map(f => f.name).join(', ');
-          const errorMessage = `Cannot generate report for ${formatDateFallback(selectedValuationDate)}. The following funds are missing valuations for this period: ${fundNames}`;
-          setDataError(errorMessage);
-          setIsCalculating(false);
-          return;
+          // Add to the overall missing valuations list
+          missingValuationFunds.forEach(fund => {
+              allMissingValuations.push({
+                  productName: productDetails.product_name,
+                  fundName: fund.name
+              });
+          });
       }
         
         // Calculate all-time summary for this product
@@ -1079,6 +1094,23 @@ const formatPercentageFallback = (value: number | null): string => {
             }
           }
         });
+        
+        // Check if this product has zero valuation but has active funds
+        if (productValuation === 0 && activeFundIds.size > 0) {
+          // Add zero-valuation product to missing valuations list
+          activeFundIds.forEach(fundId => {
+            const fundInfo = productPortfolioFunds.find(pf => pf.id === fundId);
+            const fundName = fundInfo?.fund_name || `Fund ID: ${fundId}`;
+            
+            allMissingValuations.push({
+              productName: productDetails.product_name,
+              fundName: fundName
+            });
+          });
+          
+          console.log(`Product ${productDetails.product_name} has zero valuation for selected date`);
+          continue; // Skip this product
+        }
         
         // Update overall valuation date (take the latest across all products)
         if (mostRecentValuationDate) {
@@ -1343,6 +1375,38 @@ const formatPercentageFallback = (value: number | null): string => {
         
         // Add to overall valuation
         overallValuation += productValuation;
+      }
+      
+      // Check for missing valuations across all products before proceeding
+      if (allMissingValuations.length > 0) {
+        // Format error message with product and fund names
+        const missingItemsList = allMissingValuations.map(item => 
+          `${item.productName} - ${item.fundName}`
+        ).join(', ');
+        
+        const errorMessage = `Cannot generate report for ${formatDateFallback(selectedValuationDate || '')}. 
+The following funds are missing valuation data for this period:
+${missingItemsList}
+
+Please select a different valuation date or ensure all active funds have valuation data.`;
+        
+        setDataError(errorMessage);
+        setIsCalculating(false);
+        return;
+      }
+      
+      // Check if we have any valid products with valuations
+      if (productSummaryResults.length === 0) {
+        setDataError(`No products with valid valuations found for ${formatDateFallback(selectedValuationDate || '')}. Please select a different valuation date.`);
+        setIsCalculating(false);
+        return;
+      }
+      
+      // Check if total valuation is zero
+      if (overallValuation === 0) {
+        setDataError(`Total portfolio value is zero for ${formatDateFallback(selectedValuationDate || '')}. Cannot calculate returns on a zero-value portfolio.`);
+        setIsCalculating(false);
+        return;
       }
       
       // Set state with summary data
@@ -1928,10 +1992,10 @@ const formatPercentageFallback = (value: number | null): string => {
                 <thead className="bg-gray-100">
                   <tr>
                     <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                      Total Products
+                      Product
                     </th>
                     <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                      Risk
+                      Weighted Risk
                     </th>
                     <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
                       Investment
@@ -1954,12 +2018,121 @@ const formatPercentageFallback = (value: number | null): string => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  <tr className="bg-gray-100 font-semibold">
+                  {/* Individual product rows */}
+                  {productSummaries.map(product => {
+                    // Calculate weighted risk factor for the product
+                    let weightedRisk = 0;
+                    let totalWeightedValue = 0;
+                    
+                    if (product.funds && product.funds.length > 0 && product.current_valuation > 0) {
+                      // Only include active funds with risk factors
+                      const activeFundsWithRisk = product.funds.filter(
+                        fund => !fund.isVirtual && fund.risk_factor !== undefined && fund.current_valuation > 0
+                      );
+                      
+                      if (activeFundsWithRisk.length > 0) {
+                        // Calculate total value of funds with risk factors
+                        const totalValueWithRisk = activeFundsWithRisk.reduce(
+                          (sum, fund) => sum + fund.current_valuation, 0
+                        );
+                        
+                        // Calculate weighted risk
+                        if (totalValueWithRisk > 0) {
+                          weightedRisk = activeFundsWithRisk.reduce(
+                            (sum, fund) => sum + (fund.risk_factor || 0) * (fund.current_valuation / totalValueWithRisk), 
+                            0
+                          );
+                          totalWeightedValue = totalValueWithRisk;
+                        }
+                      }
+                    }
+                    
+                    return (
+                    <tr key={product.id} className="hover:bg-blue-50">
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">
-                      {productSummaries.length} {productSummaries.length === 1 ? 'Product' : 'Products'}
+                        <div className="flex items-center gap-2">
+                          {product.provider_theme_color && (
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ backgroundColor: product.provider_theme_color }}
+                            />
+                          )}
+                          {product.product_name}
+                        </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
-                      {/* Risk is not applicable for overall totals */}
+                        {totalWeightedValue > 0 ? (
+                          <span className="px-2 py-1 text-xs font-medium rounded bg-gray-100">
+                            {weightedRisk.toFixed(1)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                        {formatCurrencyFallback(product.total_investment)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                        {formatCurrencyFallback(product.total_withdrawal)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                        {formatCurrencyFallback(product.total_switch_in)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                        {formatCurrencyFallback(product.total_switch_out)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-primary-700 text-right">
+                        {formatCurrencyFallback(product.current_valuation)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                        {product.irr !== null ? (
+                          <span className={product.irr >= 0 ? 'text-green-600' : 'text-red-600'}>
+                            {formatPercentageFallback(product.irr)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                    </tr>
+                    );
+                  })}
+                  
+                  {/* Grand total row */}
+                  <tr className="bg-gray-100 font-semibold border-t-2 border-gray-400">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">
+                      PORTFOLIO TOTAL ({productSummaries.length} {productSummaries.length === 1 ? 'Product' : 'Products'})
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                      {(() => {
+                        // Calculate portfolio-wide weighted risk factor
+                        let portfolioWeightedRisk = 0;
+                        let portfolioTotalValueWithRisk = 0;
+                        
+                        // Go through all products and their funds
+                        productSummaries.forEach(product => {
+                          if (product.funds && product.funds.length > 0) {
+                            // Only include active funds with risk factors
+                            const activeFundsWithRisk = product.funds.filter(
+                              fund => !fund.isVirtual && fund.risk_factor !== undefined && fund.current_valuation > 0
+                            );
+                            
+                            activeFundsWithRisk.forEach(fund => {
+                              portfolioTotalValueWithRisk += fund.current_valuation;
+                              portfolioWeightedRisk += (fund.risk_factor || 0) * fund.current_valuation;
+                            });
+                          }
+                        });
+                        
+                        if (portfolioTotalValueWithRisk > 0) {
+                          const finalWeightedRisk = portfolioWeightedRisk / portfolioTotalValueWithRisk;
+                          return (
+                            <span className="px-2 py-1 text-xs font-medium rounded bg-gray-200">
+                              {finalWeightedRisk.toFixed(1)}
+                            </span>
+                          );
+                        }
+                        return <span className="text-gray-400">-</span>;
+                      })()}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
                       {formatCurrencyFallback(productSummaries.reduce((sum, product) => sum + product.total_investment, 0))}
