@@ -33,6 +33,7 @@ interface Fund {
   id: number;
   fund_name: string;
   isin_number?: string;
+  risk_factor?: number; // Add risk factor field
 }
 
 interface PortfolioFund {
@@ -93,10 +94,11 @@ interface FundSummary {
   status: string;
   isVirtual?: boolean;
   inactiveFundCount?: number;
+  risk_factor?: number; // Add risk factor field
 }
 
 // Main component
-const ReportGenerator: React.FC = (): React.ReactNode => {
+const ReportGenerator: React.FC = () => {
   const { api } = useAuth();
   
   // State for data
@@ -122,6 +124,7 @@ const ReportGenerator: React.FC = (): React.ReactNode => {
   const [totalValuation, setTotalValuation] = useState<number | null>(null);
   const [totalIRR, setTotalIRR] = useState<number | null>(null);
   const [valuationDate, setValuationDate] = useState<string | null>(null);
+  const [earliestTransactionDate, setEarliestTransactionDate] = useState<string | null>(null);
   const [monthlyTransactions, setMonthlyTransactions] = useState<MonthlyTransaction[]>([]);
   
   // New state for product-specific period summaries
@@ -146,14 +149,26 @@ const ReportGenerator: React.FC = (): React.ReactNode => {
 // Fallback formatters - replace with your actual implementations if they exist elsewhere
 const formatDateFallback = (dateString: string | null): string => {
   if (!dateString) return '-';
+  
+  // Handle YYYY-MM format (year-month only)
   const parts = dateString.split('-');
-  if (parts.length !== 2) return dateString; // Expect YYYY-MM
-  const year = parseInt(parts[0]);
-  const month = parseInt(parts[1]);
-  if (isNaN(year) || isNaN(month)) return dateString;
-  const dateObj = new Date(year, month - 1);
-  if (isNaN(dateObj.getTime())) return dateString;
-  return dateObj.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+  if (parts.length === 2) {
+    const year = parseInt(parts[0]);
+    const month = parseInt(parts[1]);
+    if (isNaN(year) || isNaN(month)) return dateString;
+    const dateObj = new Date(year, month - 1);
+    if (isNaN(dateObj.getTime())) return dateString;
+    return dateObj.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+  }
+  
+  // Handle full dates (YYYY-MM-DD)
+  if (parts.length === 3) {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+  }
+  
+  return dateString;
 };
 
 const formatCurrencyFallback = (amount: number | null): string => {
@@ -576,12 +591,12 @@ const formatPercentageFallback = (value: number | null): string => {
         const allExcludedProductIds = new Set<number>([...excludedProductIds]);
         
         // Add cascade-excluded products
-        Array.from(cascadeExcludedProductIds.values()).forEach(productIds => {
-          productIds.forEach(id => allExcludedProductIds.add(id));
+        Array.from(cascadeExcludedProductIds.values()).forEach((productIds: number[]) => {
+          productIds.forEach((id: number) => allExcludedProductIds.add(id));
         });
         
         // Filter out excluded products
-        const includedProducts = relatedProducts.filter(p => !allExcludedProductIds.has(p.id));
+        const includedProducts = relatedProducts.filter((p: Product) => !allExcludedProductIds.has(p.id));
         
         if (includedProducts.length === 0) {
           setAvailableValuationDates([]);
@@ -592,7 +607,7 @@ const formatPercentageFallback = (value: number | null): string => {
         
         // Collect portfolio IDs from included products
         const portfolioIds = includedProducts
-          .map(p => p.portfolio_id)
+          .map((p: Product) => p.portfolio_id)
           .filter((id): id is number => id !== undefined);
         
         if (portfolioIds.length === 0) {
@@ -603,7 +618,7 @@ const formatPercentageFallback = (value: number | null): string => {
         }
         
         // Collect all portfolio funds for the selected products
-        const portfolioFundsPromises = portfolioIds.map(portfolioId => 
+        const portfolioFundsPromises = portfolioIds.map((portfolioId: number) => 
           api.get(`/portfolio_funds?portfolio_id=${portfolioId}`)
         );
         
@@ -620,45 +635,82 @@ const formatPercentageFallback = (value: number | null): string => {
         // Get all fund IDs
         const fundIds = allPortfolioFunds.map(fund => fund.id);
         
-        // Get latest valuations for all funds
-        const latestValuationsViewResponse = await api.get('/all_latest_fund_valuations');
+        // Get all active funds (exclude inactive funds)
+        const activeFundIds = allPortfolioFunds
+          .filter(fund => fund.status === 'active' || !fund.status)
+          .map(fund => fund.id);
         
-        if (!latestValuationsViewResponse.data || !Array.isArray(latestValuationsViewResponse.data)) {
+        if (activeFundIds.length === 0) {
           setAvailableValuationDates([]);
           setSelectedValuationDate(null);
           setIsLoadingValuationDates(false);
           return;
         }
         
-        // Filter valuations to only include our funds
-        const relevantValuations = latestValuationsViewResponse.data.filter(
-          (val: any) => val.portfolio_fund_id != null && 
-                       fundIds.includes(val.portfolio_fund_id) && 
-                       val.valuation_date != null
-        );
+        // Create a map to track which months each fund has valuations for
+        const fundValuationMonths: Map<number, Set<string>> = new Map();
         
-        // Group valuation dates by month (YYYY-MM format)
-        const valuationMonths = new Set<string>();
-        relevantValuations.forEach((val: any) => {
-          if (val.valuation_date) {
-            // Extract YYYY-MM from the date
-            const dateParts = val.valuation_date.split('-');
-            if (dateParts.length >= 2) {
-              const yearMonth = `${dateParts[0]}-${dateParts[1]}`;
-              valuationMonths.add(yearMonth);
-            }
-          }
+        // Initialize the set for each fund
+        activeFundIds.forEach(fundId => {
+          fundValuationMonths.set(fundId, new Set<string>());
         });
         
-        // Convert to array and sort chronologically (newest first)
-        const sortedDates = Array.from(valuationMonths).sort((a, b) => b.localeCompare(a));
+        // Get all historical valuations for each fund (not just the latest)
+        const valuationPromises = activeFundIds.map(fundId =>
+          api.get(`/fund_valuations`, { params: { portfolio_fund_id: fundId } })
+        );
         
-        console.log("Available valuation dates found:", sortedDates);
+        const valuationResponses = await Promise.all(valuationPromises);
+        
+        // Process all valuations to track which months each fund has valuations for
+        valuationResponses.forEach((response, index) => {
+          const fundId = activeFundIds[index];
+          const fundValuations = response.data || [];
+          
+          fundValuations.forEach((val: any) => {
+            if (val.valuation_date) {
+              // Extract YYYY-MM from the date
+              const dateParts = val.valuation_date.split('-');
+              if (dateParts.length >= 2) {
+                const yearMonth = `${dateParts[0]}-${dateParts[1]}`;
+                // Add this month to this fund's set of valuation months
+                fundValuationMonths.get(fundId)?.add(yearMonth);
+              }
+            }
+          });
+        });
+        
+        // Find the intersection of all valuation months
+        // (months where ALL funds have valuations)
+        let commonValuationMonths: string[] = [];
+        
+        if (activeFundIds.length > 0) {
+          // Start with months from the first fund
+          commonValuationMonths = Array.from(fundValuationMonths.get(activeFundIds[0]) || []);
+          
+          // For each remaining fund, filter to keep only months they also have
+          for (let i = 1; i < activeFundIds.length; i++) {
+            const fundMonths = fundValuationMonths.get(activeFundIds[i]) || new Set<string>();
+            commonValuationMonths = commonValuationMonths.filter(month => fundMonths.has(month));
+          }
+        }
+        
+        // Sort chronologically (newest first)
+        const sortedDates = commonValuationMonths.sort((a: string, b: string) => b.localeCompare(a));
+        
+        console.log("Common valuation months (all funds have data):", sortedDates);
         setAvailableValuationDates(sortedDates);
         
         // Set the most recent date as the default selection
         if (sortedDates.length > 0 && !selectedValuationDate) {
           setSelectedValuationDate(sortedDates[0]);
+        } else if (sortedDates.length > 0 && selectedValuationDate && !sortedDates.includes(selectedValuationDate)) {
+          // If the currently selected date is no longer valid, select the most recent date
+          setSelectedValuationDate(sortedDates[0]);
+        } else if (sortedDates.length === 0) {
+          // If no common dates found, clear selection and show a message
+          setSelectedValuationDate(null);
+          console.warn("No common valuation dates found for the selected funds");
         }
       } catch (err) {
         console.error("Error fetching available valuation dates:", err);
@@ -725,6 +777,7 @@ const formatPercentageFallback = (value: number | null): string => {
     setMonthlyTransactions([]);
     setTotalValuation(null);
     setValuationDate(null);
+    setEarliestTransactionDate(null);
     setTotalIRR(null);
     setProductSummaries([]);
     
@@ -867,40 +920,113 @@ const formatPercentageFallback = (value: number | null): string => {
       const allActivityLogs = (await Promise.all(activityLogsPromises)).flatMap(res => res.data);
 
         // Get latest valuations
-      const latestValuationsViewResponse = await api.get('/all_latest_fund_valuations');
+      // Instead of using the all_latest_fund_valuations endpoint which only provides the latest valuation,
+      // we need to get all historical valuations for each fund to support historical reports
       const latestValuationFromViewMap = new Map<number, { value: number, valuation_date: string }>();
-      if (latestValuationsViewResponse.data && Array.isArray(latestValuationsViewResponse.data)) {
-          latestValuationsViewResponse.data.forEach((val: any) => {
-              if (val.portfolio_fund_id != null && val.value != null && val.valuation_date != null) {
-                  // Check if we should filter by the selected valuation date
-                  if (selectedValuationDate) {
-                    // Extract year-month from the valuation date
-                    const dateParts = val.valuation_date.split('-');
-                    if (dateParts.length >= 2) {
-                      const valuationYearMonth = `${dateParts[0]}-${dateParts[1]}`;
-                      
-                      // Only include valuations from selected month or earlier
-                      if (valuationYearMonth <= selectedValuationDate) {
-                        // For valuations in the selected month, use them directly
-                        // For earlier months, only use if we don't already have a more recent valuation for this fund
-                        const existingVal = latestValuationFromViewMap.get(val.portfolio_fund_id);
-                        if (!existingVal || (existingVal && val.valuation_date > existingVal.valuation_date)) {
-                          latestValuationFromViewMap.set(val.portfolio_fund_id, { 
-                            value: parseFloat(val.value), 
-                            valuation_date: val.valuation_date 
-                          });
-                        }
+      
+      // Track funds missing valuations for the selected date
+      const missingValuationFunds: Array<{id: number, name: string}> = [];
+      
+      // Create a map to track all valuations by fund ID and date
+      const allFundValuations = new Map<number, { [dateKey: string]: { value: number, valuation_date: string } }>();
+      
+      // Fetch all historical valuations for each fund
+      const valuationPromises = productPortfolioFunds.map(pf => 
+        api.get(`/fund_valuations?portfolio_fund_id=${pf.id}`)
+      );
+      
+      const valuationResponses = await Promise.all(valuationPromises);
+      
+      // First pass: collect all valuations
+      valuationResponses.forEach((response, index) => {
+        const fundId = productPortfolioFunds[index].id;
+        if (!fundId) return;
+        
+        const fundValuations = response.data || [];
+        if (!allFundValuations.has(fundId)) {
+          allFundValuations.set(fundId, {});
+        }
+        
+        const fundValuationsMap = allFundValuations.get(fundId)!;
+        
+        fundValuations.forEach((val: any) => {
+          if (val.value != null && val.valuation_date != null) {
+            const dateParts = val.valuation_date.split('-');
+            
+            if (dateParts.length >= 2) {
+              const valuationYearMonth = `${dateParts[0]}-${dateParts[1]}`;
+              
+              // Store this valuation by year-month
+              fundValuationsMap[valuationYearMonth] = {
+                value: parseFloat(val.value),
+                valuation_date: val.valuation_date
+              };
+            }
+          }
+        });
+      });
+      
+      // Second pass: select the appropriate valuation based on the selected date
+      allFundValuations.forEach((valuations, fundId) => {
+          // If no valuation date is selected, use the latest valuation
+          if (!selectedValuationDate) {
+              let latestDate = '';
+              let latestValue = 0;
+              
+              // Find the latest valuation
+              Object.entries(valuations).forEach(([dateKey, valData]) => {
+                  if (!latestDate || dateKey > latestDate) {
+                      latestDate = dateKey;
+                      latestValue = valData.value;
+                  }
+              });
+              
+              if (latestDate) {
+                  latestValuationFromViewMap.set(fundId, {
+                      value: latestValue,
+                      valuation_date: valuations[latestDate].valuation_date
+                  });
+              }
+          } else {
+              // Find the valuation closest to (but not exceeding) the selected date
+              const availableDates = Object.keys(valuations).sort();
+              let selectedValuationFound = false;
+              
+              // Exact match - use the valuation from the selected month
+              if (valuations[selectedValuationDate]) {
+                  latestValuationFromViewMap.set(fundId, valuations[selectedValuationDate]);
+                  selectedValuationFound = true;
+              } else {
+                  // Find the most recent valuation that doesn't exceed the selected date
+                  for (let i = availableDates.length - 1; i >= 0; i--) {
+                      const dateKey = availableDates[i];
+                      if (dateKey <= selectedValuationDate) {
+                          latestValuationFromViewMap.set(fundId, valuations[dateKey]);
+                          selectedValuationFound = true;
+                          break;
                       }
-                    }
-                  } else {
-                    // If no date selection, use all valuations
-                    latestValuationFromViewMap.set(val.portfolio_fund_id, { 
-                      value: parseFloat(val.value), 
-                      valuation_date: val.valuation_date 
-                    });
                   }
               }
-          });
+              
+              // If no valid valuation found for this date, track this fund
+              if (!selectedValuationFound) {
+                  // Find the fund name for better error messaging
+                  const fundInfo = productPortfolioFunds.find(pf => pf.id === fundId);
+                  const fundName = fundInfo?.fund_name || `Fund ID: ${fundId}`;
+                  missingValuationFunds.push({ id: fundId, name: fundName });
+                  console.log(`No valid valuation found for fund ${fundId} (${fundName}) on or before ${selectedValuationDate}`);
+              }
+          }
+      });
+      
+      // If we're using a selected date and any funds are missing valuations, display an error and abort
+      if (selectedValuationDate && missingValuationFunds.length > 0) {
+          // Get fund names for the error message
+          const fundNames = missingValuationFunds.map(f => f.name).join(', ');
+          const errorMessage = `Cannot generate report for ${formatDateFallback(selectedValuationDate)}. The following funds are missing valuations for this period: ${fundNames}`;
+          setDataError(errorMessage);
+          setIsCalculating(false);
+          return;
       }
         
         // Calculate all-time summary for this product
@@ -964,7 +1090,7 @@ const formatPercentageFallback = (value: number | null): string => {
         // Process fund-level data for this product
         const fundSummaries: FundSummary[] = [];
         
-        // Get fund details to access fund names
+        // Get fund details to access fund names and risk factors
         const fundIdsToFetch = productPortfolioFunds.map(pf => pf.available_funds_id);
         const fundsResponse = await api.get('/funds');
         const fundsData = fundsResponse.data || [];
@@ -982,10 +1108,11 @@ const formatPercentageFallback = (value: number | null): string => {
           // Skip if no valid ID
           if (!portfolioFund.id) continue;
           
-          // Get fund details
-          const fundDetails = fundDetailsMap.get(portfolioFund.available_funds_id);
-          const fundName = fundDetails?.fund_name || `Fund ${portfolioFund.available_funds_id}`;
-          const isinNumber = fundDetails?.isin_number;
+          // Get fund details from the available fund
+          const availableFund = fundDetailsMap.get(portfolioFund.available_funds_id);
+          const fundName = availableFund?.fund_name || `Fund ${portfolioFund.available_funds_id}`;
+          const isinNumber = availableFund?.isin_number;
+          const riskFactor = availableFund?.risk_factor; // Get risk factor from available fund
           
           // Get activity logs for this fund
           const fundLogs = allActivityLogs.filter(log => 
@@ -1044,7 +1171,8 @@ const formatPercentageFallback = (value: number | null): string => {
             current_valuation: fundValuation,
             irr: fundIRR,
             isin_number: isinNumber,
-            status: portfolioFund.status || 'active'
+            status: portfolioFund.status || 'active',
+            risk_factor: riskFactor // Use the risk factor from the available fund
           });
         }
         
@@ -1126,16 +1254,16 @@ const formatPercentageFallback = (value: number | null): string => {
             }
           });
           
-          // Add current total valuation as the final cash flow
-          const currentDate = new Date();
-          
-          // If we have a selected valuation date, use the last day of that month instead of current date
-          let finalCashflowDate = currentDate;
+          // Add valuation as the final cash flow
+          // If we have a selected valuation date, use the last day of that month 
+          // instead of current date
+          let finalCashflowDate = new Date(); // Default to current date
           if (selectedValuationDate) {
             const [year, month] = selectedValuationDate.split('-').map(part => parseInt(part));
             
             // Create date for the last day of the selected month
-            // (month is 0-indexed in JS Date, so we use the next month's 0th day which is the last day of current month)
+            // (month is 0-indexed in JS Date, so we use the next month's 0th day 
+            // which is the last day of current month)
             finalCashflowDate = new Date(year, month, 0);
           }
           
@@ -1178,7 +1306,8 @@ const formatPercentageFallback = (value: number | null): string => {
             irr: null, // Don't calculate IRR for Previous Funds
             isVirtual: true, // Flag to identify this as a virtual entry
             status: 'virtual',
-            inactiveFundCount: inactiveFunds.length // Add count of inactive funds
+            inactiveFundCount: inactiveFunds.length, // Add count of inactive funds
+            risk_factor: inactiveFunds[0]?.risk_factor // Add risk factor of inactive funds
           };
         };
         
@@ -1221,6 +1350,15 @@ const formatPercentageFallback = (value: number | null): string => {
       setTotalValuation(overallValuation);
       setValuationDate(latestValuationDate);
       
+      // Find the earliest transaction date across all products
+      let earliestDate: string | null = null;
+      for (const product of productSummaryResults) {
+        if (product.start_date && (!earliestDate || new Date(product.start_date) < new Date(earliestDate))) {
+          earliestDate = product.start_date;
+        }
+      }
+      setEarliestTransactionDate(earliestDate);
+      
       // Calculate overall IRR using the cash flow aggregation method
       if (productSummaryResults.length > 0 && overallValuation > 0) {
         // Collect all activity logs across all products
@@ -1245,7 +1383,21 @@ const formatPercentageFallback = (value: number | null): string => {
               const logsResponse = await api.get(`/holding_activity_logs?portfolio_fund_id=${fund.id}`);
               const fundLogs = logsResponse.data || [];
               
-              fundLogs.forEach((log: any) => {
+              // Filter logs by the selected valuation date
+              const filteredLogs = fundLogs.filter((log: any) => {
+                if (!log.activity_timestamp) return false;
+                
+                // If a valuation date is selected, only include logs up to that date
+                if (selectedValuationDate) {
+                  const logDate = new Date(log.activity_timestamp);
+                  const logYearMonth = `${logDate.getFullYear()}-${String(logDate.getMonth() + 1).padStart(2, '0')}`;
+                  return logYearMonth <= selectedValuationDate;
+                }
+                
+                return true;
+              });
+              
+              filteredLogs.forEach((log: any) => {
                 if (!log.activity_timestamp || !log.amount) return;
                 
                 // Process each log entry
@@ -1300,15 +1452,13 @@ const formatPercentageFallback = (value: number | null): string => {
         });
         
         // Add current total valuation as the final cash flow
-        const currentDate = new Date();
+        let finalCashflowDate = new Date(); // Default to current date
         
-        // If we have a selected valuation date, use the last day of that month instead of current date
-        let finalCashflowDate = currentDate;
+        // If we have a selected valuation date, use the last day of that month
         if (selectedValuationDate) {
           const [year, month] = selectedValuationDate.split('-').map(part => parseInt(part));
           
           // Create date for the last day of the selected month
-          // (month is 0-indexed in JS Date, so we use the next month's 0th day which is the last day of current month)
           finalCashflowDate = new Date(year, month, 0);
         }
         
@@ -1322,12 +1472,12 @@ const formatPercentageFallback = (value: number | null): string => {
           const calculatedIRR = calculateIRR(cashFlows);
           setTotalIRR(calculatedIRR);
           console.log('Calculated total IRR using cash flow aggregation:', calculatedIRR);
-          } else {
-            setTotalIRR(null);
-          console.warn('Insufficient cash flows to calculate IRR');
-          }
         } else {
           setTotalIRR(null);
+          console.warn('Insufficient cash flows to calculate IRR');
+        }
+      } else {
+        setTotalIRR(null);
       }
       
     } catch (err: any) {
@@ -1377,6 +1527,13 @@ const formatPercentageFallback = (value: number | null): string => {
       return row;
     });
   }, [monthlyTransactions, columnMonths, transactionRowLabels, totalValuation]); // Added totalValuation dependency
+
+  // Add format function for risk display
+  const formatRiskFallback = (risk: number | undefined): string => {
+    if (risk === undefined || risk === null) return '-';
+    // Assuming risk is on a 1-10 scale
+    return risk.toString();
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -1724,13 +1881,17 @@ const formatPercentageFallback = (value: number | null): string => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div className="bg-gray-50 rounded-lg p-4 border">
-                <h3 className="text-sm font-medium text-gray-700 mb-1">Valuation Date</h3>
+                <h3 className="text-sm font-medium text-gray-700 mb-1">Valuation Period</h3>
                 {totalValuation !== null ? (
                   <div>
                     <div className="text-2xl font-semibold text-primary-700">{formatCurrencyFallback(totalValuation)}</div>
-                    {valuationDate && (
+                    {earliestTransactionDate && valuationDate ? (
+                      <div className="text-xs text-gray-500 mt-1">
+                        {formatDateFallback(earliestTransactionDate)} - {formatDateFallback(valuationDate)}
+                      </div>
+                    ) : valuationDate ? (
                       <div className="text-xs text-gray-500 mt-1">as of {formatDateFallback(valuationDate)}</div>
-                    )}
+                    ) : null}
                   </div>
                 ) : (
                 <div className="text-sm text-gray-500">{isCalculating ? 'Calculating...' : 'No valuation data'}</div>
@@ -1757,6 +1918,78 @@ const formatPercentageFallback = (value: number | null): string => {
           <h2 className="text-2xl font-normal text-gray-900 font-sans tracking-wide mb-4">
             Product Period Overview
           </h2>
+          
+          {/* New overall totals table */}
+          <div className="mb-8 bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">Portfolio Total Summary</h3>
+            
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-300">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      Total Products
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      Risk
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      Investment
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      Withdrawal
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      Switch In
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      Switch Out
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      Current Value
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      Annualised Rate of Return per annum
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  <tr className="bg-gray-100 font-semibold">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">
+                      {productSummaries.length} {productSummaries.length === 1 ? 'Product' : 'Products'}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                      {/* Risk is not applicable for overall totals */}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                      {formatCurrencyFallback(productSummaries.reduce((sum, product) => sum + product.total_investment, 0))}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                      {formatCurrencyFallback(productSummaries.reduce((sum, product) => sum + product.total_withdrawal, 0))}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                      {formatCurrencyFallback(productSummaries.reduce((sum, product) => sum + product.total_switch_in, 0))}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                      {formatCurrencyFallback(productSummaries.reduce((sum, product) => sum + product.total_switch_out, 0))}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-primary-700 text-right">
+                      {formatCurrencyFallback(productSummaries.reduce((sum, product) => sum + product.current_valuation, 0))}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                      {totalIRR !== null ? (
+                        <span className={totalIRR >= 0 ? 'text-green-600' : 'text-red-600'}>
+                          {formatPercentageFallback(totalIRR)}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
           
           {productSummaries.map(product => (
             <div key={product.id} className="mb-8 bg-white shadow-sm rounded-lg border border-gray-200 p-6">
@@ -1797,9 +2030,15 @@ const formatPercentageFallback = (value: number | null): string => {
                 </div>
                 
                 <div className="bg-gray-50 rounded-lg p-3 border">
-                  <div className="text-xs font-medium text-gray-500 uppercase mb-1">Last Valuation Period</div>
+                  <div className="text-xs font-medium text-gray-500 uppercase mb-1">Valuation Period</div>
                   <div className="text-lg font-semibold text-gray-700">
-                    {product.start_date ? new Date(product.start_date).toLocaleDateString() : 'N/A'}
+                    {product.start_date && valuationDate ? (
+                      <>{formatDateFallback(product.start_date)} - {formatDateFallback(valuationDate)}</>
+                    ) : product.start_date ? (
+                      <>{formatDateFallback(product.start_date)} - Current</>
+                    ) : (
+                      'N/A'
+                    )}
                   </div>
                 </div>
                 
@@ -1818,6 +2057,9 @@ const formatPercentageFallback = (value: number | null): string => {
                       <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
                         Fund Name
                   </th>
+                      <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                        Risk
+                      </th>
                       <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
                         Investment
                     </th>
@@ -1853,6 +2095,15 @@ const formatPercentageFallback = (value: number | null): string => {
                               <span className="block text-xs text-gray-500">{fund.isin_number}</span>
                             )}
                       </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                            {fund.isVirtual ? (
+                              <span className="text-gray-500">-</span>
+                            ) : (
+                              <span className="px-2 py-1 text-xs font-medium rounded bg-gray-100">
+                                {formatRiskFallback(fund.risk_factor)}
+                              </span>
+                            )}
+                          </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
                             {formatCurrencyFallback(fund.total_investment)}
                         </td>
@@ -1893,6 +2144,9 @@ const formatPercentageFallback = (value: number | null): string => {
                     <tr className="bg-gray-100 font-semibold border-t-2 border-gray-400">
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">
                         PRODUCT TOTAL
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                        {/* Risk not applicable for totals */}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
                         {formatCurrencyFallback(product.total_investment)}
