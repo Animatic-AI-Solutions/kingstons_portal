@@ -876,11 +876,11 @@ async def process_activity_for_fund_updates(activity_data: dict, db) -> None:
             logger.info(f"Processing Distribution: {current_amount} - {amount} = {new_amount}")
             
         elif activity_type == 'SwitchOut':
-            # Switch Out decreases the amount invested
+            # Fund Switch Out decreases the amount invested
             new_amount = current_amount - amount
             logger.info(f"Processing SwitchOut: {current_amount} - {amount} = {new_amount}")
             
-            # Process the related fund for Switch In
+            # Process the related fund for Fund Switch In
             if 'related_fund' in activity_data and activity_data['related_fund']:
                 related_fund_id = activity_data['related_fund']
                 
@@ -946,7 +946,7 @@ async def process_activity_for_fund_updates(activity_data: dict, db) -> None:
             logger.info(f"Updated related fund {related_fund_id} amount: {related_amount} + {amount} = {new_related_amount}")
             
         elif activity_type == 'SwitchIn':
-            # Switch In increases the amount invested
+            # Fund Switch In increases the amount invested
             new_amount = current_amount + amount
             logger.info(f"Processing SwitchIn: {current_amount} + {amount} = {new_amount}")
             

@@ -20,7 +20,9 @@ interface Account {
   end_date?: string;
   irr?: number;
   total_value?: number;
+  provider_id?: number;
   provider_name?: string;
+  provider_theme_color?: string;
   product_type?: string;
   portfolio_id?: number;
   portfolio_name?: string;
@@ -281,6 +283,7 @@ const createPreviousFundsEntry = (inactiveHoldings: Holding[], activityLogs: Act
     account_holding_id: -1,
     product_id: -1, // Set product_id for virtual entry
     isVirtual: true, // Flag to identify this as a virtual entry
+    isin_number: 'N/A', // Added to satisfy type requirements
     // Store the detailed information about inactive holdings
     inactiveHoldingIds: inactiveHoldings.map(h => ({
       id: h.id, // Portfolio fund ID
@@ -324,30 +327,30 @@ const calculateTotalGovernmentUplifts = (activities: ActivityLog[], holdings: Ho
 };
 
 const calculateTotalSwitchIns = (activities: ActivityLog[], holdings: Holding[]): number => {
-  console.log('Calculating total switch ins...');
+  console.log('Calculating total fund switch ins...');
   
   const activeHoldings = holdings.filter(h => h.status !== 'inactive' && !h.isVirtual);
   const total = activeHoldings.reduce((total, holding) => {
     const amount = calculateSwitchIns(activities, holding.id);
-    console.log(`Switch ins for holding ${holding.id} (${holding.fund_name}): ${amount}`);
+    console.log(`Fund switch ins for holding ${holding.id} (${holding.fund_name}): ${amount}`);
     return total + amount;
   }, 0);
   
-  console.log(`Total switch ins: ${total}`);
+  console.log(`Total fund switch ins: ${total}`);
   return total;
 };
 
 const calculateTotalSwitchOuts = (activities: ActivityLog[], holdings: Holding[]): number => {
-  console.log('Calculating total switch outs...');
+  console.log('Calculating total fund switch outs...');
   
   const activeHoldings = holdings.filter(h => h.status !== 'inactive' && !h.isVirtual);
   const total = activeHoldings.reduce((total, holding) => {
     const amount = calculateSwitchOuts(activities, holding.id);
-    console.log(`Switch outs for holding ${holding.id} (${holding.fund_name}): ${amount}`);
+    console.log(`Fund switch outs for holding ${holding.id} (${holding.fund_name}): ${amount}`);
     return total + amount;
   }, 0);
   
-  console.log(`Total switch outs: ${total}`);
+  console.log(`Total fund switch outs: ${total}`);
   return total;
 };
 
@@ -375,44 +378,7 @@ const calculateTotalValue = (holdings: Holding[]): number => {
   }, 0);
 };
 
-// Calculate the weighted average IRR for the total row
-const calculateTotalWeightedIRR = (holdings: Holding[]): { irr: number | null, irr_calculation_date: string | undefined } => {
-  let totalWeightedIRR = 0;
-  let totalWeight = 0;
-  let latestCalculationDate: string | undefined = undefined;
-  
-  // Find funds with both IRR and market value
-  const validHoldings = holdings.filter(h => 
-    h.irr !== undefined && h.irr !== null && 
-    h.market_value !== undefined && h.market_value > 0
-  );
-  
-  if (validHoldings.length === 0) {
-    return { irr: null, irr_calculation_date: undefined };
-  }
-  
-  // Calculate weighted IRR
-  for (const holding of validHoldings) {
-    const weightedIrrContribution = (holding.irr || 0) * holding.market_value;
-    totalWeightedIRR += weightedIrrContribution;
-    totalWeight += holding.market_value;
-    
-    // Track the latest IRR calculation date
-    if (holding.irr_calculation_date) {
-      if (!latestCalculationDate || new Date(holding.irr_calculation_date) > new Date(latestCalculationDate)) {
-        latestCalculationDate = holding.irr_calculation_date;
-      }
-    }
-  }
-  
-  // Calculate the weighted average IRR
-  const avgIRR = totalWeight > 0 ? totalWeightedIRR / totalWeight : null;
-  
-  return {
-    irr: avgIRR,
-    irr_calculation_date: latestCalculationDate
-  };
-};
+
 
 const calculateTotalValueMinusWithdrawals = (holdings: Holding[], activities: ActivityLog[]): number => {
   const activeHoldings = holdings.filter(h => h.status !== 'inactive' && !h.isVirtual);
@@ -463,207 +429,6 @@ const calculateTotalInvestments = (activities: ActivityLog[], holdings: Holding[
   return total;
 };
 
-// Function to calculate IRR using the Newton-Raphson method
-const calculateIRR = (cashFlows: {date: Date, amount: number}[], maxIterations = 100, precision = 0.000001): number | null => {
-  if (cashFlows.length < 2) {
-    return null; // Need at least 2 cash flows to calculate IRR
-  }
-  
-  // Make sure cash flows are sorted by date
-  cashFlows.sort((a, b) => a.date.getTime() - b.date.getTime());
-  
-  // Check if we have both negative and positive cash flows
-  const hasNegative = cashFlows.some(cf => cf.amount < 0);
-  const hasPositive = cashFlows.some(cf => cf.amount > 0);
-  
-  if (!hasNegative || !hasPositive) {
-    return null; // Need both investments (negative) and returns (positive) for IRR calculation
-  }
-  
-  // IRR calculation using Newton-Raphson method
-  // Initial guess - start with a reasonable rate (5%)
-  let rate = 0.05;
-  
-  for (let iteration = 0; iteration < maxIterations; iteration++) {
-    // Calculate NPV and its derivative at current rate
-    let npv = 0;
-    let derivativeNpv = 0;
-    const firstDate = cashFlows[0].date;
-    
-    for (let i = 0; i < cashFlows.length; i++) {
-      const daysDiff = (cashFlows[i].date.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24);
-      const yearFraction = daysDiff / 365;
-      
-      // NPV calculation
-      npv += cashFlows[i].amount / Math.pow(1 + rate, yearFraction);
-      
-      // Derivative of NPV
-      derivativeNpv += -yearFraction * cashFlows[i].amount / Math.pow(1 + rate, yearFraction + 1);
-    }
-    
-    // Break if we've reached desired precision
-    if (Math.abs(npv) < precision) {
-      return rate * 100; // Convert to percentage
-    }
-    
-    // Newton-Raphson update
-    const newRate = rate - npv / derivativeNpv;
-    
-    // Handle non-convergence
-    if (!isFinite(newRate) || isNaN(newRate)) {
-      break;
-    }
-    
-    rate = newRate;
-  }
-  
-  return rate * 100; // Convert to percentage
-};
-
-// Function to calculate total IRR from monthly activities and current value
-const calculateTotalIRR = (activities: ActivityLog[], holdings: Holding[]): { irr: number | null, irr_calculation_date: string | undefined } => {
-  console.log("Calculating total IRR from monthly activities across all funds");
-  
-  // Get the total current value across all active holdings
-  const activeHoldings = holdings.filter(h => h.status !== 'inactive' && !h.isVirtual);
-  const totalCurrentValue = activeHoldings.reduce((sum, h) => sum + (h.market_value || 0), 0);
-  
-  if (totalCurrentValue <= 0 || activities.length === 0) {
-    console.log("Cannot calculate IRR: No current value or activities");
-    return { irr: null, irr_calculation_date: undefined };
-  }
-  
-  // Group activities by month to get net cash flow for each month
-  const monthlyNetCashFlows = new Map<string, number>();
-  const monthlyDates = new Map<string, Date>();
-  
-  activities.forEach(activity => {
-    // Skip activities for inactive funds
-    const holding = holdings.find(h => h.id === activity.portfolio_fund_id);
-    if (holding?.status === 'inactive' || holding?.isVirtual) return;
-    
-    const date = new Date(activity.activity_timestamp);
-    const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    
-    // Initialize if needed
-    if (!monthlyNetCashFlows.has(monthYear)) {
-      monthlyNetCashFlows.set(monthYear, 0);
-      monthlyDates.set(monthYear, new Date(date.getFullYear(), date.getMonth(), 15)); // Use middle of month
-    }
-    
-    // Add to net cash flow (negative for investments, positive for withdrawals)
-    let cashFlowAmount = 0;
-    
-    switch (activity.activity_type) {
-      case 'Investment':
-      case 'RegularInvestment':
-      case 'GovernmentUplift':
-      case 'SwitchIn':
-        cashFlowAmount = -Math.abs(activity.amount); // Negative - money going in
-        break;
-      case 'Withdrawal':
-      case 'SwitchOut':
-        cashFlowAmount = Math.abs(activity.amount); // Positive - money coming out
-        break;
-      default:
-        // Ignore other activity types
-        break;
-    }
-    
-    const currentTotal = monthlyNetCashFlows.get(monthYear) || 0;
-    monthlyNetCashFlows.set(monthYear, currentTotal + cashFlowAmount);
-  });
-  
-  // Convert to array of cash flows
-  const cashFlows: {date: Date, amount: number}[] = [];
-  
-  // Add each month's net cash flow
-  monthlyNetCashFlows.forEach((amount, monthYear) => {
-    if (amount !== 0) { // Only include non-zero cash flows
-      cashFlows.push({
-        date: monthlyDates.get(monthYear)!,
-        amount: amount
-      });
-    }
-  });
-  
-  // Add current total value as the final cash flow
-  const currentDate = new Date();
-  cashFlows.push({
-    date: currentDate,
-    amount: totalCurrentValue
-  });
-  
-  console.log("Cash flows for IRR calculation:", cashFlows);
-  
-  // Calculate IRR
-  const irr = calculateIRR(cashFlows);
-  
-  // Find the most recent valuation date among all holdings for the "as of" date
-  const latestValuationDates = activeHoldings
-    .filter(h => h.valuation_date)
-    .map(h => h.valuation_date)
-    .sort((a, b) => new Date(b!).getTime() - new Date(a!).getTime());
-  
-  const latestValuationDate = latestValuationDates.length > 0 ? latestValuationDates[0] : undefined;
-  
-  return {
-    irr: irr,
-    irr_calculation_date: latestValuationDate
-  };
-};
-
-// Add functions to calculate activity totals for inactive funds
-
-// Calculate the total investments for inactive funds
-const calculateInactiveFundsInvestments = (activities: ActivityLog[], inactiveHoldings: Holding[]): number => {
-  return inactiveHoldings.reduce((total, holding) => {
-    return total + calculateInvestments(activities, holding.id);
-  }, 0);
-};
-
-// Calculate the total regular investments for inactive funds
-const calculateInactiveFundsRegularInvestments = (activities: ActivityLog[], inactiveHoldings: Holding[]): number => {
-  return inactiveHoldings.reduce((total, holding) => {
-    return total + calculateRegularInvestments(activities, holding.id);
-  }, 0);
-};
-
-// Calculate the total government uplifts for inactive funds
-const calculateInactiveFundsGovernmentUplifts = (activities: ActivityLog[], inactiveHoldings: Holding[]): number => {
-  return inactiveHoldings.reduce((total, holding) => {
-    return total + calculateGovernmentUplifts(activities, holding.id);
-  }, 0);
-};
-
-// Calculate the total switch ins for inactive funds
-const calculateInactiveFundsSwitchIns = (activities: ActivityLog[], inactiveHoldings: Holding[]): number => {
-  return inactiveHoldings.reduce((total, holding) => {
-    return total + calculateSwitchIns(activities, holding.id);
-  }, 0);
-};
-
-// Calculate the total switch outs for inactive funds
-const calculateInactiveFundsSwitchOuts = (activities: ActivityLog[], inactiveHoldings: Holding[]): number => {
-  return inactiveHoldings.reduce((total, holding) => {
-    return total + calculateSwitchOuts(activities, holding.id);
-  }, 0);
-};
-
-// Calculate the total withdrawals for inactive funds
-const calculateInactiveFundsWithdrawals = (activities: ActivityLog[], inactiveHoldings: Holding[]): number => {
-  return inactiveHoldings.reduce((total, holding) => {
-    return total + calculateWithdrawals(activities, holding.id);
-  }, 0);
-};
-
-// Calculate the total market value for inactive funds
-const calculateInactiveFundsMarketValue = (inactiveHoldings: Holding[]): number => {
-  return inactiveHoldings.reduce((total, holding) => {
-    return total + (holding.market_value || 0);
-  }, 0);
-};
-
 interface AccountIRRCalculationProps {
   accountId?: string;
 }
@@ -691,18 +456,25 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
   const [deactivationError, setDeactivationError] = useState<string | null>(null);
   const [showDeactivationConfirm, setShowDeactivationConfirm] = useState<boolean>(false);
   const [fundToDeactivate, setFundToDeactivate] = useState<{id: number, name: string, market_value: number} | null>(null);
-  const [totalIRRData, setTotalIRRData] = useState<{
-    irr_percentage: number | null;
-    valuation_date?: string;
-    status: string;
-  } | null>(null);
   const [latestValuationDate, setLatestValuationDate] = useState<string | null>(null);
-  const [isTotalIrrLoading, setIsTotalIrrLoading] = useState(false);
-  const [totalIrr, setTotalIrr] = useState<number | null>(null);
-  const [totalIrrCalculationDate, setTotalIrrCalculationDate] = useState<string | undefined>(undefined);
-  const [totalIrrError, setTotalIrrError] = useState<string | null>(null);
   const [availableYears, setAvailableYears] = useState<number[]>([]);
+  const [isProviderSwitchModalOpen, setIsProviderSwitchModalOpen] = useState<boolean>(false);
+  const [availableProviders, setAvailableProviders] = useState<Array<{id: number, name: string}>>([]);
+  const [selectedProvider, setSelectedProvider] = useState<number | null>(null);
+  const [isSwitchingProvider, setIsSwitchingProvider] = useState(false);
+  const [switchDescription, setSwitchDescription] = useState<string>('');
+  const [providerSwitches, setProviderSwitches] = useState<any[]>([]);
+  const [switchDate, setSwitchDate] = useState<string>('');
+  const [initialNotes, setInitialNotes] = useState<string>('');
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
+  const [notesError, setNotesError] = useState<string | null>(null);
   
+  // State for total portfolio IRR from backend
+  const [totalPortfolioIRR, setTotalPortfolioIRR] = useState<number | null>(null);
+  const [totalPortfolioIRRDate, setTotalPortfolioIRRDate] = useState<string | undefined>(undefined);
+  const [isTotalPortfolioIRRLoading, setIsTotalPortfolioIRRLoading] = useState<boolean>(false);
+  const [totalPortfolioIRRError, setTotalPortfolioIRRError] = useState<string | null>(null);
+
   useEffect(() => {
     if (accountId) {
       console.log('AccountIRRCalculation: Fetching data for accountId:', accountId);
@@ -713,48 +485,87 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
   }, [accountId, api]);
 
   useEffect(() => {
-    if (account?.portfolio_id && !isLoading && holdings.length > 0) {
-      console.log(`ProductIRRCalculation: Year changed to ${selectedYear}, recalculating total IRR`);
-      fetchTotalIRR().catch(err => {
-        console.error('Error calculating total IRR after year change:', err);
-      });
-    }
-  }, [account?.portfolio_id, selectedYear, holdings.length]);
+    const today = new Date();
+    const currentMonthYear = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+    setSwitchDate(currentMonthYear);
+  }, []);
 
-  // Generate list of available years for filtering
   useEffect(() => {
     if (activityLogs.length > 0) {
       const currentYear = new Date().getFullYear();
-      // Start from earliest activity log year or account start year
       let earliestYear = currentYear;
-      
       if (account?.start_date) {
         const accountStartYear = new Date(account.start_date).getFullYear();
         earliestYear = Math.min(earliestYear, accountStartYear);
       }
-      
-      // Check activity logs for even earlier dates
       activityLogs.forEach(log => {
         if (log.activity_timestamp) {
           const logYear = new Date(log.activity_timestamp).getFullYear();
           earliestYear = Math.min(earliestYear, logYear);
         }
       });
-      
-      // Generate list of years from earliest to current
       const years: number[] = [];
       for (let year = earliestYear; year <= currentYear; year++) {
         years.push(year);
       }
-      
-      setAvailableYears(years.reverse()); // Most recent first
-      
-      // If selectedYear isn't set, default to current year
+      setAvailableYears(years.reverse());
       if (!selectedYear) {
         setSelectedYear(currentYear);
       }
     }
   }, [activityLogs, account?.start_date, selectedYear]);
+
+  useEffect(() => {
+    if (account) {
+      setInitialNotes(account.notes || '');
+    }
+  }, [account]);
+
+  // useEffect to fetch total portfolio IRR from backend
+  useEffect(() => {
+    const fetchTotalPortfolioIRR = async () => {
+      if (account?.portfolio_id && selectedYear) {
+        setIsTotalPortfolioIRRLoading(true);
+        setTotalPortfolioIRRError(null);
+        try {
+          console.log(`Fetching total portfolio IRR for portfolio ${account.portfolio_id}, year ${selectedYear}`);
+          // Ensure api is available before calling
+          if (!api) {
+            console.error("API service is not available for fetching total portfolio IRR.");
+            setTotalPortfolioIRRError("API service not available.");
+            setIsTotalPortfolioIRRLoading(false);
+            return;
+          }
+          const response = await calculatePortfolioTotalIRR(account.portfolio_id, selectedYear);
+          console.log('Total portfolio IRR response:', response.data);
+          if (response.data.status === 'success') {
+            setTotalPortfolioIRR(response.data.irr_percentage);
+            setTotalPortfolioIRRDate(response.data.valuation_date || response.data.calculation_date);
+          } else {
+            setTotalPortfolioIRR(null);
+            setTotalPortfolioIRRDate(undefined);
+            setTotalPortfolioIRRError(response.data.error || 'Failed to calculate total portfolio IRR');
+            console.error('Error calculating total portfolio IRR from API:', response.data.error);
+          }
+        } catch (err: any) {
+          console.error('API Call Error fetching total portfolio IRR:', err);
+          setTotalPortfolioIRR(null);
+          setTotalPortfolioIRRDate(undefined);
+          setTotalPortfolioIRRError(err.response?.data?.detail || err.message || 'An unknown error occurred while fetching total IRR.');
+        } finally {
+          setIsTotalPortfolioIRRLoading(false);
+        }
+      } else {
+        setTotalPortfolioIRR(null);
+        setTotalPortfolioIRRDate(undefined);
+        setIsTotalPortfolioIRRLoading(false);
+        setTotalPortfolioIRRError(null);
+      }
+    };
+
+    fetchTotalPortfolioIRR();
+  }, [account?.portfolio_id, selectedYear, api, holdings, activityLogs]); // Added holdings and activityLogs as dependencies
+
 
   const fetchData = async (accountId: string) => {
     try {
@@ -764,7 +575,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       console.log('ProductIRRCalculation: Starting optimized data fetch for account ID:', accountId);
       
       // First fetch the account/product to get the portfolio_id
-      const accountResponse = await api.get(`/client_products/${accountId}`);
+      const accountResponse = await api.get(`/api/client_products/${accountId}/complete`);
       console.log('ProductIRRCalculation: Account/product data received:', accountResponse.data);
       
       // Get the portfolio_id from the account
@@ -777,6 +588,8 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
         setIsLoading(false);
         // Set account even if there's an error so we can show product info
         setAccount(accountResponse.data);
+        // Initialize notes from account data
+        setInitialNotes(accountResponse.data.notes || '');
         return;
       }
       
@@ -848,13 +661,12 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
         setLatestValuationDate(latestDate);
       }
       
+      // Fetch provider switches
+      await fetchProviderSwitches(accountId);
+      
       setIsLoading(false);
       
-      // Calculate the total IRR once data is loaded
-      if (accountResponse.data.portfolio_id) {
-        console.log('ProductIRRCalculation: Calculating total IRR after data load');
-        await fetchTotalIRR();
-      }
+
     } catch (error) {
       console.error('Error fetching data:', error);
       setError('Failed to load data. Please try again later.');
@@ -862,46 +674,8 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
     }
   };
 
-    const fetchTotalIRR = async () => {
-    if (!account?.portfolio_id || !selectedYear) {
-      console.warn('Cannot fetch total IRR: missing portfolio ID or year');
-      return Promise.resolve();
-    }
 
-    try {
-      console.log(`ProductIRRCalculation: Fetching total IRR for portfolio ${account.portfolio_id} for year ${selectedYear}`);
-      setIsTotalIrrLoading(true);
-      setTotalIrrError(null);
-      
-      // Use the backend endpoint for portfolio total IRR calculation
-      const response = await calculatePortfolioTotalIRR(account.portfolio_id, selectedYear);
-      
-      console.log('ProductIRRCalculation: Total IRR response from backend:', response.data);
-      
-      if (response.data.status === 'success') {
-        // Backend calculation was successful
-        setTotalIrr(response.data.irr_percentage || null);
-        setTotalIrrCalculationDate(response.data.valuation_date);
-        console.log(`ProductIRRCalculation: Using backend calculated IRR: ${response.data.irr_percentage}%`);
-      } else {
-        // Backend calculation failed
-        console.error('Backend IRR calculation error:', response.data.error);
-        setTotalIrrError(response.data.error || 'Failed to calculate total IRR');
-        setTotalIrr(null);
-      }
-      
-      setIsTotalIrrLoading(false);
-      return Promise.resolve();
-    } catch (error) {
-      console.error('Error calculating total IRR:', error);
-      setTotalIrrError('Failed to calculate total IRR');
-      setTotalIrr(null);
-      setIsTotalIrrLoading(false);
-      return Promise.reject(error);
-    }
-  };
 
-  // Update the refreshData function to also refresh the total IRR data
   const refreshData = () => {
     if (accountId) {
       console.log('DEBUG - Starting data refresh after activities updated');
@@ -912,10 +686,6 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
         fetchData(accountId)
           .then(() => {
             console.log('DEBUG - Data refresh completed successfully');
-            // Also refresh the total IRR calculation after data is refreshed
-            if (account?.portfolio_id) {
-              fetchTotalIRR();
-            }
           })
           .catch(err => console.error('DEBUG - Error during data refresh:', err));
       }, 500);
@@ -1053,6 +823,104 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
     }
   };
 
+  // Add this after the fetchData function
+  const fetchAvailableProviders = async () => {
+    try {
+      const response = await api.get('/available_providers');
+      setAvailableProviders(response.data);
+    } catch (error) {
+      console.error('Error fetching providers:', error);
+    }
+  };
+
+  // Add this function to handle provider switch
+  const handleProviderSwitch = async () => {
+    if (!selectedProvider || !account) return;
+    
+    try {
+      setIsSwitchingProvider(true);
+      
+      // Store the previous provider ID before switching
+      const previousProviderId = account.provider_id;
+      
+      // First, update the client_product with the new provider
+      await api.patch(`/client_products/${account.id}`, {
+        provider_id: selectedProvider
+      });
+      
+      // Parse the month-year string to create a date object for the 1st of the month
+      const [year, month] = switchDate.split('-').map(num => parseInt(num));
+      const switchDateObj = new Date(year, month - 1, 1); // JavaScript months are 0-indexed
+      
+      // Then create an entry in the provider_switch_log table
+      await api.post('/provider_switch_log', {
+        client_product_id: account.id,
+        switch_date: switchDateObj.toISOString(),
+        previous_provider_id: previousProviderId,
+        new_provider_id: selectedProvider,
+        description: switchDescription.trim() || 'No description' // Use default if empty
+      });
+      
+      // Refresh the data after provider switch
+      await fetchData(accountId as string);
+      setIsProviderSwitchModalOpen(false);
+      setSelectedProvider(null);
+      setSwitchDescription(''); // Reset description
+    } catch (error) {
+      console.error('Error switching provider:', error);
+      alert('Failed to switch provider. Please try again.');
+    } finally {
+      setIsSwitchingProvider(false);
+    }
+  };
+
+  // Add this useEffect to fetch providers when modal opens
+  useEffect(() => {
+    if (isProviderSwitchModalOpen) {
+      fetchAvailableProviders();
+    }
+  }, [isProviderSwitchModalOpen]);
+
+  // Add a function to fetch provider switches
+  const fetchProviderSwitches = async (productId: string) => {
+    try {
+      const response = await api.get(`/client_products/${productId}/provider_switches`);
+      setProviderSwitches(response.data || []);
+      console.log('Provider switches loaded:', response.data);
+    } catch (error) {
+      console.error('Error fetching provider switches:', error);
+      setProviderSwitches([]);
+    }
+  };
+
+  // Handle notes change
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (account) {
+      const updatedAccount = { ...account, notes: e.target.value };
+      setAccount(updatedAccount);
+      
+      // Clear any previous error
+      setNotesError(null);
+    }
+  };
+
+  // Save notes when textarea loses focus
+  const handleNotesBlur = async () => {
+    if (!account || account.notes === initialNotes) return;
+
+    try {
+      setIsSavingNotes(true);
+      await api.patch(`/api/client_products/${account.id}`, { notes: account.notes });
+      setInitialNotes(account.notes || '');
+      console.log('Notes saved successfully');
+    } catch (err) {
+      console.error('Error saving notes:', err);
+      setNotesError('Failed to save notes. Your changes may not be preserved.');
+    } finally {
+      setIsSavingNotes(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -1075,6 +943,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
     );
   }
 
+  // Main return statement for the component
   return (
     <div className="container mx-auto px-4 py-8">
       <h2 className="text-xl font-semibold mb-4">IRR Calculation</h2>
@@ -1089,99 +958,21 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
           <div className="col-span-12 bg-white shadow-sm rounded-lg border border-gray-200 p-4 mb-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-800">Notes</h3>
+              {isSavingNotes && (
+                <span className="text-xs text-gray-500">Saving...</span>
+              )}
             </div>
             <div className="relative">
               <textarea
                 value={account?.notes || ''}
-                onChange={(e) => {
-                  if (account) {
-                    const updatedAccount = { ...account, notes: e.target.value };
-                    setAccount(updatedAccount);
-                    // Use sendBeacon to save the notes when the user types
-                    const blob = new Blob([JSON.stringify({ notes: e.target.value })], { type: 'application/json' });
-                    navigator.sendBeacon(`/api/client_products/${account.id}/notes`, blob);
-                  }
-                }}
-                onBlur={(e) => {
-                  if (account) {
-                    // Also save on blur for browsers that don't support sendBeacon
-                    api.post(`client_products/${account.id}/notes`, { notes: e.target.value })
-                      .catch(error => console.error('Failed to save notes:', error));
-                  }
-                }}
+                onChange={handleNotesChange}
+                onBlur={handleNotesBlur}
                 placeholder="Enter any notes about this product..."
                 className="w-full h-24 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
               />
-            </div>
-          </div>
-
-          {/* Total IRR Section - Moved to top */}
-          <div className="col-span-12 bg-white shadow-sm rounded-lg border border-gray-200 p-4 mb-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-800">Total IRR for {selectedYear}</h2>
-              <div className="flex space-x-2">
-                <select
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                  className="border border-gray-300 rounded p-1 text-sm"
-                >
-                  {availableYears.map((year: number) => (
-                    <option key={year} value={year}>{year}</option>
-                  ))}
-                </select>
-                <button
-                  onClick={fetchTotalIRR}
-                  className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
-                  disabled={isTotalIrrLoading}
-                >
-                  {isTotalIrrLoading ? 'Calculating...' : 'Refresh'}
-                </button>
-              </div>
-            </div>
-            
-            {totalIrrError && (
-              <div className="text-red-600 mb-2">{totalIrrError}</div>
-            )}
-            
-            <div className="grid grid-cols-12 gap-4">
-              <div className="col-span-12 md:col-span-6 bg-gray-50 p-4 rounded-lg">
-                <div className="text-center">
-                  <div className="text-lg font-semibold text-gray-500 mb-1">Total IRR</div>
-                  <div className="text-3xl font-bold text-blue-600">
-                    {isTotalIrrLoading ? (
-                      <span className="text-gray-400">Calculating...</span>
-                    ) : totalIrr !== null ? (
-                      `${formatPercentage(totalIrr)}`
-                    ) : (
-                      <span className="text-gray-400">N/A</span>
-                    )}
-                  </div>
-                  {totalIrrCalculationDate && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      Calculated as of {formatDate(totalIrrCalculationDate)}
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <div className="col-span-12 md:col-span-6 bg-gray-50 p-4 rounded-lg">
-                <div className="text-sm mb-3 text-gray-500">Performance Summary</div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <div className="text-xs text-gray-500">Market Value</div>
-                    <div className="font-semibold">{formatCurrency(calculateTotalValue(filterActiveHoldings(holdings)))}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500">Total Invested</div>
-                    <div className="font-semibold">{formatCurrency(calculateTotalAmountInvested(filterActiveHoldings(holdings)))}</div>
-                  </div>
-                  {latestValuationDate && (
-                    <div className="col-span-2 text-xs text-gray-500 mt-2">
-                      Last valuation date: {formatDate(latestValuationDate)}
-                    </div>
-                  )}
-                </div>
-              </div>
+              {notesError && (
+                <div className="mt-1 text-xs text-red-600">{notesError}</div>
+              )}
             </div>
           </div>
 
@@ -1203,11 +994,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
             </div>
             
             {(() => {
-              // Filter activities by the selected year
-              console.log(`Filtering activities for period overview by year: ${selectedYear}`);
               const filteredActivities = filterActivitiesByYear(activityLogs, selectedYear);
-              console.log(`After year filtering: ${filteredActivities.length} activities for ${selectedYear}`);
-              
               return (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
@@ -1218,8 +1005,8 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                         <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Investments</th>
                         <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Regular Investments</th>
                         <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Government Uplifts</th>
-                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Switch Ins</th>
-                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Switch Outs</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Fund Switch Ins</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Fund Switch Outs</th>
                         <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Withdrawals</th>
                         <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Most Recent Value</th>
                         <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Most Recent IRR</th>
@@ -1227,54 +1014,34 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {/* First separate active and inactive holdings */}
                       {(() => {
-                        console.log("Starting to process holdings for display");
-                        
                         const activeHoldings = filterActiveHoldings(holdings);
                         const inactiveHoldings = filterInactiveHoldings(holdings);
-                        
-                        console.log(`After filtering: ${activeHoldings.length} active, ${inactiveHoldings.length} inactive`);
-                        
-                        // Create the Previous Funds entry if there are inactive holdings
                         const previousFundsEntry = createPreviousFundsEntry(inactiveHoldings, filteredActivities);
-                        
-                        // Only display active holdings directly
                         const displayHoldings = [...activeHoldings];
-                        
-                        // Log inactive funds that were filtered out
-                        if (inactiveHoldings.length > 0) {
-                          console.log("Inactive holdings excluded from direct display:", 
-                            inactiveHoldings.map(h => `${h.id} (${h.fund_name}): status=${h.status}, end_date=${h.end_date}`));
-                        }
-                        
-                        // Add the Previous Funds entry if it exists
                         if (previousFundsEntry) {
-                          console.log("Adding Previous Funds entry to display holdings");
                           displayHoldings.push(previousFundsEntry);
-                        } else {
-                          console.log("No Previous Funds entry was created");
                         }
-                        
-                        console.log(`Final display holdings count: ${displayHoldings.length}`);
-                        
-                        // Sort holdings alphabetically with Cashline and Previous Funds special cases
                         return (
                           <>
                             {displayHoldings.sort((a, b) => {
-                              // Previous Funds virtual entry always goes last
                               if (a.isVirtual) return 1;
                               if (b.isVirtual) return -1;
                               
-                              // Cashline always goes second-to-last (before Previous Funds)
-                              if (a.fund_name === 'Cashline') return 1;
-                              if (b.fund_name === 'Cashline') return -1;
-                              
-                              // All other funds are sorted alphabetically
+                              // Cash fund (name 'Cash', ISIN 'N/A') always goes second-to-last (before Previous Funds)
+                              const aIsCash = a.fund_name === 'Cash' && a.isin_number === 'N/A';
+                              const bIsCash = b.fund_name === 'Cash' && b.isin_number === 'N/A';
+
+                              if (aIsCash && !b.isVirtual) return 1; // Cash before virtual if b is not virtual
+                              if (bIsCash && !a.isVirtual) return -1; // Similar for b
+                              // If one is cash and other is virtual, cash comes before virtual
+                              if (aIsCash && b.isVirtual) return -1;
+                              if (bIsCash && a.isVirtual) return 1;
+                              // If both are cash, or neither is cash and neither is virtual, use name compare
+                              if (aIsCash && bIsCash) return (a.fund_name || '').localeCompare(b.fund_name || '');
+
                               return (a.fund_name || '').localeCompare(b.fund_name || '');
-                            }).map((holding) => {
-                              console.log(`Rendering sorted holding: ${holding.id} (${holding.fund_name}), isVirtual: ${holding.isVirtual}`);
-                              return (
+                            }).map((holding) => (
                               <tr key={holding.id} className={holding.isVirtual ? "bg-gray-100 border-t border-gray-300" : ""}>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <div className="flex items-center">
@@ -1299,42 +1066,42 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual 
-                                      ? formatCurrency(calculateInactiveFundsInvestments(filteredActivities, inactiveHoldings))
+                                      ? <span className="text-gray-500">N/A</span> 
                                       : formatCurrency(calculateInvestments(filteredActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual 
-                                      ? formatCurrency(calculateInactiveFundsRegularInvestments(filteredActivities, inactiveHoldings))
+                                      ? <span className="text-gray-500">N/A</span> 
                                       : formatCurrency(calculateRegularInvestments(filteredActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
-                                      ? formatCurrency(calculateInactiveFundsGovernmentUplifts(filteredActivities, inactiveHoldings))
+                                      ? <span className="text-gray-500">N/A</span>
                                       : formatCurrency(calculateGovernmentUplifts(filteredActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
-                                      ? formatCurrency(calculateInactiveFundsSwitchIns(filteredActivities, inactiveHoldings))
+                                      ? <span className="text-gray-500">N/A</span>
                                       : formatCurrency(calculateSwitchIns(filteredActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
-                                      ? formatCurrency(calculateInactiveFundsSwitchOuts(filteredActivities, inactiveHoldings))
+                                      ? <span className="text-gray-500">N/A</span>
                                       : formatCurrency(calculateSwitchOuts(filteredActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
-                                      ? formatCurrency(calculateInactiveFundsWithdrawals(filteredActivities, inactiveHoldings))
+                                      ? <span className="text-gray-500">N/A</span>
                                       : formatCurrency(calculateWithdrawals(filteredActivities, holding.id))}
                                   </div>
                                 </td>
@@ -1406,16 +1173,14 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                   )}
                                 </td>
                               </tr>
-                            )})}
+                            ))}
                           </>
                         );
                       })()}
                       
-                      {/* Total Row */}
+                      {/* Total Row - Updated to use state for total portfolio IRR */}
                       <tr className="bg-gray-50 font-medium">
-                        <td className="px-6 py-4 whitespace-nowrap text-base font-bold text-red-600">
-                          TOTAL
-                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-base font-bold text-red-600">TOTAL</td>
                         <td className="px-6 py-4 whitespace-nowrap"></td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-bold text-red-600">
@@ -1453,28 +1218,29 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {/* Total IRR calculation from properly calculated data */}
-                          {(() => {
-                            return totalIrr !== null ? (
-                              <div>
-                                <div className={`text-sm font-bold ${
-                                  totalIrr >= 0 ? 'text-green-700' : 'text-red-700'
-                                }`}>
-                                  {formatPercentage(totalIrr)}
-                                  <span className="ml-1">
-                                    {totalIrr >= 0 ? '▲' : '▼'}
-                                  </span>
-                                </div>
-                                {totalIrrCalculationDate && (
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    as of {formatDate(totalIrrCalculationDate)}
-                                  </div>
-                                )}
+                          {isTotalPortfolioIRRLoading ? (
+                            <span className="text-sm text-gray-500">Loading...</span>
+                          ) : totalPortfolioIRRError ? (
+                            <span className="text-sm text-red-500" title={totalPortfolioIRRError}>Error</span>
+                          ) : totalPortfolioIRR !== null ? (
+                            <div>
+                              <div className={`text-sm font-bold ${
+                                totalPortfolioIRR >= 0 ? 'text-green-700' : 'text-red-700'
+                              }`}>
+                                {formatPercentage(totalPortfolioIRR)}
+                                <span className="ml-1">
+                                  {totalPortfolioIRR >= 0 ? '▲' : '▼'}
+                                </span>
                               </div>
-                            ) : (
-                              <span className="text-sm text-gray-500">N/A</span>
-                            );
-                          })()}
+                              {totalPortfolioIRRDate && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  as of {formatDate(totalPortfolioIRRDate)}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-sm text-gray-500">N/A</span>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap"></td>
                       </tr>
@@ -1513,6 +1279,12 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                   ) : (
                     'Calculate Monthly IRR'
                   )}
+                </button>
+                <button
+                  onClick={() => setIsProviderSwitchModalOpen(true)}
+                  className="mr-2 px-4 py-2 bg-indigo-600 text-white font-medium rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Provider Switch
                 </button>
               </div>
             </div>
@@ -1584,6 +1356,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                 irr: undefined, // Set to undefined as we'll always display N/A
                 isActive: false,
                 isVirtual: true,
+                isin_number: 'N/A', // Added to satisfy type requirements
                 inactiveHoldingIds: inactiveHoldings.map(h => ({
                   id: h.id,
                   fund_id: h.fund_id,
@@ -1596,6 +1369,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                 id: holding.id,
                 holding_id: holding.account_holding_id,
                 fund_name: holding.fund_name || 'Unknown Fund',
+                isin_number: holding.isin_number || 'N/A', // Make sure ISIN is included
                 irr: holding.irr,
                 isActive: true
               }))];
@@ -1611,10 +1385,13 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                 if (a.id === -1) return 1;
                 if (b.id === -1) return -1;
                 
-                // Cashline always goes second-to-last (before Previous Funds)
-                if (a.fund_name === 'Cashline') return 1;
-                if (b.fund_name === 'Cashline') return -1;
-                
+                // Cash fund (name 'Cash', ISIN 'N/A') always goes second-to-last (before Previous Funds)
+                const aIsCash = a.fund_name === 'Cash' && a.isin_number === 'N/A';
+                const bIsCash = b.fund_name === 'Cash' && b.isin_number === 'N/A';
+
+                if (aIsCash) return 1; // If a is Cash, it should come after non-Cash, non-Virtual
+                if (bIsCash) return -1; // If b is Cash, it should come after non-Cash, non-Virtual
+                                
                 // All other funds are sorted alphabetically
                 return (a.fund_name || '').localeCompare(b.fund_name || '');
               });
@@ -1631,13 +1408,12 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                     onActivitiesUpdated={refreshData}
                     selectedYear={selectedYear}
                     allFunds={allFunds} // Pass all funds from the API instead of just holdings
+                    providerSwitches={providerSwitches} // Pass provider switches
                   />
                 </div>
               );
             })()}
           </div>
-
-          {/* Total IRR Section has been moved to the top of the page */}
         </div>
       )}
 
@@ -1667,7 +1443,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       <Transition appear show={showDeactivationConfirm} as={Fragment}>
         <Dialog 
           as="div" 
-          className="relative z-10" 
+          className="relative z-50" 
           onClose={() => setShowDeactivationConfirm(false)}
         >
           <Transition.Child
@@ -1682,7 +1458,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
             <div className="fixed inset-0 bg-black bg-opacity-25" />
           </Transition.Child>
 
-          <div className="fixed inset-0 overflow-y-auto">
+          <div className="fixed inset-0 overflow-y-auto z-50">
             <div className="flex min-h-full items-center justify-center p-4 text-center">
               <Transition.Child
                 as={Fragment}
@@ -1693,7 +1469,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-lg bg-white p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-lg bg-white p-6 text-left align-middle shadow-xl transition-all z-50">
                   <Dialog.Title
                     as="h3"
                     className="text-lg font-medium leading-6 text-gray-900"
@@ -1754,7 +1530,137 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
           </div>
         </Dialog>
       </Transition>
-    </div>
+      {/* Provider Switch Modal */}
+      <Transition appear show={isProviderSwitchModalOpen} as={Fragment}>
+        <Dialog 
+          as="div" 
+          className="relative z-50" 
+          onClose={() => setIsProviderSwitchModalOpen(false)}
+        >
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-25" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto z-50">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-lg bg-white p-6 text-left align-middle shadow-xl transition-all z-50">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-lg font-medium leading-6 text-gray-900"
+                  >
+                    Switch Provider
+                  </Dialog.Title>
+                  
+                  <div className="mt-4">
+                    {/* Current Provider Info */}
+                    <div className="mb-4 p-3 bg-gray-50 rounded-md">
+                      <div className="text-sm font-medium text-gray-500">Current Provider</div>
+                      <div className="text-base font-medium text-gray-900">
+                        {account?.provider_name || 'No Provider Assigned'}
+                      </div>
+                    </div>
+
+                    <label htmlFor="provider" className="block text-sm font-medium text-gray-700">
+                      Select New Provider
+                    </label>
+                    <select
+                      id="provider"
+                      className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                      value={selectedProvider || ''}
+                      onChange={(e) => setSelectedProvider(Number(e.target.value))}
+                    >
+                      <option value="">Select a provider...</option>
+                      {availableProviders
+                        .filter(provider => provider.id !== account?.provider_id) // Filter out current provider
+                        .map((provider) => (
+                          <option key={provider.id} value={provider.id}>
+                            {provider.name}
+                          </option>
+                      ))}
+                    </select>
+                    
+                    {/* Add switch date field */}
+                    <div className="mt-4">
+                      <label htmlFor="switchDate" className="block text-sm font-medium text-gray-700">
+                        Switch Month
+                      </label>
+                      <input
+                        type="month"
+                        id="switchDate"
+                        className="mt-1 block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                        value={switchDate}
+                        onChange={(e) => setSwitchDate(e.target.value)}
+                      />
+                    </div>
+                    
+                    {/* Add description field */}
+                    <div className="mt-4">
+                      <label htmlFor="switchDescription" className="block text-sm font-medium text-gray-700">
+                        Reason for Switch
+                      </label>
+                      <textarea
+                        id="switchDescription"
+                        className="mt-1 block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                        rows={3}
+                        placeholder="Enter reason for provider switch (optional)"
+                        value={switchDescription}
+                        onChange={(e) => setSwitchDescription(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-gray-100 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2"
+                      onClick={() => setIsProviderSwitchModalOpen(false)}
+                    >
+                      Cancel
+                    </button>
+                    
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:bg-indigo-300 disabled:cursor-not-allowed"
+                      onClick={handleProviderSwitch}
+                      disabled={!selectedProvider || isSwitchingProvider || !switchDate}
+                    >
+                      {isSwitchingProvider ? (
+                        <>
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Switching...
+                        </>
+                      ) : (
+                        'Switch Provider'
+                      )}
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+    </div> // This is the main closing div for the component's return
   );
 };
 

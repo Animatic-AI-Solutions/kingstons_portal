@@ -39,6 +39,16 @@ interface CellEdit {
   toDelete?: boolean;
 }
 
+interface ProviderSwitch {
+  id: number;
+  switch_date: string;
+  previous_provider_id: number | null;
+  new_provider_id: number;
+  description: string | null;
+  previous_provider_name: string | null;
+  new_provider_name: string | null;
+}
+
 interface EditableMonthlyActivitiesTableProps {
   funds: Fund[];
   activities: Activity[];
@@ -46,6 +56,7 @@ interface EditableMonthlyActivitiesTableProps {
   onActivitiesUpdated: () => void;
   selectedYear?: number;
   allFunds?: any[]; // Add property to receive the full list of all funds
+  providerSwitches?: ProviderSwitch[]; // Add provider switches prop
 }
 
 interface FundValuation {
@@ -68,8 +79,8 @@ const ACTIVITY_TYPES = [
   'Investment',
   'RegularInvestment',
   'GovernmentUplift',
-  'Switch In',
-  'Switch Out',
+  'Fund Switch In',
+  'Fund Switch Out',
   'Withdrawal',
   'Current Value'
 ];
@@ -80,7 +91,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   accountHoldingId,
   onActivitiesUpdated,
   selectedYear,
-  allFunds = [] // Default to empty array
+  allFunds = [], // Default to empty array
+  providerSwitches = [] // Default to empty array
 }) => {
   const [months, setMonths] = useState<string[]>([]);
   const [pendingEdits, setPendingEdits] = useState<CellEdit[]>([]);
@@ -188,35 +200,18 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     setMonths(sortedMonths);
   }, [selectedYear]);
   
-  // Add effect to focus the first cell after rendering
+  // No longer auto-focusing the first cell to avoid disrupting user flow
   useEffect(() => {
     if (funds.length > 0 && months.length > 0) {
-      // Wait for the DOM to be fully rendered
-      setTimeout(() => {
-        const firstFund = funds[0];
-        const firstMonth = months[0];
-        const firstActivityType = ACTIVITY_TYPES[0];
-        
-        // Try to find and focus the first input
-        const firstCell = document.getElementById(`cell-${firstFund.id}-${firstMonth}-${firstActivityType}`);
-        if (firstCell) {
-          const input = firstCell.querySelector('input');
-          if (input && !input.disabled) {
-            input.focus();
-            // Make sure the first cell is visible
-            firstCell.scrollIntoView({
-              behavior: 'auto',
-              block: 'nearest',
-              inline: 'nearest'
-            });
-            setFocusedCell({
-              fundId: firstFund.id,
-              activityType: firstActivityType,
-              monthIndex: 0
-            });
-          }
-        }
-      }, 100);
+      // Just initialize focusedCell without actually focusing the input
+      const firstFund = funds[0];
+      const firstActivityType = ACTIVITY_TYPES[0];
+      
+      setFocusedCell({
+        fundId: firstFund.id,
+        activityType: firstActivityType,
+        monthIndex: 0
+      });
     }
   }, [funds, months]);
 
@@ -242,8 +237,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   const convertActivityTypeForBackend = (uiActivityType: string): string => {
     // Convert UI-friendly activity types to backend format
     switch (uiActivityType) {
-      case 'Switch In': return 'SwitchIn';
-      case 'Switch Out': return 'SwitchOut';
+      case 'Fund Switch In': return 'SwitchIn';
+      case 'Fund Switch Out': return 'SwitchOut';
       case 'Current Value': return 'Valuation';
       default: return uiActivityType;
     }
@@ -397,8 +392,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       }
     }
     
-    // Only show the fund selection modal for Switch In/Out cells with a value
-    if ((activityType === 'Switch In' || activityType === 'Switch Out')) {
+    // Only show the fund selection modal for Fund Switch In/Out cells with a value
+    if ((activityType === 'Fund Switch In' || activityType === 'Fund Switch Out')) {
       // Get the current value from pendingEdits
       const cellEdit = pendingEdits.find(
         edit => edit.fundId === fundId && 
@@ -424,11 +419,11 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       
       if (valueChanged) {
         setSwitchSelectionData({
-          originFundId: activityType === 'Switch Out' ? fundId : 0,
-          destinationFundId: activityType === 'Switch In' ? fundId : 0,
+          originFundId: activityType === 'Fund Switch Out' ? fundId : 0,
+          destinationFundId: activityType === 'Fund Switch In' ? fundId : 0,
           month,
           amount: parseFloat(cellEdit.value),
-          isEditingOrigin: activityType === 'Switch Out'
+          isEditingOrigin: activityType === 'Fund Switch Out'
         });
         setShowSwitchFundModal(true);
       }
@@ -520,7 +515,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       const switchInEdit: CellEdit = {
         fundId: destinationFundId,
         month: switchSelectionData.month,
-        activityType: 'Switch In',
+        activityType: 'Fund Switch In',
         value: switchSelectionData.amount.toString(),
         isNew: true,
         originalActivityId: undefined,
@@ -531,7 +526,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       const switchOutIndex = pendingEdits.findIndex(
         edit => edit.fundId === originFundId && 
                 edit.month === switchSelectionData.month && 
-                edit.activityType === 'Switch Out'
+                edit.activityType === 'Fund Switch Out'
       );
       
       if (switchOutIndex !== -1) {
@@ -545,7 +540,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         const switchInIndex = pendingEdits.findIndex(
           edit => edit.fundId === destinationFundId && 
                   edit.month === switchSelectionData.month && 
-                  edit.activityType === 'Switch In'
+                  edit.activityType === 'Fund Switch In'
         );
         
         if (switchInIndex === -1) {
@@ -565,7 +560,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       const switchOutEdit: CellEdit = {
         fundId: originFundId,
         month: switchSelectionData.month,
-        activityType: 'Switch Out',
+        activityType: 'Fund Switch Out',
         value: switchSelectionData.amount.toString(),
         isNew: true,
         originalActivityId: undefined,
@@ -576,7 +571,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       const switchInIndex = pendingEdits.findIndex(
         edit => edit.fundId === destinationFundId && 
                 edit.month === switchSelectionData.month && 
-                edit.activityType === 'Switch In'
+                edit.activityType === 'Fund Switch In'
       );
       
       if (switchInIndex !== -1) {
@@ -590,7 +585,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         const switchOutIndex = pendingEdits.findIndex(
           edit => edit.fundId === originFundId && 
                   edit.month === switchSelectionData.month && 
-                  edit.activityType === 'Switch Out'
+                  edit.activityType === 'Fund Switch Out'
         );
         
         if (switchOutIndex === -1) {
@@ -682,7 +677,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       
       // 1. First gather all switch operations and group them into pairs
       [...nonEmptyEdits, ...emptyEdits].forEach(edit => {
-        if (edit.activityType !== 'Switch In' && edit.activityType !== 'Switch Out') {
+        if (edit.activityType !== 'Fund Switch In' && edit.activityType !== 'Fund Switch Out') {
           return;
         }
         
@@ -703,7 +698,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         }
         
         // Store the edit in its appropriate place
-        if (edit.activityType === 'Switch In') {
+        if (edit.activityType === 'Fund Switch In') {
           switchPairs[pairKey].switchIn = edit;
         } else {
           switchPairs[pairKey].switchOut = edit;
@@ -713,7 +708,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       // 2. Process all regular (non-switch) activities first
       for (const edit of nonEmptyEdits) {
         // Skip switch activities as they'll be processed together
-        if (edit.activityType === 'Switch In' || edit.activityType === 'Switch Out') {
+        if (edit.activityType === 'Fund Switch In' || edit.activityType === 'Fund Switch Out') {
           continue;
         }
         
@@ -882,7 +877,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
               await api.patch(`holding_activity_logs/${switchIn.originalActivityId}`, {
                 portfolio_fund_id: switchIn.fundId,
                 account_holding_id: accountHoldingId,
-                activity_type: convertActivityTypeForBackend('Switch In'),
+                activity_type: convertActivityTypeForBackend('Fund Switch In'),
                 activity_timestamp: formattedDate,
                 amount: "",  // Empty string to trigger our is_effectively_empty check
                 related_fund: switchIn.linkedFundId
@@ -896,7 +891,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
               await api.patch(`holding_activity_logs/${switchOut.originalActivityId}`, {
                 portfolio_fund_id: switchOut.fundId,
                 account_holding_id: accountHoldingId,
-                activity_type: convertActivityTypeForBackend('Switch Out'),
+                activity_type: convertActivityTypeForBackend('Fund Switch Out'),
                 activity_timestamp: formattedDate,
                 amount: "",  // Empty string to trigger our is_effectively_empty check
                 related_fund: switchOut.linkedFundId
@@ -912,12 +907,12 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
               const [year, monthNum] = month.split('-');
               const formattedDate = `${year}-${monthNum}-01`;
               
-              const existingSwitchIn = getActivity(targetId, month, 'Switch In');
+              const existingSwitchIn = getActivity(targetId, month, 'Fund Switch In');
               if (existingSwitchIn?.id && existingSwitchIn.id !== switchIn?.originalActivityId) {
                 const switchInData = {
                   portfolio_fund_id: targetId,
                   account_holding_id: accountHoldingId,
-                  activity_type: convertActivityTypeForBackend('Switch In'),
+                  activity_type: convertActivityTypeForBackend('Fund Switch In'),
                   activity_timestamp: formattedDate,
                   amount: "",  // Empty string to trigger our is_effectively_empty check
                   related_fund: sourceId
@@ -928,12 +923,12 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                 console.log(`Existing SwitchIn update response:`, response.data);
               }
               
-              const existingSwitchOut = getActivity(sourceId, month, 'Switch Out');
+              const existingSwitchOut = getActivity(sourceId, month, 'Fund Switch Out');
               if (existingSwitchOut?.id && existingSwitchOut.id !== switchOut?.originalActivityId) {
                 const switchOutData = {
                   portfolio_fund_id: sourceId,
                   account_holding_id: accountHoldingId,
-                  activity_type: convertActivityTypeForBackend('Switch Out'),
+                  activity_type: convertActivityTypeForBackend('Fund Switch Out'),
                   activity_timestamp: formattedDate,
                   amount: "",  // Empty string to trigger our is_effectively_empty check
                   related_fund: targetId
@@ -948,7 +943,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           // If at least one edit has a value, process the pair
           else if ((switchIn && switchIn.value.trim() !== '') || 
                    (switchOut && switchOut.value.trim() !== '')) {
-            // Use the non-empty value, or if both have values, prefer the switch in value
+            // Use the non-empty value, or if both have values, prefer the fund switch in value
             let amount = 0;
             if (switchIn && switchIn.value.trim() !== '') {
               amount = parseFloat(switchIn.value);
@@ -978,7 +973,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       // 5. Process deletions from empty cells that had activities
       for (const edit of pendingEdits.filter(e => e.toDelete || (e.value.trim() === '' && e.originalActivityId))) {
         // Skip switch activities as they were processed together
-        if (edit.activityType === 'Switch In' || edit.activityType === 'Switch Out') {
+        if (edit.activityType === 'Fund Switch In' || edit.activityType === 'Fund Switch Out') {
           continue;
         }
         
@@ -1105,7 +1100,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     }
     
     // Add special class for switch cells with linked funds
-    if ((activityType === 'Switch In' || activityType === 'Switch Out') && 
+    if ((activityType === 'Fund Switch In' || activityType === 'Fund Switch Out') && 
         pendingEdit && pendingEdit.linkedFundId) {
       baseClass += " border-blue-300 border-2";
     }
@@ -1243,71 +1238,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           if (input && !input.disabled) {
             input.focus();
             
-            // Get the scrollable container
-            const scrollContainer = newCell.closest('.overflow-auto');
-            if (scrollContainer) {
-              // Get cell and container dimensions
-              const cellRect = newCell.getBoundingClientRect();
-              const containerRect = scrollContainer.getBoundingClientRect();
-              
-              // Different scrolling logic based on direction
-              switch (e.key) {
-                case 'ArrowLeft': {
-                  // For left navigation, ensure the cell is fully visible
-                  // We need a larger padding for left movement to account for the sticky first column
-                  const firstColumnWidth = 200; // Approximate width of the first column
-                  const isPartiallyVisible = cellRect.left < (containerRect.left + firstColumnWidth);
-                  
-                  if (isPartiallyVisible) {
-                    // Scroll to ensure the cell is visible with padding
-                    const scrollOffset = scrollContainer.scrollLeft - (containerRect.left + firstColumnWidth - cellRect.left + 20);
-                    scrollContainer.scrollTo({
-                      left: Math.max(0, scrollOffset),
-                      behavior: 'smooth'
-                    });
-                  }
-                  break;
-                }
-                case 'ArrowRight': {
-                  // For right navigation, check if cell is partially out of view
-                  const isPartiallyVisible = cellRect.right > (containerRect.right - 20);
-                  
-                  if (isPartiallyVisible) {
-                    // Scroll to ensure the cell is visible with padding
-                    const scrollOffset = scrollContainer.scrollLeft + (cellRect.right - containerRect.right + 20);
-                    scrollContainer.scrollTo({
-                      left: scrollOffset,
-                      behavior: 'smooth'
-                    });
-                  }
-                  break;
-                }
-                case 'ArrowUp':
-                case 'ArrowDown':
-                case 'Enter': {
-                  // For up/down/enter navigation, check if cell is partially out of view vertically
-                  const isPartiallyVisibleTop = cellRect.top < (containerRect.top + 50); // Allow for header
-                  const isPartiallyVisibleBottom = cellRect.bottom > (containerRect.bottom - 20);
-                  
-                  if (isPartiallyVisibleTop || isPartiallyVisibleBottom) {
-                    // Scroll the cell into view
-                    newCell.scrollIntoView({
-                      behavior: 'smooth',
-                      block: isPartiallyVisibleTop ? 'start' : 'end',
-                      inline: 'nearest'
-                    });
-                  }
-                  break;
-                }
-                default: {
-                  // For other navigation, use standard scrollIntoView
-                  newCell.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'nearest',
-                    inline: 'nearest'
-                  });
-                }
-              }
+            // If it's a double click, select all text to allow immediate typing
+            if (e.detail === 2) {
+              input.select();
             }
           }
         }
@@ -1329,9 +1262,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           if (activityType === 'Investment' || 
               activityType === 'RegularInvestment' || 
               activityType === 'GovernmentUplift' || 
-              activityType === 'Switch In') {
+              activityType === 'Fund Switch In') {
             return total + parseFloat(cellValue);
-          } else if (activityType === 'Withdrawal' || activityType === 'Switch Out') {
+          } else if (activityType === 'Withdrawal' || activityType === 'Fund Switch Out') {
             return total - parseFloat(cellValue);
           }
         }
@@ -1342,7 +1275,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   // Calculate total for all funds by activity type for a specific month
   const calculateActivityTypeTotal = (activityType: string, month: string): number => {
     // Special handling for Switch activities
-    if (activityType === 'Switch In' || activityType === 'Switch Out') {
+    if (activityType === 'Fund Switch In' || activityType === 'Fund Switch Out') {
       // For totals purposes, we don't include Switch activities in the totals
       // because they have a net effect of 0 across all funds
       // (money is just moving between funds within the same account)
@@ -1439,7 +1372,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           const switchInData = {
             portfolio_fund_id: switchIn.fundId,
             account_holding_id: accountHoldingId,
-            activity_type: convertActivityTypeForBackend('Switch In'),
+            activity_type: convertActivityTypeForBackend('Fund Switch In'),
             activity_timestamp: formattedDate,
             amount: "",  // Empty string to trigger our is_effectively_empty check
             related_fund: switchIn.linkedFundId
@@ -1455,7 +1388,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           const switchOutData = {
             portfolio_fund_id: switchOut.fundId,
             account_holding_id: accountHoldingId,
-            activity_type: convertActivityTypeForBackend('Switch Out'),
+            activity_type: convertActivityTypeForBackend('Fund Switch Out'),
             activity_timestamp: formattedDate,
             amount: "",  // Empty string to trigger our is_effectively_empty check
             related_fund: switchOut.linkedFundId
@@ -1480,11 +1413,11 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       
       // Check if activities already exist for this month, fund and activity type
       const existingSwitchIn = !switchIn?.originalActivityId 
-        ? getActivity(targetId, month, 'Switch In')
+        ? getActivity(targetId, month, 'Fund Switch In')
         : null;
       
       const existingSwitchOut = !switchOut?.originalActivityId 
-        ? getActivity(sourceId, month, 'Switch Out')
+        ? getActivity(sourceId, month, 'Fund Switch Out')
         : null;
       
       // For new switch activities
@@ -1495,7 +1428,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         const switchOutActivity = {
           portfolio_fund_id: sourceId,
           account_holding_id: accountHoldingId,
-          activity_type: convertActivityTypeForBackend('Switch Out'),
+          activity_type: convertActivityTypeForBackend('Fund Switch Out'),
           activity_timestamp: formattedDate,
           amount: amount.toString(),
           related_fund: targetId
@@ -1512,7 +1445,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         const switchInActivity = {
           portfolio_fund_id: targetId,
           account_holding_id: accountHoldingId,
-          activity_type: convertActivityTypeForBackend('Switch In'),
+          activity_type: convertActivityTypeForBackend('Fund Switch In'),
           activity_timestamp: formattedDate,
           amount: amount.toString(),
           related_fund: sourceId
@@ -1564,7 +1497,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           const switchOutActivity = {
             portfolio_fund_id: sourceId,
             account_holding_id: accountHoldingId,
-            activity_type: convertActivityTypeForBackend('Switch Out'),
+            activity_type: convertActivityTypeForBackend('Fund Switch Out'),
             activity_timestamp: formattedDate,
             amount: amount.toString(),
             related_fund: targetId
@@ -1601,7 +1534,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           const switchInActivity = {
             portfolio_fund_id: targetId,
             account_holding_id: accountHoldingId,
-            activity_type: convertActivityTypeForBackend('Switch In'),
+            activity_type: convertActivityTypeForBackend('Fund Switch In'),
             activity_timestamp: formattedDate,
             amount: amount.toString(),
             related_fund: sourceId
@@ -1656,6 +1589,17 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     return baseClass;
   };
 
+  // Helper function to check if a month has a provider switch
+  const getProviderSwitchForMonth = (month: string): ProviderSwitch | undefined => {
+    if (!providerSwitches) return undefined;
+    
+    return providerSwitches.find(ps => {
+      const switchDate = new Date(ps.switch_date);
+      const switchMonth = `${switchDate.getFullYear()}-${String(switchDate.getMonth() + 1).padStart(2, '0')}`;
+      return switchMonth === month;
+    });
+  };
+
   return (
     <>
       <div className="mt-8">
@@ -1690,11 +1634,37 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
               <thead className="bg-blue-50 sticky top-0 z-20 shadow-lg">
                 <tr className="h-10">
                   <th className="px-3 py-2 text-left font-medium text-gray-800 sticky left-0 z-30 bg-blue-50 shadow-[5px_0_5px_-5px_rgba(0,0,0,0.1)] border-b border-gray-300">Fund / Activity</th>
-                  {months.map((month, index) => (
-                    <th key={month} className="px-2 py-2 text-center font-medium text-gray-800 whitespace-nowrap bg-blue-50 border-b border-gray-300">
-                      <span className="text-sm">{formatMonth(month)}</span>
-                    </th>
-                  ))}
+                  {months.map((month, index) => {
+                    const providerSwitch = getProviderSwitchForMonth(month);
+                    
+                    return (
+                      <th key={month} className="px-2 py-2 text-center font-medium text-gray-800 whitespace-nowrap bg-blue-50 border-b border-gray-300 relative group">
+                        <span className="text-sm">{formatMonth(month)}</span>
+                        {providerSwitch && (
+                          <div className="absolute -top-1 right-0 w-4 h-4">
+                            <div 
+                              className="w-3 h-3 bg-indigo-500 rounded-full cursor-help"
+                              title={`Provider Switch: ${providerSwitch.previous_provider_name || 'None'} → ${providerSwitch.new_provider_name}`}
+                            />
+                            {/* Tooltip */}
+                            <div className="hidden group-hover:block absolute z-50 w-64 p-2 bg-white rounded-lg shadow-lg border border-gray-200 text-sm text-left -right-2 top-5">
+                              <div className="font-medium text-gray-900 mb-1">Provider Switch</div>
+                              <div className="text-gray-600">
+                                <div>From: {providerSwitch.previous_provider_name || 'None'}</div>
+                                <div>To: {providerSwitch.new_provider_name}</div>
+                                {providerSwitch.description && (
+                                  <div className="mt-1 text-xs italic">{providerSwitch.description}</div>
+                                )}
+                                <div className="text-xs text-gray-500 mt-1">
+                                  {new Date(providerSwitch.switch_date).toLocaleDateString()}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -1812,7 +1782,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                   fund.isInactiveBreakdown ? 'bg-gray-50 opacity-75' : ''
                                 }`}
                               title={linkedFundName ? 
-                                `${activityType === 'Switch In' ? 'From' : 'To'}: ${linkedFundName}` : 
+                                `${activityType === 'Fund Switch In' ? 'From' : 'To'}: ${linkedFundName}` : 
                                 undefined}
                                 id={`cell-${fund.id}-${month}-${activityType}${fund.isInactiveBreakdown ? '-breakdown' : ''}`}
                               onClick={(e) => {
@@ -1905,7 +1875,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                               </div>
                                 {linkedFundName && !fund.isInactiveBreakdown && (
                                 <div className="text-xs text-blue-600 text-center mt-1">
-                                  {activityType === 'Switch In' ? 'From' : 'To'}: {linkedFundName}
+                                  {activityType === 'Fund Switch In' ? 'From' : 'To'}: {linkedFundName}
                                 </div>
                               )}
                             </td>

@@ -401,7 +401,21 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {Object.entries(irrHistoryData).map(([fundId, fund]) => (
+                {Object.entries(irrHistoryData)
+                  .sort(([fundIdA, fundA], [fundIdB, fundB]) => {
+                    const fundAName = fundA.fundName || '';
+                    const fundBName = fundB.fundName || '';
+
+                    const aIsCash = fundAName === 'Cash';
+                    const bIsCash = fundBName === 'Cash';
+
+                    if (aIsCash && !bIsCash) return 1; // A (Cash) comes after B
+                    if (!aIsCash && bIsCash) return -1; // B (Cash) comes after A
+                    
+                    // If both are Cash or neither are Cash, sort alphabetically by name
+                    return fundAName.localeCompare(fundBName);
+                  })
+                  .map(([fundId, fund]) => (
                   <tr key={fundId}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 bg-white z-10">
                       {fund.fundName}
