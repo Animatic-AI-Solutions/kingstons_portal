@@ -60,6 +60,7 @@ const PortfolioTemplateDetails: React.FC = () => {
     description: ''
   });
   const [isSubmittingGeneration, setIsSubmittingGeneration] = useState(false);
+  const [productsCount] = useState(0); // Placeholder for products count
 
   useEffect(() => {
     if (portfolioId && portfolioId !== 'undefined') {
@@ -220,9 +221,25 @@ const PortfolioTemplateDetails: React.FC = () => {
     return new Date(dateString).toLocaleDateString();
   };
 
+  const calculateWeightedRisk = () => {
+    if (!template?.funds || template.funds.length === 0) return 0;
+    
+    let totalWeightedRisk = 0;
+    let totalWeight = 0;
+    
+    for (const fund of template.funds) {
+      if (fund.available_funds?.risk_factor && fund.target_weighting) {
+        totalWeightedRisk += fund.available_funds.risk_factor * fund.target_weighting;
+        totalWeight += fund.target_weighting;
+      }
+    }
+    
+    return totalWeight > 0 ? Math.round((totalWeightedRisk / totalWeight) * 10) / 10 : 0;
+  };
+
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-4">
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600"></div>
         </div>
@@ -232,8 +249,8 @@ const PortfolioTemplateDetails: React.FC = () => {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+      <div className="container mx-auto px-4 py-4">
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
           <div className="flex">
             <div className="flex-shrink-0">
               <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
@@ -259,8 +276,8 @@ const PortfolioTemplateDetails: React.FC = () => {
 
   if (!template) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6">
+      <div className="container mx-auto px-4 py-4">
+        <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-4">
           <div className="flex">
             <div className="flex-shrink-0">
               <svg className="h-5 w-5 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
@@ -282,54 +299,54 @@ const PortfolioTemplateDetails: React.FC = () => {
     );
   }
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-        <div>
-          <button
-            onClick={handleBack}
-            className="mb-4 sm:mb-0 inline-flex items-center text-gray-600 hover:text-gray-900"
-          >
-            <svg className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back to Portfolio Templates
-          </button>
-          <h1 className="text-2xl font-bold text-gray-900">{template?.name || 'Unnamed Template'}</h1>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-0">
-          <button
-            onClick={handleDeleteClick}
-            className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-          >
-            Delete Template
-          </button>
-        </div>
-      </div>
+  const weightedRisk = calculateWeightedRisk();
 
-      {/* Template Details */}
-      <div className="bg-white shadow rounded-lg mb-6">
-        <div className="p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Template Details</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Template Name</p>
-              <p className="mt-1 text-base text-gray-900">{template?.name || 'Unnamed Template'}</p>
+  return (
+    <div className="container mx-auto px-4 py-4">
+      {/* Header */}
+      <div className="bg-white shadow-sm rounded-lg mb-4">
+        <div className="p-4">
+          <div className="flex items-center">
+            <div className="flex items-center">
+              <button
+                onClick={handleBack}
+                className="text-gray-600 hover:text-gray-900 flex items-center justify-center mr-4"
+                aria-label="Go back"
+              >
+                <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">
+                {template?.name || 'Unnamed Template'}
+              </h1>
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-500">Created Date</p>
-              <p className="mt-1 text-base text-gray-900">
-                {formatDate(template?.created_at)}
-              </p>
+            <div className="flex-grow"></div>
+            <button
+              onClick={handleDeleteClick}
+              className="bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+            >
+              Delete Template
+            </button>
+          </div>
+          
+          {/* Template Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-4">
+            <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
+              <p className="text-xs font-semibold text-gray-500 uppercase">Template Name</p>
+              <p className="text-lg font-medium text-gray-800 mt-1">{template?.name || 'Unnamed'}</p>
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-500">Number of Funds</p>
-              <p className="mt-1 text-base text-gray-900">{template?.funds?.length || 0}</p>
+            <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
+              <p className="text-xs font-semibold text-gray-500 uppercase">Created Date</p>
+              <p className="text-lg font-medium text-gray-800 mt-1">{formatDate(template?.created_at)}</p>
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-500">Number of Generations</p>
-              <p className="mt-1 text-base text-gray-900">{generations?.length || 0}</p>
+            <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
+              <p className="text-xs font-semibold text-gray-500 uppercase">Products Using Template</p>
+              <p className="text-lg font-medium text-gray-800 mt-1">{productsCount}</p>
+            </div>
+            <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
+              <p className="text-xs font-semibold text-gray-500 uppercase">Generations</p>
+              <p className="text-lg font-medium text-gray-800 mt-1">{generations?.length || 0}</p>
             </div>
           </div>
         </div>
@@ -337,13 +354,13 @@ const PortfolioTemplateDetails: React.FC = () => {
 
       {/* Generations Tabs */}
       {generations.length > 0 && (
-        <div className="bg-white shadow rounded-lg mb-6">
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-4">
+        <div className="bg-white shadow-sm rounded-lg mb-4">
+          <div className="p-4">
+            <div className="flex justify-between items-center mb-3">
               <h2 className="text-xl font-semibold text-gray-900">Portfolio Generations</h2>
               <Link
                 to={`/add-generation/${portfolioId}`}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-sm flex items-center"
+                className="bg-primary-700 text-white px-4 py-2 rounded-full hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 text-sm flex items-center shadow-sm transition-colors duration-200"
               >
                 <svg className="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -352,17 +369,18 @@ const PortfolioTemplateDetails: React.FC = () => {
               </Link>
             </div>
             
-            <div className="border-b border-gray-200">
-              <nav className="-mb-px flex space-x-2 overflow-x-auto">
+            <div className="mb-4">
+              <nav className="flex space-x-2 px-2 py-2 bg-gray-50 rounded-lg" role="tablist">
                 {generations.map((generation) => (
                   <button
                     key={generation.id}
                     onClick={() => handleGenerationSelect(generation)}
                     className={`${
                       selectedGeneration?.id === generation.id
-                        ? 'border-indigo-500 text-indigo-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    } whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm`}
+                        ? 'bg-primary-700 text-white shadow-sm'
+                        : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                    } rounded-lg px-4 py-2 font-medium text-sm transition-all duration-200 ease-in-out`}
+                    role="tab"
                   >
                     {generation.generation_name || `Version ${generation.version_number}`}
                     {generation.status !== 'active' && (
@@ -378,91 +396,98 @@ const PortfolioTemplateDetails: React.FC = () => {
             </div>
             
             {selectedGeneration && (
-              <div className="mt-4">
-                <div className="p-4 bg-gray-50 rounded-lg mb-6">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
-                    <h3 className="text-lg font-medium text-gray-900 flex items-center">
-                      Generation Details
-                      <span className={`ml-3 px-3 py-1 text-xs rounded-full ${
-                        selectedGeneration.status === 'active' ? 'bg-green-100 text-green-800' :
-                        selectedGeneration.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {selectedGeneration.status.charAt(0).toUpperCase() + selectedGeneration.status.slice(1)}
-                      </span>
-                    </h3>
+              <div className="mt-3">
+                <div className="bg-gray-50 rounded-md border border-gray-200 p-4 mb-3">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-3">
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                        {selectedGeneration.generation_name || `Version ${selectedGeneration.version_number}`}
+                        <span className={`ml-3 px-2 py-0.5 text-xs rounded-full ${
+                          selectedGeneration.status === 'active' ? 'bg-green-100 text-green-800' :
+                          selectedGeneration.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {selectedGeneration.status.charAt(0).toUpperCase() + selectedGeneration.status.slice(1)}
+                        </span>
+                      </h3>
+                      {selectedGeneration.description && (
+                        <p className="text-sm text-gray-600 mt-1">{selectedGeneration.description}</p>
+                      )}
+                    </div>
                     
-                    <div className="mt-2 md:mt-0 flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-3">
+                    <div className="mt-2 md:mt-0 flex space-x-2">
                       <Link
                         to={`/edit-generation/${portfolioId}/${selectedGeneration.id}`}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm flex items-center"
+                        className="bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm flex items-center"
                       >
-                        <svg className="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                         </svg>
-                        Edit Generation
+                        Edit
                       </Link>
                       
                       {selectedGeneration.status === 'draft' && (
                         <button
                           onClick={() => handleActivateGeneration(selectedGeneration.id)}
-                          className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 text-sm flex items-center"
+                          className="bg-green-600 text-white px-3 py-1.5 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 text-sm flex items-center"
                         >
-                          <svg className="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
-                          Activate Generation
+                          Activate
                         </button>
                       )}
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Generation Name</p>
-                      <p className="mt-1 text-base text-gray-900">{selectedGeneration.generation_name}</p>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="bg-white p-3 rounded-md shadow-sm">
+                      <p className="text-xs font-semibold text-gray-500 uppercase">Created</p>
+                      <p className="text-sm text-gray-800 mt-1">{formatDate(selectedGeneration.created_at)}</p>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Version Number</p>
-                      <p className="mt-1 text-base text-gray-900">{selectedGeneration.version_number}</p>
+                    <div className="bg-white p-3 rounded-md shadow-sm">
+                      <p className="text-xs font-semibold text-gray-500 uppercase">Version</p>
+                      <p className="text-sm text-gray-800 mt-1">{selectedGeneration.version_number}</p>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Created Date</p>
-                      <p className="mt-1 text-base text-gray-900">{formatDate(selectedGeneration.created_at)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Last Updated</p>
-                      <p className="mt-1 text-base text-gray-900">{formatDate(selectedGeneration.updated_at)}</p>
+                    <div className="bg-white p-3 rounded-md shadow-sm">
+                      <p className="text-xs font-semibold text-gray-500 uppercase">Risk Level</p>
+                      <div className="flex items-center mt-1">
+                        <span className="text-sm font-medium mr-2">{weightedRisk}/7</span>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                          <div 
+                            className={`h-2.5 rounded-full ${
+                              weightedRisk < 3 ? 'bg-green-500' : 
+                              weightedRisk < 5 ? 'bg-blue-500' : 
+                              weightedRisk < 7 ? 'bg-yellow-500' : 
+                              'bg-red-500'
+                            }`}
+                            style={{ width: `${(weightedRisk / 7) * 100}%` }}
+                          ></div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  {selectedGeneration.description && (
-                    <div className="mt-2 mb-4">
-                      <p className="text-sm font-medium text-gray-500">Description</p>
-                      <p className="mt-1 text-base text-gray-700">{selectedGeneration.description}</p>
-                    </div>
-                  )}
                 </div>
                 
-                {/* Funds List - now included within the generation section */}
-                <div className="mt-4">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    Funds for {selectedGeneration.generation_name || `Version ${selectedGeneration.version_number}`}
-                  </h3>
+                {/* Funds Table */}
+                <div className="mt-3">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Funds</h3>
                   {template?.funds && template.funds.length > 0 ? (
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto rounded-lg border border-gray-200">
                       <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                        <thead className="bg-gray-100">
                           <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th scope="col" className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
                               Fund Name
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th scope="col" className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
                               ISIN
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Target Weighting
+                            <th scope="col" className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                              Target %
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Risk Factor
+                            <th scope="col" className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                              Risk
                             </th>
                           </tr>
                         </thead>
@@ -470,8 +495,8 @@ const PortfolioTemplateDetails: React.FC = () => {
                           {template.funds.slice().sort((a, b) => 
                             (a.available_funds?.fund_name || '').localeCompare(b.available_funds?.fund_name || '')
                           ).map((fund) => (
-                            <tr key={fund.id}>
-                              <td className="px-6 py-4 whitespace-nowrap">
+                            <tr key={fund.id} className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100">
+                              <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
                                 {fund.available_funds ? (
                                   <Link to={`/definitions/funds/${fund.available_funds.id}`} className="text-indigo-600 hover:text-indigo-800">
                                     {fund.available_funds.fund_name}
@@ -480,13 +505,13 @@ const PortfolioTemplateDetails: React.FC = () => {
                                   `Fund ID: ${fund.fund_id}`
                                 )}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                                 {fund.available_funds?.isin_number || 'N/A'}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                                 {formatPercentage(fund.target_weighting)}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                                 {fund.available_funds?.risk_factor || 'N/A'}
                               </td>
                             </tr>
@@ -495,7 +520,9 @@ const PortfolioTemplateDetails: React.FC = () => {
                       </table>
                     </div>
                   ) : (
-                    <div className="text-gray-500 text-center py-4 bg-gray-50 rounded-lg">No funds in this template generation</div>
+                    <div className="text-gray-500 text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      No funds in this template generation
+                    </div>
                   )}
                 </div>
               </div>

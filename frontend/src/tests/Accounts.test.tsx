@@ -187,9 +187,9 @@ describe('Accounts Component', () => {
     });
     
     // Check if the values and IRR are displayed in the correct format
-    expect(screen.getByText('$150,000')).toBeInTheDocument();
+    expect(screen.getByText('£150,000')).toBeInTheDocument();
     expect(screen.getByText('8.5%')).toBeInTheDocument();
-    expect(screen.getByText('$75,000')).toBeInTheDocument();
+    expect(screen.getByText('£75,000')).toBeInTheDocument();
     expect(screen.getByText('6.2%')).toBeInTheDocument();
   });
 });

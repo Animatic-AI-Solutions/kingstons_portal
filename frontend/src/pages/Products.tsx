@@ -483,9 +483,6 @@ const Products: React.FC = () => {
                                 <div>
                                   <div className={`text-sm font-medium ${(product.irr ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                                     {formatPercentage(product.irr)}
-                                    <span className="ml-1">
-                                      {(product.irr ?? 0) >= 0 ? '▲' : '▼'}
-                                    </span>
                                   </div>
                                   {product.irr_date && (
                                     <div className="text-xs text-gray-500 mt-1">
@@ -728,16 +725,13 @@ const Products: React.FC = () => {
                           <div>
                               <div className={`text-sm font-medium ${(product.irr ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                               {formatPercentage(product.irr)}
-                              <span className="ml-1">
-                                {(product.irr ?? 0) >= 0 ? '▲' : '▼'}
-                              </span>
-                            </div>
-                            {product.irr_date && (
-                              <div className="text-xs text-gray-500 mt-1">
-                                as of {new Date(product.irr_date).toLocaleDateString()}
                               </div>
-                            )}
-                          </div>
+                              {product.irr_date && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  as of {new Date(product.irr_date).toLocaleDateString()}
+                                </div>
+                              )}
+                            </div>
                           ) : (
                             <div className="text-sm text-gray-500">-</div>
                           )}

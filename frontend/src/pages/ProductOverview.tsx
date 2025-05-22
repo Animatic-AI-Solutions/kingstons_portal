@@ -368,9 +368,9 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
 
   // Format currency with commas and 2 decimal places
   const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-GB', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'GBP',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(amount);
@@ -423,7 +423,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   // Format date only
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString('en-GB', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -1333,7 +1333,6 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           holding.irr !== undefined && holding.irr !== null ? (
                             <span className={`${holding.irr >= 0 ? 'text-green-700' : 'text-red-700'} font-medium`}>
                               {formatPercentage(holding.irr)}
-                              <span className="ml-1">{holding.irr >= 0 ? '▲' : '▼'}</span>
                             </span>
                           ) : (
                             <span className="text-gray-500">N/A</span>
