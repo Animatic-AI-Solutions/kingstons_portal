@@ -283,6 +283,7 @@ const createPreviousFundsEntry = (inactiveHoldings: Holding[], activityLogs: Act
     account_holding_id: -1,
     product_id: -1, // Set product_id for virtual entry
     isVirtual: true, // Flag to identify this as a virtual entry
+    isin_number: 'N/A', // Added to satisfy type requirements
     // Store the detailed information about inactive holdings
     inactiveHoldingIds: inactiveHoldings.map(h => ({
       id: h.id, // Portfolio fund ID
@@ -1026,8 +1027,19 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                             {displayHoldings.sort((a, b) => {
                               if (a.isVirtual) return 1;
                               if (b.isVirtual) return -1;
-                              if (a.fund_name === 'Cashline') return 1;
-                              if (b.fund_name === 'Cashline') return -1;
+                              
+                              // Cash fund (name 'Cash', ISIN 'N/A') always goes second-to-last (before Previous Funds)
+                              const aIsCash = a.fund_name === 'Cash' && a.isin_number === 'N/A';
+                              const bIsCash = b.fund_name === 'Cash' && b.isin_number === 'N/A';
+
+                              if (aIsCash && !b.isVirtual) return 1; // Cash before virtual if b is not virtual
+                              if (bIsCash && !a.isVirtual) return -1; // Similar for b
+                              // If one is cash and other is virtual, cash comes before virtual
+                              if (aIsCash && b.isVirtual) return -1;
+                              if (bIsCash && a.isVirtual) return 1;
+                              // If both are cash, or neither is cash and neither is virtual, use name compare
+                              if (aIsCash && bIsCash) return (a.fund_name || '').localeCompare(b.fund_name || '');
+
                               return (a.fund_name || '').localeCompare(b.fund_name || '');
                             }).map((holding) => (
                               <tr key={holding.id} className={holding.isVirtual ? "bg-gray-100 border-t border-gray-300" : ""}>
@@ -1344,6 +1356,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                 irr: undefined, // Set to undefined as we'll always display N/A
                 isActive: false,
                 isVirtual: true,
+                isin_number: 'N/A', // Added to satisfy type requirements
                 inactiveHoldingIds: inactiveHoldings.map(h => ({
                   id: h.id,
                   fund_id: h.fund_id,
@@ -1356,6 +1369,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                 id: holding.id,
                 holding_id: holding.account_holding_id,
                 fund_name: holding.fund_name || 'Unknown Fund',
+                isin_number: holding.isin_number || 'N/A', // Make sure ISIN is included
                 irr: holding.irr,
                 isActive: true
               }))];
@@ -1371,10 +1385,13 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                 if (a.id === -1) return 1;
                 if (b.id === -1) return -1;
                 
-                // Cashline always goes second-to-last (before Previous Funds)
-                if (a.fund_name === 'Cashline') return 1;
-                if (b.fund_name === 'Cashline') return -1;
-                
+                // Cash fund (name 'Cash', ISIN 'N/A') always goes second-to-last (before Previous Funds)
+                const aIsCash = a.fund_name === 'Cash' && a.isin_number === 'N/A';
+                const bIsCash = b.fund_name === 'Cash' && b.isin_number === 'N/A';
+
+                if (aIsCash) return 1; // If a is Cash, it should come after non-Cash, non-Virtual
+                if (bIsCash) return -1; // If b is Cash, it should come after non-Cash, non-Virtual
+                                
                 // All other funds are sorted alphabetically
                 return (a.fund_name || '').localeCompare(b.fund_name || '');
               });

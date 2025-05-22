@@ -215,13 +215,13 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         const fundsResponse = await api.get('/funds');
         const allFunds = fundsResponse.data;
         
-        // Filter out cashline funds - they'll be added automatically
-        const nonCashlineFunds = allFunds.filter((fund: Fund) => 
-          !fund.fund_name.toLowerCase().includes('cashline')
+        // Filter out cash funds - they'll be added automatically or handled by backend
+        const nonCashFunds = allFunds.filter((fund: Fund) => 
+          !(fund.fund_name === 'Cash' && fund.isin_number === 'N/A')
         );
         
         setFunds(allFunds); // Keep all funds in state for reference
-        setFilteredFunds(nonCashlineFunds); // But only show non-cashline funds in the UI
+        setFilteredFunds(nonCashFunds); // But only show non-cash funds in the UI
       } catch (err) {
         console.error('Error loading all funds:', err);
       } finally {
@@ -618,9 +618,10 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       // Format the selected start date with dayjs
       const formattedStartDate = startDate.format('YYYY-MM-DD');
       
-      // Find the Cashline fund ID (if it exists in our funds list)
-      const cashlineFund = funds.find(fund => 
-        fund.fund_name.toLowerCase().includes('cashline')
+      // Find the Cash fund ID (if it exists in our funds list)
+      // This might not be strictly necessary if backend handles it, but good for consistency
+      const cashFund = funds.find(fund => 
+        fund.fund_name === 'Cash' && fund.isin_number === 'N/A'
       );
       
       for (const product of products) {
@@ -674,9 +675,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               }
             });
             
-            // We DON'T need to add the Cashline fund here as it's automatically added by the 
+            // We DON'T need to add the Cash fund here as it's automatically added by the 
             // backend when a portfolio is created (in the /portfolios POST endpoint)
-            // This was causing the Cashline fund to be added twice
+            // This was causing the Cash fund to be added twice
             
             // Wait for all fund additions to complete
             await Promise.all(fundPromises);
@@ -756,15 +757,15 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     }
   };
 
-  // Update fund filtering to exclude cashline funds
+  // Update fund filtering to exclude cash funds
   const handleFundSearch = (searchTerm: string): void => {
     setFundSearchTerm(searchTerm);
     
     if (!searchTerm) {
-      const nonCashlineFunds = funds.filter((fund: Fund) => 
-        !fund.fund_name.toLowerCase().includes('cashline') // Exclude any cashline funds
+      const nonCashFunds = funds.filter((fund: Fund) => 
+        !(fund.fund_name === 'Cash' && fund.isin_number === 'N/A') // Exclude Cash fund
       );
-      setFilteredFunds(nonCashlineFunds);
+      setFilteredFunds(nonCashFunds);
       return;
     }
     
@@ -772,7 +773,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     const filtered = funds.filter((fund: Fund) => 
       (fund.fund_name.toLowerCase().includes(term) || 
       (fund.isin_number && fund.isin_number.toLowerCase().includes(term))) &&
-      !fund.fund_name.toLowerCase().includes('cashline') // Also exclude cashline funds from search results
+      !(fund.fund_name === 'Cash' && fund.isin_number === 'N/A') // Also exclude Cash fund from search results
     );
     setFilteredFunds(filtered);
   };

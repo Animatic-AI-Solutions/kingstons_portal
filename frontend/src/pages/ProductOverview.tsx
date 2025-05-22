@@ -358,9 +358,12 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           if (a.isVirtual) return 1;
           if (b.isVirtual) return -1;
           
-          // Cashline always goes second-to-last (before Previous Funds)
-          if (a.fund_name === 'Cashline') return 1;
-          if (b.fund_name === 'Cashline') return -1;
+          // Cash fund (name 'Cash', ISIN 'N/A') always goes second-to-last (before Previous Funds)
+          const aIsCash = a.fund_name === 'Cash' && a.isin_number === 'N/A';
+          const bIsCash = b.fund_name === 'Cash' && b.isin_number === 'N/A';
+
+          if (aIsCash) return 1;
+          if (bIsCash) return -1;
           
           // All other funds are sorted alphabetically
           return (a.fund_name || '').localeCompare(b.fund_name || '');

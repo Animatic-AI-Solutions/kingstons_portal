@@ -83,7 +83,7 @@ async def create_portfolio(portfolio: PortfolioCreate, db = Depends(get_db)):
     How it works:
         1. Validates the portfolio data using the PortfolioCreate model
         2. Inserts the validated data into the 'portfolios' table
-        3. Adds the CASHLINE fund with 0% weighting by default
+        3. Adds the Cash fund (name 'Cash', ISIN 'N/A') with 0% weighting by default
         4. Returns the newly created portfolio with its generated ID
     Expected output: A JSON object containing the created portfolio with all fields including ID and created_at timestamp
     """
@@ -104,35 +104,38 @@ async def create_portfolio(portfolio: PortfolioCreate, db = Depends(get_db)):
         if result.data and len(result.data) > 0:
             new_portfolio = result.data[0]
             
-            # Always add the CASHLINE fund to every new portfolio
-            logger.info(f"Adding CASHLINE fund to portfolio {new_portfolio['id']}")
+            # Always add the Cash fund to every new portfolio
+            logger.info(f"Adding Cash fund to portfolio {new_portfolio['id']}")
             
-            # Find the CASHLINE fund
-            cashline_fund_result = db.table("available_funds").select("*").eq("isin_number", "CASHLINE").limit(1).execute()
+            # Find the Cash fund
+            cash_fund_result = db.table("available_funds").select("*") \
+                                 .eq("fund_name", "Cash") \
+                                 .eq("isin_number", "N/A") \
+                                 .limit(1).execute()
             
-            if cashline_fund_result.data and len(cashline_fund_result.data) > 0:
-                cashline_fund = cashline_fund_result.data[0]
-                logger.info(f"Found CASHLINE fund with ID {cashline_fund['id']}")
+            if cash_fund_result.data and len(cash_fund_result.data) > 0:
+                cash_fund = cash_fund_result.data[0]
+                logger.info(f"Found Cash fund with ID {cash_fund['id']}")
                 
                 # Get the same start date as the portfolio
                 portfolio_start_date = data_dict['start_date']
                 
-                # Add CASHLINE fund with 0% weighting
-                cashline_fund_data = {
+                # Add Cash fund with 0% weighting
+                cash_fund_data = {
                     "portfolio_id": new_portfolio["id"],
-                    "available_funds_id": cashline_fund["id"],
+                    "available_funds_id": cash_fund["id"],
                     "weighting": 0,  # 0% weighting
                     "start_date": portfolio_start_date,
                     "amount_invested": 0  # No initial investment
                 }
                 
-                cashline_result = db.table("portfolio_funds").insert(cashline_fund_data).execute()
-                if cashline_result.data and len(cashline_result.data) > 0:
-                    logger.info(f"Successfully added CASHLINE fund to portfolio {new_portfolio['id']}")
+                cash_add_result = db.table("portfolio_funds").insert(cash_fund_data).execute()
+                if cash_add_result.data and len(cash_add_result.data) > 0:
+                    logger.info(f"Successfully added Cash fund to portfolio {new_portfolio['id']}")
                 else:
-                    logger.warning(f"Failed to add CASHLINE fund to portfolio {new_portfolio['id']}")
+                    logger.warning(f"Failed to add Cash fund to portfolio {new_portfolio['id']}")
             else:
-                logger.warning("CASHLINE fund not found in available_funds table")
+                logger.warning("Cash fund (name 'Cash', ISIN 'N/A') not found in available_funds table")
                 
             return new_portfolio
             
@@ -428,44 +431,47 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
             db.table("portfolio_funds").insert(fund_data).execute()
             added_fund_ids.add(fund_id)  # Mark as added
         
-        # Always add the CASHLINE fund if it's not already included in the template
-        # Find if CASHLINE is already added
-        cashline_fund_included = False
+        # Always add the Cash fund if it's not already included in the template
+        # Find if Cash is already added
+        cash_fund_included = False
         for fund in template_funds_response.data:
-            # Get fund details to check if it's the CASHLINE fund
+            # Get fund details to check if it's the Cash fund
             fund_details = db.table("available_funds").select("*").eq("id", fund["fund_id"]).execute()
             if fund_details.data and len(fund_details.data) > 0:
-                if fund_details.data[0].get("isin_number") == "CASHLINE":
-                    cashline_fund_included = True
-                    logger.info(f"CASHLINE fund already included in template {template_data.template_id}")
+                if fund_details.data[0].get("fund_name") == "Cash":
+                    cash_fund_included = True
+                    logger.info(f"Cash fund already included in template {template_data.template_id}")
                     break
         
-        # If CASHLINE not already included, add it
-        if not cashline_fund_included:
-            logger.info(f"Adding CASHLINE fund to portfolio {new_portfolio['id']}")
-            # Find the CASHLINE fund
-            cashline_fund_result = db.table("available_funds").select("*").eq("isin_number", "CASHLINE").limit(1).execute()
+        # If Cash not already included, add it
+        if not cash_fund_included:
+            logger.info(f"Adding Cash fund to portfolio {new_portfolio['id']}")
+            # Find the Cash fund
+            cash_fund_result = db.table("available_funds").select("*") \
+                                 .eq("fund_name", "Cash") \
+                                 .eq("isin_number", "N/A") \
+                                 .limit(1).execute()
             
-            if cashline_fund_result.data and len(cashline_fund_result.data) > 0:
-                cashline_fund = cashline_fund_result.data[0]
-                logger.info(f"Found CASHLINE fund with ID {cashline_fund['id']}")
+            if cash_fund_result.data and len(cash_fund_result.data) > 0:
+                cash_fund = cash_fund_result.data[0]
+                logger.info(f"Found Cash fund with ID {cash_fund['id']}")
                 
-                # Add CASHLINE fund with 0% weighting
-                cashline_fund_data = {
+                # Add Cash fund with 0% weighting
+                cash_fund_data = {
                     "portfolio_id": new_portfolio["id"],
-                    "available_funds_id": cashline_fund["id"],
+                    "available_funds_id": cash_fund["id"],
                     "weighting": 0,  # 0% weighting
                     "start_date": start_date,
                     "amount_invested": 0  # No initial investment
                 }
                 
-                cashline_result = db.table("portfolio_funds").insert(cashline_fund_data).execute()
-                if cashline_result.data and len(cashline_result.data) > 0:
-                    logger.info(f"Successfully added CASHLINE fund to portfolio {new_portfolio['id']}")
+                cash_add_result = db.table("portfolio_funds").insert(cash_fund_data).execute()
+                if cash_add_result.data and len(cash_add_result.data) > 0:
+                    logger.info(f"Successfully added Cash fund to portfolio {new_portfolio['id']}")
                 else:
-                    logger.warning(f"Failed to add CASHLINE fund to portfolio {new_portfolio['id']}")
+                    logger.warning(f"Failed to add Cash fund to portfolio {new_portfolio['id']}")
             else:
-                logger.warning("CASHLINE fund not found in available_funds table")
+                logger.warning("Cash fund (name 'Cash', ISIN 'N/A') not found in available_funds table")
         
         logger.info(f"Successfully created portfolio ID {new_portfolio['id']} from template {template_data.template_id}")
         return new_portfolio
