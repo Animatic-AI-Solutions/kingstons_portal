@@ -8,5 +8,6 @@ from . import (
     portfolio_funds, client_products, product_holdings, 
     analytics,
     available_providers,
-    available_portfolios, fund_valuations, product_owners, client_group_product_owners
+    available_portfolios, fund_valuations, product_owners, client_group_product_owners,
+    provider_switch_log
 )

@@ -39,6 +39,16 @@ interface CellEdit {
   toDelete?: boolean;
 }
 
+interface ProviderSwitch {
+  id: number;
+  switch_date: string;
+  previous_provider_id: number | null;
+  new_provider_id: number;
+  description: string | null;
+  previous_provider_name: string | null;
+  new_provider_name: string | null;
+}
+
 interface EditableMonthlyActivitiesTableProps {
   funds: Fund[];
   activities: Activity[];
@@ -46,6 +56,7 @@ interface EditableMonthlyActivitiesTableProps {
   onActivitiesUpdated: () => void;
   selectedYear?: number;
   allFunds?: any[]; // Add property to receive the full list of all funds
+  providerSwitches?: ProviderSwitch[]; // Add provider switches prop
 }
 
 interface FundValuation {
@@ -80,7 +91,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   accountHoldingId,
   onActivitiesUpdated,
   selectedYear,
-  allFunds = [] // Default to empty array
+  allFunds = [], // Default to empty array
+  providerSwitches = [] // Default to empty array
 }) => {
   const [months, setMonths] = useState<string[]>([]);
   const [pendingEdits, setPendingEdits] = useState<CellEdit[]>([]);
@@ -1243,71 +1255,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           if (input && !input.disabled) {
             input.focus();
             
-            // Get the scrollable container
-            const scrollContainer = newCell.closest('.overflow-auto');
-            if (scrollContainer) {
-              // Get cell and container dimensions
-              const cellRect = newCell.getBoundingClientRect();
-              const containerRect = scrollContainer.getBoundingClientRect();
-              
-              // Different scrolling logic based on direction
-              switch (e.key) {
-                case 'ArrowLeft': {
-                  // For left navigation, ensure the cell is fully visible
-                  // We need a larger padding for left movement to account for the sticky first column
-                  const firstColumnWidth = 200; // Approximate width of the first column
-                  const isPartiallyVisible = cellRect.left < (containerRect.left + firstColumnWidth);
-                  
-                  if (isPartiallyVisible) {
-                    // Scroll to ensure the cell is visible with padding
-                    const scrollOffset = scrollContainer.scrollLeft - (containerRect.left + firstColumnWidth - cellRect.left + 20);
-                    scrollContainer.scrollTo({
-                      left: Math.max(0, scrollOffset),
-                      behavior: 'smooth'
-                    });
-                  }
-                  break;
-                }
-                case 'ArrowRight': {
-                  // For right navigation, check if cell is partially out of view
-                  const isPartiallyVisible = cellRect.right > (containerRect.right - 20);
-                  
-                  if (isPartiallyVisible) {
-                    // Scroll to ensure the cell is visible with padding
-                    const scrollOffset = scrollContainer.scrollLeft + (cellRect.right - containerRect.right + 20);
-                    scrollContainer.scrollTo({
-                      left: scrollOffset,
-                      behavior: 'smooth'
-                    });
-                  }
-                  break;
-                }
-                case 'ArrowUp':
-                case 'ArrowDown':
-                case 'Enter': {
-                  // For up/down/enter navigation, check if cell is partially out of view vertically
-                  const isPartiallyVisibleTop = cellRect.top < (containerRect.top + 50); // Allow for header
-                  const isPartiallyVisibleBottom = cellRect.bottom > (containerRect.bottom - 20);
-                  
-                  if (isPartiallyVisibleTop || isPartiallyVisibleBottom) {
-                    // Scroll the cell into view
-                    newCell.scrollIntoView({
-                      behavior: 'smooth',
-                      block: isPartiallyVisibleTop ? 'start' : 'end',
-                      inline: 'nearest'
-                    });
-                  }
-                  break;
-                }
-                default: {
-                  // For other navigation, use standard scrollIntoView
-                  newCell.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'nearest',
-                    inline: 'nearest'
-                  });
-                }
-              }
+            // If it's a double click, select all text to allow immediate typing
+            if (e.detail === 2) {
+              input.select();
             }
           }
         }
@@ -1656,6 +1606,17 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     return baseClass;
   };
 
+  // Helper function to check if a month has a provider switch
+  const getProviderSwitchForMonth = (month: string): ProviderSwitch | undefined => {
+    if (!providerSwitches) return undefined;
+    
+    return providerSwitches.find(ps => {
+      const switchDate = new Date(ps.switch_date);
+      const switchMonth = `${switchDate.getFullYear()}-${String(switchDate.getMonth() + 1).padStart(2, '0')}`;
+      return switchMonth === month;
+    });
+  };
+
   return (
     <>
       <div className="mt-8">
@@ -1690,11 +1651,37 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
               <thead className="bg-blue-50 sticky top-0 z-20 shadow-lg">
                 <tr className="h-10">
                   <th className="px-3 py-2 text-left font-medium text-gray-800 sticky left-0 z-30 bg-blue-50 shadow-[5px_0_5px_-5px_rgba(0,0,0,0.1)] border-b border-gray-300">Fund / Activity</th>
-                  {months.map((month, index) => (
-                    <th key={month} className="px-2 py-2 text-center font-medium text-gray-800 whitespace-nowrap bg-blue-50 border-b border-gray-300">
-                      <span className="text-sm">{formatMonth(month)}</span>
-                    </th>
-                  ))}
+                  {months.map((month, index) => {
+                    const providerSwitch = getProviderSwitchForMonth(month);
+                    
+                    return (
+                      <th key={month} className="px-2 py-2 text-center font-medium text-gray-800 whitespace-nowrap bg-blue-50 border-b border-gray-300 relative group">
+                        <span className="text-sm">{formatMonth(month)}</span>
+                        {providerSwitch && (
+                          <div className="absolute -top-1 right-0 w-4 h-4">
+                            <div 
+                              className="w-3 h-3 bg-indigo-500 rounded-full cursor-help"
+                              title={`Provider Switch: ${providerSwitch.previous_provider_name || 'None'} → ${providerSwitch.new_provider_name}`}
+                            />
+                            {/* Tooltip */}
+                            <div className="hidden group-hover:block absolute z-50 w-64 p-2 bg-white rounded-lg shadow-lg border border-gray-200 text-sm text-left -right-2 top-5">
+                              <div className="font-medium text-gray-900 mb-1">Provider Switch</div>
+                              <div className="text-gray-600">
+                                <div>From: {providerSwitch.previous_provider_name || 'None'}</div>
+                                <div>To: {providerSwitch.new_provider_name}</div>
+                                {providerSwitch.description && (
+                                  <div className="mt-1 text-xs italic">{providerSwitch.description}</div>
+                                )}
+                                <div className="text-xs text-gray-500 mt-1">
+                                  {new Date(providerSwitch.switch_date).toLocaleDateString()}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">

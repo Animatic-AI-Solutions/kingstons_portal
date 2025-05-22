@@ -708,6 +708,12 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
   const [availableProviders, setAvailableProviders] = useState<Array<{id: number, name: string}>>([]);
   const [selectedProvider, setSelectedProvider] = useState<number | null>(null);
   const [isSwitchingProvider, setIsSwitchingProvider] = useState(false);
+  // Add a new state for the switch description
+  const [switchDescription, setSwitchDescription] = useState<string>('');
+  // Add a new state for provider switches
+  const [providerSwitches, setProviderSwitches] = useState<any[]>([]);
+  // Add a state for the switch date
+  const [switchDate, setSwitchDate] = useState<string>('');
   
   useEffect(() => {
     if (accountId) {
@@ -717,6 +723,13 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       console.error('AccountIRRCalculation: No accountId available for data fetching');
     }
   }, [accountId, api]);
+
+  // Initialize the switch date to the current month
+  useEffect(() => {
+    const today = new Date();
+    const currentMonthYear = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+    setSwitchDate(currentMonthYear); // Format as YYYY-MM
+  }, []);
 
   useEffect(() => {
     if (account?.portfolio_id && !isLoading && holdings.length > 0) {
@@ -853,6 +866,9 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       if (latestDate) {
         setLatestValuationDate(latestDate);
       }
+      
+      // Fetch provider switches
+      await fetchProviderSwitches(accountId);
       
       setIsLoading(false);
       
@@ -1075,14 +1091,33 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
     
     try {
       setIsSwitchingProvider(true);
+      
+      // Store the previous provider ID before switching
+      const previousProviderId = account.provider_id;
+      
+      // First, update the client_product with the new provider
       await api.patch(`/client_products/${account.id}`, {
         provider_id: selectedProvider
+      });
+      
+      // Parse the month-year string to create a date object for the 1st of the month
+      const [year, month] = switchDate.split('-').map(num => parseInt(num));
+      const switchDateObj = new Date(year, month - 1, 1); // JavaScript months are 0-indexed
+      
+      // Then create an entry in the provider_switch_log table
+      await api.post('/provider_switch_log', {
+        client_product_id: account.id,
+        switch_date: switchDateObj.toISOString(),
+        previous_provider_id: previousProviderId,
+        new_provider_id: selectedProvider,
+        description: switchDescription.trim() || 'Provider switch' // Use default if empty
       });
       
       // Refresh the data after provider switch
       await fetchData(accountId as string);
       setIsProviderSwitchModalOpen(false);
       setSelectedProvider(null);
+      setSwitchDescription(''); // Reset description
     } catch (error) {
       console.error('Error switching provider:', error);
       alert('Failed to switch provider. Please try again.');
@@ -1097,6 +1132,18 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       fetchAvailableProviders();
     }
   }, [isProviderSwitchModalOpen]);
+
+  // Add a function to fetch provider switches
+  const fetchProviderSwitches = async (productId: string) => {
+    try {
+      const response = await api.get(`/client_products/${productId}/provider_switches`);
+      setProviderSwitches(response.data || []);
+      console.log('Provider switches loaded:', response.data);
+    } catch (error) {
+      console.error('Error fetching provider switches:', error);
+      setProviderSwitches([]);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -1682,6 +1729,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                     onActivitiesUpdated={refreshData}
                     selectedYear={selectedYear}
                     allFunds={allFunds} // Pass all funds from the API instead of just holdings
+                    providerSwitches={providerSwitches} // Pass provider switches
                   />
                 </div>
               );
@@ -1718,7 +1766,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       <Transition appear show={showDeactivationConfirm} as={Fragment}>
         <Dialog 
           as="div" 
-          className="relative z-10" 
+          className="relative z-50" 
           onClose={() => setShowDeactivationConfirm(false)}
         >
           <Transition.Child
@@ -1733,7 +1781,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
             <div className="fixed inset-0 bg-black bg-opacity-25" />
           </Transition.Child>
 
-          <div className="fixed inset-0 overflow-y-auto">
+          <div className="fixed inset-0 overflow-y-auto z-50">
             <div className="flex min-h-full items-center justify-center p-4 text-center">
               <Transition.Child
                 as={Fragment}
@@ -1744,7 +1792,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-lg bg-white p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-lg bg-white p-6 text-left align-middle shadow-xl transition-all z-50">
                   <Dialog.Title
                     as="h3"
                     className="text-lg font-medium leading-6 text-gray-900"
@@ -1809,7 +1857,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       <Transition appear show={isProviderSwitchModalOpen} as={Fragment}>
         <Dialog 
           as="div" 
-          className="relative z-10" 
+          className="relative z-50" 
           onClose={() => setIsProviderSwitchModalOpen(false)}
         >
           <Transition.Child
@@ -1824,7 +1872,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
             <div className="fixed inset-0 bg-black bg-opacity-25" />
           </Transition.Child>
 
-          <div className="fixed inset-0 overflow-y-auto">
+          <div className="fixed inset-0 overflow-y-auto z-50">
             <div className="flex min-h-full items-center justify-center p-4 text-center">
               <Transition.Child
                 as={Fragment}
@@ -1835,7 +1883,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-lg bg-white p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-lg bg-white p-6 text-left align-middle shadow-xl transition-all z-50">
                   <Dialog.Title
                     as="h3"
                     className="text-lg font-medium leading-6 text-gray-900"
@@ -1870,6 +1918,35 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                           </option>
                       ))}
                     </select>
+                    
+                    {/* Add switch date field */}
+                    <div className="mt-4">
+                      <label htmlFor="switchDate" className="block text-sm font-medium text-gray-700">
+                        Switch Month
+                      </label>
+                      <input
+                        type="month"
+                        id="switchDate"
+                        className="mt-1 block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                        value={switchDate}
+                        onChange={(e) => setSwitchDate(e.target.value)}
+                      />
+                    </div>
+                    
+                    {/* Add description field */}
+                    <div className="mt-4">
+                      <label htmlFor="switchDescription" className="block text-sm font-medium text-gray-700">
+                        Reason for Switch
+                      </label>
+                      <textarea
+                        id="switchDescription"
+                        className="mt-1 block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                        rows={3}
+                        placeholder="Enter reason for provider switch (optional)"
+                        value={switchDescription}
+                        onChange={(e) => setSwitchDescription(e.target.value)}
+                      />
+                    </div>
                   </div>
 
                   <div className="mt-6 flex justify-end space-x-3">
@@ -1885,7 +1962,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                       type="button"
                       className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:bg-indigo-300 disabled:cursor-not-allowed"
                       onClick={handleProviderSwitch}
-                      disabled={!selectedProvider || isSwitchingProvider}
+                      disabled={!selectedProvider || isSwitchingProvider || !switchDate}
                     >
                       {isSwitchingProvider ? (
                         <>
