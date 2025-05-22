@@ -20,7 +20,9 @@ interface Account {
   end_date?: string;
   irr?: number;
   total_value?: number;
+  provider_id?: number;
   provider_name?: string;
+  provider_theme_color?: string;
   product_type?: string;
   portfolio_id?: number;
   portfolio_name?: string;
@@ -702,6 +704,10 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
   const [totalIrrCalculationDate, setTotalIrrCalculationDate] = useState<string | undefined>(undefined);
   const [totalIrrError, setTotalIrrError] = useState<string | null>(null);
   const [availableYears, setAvailableYears] = useState<number[]>([]);
+  const [isProviderSwitchModalOpen, setIsProviderSwitchModalOpen] = useState<boolean>(false);
+  const [availableProviders, setAvailableProviders] = useState<Array<{id: number, name: string}>>([]);
+  const [selectedProvider, setSelectedProvider] = useState<number | null>(null);
+  const [isSwitchingProvider, setIsSwitchingProvider] = useState(false);
   
   useEffect(() => {
     if (accountId) {
@@ -1052,6 +1058,45 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       setDeactivating(false);
     }
   };
+
+  // Add this after the fetchData function
+  const fetchAvailableProviders = async () => {
+    try {
+      const response = await api.get('/available_providers');
+      setAvailableProviders(response.data);
+    } catch (error) {
+      console.error('Error fetching providers:', error);
+    }
+  };
+
+  // Add this function to handle provider switch
+  const handleProviderSwitch = async () => {
+    if (!selectedProvider || !account) return;
+    
+    try {
+      setIsSwitchingProvider(true);
+      await api.patch(`/client_products/${account.id}`, {
+        provider_id: selectedProvider
+      });
+      
+      // Refresh the data after provider switch
+      await fetchData(accountId as string);
+      setIsProviderSwitchModalOpen(false);
+      setSelectedProvider(null);
+    } catch (error) {
+      console.error('Error switching provider:', error);
+      alert('Failed to switch provider. Please try again.');
+    } finally {
+      setIsSwitchingProvider(false);
+    }
+  };
+
+  // Add this useEffect to fetch providers when modal opens
+  useEffect(() => {
+    if (isProviderSwitchModalOpen) {
+      fetchAvailableProviders();
+    }
+  }, [isProviderSwitchModalOpen]);
 
   if (isLoading) {
     return (
@@ -1514,6 +1559,12 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                     'Calculate Monthly IRR'
                   )}
                 </button>
+                <button
+                  onClick={() => setIsProviderSwitchModalOpen(true)}
+                  className="mr-2 px-4 py-2 bg-indigo-600 text-white font-medium rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Provider Switch
+                </button>
               </div>
             </div>
             
@@ -1745,6 +1796,107 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                         </>
                       ) : (
                         'Deactivate Fund'
+                      )}
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+      {/* Provider Switch Modal */}
+      <Transition appear show={isProviderSwitchModalOpen} as={Fragment}>
+        <Dialog 
+          as="div" 
+          className="relative z-10" 
+          onClose={() => setIsProviderSwitchModalOpen(false)}
+        >
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-25" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-lg bg-white p-6 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-lg font-medium leading-6 text-gray-900"
+                  >
+                    Switch Provider
+                  </Dialog.Title>
+                  
+                  <div className="mt-4">
+                    {/* Current Provider Info */}
+                    <div className="mb-4 p-3 bg-gray-50 rounded-md">
+                      <div className="text-sm font-medium text-gray-500">Current Provider</div>
+                      <div className="text-base font-medium text-gray-900">
+                        {account?.provider_name || 'No Provider Assigned'}
+                      </div>
+                    </div>
+
+                    <label htmlFor="provider" className="block text-sm font-medium text-gray-700">
+                      Select New Provider
+                    </label>
+                    <select
+                      id="provider"
+                      className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                      value={selectedProvider || ''}
+                      onChange={(e) => setSelectedProvider(Number(e.target.value))}
+                    >
+                      <option value="">Select a provider...</option>
+                      {availableProviders
+                        .filter(provider => provider.id !== account?.provider_id) // Filter out current provider
+                        .map((provider) => (
+                          <option key={provider.id} value={provider.id}>
+                            {provider.name}
+                          </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="mt-6 flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-gray-100 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2"
+                      onClick={() => setIsProviderSwitchModalOpen(false)}
+                    >
+                      Cancel
+                    </button>
+                    
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:bg-indigo-300 disabled:cursor-not-allowed"
+                      onClick={handleProviderSwitch}
+                      disabled={!selectedProvider || isSwitchingProvider}
+                    >
+                      {isSwitchingProvider ? (
+                        <>
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Switching...
+                        </>
+                      ) : (
+                        'Switch Provider'
                       )}
                     </button>
                   </div>
