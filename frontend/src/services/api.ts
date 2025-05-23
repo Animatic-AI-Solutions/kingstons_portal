@@ -147,12 +147,14 @@ export const getBatchFundIRRValues = (fundIds: number[]) => {
  * @param {number[]} [params.fundIds] - Array of portfolio fund IDs
  * @param {number} [params.portfolioId] - Portfolio ID to filter funds (if fund_ids not provided)
  * @param {boolean} [params.includeFundDetails=true] - Whether to include detailed fund information
+ * @param {boolean} [params.includePortfolioIRR=true] - Whether to include portfolio IRR
  * @returns {Promise} - API response with pre-formatted IRR history data
  */
 export const getAggregatedIRRHistory = (params: {
   fundIds?: number[];
   portfolioId?: number;
   includeFundDetails?: boolean;
+  includePortfolioIRR?: boolean;
 }) => {
   const payload: any = {};
   
@@ -166,6 +168,10 @@ export const getAggregatedIRRHistory = (params: {
   
   if (params.includeFundDetails !== undefined) {
     payload.include_fund_details = params.includeFundDetails;
+  }
+  
+  if (params.includePortfolioIRR !== undefined) {
+    payload.include_portfolio_irr = params.includePortfolioIRR;
   }
   
   return api.post('portfolio_funds/aggregated-irr-history', payload);

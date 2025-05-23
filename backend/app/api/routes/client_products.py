@@ -1,10 +1,11 @@
 from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from typing import List, Optional
 import logging
-from datetime import date
+from datetime import date, datetime
 
 from app.models.client_product import Clientproduct, ClientproductCreate, ClientproductUpdate
 from app.db.database import get_db
+from app.api.routes.portfolio_funds import calculate_excel_style_irr
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -739,17 +740,18 @@ async def get_product_fum(product_id: int, db = Depends(get_db)):
 @router.get("/client_products/{product_id}/irr", response_model=dict)
 async def get_product_irr(product_id: int, db = Depends(get_db)):
     """
-    What it does: Calculates the IRR for a product based on all activities across its portfolio funds
-    Why it's needed: Provides an accurate IRR calculation that considers all fund activities
+    What it does: Calculates the true portfolio IRR for a product based on all cash flows across all portfolio funds
+    Why it's needed: Provides an accurate IRR calculation from actual cash flows, not weighted averages
     How it works:
         1. Gets the product to find its associated portfolio
-        2. Gets all active portfolio funds for that portfolio
-        3. Gets all activities for those funds grouped by month
-        4. Calculates a weighted IRR based on valuations
-    Expected output: A JSON object with the calculated IRR value
+        2. Gets all portfolio funds for that portfolio
+        3. Aggregates all cash flows (deposits, withdrawals, fees) from all funds
+        4. Gets latest valuations as the final cash flow
+        5. Calculates IRR from the combined cash flow series using the Excel-style IRR function
+    Expected output: A JSON object with the calculated portfolio IRR value
     """
     try:
-        logger.info(f"Calculating weighted IRR for product {product_id}")
+        logger.info(f"Calculating portfolio IRR from cash flows for product {product_id}")
         
         # Get the product to find its portfolio ID
         product_result = db.table("client_products").select("portfolio_id,product_name").eq("id", product_id).execute()
@@ -764,66 +766,170 @@ async def get_product_irr(product_id: int, db = Depends(get_db)):
             logger.info(f"Product {product_id} ({product_name}) has no associated portfolio")
             return {"product_id": product_id, "product_name": product_name, "irr": 0, "irr_decimal": 0}
             
-        # Get all active portfolio funds for this portfolio
-        funds_result = db.table("portfolio_funds").select("id,available_funds_id").eq("portfolio_id", portfolio_id).eq("status", "active").execute()
+        # Get all portfolio funds for this portfolio (active and inactive to capture full history)
+        funds_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
         
         if not funds_result.data or len(funds_result.data) == 0:
-            logger.info(f"No active funds found for portfolio {portfolio_id} (product {product_id})")
+            logger.info(f"No funds found for portfolio {portfolio_id} (product {product_id})")
             return {"product_id": product_id, "product_name": product_name, "irr": 0, "irr_decimal": 0}
             
-        total_weighted_irr = 0
-        total_valuation = 0
-        fund_irr_data = []
+        portfolio_fund_ids = [fund.get("id") for fund in funds_result.data]
+        logger.info(f"Found {len(portfolio_fund_ids)} portfolio funds for IRR calculation")
         
-        # For each fund, get its latest IRR and valuation
-        for fund in funds_result.data:
-            fund_id = fund.get("id")
-            
-            # Get latest IRR
-            irr_result = db.table("irr_values").select("irr_result").eq("fund_id", fund_id).order("date", desc=True).limit(1).execute()
-            
-            # Get latest valuation
-            valuation_result = db.table("fund_valuations").select("value").eq("portfolio_fund_id", fund_id).order("valuation_date", desc=True).limit(1).execute()
-            
-            # Extract values or use defaults
-            irr_value = irr_result.data[0].get("irr_result", 0) if irr_result.data and len(irr_result.data) > 0 else 0
-            valuation = valuation_result.data[0].get("value", 0) if valuation_result.data and len(valuation_result.data) > 0 else 0
-            
-            # Only include funds with positive valuations in weighted calculation
-            if valuation > 0:
-                fund_irr_data.append({
-                    "fund_id": fund_id,
-                    "irr": irr_value,
-                    "valuation": valuation
-                })
-                
-                weighted_irr = irr_value * valuation
-                total_weighted_irr += weighted_irr
-                total_valuation += valuation
-                
-                logger.info(f"Added fund {fund_id} to IRR calculation: IRR={irr_value}%, valuation={valuation}, weighted contribution={weighted_irr}")
+        # Aggregate all cash flows from all portfolio funds
+        all_cash_flows = {}  # date -> total_cash_flow
         
-        # Calculate final weighted IRR
-        final_irr = 0
-        if total_valuation > 0:
-            final_irr = total_weighted_irr / total_valuation
-            logger.info(f"Calculated product IRR: {final_irr}% (total weighted sum: {total_weighted_irr}, total valuation: {total_valuation})")
-        else:
-            logger.info(f"No valid fund valuations found for IRR calculation (product {product_id})")
+        # Get all activities for all portfolio funds
+        if portfolio_fund_ids:
+            activities_result = db.table("holding_activity_log").select("*").in_("portfolio_fund_id", portfolio_fund_ids).order("activity_timestamp").execute()
             
-        return {
-            "product_id": product_id,
-            "product_name": product_name,
-            "irr": final_irr,
-            "irr_decimal": final_irr / 100,
-            "fund_data": fund_irr_data,
-            "total_valuation": total_valuation
-        }
+            if activities_result.data:
+                logger.info(f"Found {len(activities_result.data)} activities across all funds")
+                
+                for activity in activities_result.data:
+                    activity_date = activity.get("activity_timestamp")
+                    activity_type = activity.get("activity_type", "").lower()
+                    amount = float(activity.get("amount", 0))
+                    
+                    if activity_date:
+                        # Normalize activity date to START of month
+                        from datetime import datetime
+                        if isinstance(activity_date, str):
+                            # Handle full datetime format from database (e.g., "2025-01-15T00:00:00")
+                            if 'T' in activity_date:
+                                parsed_date = datetime.strptime(activity_date, '%Y-%m-%dT%H:%M:%S')
+                            else:
+                                parsed_date = datetime.strptime(activity_date, '%Y-%m-%d')
+                        else:
+                            parsed_date = activity_date
+                        
+                        # Set to first day of the month for activities
+                        normalized_date = f"{parsed_date.year}-{parsed_date.month:02d}-01"
+                        
+                        if normalized_date not in all_cash_flows:
+                            all_cash_flows[normalized_date] = 0
+                        
+                        # Deposits are negative cash flows (money going out)
+                        # Withdrawals are positive cash flows (money coming in)
+                        if activity_type in ["deposit", "investment", "contribution"]:
+                            all_cash_flows[normalized_date] -= amount
+                        elif activity_type in ["withdrawal", "redemption", "distribution"]:
+                            all_cash_flows[normalized_date] += amount
+                        # Fees are negative cash flows
+                        elif activity_type in ["fee", "charge", "expense"]:
+                            all_cash_flows[normalized_date] -= amount
+            
+            # Get the latest valuation for each fund as the final positive cash flow
+            total_current_value = 0
+            latest_valuation_date = None
+            
+            for fund_id in portfolio_fund_ids:
+                valuation_result = db.table("fund_valuations").select("value,valuation_date").eq("portfolio_fund_id", fund_id).order("valuation_date", desc=True).limit(1).execute()
+                
+                if valuation_result.data and len(valuation_result.data) > 0:
+                    valuation = valuation_result.data[0]
+                    current_value = float(valuation.get("value", 0))
+                    total_current_value += current_value
+                    
+                    # Track the latest valuation date across all funds
+                    val_date = valuation.get("valuation_date")
+                    if val_date:
+                        from datetime import datetime
+                        if isinstance(val_date, str):
+                            # Handle full datetime format from database (e.g., "2025-03-01T00:00:00")
+                            if 'T' in val_date:
+                                val_date_obj = datetime.strptime(val_date, '%Y-%m-%dT%H:%M:%S').date()
+                            else:
+                                val_date_obj = datetime.strptime(val_date, '%Y-%m-%d').date()
+                        else:
+                            val_date_obj = val_date
+                        
+                        if latest_valuation_date is None or val_date_obj > latest_valuation_date:
+                            latest_valuation_date = val_date_obj
+            
+            # Add the total current value as the final cash flow (normalized to END of valuation month)
+            if total_current_value > 0 and latest_valuation_date:
+                # Use end of the valuation month, not current month
+                from datetime import date
+                val_month = latest_valuation_date.month
+                val_year = latest_valuation_date.year
+                
+                # Get last day of valuation month
+                if val_month == 12:
+                    next_month = date(val_year + 1, 1, 1)
+                else:
+                    next_month = date(val_year, val_month + 1, 1)
+                from datetime import timedelta
+                end_of_val_month = next_month - timedelta(days=1)
+                end_of_val_month_str = end_of_val_month.strftime('%Y-%m-%d')
+                
+                all_cash_flows[end_of_val_month_str] = all_cash_flows.get(end_of_val_month_str, 0) + total_current_value
+                logger.info(f"Added total current value {total_current_value} as final cash flow at end of valuation month: {end_of_val_month_str}")
+        
+        # Convert to sorted list of cash flows for IRR calculation
+        if not all_cash_flows:
+            logger.info(f"No cash flows found for portfolio {portfolio_id}")
+            return {"product_id": product_id, "product_name": product_name, "irr": 0, "irr_decimal": 0}
+        
+        # Sort by date and extract values
+        sorted_dates = sorted(all_cash_flows.keys())
+        cash_flow_values = [all_cash_flows[date] for date in sorted_dates]
+        
+        logger.info(f"Portfolio cash flows for IRR calculation:")
+        for i, date in enumerate(sorted_dates):
+            logger.info(f"  {date}: {cash_flow_values[i]}")
+        
+        # Calculate IRR using the Excel-style IRR function
+        try:
+            # Convert all dates to datetime objects for consistency
+            from datetime import datetime
+            date_objects = []
+            for date_str in sorted_dates:
+                if isinstance(date_str, str):
+                    # Parse the date string to a datetime object
+                    date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+                    date_objects.append(date_obj)
+                elif hasattr(date_str, 'date'):
+                    # It's already a datetime object
+                    date_objects.append(date_str)
+                else:
+                    # It's a date object, convert to datetime
+                    date_obj = datetime.combine(date_str, datetime.min.time())
+                    date_objects.append(date_obj)
+            
+            portfolio_irr = calculate_excel_style_irr(date_objects, cash_flow_values)
+            logger.info(f"IRR calculation result: {portfolio_irr}")
+            
+            # Extract the IRR value from the result dictionary
+            irr_decimal = portfolio_irr.get('period_irr', 0)
+            irr_percentage = irr_decimal * 100
+            
+            logger.info(f"Calculated portfolio IRR: {irr_percentage}%")
+            
+            return {
+                "product_id": product_id,
+                "product_name": product_name,
+                "irr": irr_percentage,
+                "irr_decimal": irr_decimal,
+                "cash_flows_count": len(cash_flow_values),
+                "total_current_value": total_current_value,
+                "days_in_period": portfolio_irr.get('days_in_period', 0)
+            }
+            
+        except Exception as irr_error:
+            logger.error(f"Error calculating IRR: {str(irr_error)}")
+            return {
+                "product_id": product_id,
+                "product_name": product_name,
+                "irr": 0,
+                "irr_decimal": 0,
+                "error": f"IRR calculation failed: {str(irr_error)}"
+            }
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error calculating IRR for product {product_id}: {str(e)}")
+        logger.error(f"Error calculating portfolio IRR for product {product_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.get("/client_products/{client_product_id}/complete", response_model=dict)
