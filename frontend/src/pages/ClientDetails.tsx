@@ -869,12 +869,20 @@ const ClientDetails: React.FC = () => {
 
   // Data fetching with error retry
   useEffect(() => {
-    if (clientId) {
+    // Only fetch data if clientId exists and is not null/undefined/string 'null'
+    if (clientId && clientId !== 'null' && clientId !== 'undefined') {
       fetchClientData();
     }
   }, [clientId]);
 
   const fetchClientData = async (retryCount = 0) => {
+    // Safety check: Don't make API calls if clientId is invalid
+    if (!clientId || clientId === 'null' || clientId === 'undefined') {
+      console.warn('fetchClientData called with invalid clientId:', clientId);
+      setIsLoading(false);
+      return;
+    }
+    
     try {
       setIsLoading(true);
       console.log(`Fetching client data for ID: ${clientId}`);
