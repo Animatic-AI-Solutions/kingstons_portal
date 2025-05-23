@@ -101,6 +101,9 @@ interface AggregatedIRRData {
     portfolio_name: string;
     target_risk_level?: number;
   };
+  portfolio_irr?: {
+    [monthYear: string]: number;  // Portfolio IRR values by month/year
+  };
 }
 
 // Helper function to convert ActivityLog[] to Activity[]
@@ -143,6 +146,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
   const [irrHistoryData, setIrrHistoryData] = useState<IRRTableData>({});
   const [irrTableColumns, setIrrTableColumns] = useState<string[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [portfolioIRRData, setPortfolioIRRData] = useState<{[monthYear: string]: number}>({});
 
   useEffect(() => {
     if (accountId) {
@@ -198,7 +202,8 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
         // Use the enhanced endpoint with portfolio_id directly
         const response = await getAggregatedIRRHistory({ 
           portfolioId: portfolioId,
-          includeFundDetails: true
+          includeFundDetails: true,
+          includePortfolioIRR: true
         });
         
         const aggregatedData: AggregatedIRRData = response.data;
@@ -227,6 +232,12 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
         });
         
         setIrrHistoryData(tableData);
+        
+        // Store portfolio IRR data if available
+        if (aggregatedData.portfolio_irr) {
+          setPortfolioIRRData(aggregatedData.portfolio_irr);
+        }
+        
         setIsLoadingHistory(false);
       } catch (err) {
         console.error('Error fetching aggregated IRR history:', err);
@@ -438,6 +449,31 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
                     })}
                   </tr>
                 ))}
+                
+                {/* Portfolio IRR Total Row */}
+                {Object.keys(portfolioIRRData).length > 0 && (
+                  <tr className="bg-gray-50 border-t-2 border-gray-300">
+                    <td className="px-6 py-4 whitespace-nowrap text-base font-bold text-red-600 sticky left-0 bg-gray-50 z-10">
+                      PORTFOLIO TOTAL
+                    </td>
+                    {irrTableColumns.map(monthYear => {
+                      const portfolioIrrValue = portfolioIRRData[monthYear];
+                      const irrClass = portfolioIrrValue !== undefined
+                        ? portfolioIrrValue >= 0 
+                          ? 'text-green-700 font-bold' 
+                          : 'text-red-700 font-bold'
+                        : 'text-gray-400';
+                      
+                      return (
+                        <td key={`portfolio-${monthYear}`} className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span className={irrClass}>
+                            {formatPercentage(portfolioIrrValue)}
+                          </span>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

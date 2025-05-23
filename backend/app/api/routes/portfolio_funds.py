@@ -1549,6 +1549,7 @@ async def get_aggregated_irr_history(
     fund_ids: List[int] = Body(None, description="List of portfolio fund IDs to fetch IRR history for"),
     portfolio_id: Optional[int] = Body(None, description="Optional portfolio ID to filter funds"),
     include_fund_details: bool = Body(True, description="Include detailed fund information"),
+    include_portfolio_irr: bool = Body(True, description="Include portfolio-level IRR calculations"),
     db = Depends(get_db)
 ):
     """
@@ -1560,6 +1561,7 @@ async def get_aggregated_irr_history(
         3. Retrieves all IRR values for the specified funds
         4. Pre-processes the data by extracting all unique month/years
         5. Organizes IRR values by fund and month/year in a table-ready format
+        6. Optionally calculates portfolio-level IRR for each month
     Expected output: A JSON object with columns (date labels) and rows (fund data with IRR values)
     """
     try:
@@ -1580,7 +1582,8 @@ async def get_aggregated_irr_history(
                 return {
                     "columns": [],
                     "funds": [],
-                    "portfolio_info": None
+                    "portfolio_info": None,
+                    "portfolio_irr": {} if include_portfolio_irr else None
                 }
                 
             # Get the portfolio name for context
@@ -1601,7 +1604,8 @@ async def get_aggregated_irr_history(
             return {
                 "columns": [],
                 "funds": [],
-                "portfolio_info": None
+                "portfolio_info": None,
+                "portfolio_irr": {} if include_portfolio_irr else None
             }
         
         # Get fund details including names
@@ -1676,7 +1680,8 @@ async def get_aggregated_irr_history(
                     }
                     for fund_id in fund_ids if fund_id in fund_details
                 ],
-                "portfolio_info": portfolio_info
+                "portfolio_info": portfolio_info,
+                "portfolio_irr": {} if include_portfolio_irr else None
             }
         
         # Extract all unique month/years from the IRR values
@@ -1712,6 +1717,125 @@ async def get_aggregated_irr_history(
         # Convert months set to sorted list (newest first)
         months_list = sorted(list(months_set), key=lambda d: datetime.strptime(d, "%b %Y"), reverse=True)
         
+        # Calculate portfolio-level IRR for each month if requested
+        portfolio_irr_values = {}
+        if include_portfolio_irr and portfolio_id and months_list:
+            logger.info(f"Calculating portfolio IRR for {len(months_list)} months")
+            
+            # Get all activity logs for portfolio funds to calculate portfolio IRR per month
+            try:
+                # Get all active funds in the portfolio
+                active_fund_ids = [fund_id for fund_id, fund_data in portfolio_fund_map.items() 
+                                 if fund_data.get('status') != 'inactive']
+                
+                if active_fund_ids:
+                    # Get activity logs for all active funds
+                    activity_logs_result = db.table("holding_activity_log")\
+                        .select("*")\
+                        .in_("portfolio_fund_id", active_fund_ids)\
+                        .execute()
+                    
+                    activity_logs = activity_logs_result.data or []
+                    
+                    # Calculate portfolio IRR for each month/year
+                    for month_year in months_list:
+                        try:
+                            # Parse the month/year to get the year
+                            month_year_date = datetime.strptime(month_year, "%b %Y")
+                            year = month_year_date.year
+                            
+                            # Use the existing portfolio total IRR calculation logic
+                            # but filter activities up to the specific month/year
+                            monthly_cash_flows = {}
+                            portfolio_fund_id_set = set(active_fund_ids)
+                            
+                            # Process activity logs up to this month/year
+                            cutoff_date = datetime(year, month_year_date.month, 28)  # End of month
+                            
+                            for activity in activity_logs:
+                                activity_date = datetime.fromisoformat(activity["activity_timestamp"].replace('Z', '+00:00'))
+                                
+                                # Only include activities up to the cutoff date
+                                if activity_date > cutoff_date:
+                                    continue
+                                
+                                month_key = f"{activity_date.year}-{activity_date.month:02d}"
+                                
+                                if month_key not in monthly_cash_flows:
+                                    monthly_cash_flows[month_key] = {
+                                        "date": datetime(activity_date.year, activity_date.month, 15),
+                                        "amount": 0
+                                    }
+                                
+                                amount = float(activity["amount"])
+                                activity_type = activity["activity_type"]
+                                related_fund = activity.get("related_fund")
+                                
+                                # Handle internal transfers
+                                if (activity_type == "SwitchIn" or activity_type == "SwitchOut") and related_fund in portfolio_fund_id_set:
+                                    continue
+                                
+                                # External cash flows
+                                if activity_type in ["Investment", "RegularInvestment", "GovernmentUplift"]:
+                                    monthly_cash_flows[month_key]["amount"] -= amount
+                                elif activity_type in ["Withdrawal", "RegularWithdrawal"]:
+                                    monthly_cash_flows[month_key]["amount"] += amount
+                                elif activity_type == "SwitchIn" and related_fund not in portfolio_fund_id_set:
+                                    monthly_cash_flows[month_key]["amount"] -= amount
+                                elif activity_type == "SwitchOut" and related_fund not in portfolio_fund_id_set:
+                                    monthly_cash_flows[month_key]["amount"] += amount
+                            
+                            # Get valuations for the specific month/year
+                            total_value = 0
+                            valuation_date = None
+                            
+                            for fund_id in active_fund_ids:
+                                # Find valuation closest to the end of the month/year
+                                valuation_result = db.table("fund_valuations")\
+                                    .select("*")\
+                                    .eq("portfolio_fund_id", fund_id)\
+                                    .lte("valuation_date", cutoff_date.isoformat())\
+                                    .order("valuation_date", desc=True)\
+                                    .limit(1)\
+                                    .execute()
+                                
+                                if valuation_result.data:
+                                    valuation = valuation_result.data[0]
+                                    total_value += float(valuation["value"])
+                                    
+                                    valuation_date_obj = datetime.fromisoformat(valuation["valuation_date"].replace('Z', '+00:00'))
+                                    if valuation_date is None or valuation_date_obj > valuation_date:
+                                        valuation_date = valuation_date_obj
+                            
+                            if total_value > 0 and valuation_date and len(monthly_cash_flows) >= 1:
+                                # Add final valuation
+                                final_month_key = f"{valuation_date.year}-{valuation_date.month:02d}"
+                                if final_month_key not in monthly_cash_flows:
+                                    monthly_cash_flows[final_month_key] = {
+                                        "date": valuation_date,
+                                        "amount": total_value
+                                    }
+                                else:
+                                    monthly_cash_flows[final_month_key]["amount"] += total_value
+                                
+                                # Calculate IRR if we have enough cash flows
+                                if len(monthly_cash_flows) >= 2:
+                                    sorted_cash_flows = sorted(monthly_cash_flows.values(), key=lambda x: x["date"])
+                                    dates = [cf["date"] for cf in sorted_cash_flows]
+                                    amounts = [cf["amount"] for cf in sorted_cash_flows]
+                                    
+                                    # Calculate IRR
+                                    irr_result = calculate_excel_style_irr(dates, amounts)
+                                    portfolio_irr_percentage = round(irr_result['period_irr'] * 100, 2)
+                                    portfolio_irr_values[month_year] = portfolio_irr_percentage
+                                    
+                        except Exception as e:
+                            logger.warning(f"Error calculating portfolio IRR for {month_year}: {str(e)}")
+                            continue
+                            
+            except Exception as e:
+                logger.error(f"Error calculating portfolio IRR values: {str(e)}")
+        
         # Add any missing funds (those with no IRR values)
         for fund_id in fund_ids:
             if fund_id in fund_details and fund_id not in funds_data:
@@ -1732,10 +1856,14 @@ async def get_aggregated_irr_history(
         result = {
             "columns": months_list,
             "funds": funds_list,
-            "portfolio_info": portfolio_info
+            "portfolio_info": portfolio_info,
+            "portfolio_irr": portfolio_irr_values if include_portfolio_irr else None
         }
         
         logger.info(f"Successfully aggregated IRR history for {len(funds_list)} funds across {len(months_list)} months")
+        if include_portfolio_irr:
+            logger.info(f"Calculated portfolio IRR for {len(portfolio_irr_values)} months")
+        
         return result
         
     except Exception as e:

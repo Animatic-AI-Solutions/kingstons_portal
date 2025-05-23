@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getProductFUM, getProductIRR } from '../services/api';
 
 // Basic interfaces for type safety
 interface Account {
@@ -97,6 +98,11 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   const [productOwners, setProductOwners] = useState<ProductOwner[]>([]);
   const [liveRiskValue, setLiveRiskValue] = useState<number | null>(null);
   
+  // Portfolio summary state
+  const [portfolioIRR, setPortfolioIRR] = useState<number | null>(null);
+  const [portfolioTotalValue, setPortfolioTotalValue] = useState<number | null>(null);
+  const [isLoadingPortfolioSummary, setIsLoadingPortfolioSummary] = useState(false);
+  
   // Edit mode state and form data
   const [isEditMode, setIsEditMode] = useState(false);
   const [providers, setProviders] = useState<Provider[]>([]);
@@ -192,6 +198,9 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       // Set product owners directly from the response
       setProductOwners(completeData.product_owners || []);
       console.log('Product owners loaded:', completeData.product_owners?.length || 0);
+      
+      // Fetch portfolio summary
+      await fetchPortfolioSummary(accountId);
       
       // Set fund data map
       const fundsMap = new Map<number, any>();
@@ -383,11 +392,37 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         setTargetRisk(completeData.target_risk);
       }
       
+      setIsLoading(false);
+      
     } catch (err: any) {
       console.error('ProductOverview: Error fetching data:', err);
-      setError(err.response?.data?.detail || 'Failed to fetch product details');
-    } finally {
+      setError(`Error loading data: ${err.message || 'Unknown error'}`);
       setIsLoading(false);
+    }
+  };
+
+  const fetchPortfolioSummary = async (productId: string) => {
+    try {
+      setIsLoadingPortfolioSummary(true);
+      console.log('Fetching portfolio summary for product:', productId);
+      
+      // Fetch FUM and IRR data in parallel
+      const [fumResponse, irrResponse] = await Promise.all([
+        getProductFUM(parseInt(productId)),
+        getProductIRR(parseInt(productId))
+      ]);
+      
+      console.log('FUM response:', fumResponse.data);
+      console.log('IRR response:', irrResponse.data);
+      
+      setPortfolioTotalValue(fumResponse.data.fum || 0);
+      setPortfolioIRR(irrResponse.data.irr || 0);
+      
+      setIsLoadingPortfolioSummary(false);
+    } catch (err: any) {
+      console.error('Error fetching portfolio summary:', err);
+      setIsLoadingPortfolioSummary(false);
+      // Don't set error for portfolio summary failure as it's not critical
     }
   };
 
@@ -1132,6 +1167,72 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             </div>
           )}
         </div> {/* This is the closing div for "Product Info Grid" */}
+
+        {/* Portfolio Summary */}
+        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Portfolio Summary</h3>
+          
+          {isLoadingPortfolioSummary ? (
+            <div className="flex justify-center items-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+              <span className="ml-2 text-gray-600">Loading portfolio summary...</span>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Total Portfolio Value */}
+              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <svg className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                    </svg>
+                  </div>
+                  <div className="ml-4">
+                    <div className="text-sm font-medium text-blue-900">
+                      Total Portfolio Value
+                    </div>
+                    <div className="text-2xl font-bold text-blue-900">
+                      {portfolioTotalValue !== null ? formatCurrency(portfolioTotalValue) : 'N/A'}
+                    </div>
+                    {lastValuationDate && (
+                      <div className="text-xs text-blue-700 mt-1">
+                        as of {formatDate(lastValuationDate)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Total Portfolio IRR */}
+              <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                  </div>
+                  <div className="ml-4">
+                    <div className="text-sm font-medium text-green-900">
+                      Total Portfolio IRR
+                    </div>
+                    <div className={`text-2xl font-bold ${
+                      portfolioIRR !== null
+                        ? portfolioIRR >= 0 
+                          ? 'text-green-900' 
+                          : 'text-red-600'
+                        : 'text-gray-500'
+                    }`}>
+                      {portfolioIRR !== null ? formatPercentage(portfolioIRR) : 'N/A'}
+                    </div>
+                    <div className="text-xs text-green-700 mt-1">
+                      Calculated from total portfolio cash flows
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Risk Comparison Bars */}
         <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
