@@ -681,7 +681,7 @@ async def calculate_portfolio_fund_irr(
             if log["activity_type"] in ["Investment", "RegularInvestment", "GovernmentUplift"]:
                 # Investments are money going out (negative)
                 amount = -amount
-            elif log["activity_type"] in ["Withdrawal", "SwitchOut"]:
+            elif log["activity_type"] in ["Withdrawal", "RegularWithdrawal", "SwitchOut"]:
                 # Withdrawals and SwitchOut are money coming in (positive)
                 amount = abs(amount)  # Ensure positive
             elif log["activity_type"] == "SwitchIn":
@@ -1258,7 +1258,7 @@ def calculate_portfolio_fund_irr_sync(
             if log["activity_type"] in ["Investment", "RegularInvestment", "GovernmentUplift"]:
                 # Investments are money going out (negative)
                 amount = -amount
-            elif log["activity_type"] in ["Withdrawal", "SwitchOut"]:
+            elif log["activity_type"] in ["Withdrawal", "RegularWithdrawal", "SwitchOut"]:
                 # Withdrawals and SwitchOut are money coming in (positive)
                 amount = abs(amount)  # Ensure positive
             elif log["activity_type"] == "SwitchIn":
@@ -1815,7 +1815,7 @@ async def update_irr_value(
                         # Apply sign convention
                         if log["activity_type"] in ["Investment", "RegularInvestment", "GovernmentUplift"]:
                             amount = -amount
-                        elif log["activity_type"] == "Withdrawal":
+                        elif log["activity_type"] in ["Withdrawal", "RegularWithdrawal", "SwitchOut"]:
                             amount = abs(amount)
                         
                         date = datetime.fromisoformat(log["activity_timestamp"])
@@ -2028,7 +2028,7 @@ async def calculate_portfolio_fund_irr(
             if activity_type in ["Investment", "RegularInvestment", "GovernmentUplift"]:
                 # Investments are money going out (negative)
                 amount = -amount
-            elif activity_type in ["Withdrawal", "SwitchOut"]:
+            elif activity_type in ["Withdrawal", "RegularWithdrawal", "SwitchOut"]:
                 # Withdrawals and SwitchOut are money coming in (positive)
                 amount = abs(amount)  # Ensure positive
             elif activity_type == "SwitchIn":

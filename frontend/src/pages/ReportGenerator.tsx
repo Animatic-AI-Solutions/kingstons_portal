@@ -1067,7 +1067,7 @@ const formatPercentageFallback = (value: number | null): string => {
             case 'Investment': case 'RegularInvestment': case 'GovernmentUplift': 
               totalInvestment += parsedAmount; 
               break;
-            case 'Withdrawal': 
+            case 'Withdrawal': case 'RegularWithdrawal':
               totalWithdrawal += parsedAmount; 
               break;
             case 'SwitchIn': 
@@ -1165,7 +1165,7 @@ const formatPercentageFallback = (value: number | null): string => {
               case 'Investment': case 'RegularInvestment': case 'GovernmentUplift': 
                 fundInvestment += amount; 
                 break;
-              case 'Withdrawal': 
+              case 'Withdrawal': case 'RegularWithdrawal':
                 fundWithdrawal += amount; 
                 break;
               case 'SwitchIn': 
@@ -1261,6 +1261,7 @@ const formatPercentageFallback = (value: number | null): string => {
                 cashFlowAmount = -Math.abs(amount); // Negative - money going in
                 break;
               case 'Withdrawal':
+              case 'RegularWithdrawal':
               case 'SwitchOut':
                 cashFlowAmount = Math.abs(amount); // Positive - money coming out
                 break;
@@ -1485,6 +1486,7 @@ Please select a different valuation date or ensure all active funds have valuati
                     cashFlowAmount = -Math.abs(parseFloat(log.amount)); // Negative - money going in
                     break;
                   case 'Withdrawal':
+                  case 'RegularWithdrawal':
                   case 'SwitchOut':
                     cashFlowAmount = Math.abs(parseFloat(log.amount)); // Positive - money coming out
                     break;

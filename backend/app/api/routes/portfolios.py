@@ -1147,7 +1147,7 @@ async def calculate_portfolio_total_irr(
             if activity_type in ["Investment", "RegularInvestment", "GovernmentUplift"]:
                 # Money going in (negative for IRR calculation)
                 monthly_cash_flows[month_key]["amount"] -= amount
-            elif activity_type == "Withdrawal":
+            elif activity_type in ["Withdrawal", "RegularWithdrawal"]:
                 # Money coming out (positive for IRR calculation)
                 monthly_cash_flows[month_key]["amount"] += amount
             elif activity_type == "SwitchIn" and related_fund not in portfolio_fund_id_set:

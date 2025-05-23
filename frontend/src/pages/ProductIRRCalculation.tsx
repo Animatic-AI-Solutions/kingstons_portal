@@ -154,6 +154,10 @@ const calculateWithdrawals = (activities: ActivityLog[], fundId: number): number
   return calculateActivityTotalByType(activities, 'Withdrawal', fundId);
 };
 
+const calculateRegularWithdrawals = (activities: ActivityLog[], fundId: number): number => {
+  return calculateActivityTotalByType(activities, 'RegularWithdrawal', fundId);
+};
+
 const calculateInvestmentsPlusSwitchIns = (activities: ActivityLog[], fundId: number): number => {
   const investments = calculateInvestments(activities, fundId);
   const regularInvestments = calculateRegularInvestments(activities, fundId);
@@ -359,12 +363,26 @@ const calculateTotalWithdrawals = (activities: ActivityLog[], holdings: Holding[
   
   const activeHoldings = holdings.filter(h => h.status !== 'inactive' && !h.isVirtual);
   const total = activeHoldings.reduce((total, holding) => {
-    const amount = calculateWithdrawals(activities, holding.id);
+    const amount = calculateActivityTotalByType(activities, 'Withdrawal', holding.id);
     console.log(`Withdrawals for holding ${holding.id} (${holding.fund_name}): ${amount}`);
     return total + amount;
   }, 0);
   
   console.log(`Total withdrawals: ${total}`);
+  return total;
+};
+
+const calculateTotalRegularWithdrawals = (activities: ActivityLog[], holdings: Holding[]): number => {
+  console.log('Calculating total regular withdrawals...');
+  
+  const activeHoldings = holdings.filter(h => h.status !== 'inactive' && !h.isVirtual);
+  const total = activeHoldings.reduce((total, holding) => {
+    const amount = calculateRegularWithdrawals(activities, holding.id);
+    console.log(`Regular withdrawals for holding ${holding.id} (${holding.fund_name}): ${amount}`);
+    return total + amount;
+  }, 0);
+  
+  console.log(`Total regular withdrawals: ${total}`);
   return total;
 };
 
@@ -1007,6 +1025,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                         <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Government Uplifts</th>
                         <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Fund Switch Ins</th>
                         <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Fund Switch Outs</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Regular Withdrawals</th>
                         <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Withdrawals</th>
                         <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Most Recent Value</th>
                         <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Most Recent IRR</th>
@@ -1096,6 +1115,13 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                     {holding.isVirtual
                                       ? <span className="text-gray-500">N/A</span>
                                       : formatCurrency(calculateSwitchOuts(filteredActivities, holding.id))}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                    {holding.isVirtual
+                                      ? <span className="text-gray-500">N/A</span>
+                                      : formatCurrency(calculateRegularWithdrawals(filteredActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
@@ -1205,6 +1231,11 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-bold text-red-600">
                             {formatCurrency(calculateTotalSwitchOuts(filteredActivities, holdings))}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-bold text-red-600">
+                            {formatCurrency(calculateTotalRegularWithdrawals(filteredActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">

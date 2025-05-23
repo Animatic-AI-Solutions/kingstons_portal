@@ -27,6 +27,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [focusedIndex, setFocusedIndex] = useState(-1);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 200 });
   const dropdownRef = useRef<HTMLDivElement>(null);
   const optionsRef = useRef<HTMLUListElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -41,6 +42,35 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
   const filteredOptions = options.filter(option =>
     option.label.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Calculate dropdown position
+  const calculateDropdownPosition = () => {
+    if (dropdownRef.current) {
+      const rect = dropdownRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+        width: Math.max(rect.width, 200)
+      });
+    }
+  };
+
+  // Recalculate position when dropdown opens
+  useEffect(() => {
+    if (isOpen) {
+      calculateDropdownPosition();
+      
+      // Add event listeners for scroll and resize
+      const handlePositionUpdate = () => calculateDropdownPosition();
+      window.addEventListener('scroll', handlePositionUpdate);
+      window.addEventListener('resize', handlePositionUpdate);
+      
+      return () => {
+        window.removeEventListener('scroll', handlePositionUpdate);
+        window.removeEventListener('resize', handlePositionUpdate);
+      };
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     setFocusedIndex(-1);
@@ -160,7 +190,17 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
         </span>
       </button>
       {isOpen && (
-        <div className="absolute z-30 mt-1 min-w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+        <div 
+          className="z-50 bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" 
+          style={{ 
+            position: 'fixed',
+            zIndex: 9999,
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+            width: dropdownPosition.width,
+            minWidth: '200px'
+          }}
+        >
           <div className="sticky top-0 z-10 bg-white px-2 py-2 flex items-center gap-2">
             <input
               ref={searchInputRef}
