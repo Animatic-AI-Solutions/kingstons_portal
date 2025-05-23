@@ -617,7 +617,9 @@ const ClientDetails: React.FC = () => {
             .reduce((sum: number, activity: any) => sum + Math.abs(activity.amount), 0);
             
           const withdrawals = activities
-            .filter((activity: any) => activity.activity_type === 'Withdrawal')
+            .filter((activity: any) => 
+              activity.activity_type === 'Withdrawal' || 
+              activity.activity_type === 'RegularWithdrawal')
             .reduce((sum: number, activity: any) => sum + Math.abs(activity.amount), 0);
             
           const switchIn = activities
@@ -694,7 +696,9 @@ const ClientDetails: React.FC = () => {
               .reduce((sum: number, activity: any) => sum + Math.abs(activity.amount), 0);
               
             const withdrawals = activities
-              .filter((activity: any) => activity.activity_type === 'Withdrawal')
+              .filter((activity: any) => 
+                activity.activity_type === 'Withdrawal' || 
+                activity.activity_type === 'RegularWithdrawal')
               .reduce((sum: number, activity: any) => sum + Math.abs(activity.amount), 0);
               
             const switchIn = activities

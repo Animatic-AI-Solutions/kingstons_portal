@@ -28,6 +28,9 @@ import ClientDetails from './pages/ClientDetails';
 import Products from './pages/Products';
 import ProductDetails from './pages/ProductDetails';
 
+// Actions Page - For scheduled transactions management
+import Actions from './pages/Actions';
+
 // Definitions Pages - System configuration and reference data management
 import Definitions from './pages/Definitions';
 import Providers from './pages/Providers';  // Investment providers
@@ -164,6 +167,17 @@ const AppContent: React.FC = () => {
               <Navbar />
               <div className="flex-grow pt-6 pb-12">
                 <ProductDetails />
+              </div>
+              <Footer />
+            </>
+          } />
+          
+          {/* Actions Page - For scheduled transactions management */}
+          <Route path="/actions" element={
+            <>
+              <Navbar />
+              <div className="flex-grow pt-6 pb-12">
+                <Actions />
               </div>
               <Footer />
             </>

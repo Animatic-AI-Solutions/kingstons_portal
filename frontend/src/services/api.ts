@@ -463,4 +463,81 @@ export const getFundProductsWithOwners = (fundId: number) => {
   return api.get(`funds/${fundId}/products-with-owners`);
 };
 
+/**
+ * CLIENT GROUPS API ENDPOINTS
+ * 
+ * Functions for managing client groups
+ */
+
+/**
+ * Fetches all client groups
+ * @param {Object} params - Query parameters
+ * @param {number} [params.skip] - Number of records to skip for pagination
+ * @param {number} [params.limit] - Max number of records to return
+ * @param {string} [params.status] - Filter by status
+ * @param {string} [params.search] - Search by name, email, account number
+ * @returns {Promise} - API response with client groups
+ */
+export const getClientGroups = (params?: {
+  skip?: number;
+  limit?: number;
+  status?: string;
+  search?: string;
+}) => {
+  const queryParams = new URLSearchParams();
+  if (params?.skip !== undefined) queryParams.append('skip', params.skip.toString());
+  if (params?.limit !== undefined) queryParams.append('limit', params.limit.toString());
+  if (params?.status) queryParams.append('status', params.status);
+  if (params?.search) queryParams.append('search', params.search);
+  
+  const queryString = queryParams.toString();
+  return api.get(`client_groups${queryString ? `?${queryString}` : ''}`);
+};
+
+/**
+ * CLIENT PRODUCTS API ENDPOINTS
+ * 
+ * Functions for managing client products
+ */
+
+/**
+ * Fetches client products, optionally filtered by client group
+ * @param {Object} params - Query parameters
+ * @param {number} [params.client_id] - Filter by client group ID
+ * @param {number} [params.skip] - Number of records to skip for pagination
+ * @param {number} [params.limit] - Max number of records to return
+ * @param {string} [params.status] - Filter by status
+ * @returns {Promise} - API response with client products
+ */
+export const getClientProducts = (params?: {
+  client_id?: number;
+  skip?: number;
+  limit?: number;
+  status?: string;
+}) => {
+  const queryParams = new URLSearchParams();
+  if (params?.client_id !== undefined) queryParams.append('client_id', params.client_id.toString());
+  if (params?.skip !== undefined) queryParams.append('skip', params.skip.toString());
+  if (params?.limit !== undefined) queryParams.append('limit', params.limit.toString());
+  if (params?.status) queryParams.append('status', params.status);
+  
+  const queryString = queryParams.toString();
+  return api.get(`client_products${queryString ? `?${queryString}` : ''}`);
+};
+
+/**
+ * PORTFOLIO FUNDS API ENDPOINTS
+ * 
+ * Functions for managing portfolio funds by product
+ */
+
+/**
+ * Fetches portfolio funds for a specific product
+ * @param {number} productId - Product ID
+ * @returns {Promise} - API response with portfolio funds
+ */
+export const getPortfolioFundsByProduct = (productId: number) => {
+  return api.get(`client_products/${productId}/complete`);
+};
+
 export default api; 

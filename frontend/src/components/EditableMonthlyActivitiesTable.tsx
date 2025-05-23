@@ -82,6 +82,7 @@ const ACTIVITY_TYPES = [
   'Fund Switch In',
   'Fund Switch Out',
   'Withdrawal',
+  'RegularWithdrawal',
   'Current Value'
 ];
 
@@ -107,6 +108,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   
   // Add state to track the currently focused cell
   const [focusedCell, setFocusedCell] = useState<{ fundId: number, activityType: string, monthIndex: number } | null>(null);
+  
+  // Add state for reactivation loading
+  const [reactivatingFunds, setReactivatingFunds] = useState<Set<number>>(new Set());
   
   // Styles for input elements to remove borders
   const noBorderStyles = {
@@ -247,6 +251,11 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   // Format activity type for display - convert camelCase or snake_case to spaces
   const formatActivityType = (activityType: string): string => {
     if (!activityType) return '';
+    
+    // Handle specific case for Current Value -> Valuation
+    if (activityType === 'Current Value') {
+      return 'Valuation';
+    }
     
     // Replace underscores with spaces
     let formatted = activityType.replace(/_/g, ' ');
@@ -1264,7 +1273,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
               activityType === 'GovernmentUplift' || 
               activityType === 'Fund Switch In') {
             return total + parseFloat(cellValue);
-          } else if (activityType === 'Withdrawal' || activityType === 'Fund Switch Out') {
+          } else if (activityType === 'Withdrawal' || 
+                     activityType === 'RegularWithdrawal' || 
+                     activityType === 'Fund Switch Out') {
             return total - parseFloat(cellValue);
           }
         }
@@ -1288,7 +1299,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         const cellValue = getCellValue(fund.id, month, activityType);
         if (cellValue && !isNaN(parseFloat(cellValue))) {
           // For withdrawals, use negative values
-          if (activityType === 'Withdrawal') {
+          if (activityType === 'Withdrawal' || activityType === 'RegularWithdrawal') {
             return total - parseFloat(cellValue);
           } 
           // For all other activities, use positive values
@@ -1600,6 +1611,35 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     });
   };
 
+  // Function to reactivate a fund
+  const reactivateFund = async (portfolioFundId: number, fundName: string) => {
+    try {
+      // Add to loading state
+      setReactivatingFunds(prev => new Set(prev).add(portfolioFundId));
+      
+      // Call API to reactivate the fund
+      await api.patch(`portfolio_funds/${portfolioFundId}`, {
+        status: 'active'
+      });
+      
+      console.log(`Successfully reactivated fund: ${fundName} (ID: ${portfolioFundId})`);
+      
+      // Refresh the data
+      onActivitiesUpdated();
+      
+    } catch (err: any) {
+      console.error(`Error reactivating fund ${fundName}:`, err);
+      setError(err.message || `Failed to reactivate fund: ${fundName}`);
+    } finally {
+      // Remove from loading state
+      setReactivatingFunds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(portfolioFundId);
+        return newSet;
+      });
+    }
+  };
+
   return (
     <>
       <div className="mt-8">
@@ -1622,9 +1662,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           </div>
         )}
         
-        <div className="overflow-x-auto border rounded-lg shadow-md max-w-full" style={{ scrollBehavior: 'smooth' }}>
+        <div className="overflow-x-auto border rounded-lg shadow-md max-w-full max-h-[80vh]" style={{ scrollBehavior: 'smooth' }}>
           <div className="relative">
-            <table className="w-full divide-y divide-gray-200 table-auto relative sticky-table">
+            <table className="w-full divide-y divide-gray-200 table-auto relative">
               <colgroup>
                 <col className="w-48 sticky left-0 z-10" />
                 {months.map((month, index) => (
@@ -1633,12 +1673,12 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
               </colgroup>
               <thead className="bg-blue-50 sticky top-0 z-20 shadow-lg">
                 <tr className="h-10">
-                  <th className="px-3 py-2 text-left font-medium text-gray-800 sticky left-0 z-30 bg-blue-50 shadow-[5px_0_5px_-5px_rgba(0,0,0,0.1)] border-b border-gray-300">Fund / Activity</th>
+                  <th className="px-3 py-2 text-left font-medium text-gray-800 sticky left-0 top-0 z-30 bg-blue-50 shadow-[5px_0_5px_-5px_rgba(0,0,0,0.1)] border-b border-gray-300">Fund / Activity</th>
                   {months.map((month, index) => {
                     const providerSwitch = getProviderSwitchForMonth(month);
                     
                     return (
-                      <th key={month} className="px-2 py-2 text-center font-medium text-gray-800 whitespace-nowrap bg-blue-50 border-b border-gray-300 relative group">
+                      <th key={month} className="px-2 py-2 text-center font-medium text-gray-800 whitespace-nowrap bg-blue-50 border-b border-gray-300 relative group sticky top-0 z-20">
                         <span className="text-sm">{formatMonth(month)}</span>
                         {providerSwitch && (
                           <div className="absolute -top-1 right-0 w-4 h-4">
@@ -1748,6 +1788,16 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                 title={showInactiveFunds ? "Hide inactive funds" : "Show inactive funds breakdown"}
                               >
                                 {showInactiveFunds ? "Hide" : "Show"} Breakdown
+                              </button>
+                            )}
+                            {fund.isInactiveBreakdown && (
+                              <button
+                                onClick={() => reactivateFund(fund.id, fund.fund_name)}
+                                disabled={reactivatingFunds.has(fund.id)}
+                                className="ml-2 px-2 py-1 text-xs bg-green-50 hover:bg-green-100 text-green-700 rounded border border-green-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Reactivate this fund"
+                              >
+                                {reactivatingFunds.has(fund.id) ? 'Reactivating...' : 'Reactivate'}
                               </button>
                             )}
                           </div>
@@ -1945,6 +1995,26 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       })}
                     </tr>
                   ))}
+
+                {/* Valuation total row */}
+                <tr className="h-10 bg-blue-50 border-t border-blue-200">
+                  <td className="px-3 py-1 font-medium text-blue-700 sticky left-0 z-10 bg-blue-50 shadow-[5px_0_5px_-5px_rgba(0,0,0,0.1)]">
+                    Total Valuation
+                  </td>
+                  {months.map(month => {
+                    const total = calculateActivityTypeTotal('Current Value', month);
+                    const formattedTotal = formatTotal(total);
+                    
+                    return (
+                      <td 
+                        key={`totals-valuation-${month}`} 
+                        className="px-2 py-1 text-center font-medium text-blue-700 h-10"
+                      >
+                        {formattedTotal}
+                      </td>
+                    );
+                  })}
+                </tr>
 
                 {/* Grand total row */}
                 <tr className="h-10 bg-gray-100 border-t border-gray-200">

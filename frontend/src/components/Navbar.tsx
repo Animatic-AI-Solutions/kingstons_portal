@@ -109,6 +109,12 @@ const Navbar: React.FC = () => {
                   Products
                 </Link>
                 <Link 
+                  to="/actions" 
+                  className={`px-2 py-6 text-sm ${isActive('/actions') ? activeNavLinkStyle : inactiveNavLinkStyle}`}
+                >
+                  Actions
+                </Link>
+                <Link 
                   to="/definitions" 
                   className={`px-2 py-6 text-sm ${isActive('/definitions') ? activeNavLinkStyle : inactiveNavLinkStyle}`}
                 >
