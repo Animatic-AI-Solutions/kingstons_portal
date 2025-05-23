@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Modal } from 'antd';
+import AddFundModal from '../components/AddFundModal';
 
 import { useAuth } from '../context/AuthContext';
 import { Radio, Select, Input, Checkbox, DatePicker } from 'antd';
@@ -137,6 +138,10 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   const [newProductOwnerName, setNewProductOwnerName] = useState('');
   const [isCreatingProductOwner, setIsCreatingProductOwner] = useState(false);
   const [currentProductId, setCurrentProductId] = useState<string>('');
+  
+  // Add Fund Modal state
+  const [isAddFundModalOpen, setIsAddFundModalOpen] = useState(false);
+  const [addFundForProductId, setAddFundForProductId] = useState<string | null>(null);
   
   // Click outside handler for dropdowns
   useEffect(() => {
@@ -905,13 +910,30 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               <span className="text-xs text-gray-500 ml-2">(modifying will convert to bespoke)</span>
             )}
           </h4>
-          <Input
-            placeholder="Search funds by name or ISIN"
-            value={fundSearchTerm}
-            onChange={(e) => handleFundSearch(e.target.value)}
-            style={{ marginBottom: '1rem' }}
-            disabled={isEitherLoading}
-          />
+          <div className="flex gap-2 mb-3">
+            <div className="flex-1">
+              <Input
+                placeholder="Search funds by name or ISIN"
+                value={fundSearchTerm}
+                onChange={(e) => handleFundSearch(e.target.value)}
+                disabled={isEitherLoading}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setAddFundForProductId(product.id);
+                setIsAddFundModalOpen(true);
+              }}
+              className="bg-primary-600 text-white px-3 py-2 rounded hover:bg-primary-700 transition-colors duration-150 inline-flex items-center justify-center gap-1"
+              title="Add new fund"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Add Fund
+            </button>
+          </div>
           <div className="fund-list max-h-60 overflow-y-auto border rounded-md p-2">
             {filteredFunds.map(fund => (
               <div key={fund.id} className="fund-item hover:bg-gray-50 p-1">
@@ -975,6 +997,32 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   const openCreateProductOwnerModal = (productId: string) => {
     setCurrentProductId(productId);
     setShowCreateProductOwnerModal(true);
+  };
+
+  // Add function to handle when a new fund is added
+  const handleFundAdded = (newFund: Fund) => {
+    // Add the new fund to the available funds
+    setFunds(prev => [...prev, newFund]);
+    setFilteredFunds(prev => [...prev, newFund]);
+    
+    // Automatically add the fund to the product that opened the modal
+    if (addFundForProductId) {
+      setProducts(prevProducts => prevProducts.map(product => {
+        if (product.id === addFundForProductId) {
+          return {
+            ...product,
+            portfolio: {
+              ...product.portfolio,
+              selectedFunds: [...product.portfolio.selectedFunds, newFund.id]
+            }
+          };
+        }
+        return product;
+      }));
+    }
+    
+    // Show success message  
+    showToastMessage(`Fund "${newFund.fund_name}" has been created and added to your product!`);
   };
 
   if (isLoading) {
@@ -1341,6 +1389,16 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           </div>
         </Modal>
       )}
+
+      {/* Add Fund Modal */}
+      <AddFundModal
+        isOpen={isAddFundModalOpen}
+        onClose={() => {
+          setIsAddFundModalOpen(false);
+          setAddFundForProductId(null);
+        }}
+        onFundAdded={handleFundAdded}
+      />
     </div>
   );
 };
