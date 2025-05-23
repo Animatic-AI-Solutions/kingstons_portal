@@ -1,5 +1,5 @@
-import React, { Suspense } from 'react';
-import { StatBox, FundDistributionChart, StatBoxSkeleton, ChartSkeleton } from '../components/ui';
+import React, { Suspense, useState } from 'react';
+import { StatBox, FundDistributionChart, DataTable, StatBoxSkeleton, ChartSkeleton, TableSkeleton } from '../components/ui';
 import useDashboardData from '../hooks/useDashboardData';
 
 // Icons for the stats boxes
@@ -33,6 +33,20 @@ const ProductsIcon = () => (
   </svg>
 );
 
+// Icons for view toggle
+const PieChartIcon = () => (
+  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-4 h-4">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+  </svg>
+);
+
+const TableIcon = () => (
+  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-4 h-4">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0V4a1 1 0 011-1h16a1 1 0 011 1v16a1 1 0 01-1 1H4a1 1 0 01-1-1V10z" />
+  </svg>
+);
+
 const ErrorMessage: React.FC<{ message: string; retry: () => void }> = ({ message, retry }) => (
   <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
     <div className="flex">
@@ -54,8 +68,11 @@ const ErrorMessage: React.FC<{ message: string; retry: () => void }> = ({ messag
   </div>
 );
 
+type ViewMode = 'charts' | 'tables';
+
 const Home: React.FC = () => {
   const { metrics, funds, providers, templates, loading, error, refetch } = useDashboardData();
+  const [viewMode, setViewMode] = useState<ViewMode>('charts');
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
@@ -137,13 +154,45 @@ const Home: React.FC = () => {
             </div>
           </div>
           
-          {/* Charts row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-            {/* Fund distribution chart */}
-            <div>
+          {/* View Toggle Button */}
+          <div className="flex justify-between items-center mt-6">
+            <h2 className="text-2xl font-bold text-gray-900">Portfolio Distribution</h2>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-500">View as:</span>
+              <div className="bg-gray-100 rounded-lg p-1 flex">
+                <button
+                  onClick={() => setViewMode('charts')}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+                    viewMode === 'charts'
+                      ? 'bg-white text-primary-700 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <PieChartIcon />
+                  <span>Charts</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('tables')}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+                    viewMode === 'tables'
+                      ? 'bg-white text-primary-700 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <TableIcon />
+                  <span>Tables</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Charts/Tables row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Fund distribution */}
+            <div className="min-h-[500px]">
               {loading ? (
-                <ChartSkeleton />
-              ) : (
+                viewMode === 'charts' ? <ChartSkeleton /> : <TableSkeleton />
+              ) : viewMode === 'charts' ? (
                 <Suspense fallback={<ChartSkeleton />}>
                   <FundDistributionChart
                     data={funds}
@@ -151,14 +200,19 @@ const Home: React.FC = () => {
                     title="Percentage of FUM in each Fund"
                   />
                 </Suspense>
+              ) : (
+                <DataTable
+                  data={funds}
+                  title="FUM by Fund"
+                />
               )}
             </div>
             
-            {/* Provider distribution chart */}
-            <div>
+            {/* Provider distribution */}
+            <div className="min-h-[500px]">
               {loading ? (
-                <ChartSkeleton />
-              ) : (
+                viewMode === 'charts' ? <ChartSkeleton /> : <TableSkeleton />
+              ) : viewMode === 'charts' ? (
                 <Suspense fallback={<ChartSkeleton />}>
                   <FundDistributionChart
                     data={providers.map(provider => ({
@@ -170,14 +224,23 @@ const Home: React.FC = () => {
                     title="Percentage of FUM by Provider"
                   />
                 </Suspense>
+              ) : (
+                <DataTable
+                  data={providers.map(provider => ({
+                    id: provider.id,
+                    name: provider.name,
+                    amount: provider.amount
+                  }))}
+                  title="FUM by Provider"
+                />
               )}
             </div>
             
-            {/* Portfolio Template distribution chart */}
-            <div>
+            {/* Portfolio Template distribution */}
+            <div className="min-h-[500px]">
               {loading ? (
-                <ChartSkeleton />
-              ) : (
+                viewMode === 'charts' ? <ChartSkeleton /> : <TableSkeleton />
+              ) : viewMode === 'charts' ? (
                 <Suspense fallback={<ChartSkeleton />}>
                   <FundDistributionChart
                     data={templates.map(template => ({
@@ -189,6 +252,15 @@ const Home: React.FC = () => {
                     title="Percentage of FUM by Portfolio Template"
                   />
                 </Suspense>
+              ) : (
+                <DataTable
+                  data={templates.map(template => ({
+                    id: template.id,
+                    name: template.name,
+                    amount: template.amount
+                  }))}
+                  title="FUM by Portfolio Template"
+                />
               )}
             </div>
           </div>

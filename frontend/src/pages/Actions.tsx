@@ -4,7 +4,7 @@ import ScheduledTransactionForm from '../components/ScheduledTransactionForm';
 import ScheduledTransactionsList from '../components/ScheduledTransactionsList';
 
 /**
- * Actions Page - Scheduled Transactions Management
+ * Transaction Scheduler Page - Scheduled Transactions Management
  * 
  * This page provides the interface for creating and managing scheduled transactions
  * including investments and withdrawals (both one-time and recurring).
@@ -23,7 +23,7 @@ const Actions: React.FC = () => {
     <div className="container mx-auto px-4 py-8">
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Actions</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Transaction Scheduler</h1>
         <p className="text-gray-600">
           Schedule and manage automated investments and withdrawals for your portfolios.
         </p>

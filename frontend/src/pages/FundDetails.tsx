@@ -338,6 +338,60 @@ const FundDetails: React.FC = () => {
     }
   };
 
+  // CSV Export function
+  const exportToCSV = () => {
+    if (productsWithOwners.length === 0) {
+      alert('No data to export');
+      return;
+    }
+
+    // Define the CSV headers
+    const headers = [
+      'Product Name',
+      'Product Owner',
+      'Portfolio',
+      'Product Type',
+      'Weighting (%)',
+      'Start Date',
+      'Status'
+    ];
+
+    // Convert data to CSV format
+    const csvData = productsWithOwners.map(product => [
+      product.product_name,
+      product.product_owner_name,
+      product.portfolio_name,
+      product.product_type,
+      product.weighting.toString(),
+      new Date(product.start_date).toLocaleDateString(),
+      product.product_status
+    ]);
+
+    // Combine headers and data
+    const csvContent = [headers, ...csvData]
+      .map(row => row.map(field => `"${field.replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      
+      // Create filename with fund name and current date
+      const fundName = fund?.fund_name || 'fund';
+      const date = new Date().toISOString().split('T')[0];
+      link.setAttribute('download', `${fundName}_products_${date}.csv`);
+      
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -642,8 +696,19 @@ const FundDetails: React.FC = () => {
 
           {/* Products Table */}
           <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-200">
+            <div className="px-6 py-5 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-xl font-semibold text-gray-900">Products Using This Fund</h2>
+              {productsWithOwners.length > 0 && (
+                <button
+                  onClick={exportToCSV}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                >
+                  <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Export CSV
+                </button>
+              )}
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">

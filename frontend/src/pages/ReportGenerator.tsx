@@ -1997,7 +1997,7 @@ Please select a different valuation date or ensure all active funds have valuati
                       Product
                     </th>
                     <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                      Weighted Risk
+                      Risk
                     </th>
                     <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
                       Investment
@@ -2012,7 +2012,7 @@ Please select a different valuation date or ensure all active funds have valuati
                       Fund Switch Out
                     </th>
                     <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                      Current Value
+                      Valuation
                     </th>
                     <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
                       Annualised Rate of Return per annum
@@ -2205,7 +2205,7 @@ Please select a different valuation date or ensure all active funds have valuati
                 </div>
                 
                 <div className="bg-gray-50 rounded-lg p-3 border">
-                  <div className="text-xs font-medium text-gray-500 uppercase mb-1">Valuation Period</div>
+                  <div className="text-xs font-medium text-gray-500 uppercase mb-1">Time Period</div>
                   <div className="text-lg font-semibold text-gray-700">
                     {product.start_date && valuationDate ? (
                       <>{formatDateFallback(product.start_date)} - {formatDateFallback(valuationDate)}</>
@@ -2248,7 +2248,7 @@ Please select a different valuation date or ensure all active funds have valuati
                         Fund Switch Out
                       </th>
                       <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                        Current Value
+                        Valuation
                       </th>
                       <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
                         Annualised Rate of Return per annum

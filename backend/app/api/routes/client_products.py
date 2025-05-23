@@ -839,13 +839,13 @@ async def get_product_irr(product_id: int, db = Depends(get_db)):
                             # Handle full datetime format from database (e.g., "2025-03-01T00:00:00")
                             if 'T' in val_date:
                                 val_date_obj = datetime.strptime(val_date, '%Y-%m-%dT%H:%M:%S').date()
-                            else:
-                                val_date_obj = datetime.strptime(val_date, '%Y-%m-%d').date()
                         else:
-                            val_date_obj = val_date
+                            val_date_obj = datetime.strptime(val_date, '%Y-%m-%d').date()
+                    else:
+                        val_date_obj = None
                         
-                        if latest_valuation_date is None or val_date_obj > latest_valuation_date:
-                            latest_valuation_date = val_date_obj
+                    if latest_valuation_date is None or val_date_obj > latest_valuation_date:
+                        latest_valuation_date = val_date_obj
             
             # Add the total current value as the final cash flow (normalized to END of valuation month)
             if total_current_value > 0 and latest_valuation_date:
@@ -909,12 +909,12 @@ async def get_product_irr(product_id: int, db = Depends(get_db)):
             return {
                 "product_id": product_id,
                 "product_name": product_name,
-                "irr": irr_percentage,
-                "irr_decimal": irr_decimal,
-                "cash_flows_count": len(cash_flow_values),
-                "total_current_value": total_current_value,
-                "days_in_period": portfolio_irr.get('days_in_period', 0)
-            }
+                            "irr": irr_percentage,
+                            "irr_decimal": irr_decimal,
+                            "cash_flows_count": len(cash_flow_values),
+                            "total_current_value": total_current_value,
+                            "days_in_period": portfolio_irr.get('days_in_period', 0)
+                    }
             
         except Exception as irr_error:
             logger.error(f"Error calculating IRR: {str(irr_error)}")
@@ -924,7 +924,7 @@ async def get_product_irr(product_id: int, db = Depends(get_db)):
                 "irr": 0,
                 "irr_decimal": 0,
                 "error": f"IRR calculation failed: {str(irr_error)}"
-            }
+        }
         
     except HTTPException:
         raise

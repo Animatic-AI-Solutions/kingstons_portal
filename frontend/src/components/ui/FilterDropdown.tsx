@@ -28,9 +28,11 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 200 });
+  const [calculatedWidth, setCalculatedWidth] = useState(200);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const optionsRef = useRef<HTMLUListElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const measureRef = useRef<HTMLSpanElement>(null);
 
   // Ensure value is always an array
   const selectedValues = Array.isArray(value) ? value : value !== undefined && value !== null ? [value] : [];
@@ -43,17 +45,60 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
     option.label.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Calculate the width needed to fit the longest option
+  const calculateOptimalWidth = () => {
+    if (!measureRef.current || options.length === 0) {
+      return 200; // fallback minimum width
+    }
+
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    
+    if (!context) {
+      return 200;
+    }
+
+    // Use the same font style as the dropdown options
+    context.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+
+    let maxWidth = 0;
+    
+    // Measure all option labels
+    options.forEach(option => {
+      const width = context.measureText(option.label).width;
+      maxWidth = Math.max(maxWidth, width);
+    });
+    
+    // Also measure the placeholder text
+    const placeholderWidth = context.measureText(placeholder).width;
+    maxWidth = Math.max(maxWidth, placeholderWidth);
+    
+    // Add padding for checkbox (24px), spacing (16px), and general padding (24px)
+    // Plus some extra space for scrollbar and safety margin
+    const finalWidth = Math.max(200, maxWidth + 96);
+    
+    return Math.min(finalWidth, 600); // Increase cap to 600px to allow longer text
+  };
+
   // Calculate dropdown position
   const calculateDropdownPosition = () => {
     if (dropdownRef.current) {
       const rect = dropdownRef.current.getBoundingClientRect();
+      const optimalWidth = calculatedWidth;
+      
       setDropdownPosition({
         top: rect.bottom + window.scrollY + 4,
         left: rect.left + window.scrollX,
-        width: Math.max(rect.width, 200)
+        width: optimalWidth
       });
     }
   };
+
+  // Calculate optimal width when options change
+  useEffect(() => {
+    const optimalWidth = calculateOptimalWidth();
+    setCalculatedWidth(optimalWidth);
+  }, [options, placeholder]);
 
   // Recalculate position when dropdown opens
   useEffect(() => {
@@ -70,7 +115,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
         window.removeEventListener('resize', handlePositionUpdate);
       };
     }
-  }, [isOpen]);
+  }, [isOpen, calculatedWidth]);
 
   useEffect(() => {
     setFocusedIndex(-1);
@@ -152,19 +197,23 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
 
   return (
     <div ref={dropdownRef} className={`relative ${className}`}>
+      {/* Hidden span for text measurement - not actually used since we're using canvas */}
+      <span ref={measureRef} className="absolute invisible whitespace-nowrap text-sm" aria-hidden="true"></span>
+      
       <button
         type="button"
         id={id}
         className={`flex items-center px-3 py-1.5 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
           disabled ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white hover:bg-indigo-50'
         }`}
+        style={{ width: `${calculatedWidth}px` }}
         onClick={toggleDropdown}
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
         {selectedOptions.length > 0 ? (
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1 flex-1 min-w-0">
             {selectedOptions.map(opt => (
               <span key={opt.value} className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-xs">
                 {opt.label}
@@ -172,18 +221,18 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
             ))}
           </div>
         ) : (
-          <span className="truncate mr-2">{placeholder}</span>
+          <span className="truncate mr-2 flex-1">{placeholder}</span>
         )}
         {selectedOptions.length > 0 && (
           <span
-            className="ml-1 text-gray-400 hover:text-red-500 cursor-pointer"
+            className="ml-1 text-gray-400 hover:text-red-500 cursor-pointer flex-shrink-0"
             onClick={e => { e.stopPropagation(); handleClear(); }}
             title="Clear all"
           >
             ×
           </span>
         )}
-        <span className="ml-1 pointer-events-none">
+        <span className="ml-1 pointer-events-none flex-shrink-0">
           <svg className="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
             <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
           </svg>
@@ -197,8 +246,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
             zIndex: 9999,
             top: dropdownPosition.top,
             left: dropdownPosition.left,
-            width: dropdownPosition.width,
-            minWidth: '200px'
+            width: dropdownPosition.width
           }}
         >
           <div className="sticky top-0 z-10 bg-white px-2 py-2 flex items-center gap-2">
@@ -228,7 +276,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
               filteredOptions.map((option, index) => (
                 <li
                   key={option.value}
-                  className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-indigo-100 flex items-center gap-2 ${
+                  className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-indigo-100 flex items-center gap-2 w-full ${
                     selectedValues.includes(option.value) ? 'bg-indigo-50 text-indigo-700' : 'text-gray-900'
                   } ${index === focusedIndex ? 'bg-indigo-100' : ''}`}
                   onClick={() => handleSelect(option.value)}
@@ -242,9 +290,9 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
                     type="checkbox"
                     checked={selectedValues.includes(option.value)}
                     readOnly
-                    className="mr-2"
+                    className="mr-2 flex-shrink-0"
                   />
-                  <span className="block truncate font-normal">{option.label}</span>
+                  <span className="block font-normal flex-1">{option.label}</span>
                 </li>
               ))
             ) : (

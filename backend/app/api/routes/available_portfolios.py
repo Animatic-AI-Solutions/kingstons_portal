@@ -917,4 +917,28 @@ async def get_available_portfolio_funds_by_generation(
         logger.error(f"Error fetching portfolio funds for generation ID {generation_id}: {str(e)}")
         logger.error(f"Error type: {type(e)}")
         logger.error(f"Error args: {e.args}")
-        raise HTTPException(status_code=500, detail=f"Failed to fetch portfolio funds: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"Failed to fetch portfolio funds: {str(e)}")
+
+@router.get("/template-portfolio-generations/active", response_model=List[dict])
+async def get_active_template_portfolio_generations(db = Depends(get_db)):
+    """Get all template portfolio generations that are not inactive"""
+    try:
+        logger.info("Fetching active template portfolio generations")
+        
+        # Get all template portfolio generations that are not inactive
+        response = db.table('template_portfolio_generations')\
+            .select('id, generation_name, available_portfolio_id, status, version_number')\
+            .neq('status', 'inactive')\
+            .order('generation_name')\
+            .execute()
+        
+        if not response.data:
+            logger.info("No active template portfolio generations found")
+            return []
+        
+        logger.info(f"Found {len(response.data)} active template portfolio generations")
+        return response.data
+        
+    except Exception as e:
+        logger.error(f"Error fetching active template portfolio generations: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e)) 

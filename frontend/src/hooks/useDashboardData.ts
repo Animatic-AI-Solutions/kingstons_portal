@@ -29,26 +29,21 @@ export interface Template {
   amount: number;
 }
 
-// Define type for API response data
-interface PerformanceDataItem {
-  id: number;
-  name: string;
-  type: string;
-  irr: number;
-  fum: number;
-  startDate: string | null;
-}
-
-interface FundDistributionResponse {
+// New interface for the optimized response
+interface DashboardAllResponse {
+  metrics: DashboardMetrics;
   funds: Fund[];
-}
-
-interface ProviderDistributionResponse {
   providers: Provider[];
-}
-
-interface TemplateDistributionResponse {
   templates: Template[];
+  performance: {
+    optimization_stats: {
+      total_db_queries: number;
+      total_portfolio_funds: number;
+      total_valuations: number;
+      valuations_used: number;
+      fum_source: string;
+    };
+  };
 }
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -62,6 +57,7 @@ export const useDashboardData = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
   const [lastFetched, setLastFetched] = useState<number>(0);
+  const [performanceStats, setPerformanceStats] = useState<any>(null);
 
   const fetchData = useCallback(async (forceRefresh = false) => {
     const now = Date.now();
@@ -79,69 +75,34 @@ export const useDashboardData = () => {
     try {
       setLoading(true);
       
-      // Fetch dashboard stats
-      const dashboardResponse = await api.get('/analytics/dashboard_stats');
+      // SINGLE OPTIMIZED API CALL instead of 4+ separate calls
+      console.log('Fetching dashboard data with optimized single endpoint...');
       
-      // Set metrics from response data, with fallbacks for missing values
-      setMetrics({
-        totalFUM: dashboardResponse.data?.totalFUM || 0,
-        companyIRR: dashboardResponse.data?.companyIRR || 0,
-        totalClients: dashboardResponse.data?.totalClients || 0,
-        totalAccounts: dashboardResponse.data?.totalAccounts || 0,
-        totalActiveHoldings: dashboardResponse.data?.totalActiveHoldings || 0
+      const response = await api.get<DashboardAllResponse>('/analytics/dashboard_all', {
+        params: {
+          fund_limit: 10,
+          provider_limit: 10,
+          template_limit: 10
+        }
       });
       
-      // Fetch fund distribution data from the dedicated endpoint
-      const fundsResponse = await api.get<FundDistributionResponse>('/analytics/fund_distribution');
-      
-      // Use the funds data directly from the response
-      if (fundsResponse.data?.funds) {
-        setFunds(fundsResponse.data.funds);
-      } else {
-        setFunds([]);
-      }
-      
-      // Fetch provider distribution data
-      const providersResponse = await api.get<ProviderDistributionResponse>('/analytics/provider_distribution');
-      
-      // Use the providers data directly from the response
-      if (providersResponse.data?.providers) {
-        setProviders(providersResponse.data.providers);
-      } else {
-        // If the endpoint isn't implemented yet, create mock data based on fund data
-        // This is a temporary solution until the backend endpoint is available
-        const providerMap = new Map<string, number>();
-        
-        fundsResponse.data?.funds?.forEach(fund => {
-          // Extract provider name from fund name (this is a fallback strategy)
-          // In a real implementation, the API would provide proper provider data
-          const providerName = fund.name.split(' ')[0]; // Simplified - assuming first word is provider
-          const currentAmount = providerMap.get(providerName) || 0;
-          providerMap.set(providerName, currentAmount + fund.amount);
-        });
-        
-        const mockProviders: Provider[] = Array.from(providerMap).map(([name, amount], index) => ({
-          id: `provider-${index}`,
-          name,
-          amount
-        }));
-        
-        setProviders(mockProviders);
-      }
-      
-      // Fetch portfolio template distribution data
-      const templatesResponse = await api.get<TemplateDistributionResponse>('/analytics/portfolio_template_distribution');
-      
-      // Use the templates data directly from the response
-      if (templatesResponse.data?.templates) {
-        setTemplates(templatesResponse.data.templates);
-      } else {
-        setTemplates([]);
-      }
+      // Set all data from the single response
+      setMetrics(response.data.metrics);
+      setFunds(response.data.funds || []);
+      setProviders(response.data.providers || []);
+      setTemplates(response.data.templates || []);
+      setPerformanceStats(response.data.performance?.optimization_stats);
       
       // Update last fetched timestamp
       setLastFetched(now);
       setError(null);
+      
+      // Log performance improvement
+      if (response.data.performance?.optimization_stats) {
+        const stats = response.data.performance.optimization_stats;
+        console.log(`🚀 Dashboard optimized! ${stats.total_db_queries} queries (was 50+), processed ${stats.total_portfolio_funds} funds with ${stats.valuations_used} valuations`);
+      }
+      
     } catch (err: any) {
       setError(
         new Error(err.response?.data?.detail || 'Failed to load dashboard data')
@@ -165,7 +126,8 @@ export const useDashboardData = () => {
     loading,
     error,
     refetch: () => fetchData(true),
-    lastFetched
+    lastFetched,
+    performanceStats // Expose performance stats for debugging
   };
 };
 

@@ -76,6 +76,14 @@ export const getAvailablePortfolioDetails = (id: number) => {
 };
 
 /**
+ * Fetches all template portfolio generations that are not inactive
+ * @returns {Promise} - API response with active template portfolio generations
+ */
+export const getActiveTemplatePortfolioGenerations = () => {
+  return api.get('available_portfolios/template-portfolio-generations/active');
+};
+
+/**
  * Creates a new portfolio template
  * @param {Object} data - Portfolio data
  * @param {string} data.name - Portfolio template name

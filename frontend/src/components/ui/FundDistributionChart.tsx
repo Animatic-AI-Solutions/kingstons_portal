@@ -69,11 +69,39 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
+// Custom legend component that can wrap and handles long names better
+const CustomLegend = ({ payload }: any) => {
+  if (!payload || !payload.length) return null;
+  
+  return (
+    <div className="flex flex-wrap justify-center gap-2 mt-4 px-2">
+      {payload.map((entry: any, index: number) => (
+        <div 
+          key={`legend-${index}`} 
+          className="flex items-center space-x-1 text-xs"
+          style={{ maxWidth: '150px' }}
+        >
+          <div
+            className="w-2 h-2 rounded-full flex-shrink-0"
+            style={{ backgroundColor: entry.color }}
+          />
+          <span 
+            className="text-gray-700 truncate" 
+            title={entry.value}
+          >
+            {entry.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const FundDistributionChart: React.FC<FundDistributionChartProps> = ({
   data,
   threshold = 5, // Changed from 2% to 5%
   title,
-  height = 350,
+  height,
   width = '100%',
   animated = true
 }) => {
@@ -112,6 +140,18 @@ const FundDistributionChart: React.FC<FundDistributionChartProps> = ({
     return result;
   }, [data, threshold]);
 
+  // Calculate dynamic height based on number of items in legend
+  const dynamicHeight = useMemo(() => {
+    if (height) return height;
+    
+    const baseHeight = 300;
+    const legendItems = chartData.length;
+    const legendRows = Math.ceil(legendItems / 3); // Assuming 3 items per row
+    const legendHeight = legendRows * 25; // Approximate height per row
+    
+    return Math.max(baseHeight, baseHeight + legendHeight);
+  }, [chartData.length, height]);
+
   // Format currency for display
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-GB', {
@@ -128,25 +168,25 @@ const FundDistributionChart: React.FC<FundDistributionChartProps> = ({
   }, [data]);
 
   return (
-    <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-100">
-      <div className="border-b border-gray-200 px-6 py-4">
+    <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-100 flex flex-col h-full">
+      <div className="border-b border-gray-200 px-6 py-4 flex-shrink-0">
         <h2 className="text-lg font-semibold text-primary-800">{title}</h2>
       </div>
-      <div className="p-6">
-        <div className="text-center mb-4">
+      <div className="p-6 flex-1 flex flex-col">
+        <div className="text-center mb-4 flex-shrink-0">
           <p className="text-sm font-medium text-gray-500">Total Funds</p>
-          <p className="text-3xl font-bold text-gray-800">{formatCurrency(totalValue)}</p>
+          <p className="text-2xl font-bold text-gray-800">{formatCurrency(totalValue)}</p>
         </div>
         
-        <div style={{ width, height }}>
-          <ResponsiveContainer>
+        <div className="flex-1 min-h-0" style={{ width }}>
+          <ResponsiveContainer width="100%" height="100%" minHeight={dynamicHeight}>
             <PieChart>
               <Pie
                 data={chartData}
                 cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={100}
+                cy="45%" // Moved up slightly to make room for legend
+                innerRadius={50}
+                outerRadius={80}
                 paddingAngle={2}
                 dataKey="value"
                 animationDuration={animated ? 800 : 0}
@@ -160,11 +200,8 @@ const FundDistributionChart: React.FC<FundDistributionChartProps> = ({
               </Pie>
               <Tooltip content={<CustomTooltip />} />
               <Legend 
-                layout="vertical" 
-                verticalAlign="bottom" 
-                align="center"
-                iconSize={10}
-                iconType="circle"
+                content={<CustomLegend />}
+                wrapperStyle={{ paddingTop: '20px' }}
               />
             </PieChart>
           </ResponsiveContainer>

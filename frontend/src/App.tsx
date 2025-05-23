@@ -28,7 +28,7 @@ import ClientDetails from './pages/ClientDetails';
 import Products from './pages/Products';
 import ProductDetails from './pages/ProductDetails';
 
-// Actions Page - For scheduled transactions management
+// Transaction Scheduler Page - For scheduled transactions management
 import Actions from './pages/Actions';
 
 // Definitions Pages - System configuration and reference data management
@@ -172,7 +172,7 @@ const AppContent: React.FC = () => {
             </>
           } />
           
-          {/* Actions Page - For scheduled transactions management */}
+          {/* Transaction Scheduler Page - For scheduled transactions management */}
           <Route path="/actions" element={
             <>
               <Navbar />

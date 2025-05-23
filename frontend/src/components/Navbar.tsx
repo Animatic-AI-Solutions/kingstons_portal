@@ -112,7 +112,7 @@ const Navbar: React.FC = () => {
                   to="/actions" 
                   className={`px-2 py-6 text-sm ${isActive('/actions') ? activeNavLinkStyle : inactiveNavLinkStyle}`}
                 >
-                  Actions
+                  Transaction Scheduler
                 </Link>
                 <Link 
                   to="/definitions" 

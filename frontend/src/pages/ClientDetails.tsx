@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getProviderColor } from '../services/providerColors';
-import { getClientGroupFUMById, getClientGroupIRR, getProductFUM, getProductIRR } from '../services/api';
 
 // Enhanced TypeScript interfaces
 interface Client {
@@ -556,464 +555,107 @@ const ClientDetails: React.FC = () => {
     }
   };
 
-  // Fetch fund details and activities for a product
+  // Simplified product expansion - data is already loaded
   const fetchProductFunds = async (accountId: number) => {
-    try {
-      // Mark as loading
-      setIsLoadingFunds(prev => ({ ...prev, [accountId]: true }));
-      
-      // Get the account
-      const account = clientAccounts.find(acc => acc.id === accountId);
-      if (!account || !account.portfolio_id) {
-        console.error(`No portfolio ID found for account ${accountId}`);
-        setExpandedProductFunds(prev => ({ ...prev, [accountId]: [] }));
-        setIsLoadingFunds(prev => ({ ...prev, [accountId]: false }));
-        return;
-      }
-      
-      // Get the portfolio funds
-      const [portfolioFundsResponse, fundsResponse] = await Promise.all([
-        api.get(`/portfolio_funds?portfolio_id=${account.portfolio_id}`),
-        api.get('/funds')
-      ]);
-      
-      // Create a map of funds for quick lookups
-      interface Fund {
-        id: number;
-        fund_name: string;
-        isin_number: string;
-        [key: string]: any;
-      }
-      
-      const fundsMap = new Map<number, Fund>(
-        fundsResponse.data.map((fund: Fund) => [fund.id, fund])
-      );
-      
-      // Get fund details with portfolio info
-      const portfolioFunds = portfolioFundsResponse.data;
-      
-      // Separate active and inactive funds
-      const activeFunds = portfolioFunds.filter((pf: any) => pf.status === 'active');
-      const inactiveFunds = portfolioFunds.filter((pf: any) => pf.status !== 'active');
-      
-      console.log(`Product ${accountId}: Found ${activeFunds.length} active funds and ${inactiveFunds.length} inactive funds`);
-      
-      // Process active funds
-      const activeFundsWithActivities = await Promise.all(
-        activeFunds.map(async (pf: any) => {
-          // Get all activity logs for this fund - no date restrictions for all-time data
-          const activitiesResponse = await api.get('/holding_activity_logs', {
-            params: { portfolio_fund_id: pf.id }
-          });
-          
-          const activities = activitiesResponse.data || [];
-          
-          // Calculate activity totals by type
-          const investments = activities
-            .filter((activity: any) => 
-              activity.activity_type === 'Investment' || 
-              activity.activity_type === 'RegularInvestment' || 
-              activity.activity_type === 'GovernmentUplift')
-            .reduce((sum: number, activity: any) => sum + Math.abs(activity.amount), 0);
-            
-          const withdrawals = activities
-            .filter((activity: any) => 
-              activity.activity_type === 'Withdrawal' || 
-              activity.activity_type === 'RegularWithdrawal')
-            .reduce((sum: number, activity: any) => sum + Math.abs(activity.amount), 0);
-            
-          const switchIn = activities
-            .filter((activity: any) => activity.activity_type === 'SwitchIn')
-            .reduce((sum: number, activity: any) => sum + Math.abs(activity.amount), 0);
-            
-          const switchOut = activities
-            .filter((activity: any) => activity.activity_type === 'SwitchOut')
-            .reduce((sum: number, activity: any) => sum + Math.abs(activity.amount), 0);
-            
-          // Get latest valuation
-          let marketValue = pf.market_value || 0;
-          try {
-            const valuationResponse = await api.get(`/fund_valuations/latest/${pf.id}`);
-            if (valuationResponse.data && valuationResponse.data.value) {
-              marketValue = valuationResponse.data.value;
-              console.log(`Fund ${pf.id} latest valuation: ${marketValue}`);
-            }
-          } catch (err) {
-            console.warn(`Failed to fetch valuation for fund ${pf.id}`, err);
-          }
-            
-          // Try to get latest IRR
-          let irrValue;
-          try {
-            const irrResponse = await api.get(`/portfolio_funds/${pf.id}/latest-irr`);
-            irrValue = irrResponse.data?.irr;
-          } catch (err) {
-            console.warn(`Failed to fetch IRR for fund ${pf.id}`, err);
-          }
-          
-          // Get fund details
-          const fund = fundsMap.get(pf.available_funds_id);
-          
-          return {
-            id: pf.id,
-            fund_name: fund?.fund_name || 'Unknown Fund',
-            isin_number: fund?.isin_number || 'N/A',
-            amount_invested: pf.amount_invested || 0,
-            market_value: marketValue,
-            investments,
-            withdrawals,
-            switch_in: switchIn,
-            switch_out: switchOut,
-            irr: irrValue,
-            status: 'active'
-          };
-        })
-      );
-      
-      // Handle inactive funds if they exist
-      let allFunds: ProductFund[] = [...activeFundsWithActivities];
-      
-      if (inactiveFunds.length > 0) {
-        // Process inactive funds
-        const inactiveFundsData = await Promise.all(
-          inactiveFunds.map(async (pf: any) => {
-            // Get basic fund data
-            const fund = fundsMap.get(pf.available_funds_id);
-            
-            // Get all activity logs for this fund
-            const activitiesResponse = await api.get('/holding_activity_logs', {
-              params: { portfolio_fund_id: pf.id }
-            });
-            
-            const activities = activitiesResponse.data || [];
-            
-            // Calculate activity totals by type
-            const investments = activities
-              .filter((activity: any) => 
-                activity.activity_type === 'Investment' || 
-                activity.activity_type === 'RegularInvestment' || 
-                activity.activity_type === 'GovernmentUplift')
-              .reduce((sum: number, activity: any) => sum + Math.abs(activity.amount), 0);
-              
-            const withdrawals = activities
-              .filter((activity: any) => 
-                activity.activity_type === 'Withdrawal' || 
-                activity.activity_type === 'RegularWithdrawal')
-              .reduce((sum: number, activity: any) => sum + Math.abs(activity.amount), 0);
-              
-            const switchIn = activities
-              .filter((activity: any) => activity.activity_type === 'SwitchIn')
-              .reduce((sum: number, activity: any) => sum + Math.abs(activity.amount), 0);
-              
-            const switchOut = activities
-              .filter((activity: any) => activity.activity_type === 'SwitchOut')
-              .reduce((sum: number, activity: any) => sum + Math.abs(activity.amount), 0);
-              
-            // Get latest valuation
-            let marketValue = pf.market_value || 0;
-            try {
-              const valuationResponse = await api.get(`/fund_valuations/latest/${pf.id}`);
-              if (valuationResponse.data && valuationResponse.data.value) {
-                marketValue = valuationResponse.data.value;
-              }
-            } catch (err) {
-              console.warn(`Failed to fetch valuation for inactive fund ${pf.id}`, err);
-            }
-            
-            return {
-              id: pf.id,
-              fund_name: fund?.fund_name || 'Unknown Fund',
-              isin_number: fund?.isin_number || 'N/A',
-              amount_invested: pf.amount_invested || 0,
-              market_value: marketValue,
-              investments,
-              withdrawals,
-              switch_in: switchIn,
-              switch_out: switchOut,
-              status: 'inactive'
-            };
-          })
-        );
-        
-        // Create aggregated "Previous Funds" entry
-        if (inactiveFundsData.length > 0) {
-          const totalInvestments = inactiveFundsData.reduce((sum, fund) => sum + (fund.investments || 0), 0);
-          const totalWithdrawals = inactiveFundsData.reduce((sum, fund) => sum + (fund.withdrawals || 0), 0);
-          const totalSwitchIn = inactiveFundsData.reduce((sum, fund) => sum + (fund.switch_in || 0), 0);
-          const totalSwitchOut = inactiveFundsData.reduce((sum, fund) => sum + (fund.switch_out || 0), 0);
-          const totalMarketValue = inactiveFundsData.reduce((sum, fund) => sum + (fund.market_value || 0), 0);
-          
-          // Add the "Previous Funds" virtual entry to the list of funds
-          allFunds.push({
-            id: -1, // Virtual ID for the aggregated entry
-            fund_name: `Previous Funds (${inactiveFundsData.length})`,
-            isin_number: 'Multiple',
-            amount_invested: 0,
-            market_value: totalMarketValue,
-            investments: totalInvestments,
-            withdrawals: totalWithdrawals,
-            switch_in: totalSwitchIn,
-            switch_out: totalSwitchOut,
-            is_virtual_entry: true,
-            inactive_fund_count: inactiveFundsData.length,
-            status: 'inactive'
-          });
-          
-          console.log(`Created Previous Funds entry for ${inactiveFundsData.length} inactive funds with total value: ${totalMarketValue}`);
-        }
-      }
-      
-      // Store the combined funds data
-      setExpandedProductFunds(prev => ({ ...prev, [accountId]: allFunds }));
-    } catch (err) {
-      console.error(`Error fetching fund details for account ${accountId}:`, err);
-      setExpandedProductFunds(prev => ({ ...prev, [accountId]: [] }));
-    } finally {
-      setIsLoadingFunds(prev => ({ ...prev, [accountId]: false }));
+    // Data is already loaded from the bulk endpoint, so just mark as not loading
+    setIsLoadingFunds(prev => ({ ...prev, [accountId]: false }));
+    
+    // If for some reason the data wasn't loaded, log a warning
+    if (!expandedProductFunds[accountId]) {
+      console.warn(`Fund data not found for product ${accountId} - may need to refresh`);
     }
   };
-  
-  // Set all products to be expanded when clientAccounts are updated
-  useEffect(() => {
-    if (clientAccounts.length > 0) {
-      // Get all account IDs
-      const allAccountIds = clientAccounts.map(account => account.id);
-      
-      // Set expanded products state
-      setExpandedProducts(allAccountIds);
-      
-      // Load fund data for any cards that don't have it yet
-      allAccountIds.forEach(accountId => {
-        if (!expandedProductFunds[accountId]) {
-          fetchProductFunds(accountId);
-        }
-      });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clientAccounts, expandedProductFunds]);
 
-  // Calculate totals with memoization for performance
-  const { totalFundsUnderManagement, totalIRR } = useMemo(() => {
-    // If we have the FUM directly from the database view, use that value
-    const totalFunds = clientFUMFromView.current !== null 
-      ? clientFUMFromView.current 
-      : clientAccounts.reduce((sum, account) => sum + (account.total_value || 0), 0);
-      
-    // Debug logs for total value calculation
-    console.log("FUNDS DEBUGGING - Total value calculation:");
-    console.log("Client accounts:", clientAccounts);
-    console.log("Client accounts with total_value:", clientAccounts.map(acc => ({ 
-      id: acc.id, 
-      product_name: acc.product_name, 
-      total_value: acc.total_value,
-      irr: acc.irr
-    })));
-    console.log("FUM from view:", clientFUMFromView.current);
-    console.log("Calculated totalFunds:", totalFunds);
-    
-    // If we have the IRR directly from the API, use that value
-    let finalIRR = clientIRRFromAPI.current;
-    
-    // Only calculate weighted IRR if we don't have it from the API
-    if (finalIRR === null) {
-      // Calculate weighted IRR from client accounts
-      let totalWeightedIRR = 0;
-      let totalWeight = 0;
-      
-      // Add array to store calculation steps for debugging
-      interface IrrCalcStep {
-        id: number;
-        product_name: string;
-        irr: number;
-        total_value: number;
-        weighted_contribution: number;
-      }
-      
-      const irrCalcSteps: IrrCalcStep[] = [];
-      
-      clientAccounts.forEach(account => {
-        if (account.irr !== undefined && account.total_value) {
-          const weightedIrrContribution = account.irr * account.total_value;
-          totalWeightedIRR += weightedIrrContribution;
-          totalWeight += account.total_value;
-          
-          // Record the calculation step
-          irrCalcSteps.push({
-            id: account.id,
-            product_name: account.product_name,
-            irr: account.irr,
-            total_value: account.total_value,
-            weighted_contribution: weightedIrrContribution
-          });
-        }
-      });
-      
-      // Debug logs for IRR calculation
-      console.log("IRR DEBUGGING - Weighted IRR calculation:");
-      console.log("IRR from API:", clientIRRFromAPI.current);
-      console.log("IRR Calculation steps:", irrCalcSteps);
-      console.log("Total weighted IRR contribution:", totalWeightedIRR);
-      console.log("Total weight (sum of total_value):", totalWeight);
-      
-      finalIRR = totalWeight > 0 ? totalWeightedIRR / totalWeight : 0;
-      console.log("Final calculated average IRR:", finalIRR);
-    } else {
-      console.log("Using IRR from API:", finalIRR);
-    }
-    
-    return {
-      totalFundsUnderManagement: totalFunds,
-      totalIRR: finalIRR || 0
-    };
-  }, [clientAccounts, clientFUMFromView.current, clientIRRFromAPI.current]);
-
-  // Data fetching with error retry
-  useEffect(() => {
-    if (clientId) {
-      fetchClientData();
-    }
-  }, [clientId]);
-
+  // Optimized data fetching using the new bulk endpoint
   const fetchClientData = async (retryCount = 0) => {
+    // Safety check: Don't make API calls if clientId is invalid
+    if (!clientId || clientId === 'null' || clientId === 'undefined') {
+      console.warn('fetchClientData called with invalid clientId:', clientId);
+      setIsLoading(false);
+      return;
+    }
+    
     try {
       setIsLoading(true);
-      console.log(`Fetching client data for ID: ${clientId}`);
+      console.log(`Fetching complete client data for ID: ${clientId} using optimized bulk endpoint`);
       
-      // Fetch client details
-      const clientResponse = await api.get(`/client_groups/${clientId}`);
-      console.log("Client data received:", clientResponse.data);
-      setClient(clientResponse.data);
+      // Single API call to get all client group data
+      const completeResponse = await api.get(`/client_groups/${clientId}/complete`);
+      const completeData = completeResponse.data;
       
-      // Fetch FUM summary data for this client group directly from the DB view
-      try {
-        const fumResponse = await getClientGroupFUMById(Number(clientId));
-        console.log("Client group FUM summary:", fumResponse.data);
-        if (fumResponse.data && fumResponse.data.fum) {
-          // Store the FUM value directly to override calculated value from products
-          const fumValue = parseFloat(fumResponse.data.fum);
-          console.log("Setting client group FUM value:", fumValue);
-          // We'll use this later to override the calculated value
-          clientFUMFromView.current = fumValue;
+      console.log("Complete client data received:", completeData);
+      console.log("Performance stats:", completeData.performance_stats);
+      
+      // Set client data
+      setClient(completeData.client_group);
+      
+      // Process products data
+      const processedProducts = completeData.products.map((product: any) => ({
+        id: product.id,
+        client_id: parseInt(clientId),
+        product_name: product.product_name,
+        product_type: product.product_type,
+        status: product.status,
+        start_date: product.start_date,
+        end_date: product.end_date,
+        portfolio_id: product.portfolio_id,
+        portfolio_name: product.portfolio_name,
+        provider_id: product.provider_id,
+        provider_name: product.provider_name,
+        provider_theme_color: product.provider_theme_color,
+        total_value: product.total_value,
+        irr: product.irr,
+        active_fund_count: product.active_fund_count,
+        inactive_fund_count: product.inactive_fund_count,
+        product_owners: [] // TODO: Add product owners if needed
+      }));
+      
+      setClientAccounts(processedProducts);
+      
+      // Pre-populate fund data for all products to eliminate lazy loading
+      const fundDataMap: { [key: number]: ProductFund[] } = {};
+      completeData.products.forEach((product: any) => {
+        if (product.funds && product.funds.length > 0) {
+          fundDataMap[product.id] = product.funds.map((fund: any) => ({
+            id: fund.id,
+            fund_name: fund.fund_name,
+            isin_number: fund.isin_number,
+            risk_factor: fund.risk_factor,
+            amount_invested: fund.amount_invested,
+            market_value: fund.market_value,
+            investments: fund.investments,
+            withdrawals: fund.withdrawals,
+            switch_in: fund.switch_in,
+            switch_out: fund.switch_out,
+            irr: fund.irr,
+            status: fund.status,
+            is_virtual_entry: fund.is_virtual_entry,
+            inactive_fund_count: fund.inactive_fund_count
+          }));
         }
-      } catch (fumErr) {
-        console.error("Error fetching client group FUM summary:", fumErr);
-      }
-      
-      // Fetch IRR calculation for this client group
-      try {
-        const irrResponse = await getClientGroupIRR(Number(clientId));
-        console.log("Client group IRR calculation:", irrResponse.data);
-        if (irrResponse.data && irrResponse.data.irr !== undefined) {
-          // Store the IRR value directly to override calculated value from products
-          const irrValue = parseFloat(irrResponse.data.irr);
-          console.log("Setting client group IRR value:", irrValue);
-          // We'll use this later to override the calculated value
-          clientIRRFromAPI.current = irrValue;
-        }
-      } catch (irrErr) {
-        console.error("Error fetching client group IRR calculation:", irrErr);
-      }
-      
-      // Fetch client products (was client_accounts previously)
-      const accountsResponse = await api.get('/client_products', {
-        params: { client_id: clientId }
       });
       
-      // Log the raw response to check if data includes total_value and irr
-      console.log("DETAILED CLIENT PRODUCTS DATA:", accountsResponse.data);
+      setExpandedProductFunds(fundDataMap);
       
-      // Check if products have total_value and irr data directly from API
-      const productsWithValues = accountsResponse.data.filter((product: any) => 
-        product.total_value !== undefined || product.irr !== undefined
-      );
-      console.log("Products with total_value or irr directly from API:", productsWithValues);
-      
-      const accounts = accountsResponse.data || [];
-      
-      // Enhanced data fetching for accounts - get specific FUM and IRR for each product
-      const accountsWithFumAndIRR = await Promise.all(
-        accounts.map(async (account: ClientAccount) => {
-          try {
-            // Log provider and financial data for debugging
-            console.log(`Product ${account.id} (${account.product_name}) data:`, {
-              provider_id: account.provider_id,
-              provider_name: account.provider_name,
-              total_value: account.total_value,
-              irr: account.irr
-            });
-            
-            // Fetch FUM data for this product
-            try {
-              const fumResponse = await getProductFUM(account.id);
-              console.log(`Product ${account.id} FUM data:`, fumResponse.data);
-              if (fumResponse.data && fumResponse.data.fum !== undefined) {
-                account.total_value = fumResponse.data.fum;
-                console.log(`Updated product ${account.id} total_value to: ${account.total_value}`);
-              }
-            } catch (fumErr) {
-              console.warn(`Failed to fetch FUM for product ${account.id}`, fumErr);
-            }
-            
-            // Fetch IRR data for this product
-            try {
-              const irrResponse = await getProductIRR(account.id);
-              console.log(`Product ${account.id} IRR data:`, irrResponse.data);
-              if (irrResponse.data && irrResponse.data.irr !== undefined) {
-                account.irr = irrResponse.data.irr;
-                console.log(`Updated product ${account.id} IRR to: ${account.irr}`);
-              }
-            } catch (irrErr) {
-              console.warn(`Failed to fetch IRR for product ${account.id}`, irrErr);
-            }
-            
-            // Add product owners for each account
-            try {
-              // First fetch all product owners
-              const productOwnersResponse = await api.get('/product_owners');
-              
-              if (productOwnersResponse.data && productOwnersResponse.data.length > 0) {
-                const productOwners = [];
-                
-                // For each product owner, check if they own this product
-                for (const owner of productOwnersResponse.data) {
-                  try {
-                    // Get all products for this product owner
-                    const ownerProductsResponse = await api.get(`/product_owners/${owner.id}/products`);
-                    
-                    // Check if this product is in the list of the owner's products
-                    const isOwnerOfThisProduct = ownerProductsResponse.data?.some(
-                      (p: any) => p.id === account.id
-                    );
-                    
-                    // If this owner owns this product, add it to our list
-                    if (isOwnerOfThisProduct) {
-                      productOwners.push(owner);
-                    }
-                  } catch (err) {
-                    console.error(`Error checking if owner ${owner.id} has product ${account.id}:`, err);
-                  }
-                }
-                
-                account.product_owners = productOwners;
-              }
-            } catch (ownersErr) {
-              console.error(`Error fetching product owners for account ${account.id}:`, ownersErr);
-              account.product_owners = [];
-            }
-            
-            return account;
-          } catch (err) {
-            console.warn(`Error enhancing product data for ${account.id}`, err);
-            return account;
-          }
-        })
+      // Calculate totals from processed data
+      const totalValue = processedProducts.reduce((sum: number, product: any) => 
+        sum + (product.total_value || 0), 0
       );
       
-      console.log("Final client products with FUM and IRR:", accountsWithFumAndIRR);
-      console.log("Products with total_value after processing:", accountsWithFumAndIRR.filter(acc => acc.total_value !== undefined).length);
-      console.log("Products with IRR after processing:", accountsWithFumAndIRR.filter(acc => acc.irr !== undefined).length);
+      const totalIRR = processedProducts.length > 0 
+        ? processedProducts.reduce((sum: number, product: any, index: number) => {
+            const weight = (product.total_value || 0) / totalValue;
+            return sum + ((product.irr || 0) * weight);
+          }, 0)
+        : 0;
       
-      setClientAccounts(accountsWithFumAndIRR);
+      // Store calculated values
+      clientFUMFromView.current = totalValue;
+      clientIRRFromAPI.current = totalIRR;
+      
+      console.log(`Optimized loading complete: ${processedProducts.length} products, ${Object.keys(fundDataMap).length} products with fund data`);
+      console.log(`Total Value: ${totalValue}, Total IRR: ${totalIRR}`);
+      
       setError(null);
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || 'Failed to fetch client data';
@@ -1029,6 +671,42 @@ const ClientDetails: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  // Data fetching with error retry
+  useEffect(() => {
+    // Only fetch data if clientId exists and is not null/undefined/string 'null'
+    if (clientId && clientId !== 'null' && clientId !== 'undefined') {
+      fetchClientData();
+    }
+  }, [clientId]);
+
+  // Set all products to be expanded when clientAccounts are updated
+  useEffect(() => {
+    if (clientAccounts.length > 0) {
+      // Get all account IDs
+      const allAccountIds = clientAccounts.map(account => account.id);
+      
+      // Set expanded products state
+      setExpandedProducts(allAccountIds);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientAccounts]);
+
+  // Calculate totals with memoization for performance
+  const { totalFundsUnderManagement, totalIRR } = useMemo(() => {
+    // Use the values calculated from the bulk endpoint
+    const totalFunds = clientFUMFromView.current || 0;
+    const finalIRR = clientIRRFromAPI.current || 0;
+    
+    console.log("Optimized totals calculation:");
+    console.log("Total funds from bulk endpoint:", totalFunds);
+    console.log("Total IRR from bulk endpoint:", finalIRR);
+    
+    return {
+      totalFundsUnderManagement: totalFunds,
+      totalIRR: finalIRR
+    };
+  }, [clientFUMFromView.current, clientIRRFromAPI.current]);
 
   const handleBack = () => {
     navigate('/client_groups');

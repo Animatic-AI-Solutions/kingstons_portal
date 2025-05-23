@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
+import api, { getActiveTemplatePortfolioGenerations } from '../services/api';
 import { getProviderColor } from '../services/providerColors';
 import FilterDropdown from '../components/ui/FilterDropdown';
 
@@ -44,6 +44,10 @@ const Products: React.FC = () => {
   const [providerFilter, setProviderFilter] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [productOwnerFilter, setProductOwnerFilter] = useState<string[]>([]);
+  const [templatePortfolioFilter, setTemplatePortfolioFilter] = useState<string[]>([]);
+
+  // State for active template portfolio generations
+  const [activeTemplateGenerations, setActiveTemplateGenerations] = useState<{generation_name: string}[]>([]);
 
   const fetchProducts = async () => {
     try {
@@ -86,8 +90,20 @@ const Products: React.FC = () => {
     }
   };
 
+  const fetchActiveTemplateGenerations = async () => {
+    try {
+      console.log("Fetching active template portfolio generations...");
+      const response = await getActiveTemplatePortfolioGenerations();
+      console.log("Active template generations response:", response.data);
+      setActiveTemplateGenerations(response.data || []);
+    } catch (err: any) {
+      console.error('Error fetching active template generations:', err);
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
+    fetchActiveTemplateGenerations();
   }, [api]);
 
   const handleSortFieldChange = (field: SortField) => {
@@ -200,6 +216,11 @@ const Products: React.FC = () => {
         productOwnerFilter.includes(owner.name)
       ))
     )
+    .filter(product => 
+      templatePortfolioFilter.length === 0 ||
+      (product.original_template_name && templatePortfolioFilter.includes(product.original_template_name)) ||
+      (templatePortfolioFilter.includes('Bespoke') && !product.original_template_name)
+    )
     .sort((a, b) => {
       let aValue: any = a[sortField];
       let bValue: any = b[sortField];
@@ -227,19 +248,30 @@ const Products: React.FC = () => {
       return 0;
     });
 
-  // Extract unique provider names and statuses
+  // Add a new handler function to navigate to the create client products page
+  const handleCreateClientGroupProducts = () => {
+    navigate('/create-client-group-products');
+  };
+
+  // Extract unique values for filters
   const providers = [...new Set(products
     .map(product => product.provider_name)
     .filter(provider => provider !== undefined && provider !== null))] as string[];
     
-  const statuses = ['active', 'inactive', 'dormant'];
+  const statuses = [...new Set(products
+    .map(product => product.status)
+    .filter(status => status !== undefined && status !== null))] as string[];
   
-  // Extract unique product owner names
   const productOwners = [...new Set(
     products.flatMap(product => 
       (product.product_owners || []).map(owner => owner.name)
     ).filter(name => name !== undefined && name !== null)
   )] as string[];
+  
+  const templatePortfolios = [
+    'Bespoke',
+    ...activeTemplateGenerations.map(gen => gen.generation_name).filter(Boolean)
+  ] as string[];
 
   // Group products by client if the option is selected
   const groupedProducts = groupByClient
@@ -252,11 +284,6 @@ const Products: React.FC = () => {
         return groups;
       }, {})
     : {};
-
-  // Add a new handler function to navigate to the create client products page
-  const handleCreateClientGroupProducts = () => {
-    navigate('/create-client-group-products');
-  };
 
   return (
     <div className="container mx-auto px-4 py-3">
@@ -304,8 +331,6 @@ const Products: React.FC = () => {
               </div>
             </div>
           </div>
-
-          {/* Sort controls can be updated in the next edit */}
         </div>
 
         {/* product List */}
@@ -316,61 +341,39 @@ const Products: React.FC = () => {
             </div>
           ) : error ? (
             <div className="text-red-600 text-center py-4">{error}</div>
-          ) : filteredAndSortedProducts.length === 0 ? (
-            <div className="text-gray-500 text-center py-4">No products found</div>
           ) : groupByClient ? (
             // Grouped by client view
-            <div className="space-y-4">
-              {Object.entries(groupedProducts).map(([clientName, clientProducts]) => (
-                <div key={clientName} className="border border-gray-200 rounded-lg overflow-hidden">
-                  <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-                    <div>
-                      <h3 className="text-base font-medium text-gray-900 font-sans tracking-tight">{clientName}</h3>
-                      <p className="text-sm text-gray-500">{clientProducts.length} product(s)</p>
+            filteredAndSortedProducts.length === 0 ? (
+              <div className="text-gray-500 text-center py-4">No products found</div>
+            ) : (
+              <div className="space-y-4">
+                {Object.entries(groupedProducts).map(([clientName, clientProducts]) => (
+                  <div key={clientName} className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+                      <div>
+                        <h3 className="text-base font-medium text-gray-900 font-sans tracking-tight">{clientName}</h3>
+                        <p className="text-sm text-gray-500">{clientProducts.length} product(s)</p>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteClientGroupProducts(clientName)}
+                        className="text-red-600 hover:text-red-800 text-sm font-medium flex items-center"
+                        title="Delete all products for this client group"
+                      >
+                        <svg className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Delete
+                      </button>
                     </div>
-                    <button
-                      onClick={() => handleDeleteClientGroupProducts(clientName)}
-                      className="text-red-600 hover:text-red-800 text-sm font-medium flex items-center"
-                      title="Delete all products for this client group"
-                    >
-                      <svg className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                      Delete
-                    </button>
-                  </div>
-                  <div className="overflow-x-auto overflow-visible">
-                    <table className="min-w-full table-fixed divide-y divide-gray-200">
-                      <thead className="bg-gray-100">
-                        <tr>
-                          <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                            <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('product_name')} title="Click to sort by Product">
-                            Product
-                              <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                                {sortField === 'product_name' ? (
-                                  sortOrder === 'asc' ? (
-                                    <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                    </svg>
-                                  ) : (
-                                    <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                  )
-                                ) : (
-                                  <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
-                                  </svg>
-                                )}
-                              </span>
-                            </div>
-                          </th>
-                          <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                            <div className="flex flex-col items-start">
-                              <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('provider_name')}>
-                                Provider
+                    <div className="overflow-x-auto overflow-visible">
+                      <table className="min-w-full table-fixed divide-y divide-gray-200">
+                        <thead className="bg-gray-100">
+                          <tr>
+                            <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                              <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('product_name')} title="Click to sort by Product">
+                              Product
                                 <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                                  {sortField === 'provider_name' ? (
+                                  {sortField === 'product_name' ? (
                                     sortOrder === 'asc' ? (
                                       <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
@@ -386,129 +389,208 @@ const Products: React.FC = () => {
                                     </svg>
                                   )}
                                 </span>
-                              </span>
-                            </div>
-                          </th>
-                          <th className="w-[15%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                            <div className="flex flex-col items-start">
-                              <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('original_template_name')}>
-                                Template Portfolio
-                                <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                                  {sortField === 'original_template_name' ? (
-                                    sortOrder === 'asc' ? (
-                                      <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                      </svg>
-                                    ) : (
-                                      <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                      </svg>
-                                    )
-                                  ) : (
-                                    <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
-                                    </svg>
-                                  )}
-                                </span>
-                              </span>
-                            </div>
-                          </th>
-                          <th className="w-[15%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">Value</th>
-                          <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                            <div className="flex flex-col items-start">
-                              <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('product_owners')}>
-                                Product Owners
-                                <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                                  {sortField === 'product_owners' ? (
-                                    sortOrder === 'asc' ? (
-                                      <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                      </svg>
-                                    ) : (
-                                      <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                      </svg>
-                                    )
-                                  ) : (
-                                    <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
-                                    </svg>
-                                  )}
-                                </span>
-                              </span>
-                            </div>
-                          </th>
-                          <th className="w-[15%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">IRR</th>
-                          <th className="w-[15%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {clientProducts.map((product) => (
-                          <tr 
-                            key={product.id} 
-                            className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
-                            onClick={() => handleProductClick(product.id)}
-                          >
-                            <td className="px-6 py-3 whitespace-nowrap">
-                              <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{product.product_name}</div>
-                            </td>
-                            <td className="px-6 py-3 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <div 
-                                  className="h-3 w-3 rounded-full mr-2 flex-shrink-0" 
-                                  style={{ backgroundColor: getProviderColor(product.provider_id, product.provider_name, product.provider_theme_color) }}
-                                ></div>
-                                <div className="text-sm text-gray-600 font-sans">{product.provider_name || 'Unknown'}</div>
                               </div>
-                            </td>
-                            <td className="px-6 py-3 whitespace-nowrap">
-                              <div className="text-sm text-gray-600 font-sans">{product.original_template_name || 'Bespoke'}</div>
-                            </td>
-                            <td className="px-6 py-3 whitespace-nowrap">
-                              {product.total_value !== undefined ? (
-                                <div className="text-sm font-medium text-indigo-600">
-                                  {formatCurrency(product.total_value)}
-                                </div>
-                              ) : (
-                                <div className="text-sm text-gray-500">N/A</div>
-                              )}
-                            </td>
-                            <td className="px-6 py-3 whitespace-nowrap">
-                              <div className="text-sm text-gray-600">
-                                {formatProductOwners(product.product_owners)}
+                            </th>
+                            <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                              <div className="flex flex-col items-start">
+                                <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('provider_name')}>
+                                  Provider
+                                  <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                                    {sortField === 'provider_name' ? (
+                                      sortOrder === 'asc' ? (
+                                        <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                        </svg>
+                                      ) : (
+                                        <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                      )
+                                    ) : (
+                                      <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                                      </svg>
+                                    )}
+                                  </span>
+                                </span>
+                                <FilterDropdown
+                                  id="provider-filter-grouped"
+                                  options={providers.map(p => ({ value: p, label: p }))}
+                                  value={providerFilter}
+                                  onChange={(vals) => setProviderFilter(vals.filter(v => typeof v === 'string'))}
+                                  placeholder="All Providers"
+                                  className="mt-1"
+                                />
                               </div>
-                            </td>
-                            <td className="px-6 py-3 whitespace-nowrap">
-                              {product.irr !== undefined && product.irr !== null ? (
-                                <div>
-                                  <div className={`text-sm font-medium ${(product.irr ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                                    {formatPercentage(product.irr)}
-                                  </div>
-                                  {product.irr_date && (
-                                    <div className="text-xs text-gray-500 mt-1">
-                                      as of {new Date(product.irr_date).toLocaleDateString()}
-                                    </div>
-                                  )}
-                                </div>
-                              ) : (
-                                <div className="text-sm text-gray-500">-</div>
-                              )}
-                            </td>
-                            <td className="px-6 py-3 whitespace-nowrap">
-                              <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                product.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                              }`}>
-                                {product.status}
-                              </span>
-                            </td>
+                            </th>
+                            <th className="w-[15%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                              <div className="flex flex-col items-start">
+                                <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('original_template_name')}>
+                                  Template Portfolio
+                                  <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                                    {sortField === 'original_template_name' ? (
+                                      sortOrder === 'asc' ? (
+                                        <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                        </svg>
+                                      ) : (
+                                        <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                      )
+                                    ) : (
+                                      <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                                      </svg>
+                                    )}
+                                  </span>
+                                </span>
+                                <FilterDropdown
+                                  id="template-portfolio-filter-grouped"
+                                  options={templatePortfolios.map(t => ({ value: t, label: t }))}
+                                  value={templatePortfolioFilter}
+                                  onChange={(vals) => setTemplatePortfolioFilter(vals.filter(v => typeof v === 'string'))}
+                                  placeholder="All Templates"
+                                  className="mt-1"
+                                />
+                              </div>
+                            </th>
+                            <th className="w-[15%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">Value</th>
+                            <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                              <div className="flex flex-col items-start">
+                                <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('product_owners')}>
+                                  Product Owners
+                                  <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                                    {sortField === 'product_owners' ? (
+                                      sortOrder === 'asc' ? (
+                                        <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                        </svg>
+                                      ) : (
+                                        <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                      )
+                                    ) : (
+                                      <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                                      </svg>
+                                    )}
+                                  </span>
+                                </span>
+                                <FilterDropdown
+                                  id="product-owner-filter-grouped"
+                                  options={productOwners.map(o => ({ value: o, label: o }))}
+                                  value={productOwnerFilter}
+                                  onChange={(vals) => setProductOwnerFilter(vals.filter(v => typeof v === 'string'))}
+                                  placeholder="All Owners"
+                                  className="mt-1"
+                                />
+                              </div>
+                            </th>
+                            <th className="w-[15%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">IRR</th>
+                            <th className="w-[15%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                              <div className="flex flex-col items-start">
+                                <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('status')}>
+                                  Status
+                                  <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                                    {sortField === 'status' ? (
+                                      sortOrder === 'asc' ? (
+                                        <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                        </svg>
+                                      ) : (
+                                        <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                      )
+                                    ) : (
+                                      <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                                      </svg>
+                                    )}
+                                  </span>
+                                </span>
+                                <FilterDropdown
+                                  id="status-filter-grouped"
+                                  options={statuses.map(s => ({ value: s, label: s }))}
+                                  value={statusFilter}
+                                  onChange={(vals) => setStatusFilter(vals.filter(v => typeof v === 'string'))}
+                                  placeholder="All Statuses"
+                                  className="mt-1"
+                                />
+                              </div>
+                            </th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {clientProducts.map((product) => (
+                            <tr 
+                              key={product.id} 
+                              className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
+                              onClick={() => handleProductClick(product.id)}
+                            >
+                              <td className="px-6 py-3 whitespace-nowrap">
+                                <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{product.product_name}</div>
+                              </td>
+                              <td className="px-6 py-3 whitespace-nowrap">
+                                <div className="flex items-center">
+                                  <div 
+                                    className="h-3 w-3 rounded-full mr-2 flex-shrink-0" 
+                                    style={{ backgroundColor: getProviderColor(product.provider_id, product.provider_name, product.provider_theme_color) }}
+                                  ></div>
+                                  <div className="text-sm text-gray-600 font-sans">{product.provider_name || 'Unknown'}</div>
+                                </div>
+                              </td>
+                              <td className="px-6 py-3 whitespace-nowrap">
+                                <div className="text-sm text-gray-600 font-sans">{product.original_template_name || 'Bespoke'}</div>
+                              </td>
+                              <td className="px-6 py-3 whitespace-nowrap">
+                                {product.total_value !== undefined ? (
+                                  <div className="text-sm font-medium text-indigo-600">
+                                    {formatCurrency(product.total_value)}
+                                  </div>
+                                ) : (
+                                  <div className="text-sm text-gray-500">N/A</div>
+                                )}
+                              </td>
+                              <td className="px-6 py-3 whitespace-nowrap">
+                                <div className="text-sm text-gray-600">
+                                  {formatProductOwners(product.product_owners)}
+                                </div>
+                              </td>
+                              <td className="px-6 py-3 whitespace-nowrap">
+                                {product.irr !== undefined && product.irr !== null ? (
+                                  <div>
+                                    <div className={`text-sm font-medium ${(product.irr ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                                      {formatPercentage(product.irr)}
+                                    </div>
+                                    {product.irr_date && (
+                                      <div className="text-xs text-gray-500 mt-1">
+                                        as of {new Date(product.irr_date).toLocaleDateString()}
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="text-sm text-gray-500">-</div>
+                                )}
+                              </td>
+                              <td className="px-6 py-3 whitespace-nowrap">
+                                <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                  product.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {product.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )
           ) : (
             // Regular table view
             <div className="overflow-x-auto overflow-visible">
@@ -581,95 +663,135 @@ const Products: React.FC = () => {
                             )}
                           </span>
                         </span>
+                        <FilterDropdown
+                          id="provider-filter-regular"
+                          options={providers.map(p => ({ value: p, label: p }))}
+                          value={providerFilter}
+                          onChange={(vals) => setProviderFilter(vals.filter(v => typeof v === 'string'))}
+                          placeholder="All Providers"
+                          className="mt-1"
+                        />
                       </div>
                     </th>
                     <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('original_template_name')} title="Click to sort by Template Portfolio">
-                        Template Portfolio
-                        <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                          {sortField === 'original_template_name' ? (
-                            sortOrder === 'asc' ? (
-                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
+                      <div className="flex flex-col items-start">
+                        <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('original_template_name')}>
+                          Template Portfolio
+                          <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                            {sortField === 'original_template_name' ? (
+                              sortOrder === 'asc' ? (
+                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              ) : (
+                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              )
                             ) : (
-                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
                               </svg>
-                            )
-                          ) : (
-                            <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
-                            </svg>
-                          )}
+                            )}
+                          </span>
                         </span>
+                        <FilterDropdown
+                          id="template-portfolio-filter-regular"
+                          options={templatePortfolios.map(t => ({ value: t, label: t }))}
+                          value={templatePortfolioFilter}
+                          onChange={(vals) => setTemplatePortfolioFilter(vals.filter(v => typeof v === 'string'))}
+                          placeholder="All Templates"
+                          className="mt-1"
+                        />
                       </div>
                     </th>
                     <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">Value</th>
                     <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('product_owners')} title="Click to sort by Product Owners">
-                        Product Owners
-                        <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                          {sortField === 'product_owners' ? (
-                            sortOrder === 'asc' ? (
-                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
+                      <div className="flex flex-col items-start">
+                        <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('product_owners')}>
+                          Product Owners
+                          <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                            {sortField === 'product_owners' ? (
+                              sortOrder === 'asc' ? (
+                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              ) : (
+                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              )
                             ) : (
-                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
                               </svg>
-                            )
-                          ) : (
-                            <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
-                            </svg>
-                          )}
+                            )}
+                          </span>
+                        </span>
+                        <FilterDropdown
+                          id="product-owner-filter-regular"
+                          options={productOwners.map(o => ({ value: o, label: o }))}
+                          value={productOwnerFilter}
+                          onChange={(vals) => setProductOwnerFilter(vals.filter(v => typeof v === 'string'))}
+                          placeholder="All Owners"
+                          className="mt-1"
+                        />
+                      </div>
+                    </th>
+                    <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                      <div className="flex flex-col items-start">
+                        <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('irr')}>
+                          IRR
+                          <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                            {sortField === 'irr' ? (
+                              sortOrder === 'asc' ? (
+                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              ) : (
+                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              )
+                            ) : (
+                              <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                              </svg>
+                            )}
+                          </span>
                         </span>
                       </div>
                     </th>
                     <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('irr')} title="Click to sort by IRR">
-                        IRR
-                        <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                          {sortField === 'irr' ? (
-                            sortOrder === 'asc' ? (
-                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
+                      <div className="flex flex-col items-start">
+                        <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('status')}>
+                          Status
+                          <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                            {sortField === 'status' ? (
+                              sortOrder === 'asc' ? (
+                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              ) : (
+                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              )
                             ) : (
-                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
                               </svg>
-                            )
-                          ) : (
-                            <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
-                            </svg>
-                          )}
+                            )}
+                          </span>
                         </span>
-                      </div>
-                    </th>
-                    <th className="w-[16%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('status')} title="Click to sort by Status">
-                        Status
-                        <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                          {sortField === 'status' ? (
-                            sortOrder === 'asc' ? (
-                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
-                            ) : (
-                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                              </svg>
-                            )
-                          ) : (
-                            <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
-                            </svg>
-                          )}
-                        </span>
+                        <FilterDropdown
+                          id="status-filter-regular"
+                          options={statuses.map(s => ({ value: s, label: s }))}
+                          value={statusFilter}
+                          onChange={(vals) => setStatusFilter(vals.filter(v => typeof v === 'string'))}
+                          placeholder="All Statuses"
+                          className="mt-1"
+                        />
                       </div>
                     </th>
                   </tr>
@@ -677,7 +799,7 @@ const Products: React.FC = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredAndSortedProducts.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 border-b border-gray-200">
+                      <td colSpan={8} className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 border-b border-gray-200">
                         No products found
                       </td>
                     </tr>
