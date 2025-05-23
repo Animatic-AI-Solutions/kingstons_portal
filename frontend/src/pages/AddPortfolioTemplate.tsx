@@ -35,7 +35,7 @@ const AddPortfolioTemplate: React.FC = () => {
   });
   const [availableFunds, setAvailableFunds] = useState<Fund[]>([]);
   const [selectedFunds, setSelectedFunds] = useState<number[]>([]);
-  const [fundWeightings, setFundWeightings] = useState<Record<string, number>>({});
+  const [fundWeightings, setFundWeightings] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingFunds, setIsLoadingFunds] = useState(false);
@@ -83,20 +83,51 @@ const AddPortfolioTemplate: React.FC = () => {
         setFundWeightings(newWeightings);
         return newSelected;
       } else {
-        // Set empty weighting (0) for newly selected fund instead of default 0
+        // Set empty weighting for newly selected fund
         setFundWeightings(prev => ({
           ...prev,
-          [fundId.toString()]: 0
+          [fundId.toString()]: ''
         }));
         return [...prev, fundId];
       }
     });
   };
 
-  const handleWeightingChange = (fundId: number, weighting: number) => {
+  const handleWeightingChange = (fundId: number, weighting: string) => {
+    // Allow empty string for clearing the field
+    if (weighting === '') {
+      setFundWeightings(prev => ({
+        ...prev,
+        [fundId.toString()]: ''
+      }));
+      return;
+    }
+    
+    // Remove any non-numeric characters except decimal point
+    const cleanedValue = weighting.replace(/[^0-9.]/g, '');
+    
+    // Prevent multiple decimal points
+    const parts = cleanedValue.split('.');
+    if (parts.length > 2) {
+      return; // Invalid: multiple decimal points
+    }
+    
+    // Limit to 2 decimal places
+    if (parts.length === 2 && parts[1].length > 2) {
+      return; // Invalid: too many decimal places
+    }
+    
+    // Convert to number to validate range
+    const numValue = parseFloat(cleanedValue);
+    
+    // Allow partial inputs during typing (e.g., "10." for "10.0")
+    if (!isNaN(numValue) && numValue > 100) {
+      return; // Invalid: exceeds 100%
+    }
+    
     setFundWeightings(prev => ({
       ...prev,
-      [fundId.toString()]: weighting
+      [fundId.toString()]: cleanedValue
     }));
   };
 
@@ -111,7 +142,7 @@ const AddPortfolioTemplate: React.FC = () => {
         // Prepare the funds data
         const fundsData = selectedFunds.map(fundId => ({
           fund_id: fundId,
-          target_weighting: fundWeightings[fundId.toString()] || 0
+          target_weighting: parseFloat(fundWeightings[fundId.toString()] || '0')
         }));
         
         // Create the portfolio template
@@ -154,7 +185,10 @@ const AddPortfolioTemplate: React.FC = () => {
     }
     
     // Calculate total weighting
-    const totalWeighting = Object.values(fundWeightings).reduce((a, b) => a + b, 0);
+    const totalWeighting = Object.values(fundWeightings).reduce((a, b) => {
+      const numValue = parseFloat(b) || 0;
+      return a + numValue;
+    }, 0);
     
     // Check if total weighting equals 100%
     if (Math.abs(totalWeighting - 100) > 0.01) {
@@ -167,7 +201,10 @@ const AddPortfolioTemplate: React.FC = () => {
 
   // Calculate total weighting for the progress bar
   const totalWeighting = useMemo(() => {
-    return Object.values(fundWeightings).reduce((a, b) => a + b, 0);
+    return Object.values(fundWeightings).reduce((a, b) => {
+      const numValue = parseFloat(b) || 0;
+      return a + numValue;
+    }, 0);
   }, [fundWeightings]);
 
   // Determine progress bar color based on total
@@ -439,24 +476,27 @@ const AddPortfolioTemplate: React.FC = () => {
                           {filteredFunds.map((fund) => (
                             <tr 
                               key={fund.id} 
-                              className={`hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100 ${selectedFunds.includes(fund.id) ? 'bg-blue-50' : ''}`}
+                              className={`transition-all duration-150 cursor-pointer border-b border-gray-100 ${
+                                selectedFunds.includes(fund.id) 
+                                  ? 'bg-blue-50 border-blue-200' 
+                                  : 'hover:bg-gray-50 hover:border-gray-200'
+                              }`}
                               onClick={() => handleFundSelection(fund.id)}
                             >
                               <td className="px-6 py-3 whitespace-nowrap">
-                            <input
-                              type="checkbox"
-                              checked={selectedFunds.includes(fund.id)}
-                                  onChange={() => {}} // Handled by row click
-                                  onClick={(e) => e.stopPropagation()} // Prevent double triggers
-                                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                            />
-                          </td>
+                                <input
+                                  type="checkbox"
+                                  checked={selectedFunds.includes(fund.id)}
+                                  onChange={() => handleFundSelection(fund.id)}
+                                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded pointer-events-none"
+                                />
+                              </td>
                               <td className="px-6 py-3 whitespace-nowrap">
                                 <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{fund.fund_name}</div>
-                          </td>
+                              </td>
                               <td className="px-6 py-3 whitespace-nowrap">
                                 <div className="text-sm text-gray-600 font-sans">{fund.isin_number || 'N/A'}</div>
-                          </td>
+                              </td>
                               <td className="px-6 py-3 whitespace-nowrap">
                                 <div className="text-sm text-gray-600 font-sans">
                                   {fund.risk_factor !== undefined && fund.risk_factor !== null ? (
@@ -471,36 +511,33 @@ const AddPortfolioTemplate: React.FC = () => {
                                     </span>
                                   ) : 'N/A'}
                                 </div>
-                          </td>
+                              </td>
                               <td className="px-6 py-3 whitespace-nowrap">
                                 <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              fund.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                            }`}>
-                              {fund.status}
-                            </span>
-                          </td>
+                                  fund.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                }`}>
+                                  {fund.status}
+                                </span>
+                              </td>
                               <td className="px-6 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                            {selectedFunds.includes(fund.id) && (
+                                {selectedFunds.includes(fund.id) && (
                                   <div className="flex items-center">
-                              <input
-                                type="number"
-                                min="0"
-                                max="100"
-                                      step="0.1"
-                                      value={fundWeightings[fund.id.toString()] === 0 ? '' : fundWeightings[fund.id.toString()]}
-                                onChange={(e) => handleWeightingChange(
-                                  fund.id,
-                                  parseFloat(e.target.value) || 0
-                                )}
-                                      placeholder="Enter %"
+                                    <input
+                                      type="text"
+                                      value={fundWeightings[fund.id.toString()] || ''}
+                                      onChange={(e) => handleWeightingChange(fund.id, e.target.value)}
+                                      placeholder="0.00"
                                       className="w-20 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                              />
+                                    />
                                     <span className="ml-2 text-gray-500">%</span>
                                   </div>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
+                                )}
+                                {!selectedFunds.includes(fund.id) && (
+                                  <span className="text-gray-400 text-sm">Click to select</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
                     </tbody>
                   </table>
                 </div>
