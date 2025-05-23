@@ -313,38 +313,6 @@ const Clients: React.FC = () => {
                     </th>
                     <th className="w-[15%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
                       <div className="flex flex-col items-start">
-                        <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('advisor')}>
-                          Advisor
-                          <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                            {sortField === 'advisor' ? (
-                              sortOrder === 'asc' ? (
-                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                </svg>
-                              ) : (
-                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                              )
-                            ) : (
-                              <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
-                              </svg>
-                            )}
-                          </span>
-                        </span>
-                        <FilterDropdown
-                          id="advisor-filter"
-                          options={advisors.map(a => ({ value: a, label: a }))}
-                          value={advisorFilter}
-                          onChange={(vals) => setAdvisorFilter(vals.filter(v => typeof v === 'string'))}
-                          placeholder="All Advisors"
-                          className="min-w-[140px] mt-1"
-                        />
-                      </div>
-                    </th>
-                    <th className="w-[15%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      <div className="flex flex-col items-start">
                         <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('type')}>
                           Type
                           <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
@@ -375,7 +343,61 @@ const Clients: React.FC = () => {
                         />
                       </div>
                     </th>
-                    <th className="w-[15%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                    <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                      <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('fum')} title="Click to sort by FUM">
+                        FUM
+                        <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                          {sortField === 'fum' ? (
+                            sortOrder === 'asc' ? (
+                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
+                            ) : (
+                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            )
+                          ) : (
+                            <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                            </svg>
+                          )}
+                        </span>
+                      </div>
+                    </th>
+                    <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                      <div className="flex flex-col items-start">
+                        <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('advisor')}>
+                          Advisor
+                          <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                            {sortField === 'advisor' ? (
+                              sortOrder === 'asc' ? (
+                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              ) : (
+                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              )
+                            ) : (
+                              <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                              </svg>
+                            )}
+                          </span>
+                        </span>
+                        <FilterDropdown
+                          id="advisor-filter"
+                          options={advisors.map(a => ({ value: a, label: a }))}
+                          value={advisorFilter}
+                          onChange={(vals) => setAdvisorFilter(vals.filter(v => typeof v === 'string'))}
+                          placeholder="All Advisors"
+                          className="min-w-[140px] mt-1"
+                        />
+                      </div>
+                    </th>
+                    <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
                       <div className="flex flex-col items-start">
                         <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('status')}>
                           Status
@@ -407,28 +429,6 @@ const Clients: React.FC = () => {
                         />
                       </div>
                     </th>
-                    <th className="w-[30%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('fum')} title="Click to sort by FUM">
-                        FUM
-                        <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                          {sortField === 'fum' ? (
-                            sortOrder === 'asc' ? (
-                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
-                            ) : (
-                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                              </svg>
-                            )
-                          ) : (
-                            <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
-                            </svg>
-                          )}
-                        </span>
-                      </div>
-                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -442,20 +442,10 @@ const Clients: React.FC = () => {
                         <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{client.name || 'N/A'}</div>
                       </td>
                       <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm text-gray-600">{client.advisor || '-'}</div>
-                        </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
                         <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800`}>
                           {client.type || 'Family'}
                         </span>
                         </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          client.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {client.status}
-                        </span>
-                      </td>
                       <td className="px-6 py-3 whitespace-nowrap">
                           {client.fum ? (
                             <div className="text-sm font-medium text-indigo-600">
@@ -464,6 +454,16 @@ const Clients: React.FC = () => {
                           ) : (
                           <div className="text-sm text-gray-500">£0</div>
                           )}
+                      </td>
+                      <td className="px-6 py-3 whitespace-nowrap">
+                        <div className="text-sm text-gray-600">{client.advisor || '-'}</div>
+                        </td>
+                      <td className="px-6 py-3 whitespace-nowrap">
+                        <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          client.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {client.status}
+                        </span>
                       </td>
                     </tr>
                   ))}
