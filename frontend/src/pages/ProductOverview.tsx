@@ -1133,7 +1133,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           <div>
             <div className="text-sm font-medium text-gray-500">Portfolio Template</div>
             <div className="text-base font-medium text-gray-900 mt-1">
-              {account.original_template_name || account.template_info?.name || 'N/A'}
+              {account.original_template_name || account.template_info?.name || 'Bespoke'}
             </div>
           </div>
           
@@ -1242,7 +1242,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             <div>
               <div className="flex justify-between items-center mb-1">
                 <div className="text-sm font-medium text-gray-700">
-                  Target Risk ({account.original_template_name || account.template_info?.name || 'Portfolio Template'})
+                  Target Risk ({account.original_template_name || account.template_info?.name || 'Bespoke'})
                 </div>
                 <div className="text-sm font-semibold">{displayedTargetRisk}</div>
               </div>
