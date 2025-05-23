@@ -6,6 +6,7 @@ import type { SelectValue } from 'antd/es/select';
 import moment from 'moment';
 import type { Moment } from 'moment';
 import api from '../services/api';
+import AddFundModal from '../components/AddFundModal';
 import '../styles/PortfolioTemplate.css';
 
 interface Client {
@@ -92,6 +93,13 @@ const AddAccount: React.FC = () => {
   });
   const [availableTemplates, setAvailableTemplates] = useState<TemplatePortfolio[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+
+  // State for fund modal
+  const [isAddFundModalOpen, setIsAddFundModalOpen] = useState(false);
+  const [fundSearchTerms, setFundSearchTerms] = useState<Record<string, string>>({});
+
+  // State for fund dropdown display
+  const [showFundDropdowns, setShowFundDropdowns] = useState<Record<string, boolean>>({});
 
   // Fetch necessary data on component mount
   useEffect(() => {
@@ -697,7 +705,159 @@ const AddAccount: React.FC = () => {
         {/* Show fund selection only for bespoke portfolios */}
         {product.portfolioType === 'bespoke' && (
           <div className="fund-selection">
-            {/* Existing fund selection code remains here */}
+            <h4 className="text-sm font-medium text-gray-700 mb-2">Select Funds</h4>
+            
+            {/* Fund search and add button row */}
+            <div className="flex gap-2 mb-3">
+              <div className="flex-1">
+                <Input
+                  placeholder="Search funds by name or ISIN"
+                  value={fundSearchTerms[product.id] || ''}
+                  onChange={(e) => handleFundSearch(product.id, e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              <Button
+                type="primary"
+                icon={
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                }
+                onClick={() => setIsAddFundModalOpen(true)}
+                className="flex items-center"
+                title="Add new fund"
+              >
+                Add Fund
+              </Button>
+            </div>
+
+            {/* Loading state */}
+            {isLoadingFunds[product.id] && (
+              <div className="flex justify-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+              </div>
+            )}
+
+            {/* Fund selection list */}
+            {!isLoadingFunds[product.id] && product.provider_id && availableFunds[product.provider_id] && (
+              <div className="border rounded-md max-h-60 overflow-y-auto">
+                {availableFunds[product.provider_id]
+                  .filter(fund => {
+                    const searchTerm = fundSearchTerms[product.id]?.toLowerCase() || '';
+                    return fund.fund_name.toLowerCase().includes(searchTerm) ||
+                           fund.isin_number.toLowerCase().includes(searchTerm);
+                  })
+                  .map(fund => (
+                    <div
+                      key={fund.id}
+                      className={`p-3 border-b border-gray-200 last:border-b-0 hover:bg-gray-50 cursor-pointer ${
+                        product.newPortfolio?.selectedFunds.includes(fund.id) ? 'bg-blue-50' : ''
+                      }`}
+                      onClick={() => handleFundSelection(product.id, fund.id)}
+                    >
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={product.newPortfolio?.selectedFunds.includes(fund.id) || false}
+                          onChange={() => handleFundSelection(product.id, fund.id)}
+                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded mr-3"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-gray-900">{fund.fund_name}</div>
+                          <div className="text-xs text-gray-500">{fund.isin_number}</div>
+                        </div>
+                        {product.newPortfolio?.selectedFunds.includes(fund.id) && (
+                          <div className="ml-2">
+                            <input
+                              type="number"
+                              placeholder="Weight %"
+                              value={product.newPortfolio?.fundWeightings?.[fund.id] || ''}
+                              onChange={(e) => handleFundWeightingChange(product.id, fund.id, e.target.value)}
+                              className="w-20 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                              onClick={(e) => e.stopPropagation()}
+                              min="0"
+                              max="100"
+                              step="0.01"
+                            />
+                            <span className="text-xs text-gray-500 ml-1">%</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                }
+                
+                {/* No funds message */}
+                {availableFunds[product.provider_id]?.length === 0 && (
+                  <div className="p-4 text-center text-gray-500">
+                    No funds available for this provider
+                  </div>
+                )}
+                
+                {/* No search results */}
+                {availableFunds[product.provider_id]?.length > 0 && 
+                 availableFunds[product.provider_id]
+                   .filter(fund => {
+                     const searchTerm = fundSearchTerms[product.id]?.toLowerCase() || '';
+                     return fund.fund_name.toLowerCase().includes(searchTerm) ||
+                            fund.isin_number.toLowerCase().includes(searchTerm);
+                   }).length === 0 && (
+                  <div className="p-4 text-center text-gray-500">
+                    No funds match your search criteria
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Selected funds summary */}
+            {product.newPortfolio && product.newPortfolio.selectedFunds.length > 0 && (
+              <div className="mt-3 p-3 bg-gray-50 rounded-md">
+                <div className="text-xs font-medium text-gray-700 mb-2">
+                  Selected Funds ({product.newPortfolio.selectedFunds.length})
+                </div>
+                <div className="space-y-1">
+                  {product.newPortfolio.selectedFunds.map(fundId => {
+                    const fund = availableFunds[product.provider_id]?.find(f => f.id === fundId);
+                    const weight = product.newPortfolio?.fundWeightings?.[fundId];
+                    return (
+                      <div key={fundId} className="flex justify-between text-xs">
+                        <span className="text-gray-600">{fund?.fund_name || 'Unknown Fund'}</span>
+                        <span className="text-gray-500">{weight ? `${weight}%` : 'No weight'}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Total weighting display */}
+                {(() => {
+                  const totalWeight = product.newPortfolio?.selectedFunds.reduce((sum, fundId) => {
+                    const weight = parseFloat(product.newPortfolio?.fundWeightings?.[fundId] || '0');
+                    return sum + (isNaN(weight) ? 0 : weight);
+                  }, 0) || 0;
+                  
+                  return (
+                    <div className={`mt-2 pt-2 border-t border-gray-200 text-xs font-medium ${
+                      Math.abs(totalWeight - 100) < 0.01 ? 'text-green-600' : 
+                      totalWeight > 100 ? 'text-red-600' : 'text-yellow-600'
+                    }`}>
+                      Total: {totalWeight.toFixed(2)}% 
+                      {Math.abs(totalWeight - 100) < 0.01 && ' ✓'}
+                      {totalWeight > 100 && ' (exceeds 100%)'}
+                      {totalWeight < 100 && totalWeight > 0 && ' (incomplete)'}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* Instruction message */}
+            {!product.provider_id && (
+              <div className="p-4 text-center text-gray-500 bg-gray-50 rounded-md">
+                Please select a provider first to see available funds
+              </div>
+            )}
           </div>
         )}
             </div>
@@ -798,6 +958,27 @@ const AddAccount: React.FC = () => {
         {renderPortfolioSection(product)}
                     </div>
     );
+  };
+
+  const handleFundAdded = (newFund: Fund) => {
+    // Add the new fund to the availableFunds for all providers
+    setAvailableFunds(prev => {
+      const updated = { ...prev };
+      Object.keys(updated).forEach(providerId => {
+        updated[providerId] = [...updated[providerId], newFund];
+      });
+      return updated;
+    });
+    
+    // Show success message
+    message.success(`Fund "${newFund.fund_name}" has been created successfully!`);
+  };
+
+  const handleFundSearch = (productId: string, searchTerm: string) => {
+    setFundSearchTerms(prev => ({
+      ...prev,
+      [productId]: searchTerm
+    }));
   };
 
   if (isLoading) {
@@ -945,6 +1126,13 @@ const AddAccount: React.FC = () => {
           </div>
         </Form>
       </div>
+
+      {/* Add Fund Modal */}
+      <AddFundModal
+        isOpen={isAddFundModalOpen}
+        onClose={() => setIsAddFundModalOpen(false)}
+        onFundAdded={handleFundAdded}
+      />
     </div>
   );
 };
