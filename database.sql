@@ -581,5 +581,82 @@ FROM
     LEFT JOIN product_value_irr_summary pvis ON cp.id = pvis.client_product_id;
 
 -- =========================================================
+-- OPTIMIZED BULK DATA VIEWS FOR PERFORMANCE
+-- =========================================================
+
+-- View for fund activity summaries (aggregated by portfolio_fund_id)
+CREATE OR REPLACE VIEW public.fund_activity_summary AS
+SELECT 
+    portfolio_fund_id,
+    SUM(CASE WHEN activity_type IN ('Investment', 'RegularInvestment', 'GovernmentUplift') THEN amount ELSE 0 END) as total_investments,
+    SUM(CASE WHEN activity_type IN ('Withdrawal', 'RegularWithdrawal') THEN amount ELSE 0 END) as total_withdrawals,
+    SUM(CASE WHEN activity_type = 'SwitchIn' THEN amount ELSE 0 END) as total_switch_in,
+    SUM(CASE WHEN activity_type = 'SwitchOut' THEN amount ELSE 0 END) as total_switch_out
+FROM holding_activity_log
+GROUP BY portfolio_fund_id;
+
+-- View for complete fund data with all related information
+CREATE OR REPLACE VIEW public.complete_fund_data AS
+SELECT 
+    pf.id as portfolio_fund_id,
+    pf.portfolio_id,
+    pf.available_funds_id,
+    pf.status,
+    pf.weighting,
+    pf.start_date,
+    pf.end_date,
+    pf.amount_invested,
+    af.fund_name,
+    af.isin_number,
+    af.risk_factor,
+    af.fund_cost,
+    lfv.value as market_value,
+    lfv.valuation_date,
+    liv.irr_value as irr,
+    liv.irr_date,
+    fas.total_investments,
+    fas.total_withdrawals,
+    fas.total_switch_in,
+    fas.total_switch_out
+FROM portfolio_funds pf
+LEFT JOIN available_funds af ON af.id = pf.available_funds_id
+LEFT JOIN latest_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id
+LEFT JOIN latest_irr_values liv ON liv.fund_id = pf.id
+LEFT JOIN fund_activity_summary fas ON fas.portfolio_fund_id = pf.id;
+
+-- View for complete client group data with all products and funds
+CREATE OR REPLACE VIEW public.client_group_complete_data AS
+SELECT 
+    cg.id as client_group_id,
+    cg.name as client_group_name,
+    cg.advisor,
+    cg.status as client_group_status,
+    cp.id as product_id,
+    cp.product_name,
+    cp.product_type,
+    cp.start_date as product_start_date,
+    cp.end_date as product_end_date,
+    cp.status as product_status,
+    cp.portfolio_id,
+    cp.provider_id,
+    ap.name as provider_name,
+    ap.theme_color as provider_theme_color,
+    pvis.total_value as product_total_value,
+    pvis.irr_weighted as product_irr,
+    -- Portfolio info
+    p.portfolio_name,
+    p.status as portfolio_status,
+    p.original_template_id,
+    -- Fund count for each product
+    (SELECT COUNT(*) FROM portfolio_funds pf2 WHERE pf2.portfolio_id = cp.portfolio_id AND pf2.status = 'active') as active_fund_count,
+    (SELECT COUNT(*) FROM portfolio_funds pf2 WHERE pf2.portfolio_id = cp.portfolio_id AND pf2.status != 'active') as inactive_fund_count
+FROM 
+    client_groups cg
+    LEFT JOIN client_products cp ON cp.client_id = cg.id
+    LEFT JOIN portfolios p ON p.id = cp.portfolio_id
+    LEFT JOIN available_providers ap ON ap.id = cp.provider_id
+    LEFT JOIN product_value_irr_summary pvis ON cp.id = pvis.client_product_id;
+
+-- =========================================================
 -- End of Script
 -- =========================================================

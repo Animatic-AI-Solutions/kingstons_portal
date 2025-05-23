@@ -85,4 +85,45 @@ export const ChartSkeleton: React.FC<ChartSkeletonProps> = ({
   );
 };
 
+export const TableSkeleton: React.FC = () => {
+  return (
+    <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-100 animate-pulse">
+      {/* Header */}
+      <div className="bg-gray-300 px-6 py-4">
+        <div className="h-5 bg-gray-400 rounded w-1/2"></div>
+      </div>
+      
+      {/* Table Headers */}
+      <div className="bg-gray-50 px-6 py-3">
+        <div className="grid grid-cols-3 gap-4">
+          <div className="h-3 bg-gray-300 rounded"></div>
+          <div className="h-3 bg-gray-300 rounded"></div>
+          <div className="h-3 bg-gray-300 rounded"></div>
+        </div>
+      </div>
+      
+      {/* Table Rows */}
+      <div className="divide-y divide-gray-200">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className={`px-6 py-4 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="h-4 bg-gray-300 rounded"></div>
+              <div className="h-4 bg-gray-300 rounded"></div>
+              <div className="h-4 bg-gray-300 rounded"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      {/* Footer */}
+      <div className="bg-gray-50 px-6 py-3 border-t border-gray-200">
+        <div className="flex justify-between items-center">
+          <div className="h-4 bg-gray-300 rounded w-16"></div>
+          <div className="h-4 bg-gray-300 rounded w-24"></div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default { Skeleton, StatBoxSkeleton, ChartSkeleton }; 

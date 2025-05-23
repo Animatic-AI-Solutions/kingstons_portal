@@ -4,6 +4,7 @@ export { default as StatCard } from './StatCard';
 export { default as StatBox } from './StatBox';
 export { default as ChangeIndicator } from './ChangeIndicator';
 export { default as FundDistributionChart } from './FundDistributionChart';
-export { Skeleton, StatBoxSkeleton, ChartSkeleton } from './Skeleton';
+export { default as DataTable } from './DataTable';
+export { Skeleton, StatBoxSkeleton, ChartSkeleton, TableSkeleton } from './Skeleton';
 export { default as ProfileAvatar } from './ProfileAvatar';
 export { default as SearchableDropdown } from './SearchableDropdown';
