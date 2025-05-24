@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getProductFUM, getProductIRR } from '../services/api';
@@ -111,8 +111,12 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     product_name: '',
     provider_id: '',
     portfolio_id: '',
-    product_type: ''
+    product_type: '',
+    target_risk: ''
   });
+  const [targetRiskInput, setTargetRiskInput] = useState(''); // Separate state for input display
+  const targetRiskInputRef = useRef<HTMLInputElement>(null); // Ref to maintain focus
+  const [targetRiskValidation, setTargetRiskValidation] = useState<{isValid: boolean, message: string}>({isValid: true, message: ''});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -125,14 +129,14 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     }
   }, [accountId, api]);
 
-  // Call the async function to calculate target risk and update state
+  // Call the async function to calculate target risk and update state - ONLY on mount
   useEffect(() => {
-    if (account) {
+    if (account && !displayedTargetRisk) {
       calculateTargetRisk().then(risk => {
         setDisplayedTargetRisk(risk);
       });
     }
-  }, [account, api]);
+  }, [account?.id]); // Only depend on account.id, not the whole account object
 
   // Calculate live risk whenever holdings change
   useEffect(() => {
@@ -146,17 +150,19 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     }
   }, [holdings]);
 
-  // Initialize form data when account data is loaded
+  // Initialize form data when account data is loaded - but not when in edit mode
   useEffect(() => {
-    if (account) {
+    if (account && !isEditMode) {
       setFormData({
         product_name: account.product_name || '',
         provider_id: account.provider_id?.toString() || '',
         portfolio_id: account.current_portfolio?.id?.toString() || account.portfolio_id?.toString() || '',
-        product_type: account.product_type || ''
+        product_type: account.product_type || '',
+        target_risk: account.target_risk?.toString() || ''
       });
+      setTargetRiskInput(account.target_risk?.toString() || '');
     }
-  }, [account]);
+  }, [account, isEditMode]);
 
   // Fetch providers and portfolios for edit form
   useEffect(() => {
@@ -870,34 +876,73 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
 
   // Toggle edit mode
   const toggleEditMode = () => {
-    setIsEditMode(!isEditMode);
-    setFormError(null);
-    
-    // Reset form data when entering edit mode
     if (!isEditMode && account) {
+      // Entering edit mode - initialize form data
       setFormData({
         product_name: account.product_name || '',
         provider_id: account.provider_id?.toString() || '',
         portfolio_id: account.current_portfolio?.id?.toString() || account.portfolio_id?.toString() || '',
-        product_type: account.product_type || ''
+        product_type: account.product_type || '',
+        target_risk: account.target_risk?.toString() || ''
       });
+      setTargetRiskInput(account.target_risk?.toString() || '');
     }
+    setIsEditMode(!isEditMode);
+    setFormError(null);
   };
 
-  // Handle form input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  // Handle form input changes - optimized to prevent unnecessary re-renders
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+    
+    // Special handling for target_risk with separate display state
+    if (name === 'target_risk') {
+      // Always update the input display value immediately
+      setTargetRiskInput(value);
+      
+      // Real-time validation
+      if (value === '') {
+        setTargetRiskValidation({isValid: true, message: ''});
+        setFormData(prev => ({ ...prev, [name]: '' }));
+      } else if (!/^\d*\.?\d*$/.test(value)) {
+        setTargetRiskValidation({isValid: false, message: 'Please enter numbers only'});
+      } else if (value.endsWith('.')) {
+        setTargetRiskValidation({isValid: true, message: 'Continue typing...'});
+      } else {
+        const numValue = parseFloat(value);
+        if (isNaN(numValue)) {
+          setTargetRiskValidation({isValid: false, message: 'Please enter a valid number'});
+        } else if (numValue < 1) {
+          setTargetRiskValidation({isValid: false, message: 'Minimum risk level is 1'});
+        } else if (numValue > 7) {
+          setTargetRiskValidation({isValid: false, message: 'Maximum risk level is 7'});
+        } else {
+          setTargetRiskValidation({isValid: true, message: '✓ Valid risk level'});
+          setFormData(prev => ({ ...prev, [name]: value }));
+        }
+      }
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+  }, []); // No dependencies to prevent recreation
 
   // Update the existing handleSubmit to set initialNotes after a successful save
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!accountId) return;
+    
+    // Validate target_risk before submission
+    if (formData.target_risk) {
+      const targetRiskValue = parseFloat(formData.target_risk);
+      if (isNaN(targetRiskValue) || targetRiskValue < 1 || targetRiskValue > 7) {
+        setFormError('Target risk must be a number between 1 and 7');
+        return;
+      }
+    }
     
     try {
       setIsSubmitting(true);
@@ -907,7 +952,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         product_name: formData.product_name,
         provider_id: formData.provider_id ? parseInt(formData.provider_id) : null,
         portfolio_id: formData.portfolio_id ? parseInt(formData.portfolio_id) : null,
-        product_type: formData.product_type
+        product_type: formData.product_type,
+        target_risk: formData.target_risk ? parseFloat(formData.target_risk) : null
       };
       
       await api.patch(`/api/client_products/${accountId}`, updateData);
@@ -1012,6 +1058,50 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                 className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
               />
             </div>
+            
+            <div>
+              <label htmlFor="target_risk" className="block text-sm font-medium text-gray-700 mb-1">
+                Target Risk Level
+                <span className="text-gray-500 text-xs ml-1">(1-7 scale)</span>
+                {account?.original_template_id && account?.template_info && (
+                  <span className="text-blue-600 text-xs ml-1">
+                    (Template default available)
+                  </span>
+                )}
+              </label>
+              <input
+                type="text"
+                id="target_risk"
+                name="target_risk"
+                value={targetRiskInput}
+                onChange={handleInputChange}
+                className={`shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md transition-colors ${
+                  !targetRiskValidation.isValid
+                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+                    : targetRiskValidation.message.startsWith('✓')
+                    ? 'border-green-300 focus:border-green-500 focus:ring-green-500'
+                    : ''
+                }`}
+                placeholder="e.g. 4.5"
+                ref={targetRiskInputRef}
+              />
+              <div className="text-xs mt-1 flex justify-between">
+                <span className="text-gray-500">
+                  1 = Very Low Risk, 7 = Very High Risk
+                </span>
+                {targetRiskValidation.message && (
+                  <span className={`font-medium ${
+                    !targetRiskValidation.isValid 
+                      ? 'text-red-600' 
+                      : targetRiskValidation.message.startsWith('✓')
+                      ? 'text-green-600'
+                      : 'text-blue-600'
+                  }`}>
+                    {targetRiskValidation.message}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
           
           <div className="flex justify-end">
@@ -1075,18 +1165,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           <div className="flex space-x-3">
             {isEditMode ? (
               <button
-                onClick={() => {
-                  setIsEditMode(false);
-                  // Reset form data if canceling edit
-                  if (account) {
-                    setFormData({
-                      product_name: account.product_name || '',
-                      provider_id: account.provider_id?.toString() || '',
-                      portfolio_id: account.current_portfolio?.id?.toString() || account.portfolio_id?.toString() || '',
-                      product_type: account.product_type || ''
-                    });
-                  }
-                }}
+                onClick={toggleEditMode}
                 className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
               >
                 Cancel

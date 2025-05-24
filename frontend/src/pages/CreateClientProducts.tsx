@@ -50,6 +50,7 @@ interface ProductItem {
   start_date?: dayjs.Dayjs; // Use dayjs type
   plan_number?: string; // Add plan number field
   product_owner_ids: number[]; // Changed from product_owner_id to product_owner_ids array
+  target_risk?: number; // Target risk level (1-7 scale) - required for bespoke portfolios
   portfolio: {
     id?: number; // Portfolio ID when created or selected
     name: string;
@@ -105,6 +106,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   // Form state
   const [selectedClientId, setSelectedClientId] = useState<number | null>(urlClientId ? parseInt(urlClientId) : null);
   const [products, setProducts] = useState<ProductItem[]>([]);
+  const [targetRiskInputs, setTargetRiskInputs] = useState<Record<string, string>>({}); // Track input values separately
   const [isSaving, setIsSaving] = useState(false);
   const [providerProducts, setProviderProducts] = useState<Record<number, any>>({});
   const [availableFundsByProvider, setAvailableFundsByProvider] = useState<Record<number, Fund[]>>({});
@@ -290,6 +292,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       status: 'active',
       weighting: 0,
       product_owner_ids: [],
+      target_risk: undefined,
       portfolio: {
         name: `Portfolio for Product ${products.length + 1}`,
         selectedFunds: [],
@@ -599,8 +602,13 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           return false;
         }
       } else {
+        // Bespoke portfolio validations
         if (product.portfolio.selectedFunds.length === 0) {
           showError(`Please select at least one fund for the portfolio in product "${product.product_name}"`);
+          return false;
+        }
+        if (!product.target_risk || product.target_risk < 1 || product.target_risk > 7) {
+          showError(`Please set a valid target risk level (1-7) for bespoke product "${product.product_name}"`);
           return false;
         }
       }
@@ -700,7 +708,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               portfolio_id: portfolioId,
               status: 'active',
               start_date: formattedStartDate,
-              plan_number: product.plan_number || null
+              plan_number: product.plan_number || null,
+              target_risk: product.target_risk || null
             });
             
             const createdProductId = clientProductResponse.data.id;
@@ -827,6 +836,73 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             <Radio value="template">Template Portfolio</Radio>
           </Radio.Group>
         </div>
+
+        {/* Target Risk Level - Only show for bespoke portfolios */}
+        {product.portfolio.type === 'bespoke' && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Target Risk Level <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id={`target_risk_${product.id}`}
+              value={targetRiskInputs[product.id] || ''}
+              onChange={(e) => {
+                const value = e.target.value;
+                
+                // Always update the input display value immediately
+                setTargetRiskInputs(prev => ({
+                  ...prev,
+                  [product.id]: value
+                }));
+                
+                // Only update product state if it's a valid number or empty
+                if (value === '') {
+                  handleProductChange(product.id, 'target_risk', undefined);
+                } else if (/^\d*\.?\d*$/.test(value) && !value.endsWith('.') && !isNaN(parseFloat(value))) {
+                  // Only update if it's a complete valid number
+                  const numValue = parseFloat(value);
+                  if (numValue >= 1 && numValue <= 7) {
+                    handleProductChange(product.id, 'target_risk', numValue);
+                  }
+                }
+              }}
+              className={`shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md transition-colors ${
+                targetRiskInputs[product.id] && (
+                  parseFloat(targetRiskInputs[product.id]) < 1 || 
+                  parseFloat(targetRiskInputs[product.id]) > 7 || 
+                  isNaN(parseFloat(targetRiskInputs[product.id]))
+                ) ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 
+                    targetRiskInputs[product.id] && !isNaN(parseFloat(targetRiskInputs[product.id])) && 
+                    parseFloat(targetRiskInputs[product.id]) >= 1 && parseFloat(targetRiskInputs[product.id]) <= 7 ?
+                    'border-green-300 focus:border-green-500 focus:ring-green-500' : ''
+              }`}
+              placeholder="e.g. 4.5"
+              disabled={isEitherLoading}
+            />
+            <div className="text-xs text-gray-500 mt-1 flex justify-between">
+              <span>1 = Very Low Risk, 7 = Very High Risk</span>
+              {targetRiskInputs[product.id] && (
+                <span className={`font-medium ${
+                  parseFloat(targetRiskInputs[product.id]) < 1 || 
+                  parseFloat(targetRiskInputs[product.id]) > 7 || 
+                  isNaN(parseFloat(targetRiskInputs[product.id]))
+                    ? 'text-red-600' 
+                    : 'text-green-600'
+                }`}>
+                  {isNaN(parseFloat(targetRiskInputs[product.id])) 
+                    ? 'Please enter numbers only'
+                    : parseFloat(targetRiskInputs[product.id]) < 1 
+                    ? 'Minimum: 1'
+                    : parseFloat(targetRiskInputs[product.id]) > 7 
+                    ? 'Maximum: 7'
+                    : '✓ Valid'
+                  }
+                </span>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Template Selection - Only show if template type is selected */}
         {product.portfolio.type === 'template' && (
@@ -1024,6 +1100,34 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     // Show success message  
     showToastMessage(`Fund "${newFund.fund_name}" has been created and added to your product!`);
   };
+
+  // Sync target risk input states when products change - optimized to prevent excessive re-renders
+  useEffect(() => {
+    const newInputs: Record<string, string> = {};
+    let hasChanges = false;
+    
+    products.forEach(product => {
+      const currentInput = targetRiskInputs[product.id] || '';
+      let newValue = '';
+      
+      if (product.target_risk !== undefined) {
+        newValue = product.target_risk.toString();
+      }
+      
+      // Only update if there's actually a change and we're not currently typing
+      if (newValue !== currentInput && document.activeElement?.id !== `target_risk_${product.id}`) {
+        newInputs[product.id] = newValue;
+        hasChanges = true;
+      } else {
+        newInputs[product.id] = currentInput;
+      }
+    });
+    
+    // Only update state if there are actual changes
+    if (hasChanges) {
+      setTargetRiskInputs(prev => ({ ...prev, ...newInputs }));
+    }
+  }, [products.length]); // Only depend on products length, not content
 
   if (isLoading) {
     return (
