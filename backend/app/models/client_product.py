@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, validator
 from datetime import date, datetime
 from typing import Optional, Dict, Any
 
@@ -15,9 +15,16 @@ class ClientproductBase(BaseModel):
     provider_theme_color: Optional[str] = None
     product_type: Optional[str] = None
     portfolio_id: Optional[int] = None
+    target_risk: Optional[float] = Field(None, ge=1, le=7, description="Target risk level (1-7 scale)")
     original_template_id: Optional[int] = None
     original_template_name: Optional[str] = None
     template_info: Optional[Dict[str, Any]] = None
+
+    @validator('target_risk')
+    def validate_target_risk(cls, v):
+        if v is not None and (v < 1 or v > 7):
+            raise ValueError('Target risk must be between 1 and 7')
+        return v
 
     model_config = ConfigDict(
         from_attributes=True
@@ -37,7 +44,14 @@ class ClientproductUpdate(BaseModel):
     provider_id: Optional[int] = None
     product_type: Optional[str] = None
     portfolio_id: Optional[int] = None
+    target_risk: Optional[float] = Field(None, ge=1, le=7, description="Target risk level (1-7 scale)")
     notes: Optional[str] = None
+
+    @validator('target_risk')
+    def validate_target_risk(cls, v):
+        if v is not None and (v < 1 or v > 7):
+            raise ValueError('Target risk must be between 1 and 7')
+        return v
 
     model_config = ConfigDict(
         from_attributes=True
