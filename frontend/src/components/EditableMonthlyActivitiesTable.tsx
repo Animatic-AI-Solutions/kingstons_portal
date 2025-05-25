@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { formatCurrency } from '../utils/formatters';
 import api, { createFundValuation } from '../services/api';
 import SwitchFundSelectionModal from './SwitchFundSelectionModal';
+import SwitchTooltip from './SwitchTooltip';
+import MultiDestinationSwitchModal from './MultiDestinationSwitchModal';
 
 interface Activity {
   id?: number;
@@ -14,6 +16,7 @@ interface Activity {
   market_value_held?: number;
   target_portfolio_fund_id?: number;
   related_fund?: number;
+  switch_group_id?: string;
 }
 
 interface Fund {
@@ -75,6 +78,23 @@ interface SwitchSelectionData {
   isEditingOrigin: boolean;
 }
 
+interface SwitchDestination {
+  fundId: number;
+  fundName: string;
+  amount: number;
+  isSelected: boolean;
+}
+
+interface SwitchGroup {
+  id: string;
+  sourceAmount: number;
+  sourceFundId: number;
+  sourceFundName: string;
+  destinations: SwitchDestination[];
+  month: string;
+  colorIndex: number;
+}
+
 const ACTIVITY_TYPES = [
   'Investment',
   'RegularInvestment',
@@ -112,6 +132,29 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   // Add state for reactivation loading
   const [reactivatingFunds, setReactivatingFunds] = useState<Set<number>>(new Set());
   
+  // New state for enhanced switch functionality
+  const [switchGroups, setSwitchGroups] = useState<SwitchGroup[]>([]);
+  const [showMultiDestinationModal, setShowMultiDestinationModal] = useState(false);
+  const [multiDestinationData, setMultiDestinationData] = useState<{
+    sourceFund: Fund;
+    totalAmount: number;
+    month: string;
+    existingGroup?: SwitchGroup;
+  } | null>(null);
+  
+  // Add state to track selected switch cell for showing delete button
+  const [selectedSwitchCell, setSelectedSwitchCell] = useState<{
+    fundId: number;
+    month: string;
+    activityType: string;
+  } | null>(null);
+  
+  // Memoize available funds to prevent infinite loops in modal
+  const availableFundsForSwitch = useMemo(() => {
+    if (!multiDestinationData) return [];
+    return funds.filter(f => f.id !== multiDestinationData.sourceFund.id);
+  }, [funds, multiDestinationData?.sourceFund?.id]);
+  
   // Styles for input elements to remove borders
   const noBorderStyles = {
     border: 'none', 
@@ -120,6 +163,138 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     appearance: 'none',
     WebkitAppearance: 'none',
     MozAppearance: 'none'
+  };
+
+  // Color management for switch groups
+  const SWITCH_COLORS = [
+    'border-blue-300 bg-blue-50',
+    'border-green-300 bg-green-50', 
+    'border-purple-300 bg-purple-50',
+    'border-orange-300 bg-orange-50',
+    'border-pink-300 bg-pink-50',
+    'border-indigo-300 bg-indigo-50',
+    'border-yellow-300 bg-yellow-50',
+    'border-red-300 bg-red-50'
+  ];
+
+  const getSwitchGroupColor = (colorIndex: number): string => {
+    return SWITCH_COLORS[colorIndex % SWITCH_COLORS.length];
+  };
+
+  // Build switch groups from activities and pending edits
+  const buildSwitchGroups = (): SwitchGroup[] => {
+    const groups: { [key: string]: SwitchGroup } = {};
+    let colorIndex = 0;
+
+    // Process existing activities
+    activities.forEach(activity => {
+      if ((activity.activity_type === 'SwitchOut' || activity.activity_type === 'SwitchIn') && 
+          activity.related_fund && activity.switch_group_id) {
+        
+        const date = new Date(activity.activity_timestamp);
+        const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        
+        if (!groups[activity.switch_group_id]) {
+          const sourceFund = funds.find(f => f.id === (activity.activity_type === 'SwitchOut' ? activity.portfolio_fund_id : activity.related_fund));
+          groups[activity.switch_group_id] = {
+            id: activity.switch_group_id,
+            sourceAmount: 0,
+            sourceFundId: activity.activity_type === 'SwitchOut' ? activity.portfolio_fund_id : activity.related_fund,
+            sourceFundName: sourceFund?.fund_name || 'Unknown Fund',
+            destinations: [],
+            month,
+            colorIndex: colorIndex++
+          };
+        }
+
+        const group = groups[activity.switch_group_id];
+        const amount = Math.abs(parseFloat(activity.amount));
+
+        if (activity.activity_type === 'SwitchOut') {
+          group.sourceAmount = amount;
+        } else if (activity.activity_type === 'SwitchIn') {
+          const destFund = funds.find(f => f.id === activity.portfolio_fund_id);
+          const existingDest = group.destinations.find(d => d.fundId === activity.portfolio_fund_id);
+          
+          if (!existingDest && destFund) {
+            group.destinations.push({
+              fundId: activity.portfolio_fund_id,
+              fundName: destFund.fund_name,
+              amount,
+              isSelected: true
+            });
+          }
+        }
+      }
+    });
+
+    // Process pending edits
+    pendingEdits.forEach(edit => {
+      if ((edit.activityType === 'Fund Switch Out' || edit.activityType === 'Fund Switch In') && 
+          edit.linkedFundId && edit.value && edit.value.trim() !== '') {
+        
+        // Create a temporary group ID for pending edits
+        const tempGroupId = `temp-${edit.fundId}-${edit.linkedFundId}-${edit.month}`;
+        
+        if (!groups[tempGroupId]) {
+          const sourceFundId = edit.activityType === 'Fund Switch Out' ? edit.fundId : edit.linkedFundId;
+          const sourceFund = funds.find(f => f.id === sourceFundId);
+          
+          groups[tempGroupId] = {
+            id: tempGroupId,
+            sourceAmount: 0,
+            sourceFundId,
+            sourceFundName: sourceFund?.fund_name || 'Unknown Fund',
+            destinations: [],
+            month: edit.month,
+            colorIndex: colorIndex++
+          };
+        }
+
+        const group = groups[tempGroupId];
+        const amount = parseFloat(edit.value);
+
+        if (edit.activityType === 'Fund Switch Out') {
+          group.sourceAmount = amount;
+        } else if (edit.activityType === 'Fund Switch In') {
+          const destFund = funds.find(f => f.id === edit.fundId);
+          const existingDest = group.destinations.find(d => d.fundId === edit.fundId);
+          
+          if (!existingDest && destFund) {
+            group.destinations.push({
+              fundId: edit.fundId,
+              fundName: destFund.fund_name,
+              amount,
+              isSelected: true
+            });
+          }
+        }
+      }
+    });
+
+    return Object.values(groups);
+  };
+
+  // Update switch groups when activities or pending edits change
+  useEffect(() => {
+    setSwitchGroups(buildSwitchGroups());
+  }, [activities, pendingEdits, funds]);
+
+  // Find switch group for a specific cell
+  const getSwitchGroupForCell = (fundId: number, month: string, activityType: string): SwitchGroup | null => {
+    return switchGroups.find(group => {
+      if (group.month !== month) return false;
+      
+      if (activityType === 'Fund Switch Out' && group.sourceFundId === fundId) {
+        return true;
+      }
+      
+      if (activityType === 'Fund Switch In' && group.destinations.some(d => d.fundId === fundId)) {
+        return true;
+      }
+      
+      return false;
+    }) || null;
   };
 
   // Fetch fund valuations for all the funds in the table
@@ -175,6 +350,22 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [pendingEdits, isSubmitting]);
+
+  // Add click handler to deselect switch cells when clicking elsewhere
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      // Check if the click was outside any switch cell
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-switch-cell]')) {
+        setSelectedSwitchCell(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
 
   // Initialize months based solely on the selected year
   useEffect(() => {
@@ -426,13 +617,29 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       // or if this is a new entry (no original activity)
       const valueChanged = !activity || originalValue !== cellEdit.value;
       
-      if (valueChanged) {
+      if (valueChanged && activityType === 'Fund Switch Out') {
+        // For Fund Switch Out, show the multi-destination modal
+        const sourceFund = funds.find(f => f.id === fundId);
+        if (sourceFund) {
+          const existingGroup = getSwitchGroupForCell(fundId, month, activityType);
+          
+          setMultiDestinationData({
+            sourceFund,
+            totalAmount: parseFloat(cellEdit.value),
+            month,
+            existingGroup: existingGroup || undefined
+          });
+          setShowMultiDestinationModal(true);
+        }
+      } else if (valueChanged && activityType === 'Fund Switch In') {
+        // For Fund Switch In, still use the old modal for now (or we could disable this)
+        // This case is less common since users typically start with Switch Out
         setSwitchSelectionData({
-          originFundId: activityType === 'Fund Switch Out' ? fundId : 0,
-          destinationFundId: activityType === 'Fund Switch In' ? fundId : 0,
+          originFundId: 0,
+          destinationFundId: fundId,
           month,
           amount: parseFloat(cellEdit.value),
-          isEditingOrigin: activityType === 'Fund Switch Out'
+          isEditingOrigin: false
         });
         setShowSwitchFundModal(true);
       }
@@ -610,6 +817,196 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     // Close the modal
     setShowSwitchFundModal(false);
     setSwitchSelectionData(null);
+  };
+
+  // Handle multi-destination switch confirmation
+  const handleMultiDestinationConfirm = (destinations: SwitchDestination[], sourceAmount: number) => {
+    if (!multiDestinationData) return;
+
+    const { sourceFund, month, existingGroup } = multiDestinationData;
+
+    // Handle deletion case (empty destinations array)
+    if (destinations.length === 0 || sourceAmount === 0) {
+      // Clear all pending edits for this switch group
+      const filteredEdits = pendingEdits.filter(edit => {
+        if (edit.month !== month) return true;
+        
+        // Remove existing switch out from source fund
+        if (edit.activityType === 'Fund Switch Out' && edit.fundId === sourceFund.id) {
+          return false;
+        }
+        
+        // Remove existing switch ins from any destinations
+        if (edit.activityType === 'Fund Switch In' && existingGroup?.destinations.some(d => d.fundId === edit.fundId)) {
+          return false;
+        }
+        
+        return true;
+      });
+
+      // Mark existing activities for deletion
+      if (existingGroup) {
+        const existingActivities = activities.filter(a => a.switch_group_id === existingGroup.id);
+        const deletionEdits: CellEdit[] = existingActivities.map(activity => ({
+          fundId: activity.portfolio_fund_id,
+          month,
+          activityType: activity.activity_type === 'SwitchOut' ? 'Fund Switch Out' : 'Fund Switch In',
+          value: '',
+          isNew: false,
+          originalActivityId: activity.id,
+          toDelete: true
+        }));
+        filteredEdits.push(...deletionEdits);
+      }
+
+      setPendingEdits(filteredEdits);
+      setShowMultiDestinationModal(false);
+      setMultiDestinationData(null);
+      return;
+    }
+
+    // Normal update case
+    const groupId = existingGroup?.id || `switch-${sourceFund.id}-${month}-${Date.now()}`;
+
+    // Clear existing pending edits for this switch group
+    const filteredEdits = pendingEdits.filter(edit => {
+      if (edit.month !== month) return true;
+      
+      // Remove existing switch out from source fund
+      if (edit.activityType === 'Fund Switch Out' && edit.fundId === sourceFund.id) {
+        return false;
+      }
+      
+      // Remove existing switch ins to any of the new destinations
+      if (edit.activityType === 'Fund Switch In' && 
+          destinations.some(d => d.fundId === edit.fundId)) {
+        return false;
+      }
+      
+      return true;
+    });
+
+    // If editing existing group, mark old activities for deletion
+    if (existingGroup) {
+      const existingActivities = activities.filter(a => a.switch_group_id === existingGroup.id);
+      const deletionEdits: CellEdit[] = existingActivities.map(activity => ({
+        fundId: activity.portfolio_fund_id,
+        month,
+        activityType: activity.activity_type === 'SwitchOut' ? 'Fund Switch Out' : 'Fund Switch In',
+        value: '',
+        isNew: false,
+        originalActivityId: activity.id,
+        toDelete: true
+      }));
+      filteredEdits.push(...deletionEdits);
+    }
+
+    // Use the sourceAmount from the modal instead of calculating from destinations
+    const totalAmount = sourceAmount;
+
+    // Add switch out from source fund
+    const switchOutEdit: CellEdit = {
+      fundId: sourceFund.id,
+      month,
+      activityType: 'Fund Switch Out',
+      value: totalAmount.toString(),
+      isNew: true,
+      linkedFundId: destinations[0]?.fundId // Link to first destination
+    };
+
+    // Add switch ins to destination funds
+    const switchInEdits: CellEdit[] = destinations.map(dest => ({
+      fundId: dest.fundId,
+      month,
+      activityType: 'Fund Switch In',
+      value: dest.amount.toString(),
+      isNew: true,
+      linkedFundId: sourceFund.id
+    }));
+
+    setPendingEdits([...filteredEdits, switchOutEdit, ...switchInEdits]);
+    setShowMultiDestinationModal(false);
+    setMultiDestinationData(null);
+  };
+
+  // Function to clear/delete a switch group
+  const clearSwitchGroup = (switchGroup: SwitchGroup) => {
+    if (!confirm(`Are you sure you want to delete this fund switch?\n\nFrom: ${switchGroup.sourceFundName}\nTo: ${switchGroup.destinations.map(d => d.fundName).join(', ')}\nTotal Amount: ${formatCurrency(switchGroup.sourceAmount)}`)) {
+      return;
+    }
+
+    // Remove all pending edits for this switch group (both switch out and switch in)
+    const newPendingEdits = pendingEdits.filter(edit => {
+      // Remove the switch out edit from source fund
+      if (edit.activityType === 'Fund Switch Out' && 
+          edit.fundId === switchGroup.sourceFundId && 
+          edit.month === switchGroup.month) {
+        return false;
+      }
+      // Remove all switch in edits from destination funds
+      if (edit.activityType === 'Fund Switch In' && 
+          edit.month === switchGroup.month &&
+          switchGroup.destinations.some(d => d.fundId === edit.fundId)) {
+        return false;
+      }
+      return true;
+    });
+
+    // Mark ALL existing activities in the switch group for deletion
+    const switchGroupActivities = activities.filter(activity => 
+      activity.switch_group_id === switchGroup.id ||
+      // Also catch activities that might not have switch_group_id but are part of this switch
+      (activity.activity_type === 'SwitchOut' && 
+       activity.portfolio_fund_id === switchGroup.sourceFundId &&
+       activity.activity_timestamp.startsWith(switchGroup.month)) ||
+      (activity.activity_type === 'SwitchIn' && 
+       switchGroup.destinations.some(d => d.fundId === activity.portfolio_fund_id) &&
+       activity.activity_timestamp.startsWith(switchGroup.month))
+    );
+
+    const deletionEdits: CellEdit[] = switchGroupActivities.map(activity => {
+      const date = new Date(activity.activity_timestamp);
+      const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      return {
+        fundId: activity.portfolio_fund_id,
+        month,
+        activityType: activity.activity_type === 'SwitchOut' ? 'Fund Switch Out' : 'Fund Switch In',
+        value: '',
+        isNew: false,
+        originalActivityId: activity.id,
+        toDelete: true
+      };
+    });
+
+    // Also add deletions for any destination fund switch-ins that might exist as pending edits
+    const additionalDeletions: CellEdit[] = [];
+    switchGroup.destinations.forEach(dest => {
+      // Check if there's an existing activity for this destination that we haven't marked for deletion
+      const existingActivity = getActivity(dest.fundId, switchGroup.month, 'Fund Switch In');
+      if (existingActivity && !deletionEdits.some(edit => edit.originalActivityId === existingActivity.id)) {
+        additionalDeletions.push({
+          fundId: dest.fundId,
+          month: switchGroup.month,
+          activityType: 'Fund Switch In',
+          value: '',
+          isNew: false,
+          originalActivityId: existingActivity.id,
+          toDelete: true
+        });
+      }
+    });
+
+    setPendingEdits([...newPendingEdits, ...deletionEdits, ...additionalDeletions]);
+  };
+
+  const formatCurrency = (value: number): string => {
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: 'GBP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value);
   };
 
   // Format a month string to a display format
@@ -1086,6 +1483,13 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     const isInFocusedColumn = focusedCell && 
                              months[focusedCell.monthIndex] === month;
     
+    // Check for switch group styling
+    const switchGroup = getSwitchGroupForCell(fundId, month, activityType);
+    if (switchGroup && (activityType === 'Fund Switch In' || activityType === 'Fund Switch Out')) {
+      const switchColor = getSwitchGroupColor(switchGroup.colorIndex);
+      baseClass += ` ${switchColor}`;
+    }
+    
     // Add focused indicator - bold border all around
     if (isFocused) {
       baseClass += " border-[3px] border-blue-500 bg-blue-50 z-10";
@@ -1108,7 +1512,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       }
     }
     
-    // Add special class for switch cells with linked funds
+    // Add special class for switch cells with linked funds (legacy support)
     if ((activityType === 'Fund Switch In' || activityType === 'Fund Switch Out') && 
         pendingEdit && pendingEdit.linkedFundId) {
       baseClass += " border-blue-300 border-2";
@@ -1824,6 +2228,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                         {months.map((month, monthIndex) => {
                           const cellValue = getCellValue(fund.id, month, activityType);
                           const linkedFundName = getLinkedFundName(fund.id, month, activityType);
+                          const switchGroup = getSwitchGroupForCell(fund.id, month, activityType);
                           
                           return (
                             <td 
@@ -1859,46 +2264,119 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                               }}
                             >
                               <div className="flex justify-center items-center">
+                                {/* Check if this is a switch cell with a group */}
+                                {(activityType === 'Fund Switch In' || activityType === 'Fund Switch Out') && 
+                                 cellValue && cellValue.trim() !== '' && switchGroup ? (
+                                  <SwitchTooltip
+                                    switchGroup={switchGroup}
+                                    isSource={activityType === 'Fund Switch Out'}
+                                    currentFundId={fund.id}
+                                  >
+                                    <div 
+                                      className="flex items-center justify-center w-full cursor-pointer"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        
+                                        // Open modal for editing the switch (for both in and out)
+                                        if (fund.isActive !== false && !fund.isInactiveBreakdown) {
+                                          setMultiDestinationData({
+                                            sourceFund: funds.find(f => f.id === switchGroup.sourceFundId) || fund,
+                                            totalAmount: switchGroup.sourceAmount,
+                                            month,
+                                            existingGroup: switchGroup
+                                          });
+                                          setShowMultiDestinationModal(true);
+                                        }
+                                      }}
+                                    >
+                                      <div className="flex items-center">
                                 <input
                                   type="text"
                                     className={`focus:outline-none bg-transparent text-center border-0 shadow-none w-auto min-w-0 ${!fund.isActive || fund.isInactiveBreakdown ? 'text-gray-500 cursor-not-allowed' : ''}`}
                                   value={formatCellValue(cellValue)}
                                     disabled={isSubmitting || fund.isActive === false || fund.isInactiveBreakdown}
                                   onChange={(e) => {
-                                      // Only allow changes for active funds that aren't part of a breakdown
                                       if (fund.isActive !== false && !fund.isInactiveBreakdown) {
-                                        // Check for decimal place restriction - only allow up to 2 decimal places
                                         const value = e.target.value;
-                                        // If it has a decimal point, check if it has more than 2 decimal places
                                         if (value.includes('.')) {
                                           const parts = value.split('.');
-                                          // If there are more than 2 decimal places, truncate to 2
                                           if (parts[1] && parts[1].length > 2) {
-                                            // Don't update if trying to add more than 2 decimal places
                                             return;
                                           }
                                         }
-                                        
-                                        // Continue with normal handling
                                         handleCellValueChange(fund.id, month, activityType, value);
-                                    // Adjust width to fit content
                                         e.target.style.width = (value.length + 1) + 'ch';
                                       }
                                   }}
                                     onBlur={(e) => {
-                                      // Only handle blur for active funds that aren't part of a breakdown
                                       if (fund.isActive !== false && !fund.isInactiveBreakdown) {
                                         handleCellBlur(fund.id, month, activityType);
                                       }
                                     }}
                                     onKeyDown={(e) => {
-                                      // Only handle keyboard navigation for active funds that aren't part of a breakdown
                                       if (fund.isActive !== false && !fund.isInactiveBreakdown) {
                                         handleKeyDown(e, fund.id, activityType, monthIndex);
                                       }
                                     }}
                                     onFocus={() => {
-                                      // Update the focused cell state on focus
+                                            if (fund.isActive !== false && !fund.isInactiveBreakdown) {
+                                              setFocusedCell({
+                                                fundId: fund.id,
+                                                activityType,
+                                                monthIndex: months.indexOf(month)
+                                              });
+                                            }
+                                          }}
+                                          tabIndex={fund.isActive === false || fund.isInactiveBreakdown ? -1 : 0}
+                                          style={{
+                                            border: 'none',
+                                            outline: 'none',
+                                            boxShadow: 'none',
+                                            background: 'transparent',
+                                            padding: '0 2px',
+                                            width: (cellValue.length + 1) + 'ch',
+                                            minWidth: '7ch',
+                                            maxWidth: '8ch',
+                                            fontSize: '0.875rem',
+                                            opacity: fund.isActive === false || fund.isInactiveBreakdown ? 0.7 : 1,
+                                            pointerEvents: 'none' // Prevent direct input editing, force modal use
+                                          }}
+                                          inputMode="text"
+                                        />
+                                        <span className="text-gray-400 text-xs ml-1">...</span>
+                                      </div>
+                                    </div>
+                                  </SwitchTooltip>
+                                ) : (
+                                  <input
+                                    type="text"
+                                    className={`focus:outline-none bg-transparent text-center border-0 shadow-none w-auto min-w-0 ${!fund.isActive || fund.isInactiveBreakdown ? 'text-gray-500 cursor-not-allowed' : ''}`}
+                                    value={formatCellValue(cellValue)}
+                                    disabled={isSubmitting || fund.isActive === false || fund.isInactiveBreakdown}
+                                    onChange={(e) => {
+                                      if (fund.isActive !== false && !fund.isInactiveBreakdown) {
+                                        const value = e.target.value;
+                                        if (value.includes('.')) {
+                                          const parts = value.split('.');
+                                          if (parts[1] && parts[1].length > 2) {
+                                            return;
+                                          }
+                                        }
+                                        handleCellValueChange(fund.id, month, activityType, value);
+                                        e.target.style.width = (value.length + 1) + 'ch';
+                                      }
+                                    }}
+                                    onBlur={(e) => {
+                                      if (fund.isActive !== false && !fund.isInactiveBreakdown) {
+                                        handleCellBlur(fund.id, month, activityType);
+                                      }
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (fund.isActive !== false && !fund.isInactiveBreakdown) {
+                                        handleKeyDown(e, fund.id, activityType, monthIndex);
+                                      }
+                                    }}
+                                    onFocus={() => {
                                       if (fund.isActive !== false && !fund.isInactiveBreakdown) {
                                         setFocusedCell({
                                           fundId: fund.id,
@@ -1922,6 +2400,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                   }}
                                   inputMode="text"
                                 />
+                                )}
                               </div>
                                 {linkedFundName && !fund.isInactiveBreakdown && (
                                 <div className="text-xs text-blue-600 text-center mt-1">
@@ -2056,6 +2535,20 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           onCancel={() => {
             setShowSwitchFundModal(false);
             setSwitchSelectionData(null);
+          }}
+        />
+      )}
+      {showMultiDestinationModal && multiDestinationData && (
+        <MultiDestinationSwitchModal
+          sourceFund={multiDestinationData.sourceFund}
+          availableFunds={availableFundsForSwitch}
+          totalAmount={multiDestinationData.totalAmount}
+          month={multiDestinationData.month}
+          existingDestinations={multiDestinationData.existingGroup?.destinations}
+          onConfirm={handleMultiDestinationConfirm}
+          onCancel={() => {
+            setShowMultiDestinationModal(false);
+            setMultiDestinationData(null);
           }}
         />
       )}

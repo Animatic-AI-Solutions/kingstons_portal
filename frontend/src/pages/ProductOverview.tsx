@@ -129,14 +129,14 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     }
   }, [accountId, api]);
 
-  // Call the async function to calculate target risk and update state - ONLY on mount
+  // Call the async function to calculate target risk and update state - runs whenever account changes
   useEffect(() => {
-    if (account && !displayedTargetRisk) {
+    if (account) {
       calculateTargetRisk().then(risk => {
         setDisplayedTargetRisk(risk);
       });
     }
-  }, [account?.id]); // Only depend on account.id, not the whole account object
+  }, [account?.target_risk, account?.original_template_id]); // Depend on the actual target risk value and template
 
   // Calculate live risk whenever holdings change
   useEffect(() => {
