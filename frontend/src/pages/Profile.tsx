@@ -9,7 +9,7 @@ const landingPageOptions = [
   { value: '/client_groups', label: 'Clients' },
   { value: '/products', label: 'Products' },
   { value: '/definitions', label: 'Definitions' },
-  { value: '/reporting', label: 'Analytics' }
+  { value: '/analytics', label: 'Analytics' }
 ];
 
 const Profile: React.FC = () => {

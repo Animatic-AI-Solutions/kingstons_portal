@@ -14,6 +14,7 @@ class ClientproductBase(BaseModel):
     provider_theme_color: Optional[str] = None
     product_type: Optional[str] = None
     portfolio_id: Optional[int] = None
+    template_generation_id: Optional[int] = None
     original_template_id: Optional[int] = None
     original_template_name: Optional[str] = None
     template_info: Optional[Dict[str, Any]] = None
