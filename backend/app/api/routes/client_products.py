@@ -347,10 +347,6 @@ async def create_client_product(client_product: ClientproductCreate, db = Depend
     Expected output: The newly created client product object
     """
     try:
-        # Set default weighting to 0 if not provided
-        if client_product.weighting is None:
-            client_product.weighting = 0
-
         # Ensure start_date is today's date if not provided
         today = date.today()
         start_date_iso = client_product.start_date.isoformat() if client_product.start_date else today.isoformat()
@@ -367,7 +363,6 @@ async def create_client_product(client_product: ClientproductCreate, db = Depend
             "product_name": client_product.product_name,
             "status": client_product.status,
             "start_date": start_date_iso,
-            "weighting": client_product.weighting,
             "plan_number": client_product.plan_number,
             "provider_id": client_product.provider_id,
             "product_type": client_product.product_type
@@ -1042,12 +1037,6 @@ async def get_complete_product_details(client_product_id: int, db = Depends(get_
                             response["parent_template_name"] = generation_info.get("available_portfolios").get("name")
                         else:
                             response["parent_template_name"] = None # Or fetch separately if needed
-                        
-                        # Assuming target_risk might be on the generation itself or on the parent template
-                        # For now, let's assume it could be on the generation_info object
-                        if "target_risk" in generation_info: # Check if target_risk exists on generation
-                            response["target_risk"] = generation_info.get("target_risk")
-                        # Else, you might need to fetch it from the parent `available_portfolios` or handle it differently
 
                 # Get portfolio funds in a single query
                 funds_result = db.table("portfolio_funds").select("*").eq("portfolio_id", portfolio_id).execute()

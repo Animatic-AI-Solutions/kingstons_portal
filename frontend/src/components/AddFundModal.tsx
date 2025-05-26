@@ -23,7 +23,7 @@ const AddFundModal: React.FC<AddFundModalProps> = ({ isOpen, onClose, onFundAdde
     fund_name: '',
     isin_number: '',
     risk_factor: null,
-    fund_cost: null,
+    fund_cost: 0,
     status: 'active'
   });
 
@@ -69,7 +69,7 @@ const AddFundModal: React.FC<AddFundModalProps> = ({ isOpen, onClose, onFundAdde
       return;
     }
 
-    if (formData.fund_cost === null) {
+    if (formData.fund_cost === null || formData.fund_cost === undefined) {
       setError('Fund cost is required');
       return;
     }
@@ -93,7 +93,7 @@ const AddFundModal: React.FC<AddFundModalProps> = ({ isOpen, onClose, onFundAdde
         fund_name: '',
         isin_number: '',
         risk_factor: null,
-        fund_cost: null,
+        fund_cost: 0,
         status: 'active'
       });
       onClose();
@@ -111,7 +111,7 @@ const AddFundModal: React.FC<AddFundModalProps> = ({ isOpen, onClose, onFundAdde
       fund_name: '',
       isin_number: '',
       risk_factor: null,
-      fund_cost: null,
+      fund_cost: 0,
       status: 'active'
     });
     setError(null);
@@ -227,7 +227,7 @@ const AddFundModal: React.FC<AddFundModalProps> = ({ isOpen, onClose, onFundAdde
                   name="fund_cost"
                   step="0.0001"
                   min="0"
-                  value={formData.fund_cost === null ? '' : formData.fund_cost}
+                  value={formData.fund_cost === null || formData.fund_cost === undefined ? '' : formData.fund_cost}
                   onChange={handleChange}
                   required
                   className="block w-full border border-gray-300 rounded-md shadow-sm py-2 pl-3 pr-8 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"

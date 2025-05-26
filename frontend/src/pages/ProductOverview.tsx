@@ -107,16 +107,13 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   const [isEditMode, setIsEditMode] = useState(false);
   const [providers, setProviders] = useState<Provider[]>([]);
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
-  const [formData, setFormData] = useState({
+  const [editFormData, setEditFormData] = useState({
     product_name: '',
     provider_id: '',
     portfolio_id: '',
     product_type: '',
     target_risk: ''
   });
-  const [targetRiskInput, setTargetRiskInput] = useState(''); // Separate state for input display
-  const targetRiskInputRef = useRef<HTMLInputElement>(null); // Ref to maintain focus
-  const [targetRiskValidation, setTargetRiskValidation] = useState<{isValid: boolean, message: string}>({isValid: true, message: ''});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -131,12 +128,12 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
 
   // Call the async function to calculate target risk and update state - ONLY on mount
   useEffect(() => {
-    if (account && !displayedTargetRisk) {
+    if (account && holdings.length > 0 && fundsData.size > 0) {
       calculateTargetRisk().then(risk => {
         setDisplayedTargetRisk(risk);
       });
     }
-  }, [account?.id]); // Only depend on account.id, not the whole account object
+  }, [account?.id, holdings, fundsData]); // Depend on holdings and fundsData as well
 
   // Calculate live risk whenever holdings change
   useEffect(() => {
@@ -150,21 +147,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     }
   }, [holdings]);
 
-  // Initialize form data when account data is loaded - but not when in edit mode
-  useEffect(() => {
-    if (account && !isEditMode) {
-      setFormData({
-        product_name: account.product_name || '',
-        provider_id: account.provider_id?.toString() || '',
-        portfolio_id: account.current_portfolio?.id?.toString() || account.portfolio_id?.toString() || '',
-        product_type: account.product_type || '',
-        target_risk: account.target_risk?.toString() || ''
-      });
-      setTargetRiskInput(account.target_risk?.toString() || '');
-    }
-  }, [account, isEditMode]);
-
-  // Fetch providers and portfolios for edit form
+  // Fetch providers and portfolios when entering edit mode
   useEffect(() => {
     const fetchFormOptions = async () => {
       try {
@@ -257,7 +240,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       if (completeData.portfolio_funds && completeData.portfolio_funds.length > 0) {
         const processedHoldings = completeData.portfolio_funds.map((pf: any) => {
           // Standardize weighting value
-          let standardizedWeighting = pf.weighting;
+          let standardizedWeighting = pf.target_weighting;
           if (standardizedWeighting !== null && standardizedWeighting !== undefined) {
             let numValue = typeof standardizedWeighting === 'string' 
               ? parseFloat(standardizedWeighting) 
@@ -505,102 +488,132 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     return 'N/A';
   };
 
-  // Calculate target risk based on the original portfolio template
+  // Calculate target risk based on the current portfolio's target weightings
   const calculateTargetRisk = async (): Promise<string> => {
-    if (!account) return "N/A";
+    console.log('DEBUG - calculateTargetRisk called with:', {
+      account: !!account,
+      holdingsLength: holdings.length,
+      fundsDataSize: fundsData.size
+    });
     
-    // If account has target_risk already set, use that
-    if (account.target_risk !== undefined && account.target_risk !== null) {
-      setTargetRisk(account.target_risk);
-      return account.target_risk.toString();
+    if (!account || holdings.length === 0 || fundsData.size === 0) {
+      console.log('DEBUG - Early return from calculateTargetRisk:', {
+        account: !!account,
+        holdingsLength: holdings.length,
+        fundsDataSize: fundsData.size
+      });
+      return "N/A";
     }
     
-    // If we have a template ID, fetch the template and calculate the weighted risk
-    if (account.original_template_id) {
-      try {
-        // Get the generation by ID using the new endpoint
-        const generationResponse = await api.get(`/api/available_portfolios/generations/${account.original_template_id}`);
-        const generationData = generationResponse.data || {};
+    let totalWeight = 0;
+    let weightedRiskSum = 0;
+    let validFundsCount = 0;
+    
+    console.log('DEBUG - Starting target risk calculation with holdings:', 
+      holdings.map(h => ({
+        fund_name: h.fund_name,
+        fund_id: h.fund_id,
+        target_weighting: h.target_weighting,
+        isVirtual: h.isVirtual
+      }))
+    );
+    
+    console.log('DEBUG - Available funds data:', 
+      Array.from(fundsData.values()).map(f => ({
+        id: f.id,
+        fund_name: f.fund_name,
+        risk_factor: f.risk_factor
+      }))
+    );
+    
+    // Calculate weighted average risk based on current portfolio's target weightings
+    for (const holding of holdings) {
+      // Skip virtual holdings (like "Previous Funds")
+      if (holding.isVirtual) {
+        console.log('DEBUG - Skipping virtual holding:', holding.fund_name);
+        continue;
+      }
+      
+      const fundId = holding.fund_id;
+      const targetWeighting = holding.target_weighting;
+      
+      console.log('DEBUG - Processing holding:', {
+        fund_name: holding.fund_name,
+        fund_id: fundId,
+        target_weighting: targetWeighting,
+        target_weighting_type: typeof targetWeighting
+      });
+      
+      if (!fundId || targetWeighting === undefined || targetWeighting === null) {
+        console.log('DEBUG - Skipping holding due to missing fundId or target_weighting:', {
+          fund_name: holding.fund_name,
+          fundId,
+          targetWeighting
+        });
+        continue;
+      }
+      
+      // Convert target weighting to decimal if it's in percentage format
+      let weight = typeof targetWeighting === 'string' ? parseFloat(targetWeighting) : targetWeighting;
+      
+      // If weight is in percentage format (>1), convert to decimal
+      if (weight > 1) {
+        weight = weight / 100;
+      }
+      
+      const fund = Array.from(fundsData.values()).find(f => f.id === fundId);
+      
+      console.log('DEBUG - Fund lookup result:', {
+        fundId,
+        fund: fund ? { id: fund.id, name: fund.fund_name, risk_factor: fund.risk_factor } : null
+      });
+      
+      if (fund && fund.risk_factor !== undefined && fund.risk_factor !== null) {
+        weightedRiskSum += fund.risk_factor * weight;
+        totalWeight += weight;
+        validFundsCount++;
         
-        // Get the funds associated with this generation using path parameter
-        const templateFundsResponse = await api.get(`/api/available_portfolios/available_portfolio_funds/generation/${account.original_template_id}`);
-        const templateFunds = templateFundsResponse.data || [];
-        
-        // Check if there are funds in the response
-        if (templateFunds && Array.isArray(templateFunds) && templateFunds.length > 0) {
-          let totalWeight = 0;
-          let weightedRiskSum = 0;
-          let validFundsCount = 0;
-          
-          // We need to fetch fund details for each fund to get risk factors
-          const fundDetailsPromises = templateFunds.map((fund: any) => {
-            if (fund.fund_id) {
-              return api.get(`/api/funds/${fund.fund_id}`);
-            }
-            return Promise.resolve(null);
-          });
-          
-          const fundDetailsResponses = await Promise.all(fundDetailsPromises);
-          const fundDetails = fundDetailsResponses
-            .filter((response: any) => response !== null)
-            .map((response: any) => response.data);
-          
-          // Create a map for quick lookup
-          const fundDetailsMap = new Map();
-          fundDetails.forEach((fund: any) => {
-            if (fund && fund.id) {
-              fundDetailsMap.set(fund.id, fund);
-            }
-          });
-          
-          // Calculate weighted average of risk factors
-          for (const fund of templateFunds) {
-            if (fund.fund_id) {
-              const fundDetail = fundDetailsMap.get(fund.fund_id);
-              
-              if (fundDetail && 
-                  fundDetail.risk_factor !== undefined && 
-                  fundDetail.risk_factor !== null) {
-                
-                const risk = fundDetail.risk_factor;
-                const weight = fund.target_weighting || 0;
-                
-                weightedRiskSum += risk * weight;
-                totalWeight += weight;
-                validFundsCount++;
-                console.log(`Fund ${fundDetail.fund_name}: risk=${risk}, weight=${weight}`);
-              }
-            }
-          }
-          
-          // If we found valid funds with risk factors, calculate the weighted average
-          if (validFundsCount > 0 && totalWeight > 0) {
-            const calculatedRisk = weightedRiskSum / totalWeight;
-            
-            // Cache the calculated risk
-            setTargetRisk(calculatedRisk);
-            
-            // Also update the account object
-            setAccount(prev => {
-              if (!prev) return prev;
-              return {
-                ...prev,
-                target_risk: calculatedRisk
-              };
-            });
-            
-            console.log(`Calculated target risk: ${calculatedRisk.toFixed(1)} from ${validFundsCount} funds`);
-            return calculatedRisk.toFixed(1);
-          }
-        } else {
-          console.warn("No funds found in template generation response");
-          return "N/A";
-        }
-      } catch (err) {
-        console.error("Error calculating target risk:", err);
+        console.log('DEBUG - Target risk calculation for fund:', {
+          fund_name: fund.fund_name,
+          fund_id: fundId,
+          risk_factor: fund.risk_factor,
+          target_weighting: targetWeighting,
+          weight: weight,
+          contribution: fund.risk_factor * weight
+        });
+      } else {
+        console.log('DEBUG - Skipping fund due to missing risk_factor:', {
+          fund_name: fund?.fund_name || 'Unknown',
+          fund_id: fundId,
+          risk_factor: fund?.risk_factor
+        });
       }
     }
     
+    console.log('DEBUG - Final target risk calculation summary:', {
+      totalWeight,
+      weightedRiskSum,
+      validFundsCount
+    });
+    
+    // If we found valid funds with risk factors and weightings, calculate the weighted average
+    if (validFundsCount > 0 && totalWeight > 0) {
+      const calculatedRisk = weightedRiskSum / totalWeight;
+      
+      console.log('DEBUG - Final target risk calculation:', {
+        totalWeight,
+        weightedRiskSum,
+        validFundsCount,
+        calculatedRisk
+      });
+      
+      // Cache the calculated risk
+      setTargetRisk(calculatedRisk);
+      
+      return calculatedRisk.toFixed(1);
+    }
+    
+    console.log('DEBUG - No valid funds with target weightings and risk factors found');
     setTargetRisk(null);
     return "N/A";
   };
@@ -761,6 +774,83 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   // Memoize the weightings calculation
   const liveWeightings = useMemo(() => calculateLiveWeightings(holdings), [holdings]);
 
+  // Toggle edit mode
+  const toggleEditMode = useCallback(() => {
+    if (!isEditMode && account) {
+      // Entering edit mode - initialize form data
+      setEditFormData({
+        product_name: account.product_name || '',
+        provider_id: account.provider_id?.toString() || '',
+        portfolio_id: account.current_portfolio?.id?.toString() || account.portfolio_id?.toString() || '',
+        product_type: account.product_type || '',
+        target_risk: account.target_risk?.toString() || ''
+      });
+    }
+    setIsEditMode(!isEditMode);
+    setFormError(null);
+  }, [isEditMode, account]);
+
+  // Handle form input changes
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  }, []);
+
+  // Handle form submission
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!accountId) return;
+    
+    // Validate target_risk before submission
+    if (editFormData.target_risk) {
+      const targetRiskValue = parseFloat(editFormData.target_risk);
+      if (isNaN(targetRiskValue) || targetRiskValue < 1 || targetRiskValue > 7) {
+        setFormError('Target risk must be a number between 1 and 7');
+        return;
+      }
+    }
+    
+    try {
+      setIsSubmitting(true);
+      setFormError(null);
+      
+      const updateData = {
+        product_name: editFormData.product_name,
+        provider_id: editFormData.provider_id ? parseInt(editFormData.provider_id) : null,
+        portfolio_id: editFormData.portfolio_id ? parseInt(editFormData.portfolio_id) : null,
+        product_type: editFormData.product_type,
+        target_risk: editFormData.target_risk ? parseFloat(editFormData.target_risk) : null
+      };
+      
+      await api.patch(`/api/client_products/${accountId}`, updateData);
+      
+      // Update the local account state
+      setAccount(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          product_name: editFormData.product_name,
+          provider_id: updateData.provider_id || undefined,
+          portfolio_id: updateData.portfolio_id || undefined,
+          product_type: editFormData.product_type,
+          target_risk: updateData.target_risk || undefined
+        };
+      });
+      
+      setIsEditMode(false);
+      
+    } catch (err: any) {
+      console.error('Error updating product:', err);
+      setFormError(err.response?.data?.detail || 'Failed to update product');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [accountId, editFormData, api]);
+
   // Add function to handle account deletion
   const handleDeleteProduct = async () => {
     if (!accountId) return;
@@ -874,260 +964,6 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     );
   };
 
-  // Toggle edit mode
-  const toggleEditMode = () => {
-    if (!isEditMode && account) {
-      // Entering edit mode - initialize form data
-      setFormData({
-        product_name: account.product_name || '',
-        provider_id: account.provider_id?.toString() || '',
-        portfolio_id: account.current_portfolio?.id?.toString() || account.portfolio_id?.toString() || '',
-        product_type: account.product_type || '',
-        target_risk: account.target_risk?.toString() || ''
-      });
-      setTargetRiskInput(account.target_risk?.toString() || '');
-    }
-    setIsEditMode(!isEditMode);
-    setFormError(null);
-  };
-
-  // Handle form input changes - optimized to prevent unnecessary re-renders
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    
-    // Special handling for target_risk with separate display state
-    if (name === 'target_risk') {
-      // Always update the input display value immediately
-      setTargetRiskInput(value);
-      
-      // Real-time validation
-      if (value === '') {
-        setTargetRiskValidation({isValid: true, message: ''});
-        setFormData(prev => ({ ...prev, [name]: '' }));
-      } else if (!/^\d*\.?\d*$/.test(value)) {
-        setTargetRiskValidation({isValid: false, message: 'Please enter numbers only'});
-      } else if (value.endsWith('.')) {
-        setTargetRiskValidation({isValid: true, message: 'Continue typing...'});
-      } else {
-        const numValue = parseFloat(value);
-        if (isNaN(numValue)) {
-          setTargetRiskValidation({isValid: false, message: 'Please enter a valid number'});
-        } else if (numValue < 1) {
-          setTargetRiskValidation({isValid: false, message: 'Minimum risk level is 1'});
-        } else if (numValue > 7) {
-          setTargetRiskValidation({isValid: false, message: 'Maximum risk level is 7'});
-        } else {
-          setTargetRiskValidation({isValid: true, message: '✓ Valid risk level'});
-          setFormData(prev => ({ ...prev, [name]: value }));
-        }
-      }
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
-  }, []); // No dependencies to prevent recreation
-
-  // Update the existing handleSubmit to set initialNotes after a successful save
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!accountId) return;
-    
-    // Validate target_risk before submission
-    if (formData.target_risk) {
-      const targetRiskValue = parseFloat(formData.target_risk);
-      if (isNaN(targetRiskValue) || targetRiskValue < 1 || targetRiskValue > 7) {
-        setFormError('Target risk must be a number between 1 and 7');
-        return;
-      }
-    }
-    
-    try {
-      setIsSubmitting(true);
-      setFormError(null);
-      
-      const updateData = {
-        product_name: formData.product_name,
-        provider_id: formData.provider_id ? parseInt(formData.provider_id) : null,
-        portfolio_id: formData.portfolio_id ? parseInt(formData.portfolio_id) : null,
-        product_type: formData.product_type,
-        target_risk: formData.target_risk ? parseFloat(formData.target_risk) : null
-      };
-      
-      await api.patch(`/api/client_products/${accountId}`, updateData);
-      await fetchData(accountId);
-      setIsEditMode(false);
-      
-    } catch (err: any) {
-      console.error('Error updating product:', err);
-      setFormError(err.response?.data?.detail || 'Failed to update product');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Product Edit Form Component
-  const ProductEditForm = () => {
-    return (
-      <div className="bg-white shadow-sm rounded-lg border border-gray-100 mb-6 p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium text-gray-900">Edit Product Details</h3>
-          <button
-            onClick={toggleEditMode}
-            className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-        </div>
-        
-        {formError && (
-          <div className="mb-4 p-2 text-sm text-red-700 bg-red-100 rounded-md">
-            {formError}
-          </div>
-        )}
-        
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label htmlFor="product_name" className="block text-sm font-medium text-gray-700 mb-1">
-                Product Name
-              </label>
-              <input
-                type="text"
-                id="product_name"
-                name="product_name"
-                value={formData.product_name}
-                onChange={handleInputChange}
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                required
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="provider_id" className="block text-sm font-medium text-gray-700 mb-1">
-                Provider
-              </label>
-              <select
-                id="provider_id"
-                name="provider_id"
-                value={formData.provider_id}
-                onChange={handleInputChange}
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-              >
-                <option value="">Select Provider</option>
-                {providers.map(provider => (
-                  <option key={provider.id} value={provider.id}>
-                    {provider.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div>
-              <label htmlFor="portfolio_id" className="block text-sm font-medium text-gray-700 mb-1">
-                Portfolio
-              </label>
-              <select
-                id="portfolio_id"
-                name="portfolio_id"
-                value={formData.portfolio_id}
-                onChange={handleInputChange}
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-              >
-                <option value="">Select Portfolio</option>
-                {portfolios.map(portfolio => (
-                  <option key={portfolio.id} value={portfolio.id}>
-                    {portfolio.portfolio_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div>
-              <label htmlFor="product_type" className="block text-sm font-medium text-gray-700 mb-1">
-                Product Type
-              </label>
-              <input
-                type="text"
-                id="product_type"
-                name="product_type"
-                value={formData.product_type}
-                onChange={handleInputChange}
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="target_risk" className="block text-sm font-medium text-gray-700 mb-1">
-                Target Risk Level
-                <span className="text-gray-500 text-xs ml-1">(1-7 scale)</span>
-                {account?.original_template_id && account?.template_info && (
-                  <span className="text-blue-600 text-xs ml-1">
-                    (Template default available)
-                  </span>
-                )}
-              </label>
-              <input
-                type="text"
-                id="target_risk"
-                name="target_risk"
-                value={targetRiskInput}
-                onChange={handleInputChange}
-                className={`shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md transition-colors ${
-                  !targetRiskValidation.isValid
-                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                    : targetRiskValidation.message.startsWith('✓')
-                    ? 'border-green-300 focus:border-green-500 focus:ring-green-500'
-                    : ''
-                }`}
-                placeholder="e.g. 4.5"
-                ref={targetRiskInputRef}
-              />
-              <div className="text-xs mt-1 flex justify-between">
-                <span className="text-gray-500">
-                  1 = Very Low Risk, 7 = Very High Risk
-                </span>
-                {targetRiskValidation.message && (
-                  <span className={`font-medium ${
-                    !targetRiskValidation.isValid 
-                      ? 'text-red-600' 
-                      : targetRiskValidation.message.startsWith('✓')
-                      ? 'text-green-600'
-                      : 'text-blue-600'
-                  }`}>
-                    {targetRiskValidation.message}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-            >
-              {isSubmitting ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Saving...
-                </>
-              ) : (
-                'Save Changes'
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-    );
-  };
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-6">
@@ -1153,7 +989,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     );
   }
 
-  return (
+    return (
     <>
       <DeleteConfirmationModal />
       <div className="flex flex-col space-y-6">
@@ -1164,33 +1000,136 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           </div>
           <div className="flex space-x-3">
             {isEditMode ? (
-              <button
-                onClick={toggleEditMode}
+          <button
+            onClick={toggleEditMode}
                 className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-              >
-                Cancel
+          >
+            Cancel
               </button>
             ) : (
-              <>
-                <button
-                  onClick={toggleEditMode}
-                  className="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                >
-                  Edit Product
-                </button>
-                <button
-                  onClick={() => setIsDeleteModalOpen(true)}
-                  className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                >
-                  Delete
-                </button>
-              </>
+              <button
+                onClick={toggleEditMode}
+                className="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              >
+                Edit Product
+              </button>
             )}
+            <button
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            >
+              Delete
+          </button>
           </div>
         </div>
 
         {/* Edit Form (conditionally displayed) */}
-        {isEditMode && <ProductEditForm />}
+        {isEditMode && (
+          <div className="bg-white shadow-sm rounded-lg border border-gray-100 mb-6 p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Edit Product Details</h3>
+        </div>
+        
+        {formError && (
+          <div className="mb-4 p-2 text-sm text-red-700 bg-red-100 rounded-md">
+            {formError}
+          </div>
+        )}
+        
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label htmlFor="product_name" className="block text-sm font-medium text-gray-700 mb-1">
+                Product Name
+              </label>
+              <input
+                type="text"
+                id="product_name"
+                name="product_name"
+                    value={editFormData.product_name}
+                onChange={handleInputChange}
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                required
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="provider_id" className="block text-sm font-medium text-gray-700 mb-1">
+                Provider
+              </label>
+              <select
+                id="provider_id"
+                name="provider_id"
+                    value={editFormData.provider_id}
+                onChange={handleInputChange}
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+              >
+                <option value="">Select Provider</option>
+                {providers.map(provider => (
+                  <option key={provider.id} value={provider.id}>
+                    {provider.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label htmlFor="portfolio_id" className="block text-sm font-medium text-gray-700 mb-1">
+                Portfolio
+              </label>
+              <select
+                id="portfolio_id"
+                name="portfolio_id"
+                    value={editFormData.portfolio_id}
+                onChange={handleInputChange}
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+              >
+                <option value="">Select Portfolio</option>
+                {portfolios.map(portfolio => (
+                  <option key={portfolio.id} value={portfolio.id}>
+                    {portfolio.portfolio_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label htmlFor="product_type" className="block text-sm font-medium text-gray-700 mb-1">
+                Product Type
+              </label>
+              <input
+                type="text"
+                id="product_type"
+                name="product_type"
+                value={editFormData.product_type}
+                onChange={handleInputChange}
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+              />
+            </div>
+          </div>
+          
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+            >
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+        )}
 
         {/* Product Info Grid - Ensure this div is properly closed after adding Product Owners */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-md">
@@ -1212,13 +1151,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           <div>
             <div className="text-sm font-medium text-gray-500">Portfolio Template</div>
             <div className="text-base font-medium text-gray-900 mt-1">
-              {account.original_template_name || account.template_info?.name || 'Bespoke'}
+              {account.original_template_name || account.template_info?.name || (account.original_template_id ? 'Template' : 'Bespoke')}
             </div>
-          </div>
-          
-          <div>
-            <div className="text-sm font-medium text-gray-500">Target Risk</div>
-            <div className="text-base font-medium text-gray-900 mt-1">{displayedTargetRisk}</div>
           </div>
           
           <div>
@@ -1321,7 +1255,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             <div>
               <div className="flex justify-between items-center mb-1">
                 <div className="text-sm font-medium text-gray-700">
-                  Target Risk ({account.original_template_name || account.template_info?.name || 'Bespoke'})
+                  Target Risk ({account.original_template_name || account.template_info?.name || (account.original_template_id ? 'Template' : 'Bespoke')})
                 </div>
                 <div className="text-sm font-semibold">{displayedTargetRisk}</div>
               </div>

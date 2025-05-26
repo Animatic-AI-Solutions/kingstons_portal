@@ -46,11 +46,9 @@ interface ProductItem {
   product_type: string;
   product_name: string;
   status: string;
-  weighting: number; // Will always be 0
   start_date?: dayjs.Dayjs; // Use dayjs type
   plan_number?: string; // Add plan number field
   product_owner_ids: number[]; // Changed from product_owner_id to product_owner_ids array
-  target_risk?: number; // Target risk level (1-7 scale) - required for bespoke portfolios
   portfolio: {
     id?: number; // Portfolio ID when created or selected
     name: string;
@@ -106,7 +104,6 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   // Form state
   const [selectedClientId, setSelectedClientId] = useState<number | null>(urlClientId ? parseInt(urlClientId) : null);
   const [products, setProducts] = useState<ProductItem[]>([]);
-  const [targetRiskInputs, setTargetRiskInputs] = useState<Record<string, string>>({}); // Track input values separately
   const [isSaving, setIsSaving] = useState(false);
   const [providerProducts, setProviderProducts] = useState<Record<number, any>>({});
   const [availableFundsByProvider, setAvailableFundsByProvider] = useState<Record<number, Fund[]>>({});
@@ -288,11 +285,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       client_id: selectedClientId,
       provider_id: 0,
       product_type: '',
-      product_name: `Product ${products.length + 1}`,
+      product_name: '',
       status: 'active',
-      weighting: 0,
       product_owner_ids: [],
-      target_risk: undefined,
       portfolio: {
         name: `Portfolio for Product ${products.length + 1}`,
         selectedFunds: [],
@@ -319,12 +314,6 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       const updatedProducts = prevProducts.map(product => {
         if (product.id === productId) {
           const updatedProduct = { ...product, [field]: value };
-          
-          // Always keep weighting at 0
-          if (field === 'weighting') {
-            updatedProduct.weighting = 0;
-          }
-          
           return updatedProduct;
         }
         return product;
@@ -396,18 +385,30 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         const isSelected = selectedFunds.includes(fundId);
         let updatedFunds;
         let updatedType = product.portfolio.type;
+        let updatedWeightings = { ...product.portfolio.fundWeightings };
         
         if (isSelected) {
           // Remove fund
           updatedFunds = selectedFunds.filter(id => id !== fundId);
+          // Remove weighting for this fund
+          delete updatedWeightings[fundId.toString()];
         } else {
           // Add fund
           updatedFunds = [...selectedFunds, fundId];
+          // Add default weighting for bespoke portfolios
+          if (product.portfolio.type === 'bespoke') {
+            updatedWeightings[fundId.toString()] = '';
+          }
         }
         
         // If this is a template portfolio and we're modifying the funds, convert to bespoke
         if (product.portfolio.type === 'template' && product.portfolio.templateId) {
           updatedType = 'bespoke';
+          // Initialize weightings for all selected funds when converting to bespoke
+          updatedWeightings = {};
+          updatedFunds.forEach(id => {
+            updatedWeightings[id.toString()] = '';
+          });
           // Show a toast notification instead of an error
           showToastMessage(`Template portfolio has been converted to bespoke because you modified the fund selection.`);
         }
@@ -418,7 +419,27 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             ...product.portfolio,
             type: updatedType,
             templateId: updatedType === 'bespoke' ? undefined : product.portfolio.templateId,
-            selectedFunds: updatedFunds
+            selectedFunds: updatedFunds,
+            fundWeightings: updatedWeightings
+          }
+        };
+      }
+      return product;
+    }));
+  };
+  
+  // Add function to handle weighting changes
+  const handleWeightingChange = (productId: string, fundId: number, weighting: string) => {
+    setProducts(prevProducts => prevProducts.map(product => {
+      if (product.id === productId) {
+        return {
+          ...product,
+          portfolio: {
+            ...product.portfolio,
+            fundWeightings: {
+              ...product.portfolio.fundWeightings,
+              [fundId.toString()]: weighting
+            }
           }
         };
       }
@@ -427,21 +448,94 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   };
   
   const calculateTotalFundWeighting = (product: ProductItem): number => {
-    return product.portfolio.selectedFunds.length;
+    if (product.portfolio.type !== 'bespoke') {
+      return 100; // Template portfolios are assumed to be 100%
+    }
+    
+    return product.portfolio.selectedFunds.reduce((total, fundId) => {
+      const weighting = product.portfolio.fundWeightings[fundId.toString()];
+      const numValue = weighting ? parseFloat(weighting) : 0;
+      return total + (isNaN(numValue) ? 0 : numValue);
+    }, 0);
   };
-  
+
+  // Add function to calculate target risk from weighted average
+  const calculateTargetRiskFromFunds = (product: ProductItem): number | null => {
+    if (product.portfolio.type !== 'bespoke' || product.portfolio.selectedFunds.length === 0) {
+      return null;
+    }
+
+    let totalWeightedRisk = 0;
+    let totalWeight = 0;
+
+    for (const fundId of product.portfolio.selectedFunds) {
+      const fund = funds.find(f => f.id === fundId);
+      const weighting = product.portfolio.fundWeightings[fundId.toString()];
+      const weightValue = weighting ? parseFloat(weighting) : 0;
+
+      if (fund && !isNaN(weightValue) && weightValue > 0) {
+        totalWeightedRisk += fund.risk_factor * weightValue;
+        totalWeight += weightValue;
+      }
+    }
+
+    return totalWeight > 0 ? totalWeightedRisk / totalWeight : null;
+  };
+
+  // Function to generate product name based on owners, provider, and product type
+  const generateProductName = (product: ProductItem): string => {
+    // Get product owner names
+    const ownerNames = product.product_owner_ids
+      .map(ownerId => {
+        const owner = productOwners.find(o => o.id === ownerId);
+        return owner ? owner.name : '';
+      })
+      .filter(name => name.length > 0);
+
+    // Get provider name
+    const provider = providers.find(p => p.id === product.provider_id);
+    const providerName = provider ? provider.name : '';
+
+    // Get product type
+    const productType = product.product_type;
+
+    // Generate name based on number of owners
+    if (ownerNames.length === 0) {
+      // No owners - just use provider and product type
+      return `${providerName} ${productType}`.trim();
+    } else if (ownerNames.length === 1) {
+      // Single owner - format: "Owner Provider ProductType"
+      return `${ownerNames[0]} ${providerName} ${productType}`.trim();
+    } else {
+      // Multiple owners - format: "Joint (Owner1, Owner2, Owner3) Provider ProductType"
+      const ownersList = ownerNames.join(', ');
+      return `Joint (${ownersList}) ${providerName} ${productType}`.trim();
+    }
+  };
+
   // Portfolio configuration functions
   const handlePortfolioTypeChange = (productId: string, type: 'template' | 'bespoke'): void => {
     setProducts(prevProducts => prevProducts.map(product => {
       if (product.id === productId) {
+        const updatedPortfolio = {
+          ...product.portfolio,
+          type,
+          templateId: undefined,
+          selectedFunds: [] as number[],
+          fundWeightings: {} as Record<string, string>
+        };
+
+        // If switching to bespoke and there are already selected funds, initialize weightings
+        if (type === 'bespoke' && product.portfolio.selectedFunds.length > 0) {
+          updatedPortfolio.selectedFunds = product.portfolio.selectedFunds;
+          product.portfolio.selectedFunds.forEach(fundId => {
+            updatedPortfolio.fundWeightings[fundId.toString()] = '';
+          });
+        }
+
         return {
           ...product,
-          portfolio: {
-            ...product.portfolio,
-            type,
-            templateId: undefined,
-            selectedFunds: []
-          }
+          portfolio: updatedPortfolio
         };
       }
       return product;
@@ -566,53 +660,76 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   };
 
   const validateForm = (): boolean => {
-    // Client must be selected
     if (!selectedClientId) {
-      setError('Please select a client');
+      showError('Please select a client');
       return false;
     }
+
     if (products.length === 0) {
       showError('Please add at least one product');
       return false;
     }
+
     for (const product of products) {
-      if (!product.product_name.trim()) {
-        showError('All products must have a name');
+      // Product name validation removed - will be auto-generated if empty
+      
+      if (!product.provider_id) {
+        showError(`Please select a provider for the product`);
         return false;
       }
-      if (product.provider_id === 0) {
-        showError(`Please select a provider for ${product.product_name}`);
+
+      if (!product.product_type) {
+        showError(`Please select a product type for the product`);
         return false;
       }
-      if (!product.product_type.trim()) {
-        showError(`Please select a product type for ${product.product_name}`);
-        return false;
-      }
+
       if (!product.portfolio.name.trim()) {
-        showError(`Please enter a portfolio name for product "${product.product_name}"`);
+        showError(`Please enter a portfolio name for the product`);
         return false;
       }
+
       if (product.portfolio.type === 'template') {
         if (!product.portfolio.templateId) {
-          showError(`Please select a template portfolio for product "${product.product_name}"`);
+          showError(`Please select a template portfolio for the product`);
           return false;
         }
         if (!product.portfolio.generationId) {
-          showError(`Please select a generation for the template portfolio in product "${product.product_name}"`);
+          showError(`Please select a generation for the template portfolio in the product`);
           return false;
         }
       } else {
         // Bespoke portfolio validations
         if (product.portfolio.selectedFunds.length === 0) {
-          showError(`Please select at least one fund for the portfolio in product "${product.product_name}"`);
+          showError(`Please select at least one fund for the portfolio in the product`);
           return false;
         }
-        if (!product.target_risk || product.target_risk < 1 || product.target_risk > 7) {
-          showError(`Please set a valid target risk level (1-7) for bespoke product "${product.product_name}"`);
+        
+        // Validate weightings for bespoke portfolios
+        const totalWeighting = calculateTotalFundWeighting(product);
+        if (Math.abs(totalWeighting - 100) > 0.01) { // Allow for small floating point differences
+          showError(`Fund weightings for the product must add up to 100%. Current total: ${totalWeighting.toFixed(1)}%`);
           return false;
+        }
+        
+        // Check that all funds have valid weightings
+        for (const fundId of product.portfolio.selectedFunds) {
+          const weighting = product.portfolio.fundWeightings[fundId.toString()];
+          const fund = funds.find(f => f.id === fundId);
+          
+          if (!weighting || weighting.trim() === '') {
+            showError(`Please enter a weighting for fund "${fund?.fund_name || 'Unknown'}" in the product`);
+            return false;
+          }
+          
+          const weightValue = parseFloat(weighting);
+          if (isNaN(weightValue) || weightValue <= 0 || weightValue > 100) {
+            showError(`Invalid weighting for fund "${fund?.fund_name || 'Unknown'}" in the product. Must be between 0.01 and 100.`);
+            return false;
+          }
         }
       }
     }
+
     return true;
   };
 
@@ -640,13 +757,16 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       for (const product of products) {
         let portfolioId: number | undefined;
 
+        // Generate product name if it's empty
+        const finalProductName = product.product_name.trim() || generateProductName(product);
+
         // First, create the portfolio if needed
         if (product.portfolio.type === 'template' && product.portfolio.templateId && product.portfolio.generationId) {
           // Create portfolio from template generation
           const templateResponse = await api.post('/portfolios/from_template', {
             template_id: product.portfolio.templateId,
             generation_id: product.portfolio.generationId, // Send the generation ID to the API
-            portfolio_name: product.portfolio.name,
+            portfolio_name: finalProductName,
             status: 'active',
             start_date: formattedStartDate
           });
@@ -655,7 +775,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         } else if (product.portfolio.type === 'bespoke') {
           // Create a bespoke portfolio
           const portfolioResponse = await api.post('/portfolios', {
-            portfolio_name: product.portfolio.name,
+            portfolio_name: finalProductName,
             status: 'active',
             start_date: formattedStartDate
           });
@@ -666,11 +786,15 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           if (portfolioId) {
             const fundPromises = product.portfolio.selectedFunds.map(async (fundId) => {
               try {
+                // Get the weighting for this fund
+                const weighting = product.portfolio.fundWeightings[fundId.toString()];
+                const weightingValue = weighting ? parseFloat(weighting) : 0;
+                
                 // Check the API schema - it might be expecting a different field naming or format
                 const fundData = {
                   portfolio_id: portfolioId,
                   available_funds_id: fundId, // Changed from fund_id to available_funds_id to match DB schema
-                  weighting: 1, // Try using 1 instead of 0
+                  weighting: weightingValue / 100, // Convert percentage to decimal (e.g., 50% -> 0.5)
                   status: 'active',
                   start_date: formattedStartDate // Add start date if required by API
                 };
@@ -700,16 +824,22 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         // Now, create client product with reference to the portfolio
         if (portfolioId) {
           try {
+            // Calculate target risk for bespoke portfolios
+            let targetRisk = null;
+            if (product.portfolio.type === 'bespoke') {
+              targetRisk = calculateTargetRiskFromFunds(product);
+            }
+            
             const clientProductResponse = await api.post('/client_products', {
               client_id: selectedClientId,
               provider_id: product.provider_id,
               product_type: product.product_type,
-              product_name: product.product_name,
+              product_name: finalProductName,
               portfolio_id: portfolioId,
               status: 'active',
               start_date: formattedStartDate,
               plan_number: product.plan_number || null,
-              target_risk: product.target_risk || null
+              target_risk: targetRisk
             });
             
             const createdProductId = clientProductResponse.data.id;
@@ -837,73 +967,6 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           </Radio.Group>
         </div>
 
-        {/* Target Risk Level - Only show for bespoke portfolios */}
-        {product.portfolio.type === 'bespoke' && (
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Target Risk Level <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id={`target_risk_${product.id}`}
-              value={targetRiskInputs[product.id] || ''}
-              onChange={(e) => {
-                const value = e.target.value;
-                
-                // Always update the input display value immediately
-                setTargetRiskInputs(prev => ({
-                  ...prev,
-                  [product.id]: value
-                }));
-                
-                // Only update product state if it's a valid number or empty
-                if (value === '') {
-                  handleProductChange(product.id, 'target_risk', undefined);
-                } else if (/^\d*\.?\d*$/.test(value) && !value.endsWith('.') && !isNaN(parseFloat(value))) {
-                  // Only update if it's a complete valid number
-                  const numValue = parseFloat(value);
-                  if (numValue >= 1 && numValue <= 7) {
-                    handleProductChange(product.id, 'target_risk', numValue);
-                  }
-                }
-              }}
-              className={`shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md transition-colors ${
-                targetRiskInputs[product.id] && (
-                  parseFloat(targetRiskInputs[product.id]) < 1 || 
-                  parseFloat(targetRiskInputs[product.id]) > 7 || 
-                  isNaN(parseFloat(targetRiskInputs[product.id]))
-                ) ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 
-                    targetRiskInputs[product.id] && !isNaN(parseFloat(targetRiskInputs[product.id])) && 
-                    parseFloat(targetRiskInputs[product.id]) >= 1 && parseFloat(targetRiskInputs[product.id]) <= 7 ?
-                    'border-green-300 focus:border-green-500 focus:ring-green-500' : ''
-              }`}
-              placeholder="e.g. 4.5"
-              disabled={isEitherLoading}
-            />
-            <div className="text-xs text-gray-500 mt-1 flex justify-between">
-              <span>1 = Very Low Risk, 7 = Very High Risk</span>
-              {targetRiskInputs[product.id] && (
-                <span className={`font-medium ${
-                  parseFloat(targetRiskInputs[product.id]) < 1 || 
-                  parseFloat(targetRiskInputs[product.id]) > 7 || 
-                  isNaN(parseFloat(targetRiskInputs[product.id]))
-                    ? 'text-red-600' 
-                    : 'text-green-600'
-                }`}>
-                  {isNaN(parseFloat(targetRiskInputs[product.id])) 
-                    ? 'Please enter numbers only'
-                    : parseFloat(targetRiskInputs[product.id]) < 1 
-                    ? 'Minimum: 1'
-                    : parseFloat(targetRiskInputs[product.id]) > 7 
-                    ? 'Maximum: 7'
-                    : '✓ Valid'
-                  }
-                </span>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Template Selection - Only show if template type is selected */}
         {product.portfolio.type === 'template' && (
           <div className="mb-4">
@@ -959,6 +1022,11 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Fund Name
                     </th>
+                    {product.portfolio.type === 'bespoke' && (
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Weighting (%)
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -969,12 +1037,52 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                         <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
                           {fund?.fund_name || 'Unknown Fund'}
                         </td>
+                        {product.portfolio.type === 'bespoke' && (
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                            <input
+                              type="text"
+                              value={product.portfolio.fundWeightings[fundId.toString()] || ''}
+                              onChange={(e) => handleWeightingChange(product.id, fundId, e.target.value)}
+                              className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                              placeholder="0.0"
+                            />
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
             </div>
+            
+            {/* Total Weighting Display for Bespoke Portfolios */}
+            {product.portfolio.type === 'bespoke' && (
+              <div className="mt-2 p-2 bg-gray-50 rounded-md">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-700">Total Weighting:</span>
+                  <span className={`text-sm font-bold ${
+                    Math.abs(calculateTotalFundWeighting(product) - 100) < 0.01 
+                      ? 'text-green-600' 
+                      : 'text-red-600'
+                  }`}>
+                    {calculateTotalFundWeighting(product).toFixed(1)}%
+                  </span>
+                </div>
+                {Math.abs(calculateTotalFundWeighting(product) - 100) > 0.01 && (
+                  <div className="text-xs text-red-600 mt-1">
+                    Weightings must add up to 100%
+                  </div>
+                )}
+                {product.portfolio.selectedFunds.length > 0 && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    Calculated Target Risk: {(() => {
+                      const risk = calculateTargetRiskFromFunds(product);
+                      return risk ? risk.toFixed(1) : 'N/A';
+                    })()}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -1100,34 +1208,6 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     // Show success message  
     showToastMessage(`Fund "${newFund.fund_name}" has been created and added to your product!`);
   };
-
-  // Sync target risk input states when products change - optimized to prevent excessive re-renders
-  useEffect(() => {
-    const newInputs: Record<string, string> = {};
-    let hasChanges = false;
-    
-    products.forEach(product => {
-      const currentInput = targetRiskInputs[product.id] || '';
-      let newValue = '';
-      
-      if (product.target_risk !== undefined) {
-        newValue = product.target_risk.toString();
-      }
-      
-      // Only update if there's actually a change and we're not currently typing
-      if (newValue !== currentInput && document.activeElement?.id !== `target_risk_${product.id}`) {
-        newInputs[product.id] = newValue;
-        hasChanges = true;
-      } else {
-        newInputs[product.id] = currentInput;
-      }
-    });
-    
-    // Only update state if there are actual changes
-    if (hasChanges) {
-      setTargetRiskInputs(prev => ({ ...prev, ...newInputs }));
-    }
-  }, [products.length]); // Only depend on products length, not content
 
   if (isLoading) {
     return (
@@ -1267,8 +1347,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                       >
                         {/* Product Header */}
                         <div className="flex justify-between items-center mb-4">
-                          <h3 className="text-lg font-medium">{product.product_name}</h3>
-
+                          <h3 className="text-lg font-medium">
+                            {product.product_name.trim() || generateProductName(product) || `Product ${products.indexOf(product) + 1}`}
+                          </h3>
                           <button
                             type="button"
                             onClick={() => handleRemoveProduct(product.id)}
@@ -1332,15 +1413,14 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                         {/* Product Name Field */}
                         <div className="mb-4">
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Product Name <span className="text-red-500">*</span>
+                            Product Name <span className="text-gray-400">(optional - will be auto-generated if empty)</span>
                           </label>
                           <input
                             type="text"
                             value={product.product_name}
                             onChange={(e) => handleProductChange(product.id, 'product_name', e.target.value)}
                             className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                            placeholder="Enter product name"
-                            required
+                            placeholder="Leave empty to auto-generate based on owners, provider, and type"
                           />
                         </div>
 
@@ -1379,6 +1459,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                 { value: 'Offshore Bond', label: 'Offshore Bond' },
                                 { value: 'Onshore Bond', label: 'Onshore Bond' },
                                 { value: 'Trust', label: 'Trust' },
+                                { value: 'Pension', label: 'Pension' },
                                 { value: 'Other', label: 'Other' },
                               ]}
                               value={product.product_type}

@@ -334,9 +334,11 @@ async def create_portfolio_fund(
         portfolio_fund_data = {
             "portfolio_id": portfolio_fund.portfolio_id,
             "available_funds_id": portfolio_fund.available_funds_id,
-            "weighting": to_serializable(0 if portfolio_fund.weighting is None else portfolio_fund.weighting),
-            "start_date": portfolio_fund.start_date.isoformat() if portfolio_fund.start_date else today,
-            "amount_invested": to_serializable(0 if portfolio_fund.amount_invested is None else portfolio_fund.amount_invested)
+            "target_weighting": to_serializable(0 if portfolio_fund.target_weighting is None else portfolio_fund.target_weighting),
+            "start_date": portfolio_fund.start_date.isoformat(),
+            "end_date": portfolio_fund.end_date.isoformat() if portfolio_fund.end_date else None,
+            "amount_invested": portfolio_fund.amount_invested,
+            "status": portfolio_fund.status
         }
         
         result = db.table("portfolio_funds").insert(portfolio_fund_data).execute()
@@ -1649,7 +1651,7 @@ async def get_aggregated_irr_history(
                 "name": available_fund.get("fund_name", "Unknown Fund"),
                 "risk_level": available_fund.get("risk_level", None),
                 "fund_type": available_fund.get("fund_type", None),
-                "weighting": portfolio_fund.get("weighting", 0),
+                "target_weighting": portfolio_fund.get("target_weighting", 0),
                 "start_date": portfolio_fund.get("start_date", None),
                 "status": portfolio_fund.get("status", "active"),
                 "available_fund": {

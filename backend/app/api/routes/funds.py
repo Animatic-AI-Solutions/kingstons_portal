@@ -294,7 +294,7 @@ async def get_fund_products_with_owners(
                 "product_type": product["product_type"],
                 "status": product["status"],
                 "portfolio_name": portfolio.get("portfolio_name", ""),
-                "weighting": portfolio_fund.get("weighting", 0),
+                "target_weighting": portfolio_fund.get("target_weighting", 0),
                 "start_date": product["start_date"],
                 "product_owner_name": owners[0]["name"] if owners else "No Owner"
             }
