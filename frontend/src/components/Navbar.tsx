@@ -121,8 +121,8 @@ const Navbar: React.FC = () => {
                   Definitions
                 </Link>
                 <Link 
-                  to="/reporting" 
-                  className={`px-2 py-6 text-sm ${isActive('/reporting') ? activeNavLinkStyle : inactiveNavLinkStyle}`}
+                  to="/analytics" 
+                  className={`px-2 py-6 text-sm ${isActive('/analytics') ? activeNavLinkStyle : inactiveNavLinkStyle}`}
                 >
                   Analytics
                 </Link>

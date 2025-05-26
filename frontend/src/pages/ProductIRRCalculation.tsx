@@ -655,7 +655,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
             product_id: accountResponse.data.id,
             status: portfolioFund.status || 'active',
             valuation_date: portfolioFund.valuation_date,
-            target_weighting: portfolioFund.weighting?.toString()
+            target_weighting: portfolioFund.target_weighting?.toString()
           };
           
           processedHoldings.push(holding);
@@ -1287,13 +1287,6 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-gray-900">Monthly Activities</h2>
               <div className="flex items-center"> {/* Container for buttons */}
-                {/* Added Recurring Investment Button */}
-                <button
-                  onClick={() => {}} // Non-functional
-                  className="mr-2 px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
-                >
-                  Recurring Investment
-                </button>
                 <button 
                   onClick={handleCalculateIRR}
                   disabled={isCalculatingIRR || !account?.portfolio_id}

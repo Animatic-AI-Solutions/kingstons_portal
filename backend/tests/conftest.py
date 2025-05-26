@@ -56,17 +56,13 @@ def mock_db():
     return db_mock
 
 @pytest.fixture
-def sample_portfolio_fund():
-    """Sample portfolio fund data for testing."""
+def sample_portfolio_fund(sample_portfolio, sample_fund):
     return {
-        "id": 1,
-        "portfolio_id": 1,
-        "available_funds_id": 1,
-        "weighting": 50.0,
-        "start_date": "2024-01-01",
-        "end_date": None,
-        "amount_invested": 10000.0,
-        "status": "active"
+        "portfolio_id": sample_portfolio["id"],
+        "available_funds_id": sample_fund["id"],
+        "target_weighting": 50.0,
+        "start_date": "2023-01-01",
+        "amount_invested": 1000.0
     }
 
 @pytest.fixture

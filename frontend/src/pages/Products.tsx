@@ -219,7 +219,7 @@ const Products: React.FC = () => {
     .filter(product => 
       templatePortfolioFilter.length === 0 ||
       (product.original_template_name && templatePortfolioFilter.includes(product.original_template_name)) ||
-      (templatePortfolioFilter.includes('Bespoke') && !product.original_template_name)
+      (templatePortfolioFilter.includes('Bespoke') && !product.original_template_id)
     )
     .sort((a, b) => {
       let aValue: any = a[sortField];
@@ -548,7 +548,7 @@ const Products: React.FC = () => {
                                 </div>
                               </td>
                               <td className="px-6 py-3 whitespace-nowrap">
-                                <div className="text-sm text-gray-600 font-sans">{product.original_template_name || 'Bespoke'}</div>
+                                <div className="text-sm text-gray-600 font-sans">{product.original_template_name || (product.original_template_id ? 'Template' : 'Bespoke')}</div>
                               </td>
                               <td className="px-6 py-3 whitespace-nowrap">
                                 {product.total_value !== undefined ? (
@@ -806,7 +806,7 @@ const Products: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-3 whitespace-nowrap">
-                          <div className="text-sm text-gray-600 font-sans">{product.original_template_name || 'Bespoke'}</div>
+                          <div className="text-sm text-gray-600 font-sans">{product.original_template_name || (product.original_template_id ? 'Template' : 'Bespoke')}</div>
                         </td>
                         <td className="px-6 py-3 whitespace-nowrap">
                           {product.total_value !== undefined ? (

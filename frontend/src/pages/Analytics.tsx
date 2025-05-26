@@ -100,6 +100,12 @@ const RefreshIcon = () => (
   </svg>
 );
 
+const FilterIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z" />
+  </svg>
+);
+
 // Metric Card Component
 const MetricCard: React.FC<{
   title: string;
@@ -136,7 +142,7 @@ const MetricCard: React.FC<{
   );
 };
 
-// Simple Chart Component
+// Simple Chart Component (placeholder for now)
 const SimpleChart: React.FC<{
   title: string;
   data: DistributionData[];
@@ -186,55 +192,48 @@ const PerformanceTable: React.FC<{
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
-      {data.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
-          <p>Performance data temporarily unavailable</p>
-          <p className="text-sm mt-2">Please try refreshing the page</p>
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 font-medium text-gray-700">Rank</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-700">Name</th>
-                {showType && <th className="text-left py-3 px-4 font-medium text-gray-700">Type</th>}
-                <th className="text-left py-3 px-4 font-medium text-gray-700">FUM</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-700">IRR</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.slice(0, 5).map((item, index) => (
-                <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
+      <div className="overflow-x-auto">
+        <table className="min-w-full">
+          <thead>
+            <tr className="border-b border-gray-200">
+              <th className="text-left py-3 px-4 font-medium text-gray-700">Rank</th>
+              <th className="text-left py-3 px-4 font-medium text-gray-700">Name</th>
+              {showType && <th className="text-left py-3 px-4 font-medium text-gray-700">Type</th>}
+              <th className="text-left py-3 px-4 font-medium text-gray-700">FUM</th>
+              <th className="text-left py-3 px-4 font-medium text-gray-700">IRR</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.slice(0, 5).map((item, index) => (
+              <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
+                <td className="py-3 px-4">
+                  <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center text-sm font-medium">
+                    {index + 1}
+                  </div>
+                </td>
+                <td className="py-3 px-4">
+                  <div className="font-medium text-gray-900 truncate max-w-48">{item.name}</div>
+                </td>
+                {showType && (
                   <td className="py-3 px-4">
-                    <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center text-sm font-medium">
-                      {index + 1}
-                    </div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="font-medium text-gray-900 truncate max-w-48">{item.name}</div>
-                  </td>
-                  {showType && (
-                    <td className="py-3 px-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 capitalize">
-                        {item.type}
-                      </span>
-                    </td>
-                  )}
-                  <td className="py-3 px-4 text-gray-900">
-                    £{item.fum.toLocaleString()}
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className={`font-medium ${item.irr >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {item.irr.toFixed(1)}%
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 capitalize">
+                      {item.type}
                     </span>
                   </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+                )}
+                <td className="py-3 px-4 text-gray-900">
+                  £{item.fum.toLocaleString()}
+                </td>
+                <td className="py-3 px-4">
+                  <span className={`font-medium ${item.irr >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {item.irr.toFixed(1)}%
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
@@ -280,8 +279,8 @@ const RiskAnalysis: React.FC<{ data: ClientRisk[] }> = ({ data }) => {
   );
 };
 
-// Main Reporting Component (now using Analytics design)
-const Reporting: React.FC = () => {
+// Main Analytics Component
+const Analytics: React.FC = () => {
   const { api } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -304,10 +303,20 @@ const Reporting: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch dashboard data first (most important)
-      const dashboardResponse = await api.get('/analytics/dashboard_all', {
-        params: { fund_limit: 10, provider_limit: 10, template_limit: 10 }
-      });
+      // Fetch all data in parallel
+      const [
+        dashboardResponse,
+        performanceResponse,
+        clientRisksResponse
+      ] = await Promise.all([
+        api.get('/analytics/dashboard_all', {
+          params: { fund_limit: 10, provider_limit: 10, template_limit: 10 }
+        }),
+        api.get('/analytics/performance_data', {
+          params: { entity_type: 'overview', sort_order: 'highest', limit: 10 }
+        }),
+        api.get('/analytics/client_risks')
+      ]);
 
       // Set dashboard metrics
       setMetrics(dashboardResponse.data.metrics);
@@ -315,19 +324,10 @@ const Reporting: React.FC = () => {
       setProviders(dashboardResponse.data.providers || []);
       setTemplates(dashboardResponse.data.templates || []);
 
-      // Try to fetch performance data, but don't fail if it errors
-      try {
-        const performanceResponse = await api.get('/analytics/performance_data', {
-          params: { entity_type: 'overview', sort_order: 'highest', limit: 10 }
-        });
-        setTopPerformers(performanceResponse.data.performanceData || []);
-      } catch (perfErr) {
-        console.warn('Performance data failed, continuing without it:', perfErr);
-        setTopPerformers([]);
-      }
+      // Set performance data
+      setTopPerformers(performanceResponse.data.performanceData || []);
 
-      // Fetch client risks
-      const clientRisksResponse = await api.get('/analytics/client_risks');
+      // Set client risks
       setClientRisks(clientRisksResponse.data || []);
 
       setLastUpdated(new Date());
@@ -516,4 +516,4 @@ const Reporting: React.FC = () => {
   );
 };
 
-export default Reporting; 
+export default Analytics; 

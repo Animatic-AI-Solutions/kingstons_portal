@@ -1463,8 +1463,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
   // Get class for cell
   const getCellClass = (fundId: number, month: string, activityType: string, isFirstColumn: boolean = false): string => {
-    // Base class for all cells - make more compact
-    let baseClass = "px-2 py-1 border box-border min-w-[90px] max-w-none h-10";
+    // Base class for all cells - remove fixed width constraints to allow full width usage
+    let baseClass = "px-2 py-1 border box-border w-full h-10";
     
     // Get the fund to check if it's the Previous Funds entry
     const fund = funds.find(f => f.id === fundId);
@@ -1577,6 +1577,12 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     let newFundIndex = fundIndex;
     let newActivityTypeIndex = activityTypeIndex;
     let newMonthIndex = monthIndex;
+    let navigateToTotals = false;
+    let totalsRowType = '';
+    
+    // Define the totals section structure
+    const totalsActivityTypes = ACTIVITY_TYPES.filter(at => at !== 'Current Value');
+    const totalsRows = ['header', ...totalsActivityTypes, 'Total Valuation', 'Overall Total'];
     
     switch (e.key) {
       case 'ArrowUp':
@@ -1590,12 +1596,16 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         break;
       case 'ArrowDown':
       case 'Enter': // Make Enter behave like Down Arrow
-        // Move down one activity type, or to the next fund's first activity
+        // Move down one activity type, or to the next fund's first activity, or to totals
         if (activityTypeIndex < ACTIVITY_TYPES.length - 1) {
           newActivityTypeIndex++;
         } else if (fundIndex < funds.length - 1) {
           newFundIndex++;
           newActivityTypeIndex = 0;
+        } else {
+          // We're at the last activity of the last fund, navigate to totals
+          navigateToTotals = true;
+          totalsRowType = totalsRows[1]; // First activity type in totals (skip header)
         }
         break;
       case 'ArrowLeft':
@@ -1630,7 +1640,25 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     if (newFundIndex >= funds.length) newFundIndex = funds.length - 1;
     
     // Focus the new cell if it's different
-    if (
+    if (navigateToTotals) {
+      // Navigate to totals section
+      setFocusedCell({
+        fundId: -1, // Special value to indicate totals section
+        activityType: totalsRowType,
+        monthIndex: newMonthIndex
+      });
+      
+      // Focus the totals cell
+      setTimeout(() => {
+        const totalsCell = document.getElementById(
+          `totals-cell-${totalsRowType}-${months[newMonthIndex]}`
+        );
+        if (totalsCell) {
+          totalsCell.focus();
+          totalsCell.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }, 0);
+    } else if (
       newFundIndex !== fundIndex ||
       newActivityTypeIndex !== activityTypeIndex ||
       newMonthIndex !== monthIndex
@@ -1656,6 +1684,103 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
               input.select();
             }
           }
+        }
+      }, 0);
+    }
+  };
+
+  // New function to handle keyboard navigation in totals section
+  const handleTotalsKeyDown = (
+    e: React.KeyboardEvent<HTMLTableCellElement>,
+    rowType: string,
+    monthIndex: number
+  ) => {
+    // Only handle arrow keys and Enter key
+    if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Tab'].includes(e.key)) {
+      return;
+    }
+    
+    // For Tab key, let the default behavior work
+    if (e.key === 'Tab') {
+      return;
+    }
+    
+    e.preventDefault();
+    
+    const totalsActivityTypes = ACTIVITY_TYPES.filter(at => at !== 'Current Value');
+    const totalsRows = ['header', ...totalsActivityTypes, 'Total Valuation', 'Overall Total'];
+    const currentRowIndex = totalsRows.indexOf(rowType);
+    
+    let newRowIndex = currentRowIndex;
+    let newMonthIndex = monthIndex;
+    let navigateToFunds = false;
+    
+    switch (e.key) {
+      case 'ArrowUp':
+        if (currentRowIndex > 1) { // Skip header row (index 0)
+          newRowIndex--;
+        } else if (currentRowIndex === 1) {
+          // Navigate back to the last fund's last activity
+          navigateToFunds = true;
+        }
+        break;
+      case 'ArrowDown':
+      case 'Enter':
+        if (currentRowIndex < totalsRows.length - 1) {
+          newRowIndex++;
+          // Skip header row
+          if (newRowIndex === 0) newRowIndex = 1;
+        }
+        break;
+      case 'ArrowLeft':
+        if (monthIndex > 0) {
+          newMonthIndex--;
+        }
+        break;
+      case 'ArrowRight':
+        if (monthIndex < months.length - 1) {
+          newMonthIndex++;
+        }
+        break;
+    }
+    
+    if (navigateToFunds) {
+      // Navigate back to the last active fund's last activity
+      const lastActiveFund = funds.filter(f => f.isActive !== false && !f.isInactiveBreakdown).pop();
+      if (lastActiveFund) {
+        setFocusedCell({
+          fundId: lastActiveFund.id,
+          activityType: ACTIVITY_TYPES[ACTIVITY_TYPES.length - 1],
+          monthIndex: newMonthIndex
+        });
+        
+        setTimeout(() => {
+          const cell = document.getElementById(
+            `cell-${lastActiveFund.id}-${months[newMonthIndex]}-${ACTIVITY_TYPES[ACTIVITY_TYPES.length - 1]}`
+          );
+          if (cell) {
+            const input = cell.querySelector('input');
+            if (input && !input.disabled) {
+              input.focus();
+            }
+          }
+        }, 0);
+      }
+    } else if (newRowIndex !== currentRowIndex || newMonthIndex !== monthIndex) {
+      const newRowType = totalsRows[newRowIndex];
+      setFocusedCell({
+        fundId: -1,
+        activityType: newRowType,
+        monthIndex: newMonthIndex
+      });
+      
+      setTimeout(() => {
+        const totalsCell = document.getElementById(
+          `totals-cell-${newRowType}-${months[newMonthIndex]}`
+        );
+        if (totalsCell) {
+          totalsCell.focus();
+          totalsCell.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
       }, 0);
     }
@@ -2066,13 +2191,13 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           </div>
         )}
         
-        <div className="overflow-x-auto border rounded-lg shadow-md max-w-full max-h-[80vh]" style={{ scrollBehavior: 'smooth' }}>
+        <div className="overflow-x-auto border rounded-lg shadow-md w-full max-h-[80vh]" style={{ scrollBehavior: 'smooth' }}>
           <div className="relative">
-            <table className="w-full divide-y divide-gray-200 table-auto relative">
+            <table className="w-full divide-y divide-gray-200 table-fixed relative">
               <colgroup>
-                <col className="w-48 sticky left-0 z-10" />
+                <col className="w-[20%] sticky left-0 z-10" />
                 {months.map((month, index) => (
-                  <col key={`col-${month}`} className="w-[90px]" />
+                  <col key={`col-${month}`} className={`w-[${80 / months.length}%]`} />
                 ))}
               </colgroup>
               <thead className="bg-blue-50 sticky top-0 z-20 shadow-lg">
@@ -2305,6 +2430,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                           }
                                         }
                                         handleCellValueChange(fund.id, month, activityType, value);
+
                                         e.target.style.width = (value.length + 1) + 'ch';
                                       }
                                   }}
@@ -2391,10 +2517,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                     outline: 'none',
                                     boxShadow: 'none',
                                     background: 'transparent',
-                                    padding: '0 2px',
-                                    width: (cellValue.length + 1) + 'ch',
-                                    minWidth: '7ch',
-                                    maxWidth: '10ch',
+                                    padding: '0 4px',
+                                    width: '100%',
                                     fontSize: '0.875rem',
                                     opacity: fund.isActive === false || fund.isInactiveBreakdown ? 0.7 : 1
                                   }}
@@ -2459,14 +2583,24 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       <td className="px-3 py-1 font-medium text-gray-500 sticky left-0 z-10 bg-white shadow-[5px_0_5px_-5px_rgba(0,0,0,0.1)]">
                         {formatActivityType(activityType)}
                       </td>
-                      {months.map(month => {
+                      {months.map((month, monthIndex) => {
                         const total = calculateActivityTypeTotal(activityType, month);
                         const formattedTotal = formatTotal(total);
                         
                         return (
                           <td 
-                            key={`totals-${activityType}-${month}`} 
-                            className="px-2 py-1 text-center h-10"
+                            key={`totals-${activityType}-${month}`}
+                            id={`totals-cell-${activityType}-${month}`}
+                            className="px-2 py-1 text-center h-10 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 focus:bg-blue-50 focus:z-20 relative"
+                            tabIndex={0}
+                            onKeyDown={(e) => handleTotalsKeyDown(e, activityType, monthIndex)}
+                            onFocus={() => {
+                              setFocusedCell({
+                                fundId: -1,
+                                activityType: activityType,
+                                monthIndex: monthIndex
+                              });
+                            }}
                           >
                             {formattedTotal}
                           </td>
@@ -2480,14 +2614,24 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                   <td className="px-3 py-1 font-medium text-blue-700 sticky left-0 z-10 bg-blue-50 shadow-[5px_0_5px_-5px_rgba(0,0,0,0.1)]">
                     Total Valuation
                   </td>
-                  {months.map(month => {
+                  {months.map((month, monthIndex) => {
                     const total = calculateActivityTypeTotal('Current Value', month);
                     const formattedTotal = formatTotal(total);
                     
                     return (
                       <td 
-                        key={`totals-valuation-${month}`} 
-                        className="px-2 py-1 text-center font-medium text-blue-700 h-10"
+                        key={`totals-valuation-${month}`}
+                        id={`totals-cell-Total Valuation-${month}`}
+                        className="px-2 py-1 text-center font-medium text-blue-700 h-10 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-600 focus:bg-blue-100 focus:z-20 relative"
+                        tabIndex={0}
+                        onKeyDown={(e) => handleTotalsKeyDown(e, 'Total Valuation', monthIndex)}
+                        onFocus={() => {
+                          setFocusedCell({
+                            fundId: -1,
+                            activityType: 'Total Valuation',
+                            monthIndex: monthIndex
+                          });
+                        }}
                       >
                         {formattedTotal}
                       </td>
@@ -2500,14 +2644,24 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                   <td className="px-3 py-1 font-semibold text-red-600 sticky left-0 z-10 bg-gray-100 shadow-[5px_0_5px_-5px_rgba(0,0,0,0.1)]">
                     Overall Total
                   </td>
-                  {months.map(month => {
+                  {months.map((month, monthIndex) => {
                     const total = calculateMonthTotal(month);
                     const formattedTotal = formatTotal(total);
                     
                     return (
                       <td 
-                        key={`grand-total-${month}`} 
-                        className="px-2 py-1 text-center font-semibold text-red-600 h-10"
+                        key={`grand-total-${month}`}
+                        id={`totals-cell-Overall Total-${month}`}
+                        className="px-2 py-1 text-center font-semibold text-red-600 h-10 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 focus:bg-blue-50 focus:z-20 relative"
+                        tabIndex={0}
+                        onKeyDown={(e) => handleTotalsKeyDown(e, 'Overall Total', monthIndex)}
+                        onFocus={() => {
+                          setFocusedCell({
+                            fundId: -1,
+                            activityType: 'Overall Total',
+                            monthIndex: monthIndex
+                          });
+                        }}
                       >
                         {formattedTotal}
                       </td>
