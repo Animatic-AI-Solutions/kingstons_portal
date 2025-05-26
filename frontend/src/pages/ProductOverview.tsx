@@ -75,6 +75,30 @@ interface Portfolio {
   status?: string;
 }
 
+// New interfaces for portfolio fund management
+interface Fund {
+  id: number;
+  fund_name: string;
+  isin_number: string;
+  risk_factor?: number;
+  status?: string;
+  fund_cost?: number;
+}
+
+interface PortfolioFund {
+  id: number;
+  portfolio_id: number;
+  available_funds_id: number;
+  weighting: number;
+  start_date: string;
+  end_date?: string;
+  amount_invested: number;
+  status: string;
+  fund_name?: string;
+  fund_isin?: string;
+  fund_risk?: number;
+}
+
 interface ProductOverviewProps {
   accountId?: string;
 }
@@ -119,6 +143,13 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   const [targetRiskValidation, setTargetRiskValidation] = useState<{isValid: boolean, message: string}>({isValid: true, message: ''});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Portfolio fund management state (simplified)
+  const [isEditingFunds, setIsEditingFunds] = useState(false);
+  const [isSavingFunds, setIsSavingFunds] = useState(false);
+  const [fundError, setFundError] = useState<string | null>(null);
+  const [fundSearchTerm, setFundSearchTerm] = useState('');
+  const [availableFunds, setAvailableFunds] = useState<Fund[]>([]);
 
   useEffect(() => {
     if (accountId) {
@@ -761,6 +792,195 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   // Memoize the weightings calculation
   const liveWeightings = useMemo(() => calculateLiveWeightings(holdings), [holdings]);
 
+  // Portfolio fund management functions (simplified)
+  const fetchAvailableFunds = async () => {
+    try {
+      const response = await api.get('/funds', { params: { status: 'active' } });
+      setAvailableFunds(response.data || []);
+    } catch (err: any) {
+      console.error('Error fetching available funds:', err);
+      setFundError('Failed to load available funds');
+    }
+  };
+
+  const handleAddFund = async (fundId: number, weighting: number) => {
+    try {
+      setIsSavingFunds(true);
+      setFundError(null);
+      
+      // Add fund to portfolio using the portfolio_funds endpoint
+      await api.post('/portfolio_funds', {
+        portfolio_id: account?.portfolio_id,
+        available_funds_id: fundId,
+        weighting: weighting,
+        start_date: new Date().toISOString().split('T')[0],
+        amount_invested: 0,
+        status: 'active'
+      });
+      
+      // Refresh the data
+      if (accountId) await fetchData(accountId);
+      setFundError(null);
+    } catch (err: any) {
+      console.error('Error adding fund:', err);
+      setFundError(err.response?.data?.message || err.response?.data?.detail || 'Failed to add fund');
+    } finally {
+      setIsSavingFunds(false);
+    }
+  };
+
+  const handleUpdateFundWeighting = async (fundId: number, newWeighting: number) => {
+    try {
+      setIsSavingFunds(true);
+      setFundError(null);
+      
+      // Find the portfolio fund record to update
+      const portfolioFund = holdings.find(h => h.fund_id === fundId);
+      if (!portfolioFund) {
+        throw new Error('Portfolio fund not found');
+      }
+      
+      await api.patch(`/portfolio_funds/${portfolioFund.id}`, {
+        weighting: newWeighting
+      });
+      
+      // Refresh the data
+      if (accountId) await fetchData(accountId);
+      setFundError(null);
+    } catch (err: any) {
+      console.error('Error updating fund weighting:', err);
+      setFundError(err.response?.data?.message || err.response?.data?.detail || 'Failed to update fund weighting');
+    } finally {
+      setIsSavingFunds(false);
+    }
+  };
+
+  const handleRemoveFund = async (fundId: number) => {
+    try {
+      setIsSavingFunds(true);
+      setFundError(null);
+      
+      // Find the portfolio fund record to soft delete
+      const portfolioFund = holdings.find(h => h.fund_id === fundId && h.status === 'active');
+      if (!portfolioFund) {
+        throw new Error('Active portfolio fund not found');
+      }
+      
+      // Soft delete by setting status to inactive and end_date to current date
+      await api.patch(`/portfolio_funds/${portfolioFund.id}`, {
+        status: 'inactive',
+        end_date: new Date().toISOString().split('T')[0] // Current date in YYYY-MM-DD format
+      });
+      
+      // Refresh the data
+      if (accountId) await fetchData(accountId);
+      setFundError(null);
+    } catch (err: any) {
+      console.error('Error removing fund:', err);
+      setFundError(err.response?.data?.message || err.response?.data?.detail || 'Failed to remove fund');
+    } finally {
+      setIsSavingFunds(false);
+    }
+  };
+
+  // Add function to reactivate a fund from previous funds
+  const handleReactivateFund = async (fundId: number) => {
+    try {
+      setIsSavingFunds(true);
+      setFundError(null);
+      
+      // Find the inactive portfolio fund record to reactivate
+      const portfolioFund = holdings.find(h => h.fund_id === fundId && h.status === 'inactive');
+      if (!portfolioFund) {
+        throw new Error('Inactive portfolio fund not found');
+      }
+      
+      // Reactivate by setting status to active and clearing end_date
+      await api.patch(`/portfolio_funds/${portfolioFund.id}`, {
+        status: 'active',
+        end_date: null,
+        weighting: 0 // Start with 0% weighting, user can adjust
+      });
+      
+      // Refresh the data
+      if (accountId) await fetchData(accountId);
+      setFundError(null);
+    } catch (err: any) {
+      console.error('Error reactivating fund:', err);
+      setFundError(err.response?.data?.message || err.response?.data?.detail || 'Failed to reactivate fund');
+    } finally {
+      setIsSavingFunds(false);
+    }
+  };
+
+  // Load available funds when editing starts
+  useEffect(() => {
+    if (isEditingFunds && availableFunds.length === 0) {
+      fetchAvailableFunds();
+    }
+  }, [isEditingFunds]);
+
+  // Filter available funds based on search term
+  const filteredAvailableFunds = useMemo(() => {
+    if (!fundSearchTerm) return availableFunds;
+    return availableFunds.filter(fund => 
+      fund.fund_name.toLowerCase().includes(fundSearchTerm.toLowerCase()) ||
+      fund.isin_number.toLowerCase().includes(fundSearchTerm.toLowerCase())
+    );
+  }, [availableFunds, fundSearchTerm]);
+
+  // Get funds that are not already in the portfolio (both active and inactive)
+  const fundsNotInPortfolio = useMemo(() => {
+    const currentFundIds = holdings.map(h => h.fund_id);
+    return filteredAvailableFunds.filter(fund => !currentFundIds.includes(fund.id));
+  }, [filteredAvailableFunds, holdings]);
+
+  // Calculate total weighting for validation - only count active funds
+  const getTotalWeighting = () => {
+    return holdings
+      .filter(h => !h.isVirtual && h.status === 'active') // Only count active funds
+      .reduce((sum, holding) => {
+        const weighting = parseFloat(holding.target_weighting || '0');
+        return sum + (isNaN(weighting) ? 0 : weighting);
+      }, 0);
+  };
+
+  // Save all fund weightings
+  const handleSaveFunds = async () => {
+    const totalWeighting = getTotalWeighting();
+    if (Math.abs(totalWeighting - 100) > 0.01) {
+      setFundError(`Total fund weightings must equal 100%. Current total: ${totalWeighting.toFixed(2)}%`);
+      return;
+    }
+
+    try {
+      setIsSavingFunds(true);
+      setFundError(null);
+      
+      // Update all active fund weightings only
+      const updatePromises = holdings
+        .filter(h => !h.isVirtual && h.fund_id && h.status === 'active')
+        .map(holding => {
+          const weighting = parseFloat(holding.target_weighting || '0');
+          return api.patch(`/portfolio_funds/${holding.id}`, {
+            weighting: weighting
+          });
+        });
+      
+      await Promise.all(updatePromises);
+      
+      // Refresh the data
+      if (accountId) await fetchData(accountId);
+      setIsEditingFunds(false);
+      setFundError(null);
+    } catch (err: any) {
+      console.error('Error saving fund weightings:', err);
+      setFundError(err.response?.data?.message || err.response?.data?.detail || 'Failed to save fund weightings');
+    } finally {
+      setIsSavingFunds(false);
+    }
+  };
+
   // Add function to handle account deletion
   const handleDeleteProduct = async () => {
     if (!accountId) return;
@@ -976,7 +1196,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           <h3 className="text-lg font-medium text-gray-900">Edit Product Details</h3>
           <button
             onClick={toggleEditMode}
-            className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
           >
             Cancel
           </button>
@@ -1377,128 +1597,454 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           </div>
         </div>
 
-        {/* Fund Summary Table */}
+        {/* Portfolio Fund Management - Only for Bespoke Portfolios */}
+        {account && !account.original_template_id && (
+          <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-6 mb-8">
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="flex-shrink-0">
+                  <svg className="h-8 w-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">Portfolio Fund Management</h3>
+                  <p className="text-sm text-gray-500">Add, remove, and adjust fund weightings for this bespoke portfolio</p>
+                </div>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  Bespoke Portfolio
+                </span>
+              </div>
+              
+              <div className="flex space-x-3">
+                {isEditingFunds ? (
+                  <>
+                    <button
+                      onClick={() => setIsEditingFunds(false)}
+                      disabled={isSavingFunds}
+                      className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                    >
+                      <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSaveFunds}
+                      disabled={isSavingFunds || Math.abs(getTotalWeighting() - 100) > 0.01}
+                      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSavingFunds ? (
+                        <>
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Save Changes
+                        </>
+                      )}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setIsEditingFunds(true)}
+                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit Portfolio Funds
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Error Display */}
+            {fundError && (
+              <div className="mb-6 rounded-md bg-red-50 p-4 border border-red-200">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-red-800">{fundError}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Weighting Progress Bar - Only show when editing */}
+            {isEditingFunds && (
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-sm font-medium text-gray-700">Total Portfolio Weighting</span>
+                  <span className={`text-sm font-semibold ${
+                    Math.abs(getTotalWeighting() - 100) < 0.01 ? 'text-green-600' : 
+                    getTotalWeighting() > 100 ? 'text-red-600' : 'text-orange-600'
+                  }`}>
+                    {getTotalWeighting().toFixed(2)}% / 100%
+                  </span>
+                </div>
+                
+                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                  <div 
+                    className={`h-3 rounded-full transition-all duration-300 ${
+                      Math.abs(getTotalWeighting() - 100) < 0.01 ? 'bg-green-500' : 
+                      getTotalWeighting() > 100 ? 'bg-red-500' : 'bg-orange-500'
+                    }`}
+                    style={{ width: `${Math.min(getTotalWeighting(), 100)}%` }}
+                  ></div>
+                </div>
+                
+                {Math.abs(getTotalWeighting() - 100) > 0.01 && (
+                  <p className="text-xs text-gray-600 mt-2">
+                    {getTotalWeighting() > 100 
+                      ? `Over-allocated by ${(getTotalWeighting() - 100).toFixed(2)}%` 
+                      : `Under-allocated by ${(100 - getTotalWeighting()).toFixed(2)}%`}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Current Portfolio Funds */}
         <div className="mb-8">
-          <div className="flex items-center mb-4">
-            <h3 className="text-lg font-semibold">Fund Summary</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-md font-semibold text-gray-900">Current Portfolio Funds</h4>
+                {!isEditingFunds && holdings.filter(h => !h.isVirtual && h.status === 'active').length > 0 && (
+                  <span className="text-sm text-gray-500">
+                    {holdings.filter(h => !h.isVirtual && h.status === 'active').length} active fund{holdings.filter(h => !h.isVirtual && h.status === 'active').length !== 1 ? 's' : ''}
+                  </span>
+                )}
           </div>
-          <div className="overflow-x-auto rounded-lg border border-gray-200">
-            <table className="min-w-full table-fixed divide-y divide-gray-200">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Fund Name</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">ISIN Number</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Valuation</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Weighting</th>
-                  {account.original_template_id && (
-                    <th className="px-6 py-3 text-left text-sm font-semibold">Target Weighting</th>
-                  )}
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Risk Factor</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">IRR</th>
+              
+              {holdings.filter(h => !h.isVirtual && h.status === 'active').length > 0 ? (
+                <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+                  <table className="min-w-full divide-y divide-gray-300">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Fund Name
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          ISIN
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Risk Factor
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Last Valuation
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actual Weighting %
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Target Weighting %
+                        </th>
+                        {isEditingFunds && (
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        )}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {holdings.length > 0 ? (
-                  holdings.map((holding) => (
-                    <tr key={holding.id} className={`hover:bg-indigo-50 transition-colors duration-150 ${holding.isVirtual ? "bg-gray-100 border-t border-gray-300" : ""}`}>
+                      {holdings.filter(h => !h.isVirtual && h.status === 'active').map((holding, index) => (
+                        <tr key={holding.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className={`text-sm ${holding.isVirtual ? "font-semibold text-blue-800" : "font-medium text-gray-900"}`}>
-                            {holding.fund_name}
-                            {holding.isVirtual && (
-                              <div className="text-xs text-gray-500 mt-1">
-                                (Inactive funds)
-                              </div>
-                            )}
-                          </div>
+                            <div className="text-sm font-medium text-gray-900 truncate">{holding.fund_name}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-500">{holding.isin_number || 'N/A'}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-500">
+                              {getFundRiskRating(holding.fund_id || 0, fundsData)}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">{holding.isin_number || 'N/A'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {holding.isVirtual ? (
-                          <span className="text-blue-800 font-medium">N/A</span>
-                        ) : (
-                          holding.market_value !== undefined && holding.market_value !== null
-                            ? (
+                            {holding.market_value !== undefined && holding.market_value !== null ? (
                               <div>
-                                <div>{formatCurrency(holding.market_value)}</div>
+                                <div className="font-medium">{formatCurrency(holding.market_value)}</div>
                                 {holding.valuation_date && (
                                   <div className="text-xs text-gray-500 mt-1">
                                     as of {formatDate(holding.valuation_date)}
                                   </div>
                                 )}
                               </div>
-                            ) 
-                            : 'N/A'
+                            ) : (
+                              <span className="text-gray-500">N/A</span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {holding.isVirtual ? (
-                          <span className="text-blue-800 font-medium">N/A</span>
-                        ) : (
-                          liveWeightings.has(holding.id)
-                            ? `${liveWeightings.get(holding.id)?.toFixed(1)}%` 
-                            : 'N/A'
+                            {liveWeightings.has(holding.id) ? (
+                              <div className="flex items-center">
+                                <span className="font-medium">
+                                  {liveWeightings.get(holding.id)?.toFixed(1)}%
+                                </span>
+                                {holding.target_weighting && (
+                                  <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${
+                                    Math.abs((liveWeightings.get(holding.id) || 0) - parseFloat(holding.target_weighting)) < 1
+                                      ? 'bg-green-100 text-green-800'
+                                      : Math.abs((liveWeightings.get(holding.id) || 0) - parseFloat(holding.target_weighting)) < 3
+                                      ? 'bg-yellow-100 text-yellow-800'
+                                      : 'bg-red-100 text-red-800'
+                                  }`}>
+                                    {(liveWeightings.get(holding.id) || 0) > parseFloat(holding.target_weighting) ? '+' : ''}
+                                    {((liveWeightings.get(holding.id) || 0) - parseFloat(holding.target_weighting)).toFixed(1)}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-gray-500">N/A</span>
                         )}
                       </td>
-                      {account.original_template_id && (
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          {holding.isVirtual ? (
-                            <span className="text-blue-800 font-medium">N/A</span>
-                          ) : (
-                            holding.template_weighting !== undefined 
-                              ? `${typeof holding.template_weighting === 'number' && holding.template_weighting <= 1 
-                                  ? (holding.template_weighting * 100).toFixed(1) 
-                                  : parseFloat(String(holding.template_weighting)).toFixed(1)}%` 
-                              : 'N/A'
-                          )}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {isEditingFunds ? (
+                              <div className="flex items-center space-x-2">
+                                <input
+                                  type="number"
+                                  value={holding.target_weighting || ''}
+                                  onChange={(e) => {
+                                    const newWeighting = parseFloat(e.target.value) || 0;
+                                    // Update the holding in the local state
+                                    setHoldings(prev => prev.map(h => 
+                                      h.id === holding.id 
+                                        ? { ...h, target_weighting: newWeighting.toString() }
+                                        : h
+                                    ));
+                                  }}
+                                  className="w-20 px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                  min="0"
+                                  max="100"
+                                  step="0.01"
+                                  placeholder="0.00"
+                                />
+                                <span className="text-sm text-gray-500">%</span>
+                              </div>
+                            ) : (
+                              <span className="text-sm font-medium text-gray-900">
+                                {holding.target_weighting ? parseFloat(holding.target_weighting).toFixed(2) : '0.00'}%
+                              </span>
+                            )}
+                          </td>
+                          {isEditingFunds && (
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <button
+                                onClick={() => handleRemoveFund(holding.fund_id || 0)}
+                                className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                              >
+                                <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                Remove
+                              </button>
                         </td>
                       )}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {holding.isVirtual ? (
-                          holding.riskFactor !== undefined ? (
-                            <span className="text-blue-800 font-medium">{holding.riskFactor.toFixed(1)}</span>
-                          ) : (
-                            <span className="text-blue-800 font-medium">N/A</span>
-                          )
-                        ) : (
-                          getFundRiskRating(holding.fund_id || 0, fundsData)
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {holding.isVirtual ? (
-                          <span className="text-blue-800 font-medium">N/A</span>
-                        ) : (
-                          holding.irr !== undefined && holding.irr !== null ? (
-                            <div>
-                              <span className={`${holding.irr >= 0 ? 'text-green-700' : 'text-red-700'} font-medium`}>
-                                {formatPercentage(holding.irr)}
-                              </span>
-                              {holding.irr_date && (
-                                <div className="text-xs text-gray-500 mt-1">
-                                  as of {formatDate(holding.irr_date)}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                  <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">No active funds in portfolio</h3>
+                  <p className="mt-1 text-sm text-gray-500">Get started by adding funds to this bespoke portfolio.</p>
+                  {!isEditingFunds && (
+                    <div className="mt-6">
+                      <button
+                        onClick={() => setIsEditingFunds(true)}
+                        className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      >
+                        <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Add Funds
+                      </button>
+                    </div>
+                  )}
                                 </div>
                               )}
                             </div>
-                          ) : (
-                            <span className="text-gray-500">N/A</span>
-                          )
+
+            {/* Previous Funds Section - Only show if there are inactive funds */}
+            {holdings.filter(h => !h.isVirtual && h.status === 'inactive').length > 0 && (
+              <div className="mb-8">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-2">
+                    <h4 className="text-md font-semibold text-gray-900">Previous Funds</h4>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      Inactive
+                    </span>
+                  </div>
+                  <span className="text-sm text-gray-500">
+                    {holdings.filter(h => !h.isVirtual && h.status === 'inactive').length} inactive fund{holdings.filter(h => !h.isVirtual && h.status === 'inactive').length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+                
+                <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+                  <table className="min-w-full divide-y divide-gray-300">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Fund Name
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          ISIN
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Risk Factor
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          End Date
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Last Target %
+                        </th>
+                        {isEditingFunds && (
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                          </th>
                         )}
-                      </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={account.original_template_id ? 7 : 6} className="px-6 py-4 text-center text-sm text-gray-500">
-                      No funds found in this product.
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {holdings.filter(h => !h.isVirtual && h.status === 'inactive').map((holding, index) => (
+                        <tr key={holding.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} opacity-75`}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-600 truncate">{holding.fund_name}</div>
                     </td>
-                  </tr>
-                )}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-500">{holding.isin_number || 'N/A'}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-500">
+                              {getFundRiskRating(holding.fund_id || 0, fundsData)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {holding.end_date ? formatDate(holding.end_date) : 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-gray-600">
+                              {holding.target_weighting ? parseFloat(holding.target_weighting).toFixed(2) : '0.00'}%
+                            </span>
+                          </td>
+                          {isEditingFunds && (
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <button
+                                onClick={() => handleReactivateFund(holding.fund_id || 0)}
+                                className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                              >
+                                <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                Reactivate
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
               </tbody>
             </table>
           </div>
         </div>
-      </div> {/* This is the closing div for the main content wrapper started after isEditMode && <ProductEditForm /> and before Product Info Grid. */}
+            )}
+
+            {/* Add Funds Section - Only show when editing */}
+            {isEditingFunds && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-md font-semibold text-gray-900">Add Funds to Portfolio</h4>
+                  <span className="text-sm text-gray-500">{fundsNotInPortfolio.length} available funds</span>
+                </div>
+                
+                {/* Search Input */}
+                <div className="mb-4">
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Search funds by name or ISIN..."
+                      value={fundSearchTerm}
+                      onChange={(e) => setFundSearchTerm(e.target.value)}
+                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Available Funds List */}
+                <div className="max-h-80 overflow-y-auto border border-gray-200 rounded-lg">
+                  {fundsNotInPortfolio.length > 0 ? (
+                    fundsNotInPortfolio.map((fund, index) => (
+                      <div
+                        key={fund.id}
+                        className={`p-4 border-b border-gray-100 last:border-b-0 ${
+                          index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                        } hover:bg-indigo-50 transition-colors duration-150`}
+                      >
+                        <div className="flex justify-between items-center">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-3">
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-gray-900 truncate">{fund.fund_name}</p>
+                                <p className="text-sm text-gray-500">{fund.isin_number}</p>
+                              </div>
+                              {fund.risk_factor && (
+                                <div className="flex-shrink-0">
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    Risk: {fund.risk_factor}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="ml-4 flex-shrink-0">
+                            <button
+                              onClick={() => handleAddFund(fund.id, 0)}
+                              className="inline-flex items-center px-3 py-2 border border-indigo-300 text-sm font-medium rounded-md text-indigo-700 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            >
+                              <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                              </svg>
+                              Add Fund
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-8 text-center">
+                      <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      <h3 className="mt-2 text-sm font-medium text-gray-900">No funds found</h3>
+                      <p className="mt-1 text-sm text-gray-500">
+                        {fundSearchTerm ? 'Try adjusting your search terms.' : 'All available funds are already in the portfolio.'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </>
   );
 };
