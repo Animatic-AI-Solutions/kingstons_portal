@@ -465,6 +465,23 @@ export const getProductIRR = (productId: number) => {
 };
 
 /**
+ * Calculates standardized IRR for multiple portfolio funds using the new standardized endpoint
+ * @param {Object} params - IRR calculation parameters
+ * @param {number[]} params.portfolioFundIds - Array of portfolio fund IDs
+ * @param {string} params.irrDate - Date for the IRR calculation (YYYY-MM-DD format)
+ * @returns {Promise} - API response with standardized IRR calculation
+ */
+export const calculateStandardizedMultipleFundsIRR = (params: {
+  portfolioFundIds: number[];
+  irrDate?: string;
+}) => {
+  return api.post('portfolio_funds/multiple/irr', {
+    portfolio_fund_ids: params.portfolioFundIds,
+    irr_date: params.irrDate || null
+  });
+};
+
+/**
  * FUND API ENDPOINTS
  */
 

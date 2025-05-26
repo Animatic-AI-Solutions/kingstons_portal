@@ -2448,3 +2448,257 @@ async def recalculate_fund_irr_for_date(
     except Exception as e:
         logger.error(f"Error recalculating IRR for fund {portfolio_fund_id}, date {valuation_date}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error recalculating IRR: {str(e)}")
+
+# ==================== NEW STANDARDIZED IRR ENDPOINTS ====================
+
+@router.post("/portfolio_funds/multiple/irr", response_model=dict)
+async def calculate_multiple_portfolio_funds_irr(
+    portfolio_fund_ids: List[int] = Body(..., description="List of portfolio fund IDs to include in IRR calculation"),
+    irr_date: Optional[date] = Body(None, description="Date for IRR calculation (defaults to latest valuation date)"),
+    db = Depends(get_db)
+):
+    """
+    Calculate aggregated IRR for multiple portfolio funds using Excel-style monthly aggregation.
+    
+    This endpoint:
+    1. Fetches the latest valuations for each fund (or valuations as of irr_date if provided)
+    2. Aggregates all cash flows by month
+    3. Calculates IRR using the Excel-style method
+    
+    Args:
+        portfolio_fund_ids: List of portfolio fund IDs to include
+        irr_date: Optional date for IRR calculation. If not provided, uses latest valuation date
+        
+    Returns:
+        Dictionary containing IRR calculation results
+    """
+    try:
+        logger.info(f"Calculating aggregated IRR for {len(portfolio_fund_ids)} portfolio funds")
+        
+        # If no IRR date provided, find the latest valuation date across all funds
+        if irr_date is None:
+            logger.info("No IRR date provided, finding latest valuation date")
+            latest_valuations_response = db.table("fund_valuations").select("valuation_date").in_("portfolio_fund_id", portfolio_fund_ids).order("valuation_date", desc=True).limit(1).execute()
+            
+            if latest_valuations_response.data:
+                irr_date = datetime.strptime(latest_valuations_response.data[0]["valuation_date"], "%Y-%m-%d").date()
+                logger.info(f"Using latest valuation date: {irr_date}")
+            else:
+                raise HTTPException(status_code=404, detail="No valuations found for the provided portfolio funds")
+        
+        logger.info(f"IRR calculation date: {irr_date}")
+        
+        # Fetch valuations for each fund as of the IRR date
+        fund_valuations = {}
+        for fund_id in portfolio_fund_ids:
+            valuation_response = db.table("fund_valuations").select("value").eq("portfolio_fund_id", fund_id).lte("valuation_date", irr_date.isoformat()).order("valuation_date", desc=True).limit(1).execute()
+            
+            if valuation_response.data:
+                fund_valuations[fund_id] = float(valuation_response.data[0]["value"])
+            else:
+                logger.warning(f"No valuation found for fund {fund_id} as of {irr_date}")
+                fund_valuations[fund_id] = 0.0
+        
+        logger.info(f"Fund valuations: {fund_valuations}")
+        
+        # Verify all portfolio funds exist
+        funds_response = db.table("portfolio_funds").select("id").in_("id", portfolio_fund_ids).execute()
+        found_fund_ids = [fund["id"] for fund in funds_response.data]
+        
+        if len(found_fund_ids) != len(portfolio_fund_ids):
+            missing_ids = set(portfolio_fund_ids) - set(found_fund_ids)
+            raise HTTPException(status_code=404, detail=f"Portfolio funds not found: {missing_ids}")
+        
+        # Fetch all activity logs for these funds up to the IRR date
+        activities_response = db.table("holding_activity_log").select("*").in_("portfolio_fund_id", portfolio_fund_ids).lte("activity_timestamp", irr_date.isoformat()).order("activity_timestamp").execute()
+        
+        activities = activities_response.data
+        logger.info(f"Found {len(activities)} activities up to {irr_date}")
+        
+        # Aggregate cash flows by month
+        cash_flows = {}
+        
+        for activity in activities:
+            activity_date = datetime.fromisoformat(activity["activity_timestamp"].replace('Z', '+00:00')).date()
+            month_key = activity_date.replace(day=1)
+            
+            if month_key not in cash_flows:
+                cash_flows[month_key] = 0.0
+            
+            # Apply sign conventions based on activity type
+            amount = float(activity["amount"])
+            activity_type = activity["activity_type"]
+            
+            if activity_type in ["Investment", "Transfer In", "Contribution"]:
+                cash_flows[month_key] -= amount  # Negative for investments
+            elif activity_type in ["Withdrawal", "Transfer Out", "Distribution"]:
+                cash_flows[month_key] += amount  # Positive for withdrawals
+            elif activity_type in ["Fee", "Management Fee", "Admin Fee"]:
+                cash_flows[month_key] += amount  # Positive for fees (money out)
+            elif activity_type in ["Dividend", "Interest", "Capital Gain"]:
+                cash_flows[month_key] -= amount  # Negative for reinvested gains
+            else:
+                logger.warning(f"Unknown activity type: {activity_type}, treating as neutral")
+        
+        # Add final valuations at the IRR date
+        irr_month_key = irr_date.replace(day=1)
+        total_valuation = sum(fund_valuations.values())
+        
+        if irr_month_key not in cash_flows:
+            cash_flows[irr_month_key] = 0.0
+        cash_flows[irr_month_key] += total_valuation  # Positive for final value
+        
+        logger.info(f"Aggregated cash flows: {len(cash_flows)} flows from {min(cash_flows.keys())} to {max(cash_flows.keys())}")
+        logger.info(f"Total valuation: {total_valuation}")
+        
+        # Convert to sorted lists for IRR calculation
+        sorted_months = sorted(cash_flows.keys())
+        amounts = [cash_flows[month] for month in sorted_months]
+        dates = [month.strftime("%Y-%m-%dT00:00:00") for month in sorted_months]
+        
+        logger.info(f"IRR calculation input - dates: {dates}")
+        logger.info(f"IRR calculation input - amounts: {amounts}")
+        
+        # Calculate IRR using Excel-style method
+        irr_result = calculate_excel_style_irr(dates, amounts)
+        
+        return {
+            "success": True,
+            "irr_percentage": round(irr_result * 100, 2),
+            "irr_decimal": irr_result,
+            "calculation_date": irr_date.isoformat(),
+            "portfolio_fund_ids": portfolio_fund_ids,
+            "total_valuation": total_valuation,
+            "fund_valuations": fund_valuations,
+            "cash_flows_count": len(cash_flows),
+            "period_start": min(cash_flows.keys()).isoformat(),
+            "period_end": max(cash_flows.keys()).isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error calculating multiple portfolio funds IRR: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to calculate IRR: {str(e)}")
+
+
+@router.post("/portfolio_funds/{portfolio_fund_id}/irr", response_model=dict)
+async def calculate_single_portfolio_fund_irr(
+    portfolio_fund_id: int,
+    irr_date: Optional[date] = Body(None, description="Date for IRR calculation (defaults to latest valuation date)"),
+    db = Depends(get_db)
+):
+    """
+    Calculate IRR for a single portfolio fund using Excel-style monthly aggregation.
+    
+    This endpoint:
+    1. Fetches the latest valuation for the fund (or valuation as of irr_date if provided)
+    2. Aggregates all cash flows by month
+    3. Calculates IRR using the Excel-style method
+    
+    Args:
+        portfolio_fund_id: ID of the portfolio fund
+        irr_date: Optional date for IRR calculation. If not provided, uses latest valuation date
+        
+    Returns:
+        Dictionary containing IRR calculation results
+    """
+    try:
+        logger.info(f"Calculating IRR for portfolio fund {portfolio_fund_id}")
+        
+        # Verify portfolio fund exists
+        fund_response = db.table("portfolio_funds").select("id").eq("id", portfolio_fund_id).execute()
+        if not fund_response.data:
+            raise HTTPException(status_code=404, detail=f"Portfolio fund {portfolio_fund_id} not found")
+        
+        # If no IRR date provided, find the latest valuation date for this fund
+        if irr_date is None:
+            logger.info("No IRR date provided, finding latest valuation date")
+            latest_valuation_response = db.table("fund_valuations").select("valuation_date").eq("portfolio_fund_id", portfolio_fund_id).order("valuation_date", desc=True).limit(1).execute()
+            
+            if latest_valuation_response.data:
+                irr_date = datetime.strptime(latest_valuation_response.data[0]["valuation_date"], "%Y-%m-%d").date()
+                logger.info(f"Using latest valuation date: {irr_date}")
+            else:
+                raise HTTPException(status_code=404, detail=f"No valuations found for portfolio fund {portfolio_fund_id}")
+        
+        logger.info(f"IRR calculation date: {irr_date}")
+        
+        # Fetch valuation for the fund as of the IRR date
+        valuation_response = db.table("fund_valuations").select("value").eq("portfolio_fund_id", portfolio_fund_id).lte("valuation_date", irr_date.isoformat()).order("valuation_date", desc=True).limit(1).execute()
+        
+        if not valuation_response.data:
+            raise HTTPException(status_code=404, detail=f"No valuation found for portfolio fund {portfolio_fund_id} as of {irr_date}")
+        
+        valuation_amount = float(valuation_response.data[0]["value"])
+        logger.info(f"Fund valuation: {valuation_amount}")
+        
+        # Fetch all activity logs for this fund up to the IRR date
+        activities_response = db.table("holding_activity_log").select("*").eq("portfolio_fund_id", portfolio_fund_id).lte("activity_timestamp", irr_date.isoformat()).order("activity_timestamp").execute()
+        
+        activities = activities_response.data
+        logger.info(f"Found {len(activities)} activities up to {irr_date}")
+        
+        # Aggregate cash flows by month
+        cash_flows = {}
+        
+        for activity in activities:
+            activity_date = datetime.fromisoformat(activity["activity_timestamp"].replace('Z', '+00:00')).date()
+            month_key = activity_date.replace(day=1)
+            
+            if month_key not in cash_flows:
+                cash_flows[month_key] = 0.0
+            
+            # Apply sign conventions based on activity type
+            amount = float(activity["amount"])
+            activity_type = activity["activity_type"]
+            
+            if activity_type in ["Investment", "Transfer In", "Contribution"]:
+                cash_flows[month_key] -= amount  # Negative for investments
+            elif activity_type in ["Withdrawal", "Transfer Out", "Distribution"]:
+                cash_flows[month_key] += amount  # Positive for withdrawals
+            elif activity_type in ["Fee", "Management Fee", "Admin Fee"]:
+                cash_flows[month_key] += amount  # Positive for fees (money out)
+            elif activity_type in ["Dividend", "Interest", "Capital Gain"]:
+                cash_flows[month_key] -= amount  # Negative for reinvested gains
+            else:
+                logger.warning(f"Unknown activity type: {activity_type}, treating as neutral")
+        
+        # Add final valuation at the IRR date
+        irr_month_key = irr_date.replace(day=1)
+        if irr_month_key not in cash_flows:
+            cash_flows[irr_month_key] = 0.0
+        cash_flows[irr_month_key] += valuation_amount  # Positive for final value
+        
+        logger.info(f"Aggregated cash flows: {len(cash_flows)} flows from {min(cash_flows.keys())} to {max(cash_flows.keys())}")
+        
+        # Convert to sorted lists for IRR calculation
+        sorted_months = sorted(cash_flows.keys())
+        amounts = [cash_flows[month] for month in sorted_months]
+        dates = [month.strftime("%Y-%m-%dT00:00:00") for month in sorted_months]
+        
+        logger.info(f"IRR calculation input - dates: {dates}")
+        logger.info(f"IRR calculation input - amounts: {amounts}")
+        
+        # Calculate IRR using Excel-style method
+        irr_result = calculate_excel_style_irr(dates, amounts)
+        
+        return {
+            "success": True,
+            "irr_percentage": round(irr_result * 100, 2),
+            "irr_decimal": irr_result,
+            "calculation_date": irr_date.isoformat(),
+            "portfolio_fund_id": portfolio_fund_id,
+            "valuation_amount": valuation_amount,
+            "cash_flows_count": len(cash_flows),
+            "period_start": min(cash_flows.keys()).isoformat(),
+            "period_end": max(cash_flows.keys()).isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error calculating portfolio fund IRR: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to calculate IRR: {str(e)}")
+
+# ==================== END NEW STANDARDIZED IRR ENDPOINTS ====================

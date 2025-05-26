@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getProductFUM, getProductIRR } from '../services/api';
+import { getProductFUM, getProductIRR, calculateStandardizedMultipleFundsIRR } from '../services/api';
 
 // Basic interfaces for type safety
 interface Account {
@@ -219,8 +219,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       setProductOwners(completeData.product_owners || []);
       console.log('Product owners loaded:', completeData.product_owners?.length || 0);
       
-      // Fetch portfolio summary
-      await fetchPortfolioSummary(accountId);
+      // Fetch portfolio summary after account data is loaded
+      await fetchPortfolioSummary(accountId, completeData);
       
       // Set fund data map
       const fundsMap = new Map<number, any>();
@@ -421,22 +421,94 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     }
   };
 
-  const fetchPortfolioSummary = async (productId: string) => {
+  const fetchPortfolioSummary = async (productId: string, completeData: any) => {
     try {
       setIsLoadingPortfolioSummary(true);
       console.log('Fetching portfolio summary for product:', productId);
       
-      // Fetch FUM and IRR data in parallel
-      const [fumResponse, irrResponse] = await Promise.all([
-        getProductFUM(parseInt(productId)),
-        getProductIRR(parseInt(productId))
-      ]);
-      
+      // Fetch FUM first
+      const fumResponse = await getProductFUM(parseInt(productId));
       console.log('FUM response:', fumResponse.data);
-      console.log('IRR response:', irrResponse.data);
-      
       setPortfolioTotalValue(fumResponse.data.fum || 0);
-      setPortfolioIRR(irrResponse.data.irr || 0);
+      
+      // Get portfolio funds for IRR calculation from completeData
+      if (completeData.portfolio_funds && completeData.portfolio_funds.length > 0) {
+        try {
+          const portfolioFunds = completeData.portfolio_funds;
+          console.log('Portfolio funds for IRR calculation:', portfolioFunds);
+          
+          // Get the oldest valuation date from the portfolio funds to use as IRR calculation date
+          let oldestValuationDate: string | null = null;
+          
+          for (const fund of portfolioFunds) {
+            try {
+              const valuationResponse = await api.get(`/fund_valuations?portfolio_fund_id=${fund.id}&order=valuation_date.desc&limit=1`);
+              const valuations = valuationResponse.data || [];
+              
+              if (valuations.length > 0) {
+                const valuationDate = valuations[0].valuation_date;
+                console.log(`Fund ${fund.id} latest valuation date: ${valuationDate}`);
+                
+                // Track the oldest valuation date to use as IRR calculation date
+                if (!oldestValuationDate || new Date(valuationDate) < new Date(oldestValuationDate)) {
+                  oldestValuationDate = valuationDate;
+                }
+              }
+            } catch (err) {
+              console.warn(`Could not get valuation for fund ${fund.id}:`, err);
+            }
+          }
+          
+          console.log('Using IRR calculation date:', oldestValuationDate);
+          
+          // Only calculate IRR if we have a valid date
+          if (oldestValuationDate) {
+            const portfolioFundIds = portfolioFunds.map((pf: any) => pf.id);
+            
+            console.log('Calling simplified standardized IRR endpoint with:', {
+              portfolioFundIds,
+              irrDate: oldestValuationDate
+            });
+            
+            // Call the new simplified standardized IRR endpoint
+            const irrResponse = await calculateStandardizedMultipleFundsIRR({
+              portfolioFundIds,
+              irrDate: oldestValuationDate
+            });
+            
+            console.log('Standardized IRR response:', irrResponse.data);
+            
+            // The response should already be in percentage format
+            const irrPercentage = irrResponse.data.irr_percentage;
+            setPortfolioIRR(irrPercentage);
+          } else {
+            console.warn('No valuation dates available for IRR calculation');
+            setPortfolioIRR(null);
+          }
+        } catch (irrErr) {
+          console.error('Error calculating standardized IRR:', irrErr);
+          // Fallback to old IRR endpoint
+          try {
+            const irrResponse = await getProductIRR(parseInt(productId));
+            console.log('Fallback IRR response:', irrResponse.data);
+            setPortfolioIRR(irrResponse.data.irr || 0);
+          } catch (fallbackErr) {
+            console.error('Fallback IRR calculation also failed:', fallbackErr);
+            setPortfolioIRR(null);
+          }
+        }
+      } else {
+        console.warn('No portfolio funds available for standardized IRR calculation, using fallback');
+        // Fallback to old IRR endpoint
+        try {
+          const irrResponse = await getProductIRR(parseInt(productId));
+          console.log('Fallback IRR response:', irrResponse.data);
+          setPortfolioIRR(irrResponse.data.irr || 0);
+        } catch (fallbackErr) {
+          console.error('Fallback IRR calculation failed:', fallbackErr);
+          setPortfolioIRR(null);
+        }
+      }
       
       setIsLoadingPortfolioSummary(false);
     } catch (err: any) {
@@ -1106,6 +1178,78 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         </div>
       </div>
     );
+  };
+
+  // Toggle edit mode and populate form data
+  const toggleEditMode = () => {
+    if (!isEditMode && account) {
+      // Entering edit mode - populate form with current data
+      setEditFormData({
+        product_name: account.product_name || '',
+        provider_id: account.provider_id?.toString() || '',
+        portfolio_id: account.portfolio_id?.toString() || '',
+        product_type: account.product_type || '',
+        target_risk: account.target_risk?.toString() || ''
+      });
+    } else {
+      // Exiting edit mode - clear any errors
+      setFormError(null);
+    }
+    setIsEditMode(!isEditMode);
+  };
+
+  // Handle form input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!accountId) return;
+
+    setIsSubmitting(true);
+    setFormError(null);
+
+    try {
+      const updateData: any = {
+        product_name: editFormData.product_name,
+        product_type: editFormData.product_type || null
+      };
+
+      // Only include provider_id if a value is selected
+      if (editFormData.provider_id) {
+        updateData.provider_id = parseInt(editFormData.provider_id);
+      }
+
+      // Only include portfolio_id if a value is selected
+      if (editFormData.portfolio_id) {
+        updateData.portfolio_id = parseInt(editFormData.portfolio_id);
+      }
+
+      // Only include target_risk if a value is provided
+      if (editFormData.target_risk) {
+        updateData.target_risk = parseFloat(editFormData.target_risk);
+      }
+
+      await api.patch(`/api/client_products/${accountId}`, updateData);
+      
+      // Refresh the data
+      await fetchData(accountId);
+      
+      // Exit edit mode
+      setIsEditMode(false);
+      setFormError(null);
+    } catch (err: any) {
+      console.error('Error updating product:', err);
+      setFormError(err.response?.data?.message || err.response?.data?.detail || 'Failed to update product');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isLoading) {
