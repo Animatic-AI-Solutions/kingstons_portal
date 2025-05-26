@@ -1278,21 +1278,21 @@ async def get_portfolio_template_distribution(
     What it does: Returns the distribution of portfolio templates based on the total current market value (FUM) they manage.
     Why it's needed: Provides data for the portfolio template distribution pie chart on the dashboard.
     How it works: 
-        1. Fetches all portfolio templates (available_portfolios)
-        2. For each template, finds all portfolios linked to it via original_template_id
+        1. Fetches all template portfolio generations
+        2. For each generation, finds all portfolios linked to it via template_generation_id
         3. For each portfolio, calculates the total current market value across all funds using latest valuations
         4. Only falls back to amount_invested if no valuations exist (and logs this clearly)
-        5. Returns portfolio templates sorted by total current market value (descending)
-    Expected output: A list of portfolio templates with their names and total current market value
+        5. Returns portfolio template generations sorted by total current market value (descending)
+    Expected output: A list of portfolio template generations with their names and total current market value
     """
     try:
         logger.info(f"Fetching portfolio template distribution data with limit: {limit}")
         
-        # Get all portfolio templates
-        templates_result = db.table("available_portfolios").select("id,name").execute()
+        # Get all template portfolio generations
+        generations_result = db.table("template_portfolio_generations").select("id,generation_name").execute()
         
-        if not templates_result.data:
-            logger.warning("No portfolio templates found in the database")
+        if not generations_result.data:
+            logger.warning("No template portfolio generations found in the database")
             return {"templates": []}
         
         # Add a category for portfolios without a template (bespoke)
@@ -1308,10 +1308,10 @@ async def get_portfolio_template_distribution(
         valuations_used = 0
         amount_invested_fallbacks = 0
         
-        # For each template, calculate total current market value (FUM)
-        for template in templates_result.data:
-            # Find all portfolios that use this template
-            portfolios_result = db.table("portfolios").select("id").eq("original_template_id", template["id"]).execute()
+        # For each template generation, calculate total current market value (FUM)
+        for generation in generations_result.data:
+            # Find all portfolios that use this template generation
+            portfolios_result = db.table("portfolios").select("id").eq("template_generation_id", generation["id"]).execute()
             
             total_value = 0
             template_has_valuations = False
@@ -1336,18 +1336,18 @@ async def get_portfolio_template_distribution(
                             amount_invested_fallbacks += 1
                             logger.debug(f"No valuation found for portfolio_fund {pf['id']}, using amount_invested: {pf['amount_invested']}")
             
-            # Only include templates with values > 0
+            # Only include template generations with values > 0
             if total_value > 0:
                 template_data.append({
-                    "id": str(template["id"]),
-                    "name": template["name"],
+                    "id": str(generation["id"]),
+                    "name": generation["generation_name"],
                     "amount": total_value,
                     "valuation_source": "latest_valuation" if template_has_valuations else "amount_invested"
                 })
         
         # Now handle portfolios without a template (bespoke)
-        # Find all portfolios with null original_template_id
-        bespoke_portfolios_result = db.table("portfolios").select("id").is_("original_template_id", "null").execute()
+        # Find all portfolios with null template_generation_id
+        bespoke_portfolios_result = db.table("portfolios").select("id").is_("template_generation_id", "null").execute()
         
         bespoke_total = 0
         bespoke_has_valuations = False
@@ -1431,8 +1431,8 @@ async def get_dashboard_all_data(
         # 3. Get ALL reference data in parallel batch queries
         funds_task = db.table("available_funds").select("id, fund_name").execute()
         providers_task = db.table("available_providers").select("id, name").execute()
-        portfolios_task = db.table("portfolios").select("id, original_template_id").execute()
-        templates_task = db.table("available_portfolios").select("id, name").execute()
+        portfolios_task = db.table("portfolios").select("id, template_generation_id").execute()
+        templates_task = db.table("template_portfolio_generations").select("id, generation_name").execute()
         client_products_task = db.table("client_products").select("id, portfolio_id, provider_id, status").eq("status", "active").execute()
         
         # Execute queries in parallel
@@ -1452,8 +1452,8 @@ async def get_dashboard_all_data(
         # Create lookup dictionaries for O(1) access
         funds_lookup = {f["id"]: f["fund_name"] for f in funds_result.data} if funds_result.data else {}
         providers_lookup = {p["id"]: p["name"] for p in providers_result.data} if providers_result.data else {}
-        templates_lookup = {t["id"]: t["name"] for t in templates_result.data} if templates_result.data else {}
-        portfolios_lookup = {p["id"]: p["original_template_id"] for p in portfolios_result.data} if portfolios_result.data else {}
+        templates_lookup = {t["id"]: t["generation_name"] for t in templates_result.data} if templates_result.data else {}
+        portfolios_lookup = {p["id"]: p["template_generation_id"] for p in portfolios_result.data} if portfolios_result.data else {}
         
         # Group client products by portfolio and provider for O(1) lookup
         portfolio_to_provider = {}

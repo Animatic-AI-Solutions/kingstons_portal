@@ -302,7 +302,7 @@ const AppContent: React.FC = () => {
           } />
           
           {/* Reporting Section - Financial performance analytics and reporting */}
-          <Route path="/reporting" element={
+          <Route path="/analytics" element={
             <>
               <Navbar />
               <div className="flex-grow pt-6 pb-12">

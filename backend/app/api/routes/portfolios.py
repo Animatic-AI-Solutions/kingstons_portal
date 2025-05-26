@@ -124,7 +124,7 @@ async def create_portfolio(portfolio: PortfolioCreate, db = Depends(get_db)):
                 cash_fund_data = {
                     "portfolio_id": new_portfolio["id"],
                     "available_funds_id": cash_fund["id"],
-                    "weighting": 0,  # 0% weighting
+                    "target_weighting": 0,  # 0% weighting
                     "start_date": portfolio_start_date,
                     "amount_invested": 0  # No initial investment
                 }
@@ -423,7 +423,7 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
             fund_data = {
                 "portfolio_id": new_portfolio["id"],
                 "available_funds_id": fund_id,
-                "weighting": fund["target_weighting"],
+                "target_weighting": fund["target_weighting"],
                 "start_date": start_date,  # Use the same start_date as the portfolio
                 "amount_invested": 0  # Initial amount is zero
             }
@@ -460,7 +460,7 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
                 cash_fund_data = {
                     "portfolio_id": new_portfolio["id"],
                     "available_funds_id": cash_fund["id"],
-                    "weighting": 0,  # 0% weighting
+                    "target_weighting": 0,  # 0% weighting
                     "start_date": start_date,
                     "amount_invested": 0  # No initial investment
                 }

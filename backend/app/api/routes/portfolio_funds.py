@@ -330,13 +330,16 @@ async def create_portfolio_fund(
         
         # Step 1: Create the record with only the required fields (avoiding weighting due to schema cache issue)
         today = date.today().isoformat()
-        
-        # Minimal data structure to avoid schema cache issues
-        minimal_data = {
-            "portfolio_id": int(portfolio_fund.portfolio_id),
-            "available_funds_id": int(portfolio_fund.available_funds_id),
-            "start_date": portfolio_fund.start_date.isoformat() if portfolio_fund.start_date else today,
-            "status": "active"
+
+        portfolio_fund_data = {
+            "portfolio_id": portfolio_fund.portfolio_id,
+            "available_funds_id": portfolio_fund.available_funds_id,
+            "target_weighting": to_serializable(0 if portfolio_fund.target_weighting is None else portfolio_fund.target_weighting),
+            "start_date": portfolio_fund.start_date.isoformat(),
+            "end_date": portfolio_fund.end_date.isoformat() if portfolio_fund.end_date else None,
+            "amount_invested": portfolio_fund.amount_invested,
+            "status": portfolio_fund.status
+
         }
         
         # Add amount_invested if provided
@@ -1687,7 +1690,7 @@ async def get_aggregated_irr_history(
                 "name": available_fund.get("fund_name", "Unknown Fund"),
                 "risk_level": available_fund.get("risk_level", None),
                 "fund_type": available_fund.get("fund_type", None),
-                "weighting": portfolio_fund.get("weighting", 0),
+                "target_weighting": portfolio_fund.get("target_weighting", 0),
                 "start_date": portfolio_fund.get("start_date", None),
                 "status": portfolio_fund.get("status", "active"),
                 "available_fund": {

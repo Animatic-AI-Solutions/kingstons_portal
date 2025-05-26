@@ -203,6 +203,9 @@ const AddPortfolioGeneration: React.FC = () => {
         setIsSubmitting(true);
         setError(null);
         
+        // Use auto-generated name if field is empty
+        const generationName = formData.generation_name.trim() || generateGenerationName();
+        
         // Prepare the funds data
         const fundsData = selectedFunds.map(fundId => ({
           fund_id: fundId,
@@ -211,7 +214,7 @@ const AddPortfolioGeneration: React.FC = () => {
         
         // Create the portfolio generation
         await api.post(`/available_portfolios/${portfolioId}/generations`, {
-          generation_name: formData.generation_name,
+          generation_name: generationName,
           description: formData.description,
           funds: fundsData
         });
@@ -237,8 +240,11 @@ const AddPortfolioGeneration: React.FC = () => {
   };
 
   const validateForm = () => {
-    if (!formData.generation_name.trim()) {
-      setError('Generation name is required');
+    // Auto-generate generation name if empty
+    const generationName = formData.generation_name.trim() || generateGenerationName();
+    
+    if (!generationName) {
+      setError('Unable to generate generation name');
       return false;
     }
     
@@ -289,6 +295,22 @@ const AddPortfolioGeneration: React.FC = () => {
       (fund.isin_number && fund.isin_number.toLowerCase().includes(query))
     );
   }, [availableFunds, searchQuery]);
+
+  // Auto-generation function for generation name
+  const generateGenerationName = () => {
+    if (!portfolio) return '';
+    
+    const now = new Date();
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    
+    const month = monthNames[now.getMonth()];
+    const year = now.getFullYear();
+    
+    return `${portfolio.name} ${month} ${year}`;
+  };
 
   if (isLoadingPortfolio) {
     return (
@@ -388,7 +410,7 @@ const AddPortfolioGeneration: React.FC = () => {
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="w-full md:w-1/2">
                   <label htmlFor="generation_name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Generation Name <span className="text-red-500">*</span>
+                    Generation Name <span className="text-gray-500 text-xs">(optional)</span>
                   </label>
                   <input
                     type="text"
@@ -396,10 +418,14 @@ const AddPortfolioGeneration: React.FC = () => {
                     name="generation_name"
                     value={formData.generation_name}
                     onChange={handleChange}
-                    required
                     className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                    placeholder="e.g., Q2 2023 Conservative Allocation"
+                    placeholder="Leave empty to auto-generate"
                   />
+                  {!formData.generation_name.trim() && portfolio && (
+                    <div className="mt-1 text-xs text-gray-500">
+                      <span className="font-medium">Auto-generated:</span> {generateGenerationName()}
+                    </div>
+                  )}
                 </div>
                 <div className="w-full md:w-1/2">
                   <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
