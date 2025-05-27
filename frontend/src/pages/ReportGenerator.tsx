@@ -1135,6 +1135,37 @@ const formatPercentageFallback = (value: number | null): string => {
           }
         });
         
+        // Fetch fund IRR values for the selected date
+        let fundIRRMap = new Map<number, number | null>();
+        if (selectedValuationDate) {
+          try {
+            const [year, month] = selectedValuationDate.split('-').map(part => parseInt(part));
+            const activeFundIdsList = Array.from(activeFundIds);
+            
+            // Use the new API endpoint to fetch IRR values for the specific month/year
+            const irrResponse = await api.post('/portfolio_funds/batch/irr-values-by-date', {
+              fund_ids: activeFundIdsList,
+              target_month: month,
+              target_year: year
+            });
+            
+            if (irrResponse.data && irrResponse.data.data) {
+              const irrData = irrResponse.data.data;
+              Object.entries(irrData).forEach(([fundId, irrInfo]: [string, any]) => {
+                const fundIdNum = parseInt(fundId);
+                if (irrInfo && typeof irrInfo.irr === 'number') {
+                  fundIRRMap.set(fundIdNum, irrInfo.irr);
+                } else {
+                  fundIRRMap.set(fundIdNum, null);
+                }
+              });
+            }
+          } catch (error) {
+            console.error('Error fetching fund IRR values:', error);
+            // Continue without IRR values - they'll be set to null
+          }
+        }
+        
         // Collect activity data per fund
         for (const portfolioFund of productPortfolioFunds) {
           // Skip if no valid ID
@@ -1186,9 +1217,8 @@ const formatPercentageFallback = (value: number | null): string => {
             }
           }
           
-          // Calculate IRR for this fund if needed (now done at product level)
-          // We'll calculate fund-level IRR later if specifically requested
-          let fundIRR: number | null = null;
+          // Get fund IRR from the fetched values
+          const fundIRR = fundIRRMap.get(portfolioFund.id) || null;
           
           // Add to fund summaries
           fundSummaries.push({
@@ -1207,7 +1237,7 @@ const formatPercentageFallback = (value: number | null): string => {
             risk_factor: riskFactor // Use the risk factor from the available fund
           });
         }
-        
+
         // Calculate product IRR using the cash flow aggregation method
         let productIRR: number | null = null;
         

@@ -141,12 +141,29 @@ export const getLatestFundIRR = (portfolioFundId: number) => {
 };
 
 /**
- * Fetches IRR values for multiple portfolio funds in a single request
- * @param {number[]} fundIds - Array of portfolio fund IDs to fetch IRR values for
+ * Fetches IRR values for multiple funds in batch
+ * @param {number[]} fundIds - Array of portfolio fund IDs
  * @returns {Promise} - API response with IRR values grouped by fund ID
  */
 export const getBatchFundIRRValues = (fundIds: number[]) => {
-  return api.post('portfolio_funds/batch/irr-values', { fund_ids: fundIds });
+  return api.post('portfolio_funds/batch/irr-values', {
+    fund_ids: fundIds
+  });
+};
+
+/**
+ * Fetches IRR values for multiple funds filtered by specific month/year
+ * @param {number[]} fundIds - Array of portfolio fund IDs
+ * @param {number} month - Target month (1-12)
+ * @param {number} year - Target year (e.g., 2024)
+ * @returns {Promise} - API response with IRR values for the specified date
+ */
+export const getBatchFundIRRValuesByDate = (fundIds: number[], month: number, year: number) => {
+  return api.post('portfolio_funds/batch/irr-values-by-date', {
+    fund_ids: fundIds,
+    target_month: month,
+    target_year: year
+  });
 };
 
 /**

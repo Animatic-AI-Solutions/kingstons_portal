@@ -2445,3 +2445,94 @@ async def recalculate_fund_irr_for_date(
     except Exception as e:
         logger.error(f"Error recalculating IRR for fund {portfolio_fund_id}, date {valuation_date}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error recalculating IRR: {str(e)}")
+
+@router.post("/portfolio_funds/batch/irr-values-by-date", response_model=dict)
+async def get_batch_irr_values_by_date(
+    fund_ids: List[int] = Body(..., description="List of portfolio fund IDs to fetch IRR values for"),
+    target_month: int = Body(..., description="Target month (1-12)"),
+    target_year: int = Body(..., description="Target year (e.g., 2024)"),
+    db = Depends(get_db)
+):
+    """
+    Fetch IRR values for multiple funds filtered by specific month/year.
+    Only considers YYYY-MM from the date column, ignoring day and time.
+    """
+    try:
+        logger.info(f"Fetching IRR values for {len(fund_ids)} funds for {target_month:02d}/{target_year}")
+        
+        if not fund_ids:
+            return {"data": {}}
+        
+        # Convert fund_ids to ensure they're valid
+        found_fund_ids = []
+        for fund_id in fund_ids:
+            try:
+                found_fund_ids.append(int(fund_id))
+            except (ValueError, TypeError):
+                logger.warning(f"Invalid fund_id: {fund_id}")
+                continue
+        
+        if not found_fund_ids:
+            logger.warning("No valid fund IDs provided")
+            return {"data": {}}
+        
+        # Query IRR values with date filtering using PostgreSQL date functions
+        # Extract year and month from the date column and match target_year and target_month
+        irr_values = db.table("irr_values")\
+            .select("*")\
+            .in_("fund_id", found_fund_ids)\
+            .execute()
+        
+        # Filter results in Python to match the target month/year
+        filtered_irr_values = []
+        if irr_values.data:
+            for irr in irr_values.data:
+                try:
+                    # Parse the date string to extract month and year
+                    date_str = irr["date"]
+                    date_obj = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+                    
+                    # Check if month and year match
+                    if date_obj.month == target_month and date_obj.year == target_year:
+                        filtered_irr_values.append(irr)
+                except Exception as e:
+                    logger.warning(f"Error parsing date {irr.get('date', 'unknown')}: {str(e)}")
+                    continue
+        
+        # Group by fund_id and get the latest IRR for each fund in that month/year
+        result = {}
+        
+        for irr in filtered_irr_values:
+            fund_id = irr["fund_id"]
+            
+            # Format as needed for frontend
+            formatted_irr = {
+                "id": irr["id"],
+                "date": irr["date"],
+                "irr": float(irr["irr_result"]),
+                "fund_id": fund_id,
+                "created_at": irr["created_at"],
+                "fund_valuation_id": irr["fund_valuation_id"]
+            }
+            
+            # Keep only the latest IRR for each fund in the target month/year
+            if fund_id not in result:
+                result[fund_id] = formatted_irr
+            else:
+                # Compare dates and keep the latest one
+                existing_date = datetime.fromisoformat(result[fund_id]["date"].replace("Z", "+00:00"))
+                current_date = datetime.fromisoformat(irr["date"].replace("Z", "+00:00"))
+                if current_date > existing_date:
+                    result[fund_id] = formatted_irr
+        
+        # For funds with no IRR values in the target month/year, set to None
+        for fund_id in found_fund_ids:
+            if fund_id not in result:
+                result[fund_id] = None
+                
+        logger.info(f"Successfully fetched IRR values for {len([v for v in result.values() if v is not None])} out of {len(found_fund_ids)} funds for {target_month:02d}/{target_year}")
+        return {"data": result}
+        
+    except Exception as e:
+        logger.error(f"Error fetching IRR values by date: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error fetching IRR values by date: {str(e)}")
