@@ -73,21 +73,21 @@ async def get_client_products_with_owners(
         
         # Fetch portfolio information to get template info
         portfolios_map = {}
-        template_ids = set()
+        template_generation_ids = set()
         if portfolio_ids:
             portfolios_result = db.table("portfolios").select("*").in_("id", portfolio_ids).execute()
             if portfolios_result.data:
                 portfolios_map = {p.get("id"): p for p in portfolios_result.data}
-                # Collect all template IDs to fetch in bulk
-                template_ids = {p.get("original_template_id") for p in portfolios_result.data 
-                              if p.get("original_template_id") is not None}
+                # Collect all template generation IDs to fetch in bulk
+                template_generation_ids = {p.get("template_generation_id") for p in portfolios_result.data 
+                              if p.get("template_generation_id") is not None}
         
-        # Fetch all needed templates in bulk
-        templates_map = {}
-        if template_ids:
-            templates_result = db.table("available_portfolios").select("*").in_("id", list(template_ids)).execute()
-            if templates_result.data:
-                templates_map = {t.get("id"): t for t in templates_result.data}
+        # Fetch all needed template generations in bulk
+        template_generations_map = {}
+        if template_generation_ids:
+            template_generations_result = db.table("template_portfolio_generations").select("*").in_("id", list(template_generation_ids)).execute()
+            if template_generations_result.data:
+                template_generations_map = {t.get("id"): t for t in template_generations_result.data}
         
         # Get all product_value_irr_summary data in one bulk query for better performance
         summary_data = {}
@@ -151,11 +151,10 @@ async def get_client_products_with_owners(
             portfolio_id = product.get("portfolio_id")
             if portfolio_id and portfolio_id in portfolios_map:
                 portfolio = portfolios_map[portfolio_id]
-                original_template_id = portfolio.get("original_template_id")
-                if original_template_id and original_template_id in templates_map:
-                    template = templates_map[original_template_id]
-                    product["original_template_id"] = original_template_id
-                    product["original_template_name"] = template.get("name")
+                template_generation_id = portfolio.get("template_generation_id")
+                if template_generation_id and template_generation_id in template_generations_map:
+                    template = template_generations_map[template_generation_id]
+                    product["template_generation_id"] = template_generation_id
                     product["template_info"] = template
             
             # Add total_value and irr from the summary data map
@@ -250,21 +249,21 @@ async def get_client_products(
         
         # Fetch portfolio information to get template info
         portfolios_map = {}
-        template_ids = set()
+        template_generation_ids = set()
         if portfolio_ids:
             portfolios_result = db.table("portfolios").select("*").in_("id", portfolio_ids).execute()
             if portfolios_result.data:
                 portfolios_map = {p.get("id"): p for p in portfolios_result.data}
-                # Collect all template IDs to fetch in bulk
-                template_ids = {p.get("original_template_id") for p in portfolios_result.data 
-                              if p.get("original_template_id") is not None}
+                # Collect all template generation IDs to fetch in bulk
+                template_generation_ids = {p.get("template_generation_id") for p in portfolios_result.data 
+                              if p.get("template_generation_id") is not None}
         
-        # Fetch all needed templates in bulk
-        templates_map = {}
-        if template_ids:
-            templates_result = db.table("available_portfolios").select("*").in_("id", list(template_ids)).execute()
-            if templates_result.data:
-                templates_map = {t.get("id"): t for t in templates_result.data}
+        # Fetch all needed template generations in bulk
+        template_generations_map = {}
+        if template_generation_ids:
+            template_generations_result = db.table("template_portfolio_generations").select("*").in_("id", list(template_generation_ids)).execute()
+            if template_generations_result.data:
+                template_generations_map = {t.get("id"): t for t in template_generations_result.data}
         
         # Enhance the response data with provider, client, and template information
         enhanced_data = []
@@ -300,11 +299,10 @@ async def get_client_products(
             portfolio_id = product.get("portfolio_id")
             if portfolio_id and portfolio_id in portfolios_map:
                 portfolio = portfolios_map[portfolio_id]
-                original_template_id = portfolio.get("original_template_id")
-                if original_template_id and original_template_id in templates_map:
-                    template = templates_map[original_template_id]
-                    product["original_template_id"] = original_template_id
-                    product["original_template_name"] = template.get("name")
+                template_generation_id = portfolio.get("template_generation_id")
+                if template_generation_id and template_generation_id in template_generations_map:
+                    template = template_generations_map[template_generation_id]
+                    product["template_generation_id"] = template_generation_id
                     product["template_info"] = template
             
             # Add total_value and irr from the summary data map
@@ -347,10 +345,6 @@ async def create_client_product(client_product: ClientproductCreate, db = Depend
     Expected output: The newly created client product object
     """
     try:
-        # Set default weighting to 0 if not provided
-        if client_product.weighting is None:
-            client_product.weighting = 0
-
         # Ensure start_date is today's date if not provided
         today = date.today()
         start_date_iso = client_product.start_date.isoformat() if client_product.start_date else today.isoformat()
@@ -367,7 +361,6 @@ async def create_client_product(client_product: ClientproductCreate, db = Depend
             "product_name": client_product.product_name,
             "status": client_product.status,
             "start_date": start_date_iso,
-            "weighting": client_product.weighting,
             "plan_number": client_product.plan_number,
             "provider_id": client_product.provider_id,
             "product_type": client_product.product_type
@@ -488,12 +481,11 @@ async def get_client_product(client_product_id: int, db = Depends(get_db)):
                 portfolio = portfolio_result.data[0]
                 
                 # Add template info if this portfolio is based on a template
-                if portfolio.get("original_template_id"):
-                    template_result = db.table("available_portfolios").select("*").eq("id", portfolio.get("original_template_id")).execute()
+                if portfolio.get("template_generation_id"):
+                    template_result = db.table("template_portfolio_generations").select("*").eq("id", portfolio.get("template_generation_id")).execute()
                     if template_result.data and len(template_result.data) > 0:
                         template = template_result.data[0]
-                        client_product["original_template_id"] = portfolio.get("original_template_id")
-                        client_product["original_template_name"] = template.get("name")
+                        client_product["template_generation_id"] = portfolio.get("template_generation_id")
                         client_product["template_info"] = template
             
         # Fetch total_value and irr from the product_value_irr_summary view
@@ -1022,11 +1014,11 @@ async def get_complete_product_details(client_product_id: int, db = Depends(get_
                 response["portfolio_details"] = portfolio
                 
                 # Get original template generation if available
-                original_template_generation_id = portfolio.get("original_template_id")
+                original_template_generation_id = portfolio.get("template_generation_id")
                 if original_template_generation_id:
                     # Fetch from template_portfolio_generations table
                     generation_result = db.table("template_portfolio_generations") \
-                        .select("*, available_portfolios(name)") \
+                        .select("*") \
                         .eq("id", original_template_generation_id) \
                         .maybe_single() \
                         .execute()
@@ -1034,20 +1026,12 @@ async def get_complete_product_details(client_product_id: int, db = Depends(get_
                     if generation_result.data:
                         generation_info = generation_result.data
                         response["template_info"] = generation_info # Contains generation name, version, etc.
-                        response["original_template_id"] = original_template_generation_id
-                        # Use generation_name for original_template_name
-                        response["original_template_name"] = generation_info.get("generation_name")
-                        # If the parent template name is needed and fetched via a join (e.g., available_portfolios(name)):
-                        if generation_info.get("available_portfolios") and isinstance(generation_info.get("available_portfolios"), dict):
-                            response["parent_template_name"] = generation_info.get("available_portfolios").get("name")
+                        response["template_generation_id"] = original_template_generation_id
+                        # If the parent template name is needed and fetched via a join (e.g., template_portfolio_generations(name)):
+                        if generation_info.get("template_portfolio_generations") and isinstance(generation_info.get("template_portfolio_generations"), dict):
+                            response["parent_template_name"] = generation_info.get("template_portfolio_generations").get("name")
                         else:
                             response["parent_template_name"] = None # Or fetch separately if needed
-                        
-                        # Assuming target_risk might be on the generation itself or on the parent template
-                        # For now, let's assume it could be on the generation_info object
-                        if "target_risk" in generation_info: # Check if target_risk exists on generation
-                            response["target_risk"] = generation_info.get("target_risk")
-                        # Else, you might need to fetch it from the parent `available_portfolios` or handle it differently
 
                 # Get portfolio funds in a single query
                 funds_result = db.table("portfolio_funds").select("*").eq("portfolio_id", portfolio_id).execute()

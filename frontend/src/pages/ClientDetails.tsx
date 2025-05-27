@@ -41,12 +41,11 @@ interface ClientAccount {
   irr?: number;
   risk_rating?: number;
   provider_theme_color?: string;
-  original_template_id?: number;
-  original_template_name?: string;
+  template_generation_id?: number;
   template_info?: {
     id: number;
-    name: string;
-    created_at: string;
+    generation_name: string;
+    name?: string;
   };
   product_owners?: ProductOwner[];
 }
@@ -207,8 +206,7 @@ const ProductCard: React.FC<{
     provider_id: account.provider_id,
     provider_theme_color: account.provider_theme_color,
     using_color: themeColor,
-    original_template_id: account.original_template_id,
-    original_template_name: account.original_template_name,
+    template_generation_id: account.template_generation_id,
     template_info: account.template_info,
     fum: account.total_value,
     irr: account.irr
@@ -291,8 +289,8 @@ const ProductCard: React.FC<{
                   color: themeColor
                 }}
               >
-                {account.original_template_id 
-                  ? (account.template_info?.name || account.original_template_name || `Template #${account.original_template_id}`)
+                {account.template_generation_id 
+                  ? (account.template_info?.name || `Template #${account.template_generation_id}`)
                   : 'Bespoke'}
               </span>
             </div>

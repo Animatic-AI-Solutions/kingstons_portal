@@ -288,7 +288,7 @@ async def recalculate_fund_weightings(portfolio_id: int, db) -> None:
             new_weighting = value / total_value if total_value > 0 else 0
             
             db.table("portfolio_funds")\
-                .update({"weighting": new_weighting})\
+                .update({"target_weighting": new_weighting})\
                 .eq("id", fund_id)\
                 .execute()
                 
@@ -301,6 +301,7 @@ async def recalculate_product_weightings(client_id: int, db) -> None:
     """
     Recalculate and update weightings for all products belonging to a client based on their portfolio values.
     Considers fund valuations when available.
+    Note: This function now only calculates weightings for logging purposes since weightings are derived from funds.
     """
     try:
         # Get all active products for the client
@@ -372,16 +373,12 @@ async def recalculate_product_weightings(client_id: int, db) -> None:
         if total_client_value == 0:
             return
             
-        # Update each product's weighting
+        # Log the calculated weightings (but don't update database since weighting column no longer exists)
         for av in product_values:
             new_weighting = av["value"] / total_client_value if total_client_value > 0 else 0
-            
-            db.table("client_products")\
-                .update({"weighting": new_weighting})\
-                .eq("id", av["id"])\
-                .execute()
+            logger.info(f"Product {av['id']} calculated weighting: {new_weighting:.4f} (value: {av['value']}, total: {total_client_value})")
                 
-        logger.info(f"Updated product weightings for client {client_id}")
+        logger.info(f"Calculated product weightings for client {client_id} (weightings are now derived from funds)")
     except Exception as e:
         logger.error(f"Error recalculating product weightings: {str(e)}")
         raise

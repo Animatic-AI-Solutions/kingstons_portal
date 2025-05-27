@@ -15,7 +15,6 @@ class ClientproductBase(BaseModel):
     status: str = "active"
     start_date: date
     end_date: Optional[date] = None
-    weighting: Optional[float] = 0.0
     plan_number: Optional[str] = None
     provider_id: Optional[int] = None
     product_type: Optional[str] = None
@@ -34,7 +33,6 @@ class ClientproductUpdate(BaseModel):
     status: Optional[str] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
-    weighting: Optional[float] = None
     plan_number: Optional[str] = None
     provider_id: Optional[int] = None
     product_type: Optional[str] = None

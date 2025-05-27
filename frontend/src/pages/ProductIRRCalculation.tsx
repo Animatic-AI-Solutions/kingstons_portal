@@ -5,9 +5,10 @@ import YearNavigator from '../components/YearNavigator';
 import EditableMonthlyActivitiesTable from '../components/EditableMonthlyActivitiesTable';
 import IRRCalculationModal from '../components/IRRCalculationModal';
 import IRRDateSelectionModal from '../components/IRRDateSelectionModal';
-import { calculatePortfolioIRRForDate, calculatePortfolioTotalIRR } from '../services/api';
+import { calculatePortfolioIRRForDate, calculatePortfolioTotalIRR, calculateStandardizedSingleFundIRR } from '../services/api';
 import { Dialog, Transition } from '@headlessui/react';
 import { formatCurrency, formatPercentage } from '../utils/formatters';
+import { createIRRValue } from '../services/api';
 
 interface Account {
   id: number;
@@ -67,20 +68,16 @@ interface ActivityLog {
 
 interface IrrCalculationDetail {
   portfolio_fund_id: number;
-  status: 'calculated' | 'skipped' | 'error';
+  fund_name?: string;
+  status: 'success' | 'error';
   message: string;
-  irr_value?: number;
-  existing_irr?: number;
-  date_info?: string;
+  irr_percentage?: number;
 }
 
 interface IrrCalculationResult {
-  portfolio_id: number;
-  calculation_date: string;
-  total_funds: number;
   successful: number;
-  skipped: number;
   failed: number;
+  total: number;
   details: IrrCalculationDetail[];
 }
 
@@ -655,7 +652,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
             product_id: accountResponse.data.id,
             status: portfolioFund.status || 'active',
             valuation_date: portfolioFund.valuation_date,
-            target_weighting: portfolioFund.weighting?.toString()
+            target_weighting: portfolioFund.target_weighting?.toString()
           };
           
           processedHoldings.push(holding);
@@ -769,35 +766,125 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
 
   // Add a new handler for date selection modal
   const handleCalculateIRRWithDate = async (date: string) => {
-    if (!account || !account.portfolio_id) {
-      alert('No active portfolio assigned to this account');
+    try {
+      setIsCalculatingIRR(true);
+      setIrrCalculationResult(null);
+      
+      console.log(`Starting standardized IRR calculation for date: ${date}`);
+      
+      // Get portfolio funds for this account
+      const portfolioFunds = holdings.filter(holding => holding.status !== 'inactive');
+      
+      if (portfolioFunds.length === 0) {
+        alert('No portfolio funds found for this portfolio');
       return;
     }
     
-    const portfolioId = account.portfolio_id;
-    
-    try {
-      setIsCalculatingIRR(true);
-      setDateSelectionResult(null);
+      // Calculate IRR for each fund using the standardized endpoint
+      const calculationResults: IrrCalculationDetail[] = [];
+      let successful = 0;
+      let failed = 0;
       
-      // Use the service function instead of direct API call
-      const response = await calculatePortfolioIRRForDate(portfolioId, date);
-      setDateSelectionResult(response.data);
+      for (const fund of portfolioFunds) {
+        try {
+          console.log(`Calculating standardized IRR for fund ${fund.id} (${fund.fund_name}) for date ${date}`);
+          
+          const response = await calculateStandardizedSingleFundIRR({
+            portfolioFundId: fund.id,
+            irrDate: date
+          });
+          
+          console.log(`Standardized IRR calculation successful for fund ${fund.id}:`, response.data);
       
-      // Refresh the data to show updated IRR values
-      fetchData(accountId as string);
-      
-      // If there are missing valuations, alert the user
-      if (response.data.missing_valuations && response.data.missing_valuations.length > 0) {
-        const missingFunds = response.data.missing_valuations.map((item: any) => 
-          item.fund_name || `Fund ID ${item.portfolio_fund_id}`
-        ).join(', ');
-        
-        alert(`Warning: The following funds don't have valuations for the selected date: ${missingFunds}`);
-      }
+          // Now save the IRR result to the database
+          try {
+            const saveResponse = await createIRRValue({
+              fundId: fund.id,
+              irrResult: response.data.irr_percentage,
+              date: date,
+              fundValuationId: response.data.fund_valuation_id
+            });
+            
+            console.log(`IRR value saved to database for fund ${fund.id}:`, saveResponse.data);
+            
+            calculationResults.push({
+              portfolio_fund_id: fund.id,
+              fund_name: fund.fund_name,
+              status: 'success',
+              irr_percentage: response.data.irr_percentage,
+              message: `IRR calculated and saved: ${response.data.irr_percentage}%`
+            });
+            successful++;
+            
+          } catch (saveErr: any) {
+            console.error(`Error saving IRR value for fund ${fund.id}:`, saveErr);
+            
+            // Still count as successful calculation, but note the save error
+            calculationResults.push({
+              portfolio_fund_id: fund.id,
+              fund_name: fund.fund_name,
+              status: 'success',
+              irr_percentage: response.data.irr_percentage,
+              message: `IRR calculated: ${response.data.irr_percentage}% (Warning: Could not save to database)`
+            });
+            successful++;
+          }
+          
     } catch (err: any) {
-      console.error('Error calculating IRR for date:', err);
-      const errorMessage = err.response?.data?.detail || 'Failed to calculate IRR values';
+          console.error(`Error calculating IRR for fund ${fund.id}:`, err);
+          let errorMessage = 'Failed to calculate IRR';
+          
+          if (err.response?.data?.detail) {
+            errorMessage = typeof err.response.data.detail === 'string' 
+              ? err.response.data.detail 
+              : JSON.stringify(err.response.data.detail);
+          } else if (err.message) {
+            errorMessage = typeof err.message === 'string' 
+              ? err.message 
+              : JSON.stringify(err.message);
+          }
+          
+          calculationResults.push({
+            portfolio_fund_id: fund.id,
+            fund_name: fund.fund_name,
+            status: 'error',
+            message: errorMessage
+          });
+          failed++;
+        }
+      }
+      
+      // Set the results
+      setIrrCalculationResult({
+        successful,
+        failed,
+        total: portfolioFunds.length,
+        details: calculationResults
+      });
+      
+      // Show success/failure message
+      if (failed === 0) {
+        alert(`Successfully calculated and saved standardized IRR for all ${successful} funds!`);
+      } else if (successful === 0) {
+        alert(`Failed to calculate IRR for all ${failed} funds. Please check the error details.`);
+      } else {
+        alert(`Mixed results: ${successful} successful, ${failed} failed. Please check the details.`);
+      }
+      
+    } catch (err: any) {
+      console.error('Error in IRR calculation process:', err);
+      let errorMessage = 'Failed to calculate IRR values';
+      
+      if (err.response?.data?.detail) {
+        errorMessage = typeof err.response.data.detail === 'string' 
+          ? err.response.data.detail 
+          : JSON.stringify(err.response.data.detail);
+      } else if (err.message) {
+        errorMessage = typeof err.message === 'string' 
+          ? err.message 
+          : JSON.stringify(err.message);
+      }
+      
       alert(`Error: ${errorMessage}`);
     } finally {
       setIsCalculatingIRR(false);
@@ -1287,13 +1374,6 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-gray-900">Monthly Activities</h2>
               <div className="flex items-center"> {/* Container for buttons */}
-                {/* Added Recurring Investment Button */}
-                <button
-                  onClick={() => {}} // Non-functional
-                  className="mr-2 px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
-                >
-                  Recurring Investment
-                </button>
                 <button 
                   onClick={handleCalculateIRR}
                   disabled={isCalculatingIRR || !account?.portfolio_id}
@@ -1308,7 +1388,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                       Calculating IRRs...
                     </>
                   ) : (
-                    'Calculate Monthly IRR'
+                    'Calculate Standardized IRR'
                   )}
                 </button>
                 <button
@@ -1325,9 +1405,8 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                 irrCalculationResult.failed > 0 ? 'bg-yellow-100 border border-yellow-400' : 'bg-green-100 border border-green-400'
               }`}>
                 <p className="text-sm font-medium">
-                  IRR calculation complete for {irrCalculationResult.total_funds} funds on {new Date(irrCalculationResult.calculation_date).toLocaleDateString()}.
+                  IRR calculation complete for {irrCalculationResult.total} funds.
                   {irrCalculationResult.successful > 0 && ` Successfully calculated ${irrCalculationResult.successful} new IRR values.`}
-                  {irrCalculationResult.skipped > 0 && ` Skipped ${irrCalculationResult.skipped} funds with existing IRR values.`}
                   {irrCalculationResult.failed > 0 && ` Failed to calculate ${irrCalculationResult.failed} IRR values.`}
                 </p>
                 
@@ -1340,8 +1419,11 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                         .filter((detail: IrrCalculationDetail) => detail.status === 'error')
                         .map((detail: IrrCalculationDetail, index: number) => (
                           <li key={index} className="text-red-700">
-                            <span className="font-medium">Fund ID {detail.portfolio_fund_id}:</span> {detail.message}
-                            {detail.date_info && <span className="block mt-1 text-xs"> ({detail.date_info})</span>}
+                            <span className="font-medium">Fund ID {detail.portfolio_fund_id}:</span> {
+                              typeof detail.message === 'string' 
+                                ? detail.message 
+                                : JSON.stringify(detail.message)
+                            }
                           </li>
                         ))}
                     </ul>

@@ -27,7 +27,7 @@ async def get_portfolios(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
     limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
     status: Optional[str] = None,
-    original_template_id: Optional[int] = None,
+    template_generation_id: Optional[int] = None,
     count_only: bool = False,
     db = Depends(get_db)
 ):
@@ -53,8 +53,8 @@ async def get_portfolios(
         if status is not None:
             query = query.eq("status", status)
             
-        if original_template_id is not None:
-            query = query.eq("original_template_id", original_template_id)
+        if template_generation_id is not None:
+            query = query.eq("template_generation_id", template_generation_id)
         
         # If count_only is True, return just the count
         if count_only:
@@ -124,7 +124,7 @@ async def create_portfolio(portfolio: PortfolioCreate, db = Depends(get_db)):
                 cash_fund_data = {
                     "portfolio_id": new_portfolio["id"],
                     "available_funds_id": cash_fund["id"],
-                    "weighting": 0,  # 0% weighting
+                    "target_weighting": 0,  # 0% weighting
                     "start_date": portfolio_start_date,
                     "amount_invested": 0  # No initial investment
                 }
@@ -165,11 +165,11 @@ async def get_portfolio(portfolio_id: int, db = Depends(get_db)):
         
         portfolio = result.data[0]
         
-        # If portfolio has an original_template_id, get the template info
-        if portfolio.get("original_template_id"):
-            template_result = db.table("available_portfolios") \
+        # If portfolio has a template_generation_id, get the template info
+        if portfolio.get("template_generation_id"):
+            template_result = db.table("template_portfolio_generations") \
                 .select("*") \
-                .eq("id", portfolio["original_template_id"]) \
+                .eq("id", portfolio["template_generation_id"]) \
                 .execute()
                 
             if template_result.data and len(template_result.data) > 0:
@@ -360,13 +360,12 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
             generation = latest_generation_response.data[0]
             logger.info(f"Using latest generation: {generation['id']} (version {generation['version_number']})")
         
-        # Create a new portfolio with today's date as start_date if not provided
-        start_date = template_data.start_date if template_data.start_date else date.today().isoformat()
+        # Create the portfolio with template reference
         portfolio_data = {
-            "portfolio_name": template_data.portfolio_name,
-            "status": template_data.status,
-            "start_date": start_date,
-            "original_template_id": generation['id']  # Use generation ID instead of template ID
+            "portfolio_name": f"{template['name']} - {generation['generation_name']}",
+            "status": "active",
+            "start_date": date.today().isoformat(),
+            "template_generation_id": generation['id']  # Use generation ID instead of template ID
         }
         
         portfolio_result = db.table("portfolios").insert(portfolio_data).execute()
@@ -423,8 +422,8 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
             fund_data = {
                 "portfolio_id": new_portfolio["id"],
                 "available_funds_id": fund_id,
-                "weighting": fund["target_weighting"],
-                "start_date": start_date,  # Use the same start_date as the portfolio
+                "target_weighting": fund["target_weighting"],
+                "start_date": date.today().isoformat(),  # Use the same start_date as the portfolio
                 "amount_invested": 0  # Initial amount is zero
             }
             
@@ -460,8 +459,8 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
                 cash_fund_data = {
                     "portfolio_id": new_portfolio["id"],
                     "available_funds_id": cash_fund["id"],
-                    "weighting": 0,  # 0% weighting
-                    "start_date": start_date,
+                    "target_weighting": 0,  # 0% weighting
+                    "start_date": date.today().isoformat(),
                     "amount_invested": 0  # No initial investment
                 }
                 
@@ -978,7 +977,7 @@ async def get_portfolios_with_template(
         1. Connects to the Supabase database
         2. Builds a query to the 'portfolios' table with optional filters
         3. Applies pagination parameters to limit result size
-        4. For each portfolio with an original_template_id, fetches the template info
+        4. For each portfolio with a template_generation_id, fetches the template info
         5. Returns the data as a list of PortfolioWithTemplate objects
     Expected output: A JSON array of portfolio objects with template details where applicable
     """
@@ -1004,20 +1003,19 @@ async def get_portfolios_with_template(
         
         portfolios = result.data
         
-        # Create a set of all template IDs to fetch in a single query
-        template_ids = {p["original_template_id"] for p in portfolios if p.get("original_template_id")}
+        # Get unique template IDs from portfolios that have them
+        template_ids = {p["template_generation_id"] for p in portfolios if p.get("template_generation_id")}
         
-        # If there are templates to fetch, get them all at once
+        # Fetch all templates in one query if there are any
         templates_dict = {}
         if template_ids:
-            templates_query = db.table("available_portfolios").select("*").in_("id", list(template_ids)).execute()
-            if templates_query.data:
-                templates_dict = {t["id"]: t for t in templates_query.data}
+            templates_result = db.table("template_portfolio_generations").select("*").in_("id", list(template_ids)).execute()
+            templates_dict = {t["id"]: t for t in templates_result.data}
         
         # Add template info to each portfolio
         for portfolio in portfolios:
-            if portfolio.get("original_template_id") and portfolio["original_template_id"] in templates_dict:
-                portfolio["template_info"] = templates_dict[portfolio["original_template_id"]]
+            if portfolio.get("template_generation_id") and portfolio["template_generation_id"] in templates_dict:
+                portfolio["template_info"] = templates_dict[portfolio["template_generation_id"]]
         
         return portfolios
     except Exception as e:
@@ -1269,12 +1267,12 @@ async def get_complete_portfolio(
         portfolio = portfolio_result.data[0]
         logger.info(f"Found portfolio: {portfolio['portfolio_name']} (ID: {portfolio_id})")
         
-        # If portfolio has an original_template_id, get the template info
+        # If portfolio has a template_generation_id, get the template info
         template_info = None
-        if portfolio.get("original_template_id"):
-            template_result = db.table("available_portfolios") \
+        if portfolio.get("template_generation_id"):
+            template_result = db.table("template_portfolio_generations") \
                 .select("*") \
-                .eq("id", portfolio["original_template_id"]) \
+                .eq("id", portfolio["template_generation_id"]) \
                 .execute()
                 
             if template_result.data and len(template_result.data) > 0:

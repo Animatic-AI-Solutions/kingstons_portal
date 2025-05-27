@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useAuth } from '../context/AuthContext';
 import { getProviderColor } from '../services/providerColors';
 import { MultiSelectSearchableDropdown } from '../components/ui/SearchableDropdown';
+import { calculateStandardizedMultipleFundsIRR } from '../services/api';
 
 // Interfaces for data types
 interface ClientGroup {
@@ -1238,109 +1239,45 @@ const formatPercentageFallback = (value: number | null): string => {
           });
         }
 
-        // Calculate product IRR using the cash flow aggregation method
+        
+        // Calculate product IRR using the standardized multiple funds IRR endpoint
+
         let productIRR: number | null = null;
         
         if (fundSummaries.length > 0 && productValuation > 0) {
-          // Group all activity logs by month across all funds in this product
-          const monthlyNetCashFlows = new Map<string, number>();
-          const monthlyDates = new Map<string, Date>();
-          
-          // Create a flattened array of all activity logs for this product
-          const allActiveLogs = allActivityLogs.filter(log => {
-            // Only include logs from active funds
-            const fundId = log.portfolio_fund_id;
-            if (inactiveFundIds.has(fundId)) {
-              return false;
-            }
+          try {
+            // Get portfolio fund IDs for this product (excluding virtual/inactive funds)
+            const productPortfolioFundIds = fundSummaries
+              .filter(fund => !fund.isVirtual && fund.status === 'active' && fund.id > 0)
+              .map(fund => fund.id);
             
-            // Apply date filtering if a valuation date is selected
-            if (selectedValuationDate && log.activity_timestamp) {
-              const logDate = new Date(log.activity_timestamp);
-              const logYearMonth = `${logDate.getFullYear()}-${String(logDate.getMonth() + 1).padStart(2, '0')}`;
+            if (productPortfolioFundIds.length > 0) {
+              console.log(`Calculating standardized IRR for product ${productId} with fund IDs:`, productPortfolioFundIds);
               
-              // Only include logs from selected month or earlier
-              return logYearMonth <= selectedValuationDate;
-            }
-            
-            return true;
-          });
-          
-          // Process each log to build monthly cash flows
-          allActiveLogs.forEach(log => {
-            if (!log.activity_timestamp || !log.amount) return;
-            
-            const date = new Date(log.activity_timestamp);
-            const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            
-            // Initialize if needed
-            if (!monthlyNetCashFlows.has(monthYear)) {
-              monthlyNetCashFlows.set(monthYear, 0);
-              monthlyDates.set(monthYear, new Date(date.getFullYear(), date.getMonth(), 15)); // Middle of month
-            }
-            
-            // Categorize and add to net cash flow
-            let cashFlowAmount = 0;
-            const amount = parseFloat(log.amount);
-            
-            switch(log.activity_type) {
-              case 'Investment':
-              case 'RegularInvestment':
-              case 'GovernmentUplift':
-              case 'SwitchIn':
-                cashFlowAmount = -Math.abs(amount); // Negative - money going in
-                break;
-              case 'Withdrawal':
-              case 'RegularWithdrawal':
-              case 'SwitchOut':
-                cashFlowAmount = Math.abs(amount); // Positive - money coming out
-                break;
-              default:
-                // Ignore other activity types
-                break;
-            }
-            
-            const currentTotal = monthlyNetCashFlows.get(monthYear) || 0;
-            monthlyNetCashFlows.set(monthYear, currentTotal + cashFlowAmount);
-          });
-          
-          // Convert to array of cash flows for IRR calculation
-          const cashFlows: {date: Date, amount: number}[] = [];
-          
-          // Add each month's net cash flow
-          monthlyNetCashFlows.forEach((amount, monthYear) => {
-            if (amount !== 0) { // Only include non-zero cash flows
-              cashFlows.push({
-                date: monthlyDates.get(monthYear)!,
-                amount: amount
-              });
-            }
-          });
-          
-          // Add valuation as the final cash flow
-          // If we have a selected valuation date, use the last day of that month 
-          // instead of current date
-          let finalCashflowDate = new Date(); // Default to current date
+              // Format the selected valuation date for the API call
+              let formattedDate: string | undefined = undefined;
           if (selectedValuationDate) {
+                // Convert YYYY-MM format to YYYY-MM-DD (last day of month)
             const [year, month] = selectedValuationDate.split('-').map(part => parseInt(part));
-            
-            // Create date for the last day of the selected month
-            // (month is 0-indexed in JS Date, so we use the next month's 0th day 
-            // which is the last day of current month)
-            finalCashflowDate = new Date(year, month, 0);
-          }
-          
-          cashFlows.push({
-            date: finalCashflowDate,
-            amount: productValuation
-          });
-          
-          // Calculate IRR using the Newton-Raphson method
-          if (cashFlows.length >= 2) {
-            productIRR = calculateIRR(cashFlows);
-            console.log(`Calculated IRR for product ${productId} using cash flow aggregation: ${productIRR}`);
+                const lastDayOfMonth = new Date(year, month, 0).getDate();
+                formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+              }
+              
+              // Call the standardized multiple funds IRR endpoint for this product
+              const irrResponse = await calculateStandardizedMultipleFundsIRR({
+                portfolioFundIds: productPortfolioFundIds,
+                irrDate: formattedDate
+              });
+              
+              // The response should already be in percentage format
+              productIRR = irrResponse.data.irr_percentage;
+              console.log(`Calculated IRR for product ${productId} using standardized endpoint: ${productIRR}`);
           } else {
-            console.warn(`Insufficient cash flows to calculate IRR for product ${productId}`);
+              console.warn(`No valid portfolio fund IDs found for product ${productId} IRR calculation`);
+            }
+          } catch (irrErr) {
+            console.error(`Error calculating standardized IRR for product ${productId}:`, irrErr);
+            productIRR = null;
           }
         }
 
@@ -1454,123 +1391,59 @@ Please select a different valuation date or ensure all active funds have valuati
       }
       setEarliestTransactionDate(earliestDate);
       
-      // Calculate overall IRR using the cash flow aggregation method
+      // Calculate overall IRR using the standardized multiple funds IRR endpoint
       if (productSummaryResults.length > 0 && overallValuation > 0) {
-        // Collect all activity logs across all products
-        const allActivityLogs: any[] = [];
+        try {
+          // Collect all portfolio fund IDs from all products (excluding virtual funds)
+          const allPortfolioFundIds: number[] = [];
         
-        // Get all unique months where any activity occurred
-        const monthlyNetCashFlows = new Map<string, number>();
-        const monthlyDates = new Map<string, Date>();
-        
-        // Process all activity logs for all products
         for (const product of productSummaryResults) {
-          // Skip products without valid funds
           if (!product.funds || product.funds.length === 0) continue;
           
-          // Go through each fund's activity logs
+            // Add all non-virtual fund IDs
           for (const fund of product.funds) {
-            // Skip virtual/inactive funds
-            if (fund.isVirtual) continue;
-            
-            // Get logs for this fund from the API and process them
-            try {
-              const logsResponse = await api.get(`/holding_activity_logs?portfolio_fund_id=${fund.id}`);
-              const fundLogs = logsResponse.data || [];
-              
-              // Filter logs by the selected valuation date
-              const filteredLogs = fundLogs.filter((log: any) => {
-                if (!log.activity_timestamp) return false;
-                
-                // If a valuation date is selected, only include logs up to that date
-                if (selectedValuationDate) {
-                  const logDate = new Date(log.activity_timestamp);
-                  const logYearMonth = `${logDate.getFullYear()}-${String(logDate.getMonth() + 1).padStart(2, '0')}`;
-                  return logYearMonth <= selectedValuationDate;
-                }
-                
-                return true;
-              });
-              
-              filteredLogs.forEach((log: any) => {
-                if (!log.activity_timestamp || !log.amount) return;
-                
-                // Process each log entry
-                const date = new Date(log.activity_timestamp);
-                const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-                
-                // Initialize if needed
-                if (!monthlyNetCashFlows.has(monthYear)) {
-                  monthlyNetCashFlows.set(monthYear, 0);
-                  monthlyDates.set(monthYear, new Date(date.getFullYear(), date.getMonth(), 15)); // Middle of month
-                }
-                
-                // Add to net cash flow (negative for investments, positive for withdrawals)
-                let cashFlowAmount = 0;
-                
-                switch(log.activity_type) {
-                  case 'Investment':
-                  case 'RegularInvestment':
-                  case 'GovernmentUplift':
-                  case 'SwitchIn':
-                    cashFlowAmount = -Math.abs(parseFloat(log.amount)); // Negative - money going in
-                    break;
-                  case 'Withdrawal':
-                  case 'RegularWithdrawal':
-                  case 'SwitchOut':
-                    cashFlowAmount = Math.abs(parseFloat(log.amount)); // Positive - money coming out
-                    break;
-                  default:
-                    // Ignore other activity types
-                    break;
-                }
-                
-                const currentTotal = monthlyNetCashFlows.get(monthYear) || 0;
-                monthlyNetCashFlows.set(monthYear, currentTotal + cashFlowAmount);
-              });
-            } catch (err) {
-              console.warn(`Failed to get activity logs for fund ${fund.id}`, err);
+              if (!fund.isVirtual && fund.id > 0) {
+                allPortfolioFundIds.push(fund.id);
+              }
             }
           }
-        }
-        
-        // Convert to array of cash flows
-        const cashFlows: {date: Date, amount: number}[] = [];
-        
-        // Add each month's net cash flow
-        monthlyNetCashFlows.forEach((amount, monthYear) => {
-          if (amount !== 0) { // Only include non-zero cash flows
-            cashFlows.push({
-              date: monthlyDates.get(monthYear)!,
-              amount: amount
-            });
-          }
-        });
-        
-        // Add current total valuation as the final cash flow
-        let finalCashflowDate = new Date(); // Default to current date
-        
-        // If we have a selected valuation date, use the last day of that month
-        if (selectedValuationDate) {
-          const [year, month] = selectedValuationDate.split('-').map(part => parseInt(part));
           
-          // Create date for the last day of the selected month
-          finalCashflowDate = new Date(year, month, 0);
-        }
-        
-        cashFlows.push({
-          date: finalCashflowDate,
-          amount: overallValuation
-        });
-        
-        // Calculate IRR using the Newton-Raphson method
-        if (cashFlows.length >= 2) {
-          const calculatedIRR = calculateIRR(cashFlows);
-          setTotalIRR(calculatedIRR);
-          console.log('Calculated total IRR using cash flow aggregation:', calculatedIRR);
+          if (allPortfolioFundIds.length > 0) {
+            console.log('Calculating standardized IRR for portfolio fund IDs:', allPortfolioFundIds);
+            
+            // Format the selected valuation date for the API call
+            let formattedDate: string | undefined = undefined;
+        if (selectedValuationDate) {
+              // Convert YYYY-MM format to YYYY-MM-DD (last day of month)
+          const [year, month] = selectedValuationDate.split('-').map(part => parseInt(part));
+              const lastDayOfMonth = new Date(year, month, 0).getDate();
+              formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+            }
+            
+            console.log('Calling standardized multiple funds IRR endpoint with:', {
+              portfolioFundIds: allPortfolioFundIds,
+              irrDate: formattedDate
+            });
+            
+            // Call the standardized multiple funds IRR endpoint
+            const irrResponse = await calculateStandardizedMultipleFundsIRR({
+              portfolioFundIds: allPortfolioFundIds,
+              irrDate: formattedDate
+            });
+            
+            console.log('Standardized IRR response:', irrResponse.data);
+            
+            // The response should already be in percentage format
+            const irrPercentage = irrResponse.data.irr_percentage;
+            setTotalIRR(irrPercentage);
+            console.log('Calculated total IRR using standardized endpoint:', irrPercentage);
         } else {
+            console.warn('No valid portfolio fund IDs found for IRR calculation');
           setTotalIRR(null);
-          console.warn('Insufficient cash flows to calculate IRR');
+          }
+        } catch (irrErr) {
+          console.error('Error calculating standardized IRR:', irrErr);
+          setTotalIRR(null);
         }
       } else {
         setTotalIRR(null);

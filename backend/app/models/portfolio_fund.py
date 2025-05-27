@@ -15,7 +15,7 @@ DecimalWithPrecision = Annotated[Decimal, AfterValidator(validate_decimal_places
 class PortfolioFundBase(BaseModel):
     portfolio_id: int
     available_funds_id: int
-    weighting: Optional[DecimalWithPrecision] = 0  # Set default to 0 instead of None
+    target_weighting: Optional[DecimalWithPrecision] = 0  # Set default to 0 instead of None
     start_date: date
     end_date: Optional[date] = None
     amount_invested: Optional[float] = 0  # Also set default to 0 instead of None
@@ -35,7 +35,7 @@ class PortfolioFundCreate(PortfolioFundBase):
 class PortfolioFundUpdate(BaseModel):
     portfolio_id: Optional[int] = None
     available_funds_id: Optional[int] = None
-    weighting: Optional[DecimalWithPrecision] = None  # matches numeric(5,2), renamed from target_weighting
+    target_weighting: Optional[DecimalWithPrecision] = None  # matches numeric(5,2)
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     amount_invested: Optional[float] = None  # matches double precision
