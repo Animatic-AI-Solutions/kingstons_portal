@@ -392,9 +392,9 @@ async def delete_client_group_products(
         portfolio_fund_ids = []
         if portfolio_ids:
             for portfolio_id in portfolio_ids:
-                pf_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
-                if pf_result.data:
-                    portfolio_fund_ids.extend([pf["id"] for pf in pf_result.data])
+                funds_result = db.table("portfolio_funds").select("id,available_funds_id,status").eq("portfolio_id", portfolio_id).execute()
+                if funds_result.data:
+                    portfolio_fund_ids.extend([fund.get("id") for fund in funds_result.data])
             
         # Delete activity logs associated with portfolio funds
         activity_logs_deleted = 0
@@ -724,8 +724,8 @@ async def get_client_group_irr(client_group_id: int, db = Depends(get_db)):
                 logger.info(f"Product {product.get('id')} has no portfolio attached")
                 continue
                 
-            # Find active portfolio funds for this product
-            funds_result = db.table("portfolio_funds").select("id,available_funds_id").eq("portfolio_id", portfolio_id).eq("status", "active").execute()
+            # Find ALL portfolio funds for this product (including inactive)
+            funds_result = db.table("portfolio_funds").select("id,available_funds_id,status").eq("portfolio_id", portfolio_id).execute()
             
             if funds_result.data and len(funds_result.data) > 0:
                 product_fund_ids = [fund.get("id") for fund in funds_result.data]
@@ -739,10 +739,10 @@ async def get_client_group_irr(client_group_id: int, db = Depends(get_db)):
                     "fund_ids": product_fund_ids
                 })
                 
-                logger.info(f"Product {product.get('id')} ({product.get('product_name')}) has {len(product_fund_ids)} active funds")
+                logger.info(f"Product {product.get('id')} ({product.get('product_name')}) has {len(product_fund_ids)} funds (active and inactive)")
         
         if not all_portfolio_fund_ids:
-            logger.info(f"No active portfolio funds found for client group {client_group_id}")
+            logger.info(f"No portfolio funds found for client group {client_group_id}")
             return {"client_group_id": client_group_id, "irr": 0, "irr_decimal": 0, "portfolio_fund_count": 0}
         
         logger.info(f"Found {len(all_portfolio_fund_ids)} total portfolio funds across {len(product_info)} products")

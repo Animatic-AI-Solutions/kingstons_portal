@@ -1054,28 +1054,28 @@ async def calculate_portfolio_total_irr(
         portfolio_funds = portfolio_funds_result.data
         logger.info(f"Found {len(portfolio_funds)} funds in portfolio {portfolio_id}")
         
-        # Filter to include only active funds
-        active_portfolio_funds = [fund for fund in portfolio_funds if fund.get('status') != 'inactive']
+        # Include ALL funds (active and inactive) for comprehensive IRR calculation
+        all_portfolio_funds = portfolio_funds  # Remove the status filter
         
-        if not active_portfolio_funds:
+        if not all_portfolio_funds:
             return {
                 "status": "error",
-                "error": "No active portfolio funds found",
+                "error": "No portfolio funds found",
                 "portfolio_id": portfolio_id,
                 "irr_percentage": None,
                 "calculation_date": datetime.now().isoformat()
             }
         
-        logger.info(f"Filtered to {len(active_portfolio_funds)} active funds")
+        logger.info(f"Including all {len(all_portfolio_funds)} funds (active and inactive)")
         
-        # Get all portfolio fund IDs for active funds
-        active_fund_ids = [fund["id"] for fund in active_portfolio_funds]
+        # Get all portfolio fund IDs for all funds
+        all_fund_ids = [fund["id"] for fund in all_portfolio_funds]
         
         # Get ALL historical activity logs for these funds
         # CHANGED: Removed the date filter to include all historical data
         activity_logs_result = db.table("holding_activity_log")\
             .select("*")\
-            .in_("portfolio_fund_id", active_fund_ids)\
+            .in_("portfolio_fund_id", all_fund_ids)\
             .execute()
         
         activity_logs = activity_logs_result.data or []
@@ -1085,7 +1085,7 @@ async def calculate_portfolio_total_irr(
         latest_valuations = []
         latest_valuation_date = None
         
-        for fund_id in active_fund_ids:
+        for fund_id in all_fund_ids:
             valuation_result = db.table("fund_valuations")\
                 .select("*")\
                 .eq("portfolio_fund_id", fund_id)\
@@ -1105,7 +1105,7 @@ async def calculate_portfolio_total_irr(
         if not latest_valuations:
             return {
                 "status": "error",
-                "error": "No valuations found for active funds",
+                "error": "No valuations found for portfolio funds",
                 "portfolio_id": portfolio_id,
                 "irr_percentage": None,
                 "calculation_date": datetime.now().isoformat()
@@ -1117,7 +1117,7 @@ async def calculate_portfolio_total_irr(
         monthly_cash_flows = {}
         
         # CHANGED: Create a set of portfolio fund IDs to identify internal transfers
-        portfolio_fund_id_set = set(active_fund_ids)
+        portfolio_fund_id_set = set(all_fund_ids)
         
         # Process all activity logs into monthly buckets
         for activity in activity_logs:

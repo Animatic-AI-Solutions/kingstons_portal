@@ -194,13 +194,8 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
         // Get portfolio funds from the complete data (includes fund names)
         const portfolioFunds = completeData.portfolio_funds || [];
         
-        // Filter for active funds only
-        const activeFunds = portfolioFunds.filter((pf: any) => 
-          pf.status === 'active' && (!pf.end_date || new Date(pf.end_date) > new Date())
-        );
-        
-        if (activeFunds.length === 0) {
-          console.warn('No active portfolio funds found for this portfolio');
+        if (portfolioFunds.length === 0) {
+          console.warn('No portfolio funds found for this portfolio');
           setHoldings([]);
           setIrrHistoryData({});
           setIrrTableColumns([]);
@@ -211,7 +206,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
         }
         
         // Process holdings from portfolio funds
-        const processedHoldings = activeFunds.map((pf: any) => ({
+        const processedHoldings = portfolioFunds.map((pf: any) => ({
           id: pf.id,
           fund_name: pf.fund_name || 'Unknown Fund',
           irr: undefined,
@@ -224,7 +219,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
         const allValuationDates = new Set<string>();
         const fundValuationMap = new Map<number, string[]>(); // fund_id -> array of valuation dates
         
-        for (const fund of activeFunds) {
+        for (const fund of portfolioFunds) {
           try {
             const valuationResponse = await api.get(`/fund_valuations?portfolio_fund_id=${fund.id}&order=valuation_date.desc`);
             const valuations = valuationResponse.data || [];
@@ -245,7 +240,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
         // Find dates where ALL funds have valuations
         const commonDates: string[] = [];
         for (const date of sortedDates) {
-          const allFundsHaveValuation = activeFunds.every((fund: any) => {
+          const allFundsHaveValuation = portfolioFunds.every((fund: any) => {
             const fundDates = fundValuationMap.get(fund.id) || [];
             return fundDates.some((fundDate: string) => fundDate <= date); // Fund has valuation on or before this date
           });
@@ -259,7 +254,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
         
         // Calculate portfolio IRR for each common date
         const portfolioIRRResults: {[monthYear: string]: number} = {};
-        const portfolioFundIds = activeFunds.map((pf: any) => pf.id);
+        const portfolioFundIds = portfolioFunds.map((pf: any) => pf.id);
         
         // Limit to last 24 months for performance
         const recentDates = commonDates.slice(0, 24);
@@ -294,7 +289,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
         // This maintains compatibility with the existing IRR calculation and storage system
         const tableData: IRRTableData = {};
         
-        for (const fund of activeFunds) {
+        for (const fund of portfolioFunds) {
           try {
             // Get stored IRR values for this fund
             const irrResponse = await getFundIRRValues(fund.id);

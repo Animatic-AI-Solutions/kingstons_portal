@@ -1246,9 +1246,9 @@ const formatPercentageFallback = (value: number | null): string => {
         
         if (fundSummaries.length > 0 && productValuation > 0) {
           try {
-            // Get portfolio fund IDs for this product (excluding virtual/inactive funds)
+            // Get portfolio fund IDs for this product (excluding only virtual funds)
             const productPortfolioFundIds = fundSummaries
-              .filter(fund => !fund.isVirtual && fund.status === 'active' && fund.id > 0)
+              .filter(fund => !fund.isVirtual && fund.id > 0)
               .map(fund => fund.id);
             
             if (productPortfolioFundIds.length > 0) {
@@ -1394,18 +1394,29 @@ Please select a different valuation date or ensure all active funds have valuati
       // Calculate overall IRR using the standardized multiple funds IRR endpoint
       if (productSummaryResults.length > 0 && overallValuation > 0) {
         try {
-          // Collect all portfolio fund IDs from all products (excluding virtual funds)
+          // Collect all portfolio fund IDs from all products
+          // We need to collect from the original fundSummaries arrays, not the finalFundList
+          // which excludes inactive funds. We'll need to reconstruct this from the product processing.
           const allPortfolioFundIds: number[] = [];
-        
-        for (const product of productSummaryResults) {
-          if (!product.funds || product.funds.length === 0) continue;
           
-            // Add all non-virtual fund IDs
-          for (const fund of product.funds) {
-              if (!fund.isVirtual && fund.id > 0) {
-                allPortfolioFundIds.push(fund.id);
+          // Re-process each product to get ALL fund IDs (active and inactive)
+          for (const productId of uniqueProductIds) {
+            const productDetails = comprehensiveProductList.find(p => p.id === productId);
+            if (!productDetails) continue;
+            
+            const portfolioId = productDetails.portfolio_id;
+            if (!portfolioId) continue;
+            
+            // Get portfolio funds for this product
+            const portfolioFundsResponse = await api.get(`/portfolio_funds?portfolio_id=${portfolioId}`);
+            const productPortfolioFunds = portfolioFundsResponse.data as PortfolioFund[];
+            
+            // Add ALL portfolio fund IDs (active and inactive)
+            productPortfolioFunds.forEach(pf => {
+              if (pf.id && pf.id > 0) {
+                allPortfolioFundIds.push(pf.id);
               }
-            }
+            });
           }
           
           if (allPortfolioFundIds.length > 0) {
@@ -1436,7 +1447,7 @@ Please select a different valuation date or ensure all active funds have valuati
             // The response should already be in percentage format
             const irrPercentage = irrResponse.data.irr_percentage;
             setTotalIRR(irrPercentage);
-            console.log('Calculated total IRR using standardized endpoint:', irrPercentage);
+            console.log('Calculated total IRR using standardized endpoint (including inactive funds):', irrPercentage);
         } else {
             console.warn('No valid portfolio fund IDs found for IRR calculation');
           setTotalIRR(null);
