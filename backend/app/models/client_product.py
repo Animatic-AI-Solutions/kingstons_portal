@@ -15,9 +15,8 @@ class ClientproductBase(BaseModel):
     product_type: Optional[str] = None
     portfolio_id: Optional[int] = None
     template_generation_id: Optional[int] = None
-    original_template_id: Optional[int] = None
-    original_template_name: Optional[str] = None
     template_info: Optional[Dict[str, Any]] = None
+    notes: Optional[str] = None
 
     model_config = ConfigDict(
         from_attributes=True
@@ -37,6 +36,7 @@ class ClientproductUpdate(BaseModel):
     product_type: Optional[str] = None
     portfolio_id: Optional[int] = None
     notes: Optional[str] = None
+    template_generation_id: Optional[int] = None
 
     model_config = ConfigDict(
         from_attributes=True
