@@ -1224,9 +1224,9 @@ const formatPercentageFallback = (value: number | null): string => {
               
               // Format the selected valuation date for the API call
               let formattedDate: string | undefined = undefined;
-              if (selectedValuationDate) {
+          if (selectedValuationDate) {
                 // Convert YYYY-MM format to YYYY-MM-DD (last day of month)
-                const [year, month] = selectedValuationDate.split('-').map(part => parseInt(part));
+            const [year, month] = selectedValuationDate.split('-').map(part => parseInt(part));
                 const lastDayOfMonth = new Date(year, month, 0).getDate();
                 formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
               }
@@ -1240,7 +1240,7 @@ const formatPercentageFallback = (value: number | null): string => {
               // The response should already be in percentage format
               productIRR = irrResponse.data.irr_percentage;
               console.log(`Calculated IRR for product ${productId} using standardized endpoint: ${productIRR}`);
-            } else {
+          } else {
               console.warn(`No valid portfolio fund IDs found for product ${productId} IRR calculation`);
             }
           } catch (irrErr) {
@@ -1248,7 +1248,7 @@ const formatPercentageFallback = (value: number | null): string => {
             productIRR = null;
           }
         }
-        
+
         // Helper function to create a virtual "Previous Funds" entry
         const createPreviousFundsEntry = (inactiveFunds: FundSummary[]): FundSummary | null => {
           if (inactiveFunds.length === 0) return null;
@@ -1364,12 +1364,12 @@ Please select a different valuation date or ensure all active funds have valuati
         try {
           // Collect all portfolio fund IDs from all products (excluding virtual funds)
           const allPortfolioFundIds: number[] = [];
+        
+        for (const product of productSummaryResults) {
+          if (!product.funds || product.funds.length === 0) continue;
           
-          for (const product of productSummaryResults) {
-            if (!product.funds || product.funds.length === 0) continue;
-            
             // Add all non-virtual fund IDs
-            for (const fund of product.funds) {
+          for (const fund of product.funds) {
               if (!fund.isVirtual && fund.id > 0) {
                 allPortfolioFundIds.push(fund.id);
               }
@@ -1381,9 +1381,9 @@ Please select a different valuation date or ensure all active funds have valuati
             
             // Format the selected valuation date for the API call
             let formattedDate: string | undefined = undefined;
-            if (selectedValuationDate) {
+        if (selectedValuationDate) {
               // Convert YYYY-MM format to YYYY-MM-DD (last day of month)
-              const [year, month] = selectedValuationDate.split('-').map(part => parseInt(part));
+          const [year, month] = selectedValuationDate.split('-').map(part => parseInt(part));
               const lastDayOfMonth = new Date(year, month, 0).getDate();
               formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
             }
@@ -1405,9 +1405,9 @@ Please select a different valuation date or ensure all active funds have valuati
             const irrPercentage = irrResponse.data.irr_percentage;
             setTotalIRR(irrPercentage);
             console.log('Calculated total IRR using standardized endpoint:', irrPercentage);
-          } else {
+        } else {
             console.warn('No valid portfolio fund IDs found for IRR calculation');
-            setTotalIRR(null);
+          setTotalIRR(null);
           }
         } catch (irrErr) {
           console.error('Error calculating standardized IRR:', irrErr);

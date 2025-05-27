@@ -795,7 +795,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
           });
           
           console.log(`Standardized IRR calculation successful for fund ${fund.id}:`, response.data);
-          
+      
           // Now save the IRR result to the database
           try {
             const saveResponse = await createIRRValue({

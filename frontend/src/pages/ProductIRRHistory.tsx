@@ -313,10 +313,10 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
             };
           } catch (err) {
             console.warn(`Failed to get IRR values for fund ${fund.id}:`, err);
-            tableData[fund.id] = {
+          tableData[fund.id] = {
               fundName: fund.fund_name || 'Unknown Fund',
               values: {}
-            };
+          };
           }
         }
         
