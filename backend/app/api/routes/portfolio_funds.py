@@ -2580,6 +2580,7 @@ async def recalculate_fund_irr_for_date(
         logger.error(f"Error recalculating IRR for fund {portfolio_fund_id}, date {valuation_date}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error recalculating IRR: {str(e)}")
 
+
 # ==================== NEW STANDARDIZED IRR ENDPOINTS ====================
 
 @router.post("/portfolio_funds/multiple/irr", response_model=dict)
