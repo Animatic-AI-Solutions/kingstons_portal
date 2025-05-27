@@ -988,7 +988,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       
       // Successful completion
       alert('Successfully created client products and portfolios');
+
       navigate(returnPath);
+
     } catch (err: any) { // Type the error as any
       console.error('Error in form submission:', err);
       
