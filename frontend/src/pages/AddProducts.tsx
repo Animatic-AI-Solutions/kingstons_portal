@@ -233,8 +233,8 @@ const AddAccount: React.FC = () => {
     try {
       const response = await api.get('/funds');
       
-      // Filter out the cashline fund (it should not be user-selectable)
-      const filteredFunds = response.data.filter((fund: Fund) => fund.isin_number !== "CASHLINE");
+      // Filter out the cash fund (it should not be user-selectable)
+      const filteredFunds = response.data.filter((fund: Fund) => !(fund.fund_name === "Cash" && fund.isin_number === "N/A"));
       
       setAvailableFunds(prev => ({
         ...prev,

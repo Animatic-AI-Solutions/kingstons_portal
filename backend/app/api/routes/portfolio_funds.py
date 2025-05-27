@@ -514,11 +514,15 @@ async def update_portfolio_fund(portfolio_fund_id: int, portfolio_fund_update: P
         if "status" in update_data:
             logger.info(f"Changing portfolio fund {portfolio_fund_id} status from '{existing_data.get('status', 'not set')}' to '{update_data['status']}'")
         
-        # Convert date objects to ISO format strings
+        # Convert date objects to ISO format strings and Decimal objects to floats
         if 'start_date' in update_data and update_data['start_date'] is not None:
             update_data['start_date'] = update_data['start_date'].isoformat()
         if 'end_date' in update_data and update_data['end_date'] is not None:
             update_data['end_date'] = update_data['end_date'].isoformat()
+        
+        # Convert Decimal objects to floats for JSON serialization
+        for key, value in update_data.items():
+            update_data[key] = to_serializable(value)
             
         # Perform the update
         result = db.table("portfolio_funds").update(update_data).eq("id", portfolio_fund_id).execute()
