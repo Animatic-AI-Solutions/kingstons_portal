@@ -156,9 +156,6 @@ async def get_client_products_with_owners(
                     template = template_generations_map[template_generation_id]
                     product["template_generation_id"] = template_generation_id
                     product["template_info"] = template
-                    # Add backward compatibility fields
-                    product["original_template_id"] = template_generation_id
-                    product["original_template_name"] = template.get("generation_name")
             
             # Add total_value and irr from the summary data map
             if product_id in summary_data:
@@ -307,9 +304,6 @@ async def get_client_products(
                     template = template_generations_map[template_generation_id]
                     product["template_generation_id"] = template_generation_id
                     product["template_info"] = template
-                    # Add backward compatibility fields
-                    product["original_template_id"] = template_generation_id
-                    product["original_template_name"] = template.get("generation_name")
             
             # Add total_value and irr from the summary data map
             product_id = product.get("id")
@@ -493,9 +487,6 @@ async def get_client_product(client_product_id: int, db = Depends(get_db)):
                         template = template_result.data[0]
                         client_product["template_generation_id"] = portfolio.get("template_generation_id")
                         client_product["template_info"] = template
-                        # Add backward compatibility fields
-                        client_product["original_template_id"] = portfolio.get("template_generation_id")
-                        client_product["original_template_name"] = template.get("generation_name")
             
         # Fetch total_value and irr from the product_value_irr_summary view
         try:
@@ -1036,10 +1027,6 @@ async def get_complete_product_details(client_product_id: int, db = Depends(get_
                         generation_info = generation_result.data
                         response["template_info"] = generation_info # Contains generation name, version, etc.
                         response["template_generation_id"] = original_template_generation_id
-                        # Use generation_name for original_template_name
-                        response["original_template_name"] = generation_info.get("generation_name")
-                        # Add backward compatibility field
-                        response["original_template_id"] = original_template_generation_id
                         # If the parent template name is needed and fetched via a join (e.g., template_portfolio_generations(name)):
                         if generation_info.get("template_portfolio_generations") and isinstance(generation_info.get("template_portfolio_generations"), dict):
                             response["parent_template_name"] = generation_info.get("template_portfolio_generations").get("name")

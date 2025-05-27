@@ -482,6 +482,43 @@ export const calculateStandardizedMultipleFundsIRR = (params: {
 };
 
 /**
+ * Calculates standardized IRR for a single portfolio fund using the new standardized endpoint
+ * @param {Object} params - IRR calculation parameters
+ * @param {number} params.portfolioFundId - Portfolio fund ID
+ * @param {string} params.irrDate - Date for the IRR calculation (YYYY-MM-DD format)
+ * @returns {Promise} - API response with standardized IRR calculation
+ */
+export const calculateStandardizedSingleFundIRR = (params: {
+  portfolioFundId: number;
+  irrDate?: string;
+}) => {
+  return api.post(`portfolio_funds/${params.portfolioFundId}/irr`, params.irrDate || null);
+};
+
+/**
+ * Creates a new IRR value record in the database
+ * @param {Object} params - IRR value data
+ * @param {number} params.fundId - Portfolio fund ID
+ * @param {number} params.irrResult - IRR result as percentage (e.g., 5.25 for 5.25%)
+ * @param {string} params.date - Date for the IRR calculation (YYYY-MM-DD format)
+ * @param {number} [params.fundValuationId] - Optional fund valuation ID reference
+ * @returns {Promise} - API response with created/updated IRR value
+ */
+export const createIRRValue = (params: {
+  fundId: number;
+  irrResult: number;
+  date: string;
+  fundValuationId?: number;
+}) => {
+  return api.post('irr-values', {
+    fund_id: params.fundId,
+    irr_result: params.irrResult,
+    date: params.date,
+    fund_valuation_id: params.fundValuationId || null
+  });
+};
+
+/**
  * FUND API ENDPOINTS
  */
 

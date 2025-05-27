@@ -321,7 +321,7 @@ const Definitions: React.FC = () => {
         try {
           const portfolioCountResponse = await api.get(`/portfolios`, {
             params: {
-              original_template_id: portfolioId,
+              template_generation_id: portfolioId,
               count_only: true
             },
             signal

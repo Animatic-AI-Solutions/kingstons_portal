@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getFundIRRValues, getBatchFundIRRValues, getAggregatedIRRHistory } from '../services/api';
+import { getFundIRRValues, getBatchFundIRRValues, calculateStandardizedMultipleFundsIRR } from '../services/api';
 
 interface Account {
   id: number;
@@ -162,85 +162,168 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
       setIsLoading(true);
       setError(null);
       
-      console.log('AccountIRRHistory: Making API request to /client_products/' + accountId);
+      console.log('AccountIRRHistory: Making API request to complete endpoint for product data');
       
-      // First fetch the account to get the portfolio_id
-      const accountResponse = await api.get(`/client_products/${accountId}`);
-      console.log('AccountIRRHistory: Account data received:', accountResponse.data);
+      // Use the same optimized endpoint as ProductOverview that returns all data in one request
+      const completeProductResponse = await api.get(`/api/client_products/${accountId}/complete`);
+      const completeData = completeProductResponse.data;
       
-      // Get the portfolio_id from the account
-      const portfolioId = accountResponse.data.portfolio_id;
+      console.log('AccountIRRHistory: Complete product data received:', completeData);
+      
+      // Get the portfolio_id from the complete data
+      const portfolioId = completeData.portfolio_id;
       
       if (!portfolioId) {
         console.warn('AccountIRRHistory: No portfolio ID found for this account');
         setError('No portfolio is associated with this product. Please assign a portfolio first.');
         // Set account even if there's an error so we can show product info
-        setAccount(accountResponse.data);
+        setAccount(completeData);
         setIsLoading(false);
         return;
       }
       
-      // Get portfolio details if we have a portfolio_id
-      if (portfolioId) {
-        const portfolioResponse = await api.get(`/portfolios/${portfolioId}`);
-        if (portfolioResponse.data) {
-          // Merge portfolio data into account object
-          accountResponse.data.portfolio_name = portfolioResponse.data.portfolio_name;
-        }
-      }
-      
       // Set account data with portfolio information
-      setAccount(accountResponse.data);
+      setAccount(completeData);
       
-      // Fetch portfolio funds via the aggregated IRR endpoint 
-      // which now includes all fund details
+      // Fetch portfolio funds and calculate standardized IRR history
       try {
         setIsLoadingHistory(true);
         
-        console.log('Fetching aggregated IRR history for portfolio:', portfolioId);
+        console.log('Processing portfolio funds for standardized IRR history calculation:', portfolioId);
         
-        // Use the enhanced endpoint with portfolio_id directly
-        const response = await getAggregatedIRRHistory({ 
-          portfolioId: portfolioId,
-          includeFundDetails: true,
-          includePortfolioIRR: true
-        });
+        // Get portfolio funds from the complete data (includes fund names)
+        const portfolioFunds = completeData.portfolio_funds || [];
         
-        const aggregatedData: AggregatedIRRData = response.data;
+        // Filter for active funds only
+        const activeFunds = portfolioFunds.filter((pf: any) => 
+          pf.status === 'active' && (!pf.end_date || new Date(pf.end_date) > new Date())
+        );
         
-        // Process funds data to create our holdings
-        const processedHoldings = aggregatedData.funds.map(fund => ({
-          id: fund.id,
-          fund_name: fund.name,
-          irr: undefined,  // Use undefined instead of null to match the Holding interface
-          portfolio_fund_id: fund.id
+        if (activeFunds.length === 0) {
+          console.warn('No active portfolio funds found for this portfolio');
+          setHoldings([]);
+          setIrrHistoryData({});
+          setIrrTableColumns([]);
+          setPortfolioIRRData({});
+          setIsLoadingHistory(false);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Process holdings from portfolio funds
+        const processedHoldings = activeFunds.map((pf: any) => ({
+          id: pf.id,
+          fund_name: pf.fund_name || 'Unknown Fund',
+          irr: undefined,
+          portfolio_fund_id: pf.id
         }));
         
         setHoldings(processedHoldings);
         
-        // Set the pre-formatted data from the backend
-        setIrrTableColumns(aggregatedData.columns);
+        // Get all unique valuation dates across all funds
+        const allValuationDates = new Set<string>();
+        const fundValuationMap = new Map<number, string[]>(); // fund_id -> array of valuation dates
         
-        // Convert the aggregated data format to our internal format
-        const tableData: IRRTableData = {};
-        
-        aggregatedData.funds.forEach(fund => {
-          tableData[fund.id] = {
-            fundName: fund.name,
-            values: fund.values
-          };
-        });
-        
-        setIrrHistoryData(tableData);
-        
-        // Store portfolio IRR data if available
-        if (aggregatedData.portfolio_irr) {
-          setPortfolioIRRData(aggregatedData.portfolio_irr);
+        for (const fund of activeFunds) {
+          try {
+            const valuationResponse = await api.get(`/fund_valuations?portfolio_fund_id=${fund.id}&order=valuation_date.desc`);
+            const valuations = valuationResponse.data || [];
+            
+            const fundDates = valuations.map((v: any) => v.valuation_date.split('T')[0]); // Extract YYYY-MM-DD
+            fundValuationMap.set(fund.id, fundDates);
+            
+            fundDates.forEach((date: string) => allValuationDates.add(date));
+          } catch (err) {
+            console.warn(`Could not get valuations for fund ${fund.id}:`, err);
+            fundValuationMap.set(fund.id, []);
+          }
         }
         
+        // Convert to sorted array (most recent first)
+        const sortedDates = Array.from(allValuationDates).sort((a, b) => b.localeCompare(a));
+        
+        // Find dates where ALL funds have valuations
+        const commonDates: string[] = [];
+        for (const date of sortedDates) {
+          const allFundsHaveValuation = activeFunds.every((fund: any) => {
+            const fundDates = fundValuationMap.get(fund.id) || [];
+            return fundDates.some((fundDate: string) => fundDate <= date); // Fund has valuation on or before this date
+          });
+          
+          if (allFundsHaveValuation) {
+            commonDates.push(date);
+          }
+        }
+        
+        console.log('Common valuation dates for portfolio IRR calculation:', commonDates);
+        
+        // Calculate portfolio IRR for each common date
+        const portfolioIRRResults: {[monthYear: string]: number} = {};
+        const portfolioFundIds = activeFunds.map((pf: any) => pf.id);
+        
+        // Limit to last 24 months for performance
+        const recentDates = commonDates.slice(0, 24);
+        
+        for (const date of recentDates) {
+          try {
+            console.log(`Calculating portfolio IRR for date: ${date}`);
+            
+            const irrResponse = await calculateStandardizedMultipleFundsIRR({
+              portfolioFundIds,
+              irrDate: date
+            });
+            
+            const irrPercentage = irrResponse.data.irr_percentage;
+            const monthYear = formatMonthYear(date + 'T00:00:00Z'); // Add time for proper date parsing
+            portfolioIRRResults[monthYear] = irrPercentage;
+            
+            console.log(`Portfolio IRR for ${date}: ${irrPercentage}%`);
+          } catch (err) {
+            console.warn(`Failed to calculate portfolio IRR for date ${date}:`, err);
+          }
+        }
+        
+        // Set the portfolio IRR data
+        setPortfolioIRRData(portfolioIRRResults);
+        
+        // Create columns from the dates we calculated
+        const columns = recentDates.map((date: string) => formatMonthYear(date + 'T00:00:00Z'));
+        setIrrTableColumns(columns);
+        
+        // For individual fund IRR values, we'll use the existing IRR values from the database
+        // This maintains compatibility with the existing IRR calculation and storage system
+        const tableData: IRRTableData = {};
+        
+        for (const fund of activeFunds) {
+          try {
+            // Get stored IRR values for this fund
+            const irrResponse = await getFundIRRValues(fund.id);
+            const irrValues = irrResponse.data || [];
+            
+            const fundValues: {[monthYear: string]: number} = {};
+            
+            irrValues.forEach((irr: any) => {
+              const monthYear = formatMonthYear(irr.date);
+              fundValues[monthYear] = parseFloat(irr.irr);
+            });
+            
+            tableData[fund.id] = {
+              fundName: fund.fund_name || 'Unknown Fund',
+              values: fundValues
+            };
+          } catch (err) {
+            console.warn(`Failed to get IRR values for fund ${fund.id}:`, err);
+            tableData[fund.id] = {
+              fundName: fund.fund_name || 'Unknown Fund',
+              values: {}
+            };
+          }
+        }
+        
+        setIrrHistoryData(tableData);
         setIsLoadingHistory(false);
       } catch (err) {
-        console.error('Error fetching aggregated IRR history:', err);
+        console.error('Error fetching standardized IRR history:', err);
         setError(`Error loading IRR history: ${(err as any).message || 'Unknown error'}`);
         setIsLoadingHistory(false);
       }

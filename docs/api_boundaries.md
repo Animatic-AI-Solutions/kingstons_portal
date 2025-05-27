@@ -371,8 +371,10 @@ graph TD
     "status": "string (default: active)",
     "start_date": "string (ISO date)",
     "weighting": "number (optional)",
-    "original_template_id": "integer (optional)",
-    "is_bespoke": "boolean (optional)"
+    "product_type": "string (optional)",
+    "portfolio_id": "integer (optional)",
+    "notes": "string (optional)",
+    "template_generation_id": "integer (optional)"
   }
   ```
 - **Response**:
@@ -385,6 +387,10 @@ graph TD
     "status": "string",
     "start_date": "string (ISO date)",
     "weighting": "number",
+    "product_type": "string (optional)",
+    "portfolio_id": "integer (optional)",
+    "notes": "string (optional)",
+    "template_generation_id": "integer (optional)",
     "created_at": "string (ISO date)"
   }
   ```
@@ -676,8 +682,10 @@ The API uses two authentication mechanisms:
   "weighting": "number",
   "created_at": "string (ISO date)",
   "plan_number": "string (optional)",
-  "original_template_id": "integer (optional)",
-  "is_bespoke": "boolean"
+  "product_type": "string (optional)",
+  "portfolio_id": "integer (optional)",
+  "notes": "string (optional)",
+  "template_generation_id": "integer (optional)"
 }
 ```
 

@@ -8,24 +8,39 @@ import FilterDropdown from '../components/ui/FilterDropdown';
 interface Product {
   id: number;
   client_id: number;
-  client_name?: string;
+  client_name: string;
   product_name: string;
+  status: string;
+  start_date: string;
+  end_date?: string;
+  irr?: number;
+  irr_date?: string | null;
+  total_value?: number;
   provider_name?: string;
   provider_id?: number;
   provider_theme_color?: string;
   portfolio_name?: string;
-  status: string;
-  start_date: string;
-  irr?: number | null;
-  irr_date?: string | null;
-  total_value?: number;
+  product_type?: string;
+  plan_number?: string;
+  is_bespoke?: boolean;
+  template_generation_id?: number;
+  template_info?: {
+    id: number;
+    generation_name: string;
+    name?: string;
+  };
+  target_risk?: number;
+  portfolio_id?: number;
+  notes?: string;
   product_owners?: Array<{id: number, name: string, type?: string}>;
-  original_template_id?: number;
-  original_template_name?: string;
-  template_info?: any;
+  current_portfolio?: {
+    id: number;
+    portfolio_name: string;
+    assignment_start_date: string;
+  };
 }
 
-type SortField = 'product_name' | 'provider_name' | 'client_name' | 'total_value' | 'status' | 'irr' | 'product_owners' | 'original_template_name';
+type SortField = 'product_name' | 'provider_name' | 'client_name' | 'total_value' | 'status' | 'irr' | 'product_owners' | 'template_generation_id';
 type SortOrder = 'asc' | 'desc';
 
 const Products: React.FC = () => {
@@ -218,8 +233,8 @@ const Products: React.FC = () => {
     )
     .filter(product => 
       templatePortfolioFilter.length === 0 ||
-      (product.original_template_name && templatePortfolioFilter.includes(product.original_template_name)) ||
-      (templatePortfolioFilter.includes('Bespoke') && !product.original_template_id)
+      (product.template_generation_id && templatePortfolioFilter.includes(product.template_generation_id.toString())) ||
+      (templatePortfolioFilter.includes('Bespoke') && !product.template_generation_id)
     )
     .sort((a, b) => {
       let aValue: any = a[sortField];
@@ -457,10 +472,10 @@ const Products: React.FC = () => {
                             </th>
                             <th className="w-[15%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
                               <div className="flex flex-col items-start">
-                                <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('original_template_name')}>
+                                <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('template_generation_id')}>
                                   Template Portfolio
                                   <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                                    {sortField === 'original_template_name' ? (
+                                    {sortField === 'template_generation_id' ? (
                                       sortOrder === 'asc' ? (
                                         <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
@@ -548,7 +563,7 @@ const Products: React.FC = () => {
                                 </div>
                               </td>
                               <td className="px-6 py-3 whitespace-nowrap">
-                                <div className="text-sm text-gray-600 font-sans">{product.original_template_name || (product.original_template_id ? 'Template' : 'Bespoke')}</div>
+                                <div className="text-sm text-gray-600 font-sans">{product.template_generation_id ? product.template_info?.generation_name : 'Bespoke'}</div>
                               </td>
                               <td className="px-6 py-3 whitespace-nowrap">
                                 {product.total_value !== undefined ? (
@@ -685,10 +700,10 @@ const Products: React.FC = () => {
                     </th>
                     <th className="w-[18%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
                       <div className="flex flex-col items-start">
-                        <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('original_template_name')}>
+                        <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('template_generation_id')}>
                           Template Portfolio
                           <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                            {sortField === 'original_template_name' ? (
+                            {sortField === 'template_generation_id' ? (
                               sortOrder === 'asc' ? (
                                 <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
@@ -806,7 +821,7 @@ const Products: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-3 whitespace-nowrap">
-                          <div className="text-sm text-gray-600 font-sans">{product.original_template_name || (product.original_template_id ? 'Template' : 'Bespoke')}</div>
+                          <div className="text-sm text-gray-600 font-sans">{product.template_generation_id ? product.template_info?.generation_name : 'Bespoke'}</div>
                         </td>
                         <td className="px-6 py-3 whitespace-nowrap">
                           {product.total_value !== undefined ? (

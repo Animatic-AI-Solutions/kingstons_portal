@@ -425,13 +425,13 @@ async def create_portfolio_from_template(data: PortfolioFromTemplate, db = Depen
     latest_generation = latest_generation_response.data[0]
     logger.info(f"Using template generation: {latest_generation['id']} (version {latest_generation['version_number']})")
     
-    # Create new portfolio
+    # Create portfolio from template
     portfolio_response = db.table('portfolios')\
         .insert({
             "portfolio_name": data.portfolio_name,
             "status": "active",
             "start_date": str(date.today()),
-            "original_template_id": data.template_id
+            "template_generation_id": data.template_id
         })\
         .execute()
     
