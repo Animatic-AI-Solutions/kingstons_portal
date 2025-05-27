@@ -1487,7 +1487,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                 tableFunds.push(previousFundsEntry);
               }
               
-              // Sort funds alphabetically, but place Cashline at the end and Previous Funds at the very end
+              // Sort funds alphabetically, but place Cash at the end and Previous Funds at the very end
               tableFunds.sort((a, b) => {
                 // Previous Funds entry always goes last
                 if (a.id === -1) return 1;

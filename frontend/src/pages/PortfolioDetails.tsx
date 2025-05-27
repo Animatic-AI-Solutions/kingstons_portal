@@ -514,16 +514,16 @@ const PortfolioDetails: React.FC = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                   {portfolioFunds.map((portfolioFund) => {
-                    // Check if this is the cashline fund
-                    const isCashline = portfolioFund.fund_details?.isin_number === "CASHLINE";
+                    // Check if this is the cash fund
+                    const isCash = portfolioFund.fund_details?.fund_name === "Cash" && portfolioFund.fund_details?.isin_number === "N/A";
                     
                     return (
                       <tr 
                         key={portfolioFund.id} 
-                        className={isCashline ? 'cashline-fund' : ''}
+                        className={isCash ? 'cash-fund' : ''}
                       >
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {isCashline && <span className="cashline-badge">Cashline</span>}
+                          {isCash && <span className="cash-badge">Cash</span>}
                           {portfolioFund.fund_details?.fund_name || `Fund ${portfolioFund.available_funds_id}`}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

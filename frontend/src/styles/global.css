@@ -154,24 +154,24 @@
   *:focus-visible {
     @apply outline-none ring-2 ring-primary-500 ring-offset-2;
   }
-}
 
-/* Cashline fund styling */
-.cashline-fund {
-  background-color: rgba(236, 253, 245, 0.5); /* Light mint green background */
-  border-left: 3px solid #10B981; /* Green border */
-}
+  /* Cash fund styling */
+  .cash-fund {
+    background-color: rgba(236, 253, 245, 0.5); /* Light mint green background */
+    border-left: 3px solid #10B981; /* Green border */
+  }
 
-.cashline-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #0f766e;
-  background-color: #d1fae5;
-  border-radius: 0.375rem;
-  margin-right: 0.5rem;
+  .cash-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #0f766e;
+    background-color: #d1fae5;
+    border-radius: 0.375rem;
+    margin-right: 0.5rem;
+  }
 }
 
 /* Animation for provider color gradient header */

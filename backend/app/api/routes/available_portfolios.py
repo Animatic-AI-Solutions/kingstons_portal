@@ -869,6 +869,84 @@ async def update_generation(
         logger.error(f"Error updating generation: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.delete("/{portfolio_id}/generations/{generation_id}", response_model=dict)
+async def delete_generation(portfolio_id: int, generation_id: int, db = Depends(get_db)):
+    """
+    Delete a specific generation of a portfolio template.
+    
+    Args:
+        portfolio_id: The ID of the portfolio template
+        generation_id: The ID of the generation to delete
+        
+    Returns:
+        A success message and details of what was deleted
+    """
+    try:
+        logger.info(f"Deleting generation {generation_id} from portfolio template {portfolio_id}")
+        
+        # Check if generation exists and belongs to the specified portfolio
+        generation_response = db.table('template_portfolio_generations')\
+            .select('*')\
+            .eq('id', generation_id)\
+            .eq('available_portfolio_id', portfolio_id)\
+            .single()\
+            .execute()
+        
+        if not generation_response.data:
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Generation with ID {generation_id} not found for portfolio {portfolio_id}"
+            )
+        
+        generation = generation_response.data
+        
+        # Check if any portfolios are using this generation
+        portfolios_using_generation = db.table("portfolios")\
+            .select("id")\
+            .eq("template_generation_id", generation_id)\
+            .execute()
+        
+        if portfolios_using_generation.data and len(portfolios_using_generation.data) > 0:
+            portfolio_count = len(portfolios_using_generation.data)
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot delete generation '{generation['generation_name']}' - {portfolio_count} portfolio(s) are using this generation"
+            )
+        
+        # Get count of funds that will be deleted
+        funds_response = db.table("available_portfolio_funds")\
+            .select("id")\
+            .eq("template_portfolio_generation_id", generation_id)\
+            .execute()
+        
+        funds_count = len(funds_response.data) if funds_response.data else 0
+        
+        # Delete the generation (this will cascade delete funds due to ON DELETE CASCADE)
+        delete_result = db.table("template_portfolio_generations")\
+            .delete()\
+            .eq("id", generation_id)\
+            .execute()
+        
+        if not delete_result.data or len(delete_result.data) == 0:
+            raise HTTPException(status_code=500, detail="Failed to delete generation")
+        
+        logger.info(f"Successfully deleted generation {generation_id} and {funds_count} associated funds")
+        
+        return {
+            "message": f"Generation '{generation['generation_name']}' deleted successfully",
+            "details": {
+                "generation_id": generation_id,
+                "generation_name": generation['generation_name'],
+                "funds_deleted": funds_count
+            }
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting generation: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/generations/{generation_id}", response_model=GenerationDetail)
 async def get_generation_by_id(generation_id: int, db = Depends(get_db)):
     """Get a specific generation by ID"""

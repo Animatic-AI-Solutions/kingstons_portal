@@ -430,17 +430,34 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         let updatedType = product.portfolio.type;
         let updatedWeightings = { ...product.portfolio.fundWeightings };
         
-        if (isSelected) {
-          // Remove fund
-          updatedFunds = selectedFunds.filter(id => id !== fundId);
-          // Remove weighting for this fund
-          delete updatedWeightings[fundId.toString()];
+        // Check if this is the Cash fund - prevent removal
+        const fund = funds.find(f => f.id === fundId);
+        if (fund?.fund_name === 'Cash' && fund?.isin_number === 'N/A') {
+          // Don't allow removal of Cash fund, but allow adding it if not already selected
+          if (!isSelected) {
+            updatedFunds = [...selectedFunds, fundId];
+            // Add default weighting for Cash fund (0%)
+            if (product.portfolio.type === 'bespoke') {
+              updatedWeightings[fundId.toString()] = '0';
+            }
+          } else {
+            // Trying to remove Cash fund - show message and return unchanged
+            showToastMessage('Cash fund cannot be removed from portfolios.');
+            return product;
+          }
         } else {
-          // Add fund
-          updatedFunds = [...selectedFunds, fundId];
-          // Add default weighting for bespoke portfolios
-          if (product.portfolio.type === 'bespoke') {
-            updatedWeightings[fundId.toString()] = '';
+          if (isSelected) {
+            // Remove fund
+            updatedFunds = selectedFunds.filter(id => id !== fundId);
+            // Remove weighting for this fund
+            delete updatedWeightings[fundId.toString()];
+          } else {
+            // Add fund
+            updatedFunds = [...selectedFunds, fundId];
+            // Add default weighting for bespoke portfolios
+            if (product.portfolio.type === 'bespoke') {
+              updatedWeightings[fundId.toString()] = '';
+            }
           }
         }
         
@@ -450,7 +467,13 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           // Initialize weightings for all selected funds when converting to bespoke
           updatedWeightings = {};
           updatedFunds.forEach(id => {
-            updatedWeightings[id.toString()] = '';
+            const fundForWeighting = funds.find(f => f.id === id);
+            // Initialize weighting for all funds, including Cash fund (default to 0)
+            if (fundForWeighting?.fund_name === 'Cash' && fundForWeighting?.isin_number === 'N/A') {
+              updatedWeightings[id.toString()] = '0';
+            } else {
+              updatedWeightings[id.toString()] = '';
+            }
           });
           // Show a toast notification instead of an error
           showToastMessage(`Template portfolio has been converted to bespoke because you modified the fund selection.`);
@@ -513,22 +536,36 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       return 100; // Template portfolios are assumed to be 100%
     }
     
-    return product.portfolio.selectedFunds.reduce((total, fundId) => {
+    let total = 0;
+    
+    // Add weightings from selected funds
+    total += product.portfolio.selectedFunds.reduce((sum, fundId) => {
       const weighting = product.portfolio.fundWeightings[fundId.toString()];
       const numValue = weighting ? parseFloat(weighting) : 0;
-      return total + (isNaN(numValue) ? 0 : numValue);
+      return sum + (isNaN(numValue) ? 0 : numValue);
     }, 0);
+    
+    // For bespoke portfolios, also include Cash fund weighting if it's not in selectedFunds
+    const cashFund = funds.find(f => f.fund_name === 'Cash' && f.isin_number === 'N/A');
+    if (cashFund && !product.portfolio.selectedFunds.includes(cashFund.id)) {
+      const cashWeighting = product.portfolio.fundWeightings[cashFund.id.toString()];
+      const cashValue = cashWeighting ? parseFloat(cashWeighting) : 0;
+      total += isNaN(cashValue) ? 0 : cashValue;
+    }
+    
+    return total;
   };
 
   // Add function to calculate target risk from weighted average
   const calculateTargetRiskFromFunds = (product: ProductItem): number | null => {
-    if (product.portfolio.type !== 'bespoke' || product.portfolio.selectedFunds.length === 0) {
+    if (product.portfolio.type !== 'bespoke') {
       return null;
     }
 
     let totalWeightedRisk = 0;
     let totalWeight = 0;
 
+    // Calculate from selected funds
     for (const fundId of product.portfolio.selectedFunds) {
       const fund = funds.find(f => f.id === fundId);
       const weighting = product.portfolio.fundWeightings[fundId.toString()];
@@ -537,6 +574,18 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       if (fund && !isNaN(weightValue) && weightValue > 0) {
         totalWeightedRisk += fund.risk_factor * weightValue;
         totalWeight += weightValue;
+      }
+    }
+    
+    // For bespoke portfolios, also include Cash fund if it's not in selectedFunds
+    const cashFund = funds.find(f => f.fund_name === 'Cash' && f.isin_number === 'N/A');
+    if (cashFund && !product.portfolio.selectedFunds.includes(cashFund.id)) {
+      const cashWeighting = product.portfolio.fundWeightings[cashFund.id.toString()];
+      const cashWeightValue = cashWeighting ? parseFloat(cashWeighting) : 0;
+      
+      if (!isNaN(cashWeightValue) && cashWeightValue > 0) {
+        totalWeightedRisk += cashFund.risk_factor * cashWeightValue;
+        totalWeight += cashWeightValue;
       }
     }
 
@@ -590,7 +639,13 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         if (type === 'bespoke' && product.portfolio.selectedFunds.length > 0) {
           updatedPortfolio.selectedFunds = product.portfolio.selectedFunds;
           product.portfolio.selectedFunds.forEach(fundId => {
-            updatedPortfolio.fundWeightings[fundId.toString()] = '';
+            const fund = funds.find(f => f.id === fundId);
+            // Initialize Cash fund with 0, others with empty string
+            if (fund?.fund_name === 'Cash' && fund?.isin_number === 'N/A') {
+              updatedPortfolio.fundWeightings[fundId.toString()] = '0';
+            } else {
+              updatedPortfolio.fundWeightings[fundId.toString()] = '';
+            }
           });
         }
 
@@ -772,12 +827,23 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       } else {
         // Bespoke portfolio validations
         if (product.portfolio.selectedFunds.length === 0) {
-          productErrors.funds = 'Please select at least one fund for the portfolio';
-          hasErrors = true;
-        } else {
-          // Validate weightings for bespoke portfolios
-          const totalWeighting = calculateTotalFundWeighting(product);
-          let hasWeightingErrors = false;
+
+          showError(`Please select at least one fund for the portfolio in the product`);
+          return false;
+        }
+        
+        // Validate weightings for bespoke portfolios
+        const totalWeighting = calculateTotalFundWeighting(product);
+        if (Math.abs(totalWeighting - 100) > 0.01) { // Allow for small floating point differences
+          showError(`Fund weightings for the product must add up to 100%. Current total: ${totalWeighting.toFixed(1)}%`);
+          return false;
+        }
+        
+        // Check that all funds have valid weightings
+        for (const fundId of product.portfolio.selectedFunds) {
+          const weighting = product.portfolio.fundWeightings[fundId.toString()];
+          const fund = funds.find(f => f.id === fundId);
+          const isCashFund = fund?.fund_name === 'Cash' && fund?.isin_number === 'N/A';
           
           // Check that all funds have valid weightings
           for (const fundId of product.portfolio.selectedFunds) {
@@ -796,19 +862,32 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             }
           }
           
-          // Check total weighting
-          if (!hasWeightingErrors && Math.abs(totalWeighting - 100) > 0.01) {
-            // Mark all weightings as having an error for total not being 100%
-            for (const fundId of product.portfolio.selectedFunds) {
-              if (!productWeightingErrors[fundId.toString()]) {
-                productWeightingErrors[fundId.toString()] = `Total must equal 100% (currently ${totalWeighting.toFixed(1)}%)`;
-              }
-            }
-            hasWeightingErrors = true;
+
+          const weightValue = parseFloat(weighting);
+          if (isNaN(weightValue) || weightValue < 0 || weightValue > 100) {
+            showError(`Invalid weighting for fund "${fund?.fund_name || 'Unknown'}" in the product. Must be between 0 and 100.`);
+            return false;
           }
           
-          if (hasWeightingErrors) {
-            hasErrors = true;
+          // For non-cash funds, weighting must be greater than 0
+          if (!isCashFund && weightValue <= 0) {
+            showError(`Weighting for fund "${fund?.fund_name || 'Unknown'}" must be greater than 0.`);
+            return false;
+
+          }
+        }
+        
+        // For bespoke portfolios, also validate Cash fund if it's not in selectedFunds
+        const cashFund = funds.find(f => f.fund_name === 'Cash' && f.isin_number === 'N/A');
+        if (cashFund && !product.portfolio.selectedFunds.includes(cashFund.id)) {
+          const cashWeighting = product.portfolio.fundWeightings[cashFund.id.toString()];
+          
+          if (cashWeighting && cashWeighting.trim() !== '') {
+            const cashWeightValue = parseFloat(cashWeighting);
+            if (isNaN(cashWeightValue) || cashWeightValue < 0 || cashWeightValue > 100) {
+              showError(`Invalid weighting for Cash fund in the product. Must be between 0 and 100.`);
+              return false;
+            }
           }
         }
       }
@@ -894,27 +973,26 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           
           // Add funds for bespoke portfolio
           if (portfolioId) {
+            // Only add the explicitly selected funds (not Cash fund)
             const fundPromises = product.portfolio.selectedFunds.map(async (fundId) => {
               try {
                 // Get the weighting for this fund
                 const weighting = product.portfolio.fundWeightings[fundId.toString()];
                 const weightingValue = weighting ? parseFloat(weighting) : 0;
                 
-                // Check the API schema - it might be expecting a different field naming or format
                 const fundData = {
                   portfolio_id: portfolioId,
-                  available_funds_id: fundId, // Changed from fund_id to available_funds_id to match DB schema
-                  weighting: weightingValue / 100, // Convert percentage to decimal (e.g., 50% -> 0.5)
+                  available_funds_id: fundId,
+                  target_weighting: weightingValue / 100, // Convert percentage to decimal
                   status: 'active',
-                  start_date: formattedStartDate // Add start date if required by API
+                  start_date: formattedStartDate
                 };
                 
                 console.log(`Adding fund ${fundId} to portfolio ${portfolioId} with data:`, fundData);
                 await api.post('/portfolio_funds', fundData);
                 console.log(`Added fund ${fundId} to portfolio ${portfolioId}`);
-              } catch (err: any) { // Type the error as any to access response property
+              } catch (err: any) {
                 console.error(`Error adding fund ${fundId} to portfolio:`, err);
-                // Log the response data from the error to help debug
                 if (err.response && err.response.data) {
                   console.error('API Error details:', err.response.data);
                 }
@@ -922,12 +1000,41 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               }
             });
             
-            // We DON'T need to add the Cash fund here as it's automatically added by the 
-            // backend when a portfolio is created (in the /portfolios POST endpoint)
-            // This was causing the Cash fund to be added twice
-            
             // Wait for all fund additions to complete
             await Promise.all(fundPromises);
+            
+            // Update Cash fund weighting if user has entered a custom value
+            if (cashFund) {
+              const cashWeighting = product.portfolio.fundWeightings[cashFund.id.toString()];
+              
+              if (cashWeighting && cashWeighting.trim() !== '') {
+                try {
+                  const cashWeightingValue = parseFloat(cashWeighting);
+                  
+                  // Get the automatically created Cash fund entry to update it
+                  const portfolioFundsResponse = await api.get(`/portfolio_funds`, {
+                    params: { portfolio_id: portfolioId }
+                  });
+                  
+                  const cashFundEntry = portfolioFundsResponse.data.find((pf: any) => 
+                    pf.available_funds_id === cashFund.id
+                  );
+                  
+                  if (cashFundEntry) {
+                    // Update the existing Cash fund entry
+                    await api.patch(`/portfolio_funds/${cashFundEntry.id}`, {
+                      target_weighting: cashWeightingValue / 100
+                    });
+                    console.log(`Updated Cash fund weighting to ${cashWeightingValue}% for portfolio ${portfolioId}`);
+                  }
+                } catch (err: any) {
+                  console.error(`Error updating Cash fund weighting:`, err);
+                  // Don't throw here as this is not critical
+                }
+              }
+            } else {
+              console.log(`No cash fund found in funds list`);
+            }
           }
         }
 
@@ -1143,7 +1250,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         )}
 
         {/* Selected Funds Table - Show for both template and bespoke */}
-        {product.portfolio.selectedFunds.length > 0 && (
+        {(product.portfolio.selectedFunds.length > 0 || product.portfolio.type === 'bespoke') && (
           <div className="mb-4">
             <h4 className="text-sm font-medium text-gray-700 mb-2">Selected Funds</h4>
             <div className="border rounded-md overflow-hidden">
@@ -1158,11 +1265,50 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                         Weighting (%)
                       </th>
                     )}
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Action
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
+                  {/* Always show Cash fund first for bespoke portfolios */}
+                  {product.portfolio.type === 'bespoke' && (() => {
+                    const cashFund = funds.find(f => f.fund_name === 'Cash' && f.isin_number === 'N/A');
+                    if (cashFund) {
+                      return (
+                        <tr key={`cash-${cashFund.id}`} className="bg-blue-50">
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                            <span className="inline-flex items-center">
+                              <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                              {cashFund.fund_name} (Auto-added)
+                            </span>
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                            <input
+                              type="text"
+                              value={product.portfolio.fundWeightings[cashFund.id.toString()] || '0'}
+                              onChange={(e) => handleWeightingChange(product.id, cashFund.id, e.target.value)}
+                              className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                              placeholder="0.0"
+                            />
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                            <span className="text-xs text-gray-400">Cannot remove</span>
+                          </td>
+                        </tr>
+                      );
+                    }
+                    return null;
+                  })()}
+                  
+                  {/* Show other selected funds */}
                   {product.portfolio.selectedFunds.map((fundId) => {
                     const fund = funds.find(f => f.id === fundId);
+                    // Skip Cash fund as it's already shown above for bespoke portfolios
+                    if (product.portfolio.type === 'bespoke' && fund?.fund_name === 'Cash' && fund?.isin_number === 'N/A') {
+                      return null;
+                    }
+                    
                     return (
                       <tr key={fundId}>
                         <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
@@ -1190,6 +1336,16 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                             </div>
                           </td>
                         )}
+                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                          <button
+                            type="button"
+                            onClick={() => handleFundSelection(product.id, fundId)}
+                            className="text-red-600 hover:text-red-800 text-xs"
+                            title="Remove fund"
+                          >
+                            Remove
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -1708,4 +1864,4 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   );
 };
 
-export default CreateClientProducts; 
+export default CreateClientProducts;

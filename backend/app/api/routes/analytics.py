@@ -719,161 +719,89 @@ async def get_portfolio_performance(portfolio_id: int, db = Depends(get_db)):
 
 async def calculate_company_irr(client):
     """
-    Optimized helper function to calculate company-wide IRR by aggregating all portfolio fund cash flows.
-    This version eliminates N+1 queries by batching database operations and uses the proven IRR calculation method.
+    Calculate company-wide IRR using the standardized multiple IRR endpoint.
+    This ensures consistency with individual fund IRR calculations and properly handles
+    internal transfers (SwitchIn/SwitchOut) by aggregating them monthly.
     """
-    logger.info("Starting optimized company IRR calculation...")
+    logger.info("Starting company IRR calculation using standardized multiple IRR endpoint...")
     
     try:
         # Step 1: Get all portfolio fund IDs in a single query
         logger.info("Fetching all portfolio fund IDs...")
         portfolio_funds_response = client.table('portfolio_funds') \
             .select('id') \
+            .eq('status', 'active') \
             .execute()
         
         all_portfolio_fund_ids = [fund['id'] for fund in portfolio_funds_response.data]
-        logger.info(f"Found {len(all_portfolio_fund_ids)} portfolio funds")
+        logger.info(f"Found {len(all_portfolio_fund_ids)} active portfolio funds")
         
         if not all_portfolio_fund_ids:
-            logger.warning("No portfolio funds found")
+            logger.warning("No active portfolio funds found")
             return 0.0
         
-        # Step 2: Batch fetch ALL holding activity in one query
-        logger.info("Batch fetching all holding activity data...")
-        all_holding_activity = client.table('holding_activity_log') \
-            .select('portfolio_fund_id, activity_timestamp, amount, activity_type') \
-            .in_('portfolio_fund_id', all_portfolio_fund_ids) \
-            .execute()
+        # Step 2: Use the standardized multiple IRR endpoint
+        # Import the function directly to avoid HTTP overhead
+        from app.api.routes.portfolio_funds import calculate_multiple_portfolio_funds_irr
         
-        # Step 3: Batch fetch ALL latest valuations in one query  
-        logger.info("Batch fetching all latest valuations...")
-        all_latest_valuations = client.table('latest_fund_valuations') \
-            .select('portfolio_fund_id, valuation_date, value') \
-            .in_('portfolio_fund_id', all_portfolio_fund_ids) \
-            .execute()
+        # Create a mock request body for the standardized endpoint
+        class MockBody:
+            def __init__(self, portfolio_fund_ids, irr_date=None):
+                self.portfolio_fund_ids = portfolio_fund_ids
+                self.irr_date = irr_date
         
-        # Step 4: Group data by portfolio fund ID for efficient processing
-        logger.info("Grouping data by portfolio fund...")
-        holding_activity_by_fund = {}
-        valuations_by_fund = {}
+        # Call the standardized multiple IRR calculation
+        logger.info("Calling standardized multiple IRR endpoint for company-wide calculation...")
+        irr_result = await calculate_multiple_portfolio_funds_irr(
+            portfolio_fund_ids=all_portfolio_fund_ids,
+            irr_date=None,  # Use latest valuation date
+            db=client
+        )
         
-        # Group holding activities
-        for activity in all_holding_activity.data:
-            fund_id = activity['portfolio_fund_id']
-            if fund_id not in holding_activity_by_fund:
-                holding_activity_by_fund[fund_id] = []
-            holding_activity_by_fund[fund_id].append(activity)
-        
-        # Group valuations
-        for valuation in all_latest_valuations.data:
-            fund_id = valuation['portfolio_fund_id']
-            valuations_by_fund[fund_id] = valuation
-        
-        logger.info(f"Processed data for {len(holding_activity_by_fund)} funds with activity, {len(valuations_by_fund)} funds with valuations")
-        
-        # Step 5: Aggregate all cash flows across all funds
-        all_cash_flows = []
-        
-        for fund_id in all_portfolio_fund_ids:
-            try:
-                # Get holding activity for this fund (already fetched)
-                fund_activities = holding_activity_by_fund.get(fund_id, [])
-                
-                # Get latest valuation for this fund (already fetched)
-                fund_valuation = valuations_by_fund.get(fund_id)
-                
-                # Process activities for this fund
-                for activity in fund_activities:
-                    activity_date = datetime.fromisoformat(activity['activity_timestamp'].replace('Z', '+00:00'))
-                    amount = float(activity['amount'])
-                    activity_type = activity['activity_type']
-                    
-                    # Properly classify activity types based on the actual data
-                    # INVESTMENTS (negative cash flows - money going into investments)
-                    if activity_type in ['Investment', 'initial_investment', 'additional_investment', 
-                                       'deposit', 'contribution', 'RegularInvestment', 'SwitchIn']:
-                        amount = -abs(amount)  # Ensure negative for investments
-                        logger.debug(f"Investment activity: {activity_type}, amount: {amount}")
-                    
-                    # RETURNS/WITHDRAWALS (positive cash flows - money coming out of investments)  
-                    elif activity_type in ['withdrawal', 'dividend', 'distribution', 'return', 
-                                         'redemption', 'RegularWithdrawal', 'SwitchOut']:
-                        amount = abs(amount)   # Ensure positive for returns
-                        logger.debug(f"Return/Withdrawal activity: {activity_type}, amount: {amount}")
-                    
-                    else:
-                        # Log unknown types but don't assume - this helps identify new activity types
-                        logger.warning(f"Unknown activity type '{activity_type}' with amount {amount}. Please add to classification.")
-                        # Skip unknown activities rather than making assumptions
-                        continue
-                    
-                    all_cash_flows.append((activity_date, amount))
-                
-                # Add current valuation as final cash flow if exists
-                if fund_valuation and fund_valuation['value']:
-                    try:
-                        valuation_date = datetime.fromisoformat(fund_valuation['valuation_date'].replace('Z', '+00:00'))
-                        valuation_amount = float(fund_valuation['value'])
-                        
-                        # Current valuation is positive (represents current value of investment)
-                        all_cash_flows.append((valuation_date, valuation_amount))
-                        logger.debug(f"Added valuation for fund {fund_id}: {valuation_amount} on {valuation_date}")
-                        
-                    except (ValueError, TypeError) as e:
-                        logger.warning(f"Invalid valuation data for fund {fund_id}: {e}")
-                        
-            except Exception as e:
-                logger.error(f"Error processing fund {fund_id}: {e}")
-                continue
-        
-        logger.info(f"Total cash flows collected: {len(all_cash_flows)}")
-        
-        if len(all_cash_flows) < 2:
-            logger.warning("Insufficient cash flows for IRR calculation")
+        if irr_result and irr_result.get('success'):
+            company_irr = irr_result.get('irr_percentage', 0.0)
+            logger.info(f"Company IRR calculated using standardized endpoint: {company_irr}%")
+            logger.info(f"Calculation details: {irr_result.get('cash_flows_count', 0)} cash flows, "
+                       f"period: {irr_result.get('period_start')} to {irr_result.get('period_end')}")
+            return company_irr
+        else:
+            logger.warning("Standardized IRR calculation failed or returned unsuccessful result")
             return 0.0
-        
-        # Step 6: Sort cash flows by date
-        all_cash_flows.sort(key=lambda x: x[0])
-        
-        # Extract dates and amounts for IRR calculation
-        dates = [cf[0] for cf in all_cash_flows]
-        amounts = [cf[1] for cf in all_cash_flows]
-        
-        # Log a sample of the cash flows for debugging
-        logger.info(f"Sample cash flows (first 5): {[(d.strftime('%Y-%m-%d'), a) for d, a in all_cash_flows[:5]]}")
-        logger.info(f"Cash flow summary: {sum(1 for a in amounts if a < 0)} negative flows, {sum(1 for a in amounts if a > 0)} positive flows")
-        logger.info(f"Total invested: {abs(sum(a for a in amounts if a < 0))}, Total returned: {sum(a for a in amounts if a > 0)}")
-        
-        # Step 7: Use the existing proven IRR calculation function
-        try:
-            irr_result = calculate_excel_style_irr(dates, amounts)
             
-            if irr_result and 'period_irr' in irr_result:
-                # Convert to annual percentage
-                annual_irr = irr_result['period_irr'] * 100
-                logger.info(f"Calculated optimized company IRR using proven method: {annual_irr}%")
-                return annual_irr
+    except Exception as e:
+        logger.error(f"Error in calculate_company_irr using standardized endpoint: {e}")
+        # Fallback to simple calculation if standardized endpoint fails
+        try:
+            logger.info("Attempting fallback calculation...")
+            
+            # Get total current valuations
+            latest_valuations_response = client.table('latest_fund_valuations') \
+                .select('value') \
+                .execute()
+            
+            total_current_value = sum(float(v['value'] or 0) for v in latest_valuations_response.data)
+            
+            # Get total amount invested
+            portfolio_funds_response = client.table('portfolio_funds') \
+                .select('amount_invested') \
+                .eq('status', 'active') \
+                .execute()
+            
+            total_invested = sum(float(pf['amount_invested'] or 0) for pf in portfolio_funds_response.data)
+            
+            if total_invested > 0:
+                # Simple ROI calculation as fallback
+                simple_roi = ((total_current_value / total_invested) - 1) * 100
+                logger.info(f"Fallback simple ROI calculation: {simple_roi}% "
+                           f"(current value: {total_current_value}, invested: {total_invested})")
+                return simple_roi
             else:
-                logger.warning("IRR calculation returned invalid result")
+                logger.warning("No investment amount found for fallback calculation")
                 return 0.0
                 
-        except Exception as e:
-            logger.error(f"Error in IRR calculation: {e}")
-            # Fallback to simple ROI calculation
-            try:
-                total_invested = abs(sum(a for a in amounts if a < 0))
-                total_returned = sum(a for a in amounts if a > 0)
-                if total_invested > 0:
-                    simple_roi = ((total_returned / total_invested) - 1) * 100
-                    logger.info(f"Fallback ROI calculation: {simple_roi}%")
-                    return simple_roi
-            except Exception as fallback_error:
-                logger.error(f"Fallback calculation also failed: {fallback_error}")
+        except Exception as fallback_error:
+            logger.error(f"Fallback calculation also failed: {fallback_error}")
             return 0.0
-    
-    except Exception as e:
-        logger.error(f"Error in calculate_company_irr: {e}")
-        return 0.0
 
 @router.get("/analytics/company/irr")
 async def get_company_irr_endpoint(db = Depends(get_db)):
