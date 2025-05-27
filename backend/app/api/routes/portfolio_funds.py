@@ -2713,7 +2713,14 @@ async def calculate_multiple_portfolio_funds_irr(
             latest_valuations_response = db.table("fund_valuations").select("valuation_date").in_("portfolio_fund_id", portfolio_fund_ids).order("valuation_date", desc=True).limit(1).execute()
             
             if latest_valuations_response.data:
-                irr_date_obj = datetime.strptime(latest_valuations_response.data[0]["valuation_date"], "%Y-%m-%d").date()
+                valuation_date_str = latest_valuations_response.data[0]["valuation_date"]
+                # Handle both date-only and datetime formats from the database
+                if 'T' in valuation_date_str:
+                    # Full datetime string - parse and extract date
+                    irr_date_obj = datetime.fromisoformat(valuation_date_str.replace('Z', '+00:00')).date()
+                else:
+                    # Date-only string
+                    irr_date_obj = datetime.strptime(valuation_date_str, "%Y-%m-%d").date()
                 logger.info(f"Using latest valuation date: {irr_date_obj}")
             else:
                 raise HTTPException(status_code=404, detail="No valuations found for the provided portfolio funds")
@@ -2904,7 +2911,14 @@ async def calculate_single_portfolio_fund_irr(
             latest_valuation_response = db.table("fund_valuations").select("valuation_date").eq("portfolio_fund_id", portfolio_fund_id).order("valuation_date", desc=True).limit(1).execute()
             
             if latest_valuation_response.data:
-                irr_date_obj = datetime.strptime(latest_valuation_response.data[0]["valuation_date"], "%Y-%m-%d").date()
+                valuation_date_str = latest_valuation_response.data[0]["valuation_date"]
+                # Handle both date-only and datetime formats from the database
+                if 'T' in valuation_date_str:
+                    # Full datetime string - parse and extract date
+                    irr_date_obj = datetime.fromisoformat(valuation_date_str.replace('Z', '+00:00')).date()
+                else:
+                    # Date-only string
+                    irr_date_obj = datetime.strptime(valuation_date_str, "%Y-%m-%d").date()
                 logger.info(f"Using latest valuation date: {irr_date_obj}")
             else:
                 raise HTTPException(status_code=404, detail=f"No valuations found for portfolio fund {portfolio_fund_id}")

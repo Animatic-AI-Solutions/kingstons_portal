@@ -308,7 +308,7 @@ const ProductCard: React.FC<{
             <div className="text-xl font-light text-gray-900">
               {formatCurrency(displayValue)}
             </div>
-            {account.irr !== undefined && (
+            {account.irr !== undefined && account.irr !== null && (
               <div className="flex items-center justify-end mt-1">
                 <span className={`text-sm font-medium ${
                   account.irr >= 0 ? 'text-green-600' : 'text-red-600'
@@ -472,7 +472,7 @@ const ProductCard: React.FC<{
                       <td className="px-3 py-2 whitespace-nowrap text-xs text-right">-</td>
                       <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(fund.market_value || 0)}</td>
                       <td className="px-3 py-2 whitespace-nowrap text-xs text-right">
-                        {fund.irr !== undefined ? formatPercentage(fund.irr) : '-'}
+                        {fund.irr !== undefined && fund.irr !== null ? formatPercentage(fund.irr) : '-'}
                       </td>
                     </tr>
                   ))}
@@ -635,24 +635,33 @@ const ClientDetails: React.FC = () => {
       
       setExpandedProductFunds(fundDataMap);
       
-      // Calculate totals from processed data
+      // Calculate total value from processed data
       const totalValue = processedProducts.reduce((sum: number, product: any) => 
         sum + (product.total_value || 0), 0
       );
       
-      const totalIRR = processedProducts.length > 0 
-        ? processedProducts.reduce((sum: number, product: any, index: number) => {
-            const weight = (product.total_value || 0) / totalValue;
-            return sum + ((product.irr || 0) * weight);
-          }, 0)
-        : 0;
-      
-      // Store calculated values
+      // Store calculated FUM value
       clientFUMFromView.current = totalValue;
+      
+      // Fetch the true aggregated IRR using the standardized client group IRR endpoint
+      let totalIRR = 0;
+      try {
+        console.log(`Fetching standardized IRR for client group ${clientId}`);
+        const irrResponse = await api.get(`/client_groups/${clientId}/irr`);
+        totalIRR = irrResponse.data.irr || 0;
+        console.log(`Standardized client group IRR: ${totalIRR}%`);
+        console.log('IRR calculation details:', irrResponse.data);
+      } catch (irrError) {
+        console.error('Error fetching client group IRR:', irrError);
+        // Fallback to 0 if IRR calculation fails
+        totalIRR = 0;
+      }
+      
+      // Store calculated IRR value
       clientIRRFromAPI.current = totalIRR;
       
       console.log(`Optimized loading complete: ${processedProducts.length} products, ${Object.keys(fundDataMap).length} products with fund data`);
-      console.log(`Total Value: ${totalValue}, Total IRR: ${totalIRR}`);
+      console.log(`Total Value: ${totalValue}, Standardized Total IRR: ${totalIRR}%`);
       
       setError(null);
     } catch (err: any) {
@@ -698,7 +707,7 @@ const ClientDetails: React.FC = () => {
     
     console.log("Optimized totals calculation:");
     console.log("Total funds from bulk endpoint:", totalFunds);
-    console.log("Total IRR from bulk endpoint:", finalIRR);
+    console.log("Total IRR from standardized endpoint:", finalIRR);
     
     return {
       totalFundsUnderManagement: totalFunds,
