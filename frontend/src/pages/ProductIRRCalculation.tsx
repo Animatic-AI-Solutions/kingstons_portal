@@ -1105,18 +1105,17 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Name</th>
-                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">ISIN</th>
-                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Investments</th>
-                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Regular Investments</th>
-                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Government Uplifts</th>
-                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Fund Switch Ins</th>
-                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Fund Switch Outs</th>
-                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Regular Withdrawals</th>
-                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Withdrawals</th>
-                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Most Recent Valuation</th>
-                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Most Recent IRR</th>
-                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Actions</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-32" title="Fund Name">Name</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-24" title="Total Investments">INV.</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-24" title="Regular Investments">REG. INV.</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-24" title="Government Uplifts">GOV. UPLIFTS</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-24" title="Fund Switch Ins">SWITCH IN</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-24" title="Fund Switch Outs">SWITCH OUT</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-24" title="Regular Withdrawals">REG. WITH.</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-24" title="Withdrawals">WITH.</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-28" title="Most Recent Valuation">Valuation</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-20" title="Most Recent IRR">IRR</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-20">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -1149,7 +1148,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                               return (a.fund_name || '').localeCompare(b.fund_name || '');
                             }).map((holding) => (
                               <tr key={holding.id} className={holding.isVirtual ? "bg-gray-100 border-t border-gray-300" : ""}>
-                                <td className="px-6 py-4 whitespace-nowrap">
+                                <td className="px-3 py-3 whitespace-nowrap">
                                   <div className="flex items-center">
                                     <div className={holding.isVirtual ? "ml-4 font-medium" : "ml-4"}>
                                       <div className={`text-sm ${holding.isVirtual ? "font-semibold text-blue-800" : "font-medium text-gray-900"}`}>
@@ -1166,59 +1165,56 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                     </div>
                                   </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm text-gray-900">{holding.isin_number || 'N/A'}</div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
+                                <td className="px-3 py-3 whitespace-nowrap">
                                   <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual 
                                       ? <span className="text-gray-500">N/A</span> 
                                       : formatCurrency(calculateInvestments(filteredActivities, holding.id))}
                                   </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
+                                <td className="px-3 py-3 whitespace-nowrap">
                                   <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual 
                                       ? <span className="text-gray-500">N/A</span> 
                                       : formatCurrency(calculateRegularInvestments(filteredActivities, holding.id))}
                                   </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
+                                <td className="px-3 py-3 whitespace-nowrap">
                                   <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
                                       ? <span className="text-gray-500">N/A</span>
                                       : formatCurrency(calculateGovernmentUplifts(filteredActivities, holding.id))}
                                   </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
+                                <td className="px-3 py-3 whitespace-nowrap">
                                   <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
                                       ? <span className="text-gray-500">N/A</span>
                                       : formatCurrency(calculateSwitchIns(filteredActivities, holding.id))}
                                   </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
+                                <td className="px-3 py-3 whitespace-nowrap">
                                   <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
                                       ? <span className="text-gray-500">N/A</span>
                                       : formatCurrency(calculateSwitchOuts(filteredActivities, holding.id))}
                                   </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
+                                <td className="px-3 py-3 whitespace-nowrap">
                                   <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
                                       ? <span className="text-gray-500">N/A</span>
                                       : formatCurrency(calculateRegularWithdrawals(filteredActivities, holding.id))}
                                   </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
+                                <td className="px-3 py-3 whitespace-nowrap">
                                   <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
                                       ? <span className="text-gray-500">N/A</span>
                                       : formatCurrency(calculateWithdrawals(filteredActivities, holding.id))}
                                   </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
+                                <td className="px-3 py-3 whitespace-nowrap">
                                   <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual ? (
                                       <span>N/A</span>
@@ -1236,7 +1232,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                     )}
                                   </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
+                                <td className="px-3 py-3 whitespace-nowrap">
                                   <div>
                                     <div className={`text-sm ${
                                       holding.irr !== undefined 
@@ -1267,7 +1263,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                     )}
                                   </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
+                                <td className="px-3 py-3 whitespace-nowrap">
                                   {!holding.isVirtual && holding.status !== 'inactive' && (
                                     <button
                                       onClick={() => {
@@ -1293,49 +1289,48 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                       
                       {/* Total Row - Updated to use state for total portfolio IRR */}
                       <tr className="bg-gray-50 font-medium">
-                        <td className="px-6 py-4 whitespace-nowrap text-base font-bold text-red-600">TOTAL</td>
-                        <td className="px-6 py-4 whitespace-nowrap"></td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 py-3 whitespace-nowrap text-base font-bold text-red-600">TOTAL</td>
+                        <td className="px-3 py-3 whitespace-nowrap">
                           <div className="text-sm font-bold text-red-600">
                             {formatCurrency(calculateTotalInvestments(filteredActivities, holdings))}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 py-3 whitespace-nowrap">
                           <div className="text-sm font-bold text-red-600">
                             {formatCurrency(calculateTotalRegularInvestments(filteredActivities, holdings))}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 py-3 whitespace-nowrap">
                           <div className="text-sm font-bold text-red-600">
                             {formatCurrency(calculateTotalGovernmentUplifts(filteredActivities, holdings))}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 py-3 whitespace-nowrap">
                           <div className="text-sm font-bold text-red-600">
                             {formatCurrency(calculateTotalSwitchIns(filteredActivities, holdings))}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 py-3 whitespace-nowrap">
                           <div className="text-sm font-bold text-red-600">
                             {formatCurrency(calculateTotalSwitchOuts(filteredActivities, holdings))}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 py-3 whitespace-nowrap">
                           <div className="text-sm font-bold text-red-600">
                             {formatCurrency(calculateTotalRegularWithdrawals(filteredActivities, holdings))}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 py-3 whitespace-nowrap">
                           <div className="text-sm font-bold text-red-600">
                             {formatCurrency(calculateTotalWithdrawals(filteredActivities, holdings))}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 py-3 whitespace-nowrap">
                           <div className="text-sm font-bold text-red-600">
                             {formatCurrency(calculateTotalValue(holdings))}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 py-3 whitespace-nowrap">
                           {isTotalPortfolioIRRLoading ? (
                             <span className="text-sm text-gray-500">Loading...</span>
                           ) : totalPortfolioIRRError ? (
@@ -1360,7 +1355,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                             <span className="text-sm text-gray-500">N/A</span>
                           )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap"></td>
+                        <td className="px-3 py-3 whitespace-nowrap"></td>
                       </tr>
                     </tbody>
                   </table>
