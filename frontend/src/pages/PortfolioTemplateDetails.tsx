@@ -61,6 +61,12 @@ const PortfolioTemplateDetails: React.FC = () => {
   });
   const [isSubmittingGeneration, setIsSubmittingGeneration] = useState(false);
   const [productsCount] = useState(0); // Placeholder for products count
+  const [hasProductsUsingTemplate, setHasProductsUsingTemplate] = useState(false);
+  const [isCheckingProducts, setIsCheckingProducts] = useState(false);
+  const [showDeleteGenerationConfirm, setShowDeleteGenerationConfirm] = useState(false);
+  const [generationToDelete, setGenerationToDelete] = useState<Generation | null>(null);
+  const [isDeletingGeneration, setIsDeletingGeneration] = useState(false);
+  const [generationProductCounts, setGenerationProductCounts] = useState<Record<number, number>>({});
 
   useEffect(() => {
     if (portfolioId && portfolioId !== 'undefined') {
@@ -78,6 +84,13 @@ const PortfolioTemplateDetails: React.FC = () => {
       fetchFundsForGeneration(selectedGeneration.id);
     }
   }, [selectedGeneration]);
+
+  // When generations are loaded, check if any products are using them
+  useEffect(() => {
+    if (generations.length > 0) {
+      checkForProductsUsingTemplate();
+    }
+  }, [generations]);
 
   const fetchPortfolioTemplate = async () => {
     try {
@@ -142,6 +155,10 @@ const PortfolioTemplateDetails: React.FC = () => {
   };
 
   const handleDeleteClick = () => {
+    if (hasProductsUsingTemplate) {
+      // Don't show modal if products are using this template
+      return;
+    }
     setShowDeleteConfirm(true);
   };
 
@@ -237,6 +254,109 @@ const PortfolioTemplateDetails: React.FC = () => {
     return totalWeight > 0 ? Math.round((totalWeightedRisk / totalWeight) * 10) / 10 : 0;
   };
 
+  // Function to check if any products are using any generation of this template
+  const checkForProductsUsingTemplate = async () => {
+    if (generations.length === 0) return;
+    
+    setIsCheckingProducts(true);
+    try {
+      let totalProductsCount = 0;
+      const counts: Record<number, number> = {};
+      
+      // Check each generation for products
+      for (const generation of generations) {
+        try {
+          const response = await api.get('/portfolios', {
+            params: {
+              template_generation_id: generation.id,
+              count_only: true
+            }
+          });
+          
+          const count = response.data?.count || 0;
+          counts[generation.id] = count;
+          totalProductsCount += count;
+          
+          if (count > 0) {
+            console.log(`Found ${count} portfolios using generation ${generation.generation_name || generation.id}`);
+          }
+        } catch (err) {
+          console.warn(`Failed to check products for generation ${generation.id}:`, err);
+          counts[generation.id] = 0;
+        }
+      }
+      
+      setGenerationProductCounts(counts);
+      setHasProductsUsingTemplate(totalProductsCount > 0);
+      console.log(`Total portfolios using this template: ${totalProductsCount}`);
+    } catch (err) {
+      console.error('Error checking for products using template:', err);
+      // On error, assume there might be products to be safe
+      setHasProductsUsingTemplate(true);
+    } finally {
+      setIsCheckingProducts(false);
+    }
+  };
+
+  const handleDeleteGenerationClick = (generation: Generation) => {
+    const productCount = generationProductCounts[generation.id] || 0;
+    
+    if (productCount > 0) {
+      setError(`Cannot delete generation "${generation.generation_name || `Version ${generation.version_number}`}" - ${productCount} product${productCount === 1 ? '' : 's'} are using this generation.`);
+      return;
+    }
+    
+    setGenerationToDelete(generation);
+    setShowDeleteGenerationConfirm(true);
+    setError(null); // Clear any existing errors
+  };
+
+  const handleCancelDeleteGeneration = () => {
+    setShowDeleteGenerationConfirm(false);
+    setGenerationToDelete(null);
+  };
+
+  const handleConfirmDeleteGeneration = async () => {
+    if (!generationToDelete) return;
+    
+    try {
+      setIsDeletingGeneration(true);
+      setError(null);
+      
+      // Call the API to delete the generation
+      await api.delete(`/available_portfolios/${portfolioId}/generations/${generationToDelete.id}`);
+      
+      // Refresh the generations list
+      await fetchGenerations();
+      
+      // If the deleted generation was selected, select the first available generation
+      if (selectedGeneration?.id === generationToDelete.id) {
+        const remainingGenerations = generations.filter(g => g.id !== generationToDelete.id);
+        if (remainingGenerations.length > 0) {
+          setSelectedGeneration(remainingGenerations[0]);
+        } else {
+          setSelectedGeneration(null);
+        }
+      }
+      
+      console.log('Generation deleted successfully');
+      
+    } catch (err: any) {
+      console.error('Error deleting generation:', err);
+      if (err.response?.data?.detail) {
+        setError(typeof err.response.data.detail === 'string' 
+          ? err.response.data.detail 
+          : 'Failed to delete generation');
+      } else {
+        setError('Failed to delete generation');
+      }
+    } finally {
+      setIsDeletingGeneration(false);
+      setShowDeleteGenerationConfirm(false);
+      setGenerationToDelete(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-4">
@@ -322,12 +442,20 @@ const PortfolioTemplateDetails: React.FC = () => {
               </h1>
             </div>
             <div className="flex-grow"></div>
-            <button
-              onClick={handleDeleteClick}
-              className="bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-            >
-              Delete Template
-            </button>
+            <div className="relative">
+              <button
+                onClick={handleDeleteClick}
+                disabled={hasProductsUsingTemplate || isCheckingProducts}
+                className={`px-4 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                  hasProductsUsingTemplate || isCheckingProducts
+                    ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                    : 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500'
+                }`}
+                title={hasProductsUsingTemplate ? 'Cannot delete template - products are using this template' : 'Delete Template'}
+              >
+                {isCheckingProducts ? 'Checking...' : 'Delete Template'}
+              </button>
+            </div>
           </div>
           
           {/* Template Stats Cards */}
@@ -437,6 +565,28 @@ const PortfolioTemplateDetails: React.FC = () => {
                           Activate
                         </button>
                       )}
+                      
+                      <button
+                        onClick={() => handleDeleteGenerationClick(selectedGeneration)}
+                        disabled={isCheckingProducts || (generationProductCounts[selectedGeneration.id] || 0) > 0}
+                        className={`px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 text-sm flex items-center ${
+                          isCheckingProducts || (generationProductCounts[selectedGeneration.id] || 0) > 0
+                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                            : 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500'
+                        }`}
+                        title={
+                          isCheckingProducts 
+                            ? 'Checking for products using this generation...'
+                            : (generationProductCounts[selectedGeneration.id] || 0) > 0
+                            ? `Cannot delete - ${generationProductCounts[selectedGeneration.id]} product(s) are using this generation`
+                            : 'Delete Generation'
+                        }
+                      >
+                        <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Delete
+                      </button>
                     </div>
                   </div>
                   
@@ -573,6 +723,57 @@ const PortfolioTemplateDetails: React.FC = () => {
                   className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
                   onClick={handleCancelDelete}
                   disabled={isDeleting}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Generation Confirmation Modal */}
+      {showDeleteGenerationConfirm && generationToDelete && (
+        <div className="fixed inset-0 z-10 overflow-y-auto">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start">
+                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                    <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900">Delete Generation</h3>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500">
+                        Are you sure you want to delete generation "{generationToDelete.generation_name || `Version ${generationToDelete.version_number}`}"? This action cannot be undone.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm ${
+                    isDeletingGeneration ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-700'
+                  }`}
+                  onClick={handleConfirmDeleteGeneration}
+                  disabled={isDeletingGeneration}
+                >
+                  {isDeletingGeneration ? 'Deleting...' : 'Delete'}
+                </button>
+                <button
+                  type="button"
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                  onClick={handleCancelDeleteGeneration}
+                  disabled={isDeletingGeneration}
                 >
                   Cancel
                 </button>
