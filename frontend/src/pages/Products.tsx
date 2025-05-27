@@ -265,7 +265,7 @@ const Products: React.FC = () => {
 
   // Add a new handler function to navigate to the create client products page
   const handleCreateClientGroupProducts = () => {
-    navigate('/create-client-group-products');
+    navigate(`/create-client-group-products?returnTo=${encodeURIComponent('/products')}`);
   };
 
   // Extract unique values for filters

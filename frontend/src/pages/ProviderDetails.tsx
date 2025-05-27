@@ -235,7 +235,7 @@ const ProviderDetails: React.FC = () => {
 
   const handleAddProduct = () => {
     // Navigate to client products page with the provider ID pre-selected
-    navigate(`/create-client-products?provider=${providerId}`);
+    navigate(`/create-client-products?provider=${providerId}&returnTo=${encodeURIComponent(`/definitions/providers/${providerId}`)}`);
   };
 
   const handleDeleteClick = () => {

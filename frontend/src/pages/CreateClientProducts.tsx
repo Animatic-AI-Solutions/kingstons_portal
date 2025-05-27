@@ -96,6 +96,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   const [error, setError] = useState<string | null>(null);
   const [showErrorPopup, setShowErrorPopup] = useState(false);
   
+  // Add state to track where the user came from
+  const [returnPath, setReturnPath] = useState<string>('/products'); // Default fallback
+  
   // Get client info from URL parameters
   const searchParams = new URLSearchParams(location.search);
   const urlClientId = searchParams.get('client_id');
@@ -142,6 +145,46 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   const [isAddFundModalOpen, setIsAddFundModalOpen] = useState(false);
   const [addFundForProductId, setAddFundForProductId] = useState<string | null>(null);
   
+  // Add validation error states for field-level validation
+  const [validationErrors, setValidationErrors] = useState<Record<string, Record<string, string>>>({});
+  const [weightingErrors, setWeightingErrors] = useState<Record<string, Record<string, string>>>({});
+  
+  // Add useEffect to determine return path based on where user came from
+  useEffect(() => {
+    // Check URL parameters first for explicit return path
+    const searchParams = new URLSearchParams(location.search);
+    const returnTo = searchParams.get('returnTo');
+    
+    if (returnTo) {
+      setReturnPath(decodeURIComponent(returnTo));
+    } else {
+      // Fallback to referrer-based detection
+      const referrer = document.referrer;
+      
+      if (referrer) {
+        try {
+          const referrerUrl = new URL(referrer);
+          const referrerPath = referrerUrl.pathname;
+          
+          // Determine return path based on referrer
+          if (referrerPath.includes('/client_groups/') && !referrerPath.includes('/add')) {
+            // Came from a client details page
+            setReturnPath(referrerPath);
+          } else if (referrerPath.includes('/products') && !referrerPath.includes('/add')) {
+            // Came from products page
+            setReturnPath('/products');
+          } else {
+            // Default to products page
+            setReturnPath('/products');
+          }
+        } catch (error) {
+          console.log('Could not parse referrer URL, using default return path');
+          setReturnPath('/products');
+        }
+      }
+    }
+  }, [location.search]);
+
   // Click outside handler for dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -468,6 +511,24 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       }
       return product;
     }));
+    
+    // Clear validation errors for this specific field when user starts typing
+    if (weightingErrors[productId]?.[fundId.toString()]) {
+      setWeightingErrors(prev => {
+        const newErrors = { ...prev };
+        if (newErrors[productId]) {
+          const productErrors = { ...newErrors[productId] };
+          delete productErrors[fundId.toString()];
+          
+          if (Object.keys(productErrors).length === 0) {
+            delete newErrors[productId];
+          } else {
+            newErrors[productId] = productErrors;
+          }
+        }
+        return newErrors;
+      });
+    }
   };
   
   const calculateTotalFundWeighting = (product: ProductItem): number => {
@@ -715,6 +776,14 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   };
 
   const validateForm = (): boolean => {
+    // Clear previous validation errors
+    setValidationErrors({});
+    setWeightingErrors({});
+    
+    let hasErrors = false;
+    const newValidationErrors: Record<string, Record<string, string>> = {};
+    const newWeightingErrors: Record<string, Record<string, string>> = {};
+
     if (!selectedClientId) {
       showError('Please select a client');
       return false;
@@ -726,35 +795,39 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     }
 
     for (const product of products) {
+      const productErrors: Record<string, string> = {};
+      const productWeightingErrors: Record<string, string> = {};
+      
       // Product name validation removed - will be auto-generated if empty
       
       if (!product.provider_id) {
-        showError(`Please select a provider for the product`);
-        return false;
+        productErrors.provider = 'Please select a provider';
+        hasErrors = true;
       }
 
       if (!product.product_type) {
-        showError(`Please select a product type for the product`);
-        return false;
+        productErrors.productType = 'Please select a product type';
+        hasErrors = true;
       }
 
       if (!product.portfolio.name.trim()) {
-        showError(`Please enter a portfolio name for the product`);
-        return false;
+        productErrors.portfolioName = 'Please enter a portfolio name';
+        hasErrors = true;
       }
 
       if (product.portfolio.type === 'template') {
         if (!product.portfolio.templateId) {
-          showError(`Please select a template portfolio for the product`);
-          return false;
+          productErrors.template = 'Please select a template portfolio';
+          hasErrors = true;
         }
         if (!product.portfolio.generationId) {
-          showError(`Please select a generation for the template portfolio in the product`);
-          return false;
+          productErrors.generation = 'Please select a generation for the template portfolio';
+          hasErrors = true;
         }
       } else {
         // Bespoke portfolio validations
         if (product.portfolio.selectedFunds.length === 0) {
+
           showError(`Please select at least one fund for the portfolio in the product`);
           return false;
         }
@@ -772,11 +845,24 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           const fund = funds.find(f => f.id === fundId);
           const isCashFund = fund?.fund_name === 'Cash' && fund?.isin_number === 'N/A';
           
-          if (!weighting || weighting.trim() === '') {
-            showError(`Please enter a weighting for fund "${fund?.fund_name || 'Unknown'}" in the product`);
-            return false;
+          // Check that all funds have valid weightings
+          for (const fundId of product.portfolio.selectedFunds) {
+            const weighting = product.portfolio.fundWeightings[fundId.toString()];
+            const fund = funds.find(f => f.id === fundId);
+            
+            if (!weighting || weighting.trim() === '') {
+              productWeightingErrors[fundId.toString()] = 'Required';
+              hasWeightingErrors = true;
+            } else {
+              const weightValue = parseFloat(weighting);
+              if (isNaN(weightValue) || weightValue <= 0 || weightValue > 100) {
+                productWeightingErrors[fundId.toString()] = 'Must be between 0.01 and 100';
+                hasWeightingErrors = true;
+              }
+            }
           }
           
+
           const weightValue = parseFloat(weighting);
           if (isNaN(weightValue) || weightValue < 0 || weightValue > 100) {
             showError(`Invalid weighting for fund "${fund?.fund_name || 'Unknown'}" in the product. Must be between 0 and 100.`);
@@ -787,6 +873,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           if (!isCashFund && weightValue <= 0) {
             showError(`Weighting for fund "${fund?.fund_name || 'Unknown'}" must be greater than 0.`);
             return false;
+
           }
         }
         
@@ -804,6 +891,32 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           }
         }
       }
+      
+      // Store errors for this product
+      if (Object.keys(productErrors).length > 0) {
+        newValidationErrors[product.id] = productErrors;
+      }
+      if (Object.keys(productWeightingErrors).length > 0) {
+        newWeightingErrors[product.id] = productWeightingErrors;
+      }
+    }
+
+    // Set the validation errors (this will trigger re-render with highlighted fields)
+    setValidationErrors(newValidationErrors);
+    setWeightingErrors(newWeightingErrors);
+    
+    // If there are errors, scroll to the first product with errors
+    if (hasErrors) {
+      const firstErrorProductId = Object.keys(newValidationErrors)[0] || Object.keys(newWeightingErrors)[0];
+      if (firstErrorProductId) {
+        setTimeout(() => {
+          productRefs.current[firstErrorProductId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }
+      
+      // Show a gentle error message without clearing form data
+      showToastMessage('Please fix the highlighted errors before saving.');
+      return false;
     }
 
     return true;
@@ -982,7 +1095,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       
       // Successful completion
       alert('Successfully created client products and portfolios');
-      navigate(`/client_groups/${selectedClientId}`);
+
+      navigate(returnPath);
+
     } catch (err: any) { // Type the error as any
       console.error('Error in form submission:', err);
       
@@ -1051,9 +1166,18 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             type="text"
             value={product.portfolio.name}
             onChange={(e) => handlePortfolioNameChange(product.id, e.target.value)}
-            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+            className={`shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm rounded-md ${
+              validationErrors[product.id]?.portfolioName
+                ? 'border-red-500 bg-red-50 focus:ring-red-500 focus:border-red-500'
+                : 'border-gray-300'
+            }`}
             required
           />
+          {validationErrors[product.id]?.portfolioName && (
+            <div className="text-xs text-red-600 mt-1">
+              {validationErrors[product.id].portfolioName}
+            </div>
+          )}
         </div>
         
         {/* Portfolio Type Selection */}
@@ -1083,10 +1207,15 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               value={product.portfolio.templateId?.toString() ?? ''}
               onChange={val => handleTemplateSelection(product.id, String(val))}
               placeholder="Select a template"
-              className="w-full"
+              className={`w-full ${validationErrors[product.id]?.template ? 'border-red-500' : ''}`}
               required
               disabled={isEitherLoading}
             />
+            {validationErrors[product.id]?.template && (
+              <div className="text-xs text-red-600 mt-1">
+                {validationErrors[product.id].template}
+              </div>
+            )}
           </div>
         )}
 
@@ -1105,10 +1234,15 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               value={product.portfolio.generationId?.toString() ?? ''}
               onChange={val => handleGenerationSelection(product.id, String(val))}
               placeholder="Select a generation"
-              className="w-full"
+              className={`w-full ${validationErrors[product.id]?.generation ? 'border-red-500' : ''}`}
               required
               disabled={isEitherLoading}
             />
+            {validationErrors[product.id]?.generation && (
+              <div className="text-xs text-red-600 mt-1">
+                {validationErrors[product.id].generation}
+              </div>
+            )}
             <div className="text-xs text-gray-500 mt-1">
               Select a specific generation of this template
             </div>
@@ -1182,13 +1316,24 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                         </td>
                         {product.portfolio.type === 'bespoke' && (
                           <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                            <input
-                              type="text"
-                              value={product.portfolio.fundWeightings[fundId.toString()] || ''}
-                              onChange={(e) => handleWeightingChange(product.id, fundId, e.target.value)}
-                              className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                              placeholder="0.0"
-                            />
+                            <div className="space-y-1">
+                              <input
+                                type="text"
+                                value={product.portfolio.fundWeightings[fundId.toString()] || ''}
+                                onChange={(e) => handleWeightingChange(product.id, fundId, e.target.value)}
+                                className={`shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm rounded-md ${
+                                  weightingErrors[product.id]?.[fundId.toString()]
+                                    ? 'border-red-500 bg-red-50 focus:ring-red-500 focus:border-red-500'
+                                    : 'border-gray-300'
+                                }`}
+                                placeholder="0.0"
+                              />
+                              {weightingErrors[product.id]?.[fundId.toString()] && (
+                                <div className="text-xs text-red-600 mt-1">
+                                  {weightingErrors[product.id][fundId.toString()]}
+                                </div>
+                              )}
+                            </div>
                           </td>
                         )}
                         <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
@@ -1241,12 +1386,20 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
 
         {/* Show fund selection for both template and bespoke portfolios */}
         <div className="fund-selection mt-4">
-          <h4 className="text-sm font-medium text-gray-700 mb-2">
+          <h4 className={`text-sm font-medium mb-2 ${
+            validationErrors[product.id]?.funds ? 'text-red-600' : 'text-gray-700'
+          }`}>
             {product.portfolio.type === 'template' ? 'Modify Template Funds' : 'Select Funds'}
             {product.portfolio.type === 'template' && (
               <span className="text-xs text-gray-500 ml-2">(modifying will convert to bespoke)</span>
             )}
+            {product.portfolio.type === 'bespoke' && <span className="text-red-500 ml-1">*</span>}
           </h4>
+          {validationErrors[product.id]?.funds && (
+            <div className="text-xs text-red-600 mb-2">
+              {validationErrors[product.id].funds}
+            </div>
+          )}
           <div className="flex gap-2 mb-3">
             <div className="flex-1">
               <Input
@@ -1271,7 +1424,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               Add Fund
             </button>
           </div>
-          <div className="fund-list max-h-60 overflow-y-auto border rounded-md p-2">
+          <div className={`fund-list max-h-60 overflow-y-auto border rounded-md p-2 ${
+            validationErrors[product.id]?.funds ? 'border-red-500 bg-red-50' : ''
+          }`}>
             {filteredFunds.map(fund => (
               <div key={fund.id} className="fund-item hover:bg-gray-50 p-1">
                 <Checkbox
@@ -1591,10 +1746,14 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                               value={product.provider_id}
                               onChange={val => handleProductChange(product.id, 'provider_id', Number(val))}
                               placeholder="Select a provider"
-                              className="w-full"
+                              className={`w-full ${validationErrors[product.id]?.provider ? 'border-red-500' : ''}`}
                               required
                             />
-
+                            {validationErrors[product.id]?.provider && (
+                              <div className="text-xs text-red-600 mt-1">
+                                {validationErrors[product.id].provider}
+                              </div>
+                            )}
                           </div>
 
                           {/* Product Type Selection */}
@@ -1618,9 +1777,14 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                               value={product.product_type}
                               onChange={val => handleProductTypeChange(product.id, String(val))}
                               placeholder="Select product type"
-                              className="w-full"
+                              className={`w-full ${validationErrors[product.id]?.productType ? 'border-red-500' : ''}`}
                               required
                             />
+                            {validationErrors[product.id]?.productType && (
+                              <div className="text-xs text-red-600 mt-1">
+                                {validationErrors[product.id].productType}
+                              </div>
+                            )}
                           </div>
                         </div>
 
