@@ -8,3 +8,4 @@ export { default as DataTable } from './DataTable';
 export { Skeleton, StatBoxSkeleton, ChartSkeleton, TableSkeleton } from './Skeleton';
 export { default as ProfileAvatar } from './ProfileAvatar';
 export { default as SearchableDropdown } from './SearchableDropdown';
+export { default as GlobalSearch } from './GlobalSearch';

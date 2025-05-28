@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ProfileAvatar } from './ui';
+import { ProfileAvatar, GlobalSearch } from './ui';
 
 /**
  * TopBar Component
  * 
- * Sleek top navigation bar containing company logo and user profile.
+ * Sleek top navigation bar containing company logo, global search, and user profile.
  * Positioned at the top of the screen with a clean, modern design.
  */
 const TopBar: React.FC = () => {
@@ -39,7 +39,7 @@ const TopBar: React.FC = () => {
   return (
     <div className="bg-white border-b border-gray-200 shadow-sm h-16 flex items-center justify-between px-6 relative z-[60] fixed top-0 left-0 right-0">
       {/* Left side - Company Logo */}
-      <div className="flex items-center">
+      <div className="flex items-center flex-shrink-0">
         <Link to="/" className="flex items-center hover:opacity-80 transition-opacity duration-200">
           <img
             src="/images/Companylogo2.png"
@@ -54,8 +54,13 @@ const TopBar: React.FC = () => {
         </Link>
       </div>
 
+      {/* Center - Global Search */}
+      <div className="flex-1 max-w-lg mx-8">
+        <GlobalSearch />
+      </div>
+
       {/* Right side - User Profile */}
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-4 flex-shrink-0">
         {/* Notifications (placeholder for future) */}
         <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

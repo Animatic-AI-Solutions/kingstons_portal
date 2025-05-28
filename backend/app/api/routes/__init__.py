@@ -9,5 +9,5 @@ from . import (
     analytics,
     available_providers,
     available_portfolios, fund_valuations, product_owners, client_group_product_owners,
-    provider_switch_log, scheduled_transactions
+    provider_switch_log, scheduled_transactions, search
 )

@@ -628,4 +628,20 @@ export const getPortfolioFundsByProduct = (productId: number) => {
   return api.get(`client_products/${productId}/complete`);
 };
 
+/**
+ * GLOBAL SEARCH API ENDPOINTS
+ * 
+ * Functions for searching across all entities in the system
+ */
+
+/**
+ * Performs a global search across all entities (client groups, products, funds, providers, portfolios)
+ * @param {string} query - Search query string
+ * @param {number} limit - Maximum number of results to return (default: 20)
+ * @returns {Promise} - API response with search results
+ */
+export const globalSearch = (query: string, limit: number = 20) => {
+  return api.get(`search?query=${encodeURIComponent(query)}&limit=${limit}`);
+};
+
 export default api; 
