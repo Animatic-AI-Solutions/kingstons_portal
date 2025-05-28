@@ -1491,3 +1491,132 @@ async def get_dashboard_all_data(
     except Exception as e:
         logger.error(f"Error fetching optimized dashboard data: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}") 
+
+@router.get("/analytics/risk_differences")
+async def get_products_risk_differences(
+    limit: int = Query(10, ge=1, le=50, description="Number of products to return"),
+    db = Depends(get_db)
+):
+    """
+    Get products with the biggest difference between target risk and actual risk.
+    
+    Target risk: weighted average risk of portfolio_funds against their target_weighting
+    Actual risk: weighted average risk of portfolio_funds against their latest valuations
+    """
+    try:
+        logger.info("Fetching products with risk differences")
+        
+        # Get all active client products with their portfolios
+        products_result = db.table("client_products")\
+            .select("id, product_name, client_id, portfolio_id")\
+            .eq("status", "active")\
+            .not_.is_("portfolio_id", "null")\
+            .execute()
+        
+        if not products_result.data:
+            return []
+        
+        risk_differences = []
+        
+        for product in products_result.data:
+            product_id = product["id"]
+            portfolio_id = product["portfolio_id"]
+            
+            # Get all portfolio funds for this product
+            portfolio_funds_result = db.table("portfolio_funds")\
+                .select("id, available_funds_id, target_weighting, amount_invested")\
+                .eq("portfolio_id", portfolio_id)\
+                .eq("status", "active")\
+                .execute()
+            
+            if not portfolio_funds_result.data:
+                continue
+            
+            # Get fund risk factors and latest valuations
+            fund_data = {}
+            for pf in portfolio_funds_result.data:
+                fund_id = pf["available_funds_id"]
+                
+                # Get fund risk factor
+                fund_result = db.table("available_funds")\
+                    .select("risk_factor, fund_name")\
+                    .eq("id", fund_id)\
+                    .execute()
+                
+                if not fund_result.data or fund_result.data[0]["risk_factor"] is None:
+                    continue
+                
+                # Get latest valuation for this portfolio fund
+                valuation_result = db.table("fund_valuations")\
+                    .select("value")\
+                    .eq("portfolio_fund_id", pf["id"])\
+                    .order("valuation_date", desc=True)\
+                    .limit(1)\
+                    .execute()
+                
+                fund_data[pf["id"]] = {
+                    "risk_factor": fund_result.data[0]["risk_factor"],
+                    "fund_name": fund_result.data[0]["fund_name"],
+                    "target_weighting": float(pf["target_weighting"] or 0),
+                    "amount_invested": float(pf["amount_invested"] or 0),
+                    "latest_valuation": float(valuation_result.data[0]["value"]) if valuation_result.data else None
+                }
+            
+            if not fund_data:
+                continue
+            
+            # Calculate target risk (weighted by target_weighting)
+            target_risk = None
+            total_target_weight = sum(fund["target_weighting"] for fund in fund_data.values())
+            
+            if total_target_weight > 0:
+                weighted_target_risk = sum(
+                    fund["risk_factor"] * fund["target_weighting"] 
+                    for fund in fund_data.values()
+                )
+                target_risk = weighted_target_risk / total_target_weight
+            
+            # Calculate actual risk (weighted by latest valuations)
+            actual_risk = None
+            funds_with_valuations = {k: v for k, v in fund_data.items() if v["latest_valuation"] is not None}
+            total_valuation = sum(fund["latest_valuation"] for fund in funds_with_valuations.values())
+            
+            if total_valuation > 0 and funds_with_valuations:
+                weighted_actual_risk = sum(
+                    fund["risk_factor"] * fund["latest_valuation"] 
+                    for fund in funds_with_valuations.values()
+                )
+                actual_risk = weighted_actual_risk / total_valuation
+            
+            # Calculate risk difference
+            if target_risk is not None and actual_risk is not None:
+                risk_difference = abs(actual_risk - target_risk)
+                
+                # Get client name
+                client_result = db.table("client_groups")\
+                    .select("name")\
+                    .eq("id", product["client_id"])\
+                    .execute()
+                
+                client_name = client_result.data[0]["name"] if client_result.data else "Unknown"
+                
+                risk_differences.append({
+                    "product_id": product_id,
+                    "product_name": product["product_name"],
+                    "client_name": client_name,
+                    "target_risk": round(target_risk, 2),
+                    "actual_risk": round(actual_risk, 2),
+                    "risk_difference": round(risk_difference, 2),
+                    "fund_count": len(fund_data),
+                    "funds_with_valuations": len(funds_with_valuations)
+                })
+        
+        # Sort by risk difference (descending) and limit results
+        risk_differences.sort(key=lambda x: x["risk_difference"], reverse=True)
+        
+        logger.info(f"Found {len(risk_differences)} products with calculable risk differences")
+        return risk_differences[:limit]
+        
+    except Exception as e:
+        logger.error(f"Error calculating risk differences: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error calculating risk differences: {str(e)}") 

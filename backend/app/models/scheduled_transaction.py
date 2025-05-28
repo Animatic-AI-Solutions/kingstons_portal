@@ -145,4 +145,30 @@ class ScheduledTransactionExecutionInDB(ScheduledTransactionExecutionBase):
 
 class ScheduledTransactionExecution(ScheduledTransactionExecutionInDB):
     """Complete scheduled transaction execution model returned to frontend"""
-    pass 
+    pass
+
+class UpcomingScheduledTransaction(BaseModel):
+    """Model for upcoming scheduled transactions with joined data"""
+    id: int
+    transaction_type: str
+    amount: DecimalWithPrecision
+    next_execution_date: date
+    execution_day: int
+    is_recurring: bool
+    recurrence_interval: Optional[str] = None
+    description: Optional[str] = None
+    fund_name: Optional[str] = None
+    fund_code: Optional[str] = None
+    client_name: Optional[str] = None
+    client_type: Optional[str] = None
+    product_name: Optional[str] = None
+    portfolio_fund_id: Optional[int] = None
+    client_product_id: Optional[int] = None
+    client_group_id: Optional[int] = None
+    
+    model_config = ConfigDict(
+        json_encoders={
+            date: lambda d: d.isoformat(),
+            Decimal: lambda d: float(d) if d is not None else None
+        }
+    ) 

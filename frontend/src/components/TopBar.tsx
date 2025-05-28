@@ -61,13 +61,6 @@ const TopBar: React.FC = () => {
 
       {/* Right side - User Profile */}
       <div className="flex items-center space-x-4 flex-shrink-0">
-        {/* Notifications (placeholder for future) */}
-        <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM10.5 3.5a6 6 0 0 1 6 6v2l1.5 3h-15l1.5-3v-2a6 6 0 0 1 6-6z" />
-          </svg>
-        </button>
-
         {/* Profile Section */}
         <div className="relative" ref={profileMenuRef}>
           <button

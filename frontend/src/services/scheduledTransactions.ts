@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { createAuthenticatedApi } from './auth';
 
 /**
  * Scheduled Transactions API Service
@@ -7,35 +7,8 @@ import axios from 'axios';
  * including one-time and recurring investments and withdrawals.
  */
 
-// Use the same axios instance pattern as the main API service
-const api = axios.create({
-  baseURL: '',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Add the same interceptors as main API service
-api.interceptors.request.use(
-  (config) => {
-    if (config.url && !config.url.startsWith('/api/')) {
-      config.url = `/api${config.url.startsWith('/') ? '' : '/'}${config.url}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+// Use the authenticated API instance to ensure auth headers are included
+const api = createAuthenticatedApi();
 
 /**
  * Type definitions for scheduled transactions
