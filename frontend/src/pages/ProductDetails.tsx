@@ -94,8 +94,8 @@ const ProductDetails: React.FC = () => {
             to={`/products/${productId}/overview`}
             className={({ isActive }: { isActive: boolean }) =>
               isActive
-                ? 'bg-primary-700 text-white shadow-sm rounded-lg px-4 py-2 font-medium text-base transition-all duration-200 ease-in-out'
-                : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900 rounded-lg px-4 py-2 font-medium text-base transition-all duration-200 ease-in-out'
+                ? 'bg-primary-700 text-white shadow-sm rounded-lg px-2 py-2 font-medium text-base transition-all duration-200 ease-in-out'
+                : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900 rounded-lg px-2 py-2 font-medium text-base transition-all duration-200 ease-in-out'
             }
           >
             Overview
@@ -104,8 +104,8 @@ const ProductDetails: React.FC = () => {
             to={`/products/${productId}/irr-calculation`}
             className={({ isActive }: { isActive: boolean }) =>
               isActive
-                ? 'bg-primary-700 text-white shadow-sm rounded-lg px-4 py-2 font-medium text-base transition-all duration-200 ease-in-out'
-                : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900 rounded-lg px-4 py-2 font-medium text-base transition-all duration-200 ease-in-out'
+                ? 'bg-primary-700 text-white shadow-sm rounded-lg px-2 py-2 font-medium text-base transition-all duration-200 ease-in-out'
+                : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900 rounded-lg px-2 py-2 font-medium text-base transition-all duration-200 ease-in-out'
             }
           >
             IRR Calculation
@@ -114,8 +114,8 @@ const ProductDetails: React.FC = () => {
             to={`/products/${productId}/irr-history`}
             className={({ isActive }: { isActive: boolean }) =>
               isActive
-                ? 'bg-primary-700 text-white shadow-sm rounded-lg px-4 py-2 font-medium text-base transition-all duration-200 ease-in-out'
-                : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900 rounded-lg px-4 py-2 font-medium text-base transition-all duration-200 ease-in-out'
+                ? 'bg-primary-700 text-white shadow-sm rounded-lg px-2 py-2 font-medium text-base transition-all duration-200 ease-in-out'
+                : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900 rounded-lg px-2 py-2 font-medium text-base transition-all duration-200 ease-in-out'
             }
           >
             IRR History
