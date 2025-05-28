@@ -657,5 +657,107 @@ FROM
     LEFT JOIN product_value_irr_summary pvis ON cp.id = pvis.client_product_id;
 
 -- =========================================================
+-- GLOBAL SEARCH FUNCTION
+-- =========================================================
+
+CREATE OR REPLACE FUNCTION global_search_entities(
+    search_query TEXT,
+    result_limit INTEGER DEFAULT 20
+)
+RETURNS TABLE (
+    entity_type TEXT,
+    entity_id BIGINT,
+    name TEXT,
+    description TEXT,
+    additional_info TEXT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT * FROM (
+        -- Search Client Groups
+        SELECT 
+            'client_group'::TEXT as entity_type,
+            cg.id as entity_id,
+            cg.name as name,
+            COALESCE('Client Group - ' || cg.type, 'Client Group') as description,
+            COALESCE('Advisor: ' || cg.advisor, '') as additional_info
+        FROM client_groups cg
+        WHERE cg.status != 'inactive'
+        AND (
+            cg.name ILIKE '%' || search_query || '%' OR
+            cg.advisor ILIKE '%' || search_query || '%' OR
+            cg.type ILIKE '%' || search_query || '%'
+        )
+        
+        UNION ALL
+        
+        -- Search Products (Client Products)
+        SELECT 
+            'product'::TEXT as entity_type,
+            cp.id as entity_id,
+            cp.product_name as name,
+            COALESCE('Product - ' || cp.product_type, 'Product') as description,
+            COALESCE('Plan: ' || cp.plan_number, '') as additional_info
+        FROM client_products cp
+        WHERE cp.status != 'inactive'
+        AND (
+            cp.product_name ILIKE '%' || search_query || '%' OR
+            cp.product_type ILIKE '%' || search_query || '%' OR
+            cp.plan_number ILIKE '%' || search_query || '%'
+        )
+        
+        UNION ALL
+        
+        -- Search Available Funds
+        SELECT 
+            'fund'::TEXT as entity_type,
+            af.id as entity_id,
+            af.fund_name as name,
+            COALESCE('Fund - ISIN: ' || af.isin_number, 'Fund') as description,
+            COALESCE('Risk Factor: ' || af.risk_factor::TEXT || ', Cost: ' || af.fund_cost::TEXT, '') as additional_info
+        FROM available_funds af
+        WHERE af.status != 'inactive'
+        AND (
+            af.fund_name ILIKE '%' || search_query || '%' OR
+            af.isin_number ILIKE '%' || search_query || '%'
+        )
+        
+        UNION ALL
+        
+        -- Search Available Providers
+        SELECT 
+            'provider'::TEXT as entity_type,
+            ap.id as entity_id,
+            ap.name as name,
+            'Provider' as description,
+            COALESCE('Status: ' || ap.status, '') as additional_info
+        FROM available_providers ap
+        WHERE ap.status != 'inactive'
+        AND ap.name ILIKE '%' || search_query || '%'
+        
+        UNION ALL
+        
+        -- Search Available Portfolios (Templates)
+        SELECT 
+            'portfolio'::TEXT as entity_type,
+            ap.id as entity_id,
+            ap.name as name,
+            'Portfolio Template' as description,
+            '' as additional_info
+        FROM available_portfolios ap
+        WHERE ap.name ILIKE '%' || search_query || '%'
+    ) AS search_results
+    ORDER BY 
+        CASE 
+            WHEN search_results.name ILIKE search_query || '%' THEN 1  -- Exact prefix match gets highest priority
+            WHEN search_results.name ILIKE '%' || search_query || '%' THEN 2  -- Contains match gets lower priority
+            ELSE 3
+        END,
+        search_results.name
+    LIMIT result_limit;
+END;
+$$ LANGUAGE plpgsql;
+
+-- =========================================================
 -- End of Script
 -- =========================================================

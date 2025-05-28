@@ -1,5 +1,5 @@
 import React, { Suspense, useState } from 'react';
-import { StatBox, FundDistributionChart, DataTable, StatBoxSkeleton, ChartSkeleton, TableSkeleton } from '../components/ui';
+import { StatBox, FundDistributionChart, DataTable, StatBoxSkeleton, ChartSkeleton, TableSkeleton, UpcomingTransactions, RiskDifferences } from '../components/ui';
 import useDashboardData from '../hooks/useDashboardData';
 
 // Icons for the stats boxes
@@ -75,229 +75,242 @@ const Home: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('charts');
 
   return (
-    <div className="w-full">
-      {loading && !metrics ? (
-        <div className="flex flex-col gap-6">
-          {/* Stats grid - full width */}
-          <div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[...Array(4)].map((_, i) => (
-                <StatBoxSkeleton key={i} />
-              ))}
-            </div>
-          </div>
-          
-          {/* Charts row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-            {/* Fund distribution chart */}
+    <div className="min-h-screen bg-white">
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {loading && !metrics ? (
+          <div className="flex flex-col gap-6">
+            {/* Stats grid - full width */}
             <div>
-              <ChartSkeleton />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[...Array(4)].map((_, i) => (
+                  <StatBoxSkeleton key={i} />
+                ))}
+              </div>
             </div>
             
-            {/* Provider distribution chart */}
-            <div>
-              <ChartSkeleton />
-            </div>
-            
-            {/* Portfolio Template distribution chart */}
-            <div>
-              <ChartSkeleton />
-            </div>
-          </div>
-        </div>
-      ) : error ? (
-        <ErrorMessage message={error.message} retry={refetch} />
-      ) : (
-        <div className="flex flex-col gap-6">
-          {/* Stats grid - full width */}
-          <div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Total Funds Under Management */}
-              <StatBox
-                title="Total Funds Under Management"
-                value={metrics?.totalFUM || 0}
-                format="currency"
-                changePercentage={null}
-                icon={<CurrencyIcon />}
-                colorScheme="primary"
-              />
+            {/* Charts row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+              {/* Fund distribution chart */}
+              <div>
+                <ChartSkeleton />
+              </div>
               
-              {/* Company IRR */}
-              <StatBox
-                title="Company IRR"
-                value={metrics?.companyIRR || 0}
-                format="percentage"
-                changePercentage={null}
-                icon={<ChartIcon />}
-                colorScheme="secondary"
-              />
+              {/* Provider distribution chart */}
+              <div>
+                <ChartSkeleton />
+              </div>
               
-              {/* Total Client Groups */}
-              <StatBox
-                title="Total Client Groups"
-                value={metrics?.totalClients || 0}
-                format="number"
-                changePercentage={null}
-                icon={<ClientsIcon />}
-                colorScheme="success"
-              />
-              
-              {/* Total Products */}
-              <StatBox
-                title="Total Products"
-                value={metrics?.totalAccounts || 0}
-                format="number"
-                changePercentage={null}
-                icon={<ProductsIcon />}
-                colorScheme="warning"
-              />
-            </div>
-          </div>
-          
-          {/* View Toggle Button */}
-          <div className="flex justify-between items-center mt-6">
-            <h2 className="text-2xl font-bold text-gray-900">Portfolio Distribution</h2>
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500">View as:</span>
-              <div className="bg-gray-100 rounded-lg p-1 flex">
-                <button
-                  onClick={() => setViewMode('charts')}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
-                    viewMode === 'charts'
-                      ? 'bg-white text-primary-700 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <PieChartIcon />
-                  <span>Charts</span>
-                </button>
-                <button
-                  onClick={() => setViewMode('tables')}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
-                    viewMode === 'tables'
-                      ? 'bg-white text-primary-700 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <TableIcon />
-                  <span>Tables</span>
-                </button>
+              {/* Portfolio Template distribution chart */}
+              <div>
+                <ChartSkeleton />
               </div>
             </div>
           </div>
-
-          {/* Charts/Tables row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Fund distribution */}
-            <div className="min-h-[500px]">
-              {loading ? (
-                viewMode === 'charts' ? <ChartSkeleton /> : <TableSkeleton />
-              ) : viewMode === 'charts' ? (
-                <Suspense fallback={<ChartSkeleton />}>
-                  <FundDistributionChart
-                    data={funds}
-                    threshold={5}
-                    title="Percentage of FUM in each Fund"
-                  />
-                </Suspense>
-              ) : (
-                <DataTable
-                  data={funds}
-                  title="FUM by Fund"
+        ) : error ? (
+          <ErrorMessage message={error.message} retry={refetch} />
+        ) : (
+          <div className="flex flex-col gap-6">
+            {/* Stats grid - full width */}
+            <div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Total Funds Under Management */}
+                <StatBox
+                  title="Total Funds Under Management"
+                  value={metrics?.totalFUM || 0}
+                  format="currency"
+                  changePercentage={null}
+                  icon={<CurrencyIcon />}
+                  colorScheme="primary"
                 />
-              )}
+                
+                {/* Company IRR */}
+                <StatBox
+                  title="Company IRR"
+                  value={metrics?.companyIRR || 0}
+                  format="percentage"
+                  changePercentage={null}
+                  icon={<ChartIcon />}
+                  colorScheme="secondary"
+                />
+                
+                {/* Total Client Groups */}
+                <StatBox
+                  title="Total Client Groups"
+                  value={metrics?.totalClients || 0}
+                  format="number"
+                  changePercentage={null}
+                  icon={<ClientsIcon />}
+                  colorScheme="success"
+                />
+                
+                {/* Total Products */}
+                <StatBox
+                  title="Total Products"
+                  value={metrics?.totalAccounts || 0}
+                  format="number"
+                  changePercentage={null}
+                  icon={<ProductsIcon />}
+                  colorScheme="warning"
+                />
+              </div>
             </div>
-            
-            {/* Provider distribution */}
-            <div className="min-h-[500px]">
-              {loading ? (
-                viewMode === 'charts' ? <ChartSkeleton /> : <TableSkeleton />
-              ) : viewMode === 'charts' ? (
-                <Suspense fallback={<ChartSkeleton />}>
-                  <FundDistributionChart
+
+            {/* Dashboard Widgets */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <UpcomingTransactions />
+              </div>
+              <div>
+                <RiskDifferences />
+              </div>
+            </div>
+
+            {/* View Toggle Button */}
+            <div className="flex justify-between items-center mt-6">
+              <h2 className="text-2xl font-bold text-gray-900">Portfolio Distribution</h2>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-500">View as:</span>
+                <div className="bg-gray-100 rounded-lg p-1 flex">
+                  <button
+                    onClick={() => setViewMode('charts')}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+                      viewMode === 'charts'
+                        ? 'bg-white text-primary-700 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    <PieChartIcon />
+                    <span>Charts</span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('tables')}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+                      viewMode === 'tables'
+                        ? 'bg-white text-primary-700 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    <TableIcon />
+                    <span>Tables</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Charts/Tables row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Fund distribution */}
+              <div className="min-h-[500px]">
+                {loading ? (
+                  viewMode === 'charts' ? <ChartSkeleton /> : <TableSkeleton />
+                ) : viewMode === 'charts' ? (
+                  <Suspense fallback={<ChartSkeleton />}>
+                    <FundDistributionChart
+                      data={funds}
+                      threshold={5}
+                      title="Percentage of FUM in each Fund"
+                    />
+                  </Suspense>
+                ) : (
+                  <DataTable
+                    data={funds}
+                    title="FUM by Fund"
+                  />
+                )}
+              </div>
+              
+              {/* Provider distribution */}
+              <div className="min-h-[500px]">
+                {loading ? (
+                  viewMode === 'charts' ? <ChartSkeleton /> : <TableSkeleton />
+                ) : viewMode === 'charts' ? (
+                  <Suspense fallback={<ChartSkeleton />}>
+                    <FundDistributionChart
+                      data={providers.map(provider => ({
+                        id: provider.id,
+                        name: provider.name,
+                        amount: provider.amount
+                      }))}
+                      threshold={5}
+                      title="Percentage of FUM by Provider"
+                    />
+                  </Suspense>
+                ) : (
+                  <DataTable
                     data={providers.map(provider => ({
                       id: provider.id,
                       name: provider.name,
                       amount: provider.amount
                     }))}
-                    threshold={5}
-                    title="Percentage of FUM by Provider"
+                    title="FUM by Provider"
                   />
-                </Suspense>
-              ) : (
-                <DataTable
-                  data={providers.map(provider => ({
-                    id: provider.id,
-                    name: provider.name,
-                    amount: provider.amount
-                  }))}
-                  title="FUM by Provider"
-                />
-              )}
-            </div>
-            
-            {/* Portfolio Template distribution */}
-            <div className="min-h-[500px]">
-              {loading ? (
-                viewMode === 'charts' ? <ChartSkeleton /> : <TableSkeleton />
-              ) : viewMode === 'charts' ? (
-                <Suspense fallback={<ChartSkeleton />}>
-                  <FundDistributionChart
+                )}
+              </div>
+              
+              {/* Portfolio Template distribution */}
+              <div className="min-h-[500px]">
+                {loading ? (
+                  viewMode === 'charts' ? <ChartSkeleton /> : <TableSkeleton />
+                ) : viewMode === 'charts' ? (
+                  <Suspense fallback={<ChartSkeleton />}>
+                    <FundDistributionChart
+                      data={templates.map(template => ({
+                        id: template.id,
+                        name: template.name,
+                        amount: template.amount
+                      }))}
+                      threshold={5}
+                      title="Percentage of FUM by Portfolio Template"
+                    />
+                  </Suspense>
+                ) : (
+                  <DataTable
                     data={templates.map(template => ({
                       id: template.id,
                       name: template.name,
                       amount: template.amount
                     }))}
-                    threshold={5}
-                    title="Percentage of FUM by Portfolio Template"
+                    title="FUM by Portfolio Template"
                   />
-                </Suspense>
-              ) : (
-                <DataTable
-                  data={templates.map(template => ({
-                    id: template.id,
-                    name: template.name,
-                    amount: template.amount
-                  }))}
-                  title="FUM by Portfolio Template"
-                />
-              )}
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Add a refresh button when we have data */}
-      {!loading && metrics && (
-        <div className="mt-8 flex justify-end">
-          <button
-            onClick={() => refetch()}
-            disabled={loading}
-            className={`
-              flex items-center px-4 py-2 rounded-md text-sm font-medium
-              bg-primary-50 text-primary-700 hover:bg-primary-100 
-              transition-colors duration-200 focus:outline-none focus:ring-2 
-              focus:ring-offset-2 focus:ring-primary-500
-              ${loading ? 'opacity-50 cursor-not-allowed' : ''}
-            `}
-          >
-            <svg 
-              className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
+        {/* Add a refresh button when we have data */}
+        {!loading && metrics && (
+          <div className="mt-8 flex justify-end">
+            <button
+              onClick={() => refetch()}
+              disabled={loading}
+              className={`
+                flex items-center px-4 py-2 rounded-md text-sm font-medium
+                bg-primary-50 text-primary-700 hover:bg-primary-100 
+                transition-colors duration-200 focus:outline-none focus:ring-2 
+                focus:ring-offset-2 focus:ring-primary-500
+                ${loading ? 'opacity-50 cursor-not-allowed' : ''}
+              `}
             >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={2} 
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
-              />
-            </svg>
-            Refresh Data
-          </button>
-        </div>
-      )}
+              <svg 
+                className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+                />
+              </svg>
+              Refresh Data
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
