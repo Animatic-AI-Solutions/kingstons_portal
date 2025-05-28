@@ -1,8 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
+import AppLayout from './components/layout/AppLayout';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Pages - Main site pages
@@ -68,7 +67,7 @@ const queryClient = new QueryClient({
  */
 const AppContent: React.FC = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100">
+    <div className="min-h-screen w-full">
       <Routes>
         {/* Authentication Routes - Public routes for user authentication */}
         <Route path="/login" element={<LoginForm />} />
@@ -77,250 +76,53 @@ const AppContent: React.FC = () => {
         <Route path="/reset-password" element={<SetNewPasswordForm />} />
         
         {/* Legal Pages - Public access to terms and conditions */}
-        <Route path="/terms" element={
-          <>
-            <Navbar />
-            <div className="flex-grow">
-              <Terms />
-            </div>
-            <Footer />
-          </>
-        } />
-        <Route path="/cookies" element={
-          <>
-            <Navbar />
-            <div className="flex-grow">
-              <Cookies />
-            </div>
-            <Footer />
-          </>
-        } />
+        <Route path="/terms" element={<AppLayout><Terms /></AppLayout>} />
+        <Route path="/cookies" element={<AppLayout><Cookies /></AppLayout>} />
         
         {/* Protected Routes - Require authentication to access */}
         <Route element={<ProtectedRoute />}>
           {/* Home */}
-          <Route path="/" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <Home />
-              </div>
-              <Footer />
-            </>
-          } />
+          <Route path="/" element={<AppLayout><Home /></AppLayout>} />
           
           {/* Profile Page */}
-          <Route path="/profile" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <Profile />
-              </div>
-              <Footer />
-            </>
-          } />
+          <Route path="/profile" element={<AppLayout><Profile /></AppLayout>} />
           
           {/* Client Management Section - CRUD operations for clients */}
-          <Route path="/client_groups" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <Clients />
-              </div>
-              <Footer />
-            </>
-          } />
-          
-          <Route path="/client_groups/add" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <AddClient />
-              </div>
-              <Footer />
-            </>
-          } />
-          
-          <Route path="/client_groups/:clientId" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <ClientDetails />
-              </div>
-              <Footer />
-            </>
-          } />
+          <Route path="/client_groups" element={<AppLayout><Clients /></AppLayout>} />
+          <Route path="/client_groups/add" element={<AppLayout><AddClient /></AppLayout>} />
+          <Route path="/client_groups/:clientId" element={<AppLayout><ClientDetails /></AppLayout>} />
           
           {/* Product Management Section - Managing client products */}
-          <Route path="/products" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <Products />
-              </div>
-              <Footer />
-            </>
-          } />
-          
-          <Route path="/products/:productId/*" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <ProductDetails />
-              </div>
-              <Footer />
-            </>
-          } />
+          <Route path="/products" element={<AppLayout><Products /></AppLayout>} />
+          <Route path="/products/:productId/*" element={<AppLayout><ProductDetails /></AppLayout>} />
           
           {/* Transaction Scheduler Page - For scheduled transactions management */}
-          <Route path="/actions" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <Actions />
-              </div>
-              <Footer />
-            </>
-          } />
+          <Route path="/scheduler" element={<AppLayout><Actions /></AppLayout>} />
           
           {/* Definitions Section - System setup and configuration */}
-          <Route path="/definitions" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <Definitions />
-              </div>
-              <Footer />
-            </>
-          } />
+          <Route path="/definitions" element={<AppLayout><Definitions /></AppLayout>} />
           
           {/* Redirect routes for unified definitions page */}
           <Route path="/definitions/providers" element={<Navigate to="/definitions?tab=providers" replace />} />
           <Route path="/definitions/funds" element={<Navigate to="/definitions?tab=funds" replace />} />
           <Route path="/definitions/portfolio-templates" element={<Navigate to="/definitions?tab=portfolios" replace />} />
           
-          <Route path="/definitions/providers/:providerId" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <ProviderDetails />
-              </div>
-              <Footer />
-            </>
-          } />
-          
-          <Route path="/definitions/providers/add" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <AddProvider />
-              </div>
-              <Footer />
-            </>
-          } />
-          
-          <Route path="/definitions/funds/:fundId" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <FundDetails />
-              </div>
-              <Footer />
-            </>
-          } />
-          
-          <Route path="/definitions/funds/add" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <AddFund />
-              </div>
-              <Footer />
-            </>
-          } />
-          
-          <Route path="/definitions/portfolio-templates/:portfolioId" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <PortfolioTemplateDetails />
-              </div>
-              <Footer />
-            </>
-          } />
-          
-          <Route path="/definitions/portfolio-templates/add" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <AddPortfolioTemplate />
-              </div>
-              <Footer />
-            </>
-          } />
-          
-          <Route path="/add-generation/:portfolioId" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <AddPortfolioGeneration />
-              </div>
-              <Footer />
-            </>
-          } />
-          
-          <Route path="/edit-generation/:portfolioId/:generationId" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <EditPortfolioGeneration />
-              </div>
-              <Footer />
-            </>
-          } />
+          <Route path="/definitions/providers/:providerId" element={<AppLayout><ProviderDetails /></AppLayout>} />
+          <Route path="/definitions/providers/add" element={<AppLayout><AddProvider /></AppLayout>} />
+          <Route path="/definitions/funds/:fundId" element={<AppLayout><FundDetails /></AppLayout>} />
+          <Route path="/definitions/funds/add" element={<AppLayout><AddFund /></AppLayout>} />
+          <Route path="/definitions/portfolio-templates/:portfolioId" element={<AppLayout><PortfolioTemplateDetails /></AppLayout>} />
+          <Route path="/definitions/portfolio-templates/add" element={<AppLayout><AddPortfolioTemplate /></AppLayout>} />
+          <Route path="/add-generation/:portfolioId" element={<AppLayout><AddPortfolioGeneration /></AppLayout>} />
+          <Route path="/edit-generation/:portfolioId/:generationId" element={<AppLayout><EditPortfolioGeneration /></AppLayout>} />
           
           {/* Client Account Management - Creating accounts for specific client groups */}
-          <Route path="/client-group-products/:clientId" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <CreateClientProducts />
-              </div>
-              <Footer />
-            </>
-          } />
-          
-          {/* General account creation flow - Allows creating accounts without specific client group context */}
-          <Route path="/create-client-group-products" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <CreateClientProducts />
-              </div>
-              <Footer />
-            </>
-          } />
+          <Route path="/client-group-products/:clientId" element={<AppLayout><CreateClientProducts /></AppLayout>} />
+          <Route path="/create-client-group-products" element={<AppLayout><CreateClientProducts /></AppLayout>} />
           
           {/* Reporting Section - Financial performance analytics and reporting */}
-          <Route path="/analytics" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <Reporting />
-              </div>
-              <Footer />
-            </>
-          } />
-          
-          <Route path="/report-generator" element={
-            <>
-              <Navbar />
-              <div className="flex-grow pt-6 pb-12">
-                <ReportGenerator />
-              </div>
-              <Footer />
-            </>
-          } />
+          <Route path="/analytics" element={<AppLayout><Reporting /></AppLayout>} />
+          <Route path="/report-generator" element={<AppLayout><ReportGenerator /></AppLayout>} />
         </Route>
         
         {/* Default route - redirect to login */}
