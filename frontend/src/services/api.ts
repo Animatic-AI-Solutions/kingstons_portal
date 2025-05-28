@@ -586,9 +586,10 @@ export const getClientGroups = (params?: {
  */
 
 /**
- * Fetches client products, optionally filtered by client group
+ * Fetches client products, optionally filtered by client group or provider
  * @param {Object} params - Query parameters
  * @param {number} [params.client_id] - Filter by client group ID
+ * @param {number} [params.provider_id] - Filter by provider ID
  * @param {number} [params.skip] - Number of records to skip for pagination
  * @param {number} [params.limit] - Max number of records to return
  * @param {string} [params.status] - Filter by status
@@ -596,12 +597,14 @@ export const getClientGroups = (params?: {
  */
 export const getClientProducts = (params?: {
   client_id?: number;
+  provider_id?: number;
   skip?: number;
   limit?: number;
   status?: string;
 }) => {
   const queryParams = new URLSearchParams();
   if (params?.client_id !== undefined) queryParams.append('client_id', params.client_id.toString());
+  if (params?.provider_id !== undefined) queryParams.append('provider_id', params.provider_id.toString());
   if (params?.skip !== undefined) queryParams.append('skip', params.skip.toString());
   if (params?.limit !== undefined) queryParams.append('limit', params.limit.toString());
   if (params?.status) queryParams.append('status', params.status);

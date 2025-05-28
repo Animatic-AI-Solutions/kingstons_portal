@@ -18,6 +18,7 @@ async def get_client_products_with_owners(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
     limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
     client_id: Optional[int] = None,
+    provider_id: Optional[int] = None,
     status: Optional[str] = None,
     db = Depends(get_db)
 ):
@@ -39,6 +40,9 @@ async def get_client_products_with_owners(
         # Apply filters if provided
         if client_id is not None:
             query = query.eq("client_id", client_id)
+            
+        if provider_id is not None:
+            query = query.eq("provider_id", provider_id)
             
         if status is not None:
             query = query.eq("status", status)
@@ -191,6 +195,7 @@ async def get_client_products(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
     limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
     client_id: Optional[int] = None,
+    provider_id: Optional[int] = None,
     status: Optional[str] = None,
     db = Depends(get_db)
 ):
@@ -212,6 +217,9 @@ async def get_client_products(
         # Apply filters if provided
         if client_id is not None:
             query = query.eq("client_id", client_id)
+            
+        if provider_id is not None:
+            query = query.eq("provider_id", provider_id)
             
         if status is not None:
             query = query.eq("status", status)
