@@ -1266,10 +1266,10 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     return (
     <>
       <DeleteConfirmationModal />
-      <div className="flex flex-col space-y-6 -mx-2 sm:-mx-4 lg:-mx-6">
+      <div className="flex flex-col space-y-6 -mx-6 sm:-mx-8 lg:-mx-12">
         {/* Edit Form (conditionally displayed) */}
         {isEditMode && (
-          <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-4 mb-4 mx-2 sm:mx-4 lg:mx-6">
+          <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-4 mb-4 mx-6 sm:mx-8 lg:mx-12">
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-md font-semibold text-gray-900 flex items-center">
                 <svg className="h-4 w-4 text-indigo-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1393,7 +1393,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         )}
 
         {/* Modern Compact Product Overview Card */}
-        <div className="bg-white shadow-lg rounded-xl border border-gray-200 overflow-hidden mx-2 sm:mx-4 lg:mx-6">
+        <div className="bg-white shadow-lg rounded-xl border border-gray-200 overflow-hidden mx-6 sm:mx-8 lg:mx-12">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
             {/* Left Side - Product Details & Owners */}
             <div className="p-6 border-r border-gray-200">
@@ -1626,7 +1626,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         </div>
 
         {/* Portfolio Fund Summary - Show for ALL products */}
-        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-6 mb-8 mx-2 sm:mx-4 lg:mx-6">
+        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-6 mb-8 mx-6 sm:mx-8 lg:mx-12">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center space-x-3">
               <div className="flex-shrink-0">

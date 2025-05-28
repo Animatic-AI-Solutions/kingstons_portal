@@ -47,7 +47,7 @@ const ProductDetails: React.FC = () => {
   }, [productId, api]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto px-1 sm:px-2 lg:px-3">
       {/* Breadcrumbs */}
       <nav className="mb-4 flex" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
