@@ -658,11 +658,47 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                 "provider_name": product["provider_name"],
                 "provider_theme_color": product["provider_theme_color"],
                 "total_value": product["product_total_value"],
-                "irr": product["product_irr"],
+                "irr": None,  # Will be calculated using standardized method below
                 "active_fund_count": product["active_fund_count"],
                 "inactive_fund_count": product["inactive_fund_count"],
                 "funds": processed_funds
             }
+            
+            # Calculate product IRR using standardized multiple IRR endpoint
+            if portfolio_id:
+                try:
+                    # Get ALL portfolio fund IDs for this product (both active and inactive)
+                    # This is important because the standardized IRR calculation needs all historical funds
+                    portfolio_funds_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
+                    
+                    if portfolio_funds_result.data:
+                        portfolio_fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
+                        
+                        # Import and use the standardized multiple IRR calculation
+                        from app.api.routes.portfolio_funds import calculate_multiple_portfolio_funds_irr
+                        
+                        irr_result = await calculate_multiple_portfolio_funds_irr(
+                            portfolio_fund_ids=portfolio_fund_ids,
+                            irr_date=None,  # Use latest valuation date
+                            db=db
+                        )
+                        
+                        irr_value = irr_result.get("irr_percentage", 0)
+                        # Display '-' if IRR is exactly 0%
+                        processed_product["irr"] = "-" if irr_value == 0 else irr_value
+                        
+                        logger.info(f"Calculated standardized IRR for product {product['product_id']} using {len(portfolio_fund_ids)} funds (active + inactive): {processed_product['irr']}%")
+                    else:
+                        processed_product["irr"] = "-"
+                        logger.info(f"No portfolio funds found for product {product['product_id']}, setting IRR to '-'")
+                        
+                except Exception as e:
+                    logger.warning(f"Error calculating standardized IRR for product {product['product_id']}: {str(e)}")
+                    processed_product["irr"] = "-"
+            else:
+                processed_product["irr"] = "-"
+                logger.info(f"No portfolio for product {product['product_id']}, setting IRR to '-'")
+            
             processed_products.append(processed_product)
         
         logger.info(f"Processed {len(processed_products)} products with complete fund data")

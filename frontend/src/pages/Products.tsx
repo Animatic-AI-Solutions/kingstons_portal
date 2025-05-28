@@ -176,9 +176,12 @@ const Products: React.FC = () => {
   };
 
   // Format percentage with 1 decimal place
-  const formatPercentage = (value: number | null | undefined): string => {
+  const formatPercentage = (value: number | string | null | undefined): string => {
     if (value === null || value === undefined) {
       return 'N/A';
+    }
+    if (typeof value === 'string') {
+      return value; // Return string values as-is (like "-")
     }
     return `${value.toFixed(1)}%`;
   };

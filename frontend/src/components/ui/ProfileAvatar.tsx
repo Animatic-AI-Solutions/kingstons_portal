@@ -5,13 +5,15 @@ interface ProfileAvatarProps {
   size?: 'sm' | 'md' | 'lg';
   alt?: string;
   onClick?: () => void;
+  renderAsButton?: boolean;
 }
 
 const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ 
   imageUrl = '/images/Companylogo2.png',
   size = 'md',
   alt = 'Profile',
-  onClick
+  onClick,
+  renderAsButton = true
 }) => {
   // Size mappings
   const sizeClasses = {
@@ -20,17 +22,34 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
     lg: 'h-14 w-14'
   };
   
+  const commonClasses = `${onClick ? 'cursor-pointer hover:ring-2 hover:ring-primary-300' : ''} overflow-hidden rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 border-2 border-gray-200`;
+  
+  const imageElement = (
+    <img 
+      src={imageUrl || '/images/Companylogo2.png'} 
+      alt={alt}
+      className={`${sizeClasses[size]} object-cover`}
+    />
+  );
+  
+  if (renderAsButton) {
+    return (
+      <button 
+        onClick={onClick}
+        className={commonClasses}
+      >
+        {imageElement}
+      </button>
+    );
+  }
+  
   return (
-    <button 
+    <div 
       onClick={onClick}
-      className={`${onClick ? 'cursor-pointer hover:ring-2 hover:ring-primary-300' : ''} overflow-hidden rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 border-2 border-gray-200`}
+      className={commonClasses}
     >
-      <img 
-        src={imageUrl || '/images/Companylogo2.png'} 
-        alt={alt}
-        className={`${sizeClasses[size]} object-cover`}
-      />
-    </button>
+      {imageElement}
+    </div>
   );
 };
 
