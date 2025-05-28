@@ -1,15 +1,17 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useState } from 'react';
 
 /**
  * Sidebar Component
  * 
- * Fixed sidebar navigation with icons and labels.
- * Provides access to main application sections with a clean, always-visible design.
+ * Minimized sidebar that expands on hover, showing icons by default and labels when expanded.
+ * Provides access to main application sections with a clean, space-efficient design.
  */
 const Sidebar: React.FC = () => {
   const { user } = useAuth();
   const location = useLocation();
+  const [isHovered, setIsHovered] = useState(false);
 
   const isActive = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
@@ -86,29 +88,42 @@ const Sidebar: React.FC = () => {
   if (!user) return null;
 
   return (
-    <div className="fixed left-0 top-0 h-screen w-64 bg-white shadow-lg z-50 border-r border-gray-200">
+    <div 
+      className={`fixed left-0 top-0 h-screen bg-white shadow-lg z-50 border-r border-gray-200 transition-all duration-300 ease-in-out ${
+        isHovered ? 'w-64' : 'w-16'
+      }`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       {/* Top spacer to account for the top bar */}
       <div className="h-16"></div>
       
       {/* Navigation */}
-      <nav className="h-[calc(100vh-4rem)] p-4 overflow-y-auto">
+      <nav className="h-[calc(100vh-4rem)] p-2 overflow-y-auto">
         <ul className="space-y-2">
           {navigationItems.map((item) => (
             <li key={item.path}>
               <Link
                 to={item.path}
-                className={`flex items-center p-3 rounded-lg transition-all duration-200 group ${
+                className={`flex items-center p-3 rounded-lg transition-all duration-200 group relative ${
                   isActive(item.path)
-                    ? 'bg-primary-100 text-primary-700 border-r-4 border-primary-700'
+                    ? 'bg-primary-100 text-primary-700'
                     : 'text-gray-700 hover:bg-gray-100 hover:text-primary-700'
                 }`}
+                title={!isHovered ? item.label : ''}
               >
-                <div className={`flex items-center justify-center flex-shrink-0 w-6 h-6 mr-3 ${
+                <div className={`flex items-center justify-center flex-shrink-0 w-6 h-6 ${
+                  isHovered ? 'mr-3' : ''
+                } ${
                   isActive(item.path) ? 'text-primary-700' : 'text-gray-500 group-hover:text-primary-700'
                 }`}>
                   {item.icon}
                 </div>
-                <span className="font-medium">{item.label}</span>
+                {isHovered && (
+                  <span className="font-medium whitespace-nowrap overflow-hidden">
+                    {item.label}
+                  </span>
+                )}
               </Link>
             </li>
           ))}
