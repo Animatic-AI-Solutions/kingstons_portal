@@ -420,7 +420,7 @@ const Analytics: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Analytics Dashboard</h1>
+            <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Analytics Dashboard</h1>
             <p className="text-gray-600">
               Comprehensive insights into your portfolio performance and client metrics
             </p>

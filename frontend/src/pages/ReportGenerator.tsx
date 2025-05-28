@@ -1516,8 +1516,8 @@ Please select a different valuation date or ensure all active funds have valuati
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-2xl font-normal text-gray-900 font-sans tracking-wide mb-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+      <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide mb-6">
         Report Generator
       </h1>
       

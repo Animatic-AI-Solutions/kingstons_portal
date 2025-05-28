@@ -3,7 +3,7 @@ import React from 'react';
 const Terms: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Terms and Conditions</h1>
+      <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Terms and Conditions</h1>
       
       <div className="prose prose-lg max-w-none">
         <section className="mb-8">

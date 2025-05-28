@@ -488,7 +488,7 @@ const FundDetails: React.FC = () => {
         
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-200 pb-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{fund.fund_name}</h1>
+            <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">{fund.fund_name}</h1>
             <div className="flex flex-wrap items-center gap-4">
               <span className="inline-flex items-center text-sm text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

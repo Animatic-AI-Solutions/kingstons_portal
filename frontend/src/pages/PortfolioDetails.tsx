@@ -343,7 +343,7 @@ const PortfolioDetails: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">{portfolio?.portfolio_name || 'Portfolio'}</h1>
+        <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">{portfolio?.portfolio_name || 'Portfolio'}</h1>
         <div className="flex gap-2">
           <button
             onClick={handleBack}

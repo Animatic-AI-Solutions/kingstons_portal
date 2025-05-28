@@ -103,6 +103,41 @@ async def get_client_products_with_owners(
         except Exception as e:
             logger.error(f"Error fetching bulk summary data: {str(e)}")
         
+        # Get IRR dates for all products in bulk
+        irr_dates_map = {}
+        try:
+            if portfolio_ids:
+                # Get all portfolio funds for all portfolios
+                all_portfolio_funds_result = db.table("portfolio_funds").select("id,portfolio_id").in_("portfolio_id", portfolio_ids).execute()
+                if all_portfolio_funds_result.data:
+                    # Group fund IDs by portfolio ID
+                    portfolio_to_funds = {}
+                    all_fund_ids = []
+                    for pf in all_portfolio_funds_result.data:
+                        portfolio_id = pf.get("portfolio_id")
+                        fund_id = pf.get("id")
+                        if portfolio_id not in portfolio_to_funds:
+                            portfolio_to_funds[portfolio_id] = []
+                        portfolio_to_funds[portfolio_id].append(fund_id)
+                        all_fund_ids.append(fund_id)
+                    
+                    # Get all IRR dates for all funds
+                    if all_fund_ids:
+                        irr_dates_result = db.table("latest_irr_values").select("fund_id,irr_date").in_("fund_id", all_fund_ids).execute()
+                        if irr_dates_result.data:
+                            # Create a map of fund_id to irr_date
+                            fund_to_irr_date = {item.get("fund_id"): item.get("irr_date") for item in irr_dates_result.data if item.get("irr_date")}
+                            
+                            # For each portfolio, find the most recent IRR date
+                            for portfolio_id, fund_ids in portfolio_to_funds.items():
+                                portfolio_irr_dates = [fund_to_irr_date.get(fund_id) for fund_id in fund_ids if fund_to_irr_date.get(fund_id)]
+                                if portfolio_irr_dates:
+                                    # Sort dates and get the most recent
+                                    portfolio_irr_dates.sort(reverse=True)
+                                    irr_dates_map[portfolio_id] = portfolio_irr_dates[0]
+        except Exception as e:
+            logger.warning(f"Error fetching IRR dates in bulk: {str(e)}")
+        
         # EFFICIENT PRODUCT OWNER FETCHING - This is the key improvement
         # 1. Get all product_owner_products associations in one query
         product_owner_associations = {}
@@ -166,10 +201,17 @@ async def get_client_products_with_owners(
                 summary = summary_data[product_id]
                 product["total_value"] = summary.get("total_value")
                 product["irr"] = summary.get("irr_weighted")
+                
+                # Add IRR date from the bulk-fetched data
+                if portfolio_id and portfolio_id in irr_dates_map:
+                    product["irr_date"] = irr_dates_map[portfolio_id]
+                else:
+                    product["irr_date"] = None
             else:
                 # Set defaults if no summary data found
                 product["total_value"] = 0
                 product["irr"] = 0
+                product["irr_date"] = None
             
             # Add product owners - this is the key improvement
             product_owners = []
@@ -289,6 +331,41 @@ async def get_client_products(
         except Exception as e:
             logger.error(f"Error fetching bulk summary data: {str(e)}")
         
+        # Get IRR dates for all products in bulk
+        irr_dates_map = {}
+        try:
+            if portfolio_ids:
+                # Get all portfolio funds for all portfolios
+                all_portfolio_funds_result = db.table("portfolio_funds").select("id,portfolio_id").in_("portfolio_id", portfolio_ids).execute()
+                if all_portfolio_funds_result.data:
+                    # Group fund IDs by portfolio ID
+                    portfolio_to_funds = {}
+                    all_fund_ids = []
+                    for pf in all_portfolio_funds_result.data:
+                        portfolio_id = pf.get("portfolio_id")
+                        fund_id = pf.get("id")
+                        if portfolio_id not in portfolio_to_funds:
+                            portfolio_to_funds[portfolio_id] = []
+                        portfolio_to_funds[portfolio_id].append(fund_id)
+                        all_fund_ids.append(fund_id)
+                    
+                    # Get all IRR dates for all funds
+                    if all_fund_ids:
+                        irr_dates_result = db.table("latest_irr_values").select("fund_id,irr_date").in_("fund_id", all_fund_ids).execute()
+                        if irr_dates_result.data:
+                            # Create a map of fund_id to irr_date
+                            fund_to_irr_date = {item.get("fund_id"): item.get("irr_date") for item in irr_dates_result.data if item.get("irr_date")}
+                            
+                            # For each portfolio, find the most recent IRR date
+                            for portfolio_id, fund_ids in portfolio_to_funds.items():
+                                portfolio_irr_dates = [fund_to_irr_date.get(fund_id) for fund_id in fund_ids if fund_to_irr_date.get(fund_id)]
+                                if portfolio_irr_dates:
+                                    # Sort dates and get the most recent
+                                    portfolio_irr_dates.sort(reverse=True)
+                                    irr_dates_map[portfolio_id] = portfolio_irr_dates[0]
+        except Exception as e:
+            logger.warning(f"Error fetching IRR dates in bulk: {str(e)}")
+        
         for product in client_products:
             # Add provider data if available
             provider_id = product.get("provider_id")
@@ -319,12 +396,17 @@ async def get_client_products(
                 summary = summary_data[product_id]
                 product["total_value"] = summary.get("total_value")
                 product["irr"] = summary.get("irr_weighted")
-                logger.info(f"Added total_value={summary.get('total_value')} and irr={summary.get('irr_weighted')} for product {product_id}")
+                
+                # Add IRR date from the bulk-fetched data
+                if portfolio_id and portfolio_id in irr_dates_map:
+                    product["irr_date"] = irr_dates_map[portfolio_id]
+                else:
+                    product["irr_date"] = None
             else:
                 # Set defaults if no summary data found
                 product["total_value"] = 0
                 product["irr"] = 0
-                logger.warning(f"No summary data found for product {product_id}")
+                product["irr_date"] = None
             
             enhanced_data.append(product)
             

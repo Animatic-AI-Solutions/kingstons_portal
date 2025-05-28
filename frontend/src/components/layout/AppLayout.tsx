@@ -22,11 +22,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       <TopBar />
       
       {/* Main layout with sidebar and content */}
-      <div className="flex flex-1 pt-16">
+      <div className="flex flex-1 pt-8">
         <Sidebar />
         {/* Main content area with fixed margin for 64px minimized sidebar */}
         <div className="flex-1 ml-16 flex flex-col min-w-0 w-full">
-          <main className="flex-grow p-4 sm:p-6 w-full">
+          <main className="flex-grow p-1 sm:p-2 w-full">
             <div className="w-full max-w-none">
               {children}
             </div>

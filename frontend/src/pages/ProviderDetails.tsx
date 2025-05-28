@@ -394,7 +394,7 @@ const ProviderDetails: React.FC = () => {
               </div>
               
               <div className="flex-1">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">{provider.name}</h1>
+                <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">{provider.name}</h1>
                 
                 {/* Provider Details Grid */}
                 {isEditing ? (

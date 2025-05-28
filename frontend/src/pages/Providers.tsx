@@ -93,7 +93,7 @@ const Providers: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Providers</h1>
+        <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Providers</h1>
         <div className="flex items-center gap-4">
           <label className="flex items-center gap-2">
             <input

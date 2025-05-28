@@ -20,35 +20,43 @@ const Actions: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-3">
       {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Scheduler</h1>
+      <div className="mb-3">
+        <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Scheduler</h1>
         <p className="text-gray-600">
           Schedule and manage automated investments and withdrawals for your portfolios.
         </p>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="mb-6 border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+      <div className="mb-6">
+        <nav className="flex space-x-2 px-2 py-2 bg-gray-50 rounded-lg" role="tablist">
           <button
             onClick={() => setActiveSection('create')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+            className={`${
               activeSection === 'create'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+                ? 'bg-primary-700 text-white shadow-sm'
+                : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+            } rounded-lg px-4 py-2 font-medium text-base transition-all duration-200 ease-in-out`}
+            role="tab"
+            aria-selected={activeSection === 'create'}
+            aria-controls="create-panel"
+            id="create-tab"
           >
             Schedule Transaction
           </button>
           <button
             onClick={() => setActiveSection('manage')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+            className={`${
               activeSection === 'manage'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+                ? 'bg-primary-700 text-white shadow-sm'
+                : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+            } rounded-lg px-4 py-2 font-medium text-base transition-all duration-200 ease-in-out`}
+            role="tab"
+            aria-selected={activeSection === 'manage'}
+            aria-controls="manage-panel"
+            id="manage-tab"
           >
             Manage Scheduled Transactions
           </button>
