@@ -1,12 +1,22 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Routes, Route, NavLink, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import AccountOverview from './ProductOverview';
 import AccountIRRCalculation from './ProductIRRCalculation';
 import AccountIRRHistory from './ProductIRRHistory';
 
+interface Account {
+  id: number;
+  product_name: string;
+  client_name?: string;
+}
+
 const ProductDetails: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
   const navigate = useNavigate();
+  const { api } = useAuth();
+  const [account, setAccount] = useState<Account | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     // Redirect to overview by default
@@ -14,6 +24,27 @@ const ProductDetails: React.FC = () => {
       navigate(`/products/${productId}/overview`, { replace: true });
     }
   }, [productId, navigate]);
+
+  // Fetch product data for the title
+  useEffect(() => {
+    const fetchProductData = async () => {
+      if (!productId) return;
+      
+      try {
+        setIsLoading(true);
+        const response = await api.get(`/api/client_products/${productId}/complete`);
+        setAccount(response.data);
+      } catch (err) {
+        console.error('Error fetching product data:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (productId) {
+      fetchProductData();
+    }
+  }, [productId, api]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -38,6 +69,23 @@ const ProductDetails: React.FC = () => {
           </li>
         </ol>
       </nav>
+
+      {/* Product Title */}
+      <div className="mb-6">
+        {isLoading ? (
+          <div className="animate-pulse">
+            <div className="h-9 bg-gray-200 rounded w-1/3"></div>
+          </div>
+        ) : account ? (
+          <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">
+            {account.product_name}
+          </h1>
+        ) : (
+          <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">
+            Product Details
+          </h1>
+        )}
+      </div>
 
       {/* Header with navigation tabs */}
       <div className="mb-6">

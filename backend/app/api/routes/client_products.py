@@ -5,7 +5,7 @@ from datetime import date, datetime
 
 from app.models.client_product import Clientproduct, ClientproductCreate, ClientproductUpdate
 from app.db.database import get_db
-from app.api.routes.portfolio_funds import calculate_excel_style_irr
+from app.api.routes.portfolio_funds import calculate_excel_style_irr, calculate_multiple_portfolio_funds_irr
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -200,7 +200,31 @@ async def get_client_products_with_owners(
             if product_id in summary_data:
                 summary = summary_data[product_id]
                 product["total_value"] = summary.get("total_value")
-                product["irr"] = summary.get("irr_weighted")
+                
+                # Calculate IRR using standardized multiple IRR endpoint instead of weighted IRR
+                if portfolio_id:
+                    try:
+                        # Get portfolio fund IDs for this product
+                        portfolio_funds_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
+                        if portfolio_funds_result.data:
+                            portfolio_fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
+                            
+                            # Calculate standardized IRR
+                            irr_result = await calculate_multiple_portfolio_funds_irr(
+                                portfolio_fund_ids=portfolio_fund_ids,
+                                irr_date=None,  # Use latest valuation date
+                                db=db
+                            )
+                            irr_value = irr_result.get("irr_percentage", 0)
+                            # Display '-' if IRR is exactly 0%
+                            product["irr"] = "-" if irr_value == 0 else irr_value
+                        else:
+                            product["irr"] = "-"
+                    except Exception as e:
+                        logger.warning(f"Error calculating standardized IRR for product {product_id}: {str(e)}")
+                        product["irr"] = "-"
+                else:
+                    product["irr"] = "-"
                 
                 # Add IRR date from the bulk-fetched data
                 if portfolio_id and portfolio_id in irr_dates_map:
@@ -210,7 +234,7 @@ async def get_client_products_with_owners(
             else:
                 # Set defaults if no summary data found
                 product["total_value"] = 0
-                product["irr"] = 0
+                product["irr"] = "-"
                 product["irr_date"] = None
             
             # Add product owners - this is the key improvement
@@ -395,7 +419,31 @@ async def get_client_products(
             if product_id in summary_data:
                 summary = summary_data[product_id]
                 product["total_value"] = summary.get("total_value")
-                product["irr"] = summary.get("irr_weighted")
+                
+                # Calculate IRR using standardized multiple IRR endpoint instead of weighted IRR
+                if portfolio_id:
+                    try:
+                        # Get portfolio fund IDs for this product
+                        portfolio_funds_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
+                        if portfolio_funds_result.data:
+                            portfolio_fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
+                            
+                            # Calculate standardized IRR
+                            irr_result = await calculate_multiple_portfolio_funds_irr(
+                                portfolio_fund_ids=portfolio_fund_ids,
+                                irr_date=None,  # Use latest valuation date
+                                db=db
+                            )
+                            irr_value = irr_result.get("irr_percentage", 0)
+                            # Display '-' if IRR is exactly 0%
+                            product["irr"] = "-" if irr_value == 0 else irr_value
+                        else:
+                            product["irr"] = "-"
+                    except Exception as e:
+                        logger.warning(f"Error calculating standardized IRR for product {product_id}: {str(e)}")
+                        product["irr"] = "-"
+                else:
+                    product["irr"] = "-"
                 
                 # Add IRR date from the bulk-fetched data
                 if portfolio_id and portfolio_id in irr_dates_map:
@@ -405,7 +453,7 @@ async def get_client_products(
             else:
                 # Set defaults if no summary data found
                 product["total_value"] = 0
-                product["irr"] = 0
+                product["irr"] = "-"
                 product["irr_date"] = None
             
             enhanced_data.append(product)

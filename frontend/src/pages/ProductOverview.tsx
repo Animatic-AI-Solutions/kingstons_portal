@@ -1266,327 +1266,367 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     return (
     <>
       <DeleteConfirmationModal />
-      <div className="flex flex-col space-y-6">
-        {/* Page Header and Edit/Delete Buttons */}
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">{account.product_name}</h2>
-          </div>
-          <div className="flex space-x-3">
-            {isEditMode ? (
-          <button
-            onClick={toggleEditMode}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-          >
-            Cancel
-              </button>
-            ) : (
-              <button
-                onClick={toggleEditMode}
-                className="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-              >
-                Edit Product
-              </button>
-            )}
-            <button
-              onClick={() => setIsDeleteModalOpen(true)}
-              className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-            >
-              Delete
-          </button>
-          </div>
-        </div>
-
+      <div className="flex flex-col space-y-6 -mx-2 sm:-mx-4 lg:-mx-6">
         {/* Edit Form (conditionally displayed) */}
         {isEditMode && (
-          <div className="bg-white shadow-sm rounded-lg border border-gray-100 mb-6 p-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Edit Product Details</h3>
-        </div>
+          <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-4 mb-4 mx-2 sm:mx-4 lg:mx-6">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-md font-semibold text-gray-900 flex items-center">
+                <svg className="h-4 w-4 text-indigo-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Edit Product Details
+              </h3>
+            </div>
         
-        {formError && (
-          <div className="mb-4 p-2 text-sm text-red-700 bg-red-100 rounded-md">
-            {formError}
-          </div>
-        )}
+            {formError && (
+              <div className="mb-3 p-2 text-xs text-red-700 bg-red-50 rounded border border-red-200">
+                {formError}
+              </div>
+            )}
         
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label htmlFor="product_name" className="block text-sm font-medium text-gray-700 mb-1">
-                Product Name
-              </label>
-              <input
-                type="text"
-                id="product_name"
-                name="product_name"
+            <form onSubmit={handleSubmit}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+                <div>
+                  <label htmlFor="product_name" className="block text-xs font-medium text-gray-700 mb-1">
+                    Product Name
+                  </label>
+                  <input
+                    type="text"
+                    id="product_name"
+                    name="product_name"
                     value={editFormData.product_name}
-                onChange={handleInputChange}
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                required
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="provider_id" className="block text-sm font-medium text-gray-700 mb-1">
-                Provider
-              </label>
-              <select
-                id="provider_id"
-                name="provider_id"
+                    onChange={handleInputChange}
+                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-xs border-gray-300 rounded-md py-1.5 px-2"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="provider_id" className="block text-xs font-medium text-gray-700 mb-1">
+                    Provider
+                  </label>
+                  <select
+                    id="provider_id"
+                    name="provider_id"
                     value={editFormData.provider_id}
-                onChange={handleInputChange}
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-              >
-                <option value="">Select Provider</option>
-                {providers.map(provider => (
-                  <option key={provider.id} value={provider.id}>
-                    {provider.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div>
-              <label htmlFor="portfolio_id" className="block text-sm font-medium text-gray-700 mb-1">
-                Portfolio
-              </label>
-              <select
-                id="portfolio_id"
-                name="portfolio_id"
+                    onChange={handleInputChange}
+                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-xs border-gray-300 rounded-md py-1.5 px-2"
+                  >
+                    <option value="">Select Provider</option>
+                    {providers.map(provider => (
+                      <option key={provider.id} value={provider.id}>
+                        {provider.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label htmlFor="portfolio_id" className="block text-xs font-medium text-gray-700 mb-1">
+                    Portfolio
+                  </label>
+                  <select
+                    id="portfolio_id"
+                    name="portfolio_id"
                     value={editFormData.portfolio_id}
-                onChange={handleInputChange}
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-              >
-                <option value="">Select Portfolio</option>
-                {portfolios.map(portfolio => (
-                  <option key={portfolio.id} value={portfolio.id}>
-                    {portfolio.portfolio_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div>
-              <label htmlFor="product_type" className="block text-sm font-medium text-gray-700 mb-1">
-                Product Type
-              </label>
-              <input
-                type="text"
-                id="product_type"
-                name="product_type"
-                value={editFormData.product_type}
-                onChange={handleInputChange}
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-              />
-            </div>
+                    onChange={handleInputChange}
+                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-xs border-gray-300 rounded-md py-1.5 px-2"
+                  >
+                    <option value="">Select Portfolio</option>
+                    {portfolios.map(portfolio => (
+                      <option key={portfolio.id} value={portfolio.id}>
+                        {portfolio.portfolio_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label htmlFor="product_type" className="block text-xs font-medium text-gray-700 mb-1">
+                    Product Type
+                  </label>
+                  <input
+                    type="text"
+                    id="product_type"
+                    name="product_type"
+                    value={editFormData.product_type}
+                    onChange={handleInputChange}
+                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-xs border-gray-300 rounded-md py-1.5 px-2"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={toggleEditMode}
+                  className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Save Changes
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
-          
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Saving...
-                </>
-              ) : (
-                'Save Changes'
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
         )}
 
-        {/* Product Info Grid - Ensure this div is properly closed after adding Product Owners */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-md">
-          <div>
-            <div className="text-sm font-medium text-gray-500">Client Name</div>
-            <div className="text-base font-medium text-gray-900 mt-1">{account.client_name || 'N/A'}</div>
-          </div>
-          
-          <div>
-            <div className="text-sm font-medium text-gray-500">Provider</div>
-            <div className="text-base font-medium text-gray-900 mt-1">{account.provider_name || 'N/A'}</div>
-          </div>
-          
-          <div>
-            <div className="text-sm font-medium text-gray-500">Product Type</div>
-            <div className="text-base font-medium text-gray-900 mt-1">{account.product_type || 'N/A'}</div>
-          </div>
-          
-          <div>
-            <div className="text-sm font-medium text-gray-500">Portfolio Template</div>
-            <div className="text-base font-medium text-gray-900 mt-1">
-              {account.template_info?.generation_name || account.template_info?.name || (account.template_generation_id ? 'Template' : 'Bespoke')}
-            </div>
-          </div>
-          
-          <div>
-            <div className="text-sm font-medium text-gray-500">Start Date</div>
-            <div className="text-base font-medium text-gray-900 mt-1">
-              {account.start_date ? formatDate(account.start_date) : 'N/A'}
-            </div>
-          </div>
-
-          {/* Product Owners Section - Moved into the grid */}
-          {productOwners.length > 0 && (
-            <div className="md:col-span-3 bg-white shadow-sm rounded-lg border border-gray-100 p-4 mt-4">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Product Owners</h3>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                {productOwners.map(owner => (
-                  <li key={owner.id} className="flex items-center p-2 bg-gray-50 rounded">
-                    <svg className="h-5 w-5 text-primary-600 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        {/* Modern Compact Product Overview Card */}
+        <div className="bg-white shadow-lg rounded-xl border border-gray-200 overflow-hidden mx-2 sm:mx-4 lg:mx-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
+            {/* Left Side - Product Details & Owners */}
+            <div className="p-6 border-r border-gray-200">
+              {/* Product Details Section */}
+              <div className="mb-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <svg className="h-5 w-5 text-indigo-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    <span className="text-sm font-medium">{owner.name}</span>
-                    {owner.type && <span className="ml-2 text-xs text-gray-500">({owner.type})</span>}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div> {/* This is the closing div for "Product Info Grid" */}
-
-        {/* Portfolio Summary */}
-        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Portfolio Summary</h3>
-          
-          {isLoadingPortfolioSummary ? (
-            <div className="flex justify-center items-center py-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
-              <span className="ml-2 text-gray-600">Loading portfolio summary...</span>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Total Portfolio Value */}
-              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <svg className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                    </svg>
-                  </div>
-                  <div className="ml-4">
-                    <div className="text-sm font-medium text-blue-900">
-                      Total Portfolio Value
-                    </div>
-                    <div className="text-2xl font-bold text-blue-900">
-                      {portfolioTotalValue !== null ? formatCurrency(portfolioTotalValue) : 'N/A'}
-                    </div>
-                    {lastValuationDate && (
-                      <div className="text-xs text-blue-700 mt-1">
-                        as of {formatDate(lastValuationDate)}
-                      </div>
+                    Product Details
+                  </h3>
+                  <div className="flex space-x-2">
+                    {isEditMode ? (
+                      <button
+                        onClick={toggleEditMode}
+                        className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs leading-4 font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                      >
+                        Cancel
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={toggleEditMode}
+                          className="inline-flex items-center px-2 py-1 border border-transparent shadow-sm text-xs leading-4 font-medium rounded text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                        >
+                          <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => setIsDeleteModalOpen(true)}
+                          className="inline-flex items-center px-2 py-1 border border-red-300 shadow-sm text-xs leading-4 font-medium rounded text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                        >
+                          <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          Delete
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Client Name</div>
+                    <div className="text-sm font-medium text-gray-900 mt-1">{account.client_name || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Provider</div>
+                    <div className="text-sm font-medium text-gray-900 mt-1">{account.provider_name || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Product Type</div>
+                    <div className="text-sm font-medium text-gray-900 mt-1">{account.product_type || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Portfolio Template</div>
+                    <div className="text-sm font-medium text-gray-900 mt-1">
+                      {account.template_info?.generation_name || account.template_info?.name || (account.template_generation_id ? 'Template' : 'Bespoke')}
+                    </div>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Start Date</div>
+                    <div className="text-sm font-medium text-gray-900 mt-1">
+                      {account.start_date ? formatDate(account.start_date) : 'N/A'}
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* Total Portfolio IRR */}
-              <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              {/* Product Owners Section */}
+              {productOwners.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <svg className="h-5 w-5 text-indigo-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
-                  </div>
-                  <div className="ml-4">
-                    <div className="text-sm font-medium text-green-900">
-                      Total Portfolio IRR
-                    </div>
-                    <div className={`text-2xl font-bold ${
-                      portfolioIRR !== null
-                        ? portfolioIRR >= 0 
-                          ? 'text-green-900' 
-                          : 'text-red-600'
-                        : 'text-gray-500'
-                    }`}>
-                      {portfolioIRR !== null ? formatPercentage(portfolioIRR) : 'N/A'}
-                    </div>
-                    <div className="text-xs text-green-700 mt-1">
-                      Calculated from total portfolio cash flows
-                    </div>
+                    Product Owners
+                  </h3>
+                  <div className="grid grid-cols-1 gap-2">
+                    {productOwners.map(owner => (
+                      <div key={owner.id} className="flex items-center p-3 bg-gray-50 rounded-lg">
+                        <div className="flex-shrink-0">
+                          <div className="h-8 w-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                            <svg className="h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                          </div>
+                        </div>
+                        <div className="ml-3">
+                          <div className="text-sm font-medium text-gray-900">{owner.name}</div>
+                          {owner.type && <div className="text-xs text-gray-500">{owner.type}</div>}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </div>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* Risk Comparison Bars */}
-        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Risk Profile Comparison</h3>
-          <div className="flex flex-col space-y-4">
-            {/* Target Risk Bar */}
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <div className="text-sm font-medium text-gray-700">
-                  Target Risk ({account.template_info?.generation_name || account.template_info?.name || (account.template_generation_id ? 'Template' : 'Bespoke')})
-                </div>
-                <div className="text-sm font-semibold">{displayedTargetRisk}</div>
-              </div>
-              {targetRisk !== null && !isNaN(targetRisk) && (
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div 
-                    className="bg-blue-600 h-2.5 rounded-full" 
-                    style={{ width: `${Math.min(targetRisk * 10, 100)}%` }}
-                  ></div>
-                </div>
-              )}
-            </div>
-            
-            {/* Live Risk Bar */}
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <div className="text-sm font-medium text-gray-700">Current Risk (Based on Valuations)</div>
-                <div className="text-sm font-semibold">{liveRiskValue !== null && !isNaN(liveRiskValue) ? liveRiskValue.toFixed(1) : 'N/A'}</div>
-              </div>
-              {liveRiskValue !== null && !isNaN(liveRiskValue) && (
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div 
-                    className="bg-green-600 h-2.5 rounded-full" 
-                    style={{ width: `${Math.min(liveRiskValue * 10, 100)}%` }}
-                  ></div>
-                </div>
-              )}
-            </div>
-            
-            {/* Risk Difference Indicator */}
-            {targetRisk !== null && liveRiskValue !== null && 
-             !isNaN(targetRisk) && !isNaN(liveRiskValue) && (
-              <div className="pt-2 border-t border-gray-200 mt-2">
-                <div className="flex items-center">
-                  <div className="text-sm font-medium text-gray-700">Difference:</div>
-                  <div className={`ml-2 text-sm font-semibold ${
-                    Math.abs(liveRiskValue - targetRisk) < 0.5 ? 'text-green-600' : 
-                    Math.abs(liveRiskValue - targetRisk) < 1.0 ? 'text-yellow-600' : 'text-red-600'
-                  }`}>
-                    {(liveRiskValue - targetRisk).toFixed(1)}
-                    {liveRiskValue > targetRisk ? ' higher' : liveRiskValue < targetRisk ? ' lower' : ' (on target)'}
+            {/* Right Side - Product Summary & Risk Profile */}
+            <div className="p-6">
+              {/* Product Summary Section (Compact) */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <svg className="h-5 w-5 text-indigo-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  Product Summary
+                </h3>
+                
+                {isLoadingPortfolioSummary ? (
+                  <div className="flex justify-center items-center py-4">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600"></div>
+                    <span className="ml-2 text-sm text-gray-600">Loading...</span>
                   </div>
-                </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  {Math.abs(liveRiskValue - targetRisk) < 0.5 
-                    ? 'The portfolio is well-aligned with its target risk profile.'
-                    : Math.abs(liveRiskValue - targetRisk) < 1.0
-                    ? 'The portfolio is slightly off target. Consider minor rebalancing.'
-                    : 'The portfolio has significantly deviated from its target risk. Rebalancing recommended.'}
-                </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Total Product Value */}
+                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-xs font-medium text-blue-900 uppercase tracking-wide">
+                            Total Product Value
+                          </div>
+                          <div className="text-lg font-bold text-blue-900 mt-1">
+                            {portfolioTotalValue !== null ? formatCurrency(portfolioTotalValue) : 'N/A'}
+                          </div>
+                          {lastValuationDate && (
+                            <div className="text-xs text-blue-700 mt-1">
+                              as of {formatDate(lastValuationDate)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-shrink-0">
+                          <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Total Product IRR */}
+                    <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-xs font-medium text-green-900 uppercase tracking-wide">
+                            Total Product IRR
+                          </div>
+                          <div className={`text-lg font-bold mt-1 ${
+                            portfolioIRR !== null
+                              ? portfolioIRR >= 0 
+                                ? 'text-green-900' 
+                                : 'text-red-600'
+                              : 'text-gray-500'
+                          }`}>
+                            {portfolioIRR !== null ? formatPercentage(portfolioIRR) : 'N/A'}
+                          </div>
+                        </div>
+                        <div className="flex-shrink-0">
+                          <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Risk Profile Bars (without separate header) */}
+                    <div className="space-y-3 pt-2">
+                      {/* Target Risk Bar */}
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <div className="text-xs font-medium text-gray-700 uppercase tracking-wide">
+                            Target Risk
+                          </div>
+                          <div className="text-sm font-semibold text-gray-900">{displayedTargetRisk}</div>
+                        </div>
+                        {targetRisk !== null && !isNaN(targetRisk) && (
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                              style={{ width: `${Math.min(targetRisk * 10, 100)}%` }}
+                            ></div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Live Risk Bar */}
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <div className="text-xs font-medium text-gray-700 uppercase tracking-wide">Current Risk</div>
+                          <div className="text-sm font-semibold text-gray-900">
+                            {liveRiskValue !== null && !isNaN(liveRiskValue) ? liveRiskValue.toFixed(1) : 'N/A'}
+                          </div>
+                        </div>
+                        {liveRiskValue !== null && !isNaN(liveRiskValue) && (
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-green-600 h-2 rounded-full transition-all duration-300" 
+                              style={{ width: `${Math.min(liveRiskValue * 10, 100)}%` }}
+                            ></div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Risk Difference Indicator */}
+                      {targetRisk !== null && liveRiskValue !== null && 
+                       !isNaN(targetRisk) && !isNaN(liveRiskValue) && (
+                        <div className="pt-2 border-t border-gray-200">
+                          <div className="flex items-center justify-between">
+                            <div className="text-xs font-medium text-gray-700 uppercase tracking-wide">Difference</div>
+                            <div className={`text-sm font-semibold ${
+                              Math.abs(liveRiskValue - targetRisk) < 0.5 ? 'text-green-600' : 
+                              Math.abs(liveRiskValue - targetRisk) < 1.0 ? 'text-yellow-600' : 'text-red-600'
+                            }`}>
+                              {(liveRiskValue - targetRisk).toFixed(1)}
+                              {liveRiskValue > targetRisk ? ' higher' : liveRiskValue < targetRisk ? ' lower' : ' (on target)'}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
 
         {/* Portfolio Fund Summary - Show for ALL products */}
-        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-6 mb-8">
+        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-6 mb-8 mx-2 sm:mx-4 lg:mx-6">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center space-x-3">
               <div className="flex-shrink-0">
@@ -1596,12 +1636,6 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
               </div>
               <div>
                 <h3 className="text-lg font-medium text-gray-900">Portfolio Fund Summary</h3>
-                <p className="text-sm text-gray-500">
-                  {account?.template_generation_id 
-                    ? `View funds in this template-based portfolio (${account.template_info?.generation_name || 'Template'})`
-                    : 'View and manage funds in this bespoke portfolio'
-                  }
-                </p>
               </div>
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                 account?.template_generation_id 
@@ -1653,12 +1687,12 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                 ) : (
                   <button
                     onClick={() => setIsEditingFunds(true)}
-                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                   >
                     <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
-                    Edit Portfolio Funds
+                    Edit Product Funds
                   </button>
                 )}
               </div>
@@ -1717,7 +1751,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           {/* Current Portfolio Funds */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
-              <h4 className="text-md font-semibold text-gray-900">Current Portfolio Funds</h4>
+              <h4 className="text-md font-semibold text-gray-900">Product Fund List</h4>
               {!isEditingFunds && holdings.filter(h => !h.isVirtual && h.status === 'active').length > 0 && (
                 <span className="text-sm text-gray-500">
                   {holdings.filter(h => !h.isVirtual && h.status === 'active').length} active fund{holdings.filter(h => !h.isVirtual && h.status === 'active').length !== 1 ? 's' : ''}
@@ -1730,26 +1764,26 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                 <table className="min-w-full divide-y divide-gray-300">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Fund Name
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         ISIN
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Risk Factor
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Last Valuation
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actual Weighting %
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Target Weighting %
                       </th>
                       {isEditingFunds && account && !account.template_generation_id && (
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Actions
                         </th>
                       )}
@@ -1758,24 +1792,24 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                   <tbody className="bg-white divide-y divide-gray-200">
                     {holdings.filter(h => !h.isVirtual && h.status === 'active').map((holding, index) => (
                       <tr key={holding.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-6 py-2 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900 truncate">{holding.fund_name}</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-6 py-2 whitespace-nowrap">
                           <div className="text-sm text-gray-500">{holding.isin_number || 'N/A'}</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-6 py-2 whitespace-nowrap">
                           <div className="text-sm text-gray-500">
                             {getFundRiskRating(holding.fund_id || 0, fundsData)}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <td className="px-6 py-2 whitespace-nowrap text-sm">
                           {holding.market_value !== undefined && holding.market_value !== null ? (
                             <div>
                               <div className="font-medium">{formatCurrency(holding.market_value)}</div>
                               {holding.valuation_date && (
-                                <div className="text-xs text-gray-500 mt-1">
-                                  as of {formatDate(holding.valuation_date)}
+                                <div className="text-xs text-gray-500">
+                                  {formatDate(holding.valuation_date)}
                                 </div>
                               )}
                             </div>
@@ -1783,14 +1817,14 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             <span className="text-gray-500">N/A</span>
                           )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <td className="px-6 py-2 whitespace-nowrap text-sm">
                           {liveWeightings.has(holding.id) ? (
                             <div className="flex items-center">
                               <span className="font-medium">
                                 {liveWeightings.get(holding.id)?.toFixed(1)}%
                               </span>
                               {holding.target_weighting && (
-                                <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${
+                                <span className={`ml-2 text-xs px-1 py-0.5 rounded-full ${
                                   Math.abs((liveWeightings.get(holding.id) || 0) - parseFloat(holding.target_weighting)) < 1
                                     ? 'bg-green-100 text-green-800'
                                     : Math.abs((liveWeightings.get(holding.id) || 0) - parseFloat(holding.target_weighting)) < 3
@@ -1806,7 +1840,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             <span className="text-gray-500">N/A</span>
                           )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-6 py-2 whitespace-nowrap">
                           {isEditingFunds && account && !account.template_generation_id ? (
                             <div className="flex items-center space-x-2">
                               <input
@@ -1821,7 +1855,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                                       : h
                                   ));
                                 }}
-                                className="w-20 px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                className="w-20 px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                 min="0"
                                 max="100"
                                 step="0.01"
@@ -1836,15 +1870,15 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           )}
                         </td>
                         {isEditingFunds && account && !account.template_generation_id && (
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-6 py-2 whitespace-nowrap">
                             <button
                               onClick={() => handleRemoveFund(holding.fund_id || 0)}
-                              className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                              className="inline-flex items-center p-1.5 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                              title="Remove fund"
                             >
-                              <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
-                              Remove
                             </button>
                           </td>
                         )}
@@ -1901,23 +1935,23 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                 <table className="min-w-full divide-y divide-gray-300">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Fund Name
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         ISIN
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Risk Factor
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         End Date
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Last Target %
                       </th>
                       {isEditingFunds && account && !account.template_generation_id && (
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Actions
                         </th>
                       )}
@@ -1926,29 +1960,29 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                   <tbody className="bg-white divide-y divide-gray-200">
                     {holdings.filter(h => !h.isVirtual && h.status === 'inactive').map((holding, index) => (
                       <tr key={holding.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-6 py-2 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-500 truncate">{holding.fund_name}</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-6 py-2 whitespace-nowrap">
                           <div className="text-sm text-gray-500">{holding.isin_number || 'N/A'}</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-6 py-2 whitespace-nowrap">
                           <div className="text-sm text-gray-500">
                             {getFundRiskRating(holding.fund_id || 0, fundsData)}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-6 py-2 whitespace-nowrap">
                           <div className="text-sm text-gray-500">
                             {holding.end_date ? formatDate(holding.end_date) : 'N/A'}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-6 py-2 whitespace-nowrap">
                           <span className="text-sm text-gray-500">
                             {holding.target_weighting ? parseFloat(holding.target_weighting).toFixed(2) : '0.00'}%
                           </span>
                         </td>
                         {isEditingFunds && account && !account.template_generation_id && (
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-6 py-2 whitespace-nowrap">
                             <button
                               onClick={() => handleReactivateFund(holding.fund_id || 0)}
                               className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
@@ -1971,16 +2005,16 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           {/* Fund Management Tools - Only for bespoke portfolios when editing */}
           {isEditingFunds && account && !account.template_generation_id && (
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-md font-semibold text-gray-900">Add Funds to Portfolio</h4>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-md font-semibold text-gray-900">Add Funds to Product</h4>
                 <span className="text-sm text-gray-500">{fundsNotInPortfolio.length} available funds</span>
               </div>
               
               {/* Search Input */}
-              <div className="mb-4">
+              <div className="mb-3">
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                   </div>
@@ -1989,59 +2023,61 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                     placeholder="Search funds by name or ISIN..."
                     value={fundSearchTerm}
                     onChange={(e) => setFundSearchTerm(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="block w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                   />
                 </div>
               </div>
 
               {/* Available Funds List */}
-              <div className="max-h-80 overflow-y-auto border border-gray-200 rounded-lg">
+              <div className="max-h-60 overflow-y-auto border border-gray-200 rounded-lg">
                 {fundsNotInPortfolio.length > 0 ? (
                   fundsNotInPortfolio.map((fund, index) => (
                     <div
                       key={fund.id}
-                      className={`p-4 border-b border-gray-100 last:border-b-0 ${
+                      className={`p-3 border-b border-gray-100 last:border-b-0 ${
                         index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                       } hover:bg-indigo-50 transition-colors duration-150`}
                     >
                       <div className="flex justify-between items-center">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-3">
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-gray-900 truncate">{fund.fund_name}</p>
-                              <p className="text-sm text-gray-500">{fund.isin_number}</p>
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-2">
+                                <p className="text-sm font-medium text-gray-900 truncate">{fund.fund_name}</p>
+                                <span className="text-xs text-gray-500 flex-shrink-0">({fund.isin_number})</span>
+                              </div>
                             </div>
                             {fund.risk_factor && (
-                              <div className="flex-shrink-0">
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                              <div className="flex-shrink-0 ml-3">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                   Risk: {fund.risk_factor}
                                 </span>
                               </div>
                             )}
                           </div>
                         </div>
-                        <div className="ml-4 flex-shrink-0">
+                        <div className="ml-3 flex-shrink-0">
                           <button
                             onClick={() => handleAddFund(fund.id, 0)}
-                            className="inline-flex items-center px-3 py-2 border border-indigo-300 text-sm font-medium rounded-md text-indigo-700 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                           >
-                            <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                             </svg>
-                            Add Fund
+                            Add
                           </button>
                         </div>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="p-8 text-center">
-                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="p-6 text-center">
+                    <svg className="mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                     <h3 className="mt-2 text-sm font-medium text-gray-900">No funds found</h3>
-                    <p className="mt-1 text-sm text-gray-500">
-                      {fundSearchTerm ? 'Try adjusting your search terms.' : 'All available funds are already in the portfolio.'}
+                    <p className="mt-1 text-xs text-gray-500">
+                      {fundSearchTerm ? 'Try adjusting your search terms.' : 'All available funds are already in the product.'}
                     </p>
                   </div>
                 )}
