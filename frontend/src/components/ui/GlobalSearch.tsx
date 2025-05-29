@@ -47,7 +47,7 @@ const GlobalSearch: React.FC = () => {
     const timeoutId = setTimeout(async () => {
       setIsLoading(true);
       try {
-        const response = await globalSearch(query.trim(), 8); // Reduced limit for cleaner display
+        const response = await globalSearch(query.trim());
         setResults(response.data.results || []);
         setIsOpen(true);
         setSelectedIndex(-1);

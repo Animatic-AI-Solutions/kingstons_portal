@@ -527,7 +527,7 @@ const PortfolioDetails: React.FC = () => {
                           {portfolioFund.fund_details?.fund_name || `Fund ${portfolioFund.available_funds_id}`}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {(portfolioFund.target_weighting * 100).toFixed(2)}%
+                          {portfolioFund.target_weighting.toFixed(2)}%
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {portfolioFund.amount_invested !== null && portfolioFund.amount_invested !== undefined 

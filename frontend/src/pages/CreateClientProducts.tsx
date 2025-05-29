@@ -852,12 +852,12 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             
             if (!weighting || weighting.trim() === '') {
               productWeightingErrors[fundId.toString()] = 'Required';
-              hasWeightingErrors = true;
+              hasErrors = true;
             } else {
               const weightValue = parseFloat(weighting);
               if (isNaN(weightValue) || weightValue <= 0 || weightValue > 100) {
                 productWeightingErrors[fundId.toString()] = 'Must be between 0.01 and 100';
-                hasWeightingErrors = true;
+                hasErrors = true;
               }
             }
           }
@@ -983,7 +983,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                 const fundData = {
                   portfolio_id: portfolioId,
                   available_funds_id: fundId,
-                  target_weighting: weightingValue / 100, // Convert percentage to decimal
+                  target_weighting: weightingValue, // Keep as percentage, don't convert to decimal
                   status: 'active',
                   start_date: formattedStartDate
                 };
@@ -1023,7 +1023,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                   if (cashFundEntry) {
                     // Update the existing Cash fund entry
                     await api.patch(`/portfolio_funds/${cashFundEntry.id}`, {
-                      target_weighting: cashWeightingValue / 100
+                      target_weighting: cashWeightingValue // Keep as percentage, don't convert to decimal
                     });
                     console.log(`Updated Cash fund weighting to ${cashWeightingValue}% for portfolio ${portfolioId}`);
                   }

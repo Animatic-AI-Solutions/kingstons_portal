@@ -565,9 +565,7 @@ async def calculate_portfolio_irr(
         
         for fund_data in most_recent_valuation_dates:
             portfolio_fund_id = fund_data["portfolio_fund_id"]
-            valuation = float(fund_data["valuation"])
-            valuation_date = fund_data["date"]
-            valuation_id = fund_data["valuation_id"]
+            valuation = fund_data["valuation"]
             
             # This log line will help identify where activity logs are needed but missing
             logger.info(f"Checking fund {portfolio_fund_id} for IRR calculation, valuation: {valuation}")
@@ -589,7 +587,7 @@ async def calculate_portfolio_irr(
                     "fund_id": portfolio_fund_id,
                     "irr_result": 0.0,  # Set IRR to zero
                     "date": valuation_date.isoformat(),
-                    "fund_valuation_id": valuation_id
+                    "fund_valuation_id": fund_data.get("valuation_id")
                 }
                 
                 if existing_irr.data and len(existing_irr.data) > 0:
@@ -645,7 +643,7 @@ async def calculate_portfolio_irr(
                 funds_to_calculate.append({
                     "portfolio_fund_id": portfolio_fund_id,
                     "valuation": valuation,
-                    "valuation_id": valuation_id
+                    "valuation_id": fund_data.get("valuation_id")
                 })
                 logger.info(f"Fund {portfolio_fund_id} needs IRR calculation")
         
@@ -657,69 +655,75 @@ async def calculate_portfolio_irr(
             valuation = fund_info["valuation"]
             
             try:
-                # Calculate IRR for this fund
-                from app.api.routes.portfolio_funds import calculate_portfolio_fund_irr_sync
-                logger.info(f"Calculating IRR for fund {portfolio_fund_id}, month={month}, year={year}, valuation={valuation}")
+                # Use the standardized single fund IRR endpoint
+                logger.info(f"Calculating IRR for fund {portfolio_fund_id} using standardized endpoint")
                 
-                # Pass the fund_valuation_id directly to ensure we're using the correct valuation
-                irr_result = calculate_portfolio_fund_irr_sync(
+                # Import the standardized function
+                from app.api.routes.portfolio_funds import calculate_single_portfolio_fund_irr
+                
+                # Call the standardized IRR calculation with the common date
+                irr_result = await calculate_single_portfolio_fund_irr(
                     portfolio_fund_id=portfolio_fund_id,
-                    month=month,
-                    year=year,
-                    valuation=valuation,
-                    db=db,
-                    fund_valuation_id=fund_info.get("valuation_id")
+                    irr_date=common_date_iso.split('T')[0],  # Convert to YYYY-MM-DD format
+                    db=db
                 )
                 
-                logger.info(f"IRR calculation result for fund {portfolio_fund_id}: {irr_result}")
+                logger.info(f"Standardized IRR calculation result for fund {portfolio_fund_id}: {irr_result}")
                 
-                if irr_result.get("status") == "error":
-                    # This is an error response from the calculation function
-                    error_msg = irr_result.get("error", "Unknown error during IRR calculation")
-                    calculation_results.append({
-                        "portfolio_fund_id": portfolio_fund_id,
-                        "status": "error",
-                        "message": error_msg,
-                        "date_info": f"Month: {month}, Year: {year}"
-                    })
-                    logger.error(f"Error in IRR calculation for fund {portfolio_fund_id}: {error_msg}")
-                else:
-                    # This is a successful calculation
+                if irr_result.get("success"):
+                    # Extract IRR percentage from standardized response
+                    irr_percentage = irr_result.get("irr_percentage", 0.0)
+                    
+                    # Store the IRR value in the irr_values table
+                    irr_value_data = {
+                        "fund_id": portfolio_fund_id,
+                        "irr_result": float(irr_percentage),
+                        "date": common_date_iso,
+                        "fund_valuation_id": fund_info.get("valuation_id")
+                    }
+                    
+                    # Check if IRR already exists and update or insert
+                    existing_irr = db.table("irr_values")\
+                        .select("*")\
+                        .eq("fund_id", portfolio_fund_id)\
+                        .eq("date", common_date_iso)\
+                        .execute()
+                    
+                    if existing_irr.data and len(existing_irr.data) > 0:
+                        # Update existing
+                        irr_id = existing_irr.data[0]["id"]
+                        db.table("irr_values")\
+                            .update({"irr_result": float(irr_percentage)})\
+                            .eq("id", irr_id)\
+                            .execute()
+                    else:
+                        # Insert new
+                        db.table("irr_values").insert(irr_value_data).execute()
+                    
                     calculation_results.append({
                         "portfolio_fund_id": portfolio_fund_id,
                         "status": "calculated",
-                        "irr_value": irr_result.get("irr_percentage"),
-                        "message": "IRR calculated successfully"
+                        "irr_value": irr_percentage,
+                        "calculation_date": common_date_iso,
+                        "method": "standardized"
                     })
-                    logger.info(f"Successfully calculated IRR for fund {portfolio_fund_id}: {irr_result.get('irr_percentage')}%")
+                else:
+                    # Handle error from standardized calculation
+                    error_msg = f"Standardized IRR calculation failed: {irr_result}"
+                    logger.error(error_msg)
+                    calculation_results.append({
+                        "portfolio_fund_id": portfolio_fund_id,
+                        "status": "error",
+                        "message": error_msg
+                    })
                 
             except Exception as e:
-                error_message = str(e)
-                logger.error(f"Error calculating IRR for fund ID {portfolio_fund_id}: {error_message}")
-                logger.error(f"Date: {common_date_iso}, Month: {month}, Year: {year}, Valuation: {valuation}")
-                
-                # Get activity logs for this fund to help troubleshoot
-                try:
-                    activity_logs = db.table("holding_activity_log")\
-                        .select("*")\
-                        .eq("portfolio_fund_id", portfolio_fund_id)\
-                        .execute()
-                        
-                    log_count = len(activity_logs.data) if activity_logs.data else 0
-                    logger.info(f"Fund {portfolio_fund_id} has {log_count} activity logs")
-                    
-                    if log_count == 0:
-                        detailed_error = f"{error_message}. Fund has no activity logs. IRR calculation requires cash flow activities."
-                    else:
-                        detailed_error = f"{error_message}. Fund has {log_count} activity logs."
-                except Exception as log_err:
-                    detailed_error = f"{error_message}. Could not retrieve activity logs: {str(log_err)}"
-                
+                error_msg = f"Error calculating IRR for fund {portfolio_fund_id}: {str(e)}"
+                logger.error(error_msg)
                 calculation_results.append({
                     "portfolio_fund_id": portfolio_fund_id,
                     "status": "error",
-                    "message": detailed_error,
-                    "date_info": f"Month: {month}, Year: {year}"
+                    "message": error_msg
                 })
         
         # Count the results by status
@@ -903,40 +907,65 @@ async def calculate_portfolio_irr_for_date(
                     continue
                 
                 # Calculate IRR for this fund with positive valuation
-                from app.api.routes.portfolio_funds import calculate_portfolio_fund_irr_sync
-                logger.info(f"Calculating IRR for fund {portfolio_fund_id}, month={month}, year={year}, valuation={valuation}")
+                from app.api.routes.portfolio_funds import calculate_single_portfolio_fund_irr
+                logger.info(f"Calculating IRR for fund {portfolio_fund_id} using standardized endpoint for date {date}")
                 
-                # Pass the fund_valuation_id directly to ensure we're using the correct valuation
-                irr_result = calculate_portfolio_fund_irr_sync(
+                # Use the standardized IRR calculation
+                irr_result = await calculate_single_portfolio_fund_irr(
                     portfolio_fund_id=portfolio_fund_id,
-                    month=month,
-                    year=year,
-                    valuation=valuation,
-                    db=db,
-                    fund_valuation_id=fund_info.get("valuation_id")
+                    irr_date=date,  # Use the provided date directly
+                    db=db
                 )
                 
-                logger.info(f"IRR calculation result for fund {portfolio_fund_id}: {irr_result}")
+                logger.info(f"Standardized IRR calculation result for fund {portfolio_fund_id}: {irr_result}")
                 
-                if irr_result.get("status") == "error":
-                    # This is an error response from the calculation function
-                    error_msg = irr_result.get("error", "Unknown error during IRR calculation")
-                    calculation_results.append({
-                        "portfolio_fund_id": portfolio_fund_id,
-                        "status": "error",
-                        "message": error_msg,
-                        "date_info": f"Month: {month}, Year: {year}"
-                    })
-                    logger.error(f"Error in IRR calculation for fund {portfolio_fund_id}: {error_msg}")
-                else:
-                    # This is a successful calculation
+                if irr_result.get("success"):
+                    # Extract IRR percentage from standardized response
+                    irr_percentage = irr_result.get("irr_percentage", 0.0)
+                    
+                    # Store the IRR value in the irr_values table
+                    irr_value_data = {
+                        "fund_id": portfolio_fund_id,
+                        "irr_result": float(irr_percentage),
+                        "date": calculation_date.isoformat(),
+                        "fund_valuation_id": fund_info.get("valuation_id")
+                    }
+                    
+                    # Check if IRR already exists and update or insert
+                    existing_irr = db.table("irr_values")\
+                        .select("*")\
+                        .eq("fund_id", portfolio_fund_id)\
+                        .eq("date", calculation_date.isoformat())\
+                        .execute()
+                    
+                    if existing_irr.data and len(existing_irr.data) > 0:
+                        # Update existing
+                        irr_id = existing_irr.data[0]["id"]
+                        db.table("irr_values")\
+                            .update({"irr_result": float(irr_percentage)})\
+                            .eq("id", irr_id)\
+                            .execute()
+                    else:
+                        # Insert new
+                        db.table("irr_values").insert(irr_value_data).execute()
+                    
                     calculation_results.append({
                         "portfolio_fund_id": portfolio_fund_id,
                         "status": "calculated",
-                        "irr_value": irr_result.get("irr_percentage"),
-                        "message": "IRR calculated successfully"
+                        "irr_value": irr_percentage,
+                        "calculation_date": calculation_date.isoformat(),
+                        "method": "standardized"
                     })
-                    logger.info(f"Successfully calculated IRR for fund {portfolio_fund_id}: {irr_result.get('irr_percentage')}%")
+                    logger.info(f"Successfully calculated IRR for fund {portfolio_fund_id}: {irr_percentage}%")
+                else:
+                    # Handle error from standardized calculation
+                    error_msg = f"Standardized IRR calculation failed: {irr_result}"
+                    logger.error(error_msg)
+                    calculation_results.append({
+                        "portfolio_fund_id": portfolio_fund_id,
+                        "status": "error",
+                        "message": error_msg
+                    })
                 
             except Exception as e:
                 logger.error(f"Error calculating IRR for fund {portfolio_fund_id}: {str(e)}")
