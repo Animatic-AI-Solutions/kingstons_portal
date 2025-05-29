@@ -8,7 +8,7 @@ from app.models.holding_activity_log import HoldingActivityLog, HoldingActivityL
 from app.db.database import get_db
 
 # Import from portfolio_funds to use the calculate_portfolio_fund_irr function
-from app.api.routes.portfolio_funds import calculate_portfolio_fund_irr
+from app.api.routes.portfolio_funds import calculate_portfolio_fund_irr, calculate_single_portfolio_fund_irr, replace_irr_value
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -753,37 +753,89 @@ async def create_holding_activity_log(
         for client_id in affected_client_ids:
             await recalculate_product_weightings(client_id, db)
         
-        # Recalculate existing IRR values for affected portfolio funds
+        # Recalculate IRR for existing IRR values from the activity date onwards using replace endpoint
         for portfolio_fund_id in affected_portfolio_fund_ids:
             activity_timestamp = holding_activity_log.activity_timestamp if holding_activity_log.activity_timestamp else datetime.now()
             
             # Handle different timestamp types
             if isinstance(activity_timestamp, date):
-                # Use date directly
                 activity_date = activity_timestamp
             elif isinstance(activity_timestamp, datetime):
                 activity_date = activity_timestamp.date()
             elif isinstance(activity_timestamp, str):
                 try:
-                    # Try to parse as ISO format first
                     dt = datetime.fromisoformat(activity_timestamp.replace('Z', '+00:00'))
                     activity_date = dt.date()
                 except ValueError:
-                    # Try to parse as date format
                     try:
                         dt = datetime.strptime(activity_timestamp, "%Y-%m-%d")
                         activity_date = dt.date()
                     except ValueError:
-                        # If all parsing fails, use current date as fallback
                         logger.warning(f"Could not parse activity timestamp: {activity_timestamp}, using current date")
                         activity_date = date.today()
                         
-            logger.info(f"Recalculating existing IRR values for portfolio_fund_id: {portfolio_fund_id} after {activity_date}")
-            await recalculate_existing_irr_values(
-                portfolio_fund_id=portfolio_fund_id,
-                activity_date=activity_date,
-                db=db
-            )
+            logger.info(f"Recalculating existing IRR values for portfolio_fund_id: {portfolio_fund_id} from {activity_date} onwards")
+            
+            # Get all existing IRR values for this fund from the activity date onwards
+            try:
+                irr_values_result = db.table("irr_values")\
+                    .select("date", "fund_valuation_id")\
+                    .eq("fund_id", portfolio_fund_id)\
+                    .gte("date", activity_date.isoformat())\
+                    .execute()
+                
+                if irr_values_result.data:
+                    logger.info(f"Found {len(irr_values_result.data)} existing IRR values to recalculate")
+                    
+                    # Recalculate each existing IRR value using the replace endpoint
+                    for irr_record in irr_values_result.data:
+                        try:
+                            irr_date = irr_record["date"]
+                            fund_valuation_id = irr_record.get("fund_valuation_id")
+                            
+                            # Parse the date to ensure it's in the correct format
+                            if 'T' in irr_date:
+                                irr_date_obj = datetime.fromisoformat(irr_date.replace('Z', '+00:00')).date()
+                            else:
+                                irr_date_obj = datetime.strptime(irr_date, "%Y-%m-%d").date()
+                            
+                            logger.info(f"Recalculating IRR for date: {irr_date_obj}")
+                            
+                            # First calculate the new IRR using the standardized endpoint
+                            irr_result = await calculate_single_portfolio_fund_irr(
+                                portfolio_fund_id=portfolio_fund_id,
+                                irr_date=irr_date_obj.isoformat(),
+                                db=db
+                            )
+                            
+                            if irr_result.get("success") and "irr_percentage" in irr_result:
+                                new_irr_percentage = irr_result["irr_percentage"]
+                                
+                                # Use the replace endpoint to delete old and insert new IRR value
+                                replace_result = await replace_irr_value(
+                                    portfolio_fund_id=portfolio_fund_id,
+                                    irr_date=irr_date_obj.isoformat(),
+                                    new_irr_percentage=new_irr_percentage,
+                                    fund_valuation_id=fund_valuation_id,
+                                    db=db
+                                )
+                                
+                                if replace_result.get("success"):
+                                    logger.info(f"Successfully replaced IRR for fund {portfolio_fund_id} on {irr_date_obj}: {new_irr_percentage}%")
+                                else:
+                                    logger.error(f"Failed to replace IRR for fund {portfolio_fund_id} on {irr_date_obj}: {replace_result}")
+                            else:
+                                logger.error(f"Failed to calculate new IRR for fund {portfolio_fund_id} on {irr_date_obj}: {irr_result}")
+                            
+                        except Exception as irr_error:
+                            logger.error(f"Error recalculating IRR for fund {portfolio_fund_id} on {irr_record.get('date')}: {str(irr_error)}")
+                            continue
+                else:
+                    logger.info(f"No existing IRR values found for fund {portfolio_fund_id} from {activity_date} onwards")
+                    
+            except Exception as e:
+                logger.error(f"Error fetching existing IRR values for fund {portfolio_fund_id}: {str(e)}")
+                continue
         
         return result.data[0]
         
@@ -1119,14 +1171,89 @@ async def delete_holding_activity_log(holding_activity_log_id: int, db = Depends
         for client_id in affected_client_ids:
             await recalculate_product_weightings(client_id, db)
         
-        # Recalculate existing IRR values for affected funds
+        # Recalculate IRR for existing IRR values from the activity date onwards using replace endpoint
         for portfolio_fund_id in affected_portfolio_fund_ids:
-            logger.info(f"Recalculating existing IRR values for portfolio_fund_id: {portfolio_fund_id} after {activity_date}")
-            await recalculate_existing_irr_values(
-                portfolio_fund_id=portfolio_fund_id, 
-                activity_date=activity_date,
-                db=db
-            )
+            activity_timestamp = holding_activity_log.activity_timestamp if holding_activity_log.activity_timestamp else datetime.now()
+            
+            # Handle different timestamp types
+            if isinstance(activity_timestamp, date):
+                activity_date = activity_timestamp
+            elif isinstance(activity_timestamp, datetime):
+                activity_date = activity_timestamp.date()
+            elif isinstance(activity_timestamp, str):
+                try:
+                    dt = datetime.fromisoformat(activity_timestamp.replace('Z', '+00:00'))
+                    activity_date = dt.date()
+                except ValueError:
+                    try:
+                        dt = datetime.strptime(activity_timestamp, "%Y-%m-%d")
+                        activity_date = dt.date()
+                    except ValueError:
+                        logger.warning(f"Could not parse activity timestamp: {activity_timestamp}, using current date")
+                        activity_date = date.today()
+                        
+            logger.info(f"Recalculating existing IRR values for portfolio_fund_id: {portfolio_fund_id} from {activity_date} onwards")
+            
+            # Get all existing IRR values for this fund from the activity date onwards
+            try:
+                irr_values_result = db.table("irr_values")\
+                    .select("date", "fund_valuation_id")\
+                    .eq("fund_id", portfolio_fund_id)\
+                    .gte("date", activity_date.isoformat())\
+                    .execute()
+                
+                if irr_values_result.data:
+                    logger.info(f"Found {len(irr_values_result.data)} existing IRR values to recalculate")
+                    
+                    # Recalculate each existing IRR value using the replace endpoint
+                    for irr_record in irr_values_result.data:
+                        try:
+                            irr_date = irr_record["date"]
+                            fund_valuation_id = irr_record.get("fund_valuation_id")
+                            
+                            # Parse the date to ensure it's in the correct format
+                            if 'T' in irr_date:
+                                irr_date_obj = datetime.fromisoformat(irr_date.replace('Z', '+00:00')).date()
+                            else:
+                                irr_date_obj = datetime.strptime(irr_date, "%Y-%m-%d").date()
+                            
+                            logger.info(f"Recalculating IRR for date: {irr_date_obj}")
+                            
+                            # First calculate the new IRR using the standardized endpoint
+                            irr_result = await calculate_single_portfolio_fund_irr(
+                                portfolio_fund_id=portfolio_fund_id,
+                                irr_date=irr_date_obj.isoformat(),
+                                db=db
+                            )
+                            
+                            if irr_result.get("success") and "irr_percentage" in irr_result:
+                                new_irr_percentage = irr_result["irr_percentage"]
+                                
+                                # Use the replace endpoint to delete old and insert new IRR value
+                                replace_result = await replace_irr_value(
+                                    portfolio_fund_id=portfolio_fund_id,
+                                    irr_date=irr_date_obj.isoformat(),
+                                    new_irr_percentage=new_irr_percentage,
+                                    fund_valuation_id=fund_valuation_id,
+                                    db=db
+                                )
+                                
+                                if replace_result.get("success"):
+                                    logger.info(f"Successfully replaced IRR for fund {portfolio_fund_id} on {irr_date_obj}: {new_irr_percentage}%")
+                                else:
+                                    logger.error(f"Failed to replace IRR for fund {portfolio_fund_id} on {irr_date_obj}: {replace_result}")
+                            else:
+                                logger.error(f"Failed to calculate new IRR for fund {portfolio_fund_id} on {irr_date_obj}: {irr_result}")
+                            
+                        except Exception as irr_error:
+                            logger.error(f"Error recalculating IRR for fund {portfolio_fund_id} on {irr_record.get('date')}: {str(irr_error)}")
+                            continue
+                else:
+                    logger.info(f"No existing IRR values found for fund {portfolio_fund_id} from {activity_date} onwards")
+                    
+            except Exception as e:
+                logger.error(f"Error fetching existing IRR values for fund {portfolio_fund_id}: {str(e)}")
+                continue
         
         return {"status": "success", "message": f"Activity log with ID {holding_activity_log_id} deleted successfully"}
     except HTTPException:
@@ -1436,37 +1563,89 @@ async def update_holding_activity_log(
         for client_id in affected_client_ids:
             await recalculate_product_weightings(client_id, db)
         
-        # Recalculate existing IRR values for affected portfolio funds
+        # Recalculate IRR for existing IRR values from the activity date onwards using replace endpoint
         for portfolio_fund_id in affected_portfolio_fund_ids:
             activity_timestamp = holding_activity_log.activity_timestamp if holding_activity_log.activity_timestamp else datetime.now()
             
             # Handle different timestamp types
             if isinstance(activity_timestamp, date):
-                # Use date directly
                 activity_date = activity_timestamp
             elif isinstance(activity_timestamp, datetime):
                 activity_date = activity_timestamp.date()
             elif isinstance(activity_timestamp, str):
                 try:
-                    # Try to parse as ISO format first
                     dt = datetime.fromisoformat(activity_timestamp.replace('Z', '+00:00'))
                     activity_date = dt.date()
                 except ValueError:
-                    # Try to parse as date format
                     try:
                         dt = datetime.strptime(activity_timestamp, "%Y-%m-%d")
                         activity_date = dt.date()
                     except ValueError:
-                        # If all parsing fails, use current date as fallback
                         logger.warning(f"Could not parse activity timestamp: {activity_timestamp}, using current date")
                         activity_date = date.today()
                         
-            logger.info(f"Recalculating existing IRR values for portfolio_fund_id: {portfolio_fund_id} after {activity_date}")
-            await recalculate_existing_irr_values(
-                portfolio_fund_id=portfolio_fund_id,
-                activity_date=activity_date,
-                db=db
-            )
+            logger.info(f"Recalculating existing IRR values for portfolio_fund_id: {portfolio_fund_id} from {activity_date} onwards")
+            
+            # Get all existing IRR values for this fund from the activity date onwards
+            try:
+                irr_values_result = db.table("irr_values")\
+                    .select("date", "fund_valuation_id")\
+                    .eq("fund_id", portfolio_fund_id)\
+                    .gte("date", activity_date.isoformat())\
+                    .execute()
+                
+                if irr_values_result.data:
+                    logger.info(f"Found {len(irr_values_result.data)} existing IRR values to recalculate")
+                    
+                    # Recalculate each existing IRR value using the replace endpoint
+                    for irr_record in irr_values_result.data:
+                        try:
+                            irr_date = irr_record["date"]
+                            fund_valuation_id = irr_record.get("fund_valuation_id")
+                            
+                            # Parse the date to ensure it's in the correct format
+                            if 'T' in irr_date:
+                                irr_date_obj = datetime.fromisoformat(irr_date.replace('Z', '+00:00')).date()
+                            else:
+                                irr_date_obj = datetime.strptime(irr_date, "%Y-%m-%d").date()
+                            
+                            logger.info(f"Recalculating IRR for date: {irr_date_obj}")
+                            
+                            # First calculate the new IRR using the standardized endpoint
+                            irr_result = await calculate_single_portfolio_fund_irr(
+                                portfolio_fund_id=portfolio_fund_id,
+                                irr_date=irr_date_obj.isoformat(),
+                                db=db
+                            )
+                            
+                            if irr_result.get("success") and "irr_percentage" in irr_result:
+                                new_irr_percentage = irr_result["irr_percentage"]
+                                
+                                # Use the replace endpoint to delete old and insert new IRR value
+                                replace_result = await replace_irr_value(
+                                    portfolio_fund_id=portfolio_fund_id,
+                                    irr_date=irr_date_obj.isoformat(),
+                                    new_irr_percentage=new_irr_percentage,
+                                    fund_valuation_id=fund_valuation_id,
+                                    db=db
+                                )
+                                
+                                if replace_result.get("success"):
+                                    logger.info(f"Successfully replaced IRR for fund {portfolio_fund_id} on {irr_date_obj}: {new_irr_percentage}%")
+                                else:
+                                    logger.error(f"Failed to replace IRR for fund {portfolio_fund_id} on {irr_date_obj}: {replace_result}")
+                            else:
+                                logger.error(f"Failed to calculate new IRR for fund {portfolio_fund_id} on {irr_date_obj}: {irr_result}")
+                            
+                        except Exception as irr_error:
+                            logger.error(f"Error recalculating IRR for fund {portfolio_fund_id} on {irr_record.get('date')}: {str(irr_error)}")
+                            continue
+                else:
+                    logger.info(f"No existing IRR values found for fund {portfolio_fund_id} from {activity_date} onwards")
+                    
+            except Exception as e:
+                logger.error(f"Error fetching existing IRR values for fund {portfolio_fund_id}: {str(e)}")
+                continue
         
         # Get and return the updated activity log
         updated_activity = db.table("holding_activity_log").select("*").eq("id", activity_id).execute()

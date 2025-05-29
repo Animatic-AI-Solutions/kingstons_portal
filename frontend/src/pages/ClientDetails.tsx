@@ -38,7 +38,7 @@ interface ClientAccount {
   portfolio_id?: number;
   total_value?: number;
   previous_value?: number;
-  irr?: number;
+  irr?: number | string;
   risk_rating?: number;
   provider_theme_color?: string;
   template_generation_id?: number;
@@ -69,7 +69,7 @@ interface ProductFund {
   withdrawals?: number;
   switch_in?: number;
   switch_out?: number;
-  irr?: number;
+  irr?: number | string;
   status?: string;
   is_virtual_entry?: boolean;
   inactive_fund_count?: number;
@@ -84,19 +84,25 @@ const ClientHeader = ({
 }: { 
   client: Client; 
   totalValue: number;
-  totalIRR: number;
+  totalIRR: number | string;
   onEditClick: () => void;
 }) => {
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-GB', {
       style: 'currency',
       currency: 'GBP',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(amount);
   };
 
-  const formatPercentage = (value: number): string => {
+  const formatPercentage = (value: number | string | null | undefined): string => {
+    if (value === null || value === undefined) {
+      return 'N/A';
+    }
+    if (typeof value === 'string') {
+      return value; // Return string values as-is (like "-")
+    }
     return `${(value).toFixed(2)}%`;
   };
 
@@ -158,7 +164,7 @@ const ClientHeader = ({
           <div className="py-1">
             <div className="text-sm font-medium text-gray-500">Total IRR Number</div>
             <div className="flex justify-end items-center">
-              <span className={`text-2xl font-semibold ${totalIRR >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+              <span className={`text-2xl font-semibold ${typeof totalIRR === 'number' && totalIRR >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                 {formatPercentage(totalIRR)}
               </span>
             </div>
@@ -250,7 +256,13 @@ const ProductCard: React.FC<{
   };
 
   // Format percentage with 2 decimal places
-  const formatPercentage = (value: number): string => {
+  const formatPercentage = (value: number | string | null | undefined): string => {
+    if (value === null || value === undefined) {
+      return 'N/A';
+    }
+    if (typeof value === 'string') {
+      return value; // Return string values as-is (like "-")
+    }
     return `${(value).toFixed(2)}%`;
   };
 
@@ -311,7 +323,7 @@ const ProductCard: React.FC<{
             {account.irr !== undefined && account.irr !== null && (
               <div className="flex items-center justify-end mt-1">
                 <span className={`text-sm font-medium ${
-                  account.irr >= 0 ? 'text-green-600' : 'text-red-600'
+                  typeof account.irr === 'number' && account.irr >= 0 ? 'text-green-600' : 'text-red-600'
                 }`}>
                   {formatPercentage(account.irr)}
                 </span>

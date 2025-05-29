@@ -1101,17 +1101,19 @@ async def recalculate_all_irr_values(
                     logger.warning(f"Skipping IRR calculation for negative valuation: {valuation_amount}")
                     continue
                 
-                # Recalculate IRR for this date and valuation
-                await calculate_portfolio_fund_irr(
+                # Recalculate IRR for this date and valuation using standardized endpoint
+                irr_result = await calculate_single_portfolio_fund_irr(
                     portfolio_fund_id=portfolio_fund_id,
-                    month=valuation_date.month,
-                    year=valuation_date.year,
-                    valuation=valuation_amount,
+                    irr_date=valuation_date.strftime("%Y-%m-%d"),
                     db=db
                 )
                 
-                update_count += 1
-                logger.info(f"Successfully recalculated IRR for date: {valuation_date.isoformat()}")
+                if irr_result.get("success"):
+                    logger.info(f"Successfully recalculated IRR for date: {valuation_date.isoformat()}")
+                    update_count += 1
+                else:
+                    logger.error(f"Failed to recalculate IRR for date {valuation_date.isoformat()}: {irr_result}")
+                    # Continue with next valuation date instead of failing whole process
                 
             except Exception as e:
                 logger.error(f"Error recalculating IRR for valuation date {irr_value['date']}: {str(e)}")
@@ -2634,37 +2636,29 @@ async def recalculate_fund_irr_for_date(
         
         logger.info(f"Found valuation record: id={fund_valuation_id}, amount={valuation_amount}")
         
-        # Calculate IRR for this specific date
-        month = valuation_date.month
-        year = valuation_date.year
-        
-        # Pass update_only=True to only update existing IRR records instead of creating new ones
-        irr_result = await calculate_portfolio_fund_irr(
+        # Calculate IRR for this specific date using standardized endpoint
+        irr_result = await calculate_single_portfolio_fund_irr(
             portfolio_fund_id=portfolio_fund_id,
-            month=month,
-            year=year,
-            valuation=valuation_amount,
-            db=db,
-            update_only=True
+            irr_date=valuation_date.strftime("%Y-%m-%d"),
+            db=db
         )
         
-        if not irr_result:
-            # If no existing IRR record found and update_only=True, we need to create a new one
-            irr_result = await calculate_portfolio_fund_irr(
-                portfolio_fund_id=portfolio_fund_id,
-                month=month,
-                year=year,
-                valuation=valuation_amount,
-                db=db,
-                update_only=False
-            )
-        
-        return {
-            "status": "success",
-            "portfolio_fund_id": portfolio_fund_id,
-            "valuation_date": valuation_date.isoformat(),
-            "irr_result": irr_result
-        }
+        if irr_result.get("success"):
+            logger.info(f"Successfully recalculated IRR for date: {valuation_date.isoformat()}")
+            return {
+                "status": "success",
+                "portfolio_fund_id": portfolio_fund_id,
+                "valuation_date": valuation_date.isoformat(),
+                "irr_result": irr_result
+            }
+        else:
+            logger.error(f"Failed to recalculate IRR: {irr_result}")
+            return {
+                "status": "error",
+                "message": f"Failed to recalculate IRR: {irr_result}",
+                "portfolio_fund_id": portfolio_fund_id,
+                "valuation_date": valuation_date.isoformat()
+            }
     except Exception as e:
         logger.error(f"Error recalculating IRR for fund {portfolio_fund_id}, date {valuation_date}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error recalculating IRR: {str(e)}")
@@ -3048,3 +3042,255 @@ async def calculate_single_portfolio_fund_irr(
         raise HTTPException(status_code=500, detail=f"Failed to calculate IRR: {str(e)}")
 
 # ==================== END NEW STANDARDIZED IRR ENDPOINTS ====================
+
+@router.post("/portfolio_funds/{portfolio_fund_id}/replace-irr", response_model=dict)
+async def replace_irr_value(
+    portfolio_fund_id: int,
+    irr_date: str = Body(..., description="Date for the IRR value in YYYY-MM-DD format"),
+    new_irr_percentage: float = Body(..., description="New IRR percentage value (e.g., 5.25 for 5.25%)"),
+    fund_valuation_id: Optional[int] = Body(None, description="Optional fund valuation ID reference"),
+    db = Depends(get_db)
+):
+    """
+    Replace an existing IRR value by deleting the old one and inserting the new one.
+    
+    This endpoint:
+    1. Deletes any existing IRR value for the fund and date
+    2. Inserts the new IRR value
+    3. Returns confirmation of the replacement
+    
+    Args:
+        portfolio_fund_id: ID of the portfolio fund
+        irr_date: Date for the IRR value in YYYY-MM-DD format
+        new_irr_percentage: New IRR percentage value
+        fund_valuation_id: Optional fund valuation ID reference
+        
+    Returns:
+        Dictionary containing replacement confirmation and details
+    """
+    try:
+        logger.info(f"Replacing IRR value for portfolio fund {portfolio_fund_id} on date {irr_date}")
+        
+        # Verify portfolio fund exists
+        fund_response = db.table("portfolio_funds").select("id").eq("id", portfolio_fund_id).execute()
+        if not fund_response.data:
+            raise HTTPException(status_code=404, detail=f"Portfolio fund {portfolio_fund_id} not found")
+        
+        # Parse and validate date
+        try:
+            irr_date_obj = datetime.strptime(irr_date, "%Y-%m-%d").date()
+            irr_date_iso = irr_date_obj.isoformat()
+        except ValueError:
+            raise HTTPException(status_code=422, detail=f"Invalid date format. Expected YYYY-MM-DD, got: {irr_date}")
+        
+        # Step 1: Delete existing IRR value(s) for this fund and date
+        existing_irr_response = db.table("irr_values")\
+            .select("id")\
+            .eq("fund_id", portfolio_fund_id)\
+            .eq("date", irr_date_iso)\
+            .execute()
+        
+        deleted_count = 0
+        if existing_irr_response.data:
+            # Delete all existing IRR values for this fund and date
+            for irr_record in existing_irr_response.data:
+                db.table("irr_values").delete().eq("id", irr_record["id"]).execute()
+                deleted_count += 1
+            
+            logger.info(f"Deleted {deleted_count} existing IRR value(s) for fund {portfolio_fund_id} on {irr_date}")
+        else:
+            logger.info(f"No existing IRR values found for fund {portfolio_fund_id} on {irr_date}")
+        
+        # Step 2: Insert the new IRR value
+        new_irr_data = {
+            "fund_id": portfolio_fund_id,
+            "irr_result": float(new_irr_percentage),
+            "date": irr_date_iso,
+            "fund_valuation_id": fund_valuation_id
+        }
+        
+        insert_response = db.table("irr_values").insert(new_irr_data).execute()
+        
+        if not insert_response.data:
+            raise HTTPException(status_code=500, detail="Failed to insert new IRR value")
+        
+        new_irr_record = insert_response.data[0]
+        logger.info(f"Successfully inserted new IRR value: {new_irr_percentage}% for fund {portfolio_fund_id} on {irr_date}")
+        
+        return {
+            "success": True,
+            "message": "IRR value replaced successfully",
+            "portfolio_fund_id": portfolio_fund_id,
+            "irr_date": irr_date,
+            "deleted_count": deleted_count,
+            "new_irr_value": {
+                "id": new_irr_record["id"],
+                "irr_percentage": new_irr_percentage,
+                "date": irr_date_iso,
+                "fund_valuation_id": fund_valuation_id
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error replacing IRR value: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to replace IRR value: {str(e)}")
+
+@router.post("/portfolio_funds/batch/replace-irr", response_model=dict)
+async def batch_replace_irr_values(
+    replacements: List[dict] = Body(..., description="List of IRR replacement data"),
+    db = Depends(get_db)
+):
+    """
+    Replace multiple IRR values in a single batch operation.
+    
+    This endpoint:
+    1. Validates all replacement data
+    2. Deletes existing IRR values for each fund/date combination
+    3. Inserts all new IRR values
+    4. Returns summary of the batch replacement
+    
+    Args:
+        replacements: List of dictionaries containing:
+            - portfolio_fund_id: ID of the portfolio fund
+            - irr_date: Date for the IRR value in YYYY-MM-DD format
+            - new_irr_percentage: New IRR percentage value
+            - fund_valuation_id: Optional fund valuation ID reference
+        
+    Returns:
+        Dictionary containing batch replacement summary
+    """
+    try:
+        logger.info(f"Batch replacing {len(replacements)} IRR values")
+        
+        if not replacements:
+            raise HTTPException(status_code=400, detail="No replacement data provided")
+        
+        # Validate all replacement data first
+        validated_replacements = []
+        for i, replacement in enumerate(replacements):
+            try:
+                portfolio_fund_id = replacement.get("portfolio_fund_id")
+                irr_date = replacement.get("irr_date")
+                new_irr_percentage = replacement.get("new_irr_percentage")
+                fund_valuation_id = replacement.get("fund_valuation_id")
+                
+                if not portfolio_fund_id:
+                    raise ValueError(f"Missing portfolio_fund_id in replacement {i}")
+                if not irr_date:
+                    raise ValueError(f"Missing irr_date in replacement {i}")
+                if new_irr_percentage is None:
+                    raise ValueError(f"Missing new_irr_percentage in replacement {i}")
+                
+                # Validate date format
+                irr_date_obj = datetime.strptime(irr_date, "%Y-%m-%d").date()
+                irr_date_iso = irr_date_obj.isoformat()
+                
+                validated_replacements.append({
+                    "portfolio_fund_id": int(portfolio_fund_id),
+                    "irr_date": irr_date,
+                    "irr_date_iso": irr_date_iso,
+                    "new_irr_percentage": float(new_irr_percentage),
+                    "fund_valuation_id": fund_valuation_id
+                })
+                
+            except (ValueError, TypeError) as e:
+                raise HTTPException(status_code=422, detail=f"Invalid replacement data at index {i}: {str(e)}")
+        
+        # Verify all portfolio funds exist
+        fund_ids = [r["portfolio_fund_id"] for r in validated_replacements]
+        funds_response = db.table("portfolio_funds").select("id").in_("id", fund_ids).execute()
+        found_fund_ids = {fund["id"] for fund in funds_response.data}
+        
+        missing_fund_ids = set(fund_ids) - found_fund_ids
+        if missing_fund_ids:
+            raise HTTPException(status_code=404, detail=f"Portfolio funds not found: {missing_fund_ids}")
+        
+        # Process each replacement
+        results = []
+        total_deleted = 0
+        total_inserted = 0
+        
+        for replacement in validated_replacements:
+            portfolio_fund_id = replacement["portfolio_fund_id"]
+            irr_date = replacement["irr_date"]
+            irr_date_iso = replacement["irr_date_iso"]
+            new_irr_percentage = replacement["new_irr_percentage"]
+            fund_valuation_id = replacement["fund_valuation_id"]
+            
+            try:
+                # Delete existing IRR value(s) for this fund and date
+                existing_irr_response = db.table("irr_values")\
+                    .select("id")\
+                    .eq("fund_id", portfolio_fund_id)\
+                    .eq("date", irr_date_iso)\
+                    .execute()
+                
+                deleted_count = 0
+                if existing_irr_response.data:
+                    for irr_record in existing_irr_response.data:
+                        db.table("irr_values").delete().eq("id", irr_record["id"]).execute()
+                        deleted_count += 1
+                
+                # Insert the new IRR value
+                new_irr_data = {
+                    "fund_id": portfolio_fund_id,
+                    "irr_result": new_irr_percentage,
+                    "date": irr_date_iso,
+                    "fund_valuation_id": fund_valuation_id
+                }
+                
+                insert_response = db.table("irr_values").insert(new_irr_data).execute()
+                
+                if insert_response.data:
+                    new_irr_record = insert_response.data[0]
+                    total_deleted += deleted_count
+                    total_inserted += 1
+                    
+                    results.append({
+                        "portfolio_fund_id": portfolio_fund_id,
+                        "irr_date": irr_date,
+                        "status": "success",
+                        "deleted_count": deleted_count,
+                        "new_irr_id": new_irr_record["id"],
+                        "new_irr_percentage": new_irr_percentage
+                    })
+                else:
+                    results.append({
+                        "portfolio_fund_id": portfolio_fund_id,
+                        "irr_date": irr_date,
+                        "status": "error",
+                        "message": "Failed to insert new IRR value"
+                    })
+                    
+            except Exception as e:
+                logger.error(f"Error processing replacement for fund {portfolio_fund_id} on {irr_date}: {str(e)}")
+                results.append({
+                    "portfolio_fund_id": portfolio_fund_id,
+                    "irr_date": irr_date,
+                    "status": "error",
+                    "message": str(e)
+                })
+        
+        successful_replacements = [r for r in results if r["status"] == "success"]
+        failed_replacements = [r for r in results if r["status"] == "error"]
+        
+        logger.info(f"Batch replacement complete: {len(successful_replacements)} successful, {len(failed_replacements)} failed")
+        
+        return {
+            "success": len(failed_replacements) == 0,
+            "message": f"Batch IRR replacement completed: {len(successful_replacements)} successful, {len(failed_replacements)} failed",
+            "total_processed": len(replacements),
+            "successful_count": len(successful_replacements),
+            "failed_count": len(failed_replacements),
+            "total_deleted": total_deleted,
+            "total_inserted": total_inserted,
+            "results": results
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in batch IRR replacement: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to batch replace IRR values: {str(e)}")

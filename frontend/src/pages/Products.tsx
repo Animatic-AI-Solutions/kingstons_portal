@@ -53,9 +53,6 @@ const Products: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [groupByClient, setGroupByClient] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [clientToDelete, setClientToDelete] = useState<{id: number, name: string} | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   // State for active template portfolio generations
   const [activeTemplateGenerations, setActiveTemplateGenerations] = useState<{generation_name: string}[]>([]);
@@ -130,41 +127,6 @@ const Products: React.FC = () => {
     navigate(`/products/${productId}`);
   };
 
-  const handleDeleteClientGroupProducts = (clientName: string) => {
-    // Find the client ID from products
-    const clientProduct = products.find(product => product.client_name === clientName);
-    if (clientProduct) {
-      setClientToDelete({
-        id: clientProduct.client_id,
-        name: clientName
-      });
-      setShowDeleteConfirm(true);
-    }
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!clientToDelete) return;
-    
-    try {
-      setIsDeleting(true);
-      
-      // Call API to delete all products, portfolios, and products for this client
-      await api.delete(`/client_groups/${clientToDelete.id}/products`);
-      
-      // Refresh the products list
-      await fetchProducts();
-      
-      // Close the modal
-      setShowDeleteConfirm(false);
-      setClientToDelete(null);
-    } catch (err: any) {
-      console.error('Error deleting client products:', err);
-      setError(err.response?.data?.detail || 'Failed to delete client products');
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
   // Format currency with commas and 2 decimal places
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-GB', {
@@ -184,6 +146,11 @@ const Products: React.FC = () => {
       return value; // Return string values as-is (like "-")
     }
     return `${value.toFixed(1)}%`;
+  };
+
+  // Add a new handler function to navigate to the create client products page
+  const handleCreateClientGroupProducts = () => {
+    navigate(`/create-client-group-products?returnTo=${encodeURIComponent('/products')}`);
   };
 
   const filteredAndSortedProducts = products
@@ -213,11 +180,6 @@ const Products: React.FC = () => {
       return 0;
     });
 
-  // Add a new handler function to navigate to the create client products page
-  const handleCreateClientGroupProducts = () => {
-    navigate(`/create-client-group-products?returnTo=${encodeURIComponent('/products')}`);
-  };
-
   // Group products by client if the option is selected
   const groupedProducts = groupByClient
     ? filteredAndSortedProducts.reduce((groups: Record<string, Product[]>, product) => {
@@ -244,17 +206,17 @@ const Products: React.FC = () => {
             />
             <span>Group by Client Group</span>
           </label>
-            <button
-              onClick={handleCreateClientGroupProducts}
+          <button
+            onClick={handleCreateClientGroupProducts}
             className="bg-primary-700 text-white px-4 py-1.5 rounded-xl font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 shadow-sm flex items-center gap-1"
-            >
+          >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
             Add Client Group Products
-            </button>
-          </div>
+          </button>
         </div>
+      </div>
 
       <div className="bg-white shadow rounded-lg p-4 overflow-visible">
         {/* Search and Sort Controls */}
@@ -299,16 +261,6 @@ const Products: React.FC = () => {
                         <h3 className="text-base font-medium text-gray-900 font-sans tracking-tight">{clientName}</h3>
                         <p className="text-sm text-gray-500">{clientProducts.length} product(s)</p>
                       </div>
-                      <button
-                        onClick={() => handleDeleteClientGroupProducts(clientName)}
-                        className="text-red-600 hover:text-red-800 text-sm font-medium flex items-center"
-                        title="Delete all products for this client group"
-                      >
-                        <svg className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                        Delete
-                      </button>
                     </div>
                     <div className="overflow-x-auto overflow-visible">
                       <table className="min-w-full table-fixed divide-y divide-gray-200">
@@ -513,57 +465,6 @@ const Products: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-          <div className="relative mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3 text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <h3 className="text-lg leading-6 font-medium text-gray-900 mt-4">Delete All Products</h3>
-              <div className="mt-2 px-7 py-3">
-                <p className="text-sm text-gray-500">
-                  Are you sure you want to delete all products for "{clientToDelete?.name}" client group?
-                </p>
-                <p className="text-sm text-gray-500 mt-2">
-                  This will delete all products, portfolios, and products associated with this client group.
-                  <span className="font-medium"> This action cannot be undone.</span>
-                </p>
-              </div>
-              <div className="flex justify-center gap-4 mt-4">
-                <button 
-                  onClick={() => {
-                    setShowDeleteConfirm(false);
-                    setClientToDelete(null);
-                  }}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleConfirmDelete}
-                  disabled={isDeleting}
-                  className={`px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 ${isDeleting ? 'opacity-75 cursor-not-allowed' : ''}`}
-                >
-                  {isDeleting ? (
-                    <span className="flex items-center">
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Deleting...
-                    </span>
-                  ) : "Delete All"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
