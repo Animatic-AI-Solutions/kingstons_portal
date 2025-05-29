@@ -642,7 +642,7 @@ export const getPortfolioFundsByProduct = (productId: number) => {
  */
 export const globalSearch = async (query: string) => {
   const encodedQuery = encodeURIComponent(query);
-  return api.get(`/search?q=${encodedQuery}`);
+  return api.get(`/search?query=${encodedQuery}`);
 };
 
 export const getRiskDifferences = async (limit: number = 10) => {

@@ -261,17 +261,12 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       // Process holdings from portfolio_funds
       if (completeData.portfolio_funds && completeData.portfolio_funds.length > 0) {
         const processedHoldings = completeData.portfolio_funds.map((pf: any) => {
-          // Standardize weighting value
+          // Standardize weighting value - no conversion needed since database stores percentages
           let standardizedWeighting = pf.target_weighting;
           if (standardizedWeighting !== null && standardizedWeighting !== undefined) {
-            let numValue = typeof standardizedWeighting === 'string' 
+            standardizedWeighting = typeof standardizedWeighting === 'string' 
               ? parseFloat(standardizedWeighting) 
               : standardizedWeighting;
-            
-            // If it's in decimal format (0-1), convert to percentage (0-100)
-            if (numValue <= 1 && numValue > 0) {
-              standardizedWeighting = numValue * 100;
-            }
           }
           
           // Get template weighting for this fund if available
