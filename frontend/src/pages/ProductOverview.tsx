@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getProductFUM, calculateStandardizedMultipleFundsIRR } from '../services/api';
+import { MultiSelectSearchableDropdown } from '../components/ui/SearchableDropdown';
 
 // Basic interfaces for type safety
 interface Account {
@@ -34,6 +35,10 @@ interface Account {
     id: number;
     portfolio_name: string;
     assignment_start_date: string;
+  };
+  portfolio_details?: {
+    portfolio_name: string;
+    start_date: string;
   };
 }
 
@@ -129,17 +134,24 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   
   // Edit mode state and form data
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isEditOwnersMode, setIsEditOwnersMode] = useState(false);
   const [providers, setProviders] = useState<Provider[]>([]);
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
+  const [allProductOwners, setAllProductOwners] = useState<ProductOwner[]>([]);
   const [editFormData, setEditFormData] = useState({
     product_name: '',
     provider_id: '',
-    portfolio_id: '',
     product_type: '',
     target_risk: ''
   });
+  const [editOwnersFormData, setEditOwnersFormData] = useState({
+    portfolio_id: '',
+    selected_owner_ids: [] as number[]
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmittingOwners, setIsSubmittingOwners] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [ownersFormError, setOwnersFormError] = useState<string | null>(null);
 
   // Portfolio fund management state (simplified)
   const [isEditingFunds, setIsEditingFunds] = useState(false);
@@ -208,19 +220,42 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       setIsLoading(true);
       setError(null);
       
-      console.log('ProductOverview: Making API request to optimized endpoint for product data');
-      
-      // Use the new optimized endpoint that returns all data in one request
-      const completeProductResponse = await api.get(`/api/client_products/${accountId}/complete`);
-      const completeData = completeProductResponse.data;
+      const response = await api.get(`/api/client_products/${accountId}/complete`);
+      const completeData = response.data;
+
+      // Set product owners for this specific product
+      if (completeData.product_owners) {
+        setProductOwners(completeData.product_owners);
+      }
+
+      // Fetch all available product owners for editing
+      try {
+        const allOwnersResponse = await api.get('/product_owners');
+        setAllProductOwners(allOwnersResponse.data);
+      } catch (err) {
+        console.error('Error fetching all product owners:', err);
+      }
+
+      // Fetch providers and portfolios for editing
+      try {
+        const providersResponse = await api.get('/available_providers');
+        setProviders(providersResponse.data);
+      } catch (err) {
+        console.error('Error fetching providers:', err);
+      }
+
+      try {
+        const portfoliosResponse = await api.get('/portfolios');
+        setPortfolios(portfoliosResponse.data);
+      } catch (err) {
+        console.error('Error fetching portfolios:', err);
+      }
       
       console.log('ProductOverview: Complete product data received:', completeData);
       
       // Set account data directly from the response
       setAccount(completeData);
       
-      // Set product owners directly from the response
-      setProductOwners(completeData.product_owners || []);
       console.log('Product owners loaded:', completeData.product_owners?.length || 0);
       
       // Fetch portfolio summary after account data is loaded
@@ -1164,11 +1199,10 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   // Toggle edit mode and populate form data
   const toggleEditMode = () => {
     if (!isEditMode && account) {
-      // Entering edit mode - populate form with current data
+      // Entering edit mode - populate form with current data (without portfolio_id)
       setEditFormData({
         product_name: account.product_name || '',
         provider_id: account.provider_id?.toString() || '',
-        portfolio_id: account.portfolio_id?.toString() || '',
         product_type: account.product_type || '',
         target_risk: account.target_risk?.toString() || ''
       });
@@ -1179,7 +1213,22 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     setIsEditMode(!isEditMode);
   };
 
-  // Handle form input changes
+  // Toggle edit owners mode and populate form data
+  const toggleEditOwnersMode = () => {
+    if (!isEditOwnersMode && account) {
+      // Entering edit mode - populate form with current data
+      setEditOwnersFormData({
+        portfolio_id: account.portfolio_id?.toString() || '',
+        selected_owner_ids: productOwners.map(owner => owner.id)
+      });
+    } else {
+      // Exiting edit mode - clear any errors
+      setOwnersFormError(null);
+    }
+    setIsEditOwnersMode(!isEditOwnersMode);
+  };
+
+  // Handle form input changes for product details
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setEditFormData(prev => ({
@@ -1188,7 +1237,16 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     }));
   };
 
-  // Handle form submission
+  // Handle form input changes for product owners
+  const handleOwnersInputChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setEditOwnersFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Handle product details form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!accountId) return;
@@ -1205,11 +1263,6 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       // Only include provider_id if a value is selected
       if (editFormData.provider_id) {
         updateData.provider_id = parseInt(editFormData.provider_id);
-      }
-
-      // Only include portfolio_id if a value is selected
-      if (editFormData.portfolio_id) {
-        updateData.portfolio_id = parseInt(editFormData.portfolio_id);
       }
 
       // Only include target_risk if a value is provided
@@ -1230,6 +1283,74 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       setFormError(err.response?.data?.message || err.response?.data?.detail || 'Failed to update product');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Handle product owners form submission
+  const handleOwnersSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!accountId || !account) return;
+
+    setIsSubmittingOwners(true);
+    setOwnersFormError(null);
+
+    try {
+      const updateData: any = {};
+
+      // Only include portfolio_id if a value is selected
+      if (editOwnersFormData.portfolio_id) {
+        updateData.portfolio_id = parseInt(editOwnersFormData.portfolio_id);
+      }
+
+      // Update product details if portfolio changed
+      if (Object.keys(updateData).length > 0) {
+        await api.patch(`/api/client_products/${accountId}`, updateData);
+      }
+
+      // Update product owners associations
+      // First, get current associations
+      const currentOwnerIds = productOwners.map(owner => owner.id);
+      const newOwnerIds = editOwnersFormData.selected_owner_ids;
+
+      // Remove owners that are no longer selected
+      const ownersToRemove = currentOwnerIds.filter(id => !newOwnerIds.includes(id));
+      for (const ownerId of ownersToRemove) {
+        try {
+          await api.delete(`/client_group_product_owners`, {
+            data: {
+              client_group_id: account.client_id,
+              product_owner_id: ownerId
+            }
+          });
+        } catch (err) {
+          console.error(`Error removing product owner ${ownerId}:`, err);
+        }
+      }
+
+      // Add new owners
+      const ownersToAdd = newOwnerIds.filter(id => !currentOwnerIds.includes(id));
+      for (const ownerId of ownersToAdd) {
+        try {
+          await api.post('/client_group_product_owners', {
+            client_group_id: account.client_id,
+            product_owner_id: ownerId
+          });
+        } catch (err) {
+          console.error(`Error adding product owner ${ownerId}:`, err);
+        }
+      }
+      
+      // Refresh the data
+      await fetchData(accountId);
+      
+      // Exit edit mode
+      setIsEditOwnersMode(false);
+      setOwnersFormError(null);
+    } catch (err: any) {
+      console.error('Error updating product owners:', err);
+      setOwnersFormError(err.response?.data?.message || err.response?.data?.detail || 'Failed to update product owners');
+    } finally {
+      setIsSubmittingOwners(false);
     }
   };
 
@@ -1312,26 +1433,6 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                     {providers.map(provider => (
                       <option key={provider.id} value={provider.id}>
                         {provider.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label htmlFor="portfolio_id" className="block text-xs font-medium text-gray-700 mb-1">
-                    Portfolio
-                  </label>
-                  <select
-                    id="portfolio_id"
-                    name="portfolio_id"
-                    value={editFormData.portfolio_id}
-                    onChange={handleInputChange}
-                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-xs border-gray-300 rounded-md py-1.5 px-2"
-                  >
-                    <option value="">Select Portfolio</option>
-                    {portfolios.map(portfolio => (
-                      <option key={portfolio.id} value={portfolio.id}>
-                        {portfolio.portfolio_name}
                       </option>
                     ))}
                   </select>
@@ -1462,33 +1563,153 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
               </div>
 
               {/* Product Owners Section */}
-              {productOwners.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <svg className="h-5 w-5 text-indigo-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-md font-semibold text-gray-900 flex items-center">
+                    <svg className="h-4 w-4 text-indigo-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
-                    Product Owners
+                    Product Owners & Portfolio
                   </h3>
-                  <div className="grid grid-cols-1 gap-2">
-                    {productOwners.map(owner => (
-                      <div key={owner.id} className="flex items-center p-3 bg-gray-50 rounded-lg">
-                        <div className="flex-shrink-0">
-                          <div className="h-8 w-8 bg-indigo-100 rounded-full flex items-center justify-center">
-                            <svg className="h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                          </div>
-                        </div>
-                        <div className="ml-3">
-                          <div className="text-sm font-medium text-gray-900">{owner.name}</div>
-                          {owner.type && <div className="text-xs text-gray-500">{owner.type}</div>}
-                        </div>
-                      </div>
-                    ))}
+                  <div className="flex space-x-2">
+                    {isEditOwnersMode ? (
+                      <button
+                        onClick={toggleEditOwnersMode}
+                        className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs leading-4 font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                      >
+                        Cancel
+                      </button>
+                    ) : (
+                      <button
+                        onClick={toggleEditOwnersMode}
+                        className="inline-flex items-center px-2 py-1 border border-transparent shadow-sm text-xs leading-4 font-medium rounded text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                      >
+                        <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Edit
+                      </button>
+                    )}
                   </div>
                 </div>
-              )}
+
+                {isEditOwnersMode ? (
+                  // Compact Edit Product Owners Form
+                  <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    {ownersFormError && (
+                      <div className="mb-2 p-2 text-xs text-red-700 bg-red-50 rounded border border-red-200">
+                        {ownersFormError}
+                      </div>
+                    )}
+
+                    <form onSubmit={handleOwnersSubmit} className="space-y-3">
+                      <div className="grid grid-cols-1 gap-3">
+                        <div>
+                          <label htmlFor="owners-portfolio_id" className="block text-xs font-medium text-gray-700 mb-1">
+                            Portfolio Assignment
+                          </label>
+                          <select
+                            id="owners-portfolio_id"
+                            name="portfolio_id"
+                            value={editOwnersFormData.portfolio_id}
+                            onChange={handleOwnersInputChange}
+                            className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-xs border-gray-300 rounded-md py-1.5 px-2"
+                          >
+                            <option value="">Select Portfolio</option>
+                            {portfolios.map(portfolio => (
+                              <option key={portfolio.id} value={portfolio.id}>
+                                {portfolio.portfolio_name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        
+                        <div>
+                          <label htmlFor="product-owners-select" className="block text-xs font-medium text-gray-700 mb-1">
+                            Product Owners
+                          </label>
+                          <MultiSelectSearchableDropdown
+                            id="product-owners-select"
+                            options={allProductOwners.map(owner => ({
+                              value: owner.id,
+                              label: owner.name
+                            }))}
+                            values={editOwnersFormData.selected_owner_ids}
+                            onChange={(values) => setEditOwnersFormData(prev => ({
+                              ...prev,
+                              selected_owner_ids: values as number[]
+                            }))}
+                            placeholder="Search and select product owners"
+                            className="text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end space-x-2 pt-2">
+                        <button
+                          type="button"
+                          onClick={toggleEditOwnersMode}
+                          className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={isSubmittingOwners}
+                          className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50"
+                        >
+                          {isSubmittingOwners ? 'Saving...' : 'Save'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                ) : (
+                  // Compact Display
+                  <div className="space-y-3">
+                    {/* Portfolio Info - Inline */}
+                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Portfolio</div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {account.portfolio_details?.portfolio_name || 'No portfolio assigned'}
+                        </div>
+                      </div>
+                      {account.portfolio_details?.start_date && (
+                        <div className="text-right">
+                          <div className="text-xs text-gray-500">Assigned</div>
+                          <div className="text-xs font-medium text-gray-700">
+                            {formatDate(account.portfolio_details.start_date)}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Product Owners - Compact Chips */}
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Product Owners</div>
+                      {productOwners.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {productOwners.map(owner => (
+                            <span
+                              key={owner.id}
+                              className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
+                            >
+                              <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                              </svg>
+                              {owner.name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-gray-500 italic p-2 bg-gray-50 rounded">
+                          No product owners assigned
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Right Side - Product Summary & Risk Profile */}
