@@ -649,31 +649,6 @@ export const getRiskDifferences = async (limit: number = 10) => {
   return api.get(`/analytics/risk_differences?limit=${limit}`);
 };
 
-/**
- * SCHEDULED TRANSACTIONS API ENDPOINTS
- * 
- * Functions for managing scheduled transactions
- */
-
-/**
- * Fetches upcoming scheduled transactions for the dashboard
- * @param {Object} params - Query parameters
- * @param {number} [params.days_ahead] - Number of days ahead to look for upcoming transactions (default: 7)
- * @param {number} [params.limit] - Maximum number of transactions to return (default: 10)
- * @returns {Promise} - API response with upcoming scheduled transactions
- */
-export const getUpcomingScheduledTransactions = (params?: {
-  days_ahead?: number;
-  limit?: number;
-}) => {
-  const queryParams = new URLSearchParams();
-  if (params?.days_ahead !== undefined) queryParams.append('days_ahead', params.days_ahead.toString());
-  if (params?.limit !== undefined) queryParams.append('limit', params.limit.toString());
-  
-  const queryString = queryParams.toString();
-  return api.get(`scheduled_transactions/upcoming${queryString ? `?${queryString}` : ''}`);
-};
-
 // Activity API functions
 export const createActivity = async (activityData: {
   product_id: number;

@@ -47,7 +47,7 @@ from app.api.routes import (
     available_portfolios, fund_valuations,
     client_products, holding_activity_logs, product_holdings,
     product_owners, client_group_product_owners,
-    provider_switch_log, scheduled_transactions, search
+    provider_switch_log, search
 )
 
 # Load environment variables from .env file
@@ -137,7 +137,6 @@ app.include_router(fund_valuations.router, prefix="/api", tags=["Fund Valuations
 app.include_router(product_owners.router, prefix="/api", tags=["Product Owners"])
 app.include_router(client_group_product_owners.router, prefix="/api", tags=["Client Group Product Owners"])
 app.include_router(provider_switch_log.router, prefix="/api", tags=["Provider Switch Log"])
-app.include_router(scheduled_transactions.router, prefix="/api", tags=["Scheduled Transactions"])
 app.include_router(search.router, prefix="/api", tags=["Search"])
 
 @app.get("/api")
