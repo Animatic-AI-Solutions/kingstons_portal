@@ -605,7 +605,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   // Handle fund selection confirmation
   
 
-  
+
   const formatCurrency = (value: number): string => {
     return new Intl.NumberFormat('en-GB', {
       style: 'currency',
@@ -673,7 +673,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
     setIsSubmitting(true);
     setError(null);
-
+    
     try {
       const editsToProcess = pendingEdits.filter(edit => 
         edit.value.trim() !== '' || edit.toDelete
@@ -718,15 +718,15 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
             activity_timestamp: `${edit.month}-01`,
             amount: edit.value
           };
-
+          
           if (edit.isNew) {
             await api.post('holding_activity_logs', activityData);
           } else if (edit.originalActivityId) {
-            await api.patch(`holding_activity_logs/${edit.originalActivityId}`, activityData);
+              await api.patch(`holding_activity_logs/${edit.originalActivityId}`, activityData);
           }
 
           // Recalculate IRR for this fund and month
-          await recalculateIRRForFundAndMonth(edit.fundId, edit.month);
+              await recalculateIRRForFundAndMonth(edit.fundId, edit.month);
         }
       }
 
@@ -738,7 +738,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       console.error('Error saving activities:', error);
       setError(error.response?.data?.detail || 'Failed to save activities');
     } finally {
-      setIsSubmitting(false);
+          setIsSubmitting(false);
     }
   };
 
@@ -787,9 +787,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         } else {
           // Handle regular activities with uniform structure
           const activityData = {
-            portfolio_fund_id: edit.fundId,
-            account_holding_id: accountHoldingId,
-            activity_type: convertActivityTypeForBackend(edit.activityType),
+              portfolio_fund_id: edit.fundId,
+              account_holding_id: accountHoldingId,
+              activity_type: convertActivityTypeForBackend(edit.activityType),
             activity_timestamp: `${edit.month}-01`,
             amount: edit.value
           };
@@ -804,11 +804,11 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           await recalculateIRRForFundAndMonth(edit.fundId, edit.month);
         }
       }
-
+      
       // Clear pending edits and refresh data
       setPendingEdits([]);
       onActivitiesUpdated();
-
+      
     } catch (error: any) {
       console.error('Error saving activities:', error);
       setError(error.response?.data?.detail || 'Failed to save activities');
@@ -1784,12 +1784,12 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                               }}
                             >
                               <div className="flex justify-center items-center">
-                                <input
-                                  type="text"
+                                  <input
+                                    type="text"
                                     className={`focus:outline-none bg-transparent text-center border-0 shadow-none w-auto min-w-0 ${!fund.isActive || fund.isInactiveBreakdown ? 'text-gray-500 cursor-not-allowed' : ''}`}
-                                  value={formatCellValue(cellValue)}
+                                    value={formatCellValue(cellValue)}
                                     disabled={isSubmitting || fund.isActive === false || fund.isInactiveBreakdown}
-                                  onChange={(e) => {
+                                    onChange={(e) => {
                                       if (fund.isActive !== false && !fund.isInactiveBreakdown) {
                                         const value = e.target.value;
                                         if (value.includes('.')) {
@@ -1801,7 +1801,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                         handleCellValueChange(fund.id, month, activityType, value);
                                         e.target.style.width = (value.length + 1) + 'ch';
                                       }
-                                  }}
+                                    }}
                                     onBlur={(e) => {
                                       if (fund.isActive !== false && !fund.isInactiveBreakdown) {
                                         handleCellBlur(fund.id, month, activityType);
@@ -1813,27 +1813,27 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                       }
                                     }}
                                     onFocus={() => {
-                                            if (fund.isActive !== false && !fund.isInactiveBreakdown) {
-                                              setFocusedCell({
-                                                fundId: fund.id,
-                                                activityType,
-                                                monthIndex: months.indexOf(month)
-                                              });
-                                            }
-                                          }}
-                                          tabIndex={fund.isActive === false || fund.isInactiveBreakdown ? -1 : 0}
-                                          style={{
-                                            border: 'none',
-                                            outline: 'none',
-                                            boxShadow: 'none',
-                                            background: 'transparent',
-                                            padding: '0 4px',
-                                            width: '100%',
-                                            fontSize: '0.875rem',
-                                            opacity: fund.isActive === false || fund.isInactiveBreakdown ? 0.7 : 1
-                                          }}
-                                          inputMode="text"
-                                        />
+                                      if (fund.isActive !== false && !fund.isInactiveBreakdown) {
+                                        setFocusedCell({
+                                          fundId: fund.id,
+                                          activityType,
+                                          monthIndex: months.indexOf(month)
+                                        });
+                                      }
+                                    }}
+                                    tabIndex={fund.isActive === false || fund.isInactiveBreakdown ? -1 : 0}
+                                  style={{
+                                    border: 'none',
+                                    outline: 'none',
+                                    boxShadow: 'none',
+                                    background: 'transparent',
+                                    padding: '0 4px',
+                                    width: '100%',
+                                    fontSize: '0.875rem',
+                                    opacity: fund.isActive === false || fund.isInactiveBreakdown ? 0.7 : 1
+                                  }}
+                                  inputMode="text"
+                                />
                               </div>
                             </td>
                           );
