@@ -98,3 +98,35 @@ The API provides the following endpoints:
 
 ### Analytics
 - `GET /api/analytics/product_client_counts` - Get a table of client counts per product by relationship
+
+# Kingston's Portal
+
+A comprehensive financial advisory platform for managing client portfolios, products, and analysis.
+
+## Recent Updates
+
+### CreateClientProducts Page Redesign ✨
+
+The "Create Client Products" page has been redesigned for improved efficiency and user experience:
+
+#### **Key Improvements:**
+- **Compact Layout**: Reduced padding and spacing optimized for large monitors
+- **Progressive Disclosure**: Products auto-expand when incomplete, collapse when configured
+- **Smart Visual Indicators**: Color-coded status dots (🔴 errors, 🟡 incomplete, 🟢 complete)
+- **Real-time Summary**: Floating counter shows products being created
+- **Enhanced Fund Selection**: Streamlined search and selection with compact tables
+- **Provider Theme Integration**: Product cards use provider brand colors
+
+#### **Keyboard Shortcuts:**
+- `Ctrl+Enter` - Save all products
+- `Ctrl+D` - Duplicate last product  
+- `Ctrl+Shift+A` - Add new product
+- `Escape` - Close modals
+
+#### **Optimized Workflow:**
+1. **Step 1**: Select client and start date (always visible)
+2. **Step 2**: Add and configure products (progressive disclosure)
+3. **Real-time validation** with inline error indicators
+4. **Context-aware submission** with smart button text
+
+The redesign maintains all existing functionality while dramatically improving usability for advisors working on large monitors.

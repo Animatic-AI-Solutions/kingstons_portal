@@ -8,6 +8,7 @@ import { Radio, Select, Input, Checkbox, DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import SearchableDropdown from '../components/ui/SearchableDropdown';
+import { getProviderColor } from '../services/providerColors';
 
 interface Client {
   id: number;
@@ -21,6 +22,7 @@ interface Provider {
   id: number;
   name: string;
   status: string;
+  theme_color?: string;
 }
 
 interface ProductOwner {
@@ -149,6 +151,65 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   const [validationErrors, setValidationErrors] = useState<Record<string, Record<string, string>>>({});
   const [weightingErrors, setWeightingErrors] = useState<Record<string, Record<string, string>>>({});
   
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Only handle shortcuts when not typing in inputs
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      
+      // Ctrl+Enter or Cmd+Enter - Save products
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && !isSaving && products.length > 0) {
+        event.preventDefault();
+        const form = document.querySelector('form') as HTMLFormElement;
+        if (form) {
+          form.requestSubmit();
+        }
+      }
+      
+      // Ctrl+D or Cmd+D - Duplicate last product
+      if ((event.ctrlKey || event.metaKey) && event.key === 'd' && products.length > 0) {
+        event.preventDefault();
+        const lastProduct = products[products.length - 1];
+        const newProduct = {
+          ...lastProduct,
+          id: `temp-${Date.now()}`,
+          product_name: '',
+          portfolio: {
+            ...lastProduct.portfolio,
+            name: '', // Will be auto-generated based on product details
+            selectedFunds: [],
+            fundWeightings: {}
+          }
+        };
+        setProducts([...products, newProduct]);
+        showToastMessage('Product duplicated! 📋');
+      }
+      
+      // Ctrl+Shift+A or Cmd+Shift+A - Add new product
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'A' && selectedClientId) {
+        event.preventDefault();
+        handleAddProduct();
+        showToastMessage('New product added! ✨');
+      }
+      
+      // Escape - Close modals
+      if (event.key === 'Escape') {
+        if (showCreateProductOwnerModal) {
+          setShowCreateProductOwnerModal(false);
+        }
+        if (isAddFundModalOpen) {
+          setIsAddFundModalOpen(false);
+          setAddFundForProductId(null);
+        }
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [products, isSaving, selectedClientId, showCreateProductOwnerModal, isAddFundModalOpen]);
+  
   // Add useEffect to determine return path based on where user came from
   useEffect(() => {
     // Check URL parameters first for explicit return path
@@ -184,6 +245,36 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       }
     }
   }, [location.search]);
+
+  // Auto-update portfolio names when product details change
+  useEffect(() => {
+    setProducts(prevProducts => 
+      prevProducts.map(product => {
+        // Only auto-update if portfolio name is empty or matches the old generated pattern
+        const currentName = product.portfolio.name;
+        const shouldUpdate = !currentName || 
+                           currentName.startsWith('Portfolio for Product') || 
+                           currentName === generatePortfolioName(product);
+        
+        if (shouldUpdate) {
+          const newName = generatePortfolioName(product);
+          return {
+            ...product,
+            portfolio: {
+              ...product.portfolio,
+              name: newName
+            }
+          };
+        }
+        return product;
+      })
+    );
+  }, [
+    // Dependencies: update when these product details change
+    products.map(p => `${p.provider_id}-${p.product_type}-${p.product_name}-${p.product_owner_ids.join(',')}`).join('|'),
+    providers,
+    productOwners
+  ]);
 
   // Click outside handler for dropdowns
   useEffect(() => {
@@ -266,9 +357,12 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         const nonCashFunds = allFunds.filter((fund: Fund) => 
           !(fund.fund_name === 'Cash' && fund.isin_number === 'N/A')
         );
+
+        // Sort funds alphabetically by fund name
+        nonCashFunds.sort((a: Fund, b: Fund) => a.fund_name.localeCompare(b.fund_name));
         
         setFunds(allFunds); // Keep all funds in state for reference
-        setFilteredFunds(nonCashFunds); // But only show non-cash funds in the UI
+        setFilteredFunds(nonCashFunds); // But only show non-cash funds in the UI, sorted alphabetically
       } catch (err) {
         console.error('Error loading all funds:', err);
       } finally {
@@ -332,7 +426,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       status: 'active',
       product_owner_ids: [],
       portfolio: {
-        name: `Portfolio for Product ${products.length + 1}`,
+        name: '', // Will be generated when product details are filled
         selectedFunds: [],
         type: 'bespoke',
         fundWeightings: {}
@@ -623,6 +717,19 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     }
   };
 
+  // Function to generate portfolio name based on product
+  const generatePortfolioName = (product: ProductItem): string => {
+    // Get the product name (either custom or auto-generated)
+    const productName = product.product_name.trim() || generateProductName(product);
+    
+    // If no meaningful product name can be generated, use a default
+    if (!productName || productName.trim() === '') {
+      return `Portfolio for Product`;
+    }
+    
+    return `Portfolio for ${productName}`;
+  };
+
   // Portfolio configuration functions
   const handlePortfolioTypeChange = (productId: string, type: 'template' | 'bespoke'): void => {
     setProducts(prevProducts => prevProducts.map(product => {
@@ -810,7 +917,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         hasErrors = true;
       }
 
-      if (!product.portfolio.name.trim()) {
+      // Portfolio name validation - use auto-generated name if empty
+      const portfolioName = product.portfolio.name || generatePortfolioName(product);
+      if (!portfolioName.trim()) {
         productErrors.portfolioName = 'Please enter a portfolio name';
         hasErrors = true;
       }
@@ -827,33 +936,35 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       } else {
         // Bespoke portfolio validations
         if (product.portfolio.selectedFunds.length === 0) {
-
           showError(`Please select at least one fund for the portfolio in the product`);
           return false;
         }
         
-        // Validate weightings for bespoke portfolios
+        // Flexible weighting validation: Allow no weightings OR weightings that don't exceed 100%
+        const hasAnyWeightings = product.portfolio.selectedFunds.some(fundId => {
+          const weighting = product.portfolio.fundWeightings[fundId.toString()];
+          return weighting && weighting.trim() !== '';
+        });
+        
+        // Check Cash fund weighting too
+        const cashFund = funds.find(f => f.fund_name === 'Cash' && f.isin_number === 'N/A');
+        const hasCashWeighting = cashFund && product.portfolio.fundWeightings[cashFund.id.toString()]?.trim();
+        
+        // If user has entered any weightings, validate them
+        if (hasAnyWeightings || hasCashWeighting) {
         const totalWeighting = calculateTotalFundWeighting(product);
-        if (Math.abs(totalWeighting - 100) > 0.01) { // Allow for small floating point differences
-          showError(`Fund weightings for the product must add up to 100%. Current total: ${totalWeighting.toFixed(1)}%`);
+          
+          // Allow under 100% but prevent over 100%
+          if (totalWeighting > 100) {
+            showError(`Fund weightings cannot exceed 100%. Current total: ${totalWeighting.toFixed(1)}%. You can leave some weightings empty for partial allocation.`);
           return false;
         }
         
-        // Check that all funds have valid weightings
+          // Validate individual weighting values
         for (const fundId of product.portfolio.selectedFunds) {
           const weighting = product.portfolio.fundWeightings[fundId.toString()];
-          const fund = funds.find(f => f.id === fundId);
-          const isCashFund = fund?.fund_name === 'Cash' && fund?.isin_number === 'N/A';
-          
-          // Check that all funds have valid weightings
-          for (const fundId of product.portfolio.selectedFunds) {
-            const weighting = product.portfolio.fundWeightings[fundId.toString()];
-            const fund = funds.find(f => f.id === fundId);
             
-            if (!weighting || weighting.trim() === '') {
-              productWeightingErrors[fundId.toString()] = 'Required';
-              hasErrors = true;
-            } else {
+            if (weighting && weighting.trim() !== '') {
               const weightValue = parseFloat(weighting);
               if (isNaN(weightValue) || weightValue <= 0 || weightValue > 100) {
                 productWeightingErrors[fundId.toString()] = 'Must be between 0.01 and 100';
@@ -862,30 +973,12 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             }
           }
           
-
-          const weightValue = parseFloat(weighting);
-          if (isNaN(weightValue) || weightValue < 0 || weightValue > 100) {
-            showError(`Invalid weighting for fund "${fund?.fund_name || 'Unknown'}" in the product. Must be between 0 and 100.`);
-            return false;
-          }
-          
-          // For non-cash funds, weighting must be greater than 0
-          if (!isCashFund && weightValue <= 0) {
-            showError(`Weighting for fund "${fund?.fund_name || 'Unknown'}" must be greater than 0.`);
-            return false;
-
-          }
-        }
-        
-        // For bespoke portfolios, also validate Cash fund if it's not in selectedFunds
-        const cashFund = funds.find(f => f.fund_name === 'Cash' && f.isin_number === 'N/A');
-        if (cashFund && !product.portfolio.selectedFunds.includes(cashFund.id)) {
+          // Validate Cash fund weighting if provided
+          if (cashFund && hasCashWeighting) {
           const cashWeighting = product.portfolio.fundWeightings[cashFund.id.toString()];
-          
-          if (cashWeighting && cashWeighting.trim() !== '') {
             const cashWeightValue = parseFloat(cashWeighting);
             if (isNaN(cashWeightValue) || cashWeightValue < 0 || cashWeightValue > 100) {
-              showError(`Invalid weighting for Cash fund in the product. Must be between 0 and 100.`);
+              showError(`Cash fund weighting must be between 0 and 100%.`);
               return false;
             }
           }
@@ -949,13 +1042,16 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         // Generate product name if it's empty
         const finalProductName = product.product_name.trim() || generateProductName(product);
 
+        // Generate portfolio name using the new auto-generation system
+        const finalPortfolioName = product.portfolio.name.trim() || `Portfolio for ${finalProductName}`;
+
         // First, create the portfolio if needed
         if (product.portfolio.type === 'template' && product.portfolio.templateId && product.portfolio.generationId) {
           // Create portfolio from template generation
           const templateResponse = await api.post('/portfolios/from_template', {
             template_id: product.portfolio.templateId,
             generation_id: product.portfolio.generationId, // Send the generation ID to the API
-            portfolio_name: finalProductName,
+            portfolio_name: finalPortfolioName,
             status: 'active',
             start_date: formattedStartDate
           });
@@ -964,7 +1060,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         } else if (product.portfolio.type === 'bespoke') {
           // Create a bespoke portfolio
           const portfolioResponse = await api.post('/portfolios', {
-            portfolio_name: finalProductName,
+            portfolio_name: finalPortfolioName,
             status: 'active',
             start_date: formattedStartDate
           });
@@ -1128,6 +1224,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       const nonCashFunds = funds.filter((fund: Fund) => 
         !(fund.fund_name === 'Cash' && fund.isin_number === 'N/A') // Exclude Cash fund
       );
+      // Sort alphabetically by fund name
+      nonCashFunds.sort((a: Fund, b: Fund) => a.fund_name.localeCompare(b.fund_name));
       setFilteredFunds(nonCashFunds);
       return;
     }
@@ -1138,6 +1236,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       (fund.isin_number && fund.isin_number.toLowerCase().includes(term))) &&
       !(fund.fund_name === 'Cash' && fund.isin_number === 'N/A') // Also exclude Cash fund from search results
     );
+    
+    // Sort search results alphabetically by fund name
+    filtered.sort((a: Fund, b: Fund) => a.fund_name.localeCompare(b.fund_name));
     setFilteredFunds(filtered);
   };
 
@@ -1149,29 +1250,36 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     const generations = templateId ? templateGenerations[templateId.toString()] || [] : [];
     
     return (
-      <div className="portfolio-section">
+      <div className="portfolio-section space-y-3">
         {/* Show loading overlay when template or generation is loading */}
         {isEitherLoading && (
-          <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-10">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
+          <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-10 rounded">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
           </div>
         )}
         
-        {/* Portfolio Name - Moved above Portfolio Type */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        {/* Portfolio Configuration Row */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* Portfolio Name - Auto-generated */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
             Portfolio Name <span className="text-red-500">*</span>
+              <span className="text-gray-400">(auto-generated)</span>
           </label>
           <input
             type="text"
-            value={product.portfolio.name}
-            onChange={(e) => handlePortfolioNameChange(product.id, e.target.value)}
-            className={`shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm rounded-md ${
-              validationErrors[product.id]?.portfolioName
-                ? 'border-red-500 bg-red-50 focus:ring-red-500 focus:border-red-500'
-                : 'border-gray-300'
-            }`}
-            required
+              value={(() => {
+                // Auto-generate portfolio name based on product name
+                const productName = product.product_name.trim() || generateProductName(product);
+                return product.portfolio.name.trim() || `Portfolio for ${productName || 'Product'}`;
+              })()}
+              onChange={(e) => {
+                // Allow manual override of portfolio name
+                const value = e.target.value;
+                handlePortfolioNameChange(product.id, value);
+              }}
+              className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm border-gray-300 rounded-md h-8"
+              placeholder="Auto-generated"
           />
           {validationErrors[product.id]?.portfolioName && (
             <div className="text-xs text-red-600 mt-1">
@@ -1181,24 +1289,28 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         </div>
         
         {/* Portfolio Type Selection */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
             Portfolio Type <span className="text-red-500">*</span>
           </label>
           <Radio.Group
             value={product.portfolio.type}
             onChange={(e) => handlePortfolioTypeChange(product.id, e.target.value as 'template' | 'bespoke')}
             disabled={isEitherLoading}
+              size="middle"
+              className="flex space-x-4"
           >
-            <Radio value="bespoke">Bespoke Portfolio</Radio>
-            <Radio value="template">Template Portfolio</Radio>
+              <Radio value="bespoke" className="text-sm">Bespoke</Radio>
+              <Radio value="template" className="text-sm">Template</Radio>
           </Radio.Group>
+          </div>
         </div>
 
-        {/* Template Selection - Only show if template type is selected */}
+        {/* Template Selection Row - Only show if template type is selected */}
         {product.portfolio.type === 'template' && (
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
               Select Template <span className="text-red-500">*</span>
             </label>
             <SearchableDropdown
@@ -1206,8 +1318,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               options={availableTemplates.map(t => ({ value: t.id.toString(), label: t.name || `Template ${t.id}` }))}
               value={product.portfolio.templateId?.toString() ?? ''}
               onChange={val => handleTemplateSelection(product.id, String(val))}
-              placeholder="Select a template"
-              className={`w-full ${validationErrors[product.id]?.template ? 'border-red-500' : ''}`}
+                placeholder="Select template"
+                className={`w-full text-sm ${validationErrors[product.id]?.template ? 'border-red-500' : ''}`}
               required
               disabled={isEitherLoading}
             />
@@ -1217,12 +1329,11 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               </div>
             )}
           </div>
-        )}
 
         {/* Generation Selection - Show after template is selected */}
-        {product.portfolio.type === 'template' && product.portfolio.templateId && generations.length > 0 && (
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            {product.portfolio.templateId && generations.length > 0 && (
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
               Select Generation <span className="text-red-500">*</span>
             </label>
             <SearchableDropdown
@@ -1233,8 +1344,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               }))}
               value={product.portfolio.generationId?.toString() ?? ''}
               onChange={val => handleGenerationSelection(product.id, String(val))}
-              placeholder="Select a generation"
-              className={`w-full ${validationErrors[product.id]?.generation ? 'border-red-500' : ''}`}
+                  placeholder="Select generation"
+                  className={`w-full text-sm ${validationErrors[product.id]?.generation ? 'border-red-500' : ''}`}
               required
               disabled={isEitherLoading}
             />
@@ -1243,201 +1354,250 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                 {validationErrors[product.id].generation}
               </div>
             )}
-            <div className="text-xs text-gray-500 mt-1">
-              Select a specific generation of this template
             </div>
-          </div>
-        )}
-
-        {/* Selected Funds Table - Show for both template and bespoke */}
-        {(product.portfolio.selectedFunds.length > 0 || product.portfolio.type === 'bespoke') && (
-          <div className="mb-4">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Selected Funds</h4>
-            <div className="border rounded-md overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Fund Name
-                    </th>
-                    {product.portfolio.type === 'bespoke' && (
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Weighting (%)
-                      </th>
-                    )}
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {/* Always show Cash fund first for bespoke portfolios */}
-                  {product.portfolio.type === 'bespoke' && (() => {
-                    const cashFund = funds.find(f => f.fund_name === 'Cash' && f.isin_number === 'N/A');
-                    if (cashFund) {
-                      return (
-                        <tr key={`cash-${cashFund.id}`} className="bg-blue-50">
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                            <span className="inline-flex items-center">
-                              <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
-                              {cashFund.fund_name} (Auto-added)
-                            </span>
-                          </td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                            <input
-                              type="text"
-                              value={product.portfolio.fundWeightings[cashFund.id.toString()] || '0'}
-                              onChange={(e) => handleWeightingChange(product.id, cashFund.id, e.target.value)}
-                              className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                              placeholder="0.0"
-                            />
-                          </td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
-                            <span className="text-xs text-gray-400">Cannot remove</span>
-                          </td>
-                        </tr>
-                      );
-                    }
-                    return null;
-                  })()}
-                  
-                  {/* Show other selected funds */}
-                  {product.portfolio.selectedFunds.map((fundId) => {
-                    const fund = funds.find(f => f.id === fundId);
-                    // Skip Cash fund as it's already shown above for bespoke portfolios
-                    if (product.portfolio.type === 'bespoke' && fund?.fund_name === 'Cash' && fund?.isin_number === 'N/A') {
-                      return null;
-                    }
-                    
-                    return (
-                      <tr key={fundId}>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                          {fund?.fund_name || 'Unknown Fund'}
-                        </td>
-                        {product.portfolio.type === 'bespoke' && (
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                            <div className="space-y-1">
-                              <input
-                                type="text"
-                                value={product.portfolio.fundWeightings[fundId.toString()] || ''}
-                                onChange={(e) => handleWeightingChange(product.id, fundId, e.target.value)}
-                                className={`shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm rounded-md ${
-                                  weightingErrors[product.id]?.[fundId.toString()]
-                                    ? 'border-red-500 bg-red-50 focus:ring-red-500 focus:border-red-500'
-                                    : 'border-gray-300'
-                                }`}
-                                placeholder="0.0"
-                              />
-                              {weightingErrors[product.id]?.[fundId.toString()] && (
-                                <div className="text-xs text-red-600 mt-1">
-                                  {weightingErrors[product.id][fundId.toString()]}
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                        )}
-                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                          <button
-                            type="button"
-                            onClick={() => handleFundSelection(product.id, fundId)}
-                            className="text-red-600 hover:text-red-800 text-xs"
-                            title="Remove fund"
-                          >
-                            Remove
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            
-            {/* Total Weighting Display for Bespoke Portfolios */}
-            {product.portfolio.type === 'bespoke' && (
-              <div className="mt-2 p-2 bg-gray-50 rounded-md">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-700">Total Weighting:</span>
-                  <span className={`text-sm font-bold ${
-                    Math.abs(calculateTotalFundWeighting(product) - 100) < 0.01 
-                      ? 'text-green-600' 
-                      : 'text-red-600'
-                  }`}>
-                    {calculateTotalFundWeighting(product).toFixed(1)}%
-                  </span>
-                </div>
-                {Math.abs(calculateTotalFundWeighting(product) - 100) > 0.01 && (
-                  <div className="text-xs text-red-600 mt-1">
-                    Weightings must add up to 100%
-                  </div>
-                )}
-                {product.portfolio.selectedFunds.length > 0 && (
-                  <div className="text-xs text-gray-500 mt-1">
-                    Calculated Target Risk: {(() => {
-                      const risk = calculateTargetRiskFromFunds(product);
-                      return risk ? risk.toFixed(1) : 'N/A';
-                    })()}
-                  </div>
-                )}
-              </div>
             )}
           </div>
         )}
 
-        {/* Show fund selection for both template and bespoke portfolios */}
-        <div className="fund-selection mt-4">
-          <h4 className={`text-sm font-medium mb-2 ${
-            validationErrors[product.id]?.funds ? 'text-red-600' : 'text-gray-700'
-          }`}>
-            {product.portfolio.type === 'template' ? 'Modify Template Funds' : 'Select Funds'}
-            {product.portfolio.type === 'template' && (
-              <span className="text-xs text-gray-500 ml-2">(modifying will convert to bespoke)</span>
-            )}
-            {product.portfolio.type === 'bespoke' && <span className="text-red-500 ml-1">*</span>}
-          </h4>
-          {validationErrors[product.id]?.funds && (
-            <div className="text-xs text-red-600 mb-2">
-              {validationErrors[product.id].funds}
-            </div>
-          )}
-          <div className="flex gap-2 mb-3">
-            <div className="flex-1">
-              <Input
-                placeholder="Search funds by name or ISIN"
-                value={fundSearchTerm}
-                onChange={(e) => handleFundSearch(e.target.value)}
-                disabled={isEitherLoading}
-              />
-            </div>
+        {/* Side-by-side Fund Selection Layout */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Left Column - Available Funds */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h4 className={`text-xs font-medium ${
+                validationErrors[product.id]?.funds ? 'text-red-600' : 'text-gray-700'
+              }`}>
+                Available Funds
+                {product.portfolio.type === 'bespoke' && <span className="text-red-500 ml-1">*</span>}
+              </h4>
             <button
               type="button"
               onClick={() => {
                 setAddFundForProductId(product.id);
                 setIsAddFundModalOpen(true);
               }}
-              className="bg-primary-600 text-white px-3 py-2 rounded hover:bg-primary-700 transition-colors duration-150 inline-flex items-center justify-center gap-1"
+                className="bg-primary-600 text-white px-2 py-1 rounded text-xs hover:bg-primary-700 transition-colors duration-150 inline-flex items-center gap-1"
               title="Add new fund"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
-              Add Fund
+                Add
             </button>
           </div>
-          <div className={`fund-list max-h-60 overflow-y-auto border rounded-md p-2 ${
-            validationErrors[product.id]?.funds ? 'border-red-500 bg-red-50' : ''
+            
+            {/* Fund Search */}
+            <Input
+              placeholder="Search funds..."
+              value={fundSearchTerm}
+              onChange={(e) => handleFundSearch(e.target.value)}
+              disabled={isEitherLoading}
+              size="middle"
+              className="w-full"
+            />
+            
+            {/* Available Fund List */}
+            <div className={`h-48 overflow-y-auto border rounded p-2 bg-gray-50 ${
+              validationErrors[product.id]?.funds ? 'border-red-500 bg-red-50' : 'border-gray-200'
           }`}>
+              {filteredFunds.length === 0 ? (
+                <div className="text-xs text-gray-500 text-center py-4">
+                  No funds found. Try adjusting your search.
+                </div>
+              ) : (
+                <div className="space-y-1">
             {filteredFunds.map(fund => (
-              <div key={fund.id} className="fund-item hover:bg-gray-50 p-1">
+                    <div 
+                      key={fund.id} 
+                      className="flex items-center space-x-2 p-2 hover:bg-white rounded text-xs cursor-pointer transition-colors"
+                      onClick={() => handleFundSelection(product.id, fund.id)}
+                    >
                 <Checkbox
                   checked={product.portfolio.selectedFunds.includes(fund.id)}
                   onChange={() => handleFundSelection(product.id, fund.id)}
                   disabled={isEitherLoading}
-                >
-                  {fund.fund_name} ({fund.isin_number})
-                </Checkbox>
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-gray-900 truncate" title={fund.fund_name}>
+                          {fund.fund_name}
+                        </div>
+                        {fund.isin_number && (
+                          <div className="text-gray-500 truncate" title={fund.isin_number}>
+                            {fund.isin_number}
+                          </div>
+                        )}
+                      </div>
               </div>
             ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Column - Selected Funds */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <h4 className="text-xs font-medium text-gray-700">Selected Funds</h4>
+                <div className="bg-primary-100 text-primary-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                  {product.portfolio.selectedFunds.length}
+                </div>
+                {product.portfolio.type === 'bespoke' && (
+                  <div className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                    (() => {
+                      const totalWeight = calculateTotalFundWeighting(product);
+                      if (totalWeight > 100) return 'bg-red-100 text-red-800';
+                      if (totalWeight === 100) return 'bg-green-100 text-green-800';
+                      if (totalWeight > 0) return 'bg-blue-100 text-blue-800';
+                      return 'bg-gray-100 text-gray-600';
+                    })()
+                  }`}>
+                    {calculateTotalFundWeighting(product).toFixed(1)}%
+                  </div>
+                )}
+              </div>
+              {product.portfolio.selectedFunds.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProducts(prev => prev.map(p => p.id === product.id ? {
+                      ...p,
+                      portfolio: {
+                        ...p.portfolio,
+                        selectedFunds: [],
+                        fundWeightings: {}
+                      }
+                    } : p));
+                  }}
+                  className="text-gray-400 hover:text-red-500 text-xs"
+                  title="Clear all"
+                >
+                  Clear all
+                </button>
+              )}
+            </div>
+
+            {/* Selected Funds Display */}
+            <div className="h-48 overflow-y-auto border rounded bg-white">
+              {product.portfolio.selectedFunds.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-xs text-gray-500">
+                  No funds selected
+                </div>
+              ) : (
+                <div className="p-2 space-y-2">
+                  {/* Cash fund for bespoke portfolios */}
+                  {product.portfolio.type === 'bespoke' && (() => {
+                    const cashFund = funds.find(f => f.fund_name === 'Cash' && f.isin_number === 'N/A');
+                    if (cashFund) {
+                      return (
+                        <div key={`cash-${cashFund.id}`} className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded p-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2 flex-1 min-w-0">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                              <div className="min-w-0 flex-1">
+                                <div className="text-xs font-medium text-blue-900">{cashFund.fund_name}</div>
+                                <div className="text-xs text-blue-700">Auto-included</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-1 flex-shrink-0">
+                              <input
+                                type="text"
+                                value={product.portfolio.fundWeightings[cashFund.id.toString()] || '0'}
+                                onChange={(e) => handleWeightingChange(product.id, cashFund.id, e.target.value)}
+                                className="w-12 text-xs text-center border border-blue-300 rounded px-1 py-0.5 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                placeholder="0"
+                              />
+                              <span className="text-xs text-blue-700">%</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+                  
+                  {/* Other selected funds */}
+                  {product.portfolio.selectedFunds.map((fundId) => {
+                    const fund = funds.find(f => f.id === fundId);
+                    // Skip Cash fund as it's shown above for bespoke
+                    if (product.portfolio.type === 'bespoke' && fund?.fund_name === 'Cash' && fund?.isin_number === 'N/A') {
+                      return null;
+                    }
+                    
+                    return (
+                      <div key={fundId} className="bg-gray-50 border border-gray-200 rounded p-2 hover:bg-gray-100 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2 flex-1 min-w-0">
+                            <div className="w-2 h-2 bg-primary-500 rounded-full flex-shrink-0"></div>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-xs font-medium text-gray-900 truncate" title={fund?.fund_name}>
+                                {fund?.fund_name || 'Unknown Fund'}
+                              </div>
+                              {fund?.isin_number && (
+                                <div className="text-xs text-gray-500 truncate" title={fund.isin_number}>
+                                  {fund.isin_number}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center space-x-1 flex-shrink-0">
+                            {product.portfolio.type === 'bespoke' && (
+                              <>
+                                <input
+                                  type="text"
+                                  value={product.portfolio.fundWeightings[fundId.toString()] || ''}
+                                  onChange={(e) => handleWeightingChange(product.id, fundId, e.target.value)}
+                                  className={`w-12 text-xs text-center border rounded px-1 py-0.5 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 ${
+                                    weightingErrors[product.id]?.[fundId.toString()]
+                                    ? 'border-red-500 bg-red-50'
+                                    : 'border-gray-300'
+                                  }`}
+                                  placeholder="0"
+                                />
+                                <span className="text-xs text-gray-500">%</span>
+                              </>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleFundSelection(product.id, fundId)}
+                              className="text-gray-400 hover:text-red-500 p-0.5 rounded hover:bg-red-50 transition-colors"
+                              title="Remove fund"
+                            >
+                              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                        
+                        {/* Show weighting errors */}
+                        {weightingErrors[product.id]?.[fundId.toString()] && (
+                          <div className="mt-1 text-xs text-red-600 bg-red-50 px-1 py-0.5 rounded">
+                            {weightingErrors[product.id][fundId.toString()]}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Portfolio Risk Summary */}
+            {product.portfolio.selectedFunds.length > 0 && (
+              <div className="bg-gray-50 rounded border border-gray-200 p-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-600">Portfolio Risk:</span>
+                  <span className="font-medium text-gray-900">
+                    {(() => {
+                      const risk = calculateTargetRiskFromFunds(product);
+                      return risk ? risk.toFixed(1) : 'N/A';
+                    })()}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1519,34 +1679,34 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-center items-center py-16">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600"></div>
+      <div className="max-w-7xl mx-auto px-3 py-3">
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-3 border-primary-600"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="max-w-6xl mx-auto px-3 py-1">
       {/* Toast notification */}
       {showToast && (
-        <div className="fixed top-4 right-4 z-50 bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded shadow-md">
-          <div className="flex">
+        <div className="fixed top-4 right-4 z-50 bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-3 rounded shadow-md">
+          <div className="flex items-center">
             <div className="py-1">
-              <svg className="h-6 w-6 text-blue-500 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-5 w-5 text-blue-500 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div>
-              <p className="font-bold">Notification</p>
-              <p className="text-sm">{toastMessage}</p>
+              <p className="font-medium text-sm">Notification</p>
+              <p className="text-xs">{toastMessage}</p>
             </div>
             <button 
               onClick={() => setShowToast(false)} 
               className="ml-auto text-blue-500 hover:text-blue-700"
             >
-              <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -1554,34 +1714,87 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex justify-between items-center mb-4 mt-4">
+      {/* Compact Header */}
+      <div className="flex justify-between items-center mb-2">
         <div className="flex items-center">
           <div className="bg-primary-100 p-2 rounded-lg mr-3 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
           </div>
-          <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Create Client Products</h1>
+          <h1 className="text-2xl font-normal text-gray-900 font-sans tracking-wide">Create Client Products</h1>
+          
+          {/* Keyboard shortcuts help */}
+          <div className="ml-4 relative group">
+            <button
+              type="button"
+              className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"
+              title="Keyboard shortcuts"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+              </svg>
+            </button>
+            <div className="invisible group-hover:visible absolute left-0 top-8 z-50 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-lg w-64">
+              <div className="font-medium mb-2">Keyboard Shortcuts:</div>
+              <div className="space-y-1">
+                <div className="flex justify-between">
+                  <span>Save products</span>
+                  <span className="text-gray-300">Ctrl+Enter</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Duplicate last product</span>
+                  <span className="text-gray-300">Ctrl+D</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Add new product</span>
+                  <span className="text-gray-300">Ctrl+Shift+A</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Close modals</span>
+                  <span className="text-gray-300">Escape</span>
+                </div>
+              </div>
+            </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto p-4">
+        {/* Floating Summary */}
+        {products.length > 0 && (
+          <div className="bg-white rounded-full shadow-lg px-4 py-2 border border-gray-200">
+            <div className="flex items-center space-x-2">
+              <div className="text-center">
+                <div className="text-lg font-bold text-primary-700">{products.length}</div>
+                <div className="text-xs text-gray-600">Product{products.length !== 1 ? 's' : ''}</div>
+              </div>
+              {selectedClientId && (
+                <div className="text-sm text-gray-500 ml-2">
+                  for {clients.find(c => c.id === selectedClientId)?.name}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-4">
         {isLoading ? (
           <div className="flex justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-700"></div>
           </div>
         ) : error ? (
-          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
-            <p>{error}</p>
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 mb-4 rounded">
+            <p className="text-sm">{error}</p>
           </div>
         ) : (
-          <div className="bg-white shadow-md rounded-lg p-4">
-            <form onSubmit={handleSubmit}>
-              {/* Client Selection and Start Date in horizontal layout */}
-              <div className="flex gap-4 mb-4">
+          <div className="bg-white shadow-sm rounded-lg border border-gray-200">
+            <form onSubmit={handleSubmit} className="p-4">
+              {/* Step 1: Client Selection and Start Date - Compact Layout */}
+              <div className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
+                <h2 className="text-lg font-medium mb-3 text-gray-900">Client & Start Date</h2>
+                <div className="grid grid-cols-2 gap-4">
                 {/* Client Selection */}
-                <div className="w-1/2">
+                  <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Client Name <span className="text-red-500">*</span>
                   </label>
@@ -1598,6 +1811,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                           .includes(input.toLowerCase())
                       }
                       className="w-full"
+                        size="middle"
                     >
                       {clients.map(client => (
                         <Select.Option key={client.id} value={client.id}>
@@ -1606,147 +1820,169 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                       ))}
                     </Select>
                   ) : (
-                    <div className="text-gray-500">No clients available. Please add a client first.</div>
+                      <div className="text-gray-500 text-sm bg-gray-100 p-2 rounded">
+                        No clients available. Please add a client first.
+                      </div>
                   )}
                 </div>
 
                 {/* Start Date Selection */}
-                <div className="w-1/2">
+                  <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Start Date <span className="text-red-500">*</span>
                   </label>
                   <DatePicker
                     value={startDate}
                     onChange={(date) => setStartDate(date as Dayjs)}
-                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md h-[38px]"
-                    style={{ width: '100%' }}
+                      className="w-full"
+                      size="middle"
+                      format="DD/MM/YYYY"
                   />
+                  </div>
                 </div>
               </div>
 
-              {/* Product List */}
-              <div className="space-y-4">
-                <div className="flex justify-between items-center pb-3 border-b border-gray-200">
-                  <h2 className="text-lg font-medium">Products</h2>
+              {/* Step 2: Products Section - Only show after client selected */}
+              {selectedClientId && (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-lg font-medium text-gray-900">Products</h2>
+                    <div className="flex items-center space-x-2">
+                      {/* Quick Actions */}
+                      {products.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (products.length > 0) {
+                              const lastProduct = products[products.length - 1];
+                              const newProduct = {
+                                ...lastProduct,
+                                id: `temp-${Date.now()}`,
+                                product_name: '',
+                                portfolio: {
+                                  ...lastProduct.portfolio,
+                                  name: '', // Will be auto-generated based on product details
+                                  selectedFunds: [],
+                                  fundWeightings: {}
+                                }
+                              };
+                              setProducts([...products, newProduct]);
+                            }
+                          }}
+                          className="bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 shadow-sm flex items-center gap-1"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                          Duplicate Last
+                        </button>
+                      )}
                   <button
                     type="button"
                     onClick={handleAddProduct}
-                    className="bg-primary-700 text-white px-3 py-1.5 rounded-xl font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 shadow-sm flex items-center gap-1"
+                        className="bg-primary-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 shadow-sm flex items-center gap-1"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
-                    Add Client Product
+                        Add Product
                   </button>
+                    </div>
                 </div>
 
                 {products.length === 0 ? (
-                  <div className="text-center py-6 text-gray-500">
-                    No products added yet. Click the button above to add a product.
+                    <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="mx-auto w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mb-3">
+                        <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                      </div>
+                      <p className="text-sm font-medium">No products added yet</p>
+                      <p className="text-xs">Click "Add Product" above to create your first product</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {products.map((product) => (
+                    <div className="space-y-3">
+                      {products.map((product, index) => {
+                        const provider = providers.find(p => p.id === product.provider_id);
+                        const themeColor = getProviderColor(product.provider_id, provider?.name, provider?.theme_color);
+                        const isExpanded = true; // Always keep products editable
+                        
+                        return (
                       <div 
                         key={product.id} 
-                        className="border rounded-md p-6 mb-6 bg-gray-50 relative"
+                            className="bg-white rounded-lg shadow-sm border-2 transition-all duration-200 hover:shadow-md"
+                            style={{ 
+                              borderColor: product.provider_id ? themeColor : '#E5E7EB',
+                              borderLeftWidth: '6px'
+                            }}
                         ref={el => productRefs.current[product.id] = el}
                         id={`product-${product.id}`}
                       >
-                        {/* Product Header */}
-                        <div className="flex justify-between items-center mb-4">
-                          <h3 className="text-lg font-medium">
-                            {product.product_name.trim() || generateProductName(product) || `Product ${products.indexOf(product) + 1}`}
+                            {/* Compact Product Header */}
+                            <div className="p-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center space-x-3">
+                                  <div 
+                                    className="w-3 h-3 rounded-full"
+                                    style={{ backgroundColor: themeColor }}
+                                  />
+                                  <h3 className="text-sm font-medium text-gray-900">
+                                    {product.product_name.trim() || generateProductName(product) || `Product ${index + 1}`}
                           </h3>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveProduct(product.id)}
-                            className="text-gray-400 hover:text-red-500 transition-colors duration-200"
-                          >
-                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
-
-                        {/* Product Owner Selection - Moved above Product Name */}
-                        <div className="mb-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Product Owners
-                          </label>
-                          <div className="flex space-x-2">
-                            <div className="flex-grow">
-                              <Select
-                                mode="multiple"
-                                showSearch
-                                allowClear
-                                placeholder="Select product owners"
-                                className="w-full"
-                                value={product.product_owner_ids}
-                                onChange={(selectedValues: any) => {
-                                  // Handle the create new option case
-                                  if (selectedValues.includes('create-new')) {
-                                    // Filter out the 'create-new' value
-                                    const actualOwnerIds = selectedValues.filter((v: any) => v !== 'create-new');
-                                    handleProductChange(product.id, 'product_owner_ids', actualOwnerIds);
-                                    openCreateProductOwnerModal(product.id);
-                                  } else {
-                                    handleProductChange(product.id, 'product_owner_ids', selectedValues);
-                                  }
-                                }}
-                              >
-                                {productOwners.map(p => (
-                                  <Select.Option key={p.id} value={p.id}>
-                                    {p.name}
-                                  </Select.Option>
-                                ))}
-                                <Select.Option key="create-new" value="create-new">
-                                  + Create new product owner
-                                </Select.Option>
-                              </Select>
+                                  {provider && (
+                                    <span className="text-xs text-gray-500">
+                                      {provider.name}
+                                    </span>
+                                  )}
+                                  {product.product_type && (
+                                    <span 
+                                      className="px-2 py-0.5 text-xs font-medium rounded-full"
+                                      style={{ 
+                                        backgroundColor: `${themeColor}15`,
+                                        color: themeColor
+                                      }}
+                                    >
+                                      {product.product_type}
+                                    </span>
+                                  )}
                             </div>
+                                <div className="flex items-center space-x-1">
+                                  {/* Validation status indicator */}
+                                  {validationErrors[product.id] && Object.keys(validationErrors[product.id]).length > 0 ? (
+                                    <div className="w-2 h-2 bg-red-500 rounded-full" title="Has validation errors" />
+                                  ) : product.provider_id && product.product_type ? (
+                                    <div className="w-2 h-2 bg-green-500 rounded-full" title="Complete" />
+                                  ) : (
+                                    <div className="w-2 h-2 bg-yellow-500 rounded-full" title="Incomplete" />
+                                  )}
                             <button
                               type="button"
-                              onClick={() => openCreateProductOwnerModal(product.id)}
-                              className="bg-primary-600 text-white p-2 rounded hover:bg-primary-700 transition-colors duration-150 inline-flex items-center justify-center"
-                              title="Create new product owner"
+                                    onClick={() => handleRemoveProduct(product.id)}
+                                    className="text-gray-400 hover:text-red-500 transition-colors duration-200 p-1"
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                               </svg>
                             </button>
                           </div>
                         </div>
 
-                        {/* Product Name Field */}
-                        <div className="mb-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Product Name <span className="text-gray-400">(optional - will be auto-generated if empty)</span>
-                          </label>
-                          <input
-                            type="text"
-                            value={product.product_name}
-                            onChange={(e) => handleProductChange(product.id, 'product_name', e.target.value)}
-                            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                            placeholder="Leave empty to auto-generate based on owners, provider, and type"
-                          />
-                        </div>
-
-                        {/* Provider and Product Type Selection in horizontal layout */}
-                        <div className="flex gap-4 mb-3">
-                          {/* Provider Selection */}
-                          <div className="w-1/2">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {/* Compact configuration form - always visible for incomplete products */}
+                              {isExpanded && (
+                                <div className="space-y-3 pt-3 border-t border-gray-100">
+                                  {/* Row 1: Provider, Product Type, Product Name */}
+                                  <div className="grid grid-cols-3 gap-3">
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-700 mb-1">
                               Provider <span className="text-red-500">*</span>
                             </label>
-
                             <SearchableDropdown
                               id={`provider-select-${product.id}`}
                               options={providers.map(p => ({ value: p.id, label: p.name }))}
                               value={product.provider_id}
                               onChange={val => handleProductChange(product.id, 'provider_id', Number(val))}
-                              placeholder="Select a provider"
-                              className={`w-full ${validationErrors[product.id]?.provider ? 'border-red-500' : ''}`}
+                                        placeholder="Select provider"
+                                        className={`w-full text-sm ${validationErrors[product.id]?.provider ? 'border-red-500' : ''}`}
                               required
                             />
                             {validationErrors[product.id]?.provider && (
@@ -1756,9 +1992,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                             )}
                           </div>
 
-                          {/* Product Type Selection */}
-                          <div className="w-1/2">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-700 mb-1">
                               Product Type <span className="text-red-500">*</span>
                             </label>
                             <SearchableDropdown
@@ -1776,8 +2011,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                               ]}
                               value={product.product_type}
                               onChange={val => handleProductTypeChange(product.id, String(val))}
-                              placeholder="Select product type"
-                              className={`w-full ${validationErrors[product.id]?.productType ? 'border-red-500' : ''}`}
+                                        placeholder="Select type"
+                                        className={`w-full text-sm ${validationErrors[product.id]?.productType ? 'border-red-500' : ''}`}
                               required
                             />
                             {validationErrors[product.id]?.productType && (
@@ -1786,30 +2021,130 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                               </div>
                             )}
                           </div>
+
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                                        Product Name <span className="text-gray-400">(optional)</span>
+                                      </label>
+                                      <input
+                                        type="text"
+                                        value={product.product_name}
+                                        onChange={(e) => handleProductChange(product.id, 'product_name', e.target.value)}
+                                        className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm border-gray-300 rounded-md h-8"
+                                        placeholder="Auto-generated"
+                                      />
+                          </div>
                         </div>
 
-                        {/* Portfolio Configuration */}
-                        <div className="mt-6 border-t pt-6 col-span-2">
-                          <h4 className="text-lg font-medium mb-4">Portfolio Configuration</h4>
+                                  {/* Row 2: Product Owners */}
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                      Product Owners
+                                    </label>
+                                    <div className="flex space-x-2">
+                                      <div className="flex-grow">
+                                        <Select
+                                          mode="multiple"
+                                          showSearch
+                                          value={product.product_owner_ids}
+                                          onChange={(values: number[]) => {
+                                            handleProductChange(product.id, 'product_owner_ids', values);
+                                          }}
+                                          placeholder="Search and select product owners"
+                                          className="w-full"
+                                          size="middle"
+                                          allowClear
+                                          maxTagCount="responsive"
+                                          optionFilterProp="children"
+                                          placement="bottomLeft"
+                                          listHeight={200}
+                                          filterOption={(input, option) =>
+                                            (option?.children as unknown as string)
+                                              .toLowerCase()
+                                              .includes(input.toLowerCase())
+                                          }
+                                          dropdownRender={(menu) => (
+                                            <div className="max-h-48">
+                                              <div className="max-h-40 overflow-y-auto">
+                                                {menu}
+                                              </div>
+                                              <div className="border-t border-gray-200 p-1">
+                                                <button
+                                                  type="button"
+                                                  onClick={() => openCreateProductOwnerModal(product.id)}
+                                                  className="w-full text-left px-2 py-1 text-xs text-primary-600 hover:bg-primary-50 rounded flex items-center space-x-1"
+                                                >
+                                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                                  </svg>
+                                                  <span>Create new product owner</span>
+                                                </button>
+                                              </div>
+                                            </div>
+                                          )}
+                                        >
+                                          {productOwners.map(owner => (
+                                            <Select.Option key={owner.id} value={owner.id}>
+                                              {owner.name}
+                                            </Select.Option>
+                                          ))}
+                                        </Select>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => openCreateProductOwnerModal(product.id)}
+                                        className="bg-primary-600 text-white p-1.5 rounded hover:bg-primary-700 transition-colors duration-150 inline-flex items-center justify-center"
+                                        title="Create new product owner"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  </div>
 
+                                  {/* Portfolio Configuration */}
+                                  <div className="border-t pt-3">
+                                    <h4 className="text-sm font-medium text-gray-900 mb-2">Portfolio Configuration</h4>
                           {renderPortfolioSection(product)}
                         </div>
                       </div>
-                    ))}
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                   </div>
                 )}
               </div>
+              )}
 
-              {/* Submit Button */}
-              <div className="mt-6 flex justify-end">
+              {/* Submit Button - Context-aware */}
+              {selectedClientId && products.length > 0 && (
+                <div className="mt-6 flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => navigate(returnPath)}
+                    className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2"
+                  >
+                    Cancel
+                  </button>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="bg-primary-700 text-white px-4 py-2 rounded-xl font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 shadow-sm"
+                    className="bg-primary-700 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isSaving ? 'Saving...' : 'Save Products'}
+                    {isSaving ? (
+                      <div className="flex items-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Saving...
+                      </div>
+                    ) : (
+                      `Create ${products.length} Product${products.length !== 1 ? 's' : ''} for ${clients.find(c => c.id === selectedClientId)?.name || 'Client'}`
+                    )}
                 </button>
               </div>
+              )}
             </form>
           </div>
         )}
@@ -1836,7 +2171,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               type="text"
               value={newProductOwnerName}
               onChange={(e) => setNewProductOwnerName(e.target.value)}
-              className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+              className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm border-gray-300 rounded-md h-8"
               placeholder="Enter product owner name"
               required
               onKeyDown={(e) => {
@@ -1852,6 +2187,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       )}
 
       {/* Add Fund Modal */}
+      {isAddFundModalOpen && (
       <AddFundModal
         isOpen={isAddFundModalOpen}
         onClose={() => {
@@ -1860,6 +2196,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         }}
         onFundAdded={handleFundAdded}
       />
+      )}
     </div>
   );
 };
