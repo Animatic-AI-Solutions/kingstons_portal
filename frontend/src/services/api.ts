@@ -674,4 +674,16 @@ export const getUpcomingScheduledTransactions = (params?: {
   return api.get(`scheduled_transactions/upcoming${queryString ? `?${queryString}` : ''}`);
 };
 
+// Activity API functions
+export const createActivity = async (activityData: {
+  product_id: number;
+  portfolio_fund_id: number;
+  activity_timestamp: string;
+  activity_type: string;
+  amount: number;
+}) => {
+  const response = await api.post('/activities', activityData);
+  return response.data;
+};
+
 export default api; 
