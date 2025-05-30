@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { formatCurrency } from '../utils/formatters';
 import api, { createFundValuation } from '../services/api';
 import SwitchFundSelectionModal from './SwitchFundSelectionModal';
 import SwitchTooltip from './SwitchTooltip';
 import MultiDestinationSwitchModal from './MultiDestinationSwitchModal';
+import BulkMonthActivitiesModal from './BulkMonthActivitiesModal';
 
 interface Activity {
   id?: number;
@@ -148,6 +149,21 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     month: string;
     activityType: string;
   } | null>(null);
+  
+  // State for bulk month activities modal
+  const [showBulkMonthModal, setShowBulkMonthModal] = useState(false);
+  const [selectedBulkMonth, setSelectedBulkMonth] = useState<string>('');
+  
+  // State for compact view toggle
+  const [isCompactView, setIsCompactView] = useState(false);
+  
+  // State and ref for sticky header tracking
+  const [headerTop, setHeaderTop] = useState<number | null>(null);
+  const [tableWidth, setTableWidth] = useState<number>(0);
+  const [headerLeft, setHeaderLeft] = useState<number>(0);
+  const [columnPositions, setColumnPositions] = useState<{left: number, width: number}[]>([]);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
   
   // Memoize available funds to prevent infinite loops in modal
   const availableFundsForSwitch = useMemo(() => {
@@ -364,6 +380,67 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     document.addEventListener('click', handleClickOutside);
     return () => {
       document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
+
+  // Add scroll tracking for sticky header
+  useEffect(() => {
+    const handleScroll = () => {
+      if (tableContainerRef.current && tableRef.current) {
+        const containerRect = tableContainerRef.current.getBoundingClientRect();
+        const tableRect = tableRef.current.getBoundingClientRect();
+        
+        // Check if the table container is scrolled past the viewport top
+        const shouldStick = containerRect.top <= 0 && containerRect.bottom > 0;
+        
+        if (shouldStick) {
+          // Get exact column positions from the actual table cells
+          const headerRow = tableRef.current.querySelector('thead tr');
+          const cells = headerRow?.querySelectorAll('th');
+          const positions: {left: number, width: number}[] = [];
+          
+          if (cells && tableContainerRef.current) {
+            const containerLeft = containerRect.left;
+            cells.forEach(cell => {
+              const cellRect = cell.getBoundingClientRect();
+              positions.push({
+                left: cellRect.left - containerLeft,
+                width: cellRect.width
+              });
+            });
+          }
+          
+          setHeaderTop(0);
+          setTableWidth(tableRect.width);
+          setHeaderLeft(containerRect.left);
+          setColumnPositions(positions);
+        } else {
+          setHeaderTop(null);
+          setTableWidth(0);
+          setHeaderLeft(0);
+          setColumnPositions([]);
+        }
+      }
+    };
+
+    // Handle scroll events on both window and table container
+    const tableContainer = tableContainerRef.current;
+    
+    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('resize', handleScroll);
+    if (tableContainer) {
+      tableContainer.addEventListener('scroll', handleScroll); // Handle horizontal scrolling
+    }
+    
+    // Initial calculation
+    handleScroll();
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+      if (tableContainer) {
+        tableContainer.removeEventListener('scroll', handleScroll);
+      }
     };
   }, []);
 
@@ -1013,7 +1090,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   const formatMonth = (monthStr: string): string => {
     const [year, month] = monthStr.split('-');
     const date = new Date(parseInt(year), parseInt(month) - 1, 1);
-    return date.toLocaleDateString('en-GB', { year: 'numeric', month: 'short' }).toUpperCase();
+    const monthAbbr = date.toLocaleDateString('en-GB', { month: 'short' });
+    const yearShort = year.slice(-2); // Get last 2 digits of year
+    return `${monthAbbr} ${yearShort}`;
   };
 
   // Helper function to recalculate IRR for a specific fund and month
@@ -1464,7 +1543,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   // Get class for cell
   const getCellClass = (fundId: number, month: string, activityType: string, isFirstColumn: boolean = false): string => {
     // Base class for all cells - remove fixed width constraints to allow full width usage
-    let baseClass = "px-2 py-1 border box-border w-full h-10";
+    let baseClass = "px-2 py-1 border box-border w-full h-8";
     
     // Get the fund to check if it's the Previous Funds entry
     const fund = funds.find(f => f.id === fundId);
@@ -2103,7 +2182,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   // Get class for activity label cell in first column
   const getActivityLabelClass = (fundId: number, activityType: string) => {
     // Default styling
-    let baseClass = "px-3 py-1 font-medium text-gray-500 sticky left-0 z-10 h-10";
+    let baseClass = "px-2 py-1 font-medium text-gray-500 sticky left-0 z-10 h-8";
     
     // Check if this is a focused row
     const isInFocusedRow = focusedCell && 
@@ -2169,11 +2248,91 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     }
   };
 
+  // Handle bulk month activities changes
+  const handleBulkMonthSave = (bulkData: any) => {
+    // Convert bulk data to pending edits format
+    const newEdits: CellEdit[] = [];
+    
+    Object.keys(bulkData).forEach(fundIdStr => {
+      const fundId = parseInt(fundIdStr);
+      Object.keys(bulkData[fundId]).forEach(activityType => {
+        const value = bulkData[fundId][activityType];
+        
+        // Get existing activity or valuation
+        let existingId = undefined;
+        if (activityType === 'Current Value') {
+          const valuation = getFundValuation(fundId, selectedBulkMonth);
+          existingId = valuation?.id;
+        } else {
+          const activity = getActivity(fundId, selectedBulkMonth, activityType);
+          existingId = activity?.id;
+        }
+        
+        const newEdit: CellEdit = {
+          fundId,
+          month: selectedBulkMonth,
+          activityType,
+          value: value,
+          isNew: !existingId,
+          originalActivityId: existingId,
+          toDelete: value === '' && !!existingId
+        };
+        
+        newEdits.push(newEdit);
+      });
+    });
+    
+    // Remove existing pending edits for this month and add new ones
+    const filteredEdits = pendingEdits.filter(edit => edit.month !== selectedBulkMonth);
+    setPendingEdits([...filteredEdits, ...newEdits]);
+  };
+
+  // Handle month header click
+  const handleMonthHeaderClick = (month: string) => {
+    setSelectedBulkMonth(month);
+    setShowBulkMonthModal(true);
+  };
+
+  // Calculate fund total for a specific month (for compact view)
+  const calculateFundTotal = (fundId: number, month: string): number => {
+    let total = 0;
+    
+    ACTIVITY_TYPES.forEach(activityType => {
+      const cellValue = getCellValue(fundId, month, activityType);
+      const numericValue = parseFloat(cellValue) || 0;
+      
+      if (numericValue !== 0) {
+        if (activityType === 'Withdrawal' || activityType === 'RegularWithdrawal') {
+          total -= numericValue;
+        } else if (activityType === 'Fund Switch Out') {
+          total -= numericValue;
+        } else if (activityType !== 'Current Value') {
+          total += numericValue;
+        }
+      }
+    });
+    
+    return total;
+  };
+
   return (
     <>
       <div className="mt-8">
         <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center space-x-4">
           <h3 className="text-lg font-semibold text-gray-900">Monthly Activities</h3>
+            <button
+              onClick={() => setIsCompactView(!isCompactView)}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md shadow-sm transition-colors ${
+                isCompactView
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+              title={isCompactView ? 'Switch to detailed view' : 'Switch to compact view (totals only)'}
+            >
+              {isCompactView ? 'Detailed View' : 'Compact View'}
+            </button>
+          </div>
           {pendingEdits.length > 0 && (
             <button
               onClick={saveChanges}
@@ -2191,23 +2350,84 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           </div>
         )}
         
-        <div className="overflow-x-auto border rounded-lg shadow-md w-full max-h-[80vh]" style={{ scrollBehavior: 'smooth' }}>
+        <div 
+          ref={tableContainerRef}
+          className="overflow-x-auto border rounded-lg shadow-md w-full" 
+          style={{ scrollBehavior: 'smooth' }}
+        >
           <div className="relative">
-            <table className="w-full divide-y divide-gray-200 table-fixed relative">
+            <table 
+              ref={tableRef}
+              className="w-full divide-y divide-gray-200 table-fixed relative"
+            >
               <colgroup>
                 <col className="w-[20%] sticky left-0 z-10" />
                 {months.map((month, index) => (
                   <col key={`col-${month}`} className={`w-[${80 / months.length}%]`} />
                 ))}
               </colgroup>
-              <thead className="bg-blue-50 sticky top-0 z-20 shadow-lg">
-                <tr className="h-10">
-                  <th className="px-3 py-2 text-left font-medium text-gray-800 sticky left-0 top-0 z-30 bg-blue-50 shadow-[5px_0_5px_-5px_rgba(0,0,0,0.1)] border-b border-gray-300">Fund / Activity</th>
+              <thead 
+                className="bg-blue-50 shadow-lg"
+                style={{
+                  position: headerTop !== null ? 'fixed' : 'sticky',
+                  top: headerTop !== null ? `${headerTop}px` : 0,
+                  left: headerTop !== null ? `${headerLeft}px` : 'auto',
+                  width: headerTop !== null ? `${tableWidth}px` : 'auto',
+                  zIndex: headerTop !== null ? 100 : 20,
+                  ...(headerTop !== null && { display: 'block' })
+                }}
+              >
+                <tr 
+                  className="h-8"
+                  style={{
+                    ...(headerTop !== null && { 
+                      display: 'block',
+                      position: 'relative',
+                      height: '32px'
+                    })
+                  }}
+                >
+                  <th 
+                    className="px-2 py-1 text-left font-medium text-gray-800 sticky left-0 top-0 z-30 bg-blue-50 shadow-[5px_0_5px_-5px_rgba(0,0,0,0.1)] border-b border-gray-300"
+                    style={{
+                      ...(headerTop !== null && columnPositions[0] ? {
+                        position: 'absolute',
+                        left: `${columnPositions[0].left}px`,
+                        width: `${columnPositions[0].width}px`,
+                        height: '32px',
+                        display: 'flex',
+                        alignItems: 'center'
+                      } : {
+                        width: 'auto'
+                      })
+                    }}
+                  >
+                    Fund / Activity
+                  </th>
                   {months.map((month, index) => {
                     const providerSwitch = getProviderSwitchForMonth(month);
+                    const columnIndex = index + 1; // +1 because first column is Fund/Activity
                     
                     return (
-                      <th key={month} className="px-2 py-2 text-center font-medium text-gray-800 whitespace-nowrap bg-blue-50 border-b border-gray-300 relative group sticky top-0 z-20">
+                      <th 
+                        key={month} 
+                        className="px-1 py-1 text-center font-medium text-gray-800 whitespace-nowrap bg-blue-50 border-b border-gray-300 relative group sticky top-0 z-20 cursor-pointer hover:bg-blue-100"
+                        onClick={() => handleMonthHeaderClick(month)}
+                        title="Click to bulk edit activities for this month"
+                        style={{
+                          ...(headerTop !== null && columnPositions[columnIndex] ? {
+                            position: 'absolute',
+                            left: `${columnPositions[columnIndex].left}px`,
+                            width: `${columnPositions[columnIndex].width}px`,
+                            height: '32px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          } : {
+                            width: 'auto'
+                          })
+                        }}
+                      >
                         <span className="text-sm">{formatMonth(month)}</span>
                         {providerSwitch && (
                           <div className="absolute -top-1 right-0 w-4 h-4">
@@ -2236,9 +2456,133 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                   })}
                 </tr>
               </thead>
+              {/* Spacer to prevent content jump when header becomes fixed */}
+              {headerTop !== null && (
+                <thead className="bg-transparent">
+                  <tr className="h-8">
+                    <th 
+                      className="px-2 py-1"
+                      style={{
+                        width: columnPositions[0] ? `${columnPositions[0].width}px` : 'auto'
+                      }}
+                    ></th>
+                    {months.map((month, index) => {
+                      const columnIndex = index + 1;
+                      return (
+                        <th 
+                          key={`spacer-${month}`} 
+                          className="px-1 py-1"
+                          style={{
+                            width: columnPositions[columnIndex] ? `${columnPositions[columnIndex].width}px` : 'auto'
+                          }}
+                        ></th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+              )}
               <tbody className="bg-white divide-y divide-gray-200">
-                {/* First get any inactive funds that might need to be displayed */}
-                {(() => {
+                {isCompactView ? (
+                  // Compact view - only show fund totals
+                  (() => {
+                    const previousFundsEntry = funds.find(f => f.isActive === false && f.inactiveHoldingIds && f.inactiveHoldingIds.length > 0);
+                    let fundsToDisplay = [...funds];
+                    
+                    if (showInactiveFunds && previousFundsEntry && previousFundsEntry.inactiveHoldingIds) {
+                      const inactiveFundsToShow = previousFundsEntry.inactiveHoldingIds.map(holding => ({
+                        id: holding.id,
+                        fund_name: holding.fund_name || `Inactive Fund ${holding.id}`,
+                        holding_id: -1,
+                        isActive: false,
+                        isInactiveBreakdown: true,
+                        fund_id: holding.fund_id
+                      }));
+                      
+                      const previousFundsIndex = fundsToDisplay.findIndex(f => f.id === previousFundsEntry.id);
+                      if (previousFundsIndex >= 0) {
+                        fundsToDisplay = [
+                          ...fundsToDisplay.slice(0, previousFundsIndex + 1),
+                          ...inactiveFundsToShow,
+                          ...fundsToDisplay.slice(previousFundsIndex + 1)
+                        ];
+                      }
+                    }
+                    
+                    return fundsToDisplay.map(fund => (
+                      <tr key={`compact-${fund.id}${fund.isInactiveBreakdown ? '-breakdown' : ''}`} 
+                          className={`h-8 ${
+                            fund.isActive === false 
+                              ? fund.isInactiveBreakdown 
+                                ? 'bg-gray-50 border-t border-dashed border-gray-300' 
+                                : 'bg-gray-100 border-t border-gray-300'
+                              : 'bg-white border-t border-gray-200'
+                          }`}>
+                        <td className={`px-2 py-1 font-semibold ${
+                          fund.isActive === false 
+                            ? fund.isInactiveBreakdown 
+                              ? 'text-gray-600 pl-6' 
+                              : 'text-blue-800' 
+                            : 'text-gray-900'
+                        } sticky left-0 z-10 ${
+                          fund.isActive === false 
+                            ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
+                            : 'bg-white'
+                        } shadow-[5px_0_5px_-5px_rgba(0,0,0,0.1)]`}>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              {fund.isInactiveBreakdown && 
+                                <span className="text-gray-400 mr-2">→</span>
+                              }
+                              {fund.fund_name}
+                              <div className="text-xs text-red-600 font-normal">
+                                Total Activities
+                              </div>
+                            </div>
+                            {fund.isActive === false && !fund.isInactiveBreakdown && fund.inactiveHoldingIds && fund.inactiveHoldingIds.length > 0 && (
+                              <button
+                                onClick={() => setShowInactiveFunds(!showInactiveFunds)}
+                                className="ml-2 px-2 py-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                                title={showInactiveFunds ? "Hide inactive funds" : "Show inactive funds breakdown"}
+                              >
+                                {showInactiveFunds ? "Hide" : "Show"} Breakdown
+                              </button>
+                            )}
+                            {fund.isInactiveBreakdown && (
+                              <button
+                                onClick={() => reactivateFund(fund.id, fund.fund_name)}
+                                disabled={reactivatingFunds.has(fund.id)}
+                                className="ml-2 px-2 py-1 text-xs bg-green-50 hover:bg-green-100 text-green-700 rounded border border-green-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Reactivate this fund"
+                              >
+                                {reactivatingFunds.has(fund.id) ? 'Reactivating...' : 'Reactivate'}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                        {months.map(month => {
+                          const total = calculateFundTotal(fund.id, month);
+                          return (
+                            <td key={`compact-${fund.id}-${month}`} 
+                                className={`px-1 py-1 text-center text-sm font-medium ${
+                                  fund.isActive === false 
+                                    ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
+                                    : 'bg-white'
+                                } ${
+                                  total > 0 ? 'text-green-700' : 
+                                  total < 0 ? 'text-red-700' : 
+                                  'text-gray-500'
+                                }`}>
+                              {total !== 0 ? formatCurrency(total) : ''}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ));
+                  })()
+                ) : (
+                  // Detailed view - current implementation
+                  (() => {
+                    // First get any inactive funds that might need to be displayed
                   // If we're showing the inactive funds breakdown, we need to find the previous funds entry
                   const previousFundsEntry = funds.find(f => f.isActive === false && f.inactiveHoldingIds && f.inactiveHoldingIds.length > 0);
                   
@@ -2275,14 +2619,14 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                   return fundsToDisplay.map(fund => (
                     <React.Fragment key={`${fund.id}${fund.isInactiveBreakdown ? '-breakdown' : ''}`}>
                     {/* Fund name row */}
-                      <tr className={`h-10 ${
+                        <tr className={`h-8 ${
                         fund.isActive === false 
                           ? fund.isInactiveBreakdown 
                             ? 'bg-gray-50 border-t border-dashed border-gray-300' 
                             : 'bg-gray-100 border-t border-gray-300'
                           : 'bg-gray-50 border-t border-gray-200'
                       }`}>
-                        <td className={`px-3 py-2 font-semibold ${
+                          <td className={`px-2 py-1 font-semibold ${
                           fund.isActive === false 
                             ? fund.isInactiveBreakdown 
                               ? 'text-gray-600 pl-6' // Indent inactive breakdown funds
@@ -2332,11 +2676,13 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                           </div>
                       </td>
                       {months.map(month => (
-                          <td key={`fund-header-${fund.id}-${month}`} className={
+                            <td key={`fund-name-${month}`} 
+                                className={`px-1 py-1 bg-transparent ${
                             fund.isActive === false 
                               ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
                               : 'bg-gray-50'
-                          }></td>
+                                }`}>
+                            </td>
                       ))}
                     </tr>
                     
@@ -2563,7 +2909,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       )}
                   </React.Fragment>
                   ));
-                })()}
+                  })()
+                )}
 
                 {/* Grand totals section - totals by activity type across all funds */}
                 <tr className="h-10 bg-gray-50 border-t-2 border-gray-300 font-semibold">
@@ -2704,6 +3051,21 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
             setShowMultiDestinationModal(false);
             setMultiDestinationData(null);
           }}
+        />
+      )}
+      
+      {/* Bulk Month Activities Modal */}
+      {showBulkMonthModal && (
+        <BulkMonthActivitiesModal
+          isOpen={showBulkMonthModal}
+          onClose={() => {
+            setShowBulkMonthModal(false);
+            setSelectedBulkMonth('');
+          }}
+          month={selectedBulkMonth}
+          funds={funds}
+          onSave={handleBulkMonthSave}
+          getCurrentValue={(fundId: number, activityType: string) => getCellValue(fundId, selectedBulkMonth, activityType)}
         />
       )}
     </>
