@@ -99,7 +99,7 @@ async def create_holding_activity_log(
                 product_result = db.table("client_products") \
                     .select("id") \
                     .eq("portfolio_id", portfolio_id) \
-                    .execute()
+                .execute()
                 
                 if product_result.data and len(product_result.data) > 0:
                     product_id = product_result.data[0]["id"]
@@ -167,7 +167,7 @@ async def update_holding_activity_log(
         
         if not existing_result.data:
             raise HTTPException(status_code=404, detail="Holding activity log not found")
-        
+            
         # Get update data
         update_data = holding_activity_log.model_dump(exclude_unset=True)
         
@@ -180,10 +180,10 @@ async def update_holding_activity_log(
 
         # Handle amount conversion
         if 'amount' in update_data and isinstance(update_data['amount'], Decimal):
-            update_data['amount'] = float(update_data['amount'])
+                    update_data['amount'] = float(update_data['amount'])
 
         logger.info(f"Updating activity {activity_id} with data: {update_data}")
-        
+
         # Update the activity log
         result = db.table("holding_activity_log").update(update_data).eq("id", activity_id).execute()
         

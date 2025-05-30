@@ -14,6 +14,7 @@ interface SearchableDropdownProps {
   className?: string;
   disabled?: boolean;
   required?: boolean;
+  loading?: boolean;
 }
 
 // Multi-select version
@@ -26,6 +27,7 @@ export interface MultiSelectSearchableDropdownProps {
   className?: string;
   disabled?: boolean;
   required?: boolean;
+  loading?: boolean;
 }
 
 /**
@@ -44,7 +46,8 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   placeholder = 'Select an option',
   className = '',
   disabled = false,
-  required = false
+  required = false,
+  loading = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -75,11 +78,21 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
       }
     };
     
+    const handleGlobalKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+        setSearchTerm('');
+        setFocusedIndex(-1);
+      }
+    };
+    
     document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleGlobalKeyDown);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleGlobalKeyDown);
     };
-  }, []);
+  }, [isOpen]);
 
   // Scroll focused option into view
   useEffect(() => {
@@ -168,9 +181,16 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
       >
         <span className="block truncate">{displayValue}</span>
         <span className="ml-2 pointer-events-none">
-          <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-          </svg>
+          {loading ? (
+            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          ) : (
+            <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          )}
         </span>
       </button>
       
@@ -194,7 +214,15 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           
           {/* Options list */}
           <ul ref={optionsRef} className="py-1" role="listbox">
-            {filteredOptions.length > 0 ? (
+            {loading ? (
+              <li className="text-gray-500 py-4 px-3 flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Loading options...
+              </li>
+            ) : filteredOptions.length > 0 ? (
               filteredOptions.map((option, index) => (
                 <li
                   key={option.value}
@@ -259,7 +287,8 @@ export const MultiSelectSearchableDropdown: React.FC<MultiSelectSearchableDropdo
   placeholder = 'Select options',
   className = '',
   disabled = false,
-  required = false
+  required = false,
+  loading = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -285,11 +314,22 @@ export const MultiSelectSearchableDropdown: React.FC<MultiSelectSearchableDropdo
         setIsOpen(false);
       }
     };
+    
+    const handleGlobalKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+        setSearchTerm('');
+        setFocusedIndex(-1);
+      }
+    };
+    
     document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleGlobalKeyDown);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleGlobalKeyDown);
     };
-  }, []);
+  }, [isOpen]);
 
   // Scroll focused option into view
   useEffect(() => {
@@ -398,9 +438,16 @@ export const MultiSelectSearchableDropdown: React.FC<MultiSelectSearchableDropdo
       >
         <span className="block truncate text-gray-500">{selectedOptions.length === 0 ? placeholder : `${selectedOptions.length} selected`}</span>
         <span className="ml-2 pointer-events-none">
-          <svg className={`h-5 w-5 text-gray-400 transition-transform ${isOpen ? 'transform rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-          </svg>
+          {loading ? (
+            <svg className="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          ) : (
+            <svg className={`h-5 w-5 text-gray-400 transition-transform ${isOpen ? 'transform rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          )}
         </span>
       </button>
       
@@ -420,7 +467,15 @@ export const MultiSelectSearchableDropdown: React.FC<MultiSelectSearchableDropdo
             />
           </div>
           <ul ref={optionsRef} className="py-1" role="listbox">
-            {filteredOptions.length > 0 ? (
+            {loading ? (
+              <li className="text-gray-500 py-4 px-3 flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Loading options...
+              </li>
+            ) : filteredOptions.length > 0 ? (
               filteredOptions.map((option, index) => (
                 <li
                   key={option.value}

@@ -1318,10 +1318,11 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               options={availableTemplates.map(t => ({ value: t.id.toString(), label: t.name || `Template ${t.id}` }))}
               value={product.portfolio.templateId?.toString() ?? ''}
               onChange={val => handleTemplateSelection(product.id, String(val))}
-                placeholder="Select template"
-                className={`w-full text-sm ${validationErrors[product.id]?.template ? 'border-red-500' : ''}`}
+              placeholder="Select template"
+              className={`w-full text-sm ${validationErrors[product.id]?.template ? 'border-red-500' : ''}`}
               required
               disabled={isEitherLoading}
+              loading={isLoadingTemplate || availableTemplates.length === 0}
             />
             {validationErrors[product.id]?.template && (
               <div className="text-xs text-red-600 mt-1">
@@ -1344,10 +1345,11 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               }))}
               value={product.portfolio.generationId?.toString() ?? ''}
               onChange={val => handleGenerationSelection(product.id, String(val))}
-                  placeholder="Select generation"
-                  className={`w-full text-sm ${validationErrors[product.id]?.generation ? 'border-red-500' : ''}`}
+              placeholder="Select generation"
+              className={`w-full text-sm ${validationErrors[product.id]?.generation ? 'border-red-500' : ''}`}
               required
               disabled={isEitherLoading}
+              loading={isLoadingGeneration || (!!product.portfolio.templateId && generations.length === 0)}
             />
             {validationErrors[product.id]?.generation && (
               <div className="text-xs text-red-600 mt-1">

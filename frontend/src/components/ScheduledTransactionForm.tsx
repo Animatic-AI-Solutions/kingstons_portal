@@ -294,6 +294,7 @@ const ScheduledTransactionForm: React.FC<ScheduledTransactionFormProps> = ({
               onChange={(value) => setSelectedClientGroupId(value as number)}
               placeholder="Select a client group..."
               disabled={isLoadingClientGroups}
+              loading={isLoadingClientGroups}
               className={errors.client_group ? 'border-red-300' : ''}
             />
             {errors.client_group && (
@@ -311,8 +312,9 @@ const ScheduledTransactionForm: React.FC<ScheduledTransactionFormProps> = ({
               options={productOptions}
               value={selectedProductId || ''}
               onChange={(value) => setSelectedProductId(value as number)}
-              placeholder={isLoadingProducts ? "Loading products..." : "Select a product..."}
+              placeholder="Select a product..."
               disabled={isLoadingProducts || !selectedClientGroupId}
+              loading={isLoadingProducts}
               className={errors.product ? 'border-red-300' : ''}
             />
             {errors.product && (
@@ -330,8 +332,9 @@ const ScheduledTransactionForm: React.FC<ScheduledTransactionFormProps> = ({
               options={portfolioFundOptions}
               value={selectedPortfolioFundId || ''}
               onChange={(value) => setSelectedPortfolioFundId(value as number)}
-              placeholder={isLoadingPortfolioFunds ? "Loading portfolio funds..." : "Select a portfolio fund..."}
+              placeholder="Select a portfolio fund..."
               disabled={isLoadingPortfolioFunds || !selectedProductId}
+              loading={isLoadingPortfolioFunds}
               className={errors.portfolio_fund_id ? 'border-red-300' : ''}
             />
             {errors.portfolio_fund_id && (

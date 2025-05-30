@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { getProviderColor } from '../services/providerColors';
 import { MultiSelectSearchableDropdown } from '../components/ui/SearchableDropdown';
 import { calculateStandardizedMultipleFundsIRR } from '../services/api';
+import { formatMoney } from '../utils';
 
 // Interfaces for data types
 interface ClientGroup {
@@ -1542,6 +1543,7 @@ Please select a different valuation date or ensure all active funds have valuati
                   values={selectedClientGroupIds}
                   onChange={setSelectedClientGroupIds}
                   placeholder="Search client groups..."
+                  loading={isLoading}
                   className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
                 />
               </div>
@@ -1554,6 +1556,7 @@ Please select a different valuation date or ensure all active funds have valuati
                   values={selectedProductOwnerIds}
                   onChange={setSelectedProductOwnerIds}
                   placeholder="Search product owners..."
+                  loading={isLoading}
                   className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
                 />
               </div>
@@ -1566,6 +1569,7 @@ Please select a different valuation date or ensure all active funds have valuati
                   values={selectedProductIds}
                   onChange={setSelectedProductIds}
                   placeholder="Search products..."
+                  loading={isLoading}
                   className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
                 />
               </div>
@@ -2226,9 +2230,7 @@ Please select a different valuation date or ensure all active funds have valuati
                                 {fund.inactiveFundCount} {fund.inactiveFundCount === 1 ? 'fund' : 'funds'}
                               </span>
                             )}
-                            {fund.isin_number && (
-                              <span className="block text-xs text-gray-500">{fund.isin_number}</span>
-                            )}
+
                       </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
                             {fund.isVirtual ? (
