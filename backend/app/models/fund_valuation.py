@@ -15,7 +15,7 @@ DecimalWithPrecision = Annotated[Decimal, AfterValidator(validate_decimal_places
 class FundValuationBase(BaseModel):
     portfolio_fund_id: int
     valuation_date: datetime
-    value: DecimalWithPrecision  # numeric(16,2)
+    valuation: DecimalWithPrecision  # numeric(16,2)
     
     @field_validator('valuation_date', mode='before')
     @classmethod
@@ -46,7 +46,7 @@ class FundValuationCreate(FundValuationBase):
 class FundValuationUpdate(BaseModel):
     portfolio_fund_id: Optional[int] = None
     valuation_date: Optional[datetime] = None
-    value: Optional[DecimalWithPrecision] = None
+    valuation: Optional[DecimalWithPrecision] = None
     
     @field_validator('valuation_date', mode='before')
     @classmethod
@@ -92,7 +92,7 @@ class LatestFundValuationViewItem(BaseModel):
     id: int
     portfolio_fund_id: int
     valuation_date: datetime 
-    value: DecimalWithPrecision
+    valuation: DecimalWithPrecision
 
     # Re-include the validator and config if necessary, or ensure it inherits from a base with them
     @field_validator('valuation_date', mode='before')

@@ -94,14 +94,8 @@ async def get_client_products_with_owners(
                 template_generations_map = {t.get("id"): t for t in template_generations_result.data}
         
         # Get all product_value_irr_summary data in one bulk query for better performance
-        summary_data = {}
-        try:
-            if product_ids:
-                summary_result = db.table("product_value_irr_summary").select("*").in_("client_product_id", product_ids).execute()
-                # Create a lookup map by client_product_id
-                summary_data = {item.get("client_product_id"): item for item in summary_result.data}
-        except Exception as e:
-            logger.error(f"Error fetching bulk summary data: {str(e)}")
+        # NOTE: product_value_irr_summary view doesn't exist - calculations are done on-demand
+        # Setting default values instead
         
         # Get IRR dates for all products in bulk
         irr_dates_map = {}
@@ -121,22 +115,59 @@ async def get_client_products_with_owners(
                         portfolio_to_funds[portfolio_id].append(fund_id)
                         all_fund_ids.append(fund_id)
                     
-                    # Get all IRR dates for all funds
-                    if all_fund_ids:
-                        irr_dates_result = db.table("latest_irr_values").select("fund_id,irr_date").in_("fund_id", all_fund_ids).execute()
-                        if irr_dates_result.data:
-                            # Create a map of fund_id to irr_date
-                            fund_to_irr_date = {item.get("fund_id"): item.get("irr_date") for item in irr_dates_result.data if item.get("irr_date")}
-                            
-                            # For each portfolio, find the most recent IRR date
-                            for portfolio_id, fund_ids in portfolio_to_funds.items():
-                                portfolio_irr_dates = [fund_to_irr_date.get(fund_id) for fund_id in fund_ids if fund_to_irr_date.get(fund_id)]
-                                if portfolio_irr_dates:
-                                    # Sort dates and get the most recent
-                                    portfolio_irr_dates.sort(reverse=True)
-                                    irr_dates_map[portfolio_id] = portfolio_irr_dates[0]
+                    # Get latest IRR dates for funds that have them for efficient date filtering
+                    irr_dates_result = db.table("latest_portfolio_fund_irr_values").select("fund_id,irr_date").in_("fund_id", all_fund_ids).execute()
+                    if irr_dates_result.data:
+                        # Create a map of fund_id to irr_date
+                        fund_to_irr_date = {item.get("fund_id"): item.get("irr_date") for item in irr_dates_result.data if item.get("irr_date")}
+                        
+                        # For each portfolio, find the most recent IRR date
+                        for portfolio_id, fund_ids in portfolio_to_funds.items():
+                            portfolio_irr_dates = [fund_to_irr_date.get(fund_id) for fund_id in fund_ids if fund_to_irr_date.get(fund_id)]
+                            if portfolio_irr_dates:
+                                # Sort dates and get the most recent
+                                portfolio_irr_dates.sort(reverse=True)
+                                irr_dates_map[portfolio_id] = portfolio_irr_dates[0]
         except Exception as e:
             logger.warning(f"Error fetching IRR dates in bulk: {str(e)}")
+        
+        # Calculate FUM for each portfolio using latest_portfolio_fund_valuations view
+        portfolio_fum_map = {}
+        portfolio_irr_map = {}  # Add this to track portfolio IRRs
+        try:
+            if portfolio_ids:
+                # Get latest portfolio IRR for all portfolios
+                portfolio_irr_result = db.table("latest_portfolio_irr_values").select("portfolio_id,irr_result").in_("portfolio_id", portfolio_ids).execute()
+                
+                portfolio_irr_map = {item.get("portfolio_id"): item.get("irr_result") for item in portfolio_irr_result.data}
+                
+                # Get all portfolio funds for all portfolios
+                all_portfolio_funds_result = db.table("portfolio_funds").select("id,portfolio_id").in_("portfolio_id", portfolio_ids).eq("status", "active").execute()
+                if all_portfolio_funds_result.data:
+                    # Group fund IDs by portfolio ID
+                    portfolio_to_funds = {}
+                    all_fund_ids = []
+                    for pf in all_portfolio_funds_result.data:
+                        portfolio_id = pf.get("portfolio_id")
+                        fund_id = pf.get("id")
+                        if portfolio_id not in portfolio_to_funds:
+                            portfolio_to_funds[portfolio_id] = []
+                        portfolio_to_funds[portfolio_id].append(fund_id)
+                        all_fund_ids.append(fund_id)
+                    
+                    # Get latest valuations for all funds
+                    if all_fund_ids:
+                        valuations_result = db.table("latest_portfolio_fund_valuations").select("portfolio_fund_id,valuation").in_("portfolio_fund_id", all_fund_ids).execute()
+                        if valuations_result.data:
+                            # Create fund_id to value map
+                            fund_to_value = {item.get("portfolio_fund_id"): float(item.get("valuation", 0)) for item in valuations_result.data}
+                            
+                            # Calculate FUM for each portfolio
+                            for portfolio_id, fund_ids in portfolio_to_funds.items():
+                                portfolio_fum = sum(fund_to_value.get(fund_id, 0) for fund_id in fund_ids)
+                                portfolio_fum_map[portfolio_id] = portfolio_fum
+        except Exception as e:
+            logger.warning(f"Error calculating portfolio FUM and IRR: {str(e)}")
         
         # EFFICIENT PRODUCT OWNER FETCHING - This is the key improvement
         # 1. Get all product_owner_products associations in one query
@@ -196,45 +227,22 @@ async def get_client_products_with_owners(
                     product["template_generation_id"] = template_generation_id
                     product["template_info"] = template
             
-            # Add total_value and irr from the summary data map
-            if product_id in summary_data:
-                summary = summary_data[product_id]
-                product["total_value"] = summary.get("total_value")
-                
-                # Calculate IRR using standardized multiple IRR endpoint instead of weighted IRR
-                if portfolio_id:
-                    try:
-                        # Get portfolio fund IDs for this product
-                        portfolio_funds_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
-                        if portfolio_funds_result.data:
-                            portfolio_fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
-                            
-                            # Calculate standardized IRR
-                            irr_result = await calculate_multiple_portfolio_funds_irr(
-                                portfolio_fund_ids=portfolio_fund_ids,
-                                irr_date=None,  # Use latest valuation date
-                                db=db
-                            )
-                            irr_value = irr_result.get("irr_percentage", 0)
-                            # Display '-' if IRR is exactly 0%
-                            product["irr"] = "-" if irr_value == 0 else irr_value
-                        else:
-                            product["irr"] = "-"
-                    except Exception as e:
-                        logger.warning(f"Error calculating standardized IRR for product {product_id}: {str(e)}")
-                        product["irr"] = "-"
-                else:
-                    product["irr"] = "-"
-                
-                # Add IRR date from the bulk-fetched data
-                if portfolio_id and portfolio_id in irr_dates_map:
-                    product["irr_date"] = irr_dates_map[portfolio_id]
-                else:
-                    product["irr_date"] = None
+            # Add total_value and irr from calculated FUM and latest portfolio IRR
+            if portfolio_id and portfolio_id in portfolio_fum_map:
+                product["total_value"] = portfolio_fum_map[portfolio_id]
             else:
-                # Set defaults if no summary data found
                 product["total_value"] = 0
-                product["irr"] = "-"
+            
+            # Use latest portfolio IRR if available
+            if portfolio_id and portfolio_id in portfolio_irr_map:
+                product["irr"] = portfolio_irr_map[portfolio_id]
+            else:
+                product["irr"] = "-"  # Display as dash if no portfolio IRR available
+            
+            # Add IRR date from the bulk-fetched data
+            if portfolio_id and portfolio_id in irr_dates_map:
+                product["irr_date"] = irr_dates_map[portfolio_id]
+            else:
                 product["irr_date"] = None
             
             # Add product owners - this is the key improvement
@@ -339,22 +347,6 @@ async def get_client_products(
             if template_generations_result.data:
                 template_generations_map = {t.get("id"): t for t in template_generations_result.data}
         
-        # Enhance the response data with provider, client, and template information
-        enhanced_data = []
-        
-        # Get all product_value_irr_summary data in one bulk query for better performance
-        product_ids = [product.get("id") for product in client_products]
-        summary_data = {}
-        
-        try:
-            if product_ids:
-                summary_result = db.table("product_value_irr_summary").select("*").in_("client_product_id", product_ids).execute()
-                # Create a lookup map by client_product_id
-                summary_data = {item.get("client_product_id"): item for item in summary_result.data}
-                logger.info(f"Fetched {len(summary_result.data)} summary records for {len(product_ids)} products")
-        except Exception as e:
-            logger.error(f"Error fetching bulk summary data: {str(e)}")
-        
         # Get IRR dates for all products in bulk
         irr_dates_map = {}
         try:
@@ -373,24 +365,95 @@ async def get_client_products(
                         portfolio_to_funds[portfolio_id].append(fund_id)
                         all_fund_ids.append(fund_id)
                     
-                    # Get all IRR dates for all funds
-                    if all_fund_ids:
-                        irr_dates_result = db.table("latest_irr_values").select("fund_id,irr_date").in_("fund_id", all_fund_ids).execute()
-                        if irr_dates_result.data:
-                            # Create a map of fund_id to irr_date
-                            fund_to_irr_date = {item.get("fund_id"): item.get("irr_date") for item in irr_dates_result.data if item.get("irr_date")}
-                            
-                            # For each portfolio, find the most recent IRR date
-                            for portfolio_id, fund_ids in portfolio_to_funds.items():
-                                portfolio_irr_dates = [fund_to_irr_date.get(fund_id) for fund_id in fund_ids if fund_to_irr_date.get(fund_id)]
-                                if portfolio_irr_dates:
-                                    # Sort dates and get the most recent
-                                    portfolio_irr_dates.sort(reverse=True)
-                                    irr_dates_map[portfolio_id] = portfolio_irr_dates[0]
+                    # Get latest IRR dates for funds that have them for efficient date filtering
+                    irr_dates_result = db.table("latest_portfolio_fund_irr_values").select("fund_id,irr_date").in_("fund_id", all_fund_ids).execute()
+                    if irr_dates_result.data:
+                        # Create a map of fund_id to irr_date
+                        fund_to_irr_date = {item.get("fund_id"): item.get("irr_date") for item in irr_dates_result.data if item.get("irr_date")}
+                        
+                        # For each portfolio, find the most recent IRR date
+                        for portfolio_id, fund_ids in portfolio_to_funds.items():
+                            portfolio_irr_dates = [fund_to_irr_date.get(fund_id) for fund_id in fund_ids if fund_to_irr_date.get(fund_id)]
+                            if portfolio_irr_dates:
+                                # Sort dates and get the most recent
+                                portfolio_irr_dates.sort(reverse=True)
+                                irr_dates_map[portfolio_id] = portfolio_irr_dates[0]
         except Exception as e:
             logger.warning(f"Error fetching IRR dates in bulk: {str(e)}")
         
+        # Calculate FUM for each portfolio using latest_portfolio_fund_valuations view
+        portfolio_fum_map = {}
+        portfolio_irr_map = {}  # Add this to track portfolio IRRs
+        try:
+            if portfolio_ids:
+                # Get latest portfolio IRR for all portfolios
+                portfolio_irr_result = db.table("latest_portfolio_irr_values").select("portfolio_id,irr_result").in_("portfolio_id", portfolio_ids).execute()
+                
+                portfolio_irr_map = {item.get("portfolio_id"): item.get("irr_result") for item in portfolio_irr_result.data}
+                
+                # Get all portfolio funds for all portfolios
+                all_portfolio_funds_result = db.table("portfolio_funds").select("id,portfolio_id").in_("portfolio_id", portfolio_ids).eq("status", "active").execute()
+                if all_portfolio_funds_result.data:
+                    # Group fund IDs by portfolio ID
+                    portfolio_to_funds = {}
+                    all_fund_ids = []
+                    for pf in all_portfolio_funds_result.data:
+                        portfolio_id = pf.get("portfolio_id")
+                        fund_id = pf.get("id")
+                        if portfolio_id not in portfolio_to_funds:
+                            portfolio_to_funds[portfolio_id] = []
+                        portfolio_to_funds[portfolio_id].append(fund_id)
+                        all_fund_ids.append(fund_id)
+                    
+                    # Get latest valuations for all funds
+                    if all_fund_ids:
+                        valuations_result = db.table("latest_portfolio_fund_valuations").select("portfolio_fund_id,valuation").in_("portfolio_fund_id", all_fund_ids).execute()
+                        if valuations_result.data:
+                            # Create fund_id to value map
+                            fund_to_value = {item.get("portfolio_fund_id"): float(item.get("valuation", 0)) for item in valuations_result.data}
+                            
+                            # Calculate FUM for each portfolio
+                            for portfolio_id, fund_ids in portfolio_to_funds.items():
+                                portfolio_fum = sum(fund_to_value.get(fund_id, 0) for fund_id in fund_ids)
+                                portfolio_fum_map[portfolio_id] = portfolio_fum
+        except Exception as e:
+            logger.warning(f"Error calculating portfolio FUM and IRR: {str(e)}")
+        
+        # EFFICIENT PRODUCT OWNER FETCHING - This is the key improvement
+        # 1. Get all product_owner_products associations in one query
+        product_owner_associations = {}
+        try:
+            pop_result = db.table("product_owner_products").select("*").in_("product_id", product_ids).execute()
+            if pop_result.data:
+                # Group by product_id for efficient lookup
+                for assoc in pop_result.data:
+                    product_id = assoc.get("product_id")
+                    if product_id not in product_owner_associations:
+                        product_owner_associations[product_id] = []
+                    product_owner_associations[product_id].append(assoc.get("product_owner_id"))
+        except Exception as e:
+            logger.error(f"Error fetching product owner associations: {str(e)}")
+        
+        # 2. Get all product owner details in one query
+        product_owner_ids = []
+        for owners in product_owner_associations.values():
+            product_owner_ids.extend(owners)
+        
+        product_owners_map = {}
+        if product_owner_ids:
+            try:
+                owners_result = db.table("product_owners").select("*").in_("id", list(set(product_owner_ids))).execute()
+                if owners_result.data:
+                    product_owners_map = {owner.get("id"): owner for owner in owners_result.data}
+            except Exception as e:
+                logger.error(f"Error fetching product owners: {str(e)}")
+        
+        # Enhance the response data with all related information
+        enhanced_data = []
+        
         for product in client_products:
+            product_id = product.get("id")
+            
             # Add provider data if available
             provider_id = product.get("provider_id")
             if provider_id and provider_id in providers_map:
@@ -414,56 +477,37 @@ async def get_client_products(
                     product["template_generation_id"] = template_generation_id
                     product["template_info"] = template
             
-            # Add total_value and irr from the summary data map
-            product_id = product.get("id")
-            if product_id in summary_data:
-                summary = summary_data[product_id]
-                product["total_value"] = summary.get("total_value")
-                
-                # Calculate IRR using standardized multiple IRR endpoint instead of weighted IRR
-                if portfolio_id:
-                    try:
-                        # Get portfolio fund IDs for this product
-                        portfolio_funds_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
-                        if portfolio_funds_result.data:
-                            portfolio_fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
-                            
-                            # Calculate standardized IRR
-                            irr_result = await calculate_multiple_portfolio_funds_irr(
-                                portfolio_fund_ids=portfolio_fund_ids,
-                                irr_date=None,  # Use latest valuation date
-                                db=db
-                            )
-                            irr_value = irr_result.get("irr_percentage", 0)
-                            # Display '-' if IRR is exactly 0%
-                            product["irr"] = "-" if irr_value == 0 else irr_value
-                        else:
-                            product["irr"] = "-"
-                    except Exception as e:
-                        logger.warning(f"Error calculating standardized IRR for product {product_id}: {str(e)}")
-                        product["irr"] = "-"
-                else:
-                    product["irr"] = "-"
-                
-                # Add IRR date from the bulk-fetched data
-                if portfolio_id and portfolio_id in irr_dates_map:
-                    product["irr_date"] = irr_dates_map[portfolio_id]
-                else:
-                    product["irr_date"] = None
+            # Add total_value and irr from calculated FUM and latest portfolio IRR
+            if portfolio_id and portfolio_id in portfolio_fum_map:
+                product["total_value"] = portfolio_fum_map[portfolio_id]
             else:
-                # Set defaults if no summary data found
                 product["total_value"] = 0
-                product["irr"] = "-"
+            
+            # Use latest portfolio IRR if available
+            if portfolio_id and portfolio_id in portfolio_irr_map:
+                product["irr"] = portfolio_irr_map[portfolio_id]
+            else:
+                product["irr"] = "-"  # Display as dash if no portfolio IRR available
+            
+            # Add IRR date from the bulk-fetched data
+            if portfolio_id and portfolio_id in irr_dates_map:
+                product["irr_date"] = irr_dates_map[portfolio_id]
+            else:
                 product["irr_date"] = None
             
-            enhanced_data.append(product)
+            # Add product owners - this is the key improvement
+            product_owners = []
+            if product_id in product_owner_associations:
+                owner_ids = product_owner_associations[product_id]
+                for owner_id in owner_ids:
+                    if owner_id in product_owners_map:
+                        product_owners.append(product_owners_map[owner_id])
             
-        logger.info(f"Retrieved {len(enhanced_data)} client products with provider data and template info")
+            product["product_owners"] = product_owners
+            
+            enhanced_data.append(product)
         
-        # Log the first few products for debugging purposes
-        if enhanced_data and len(enhanced_data) > 0:
-            sample = enhanced_data[0]
-            logger.info(f"Sample product data: id={sample.get('id')}, provider_name={sample.get('provider_name')}, theme_color={sample.get('provider_theme_color')}")
+        logger.info(f"Retrieved {len(enhanced_data)} client products with all related data including owners")
         
         return enhanced_data
     except Exception as e:
@@ -626,24 +670,42 @@ async def get_client_product(client_product_id: int, db = Depends(get_db)):
                         client_product["template_generation_id"] = portfolio.get("template_generation_id")
                         client_product["template_info"] = template
             
-        # Fetch total_value and irr from the product_value_irr_summary view
-        try:
-            summary_result = db.table("product_value_irr_summary").select("*").eq("client_product_id", client_product_id).execute()
-            if summary_result.data and len(summary_result.data) > 0:
-                summary = summary_result.data[0]
-                client_product["total_value"] = summary.get("total_value", 0)
-                client_product["irr"] = summary.get("irr_weighted", 0)
-                logger.info(f"Added total_value={summary.get('total_value')} and irr={summary.get('irr_weighted')} for product {client_product_id}")
-            else:
-                # Set defaults if no summary data found
-                client_product["total_value"] = 0
-                client_product["irr"] = 0
-                logger.warning(f"No summary data found for product {client_product_id}")
-        except Exception as e:
-            logger.error(f"Error fetching summary data for product {client_product_id}: {str(e)}")
-            # Don't fail the entire request if summary data fails
-            client_product["total_value"] = 0
-            client_product["irr"] = 0
+        # Fetch total_value using latest_portfolio_fund_valuations view instead of product_value_irr_summary
+        portfolio_id = client_product.get("portfolio_id")
+        total_value = 0
+        portfolio_irr = "-"
+        
+        if portfolio_id:
+            try:
+                # Get latest portfolio IRR
+                portfolio_irr_result = db.table("latest_portfolio_irr_values").select("irr_result").eq("portfolio_id", portfolio_id).execute()
+                if portfolio_irr_result.data:
+                    portfolio_irr = portfolio_irr_result.data[0].get("irr_result")
+                
+                # Get all active portfolio funds for this portfolio
+                funds_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).eq("status", "active").execute()
+                
+                if funds_result.data:
+                    portfolio_fund_ids = [fund.get("id") for fund in funds_result.data]
+                    
+                    # Use the latest_portfolio_fund_valuations view to get current values
+                    valuations_result = db.table("latest_portfolio_fund_valuations").select("valuation").in_("portfolio_fund_id", portfolio_fund_ids).execute()
+                    
+                    if valuations_result.data:
+                        for valuation in valuations_result.data:
+                            value = valuation.get("valuation", 0)
+                            if value:
+                                total_value += float(value)
+                        logger.info(f"Calculated total_value={total_value} for product {client_product_id}")
+                    else:
+                        logger.info(f"No valuations found for portfolio funds: {portfolio_fund_ids}")
+                else:
+                    logger.info(f"No active funds found for portfolio {portfolio_id}")
+            except Exception as e:
+                logger.error(f"Error calculating total value and IRR for product {client_product_id}: {str(e)}")
+        
+        client_product["total_value"] = total_value
+        client_product["irr"] = portfolio_irr
         
         return client_product
     except HTTPException:
@@ -764,7 +826,7 @@ async def delete_client_product(client_product_id: int, db = Depends(get_db)):
                     
                     # Also delete IRR values for any fund valuations related to this fund
                     # Get all fund valuation IDs for this fund
-                    fund_valuation_ids_result = db.table("fund_valuations").select("id").eq("portfolio_fund_id", fund_id).execute()
+                    fund_valuation_ids_result = db.table("portfolio_fund_valuations").select("id").eq("portfolio_fund_id", fund_id).execute()
                     if fund_valuation_ids_result.data and len(fund_valuation_ids_result.data) > 0:
                         valuation_ids = [v["id"] for v in fund_valuation_ids_result.data]
                         # Delete IRR values referencing these fund valuation IDs
@@ -775,7 +837,7 @@ async def delete_client_product(client_product_id: int, db = Depends(get_db)):
                             logger.info(f"Deleted {deleted_count} IRR values for fund valuation {val_id}")
                     
                     # Now it's safe to delete fund valuations for this fund
-                    fund_val_result = db.table("fund_valuations").delete().eq("portfolio_fund_id", fund_id).execute()
+                    fund_val_result = db.table("portfolio_fund_valuations").delete().eq("portfolio_fund_id", fund_id).execute()
                     deleted_count = len(fund_val_result.data) if fund_val_result.data else 0
                     fund_valuations_deleted += deleted_count
                     logger.info(f"Deleted {deleted_count} fund valuations for portfolio fund {fund_id}")
@@ -823,7 +885,7 @@ async def get_product_fum(product_id: int, db = Depends(get_db)):
     How it works:
         1. Gets the product to find its associated portfolio
         2. Gets all active portfolio funds for that portfolio
-        3. Gets the latest valuation for each fund
+        3. Uses the latest_portfolio_fund_valuations view to get current values
         4. Sums up the valuations
     Expected output: A JSON object with the total FUM value
     """
@@ -846,17 +908,20 @@ async def get_product_fum(product_id: int, db = Depends(get_db)):
             logger.info(f"No active funds found for portfolio {portfolio_id}")
             return {"product_id": product_id, "fum": 0}
             
-        total_fum = 0
+        portfolio_fund_ids = [fund.get("id") for fund in funds_result.data]
         
-        # For each fund, get its latest valuation
-        for fund in funds_result.data:
-            fund_id = fund.get("id")
-            valuation_result = db.table("fund_valuations").select("value").eq("portfolio_fund_id", fund_id).order("valuation_date", desc=True).limit(1).execute()
-            
-            if valuation_result.data and len(valuation_result.data) > 0:
-                valuation = valuation_result.data[0].get("value", 0)
-                total_fum += valuation
-                logger.info(f"Fund {fund_id} valuation: {valuation}")
+        # Use the latest_portfolio_fund_valuations view to get current values
+        valuations_result = db.table("latest_portfolio_fund_valuations").select("valuation").in_("portfolio_fund_id", portfolio_fund_ids).execute()
+        
+        total_fum = 0
+        if valuations_result.data:
+            for valuation in valuations_result.data:
+                value = valuation.get("valuation", 0)
+                if value:
+                    total_fum += float(value)
+            logger.info(f"Total FUM calculated from {len(valuations_result.data)} fund valuations")
+        else:
+            logger.info(f"No valuations found for portfolio funds: {portfolio_fund_ids}")
                 
         logger.info(f"Total FUM for product {product_id}: {total_fum}")
         return {"product_id": product_id, "fum": total_fum}
@@ -954,11 +1019,11 @@ async def get_product_irr(product_id: int, db = Depends(get_db)):
             latest_valuation_date = None
             
             for fund_id in portfolio_fund_ids:
-                valuation_result = db.table("fund_valuations").select("value,valuation_date").eq("portfolio_fund_id", fund_id).order("valuation_date", desc=True).limit(1).execute()
+                valuation_result = db.table("portfolio_fund_valuations").select("valuation,valuation_date").eq("portfolio_fund_id", fund_id).order("valuation_date", desc=True).limit(1).execute()
                 
                 if valuation_result.data and len(valuation_result.data) > 0:
                     valuation = valuation_result.data[0]
-                    current_value = float(valuation.get("value", 0))
+                    current_value = float(valuation.get("valuation", 0))
                     total_current_value += current_value
                     
                     # Track the latest valuation date across all funds
@@ -1194,7 +1259,7 @@ async def get_complete_product_details(client_product_id: int, db = Depends(get_
                     if portfolio_fund_ids:
                         # We want the latest valuation for each fund, so we need to use a SQL query
                         # A typical approach in Supabase might be:
-                        latest_valuations_result = db.table("latest_fund_valuations").select("*").in_("portfolio_fund_id", portfolio_fund_ids).execute()
+                        latest_valuations_result = db.table("latest_portfolio_fund_valuations").select("*").in_("portfolio_fund_id", portfolio_fund_ids).execute()
                         if latest_valuations_result.data:
                             valuations_map = {v.get("portfolio_fund_id"): v for v in latest_valuations_result.data}
                     
@@ -1202,7 +1267,7 @@ async def get_complete_product_details(client_product_id: int, db = Depends(get_
                     irr_map = {}
                     if portfolio_fund_ids:
                         # Similar to valuations, we want the latest IRR for each fund
-                        latest_irr_result = db.table("latest_irr_values").select("*").in_("fund_id", portfolio_fund_ids).execute()
+                        latest_irr_result = db.table("latest_portfolio_fund_irr_values").select("*").in_("fund_id", portfolio_fund_ids).execute()
                         if latest_irr_result.data:
                             irr_map = {irr.get("fund_id"): irr for irr in latest_irr_result.data}
                     
@@ -1224,14 +1289,14 @@ async def get_complete_product_details(client_product_id: int, db = Depends(get_
                         if portfolio_fund_id and portfolio_fund_id in valuations_map:
                             valuation = valuations_map[portfolio_fund_id]
                             pf["latest_valuation"] = valuation
-                            pf["market_value"] = valuation.get("value")
+                            pf["market_value"] = valuation.get("valuation")
                             pf["valuation_date"] = valuation.get("valuation_date")
                         
                         # Add IRR data
                         if portfolio_fund_id and portfolio_fund_id in irr_map:
                             irr = irr_map[portfolio_fund_id]
                             pf["latest_irr"] = irr
-                            pf["irr_result"] = irr.get("irr_value")
+                            pf["irr_result"] = irr.get("irr_result")
                             pf["irr_date"] = irr.get("irr_date")
                         
                         enhanced_funds.append(pf)
@@ -1240,16 +1305,41 @@ async def get_complete_product_details(client_product_id: int, db = Depends(get_
                     response["fund_valuations"] = valuations_map
                     response["irr_values"] = irr_map
         
-        # Fetch the product summary data
-        try:
-            summary_result = db.table("product_value_irr_summary").select("*").eq("client_product_id", client_product_id).execute()
-            if summary_result.data and len(summary_result.data) > 0:
-                summary = summary_result.data[0]
-                response["summary"] = summary
-                response["total_value"] = summary.get("total_value")
-                response["irr"] = summary.get("irr_weighted")
-        except Exception as e:
-            logger.error(f"Error fetching product summary: {str(e)}")
+        # Fetch the product summary data - calculate on demand instead of using view
+        portfolio_id = product.get("portfolio_id")
+        summary_total_value = 0
+        portfolio_irr = "-"
+        
+        if portfolio_id:
+            try:
+                # Get latest portfolio IRR
+                portfolio_irr_result = db.table("latest_portfolio_irr_values").select("irr_result").eq("portfolio_id", portfolio_id).execute()
+                if portfolio_irr_result.data:
+                    portfolio_irr = portfolio_irr_result.data[0].get("irr_result")
+                
+                # Get all active portfolio funds for this portfolio
+                funds_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).eq("status", "active").execute()
+                
+                if funds_result.data:
+                    portfolio_fund_ids = [fund.get("id") for fund in funds_result.data]
+                    
+                    # Use the latest_portfolio_fund_valuations view to get current values
+                    valuations_result = db.table("latest_portfolio_fund_valuations").select("valuation").in_("portfolio_fund_id", portfolio_fund_ids).execute()
+                    
+                    if valuations_result.data:
+                        for valuation in valuations_result.data:
+                            value = valuation.get("valuation", 0)
+                            if value:
+                                summary_total_value += float(value)
+            except Exception as e:
+                logger.error(f"Error calculating product summary: {str(e)}")
+        
+        response["summary"] = {
+            "total_value": summary_total_value,
+            "irr_weighted": portfolio_irr  # Use portfolio IRR instead of None
+        }
+        response["total_value"] = summary_total_value
+        response["irr"] = portfolio_irr  # Use portfolio IRR instead of "-"
         
         return response
     except HTTPException:

@@ -59,7 +59,7 @@ interface FundValuation {
   id: number;
   portfolio_fund_id: number;
   valuation_date: string;
-  value: number;
+  valuation: number;
   created_at: string;
 }
 
@@ -403,7 +403,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     if (activityType === 'Current Value') {
       const valuation = getFundValuation(fundId, month);
       if (valuation) {
-        return valuation.value.toString();
+        return valuation.valuation.toString();
       }
       
       // Fallback to activity log if no valuation found
@@ -624,48 +624,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     return `${monthAbbr} ${yearShort}`;
   };
 
-  // Helper function to recalculate IRR for a specific fund and month
-  const recalculateIRRForFundAndMonth = async (fundId: number, month: string): Promise<void> => {
-    try {
-      // Parse the month string to get year and month
-      const [year, monthNum] = month.split('-');
-      
-      // Ensure month number is padded with leading zero if needed
-      const paddedMonth = monthNum.padStart(2, '0');
-      
-      // Format the date - we'll use the first day of the month as that's what the backend expects
-      const formattedDate = `${year}-${paddedMonth}-01`;
-      
-      console.log(`Triggering IRR recalculation for fund ${fundId} and date ${formattedDate}`);
-      
-      // Call the portfolio_funds endpoint to recalculate IRR
-      try {
-        const response = await api.post(`portfolio_funds/${fundId}/recalculate_irr?valuation_date=${formattedDate}`);
-        
-        console.log(`IRR recalculation completed for fund ${fundId}, month ${month}:`, response.data);
-        
-        // Verify the IRR update was successful by fetching the latest IRR value
-        try {
-          await new Promise(resolve => setTimeout(resolve, 200));
-          const irrResponse = await api.get(`portfolio_funds/${fundId}/latest-irr`);
-          console.log(`Verified latest IRR for fund ${fundId}:`, irrResponse.data);
-        } catch (verifyErr) {
-          console.error(`Error verifying IRR for fund ${fundId}:`, verifyErr);
-        }
-        
-        return;
-      } catch (apiErr: any) {
-        // Log API-specific errors but don't throw
-        console.error(`API error recalculating IRR for fund ${fundId}, month ${month}:`, 
-          apiErr.response?.data?.detail || apiErr.message);
-      }
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.message;
-      console.error(`Error recalculating IRR for fund ${fundId}, month ${month}:`, errorMessage);
-      // Don't throw the error - we don't want to interrupt the overall save process
-      // Just log it for debugging
-    }
-  };
+  // IRR recalculation is now handled automatically in the backend
+  // No manual recalculation function needed
 
   // Simplified save function for new uniform activity structure
   const saveActivitiesUniform = async () => {
@@ -725,8 +685,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
               await api.patch(`holding_activity_logs/${edit.originalActivityId}`, activityData);
           }
 
-          // Recalculate IRR for this fund and month
-              await recalculateIRRForFundAndMonth(edit.fundId, edit.month);
+          // IRR recalculation now happens automatically in the backend
+          // No need for manual recalculation call
         }
       }
 
@@ -800,8 +760,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
             await api.patch(`holding_activity_logs/${edit.originalActivityId}`, activityData);
           }
 
-          // Recalculate IRR for this fund and month
-          await recalculateIRRForFundAndMonth(edit.fundId, edit.month);
+          // IRR recalculation now happens automatically in the backend
+          // No need for manual recalculation call
         }
       }
       

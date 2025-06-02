@@ -5,6 +5,9 @@ from app.db.database import get_db
 from app.models.fund_valuation import FundValuationCreate, FundValuationUpdate, FundValuation, LatestFundValuationViewItem
 import logging
 
+# Import the IRR recalculation function
+from app.api.routes.holding_activity_logs import recalculate_irr_after_activity_change
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -24,51 +27,79 @@ async def create_fund_valuation(
             raise HTTPException(status_code=404, detail="Portfolio fund not found")
         
         # Handle None values as zeros
-        value = 0.0
-        if fund_valuation.value is not None:
+        valuation_amount = 0.0
+        if fund_valuation.valuation is not None:
             try:
-                value = float(fund_valuation.value)
+                valuation_amount = float(fund_valuation.valuation)
             except (ValueError, TypeError):
-                raise HTTPException(status_code=400, detail="Invalid value format - must be a number")
+                raise HTTPException(status_code=400, detail="Invalid valuation format - must be a number")
         
         # Check for duplicate (same portfolio_fund_id and valuation_date)
-        existing_valuation = db.table("fund_valuations") \
+        existing_valuation = db.table("portfolio_fund_valuations") \
             .select("*") \
             .eq("portfolio_fund_id", fund_valuation.portfolio_fund_id) \
             .eq("valuation_date", fund_valuation.valuation_date.isoformat()) \
             .execute()
         
-        if existing_valuation.data and len(existing_valuation.data) > 0:
-            # Update the existing valuation instead of creating a new one
-            valuation_id = existing_valuation.data[0]["id"]
-            logger.info(f"Found existing valuation with ID {valuation_id}, updating instead of creating new one")
-            
-            update_result = db.table("fund_valuations") \
-                .update({"value": value}) \
-                .eq("id", valuation_id) \
+        if existing_valuation.data:
+            # Update existing valuation
+            existing_id = existing_valuation.data[0]['id']
+            update_result = db.table("portfolio_fund_valuations") \
+                .update({
+                    "valuation": valuation_amount,
+                    "created_at": datetime.now().isoformat()
+                }) \
+                .eq("id", existing_id) \
                 .execute()
             
-            if not update_result.data or len(update_result.data) == 0:
-                raise HTTPException(status_code=500, detail="Failed to update fund valuation")
-            
-            return update_result.data[0]
+            if update_result.data:
+                logger.info(f"Updated existing fund valuation with ID {existing_id}")
+                
+                updated_valuation = update_result.data[0]
+                
+                # ========================================================================
+                # NEW: Automatically recalculate IRR after updating existing valuation
+                # ========================================================================
+                try:
+                    logger.info(f"Triggering automatic IRR recalculation after updating existing valuation for portfolio fund {fund_valuation.portfolio_fund_id}")
+                    irr_recalc_result = await recalculate_irr_after_activity_change(fund_valuation.portfolio_fund_id, db)
+                    logger.info(f"IRR recalculation result: {irr_recalc_result}")
+                except Exception as e:
+                    # Don't fail the valuation update if IRR recalculation fails
+                    logger.error(f"IRR recalculation failed after valuation update: {str(e)}")
+                # ========================================================================
+                
+                return updated_valuation
+            else:
+                raise HTTPException(status_code=500, detail="Failed to update existing fund valuation")
         
-        # Create new fund valuation
-        now = datetime.now().isoformat()
+        # Create new valuation
         fund_valuation_data = {
             "portfolio_fund_id": fund_valuation.portfolio_fund_id,
             "valuation_date": fund_valuation.valuation_date.isoformat(),
-            "value": value,
-            "created_at": now
+            "valuation": valuation_amount
         }
         
-        logger.info(f"Creating new valuation for fund {fund_valuation.portfolio_fund_id} with value {value}")
-        result = db.table("fund_valuations").insert(fund_valuation_data).execute()
+        result = db.table("portfolio_fund_valuations").insert(fund_valuation_data).execute()
         
         if not result.data or len(result.data) == 0:
             raise HTTPException(status_code=500, detail="Failed to create fund valuation")
             
-        return result.data[0]
+        created_valuation = result.data[0]
+        
+        # ========================================================================
+        # NEW: Automatically recalculate IRR after creating fund valuation
+        # ========================================================================
+        try:
+            logger.info(f"Triggering automatic IRR recalculation after creating valuation for portfolio fund {fund_valuation.portfolio_fund_id}")
+            irr_recalc_result = await recalculate_irr_after_activity_change(fund_valuation.portfolio_fund_id, db)
+            logger.info(f"IRR recalculation result: {irr_recalc_result}")
+        except Exception as e:
+            # Don't fail the valuation creation if IRR recalculation fails
+            logger.error(f"IRR recalculation failed after valuation creation: {str(e)}")
+        # ========================================================================
+            
+        return created_valuation
     except HTTPException:
         raise
     except Exception as e:
@@ -84,7 +115,7 @@ async def get_fund_valuations(
     Get all fund valuations, optionally filtered by portfolio_fund_id.
     """
     try:
-        query = db.table("fund_valuations").select("*")
+        query = db.table("portfolio_fund_valuations").select("*")
         
         if portfolio_fund_id is not None:
             query = query.eq("portfolio_fund_id", portfolio_fund_id)
@@ -106,7 +137,7 @@ async def get_latest_fund_valuation(
     Get the latest fund valuation for a specific portfolio fund.
     """
     try:
-        result = db.table("fund_valuations") \
+        result = db.table("portfolio_fund_valuations") \
             .select("*") \
             .eq("portfolio_fund_id", portfolio_fund_id) \
             .order("valuation_date", desc=True) \
@@ -128,11 +159,11 @@ async def get_all_latest_fund_valuations_from_view(
     db = Depends(get_db)
 ):
     """
-    Get all latest fund valuations from the public.latest_fund_valuations view.
+    Get all latest fund valuations from the public.latest_portfolio_fund_valuations view.
     """
     try:
-        # The view is already named 'latest_fund_valuations'
-        result = db.table("latest_fund_valuations").select("*").execute()
+        # The view is already named 'latest_portfolio_fund_valuations'
+        result = db.table("latest_portfolio_fund_valuations").select("*").execute()
         
         if not result.data:
             return []
@@ -171,7 +202,7 @@ async def check_fund_valuation_exists(
             next_month = datetime(year, month + 1, 1)
             
         # This query uses the idx_fund_valuations_fund_date index for fast lookups
-        result = db.table("fund_valuations") \
+        result = db.table("portfolio_fund_valuations") \
             .select("id") \
             .eq("portfolio_fund_id", portfolio_fund_id) \
             .gte("valuation_date", first_day.isoformat()) \
@@ -193,7 +224,7 @@ async def get_fund_valuation(
     Get a specific fund valuation by ID.
     """
     try:
-        result = db.table("fund_valuations").select("*").eq("id", valuation_id).execute()
+        result = db.table("portfolio_fund_valuations").select("*").eq("id", valuation_id).execute()
         
         if not result.data or len(result.data) == 0:
             raise HTTPException(status_code=404, detail="Fund valuation not found")
@@ -218,18 +249,52 @@ async def update_fund_valuation(
     """
     try:
         # Check if fund valuation exists
-        existing_result = db.table("fund_valuations").select("*").eq("id", valuation_id).execute()
+        existing_result = db.table("portfolio_fund_valuations").select("*").eq("id", valuation_id).execute()
         
         # Handle case where valuation doesn't exist
         if not existing_result.data or len(existing_result.data) == 0:
             raise HTTPException(status_code=404, detail="Fund valuation not found")
         
         # Check if value is empty string and delete if so
-        if hasattr(fund_valuation, 'value') and isinstance(fund_valuation.value, str) and fund_valuation.value.strip() == "":
+        if hasattr(fund_valuation, 'valuation') and isinstance(fund_valuation.valuation, str) and fund_valuation.valuation.strip() == "":
             logger.info(f"Deleting fund valuation {valuation_id} due to empty value")
-            delete_result = db.table("fund_valuations").delete().eq("id", valuation_id).execute()
+            
+            # Get portfolio_fund_id before deletion for IRR recalculation
+            portfolio_fund_id = existing_result.data[0]["portfolio_fund_id"]
+            
+            # ========================================================================
+            # NEW: Clean up related IRR records before deleting valuation
+            # ========================================================================
+            try:
+                # Delete any IRR records that reference this valuation
+                irr_cleanup_result = db.table("portfolio_fund_irr_values")\
+                    .delete()\
+                    .eq("fund_valuation_id", valuation_id)\
+                    .execute()
+                
+                if irr_cleanup_result.data:
+                    logger.info(f"Cleaned up {len(irr_cleanup_result.data)} related IRR records before deleting valuation {valuation_id}")
+            except Exception as e:
+                logger.warning(f"Failed to clean up related IRR records for valuation {valuation_id}: {str(e)}")
+            # ========================================================================
+            
+            delete_result = db.table("portfolio_fund_valuations").delete().eq("id", valuation_id).execute()
+            
             if not delete_result.data:
                 raise HTTPException(status_code=500, detail="Failed to delete fund valuation")
+                
+            # ========================================================================
+            # NEW: Automatically recalculate IRR after deleting valuation
+            # ========================================================================
+            try:
+                logger.info(f"Triggering automatic IRR recalculation after deleting valuation for portfolio fund {portfolio_fund_id}")
+                irr_recalc_result = await recalculate_irr_after_activity_change(portfolio_fund_id, db)
+                logger.info(f"IRR recalculation result: {irr_recalc_result}")
+            except Exception as e:
+                # Don't fail the valuation deletion if IRR recalculation fails
+                logger.error(f"IRR recalculation failed after valuation deletion: {str(e)}")
+            # ========================================================================
+                
             # Return the deleted record
             return existing_result.data[0]
             
@@ -247,20 +312,37 @@ async def update_fund_valuation(
         if fund_valuation.valuation_date is not None:
             update_data["valuation_date"] = fund_valuation.valuation_date.isoformat()
         
-        if fund_valuation.value is not None:
-            update_data["value"] = float(fund_valuation.value)
+        if fund_valuation.valuation is not None:
+            update_data["valuation"] = float(fund_valuation.valuation)
         
         if len(update_data) == 0:
             # No actual updates provided, return existing data
             return existing_result.data[0]
         
         # Update the fund valuation
-        result = db.table("fund_valuations").update(update_data).eq("id", valuation_id).execute()
+        result = db.table("portfolio_fund_valuations").update(update_data).eq("id", valuation_id).execute()
         
         if not result.data or len(result.data) == 0:
             raise HTTPException(status_code=500, detail="Failed to update fund valuation")
             
-        return result.data[0]
+        updated_valuation = result.data[0]
+        
+        # ========================================================================
+        # NEW: Automatically recalculate IRR after updating fund valuation
+        # ========================================================================
+        try:
+            # Get portfolio_fund_id from the updated record or existing record
+            portfolio_fund_id = updated_valuation.get("portfolio_fund_id") or existing_result.data[0]["portfolio_fund_id"]
+            
+            logger.info(f"Triggering automatic IRR recalculation after updating valuation for portfolio fund {portfolio_fund_id}")
+            irr_recalc_result = await recalculate_irr_after_activity_change(portfolio_fund_id, db)
+            logger.info(f"IRR recalculation result: {irr_recalc_result}")
+        except Exception as e:
+            # Don't fail the valuation update if IRR recalculation fails
+            logger.error(f"IRR recalculation failed after valuation update: {str(e)}")
+        # ========================================================================
+            
+        return updated_valuation
     except HTTPException:
         raise
     except Exception as e:
@@ -281,20 +363,52 @@ async def delete_fund_valuation(
         logger.info(f"Attempting to delete fund valuation with ID: {valuation_id}")
         
         # Check if fund valuation exists
-        existing_result = db.table("fund_valuations").select("*").eq("id", valuation_id).execute()
+        existing_result = db.table("portfolio_fund_valuations").select("*").eq("id", valuation_id).execute()
         
         if not existing_result.data or len(existing_result.data) == 0:
             logger.warning(f"Fund valuation with ID {valuation_id} not found, but treating as success")
             return {"message": f"Fund valuation with ID {valuation_id} doesn't exist", "status": "success"}
         
+        # Get portfolio_fund_id before deletion for IRR recalculation
+        portfolio_fund_id = existing_result.data[0]["portfolio_fund_id"]
+        
+        # ========================================================================
+        # NEW: Clean up related IRR records before deleting valuation
+        # ========================================================================
+        try:
+            # Delete any IRR records that reference this valuation
+            irr_cleanup_result = db.table("portfolio_fund_irr_values")\
+                .delete()\
+                .eq("fund_valuation_id", valuation_id)\
+                .execute()
+            
+            if irr_cleanup_result.data:
+                logger.info(f"Cleaned up {len(irr_cleanup_result.data)} related IRR records before deleting valuation {valuation_id}")
+        except Exception as e:
+            logger.warning(f"Failed to clean up related IRR records for valuation {valuation_id}: {str(e)}")
+        # ========================================================================
+        
         # Delete the fund valuation
-        result = db.table("fund_valuations").delete().eq("id", valuation_id).execute()
+        result = db.table("portfolio_fund_valuations").delete().eq("id", valuation_id).execute()
         
         if not result or not hasattr(result, 'data') or not result.data:
             logger.error(f"Failed to delete fund valuation with ID {valuation_id}")
             raise HTTPException(status_code=500, detail="Failed to delete fund valuation")
             
         logger.info(f"Successfully deleted fund valuation with ID {valuation_id}")
+        
+        # ========================================================================
+        # NEW: Automatically recalculate IRR after deleting fund valuation
+        # ========================================================================
+        try:
+            logger.info(f"Triggering automatic IRR recalculation after deleting valuation for portfolio fund {portfolio_fund_id}")
+            irr_recalc_result = await recalculate_irr_after_activity_change(portfolio_fund_id, db)
+            logger.info(f"IRR recalculation result: {irr_recalc_result}")
+        except Exception as e:
+            # Don't fail the valuation deletion if IRR recalculation fails
+            logger.error(f"IRR recalculation failed after valuation deletion: {str(e)}")
+        # ========================================================================
+        
         return {"message": f"Fund valuation with ID {valuation_id} deleted successfully", "status": "success"}
     except Exception as e:
         logger.error(f"Error deleting fund valuation: {str(e)}")
@@ -312,16 +426,16 @@ async def get_latest_valuation_date():
 
 @router.get("/latest_fund_valuations")
 async def get_latest_fund_valuations(
-    portfolio_fund_id: Optional[int] = Query(None),
-    portfolio_id: Optional[int] = Query(None),
+    portfolio_fund_id: Optional[int] = Query(None, description="Filter by portfolio fund ID"),
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=100, description="Number of records to return"),
     db = Depends(get_db)
 ):
     """
-    Get the latest fund valuations from the latest_fund_valuations view.
-    Can be filtered by portfolio_fund_id or portfolio_id.
+    Get the latest fund valuations from the latest_portfolio_fund_valuations view.
     """
     try:
-        query = db.table("latest_fund_valuations").select("*")
+        query = db.table("latest_portfolio_fund_valuations").select("*")
         
         if portfolio_fund_id is not None:
             query = query.eq("portfolio_fund_id", portfolio_fund_id)
@@ -329,9 +443,9 @@ async def get_latest_fund_valuations(
         result = query.execute()
         
         # If we need to filter by portfolio_id, we need to do a join with portfolio_funds
-        if portfolio_id is not None and not portfolio_fund_id:
+        if portfolio_fund_id is None:
             # Get all portfolio_fund_ids for this portfolio
-            portfolio_funds = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
+            portfolio_funds = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_fund_id).execute()
             
             if portfolio_funds.data and len(portfolio_funds.data) > 0:
                 # Extract the IDs

@@ -62,11 +62,11 @@ async def get_fund_distribution(
             
             for pf in pf_result.data:
                 # Prioritize latest valuation for current market value
-                valuation_result = db.table("latest_fund_valuations").select("value").eq("portfolio_fund_id", pf["id"]).execute()
+                valuation_result = db.table("latest_portfolio_fund_valuations").select("valuation").eq("portfolio_fund_id", pf["id"]).execute()
                 
-                if valuation_result.data and len(valuation_result.data) > 0 and valuation_result.data[0]["value"] is not None:
+                if valuation_result.data and len(valuation_result.data) > 0 and valuation_result.data[0]["valuation"] is not None:
                     # Use latest market valuation (preferred method)
-                    total_value += valuation_result.data[0]["value"]
+                    total_value += valuation_result.data[0]["valuation"]
                     fund_has_valuations = True
                     valuations_used += 1
                 else:
@@ -142,11 +142,11 @@ async def get_provider_distribution(
                     
                     for pf in pf_result.data:
                         # Prioritize latest valuation for current market value
-                        valuation_result = db.table("latest_fund_valuations").select("value").eq("portfolio_fund_id", pf["id"]).execute()
+                        valuation_result = db.table("latest_portfolio_fund_valuations").select("valuation").eq("portfolio_fund_id", pf["id"]).execute()
                         
-                        if valuation_result.data and len(valuation_result.data) > 0 and valuation_result.data[0]["value"] is not None:
+                        if valuation_result.data and len(valuation_result.data) > 0 and valuation_result.data[0]["valuation"] is not None:
                             # Use latest market valuation (preferred method)
-                            total_value += valuation_result.data[0]["value"]
+                            total_value += valuation_result.data[0]["valuation"]
                             provider_has_valuations = True
                             valuations_used += 1
                         else:
@@ -200,12 +200,12 @@ async def get_dashboard_stats(db = Depends(get_db)):
         
         # Calculate total FUM from latest fund valuations (preferred) with fallback to amount_invested
         # This gives current market value rather than historical invested amount
-        latest_valuations_result = db.table("latest_fund_valuations").select("value").execute()
+        latest_valuations_result = db.table("latest_portfolio_fund_valuations").select("valuation").execute()
         total_from_valuations = 0
         total_from_investments = 0
         
         if latest_valuations_result.data:
-            total_from_valuations = sum(val["value"] or 0 for val in latest_valuations_result.data)
+            total_from_valuations = sum(val["valuation"] or 0 for val in latest_valuations_result.data)
             stats["totalFUM"] = total_from_valuations
             logger.info(f"Dashboard stats: Total FUM calculated from {len(latest_valuations_result.data)} latest valuations: {total_from_valuations}")
         
@@ -251,9 +251,9 @@ async def get_performance_data(
         response["companyIRR"] = company_stats["company_irr"]
         
         # Calculate total FUM using latest valuations (consistent with dashboard_stats)
-        latest_valuations_result = db.table("latest_fund_valuations").select("value").execute()
+        latest_valuations_result = db.table("latest_portfolio_fund_valuations").select("valuation").execute()
         if latest_valuations_result.data:
-            response["companyFUM"] = sum(val["value"] or 0 for val in latest_valuations_result.data)
+            response["companyFUM"] = sum(val["valuation"] or 0 for val in latest_valuations_result.data)
             logger.info(f"Performance data: Company FUM calculated from {len(latest_valuations_result.data)} latest valuations: {response['companyFUM']}")
         else:
             # Fallback to amount_invested if no valuations exist
@@ -775,11 +775,11 @@ async def calculate_company_irr(client):
             logger.info("Attempting fallback calculation...")
             
             # Get total current valuations
-            latest_valuations_response = client.table('latest_fund_valuations') \
-                .select('value') \
+            latest_valuations_response = client.table('latest_portfolio_fund_valuations') \
+                .select('valuation') \
                 .execute()
             
-            total_current_value = sum(float(v['value'] or 0) for v in latest_valuations_response.data)
+            total_current_value = sum(float(v['valuation'] or 0) for v in latest_valuations_response.data)
             
             # Get total amount invested
             portfolio_funds_response = client.table('portfolio_funds') \
@@ -1232,11 +1232,11 @@ async def get_portfolio_template_distribution(
                 
                 for pf in pf_result.data:
                     # Prioritize latest valuation for current market value
-                    valuation_result = db.table("latest_fund_valuations").select("value").eq("portfolio_fund_id", pf["id"]).execute()
+                    valuation_result = db.table("latest_portfolio_fund_valuations").select("valuation").eq("portfolio_fund_id", pf["id"]).execute()
                     
-                    if valuation_result.data and len(valuation_result.data) > 0 and valuation_result.data[0]["value"] is not None:
+                    if valuation_result.data and len(valuation_result.data) > 0 and valuation_result.data[0]["valuation"] is not None:
                         # Use latest market valuation (preferred method)
-                        total_value += valuation_result.data[0]["value"]
+                        total_value += valuation_result.data[0]["valuation"]
                         template_has_valuations = True
                         valuations_used += 1
                     else:
@@ -1268,11 +1268,11 @@ async def get_portfolio_template_distribution(
             
             for pf in pf_result.data:
                 # Prioritize latest valuation for current market value
-                valuation_result = db.table("latest_fund_valuations").select("value").eq("portfolio_fund_id", pf["id"]).execute()
+                valuation_result = db.table("latest_portfolio_fund_valuations").select("valuation").eq("portfolio_fund_id", pf["id"]).execute()
                 
-                if valuation_result.data and len(valuation_result.data) > 0 and valuation_result.data[0]["value"] is not None:
+                if valuation_result.data and len(valuation_result.data) > 0 and valuation_result.data[0]["valuation"] is not None:
                     # Use latest market valuation (preferred method)
-                    bespoke_total += valuation_result.data[0]["value"]
+                    bespoke_total += valuation_result.data[0]["valuation"]
                     bespoke_has_valuations = True
                     valuations_used += 1
                 else:
@@ -1318,8 +1318,8 @@ async def get_dashboard_all_data(
         logger.info("Fetching complete dashboard data with optimized bulk queries")
         
         # 1. Get ALL latest valuations in one query (instead of N individual queries)
-        all_valuations_result = db.table("latest_fund_valuations")\
-            .select("portfolio_fund_id, value, valuation_date")\
+        all_valuations_result = db.table("latest_portfolio_fund_valuations")\
+            .select("portfolio_fund_id, valuation, valuation_date")\
             .execute()
         
         # Create lookup dictionary for O(1) access
@@ -1328,9 +1328,9 @@ async def get_dashboard_all_data(
         
         if all_valuations_result.data:
             for v in all_valuations_result.data:
-                if v["value"] is not None:
-                    valuations_lookup[v["portfolio_fund_id"]] = v["value"]
-                    total_fum_from_valuations += v["value"]
+                if v["valuation"] is not None:
+                    valuations_lookup[v["portfolio_fund_id"]] = v["valuation"]
+                    total_fum_from_valuations += v["valuation"]
         
         # 2. Get ALL portfolio funds with related data in one query
         portfolio_funds_result = db.table("portfolio_funds")\
@@ -1529,8 +1529,8 @@ async def get_products_risk_differences(
                     continue
                 
                 # Get latest valuation for this portfolio fund
-                valuation_result = db.table("fund_valuations")\
-                    .select("value")\
+                valuation_result = db.table("portfolio_fund_valuations")\
+                    .select("valuation")\
                     .eq("portfolio_fund_id", pf["id"])\
                     .order("valuation_date", desc=True)\
                     .limit(1)\
@@ -1541,7 +1541,7 @@ async def get_products_risk_differences(
                     "fund_name": fund_result.data[0]["fund_name"],
                     "target_weighting": float(pf["target_weighting"] or 0),
                     "amount_invested": float(pf["amount_invested"] or 0),
-                    "latest_valuation": float(valuation_result.data[0]["value"]) if valuation_result.data else None
+                    "latest_valuation": float(valuation_result.data[0]["valuation"]) if valuation_result.data else None
                 }
             
             if not fund_data:

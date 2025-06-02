@@ -318,21 +318,28 @@ async def get_portfolio_funds(
         latest_valuations = {}
         
         if len(fund_ids) > 0:
-            # Get the latest valuation for each fund from fund_valuations
-            for fund_id in fund_ids:
-
-                valuation_result = db.table("fund_valuations")\
-                    .select("value", "valuation_date", "portfolio_fund_id")\
-                    .eq("portfolio_fund_id", fund_id)\
+            # Get the latest valuation for each fund from portfolio_fund_valuations
+            # This gets all valuations for all funds and groups them by fund ID
+            if portfolio_fund_ids:
+                valuation_result = db.table("portfolio_fund_valuations")\
+                    .select("valuation, valuation_date, portfolio_fund_id")\
+                    .in_("portfolio_fund_id", portfolio_fund_ids)\
                     .order("valuation_date", desc=True)\
-                    .limit(1)\
                     .execute()
-                    
-                if valuation_result.data and len(valuation_result.data) > 0:
-                    latest_valuations[fund_id] = {
-                        "value": valuation_result.data[0]["value"],
-                        "date": valuation_result.data[0]["valuation_date"]
-                    }
+
+                # Group valuations by portfolio_fund_id and keep only the latest for each
+                valuations_map = {}
+                if valuation_result.data:
+                    for val in valuation_result.data:
+                        fund_id = val.get("portfolio_fund_id")
+                        if fund_id not in valuations_map:
+                            valuations_map[fund_id] = val
+                        else:
+                            # Check if this valuation is more recent
+                            current_date = valuations_map[fund_id].get("valuation_date")
+                            new_date = val.get("valuation_date")
+                            if new_date > current_date:
+                                valuations_map[fund_id] = val
         
         # Add valuations to the portfolio funds
         for fund in result.data:
@@ -439,7 +446,7 @@ async def get_portfolio_fund(portfolio_fund_id: int, db = Depends(get_db)):
     How it works:
         1. Takes the portfolio_fund_id from the URL path
         2. Queries the 'portfolio_funds' table for a record with matching ID
-        3. Fetches the latest valuation from fund_valuations if available
+        3. Fetches the latest valuation from portfolio_fund_valuations if available
         4. Returns the association data or raises a 404 error if not found
     Expected output: A JSON object containing the requested portfolio fund's details
     """
@@ -451,9 +458,9 @@ async def get_portfolio_fund(portfolio_fund_id: int, db = Depends(get_db)):
         # Get the portfolio fund data
         portfolio_fund = result.data[0]
 
-        # Get latest valuation for this fund from fund_valuations
-        valuation_result = db.table("fund_valuations")\
-            .select("value", "valuation_date")\
+        # Get latest valuation for this fund from portfolio_fund_valuations
+        valuation_result = db.table("portfolio_fund_valuations")\
+            .select("valuation, valuation_date")\
             .eq("portfolio_fund_id", portfolio_fund_id)\
             .order("valuation_date", desc=True)\
             .limit(1)\
@@ -461,7 +468,7 @@ async def get_portfolio_fund(portfolio_fund_id: int, db = Depends(get_db)):
             
         if valuation_result.data and len(valuation_result.data) > 0:
             latest_valuation = valuation_result.data[0]
-            portfolio_fund["market_value"] = float(latest_valuation["value"])
+            portfolio_fund["market_value"] = float(latest_valuation["valuation"])
             portfolio_fund["valuation_date"] = latest_valuation["valuation_date"]
 
         return portfolio_fund
@@ -628,7 +635,7 @@ async def calculate_portfolio_fund_irr(
         else:
             next_month = datetime(year, month + 1, 1)
 
-        valuation_result = db.table("fund_valuations") \
+        valuation_result = db.table("portfolio_fund_valuations") \
             .select("*") \
             .eq("portfolio_fund_id", portfolio_fund_id) \
             .gte("valuation_date", first_day.isoformat()) \
@@ -1025,15 +1032,15 @@ async def recalculate_all_irr_values(
 
                 fund_valuation_id = irr_value["fund_valuation_id"]
                 
-                # Get the valuation amount from fund_valuations table
+                # Get the valuation amount from portfolio_fund_valuations table
                 if fund_valuation_id:
-                    valuation_result = db.table("fund_valuations")\
-                        .select("value")\
+                    valuation_result = db.table("portfolio_fund_valuations")\
+                        .select("valuation")\
                         .eq("id", fund_valuation_id)\
                         .execute()
                         
                     if valuation_result.data and len(valuation_result.data) > 0:
-                        valuation_amount = float(valuation_result.data[0]["value"])
+                        valuation_amount = float(valuation_result.data[0]["valuation"])
                     else:
                         logger.warning(f"Fund valuation record with ID {fund_valuation_id} not found, skipping IRR recalculation")
                         continue
@@ -1046,7 +1053,7 @@ async def recalculate_all_irr_values(
                     else:
                         next_month = month_start.replace(month=month_start.month + 1)
                     
-                    valuation_result = db.table("fund_valuations")\
+                    valuation_result = db.table("portfolio_fund_valuations")\
                         .select("*")\
                         .eq("portfolio_fund_id", portfolio_fund_id)\
                         .gte("valuation_date", month_start.isoformat())\
@@ -1057,7 +1064,7 @@ async def recalculate_all_irr_values(
                         logger.warning(f"No valuation found for date {valuation_date.isoformat()}, skipping IRR recalculation")
                         continue
                         
-                    valuation_amount = float(valuation_result.data[0]["value"])
+                    valuation_amount = float(valuation_result.data[0]["valuation"])
                     fund_valuation_id = valuation_result.data[0]["id"]
 
                 
@@ -1173,7 +1180,7 @@ def calculate_portfolio_fund_irr_sync(
 
         # If fund_valuation_id is provided, use it directly
         if fund_valuation_id:
-            valuation_result = db.table("fund_valuations") \
+            valuation_result = db.table("portfolio_fund_valuations") \
                 .select("*") \
                 .eq("id", fund_valuation_id) \
                 .execute()
@@ -1195,7 +1202,7 @@ def calculate_portfolio_fund_irr_sync(
             else:
                 next_month = datetime(year, month + 1, 1)
 
-            valuation_result = db.table("fund_valuations") \
+            valuation_result = db.table("portfolio_fund_valuations") \
                 .select("*") \
                 .eq("portfolio_fund_id", portfolio_fund_id) \
                 .gte("valuation_date", first_day.isoformat()) \
@@ -1965,7 +1972,7 @@ async def get_aggregated_irr_history(
                         
                         for fund_id in all_fund_ids:
                             # Find valuation closest to the end of the month/year
-                            valuation_result = db.table("fund_valuations")\
+                            valuation_result = db.table("portfolio_fund_valuations")\
                                 .select("*")\
                                 .eq("portfolio_fund_id", fund_id)\
                                 .lte("valuation_date", cutoff_date.isoformat())\
@@ -2133,7 +2140,7 @@ async def update_irr_value(
                 
                 if "fund_valuation_id" in data:
                     # Get the valuation amount from the fund_valuation record
-                    valuation_record = db.table("fund_valuations")\
+                    valuation_record = db.table("portfolio_fund_valuations")\
                         .select("value")\
                         .eq("id", data["fund_valuation_id"])\
                         .execute()
@@ -2145,7 +2152,7 @@ async def update_irr_value(
                     # Get the valuation amount from the existing fund_valuation record
                     existing_fund_valuation_id = irr_record["fund_valuation_id"]
                     if existing_fund_valuation_id:
-                        valuation_record = db.table("fund_valuations")\
+                        valuation_record = db.table("portfolio_fund_valuations")\
                             .select("value")\
                             .eq("id", existing_fund_valuation_id)\
                             .execute()
@@ -2363,7 +2370,7 @@ async def calculate_portfolio_fund_irr(
         
         # If we need to get a valuation for this date
         if valuation is None:
-            valuation_result = db.table("fund_valuations") \
+            valuation_result = db.table("portfolio_fund_valuations") \
                 .select("*") \
                 .eq("portfolio_fund_id", portfolio_fund_id) \
                 .gte("valuation_date", calculation_date.isoformat()) \
@@ -2379,7 +2386,7 @@ async def calculate_portfolio_fund_irr(
             fund_valuation_id = valuation_result.data[0]["id"]
         else:
             # Try to find existing valuation record for this month
-            valuation_result = db.table("fund_valuations") \
+            valuation_result = db.table("portfolio_fund_valuations") \
                 .select("id") \
                 .eq("portfolio_fund_id", portfolio_fund_id) \
                 .gte("valuation_date", calculation_date.isoformat()) \
@@ -2615,7 +2622,7 @@ async def recalculate_fund_irr_for_date(
             next_month = month_start.replace(month=month_start.month + 1)
         
         # Find valuation for this month
-        valuation_result = db.table("fund_valuations")\
+        valuation_result = db.table("portfolio_fund_valuations")\
             .select("*")\
             .eq("portfolio_fund_id", portfolio_fund_id)\
             .gte("valuation_date", month_start.isoformat())\
@@ -2702,7 +2709,7 @@ async def calculate_multiple_portfolio_funds_irr(
         # If no IRR date provided, find the latest valuation date across all funds
         if irr_date_obj is None:
             logger.info("No IRR date provided, finding latest valuation date")
-            latest_valuations_response = db.table("fund_valuations").select("valuation_date").in_("portfolio_fund_id", portfolio_fund_ids).order("valuation_date", desc=True).limit(1).execute()
+            latest_valuations_response = db.table("portfolio_fund_valuations").select("valuation_date").in_("portfolio_fund_id", portfolio_fund_ids).order("valuation_date", desc=True).limit(1).execute()
             
             if latest_valuations_response.data:
                 valuation_date_str = latest_valuations_response.data[0]["valuation_date"]
@@ -2722,10 +2729,10 @@ async def calculate_multiple_portfolio_funds_irr(
         # Fetch valuations for each fund as of the IRR date
         fund_valuations = {}
         for fund_id in portfolio_fund_ids:
-            valuation_response = db.table("fund_valuations").select("value").eq("portfolio_fund_id", fund_id).lte("valuation_date", irr_date_obj.isoformat()).order("valuation_date", desc=True).limit(1).execute()
+            valuation_response = db.table("portfolio_fund_valuations").select("valuation").eq("portfolio_fund_id", fund_id).lte("valuation_date", irr_date_obj.isoformat()).order("valuation_date", desc=True).limit(1).execute()
             
             if valuation_response.data:
-                fund_valuations[fund_id] = float(valuation_response.data[0]["value"])
+                fund_valuations[fund_id] = float(valuation_response.data[0]["valuation"])
             else:
                 logger.warning(f"No valuation found for fund {fund_id} as of {irr_date_obj}")
                 fund_valuations[fund_id] = 0.0
@@ -2900,7 +2907,7 @@ async def calculate_single_portfolio_fund_irr(
         # If no IRR date provided, find the latest valuation date for this fund
         if irr_date_obj is None:
             logger.info("No IRR date provided, finding latest valuation date")
-            latest_valuation_response = db.table("fund_valuations").select("valuation_date").eq("portfolio_fund_id", portfolio_fund_id).order("valuation_date", desc=True).limit(1).execute()
+            latest_valuation_response = db.table("portfolio_fund_valuations").select("valuation_date").eq("portfolio_fund_id", portfolio_fund_id).order("valuation_date", desc=True).limit(1).execute()
             
             if latest_valuation_response.data:
                 valuation_date_str = latest_valuation_response.data[0]["valuation_date"]
@@ -2918,12 +2925,12 @@ async def calculate_single_portfolio_fund_irr(
         logger.info(f"IRR calculation date: {irr_date_obj}")
         
         # Fetch valuation for the fund as of the IRR date
-        valuation_response = db.table("fund_valuations").select("value").eq("portfolio_fund_id", portfolio_fund_id).lte("valuation_date", irr_date_obj.isoformat()).order("valuation_date", desc=True).limit(1).execute()
+        valuation_response = db.table("portfolio_fund_valuations").select("valuation").eq("portfolio_fund_id", portfolio_fund_id).lte("valuation_date", irr_date_obj.isoformat()).order("valuation_date", desc=True).limit(1).execute()
         
         if not valuation_response.data:
             raise HTTPException(status_code=404, detail=f"No valuation found for portfolio fund {portfolio_fund_id} as of {irr_date_obj}")
         
-        valuation_amount = float(valuation_response.data[0]["value"])
+        valuation_amount = float(valuation_response.data[0]["valuation"])
         logger.info(f"Fund valuation: {valuation_amount}")
         
         # Fetch all activity logs for this fund up to the IRR date
