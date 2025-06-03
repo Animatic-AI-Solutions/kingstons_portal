@@ -661,7 +661,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           const valuationData = {
             portfolio_fund_id: edit.fundId,
             valuation_date: `${edit.month}-01`,
-            value: parseFloat(edit.value)
+            valuation: parseFloat(edit.value)
           };
 
           if (edit.isNew) {
@@ -736,7 +736,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           const valuationData = {
             portfolio_fund_id: edit.fundId,
             valuation_date: `${edit.month}-01`,
-            value: parseFloat(edit.value)
+            valuation: parseFloat(edit.value)
           };
 
           if (edit.isNew) {

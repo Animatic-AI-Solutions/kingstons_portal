@@ -375,7 +375,7 @@ async def delete_client_group_products(
                 valuations_deleted += len(valuations.data) if valuations.data else 0
                         
                         # Delete IRR values
-                irr_values = db.table("irr_values").delete().eq("fund_id", pf_id).execute()
+                irr_values = db.table("portfolio_fund_irr_values").delete().eq("fund_id", pf_id).execute()
                 irr_values_deleted += len(irr_values.data) if irr_values.data else 0
         
         # Delete portfolio funds
@@ -463,14 +463,14 @@ async def get_client_group_fum_summary(db = Depends(get_db)):
                             for fund in funds_result.data:
                                 # Get the latest valuation for this fund
                                 fund_val_result = db.table("portfolio_fund_valuations")\
-                                    .select("value")\
+                                    .select("valuation")\
                                     .eq("portfolio_fund_id", fund["id"])\
                                     .order("valuation_date", desc=True)\
                                     .limit(1)\
                                     .execute()
                                 
                                 if fund_val_result.data:
-                                    total_fum += float(fund_val_result.data[0]["value"] or 0)
+                                    total_fum += float(fund_val_result.data[0]["valuation"] or 0)
             
             # Combine the data  
             combined_record = {

@@ -1204,8 +1204,8 @@ async def calculate_portfolio_total_irr(
             return {
                 "status": "success",
                 "portfolio_id": portfolio_id,
-                "irr_value": 0.0,
-                "calculation_date": datetime.now().isoformat(),
+                "irr_percentage": 0.0,  # Changed from irr_value to irr_percentage to match frontend expectation
+                "valuation_date": datetime.now().isoformat(),  # Changed from calculation_date to valuation_date to match frontend expectation
                 "note": "No portfolio IRR found - returning 0%"
             }
         
@@ -1219,8 +1219,8 @@ async def calculate_portfolio_total_irr(
         return {
             "status": "success",
             "portfolio_id": portfolio_id,
-            "irr_value": irr_percentage,
-            "calculation_date": irr_date if irr_date else datetime.now().isoformat(),
+            "irr_percentage": irr_percentage,  # Changed from irr_value to irr_percentage to match frontend expectation
+            "valuation_date": irr_date if irr_date else datetime.now().isoformat(),  # Changed from calculation_date to valuation_date to match frontend expectation
             "note": "Retrieved from latest_portfolio_irr_values"
         }
             
@@ -1299,21 +1299,18 @@ async def get_complete_portfolio(
             except Exception as e:
                 logger.error(f"Error fetching latest valuations: {str(e)}")
             
-            # Step 5: Get portfolio-level IRR instead of individual fund IRR values
-            portfolio_irr = None
-            portfolio_irr_date = None
+            # Step 5: Get individual fund IRR values
+            irr_map = {}
             try:
-                # Get the latest portfolio IRR from latest_portfolio_irr_values view
-                portfolio_irr_result = db.table("latest_portfolio_irr_values").select("*").eq("portfolio_id", portfolio_id).execute()
-                if portfolio_irr_result.data and len(portfolio_irr_result.data) > 0:
-                    portfolio_irr_data = portfolio_irr_result.data[0]
-                    portfolio_irr = portfolio_irr_data.get("irr_result")
-                    portfolio_irr_date = portfolio_irr_data.get("irr_date")
-                    logger.info(f"Found portfolio IRR: {portfolio_irr}% calculated on {portfolio_irr_date}")
+                # Get the latest IRR values for each fund from latest_portfolio_fund_irr_values view
+                latest_irr_result = db.table("latest_portfolio_fund_irr_values").select("*").in_("fund_id", portfolio_fund_ids).execute()
+                if latest_irr_result.data:
+                    irr_map = {irr.get("fund_id"): irr for irr in latest_irr_result.data}
+                    logger.info(f"Found IRR data for {len(irr_map)} funds")
                 else:
-                    logger.info(f"No portfolio IRR found for portfolio {portfolio_id}")
+                    logger.info(f"No fund IRR data found for portfolio {portfolio_id}")
             except Exception as e:
-                logger.error(f"Error fetching portfolio IRR: {str(e)}")
+                logger.error(f"Error fetching fund IRR values: {str(e)}")
             
             # Enhance each portfolio fund with its related data
             for fund in portfolio_funds:
@@ -1335,9 +1332,15 @@ async def get_complete_portfolio(
                     fund["market_value"] = valuation.get("valuation")
                     fund["valuation_date"] = valuation.get("valuation_date")
                 
-                # Add portfolio-level IRR to each fund (since Product IRR = Portfolio IRR)
-                fund["irr_value"] = portfolio_irr
-                fund["irr_date"] = portfolio_irr_date
+                # Add individual fund IRR data
+                if fund_id in irr_map:
+                    irr_data = irr_map[fund_id]
+                    fund["irr_result"] = irr_data.get("irr_result")
+                    fund["irr_date"] = irr_data.get("irr_date")
+                else:
+                    # Fund has no IRR data, set default values
+                    fund["irr_result"] = None
+                    fund["irr_date"] = None
         
         # Construct the complete response
         response = {

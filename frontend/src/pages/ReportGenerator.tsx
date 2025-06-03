@@ -966,7 +966,7 @@ const formatPercentageFallback = (value: number | null): string => {
         const fundValuationsMap = allFundValuations.get(fundId)!;
         
         fundValuations.forEach((val: any) => {
-          if (val.value != null && val.valuation_date != null) {
+          if (val.valuation != null && val.valuation_date != null) {
             const dateParts = val.valuation_date.split('-');
             
             if (dateParts.length >= 2) {
@@ -974,7 +974,7 @@ const formatPercentageFallback = (value: number | null): string => {
               
               // Store this valuation by year-month
               fundValuationsMap[valuationYearMonth] = {
-                value: parseFloat(val.value),
+                value: parseFloat(val.valuation),
                 valuation_date: val.valuation_date
               };
             }

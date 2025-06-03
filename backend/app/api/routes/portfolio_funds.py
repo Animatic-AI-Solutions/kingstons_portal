@@ -320,35 +320,31 @@ async def get_portfolio_funds(
         if len(fund_ids) > 0:
             # Get the latest valuation for each fund from portfolio_fund_valuations
             # This gets all valuations for all funds and groups them by fund ID
-            if portfolio_fund_ids:
-                valuation_result = db.table("portfolio_fund_valuations")\
-                    .select("valuation, valuation_date, portfolio_fund_id")\
-                    .in_("portfolio_fund_id", portfolio_fund_ids)\
-                    .order("valuation_date", desc=True)\
-                    .execute()
-                    
-                # Group valuations by portfolio_fund_id and keep only the latest for each
-                valuations_map = {}
-                if valuation_result.data:
-                    for val in valuation_result.data:
-                        fund_id = val.get("portfolio_fund_id")
-                        if fund_id not in valuations_map:
-                            valuations_map[fund_id] = val
-                        else:
-                            # Check if this valuation is more recent
-                            current_date = valuations_map[fund_id].get("valuation_date")
-                            new_date = val.get("valuation_date")
-                            if new_date > current_date:
-                                valuations_map[fund_id] = val
+            valuation_result = db.table("portfolio_fund_valuations")\
+                .select("valuation, valuation_date, portfolio_fund_id")\
+                .in_("portfolio_fund_id", fund_ids)\
+                .order("valuation_date", desc=True)\
+                .execute()
+                
+            # Group valuations by portfolio_fund_id and keep only the latest for each
+            if valuation_result.data:
+                for val in valuation_result.data:
+                    fund_id = val.get("portfolio_fund_id")
+                    if fund_id not in latest_valuations:
+                        latest_valuations[fund_id] = val
+                    else:
+                        # Check if this valuation is more recent
+                        current_date = latest_valuations[fund_id].get("valuation_date")
+                        new_date = val.get("valuation_date")
+                        if new_date > current_date:
+                            latest_valuations[fund_id] = val
         
         # Add valuations to the portfolio funds
         for fund in result.data:
             fund_id = fund["id"]
             if fund_id in latest_valuations:
-
-                fund["market_value"] = float(latest_valuations[fund_id]["value"])
-
-                fund["valuation_date"] = latest_valuations[fund_id]["date"]
+                fund["market_value"] = float(latest_valuations[fund_id]["valuation"])
+                fund["valuation_date"] = latest_valuations[fund_id]["valuation_date"]
         
         return result.data
     except Exception as e:
@@ -570,7 +566,7 @@ async def delete_portfolio_fund(portfolio_fund_id: int, db = Depends(get_db)):
         logger.info(f"Deleting portfolio fund with ID: {portfolio_fund_id} and all related data")
         
         # First, delete related IRR values
-        irr_result = db.table("irr_values").delete().eq("fund_id", portfolio_fund_id).execute()
+        irr_result = db.table("portfolio_fund_irr_values").delete().eq("fund_id", portfolio_fund_id).execute()
         irr_values_deleted = len(irr_result.data) if irr_result.data else 0
         logger.info(f"Deleted {irr_values_deleted} IRR values for portfolio fund {portfolio_fund_id}")
         
@@ -651,7 +647,7 @@ async def calculate_portfolio_fund_irr(
         # Use the valuation from the database instead of the provided value
         existing_valuation = valuation_result.data[0]
         logger.info(f"Found existing valuation: {existing_valuation}")
-        valuation = float(existing_valuation["value"])
+        valuation = float(existing_valuation["valuation"])
         logger.info(f"Using valuation from database: {valuation}")
 
         # Add the fund_valuation_id from the existing valuation
@@ -725,7 +721,7 @@ async def calculate_portfolio_fund_irr(
                     }
                     
                     # Check if IRR already exists
-                    existing_irr = db.table("irr_values")\
+                    existing_irr = db.table("portfolio_fund_irr_values")\
                         .select("*")\
                         .eq("fund_id", portfolio_fund_id)\
                         .eq("date", valuation_date.isoformat())\
@@ -734,13 +730,13 @@ async def calculate_portfolio_fund_irr(
                     if existing_irr.data and len(existing_irr.data) > 0:
                         # Update existing
                         irr_id = existing_irr.data[0]["id"]
-                        db.table("irr_values")\
+                        db.table("portfolio_fund_irr_values")\
                             .update({"irr_result": float(round(irr_percentage, 2))})\
                             .eq("id", irr_id)\
                             .execute()
                     else:
                         # Insert new
-                        db.table("irr_values").insert(irr_value_data).execute()
+                        db.table("portfolio_fund_irr_values").insert(irr_value_data).execute()
                     
                     return {
                         "status": "success",
@@ -834,7 +830,7 @@ async def calculate_portfolio_fund_irr(
             logger.info(f"Calculated IRR: {irr_percentage}%")
             
             # Check if an IRR value already exists for this fund and date
-            existing_irr = db.table("irr_values")\
+            existing_irr = db.table("portfolio_fund_irr_values")\
                 .select("*")\
                 .eq("fund_id", portfolio_fund_id)\
                 .eq("date", valuation_date.isoformat())\
@@ -858,7 +854,7 @@ async def calculate_portfolio_fund_irr(
                 oldest_record = existing_irr.data[0]
                 irr_value_id = oldest_record["id"]
                 
-                db.table("irr_values")\
+                db.table("portfolio_fund_irr_values")\
                     .update(irr_value_data)\
                     .eq("id", irr_value_id)\
                     .execute()
@@ -875,7 +871,7 @@ async def calculate_portfolio_fund_irr(
                 }
                 
                 logger.info(f"Storing new IRR value: {full_irr_data}")
-                db.table("irr_values").insert(full_irr_data).execute()
+                db.table("portfolio_fund_irr_values").insert(full_irr_data).execute()
             
             calculation_type = "standard_irr"
             if irr_result.get('is_simple_return'):
@@ -926,7 +922,7 @@ async def get_latest_irr(portfolio_fund_id: int, db = Depends(get_db)):
 
         # Get the latest IRR value for this fund using the optimized index
         logger.info("Querying irr_values table...")
-        query = db.table("irr_values")\
+        query = db.table("portfolio_fund_irr_values")\
             .select("*")\
             .eq("fund_id", portfolio_fund_id)\
             .order("date", desc=True)\
@@ -1009,7 +1005,7 @@ async def recalculate_all_irr_values(
             raise HTTPException(status_code=404, detail=f"Portfolio fund with ID {portfolio_fund_id} not found")
         
         # Get all existing IRR values for this fund
-        existing_irr_values = db.table("irr_values")\
+        existing_irr_values = db.table("portfolio_fund_irr_values")\
             .select("*")\
             .eq("fund_id", portfolio_fund_id)\
             .order("date")\
@@ -1075,7 +1071,7 @@ async def recalculate_all_irr_values(
                     logger.info(f"Zero valuation detected - storing IRR value of 0 for portfolio_fund_id {portfolio_fund_id}")
                     
                     # Check if IRR already exists for this date
-                    existing_irr = db.table("irr_values")\
+                    existing_irr = db.table("portfolio_fund_irr_values")\
                         .select("*")\
                         .eq("fund_id", portfolio_fund_id)\
                         .eq("date", valuation_date.isoformat())\
@@ -1091,13 +1087,13 @@ async def recalculate_all_irr_values(
                     if existing_irr.data and len(existing_irr.data) > 0:
                         # Update existing record
                         irr_id = existing_irr.data[0]["id"]
-                        db.table("irr_values")\
+                        db.table("portfolio_fund_irr_values")\
                             .update({"irr_result": 0.0})\
                             .eq("id", irr_id)\
                             .execute()
                     else:
                         # Create new record
-                        db.table("irr_values").insert(irr_value_data).execute()
+                        db.table("portfolio_fund_irr_values").insert(irr_value_data).execute()
                     
                     update_count += 1
                     logger.info(f"Successfully set IRR to 0 for zero valuation on date: {valuation_date.isoformat()}")
@@ -1222,7 +1218,7 @@ def calculate_portfolio_fund_irr_sync(
         # Use the valuation from the database
         existing_valuation = valuation_result.data[0]
         logger.info(f"Found existing valuation: {existing_valuation}")
-        valuation = float(existing_valuation["value"])
+        valuation = float(existing_valuation["valuation"])
         logger.info(f"Using valuation from database: {valuation}")
 
         # Add the fund_valuation_id from the existing valuation
@@ -1304,7 +1300,7 @@ def calculate_portfolio_fund_irr_sync(
                     }
                     
                     # Check if IRR already exists
-                    existing_irr = db.table("irr_values")\
+                    existing_irr = db.table("portfolio_fund_irr_values")\
                         .select("*")\
                         .eq("fund_id", portfolio_fund_id)\
                         .eq("date", valuation_date.isoformat())\
@@ -1313,13 +1309,13 @@ def calculate_portfolio_fund_irr_sync(
                     if existing_irr.data and len(existing_irr.data) > 0:
                         # Update existing
                         irr_id = existing_irr.data[0]["id"]
-                        db.table("irr_values")\
+                        db.table("portfolio_fund_irr_values")\
                             .update({"irr_result": float(round(irr_percentage, 2))})\
                             .eq("id", irr_id)\
                             .execute()
                     else:
                         # Insert new
-                        db.table("irr_values").insert(irr_value_data).execute()
+                        db.table("portfolio_fund_irr_values").insert(irr_value_data).execute()
                     
                     return {
                         "status": "success",
@@ -1433,7 +1429,7 @@ def calculate_portfolio_fund_irr_sync(
             logger.info(f"Calculated IRR: {irr_percentage}%")
             
             # Check if an IRR value already exists for this fund and date
-            existing_irr = db.table("irr_values")\
+            existing_irr = db.table("portfolio_fund_irr_values")\
                 .select("*")\
                 .eq("fund_id", portfolio_fund_id)\
                 .eq("date", valuation_date.isoformat())\
@@ -1457,7 +1453,7 @@ def calculate_portfolio_fund_irr_sync(
                 oldest_record = existing_irr.data[0]
                 irr_value_id = oldest_record["id"]
                 
-                db.table("irr_values")\
+                db.table("portfolio_fund_irr_values")\
                     .update(irr_value_data)\
                     .eq("id", irr_value_id)\
                     .execute()
@@ -1474,7 +1470,7 @@ def calculate_portfolio_fund_irr_sync(
                 }
                 
                 logger.info(f"Storing new IRR value: {full_irr_data}")
-                db.table("irr_values").insert(full_irr_data).execute()
+                db.table("portfolio_fund_irr_values").insert(full_irr_data).execute()
             
             calculation_type = "standard_irr"
             if irr_result.get('is_simple_return'):
@@ -1536,7 +1532,7 @@ async def get_fund_irr_values(portfolio_fund_id: int, db = Depends(get_db)):
             raise HTTPException(status_code=404, detail=f"Portfolio fund with ID {portfolio_fund_id} not found")
             
         # Get all IRR values
-        irr_values = db.table("irr_values")\
+        irr_values = db.table("portfolio_fund_irr_values")\
             .select("*")\
             .eq("fund_id", portfolio_fund_id)\
             .order("date")\
@@ -1597,7 +1593,7 @@ async def get_batch_irr_values(
             logger.warning(f"Some portfolio funds not found: {missing_fund_ids}")
             
         # Get all IRR values for the valid funds in a single query
-        irr_values = db.table("irr_values")\
+        irr_values = db.table("portfolio_fund_irr_values")\
             .select("*")\
             .in_("fund_id", found_fund_ids)\
             .order("date")\
@@ -1669,7 +1665,7 @@ async def get_batch_irr_values_by_date(
         
         # Query IRR values with date filtering using PostgreSQL date functions
         # Extract year and month from the date column and match target_year and target_month
-        irr_values = db.table("irr_values")\
+        irr_values = db.table("portfolio_fund_irr_values")\
             .select("*")\
             .in_("fund_id", found_fund_ids)\
             .execute()
@@ -1845,7 +1841,7 @@ async def get_aggregated_irr_history(
             }
         
         # Get all IRR values for the specified funds
-        irr_values = db.table("irr_values")\
+        irr_values = db.table("portfolio_fund_irr_values")\
             .select("*")\
             .in_("fund_id", fund_ids)\
             .order("date")\
@@ -1982,7 +1978,7 @@ async def get_aggregated_irr_history(
                             
                             if valuation_result.data:
                                 valuation = valuation_result.data[0]
-                                total_value += float(valuation["value"])
+                                total_value += float(valuation["valuation"])
                                 
                                 valuation_date_obj = datetime.fromisoformat(valuation["valuation_date"].replace('Z', '+00:00'))
                                 if valuation_date is None or valuation_date_obj > valuation_date:
@@ -2070,7 +2066,7 @@ async def update_irr_value(
         logger.info(f"Updating IRR value with ID: {irr_value_id}, data: {data}")
         
         # Validate the IRR value exists
-        irr_check = db.table("irr_values").select("*").eq("id", irr_value_id).execute()
+        irr_check = db.table("portfolio_fund_irr_values").select("*").eq("id", irr_value_id).execute()
         if not irr_check.data or len(irr_check.data) == 0:
             logger.error(f"IRR value not found with ID: {irr_value_id}")
             raise HTTPException(status_code=404, detail=f"IRR value with ID {irr_value_id} not found")
@@ -2145,7 +2141,7 @@ async def update_irr_value(
                         .eq("id", data["fund_valuation_id"])\
                         .execute()
                     if valuation_record.data and len(valuation_record.data) > 0:
-                        valuation_amount = valuation_record.data[0]["value"]
+                        valuation_amount = valuation_record.data[0]["valuation"]
                     else:
                         raise HTTPException(status_code=404, detail=f"Fund valuation with ID {data['fund_valuation_id']} not found")
                 else:
@@ -2157,7 +2153,7 @@ async def update_irr_value(
                             .eq("id", existing_fund_valuation_id)\
                             .execute()
                         if valuation_record.data and len(valuation_record.data) > 0:
-                            valuation_amount = valuation_record.data[0]["value"]
+                            valuation_amount = valuation_record.data[0]["valuation"]
                         else:
                             raise HTTPException(status_code=404, detail=f"Fund valuation with ID {existing_fund_valuation_id} not found")
                     else:
@@ -2190,7 +2186,7 @@ async def update_irr_value(
         # If we have updates to make
         if update_data:
             logger.info(f"Applying updates to IRR value: {update_data}")
-            result = db.table("irr_values").update(update_data).eq("id", irr_value_id).execute()
+            result = db.table("portfolio_fund_irr_values").update(update_data).eq("id", irr_value_id).execute()
             
             if result.data and len(result.data) > 0:
                 logger.info(f"Successfully updated IRR value: {result.data[0]}")
@@ -2221,13 +2217,13 @@ async def delete_irr_value(irr_value_id: int, db = Depends(get_db)):
         logger.info(f"Deleting IRR value with ID: {irr_value_id}")
         
         # Check if IRR value exists
-        check_result = db.table("irr_values").select("*").eq("id", irr_value_id).execute()
+        check_result = db.table("portfolio_fund_irr_values").select("*").eq("id", irr_value_id).execute()
         if not check_result.data or len(check_result.data) == 0:
             logger.error(f"IRR value not found with ID: {irr_value_id}")
             raise HTTPException(status_code=404, detail=f"IRR value with ID {irr_value_id} not found")
             
         # Delete the record
-        db.table("irr_values").delete().eq("id", irr_value_id).execute()
+        db.table("portfolio_fund_irr_values").delete().eq("id", irr_value_id).execute()
         logger.info(f"Successfully deleted IRR value with ID: {irr_value_id}")
         
         return None
@@ -2274,7 +2270,7 @@ async def create_irr_value(
             irr_result = 99999.99 if irr_result > 0 else -99999.99
         
         # Check if IRR value already exists for this fund and date
-        existing_irr = db.table("irr_values")\
+        existing_irr = db.table("portfolio_fund_irr_values")\
             .select("*")\
             .eq("fund_id", fund_id)\
             .eq("date", date)\
@@ -2292,7 +2288,7 @@ async def create_irr_value(
             irr_id = existing_irr.data[0]["id"]
             logger.info(f"Updating existing IRR record {irr_id}")
             
-            result = db.table("irr_values")\
+            result = db.table("portfolio_fund_irr_values")\
                 .update({"irr_result": float(round(irr_result, 2)), "fund_valuation_id": fund_valuation_id})\
                 .eq("id", irr_id)\
                 .execute()
@@ -2310,7 +2306,7 @@ async def create_irr_value(
             # Create new record
             logger.info(f"Creating new IRR record: {irr_value_data}")
             
-            result = db.table("irr_values").insert(irr_value_data).execute()
+            result = db.table("portfolio_fund_irr_values").insert(irr_value_data).execute()
             
             if result.data and len(result.data) > 0:
                 created_record = result.data[0]
@@ -2382,7 +2378,7 @@ async def calculate_portfolio_fund_irr(
                 return None
                 
             # Get valuation
-            valuation = float(valuation_result.data[0]["value"])
+            valuation = float(valuation_result.data[0]["valuation"])
             fund_valuation_id = valuation_result.data[0]["id"]
         else:
             # Try to find existing valuation record for this month
@@ -2516,7 +2512,7 @@ async def calculate_portfolio_fund_irr(
             
             # If update_only is True, check if an IRR record exists for this fund/date
             if update_only:
-                existing_irr = db.table("irr_values")\
+                existing_irr = db.table("portfolio_fund_irr_values")\
                     .select("id")\
                     .eq("fund_id", portfolio_fund_id)\
                     .eq("date", calculation_date.isoformat())\
@@ -2536,14 +2532,14 @@ async def calculate_portfolio_fund_irr(
                 else:
                     # Update existing record
                     irr_id = existing_irr.data[0]["id"]
-                    db.table("irr_values")\
+                    db.table("portfolio_fund_irr_values")\
                         .update({"irr_result": float(round(annual_irr_percent, 2))})\
                         .eq("id", irr_id)\
                         .execute()
                     logger.info(f"Updated existing IRR record {irr_id} with value {annual_irr_percent:.2f}%")
             else:
                 # Check if IRR already exists for this date
-                existing_irr = db.table("irr_values")\
+                existing_irr = db.table("portfolio_fund_irr_values")\
                     .select("id")\
                     .eq("fund_id", portfolio_fund_id)\
                     .eq("date", calculation_date.isoformat())\
@@ -2552,14 +2548,14 @@ async def calculate_portfolio_fund_irr(
                 if existing_irr.data and len(existing_irr.data) > 0:
                     # Update existing
                     irr_id = existing_irr.data[0]["id"]
-                    db.table("irr_values")\
+                    db.table("portfolio_fund_irr_values")\
                         .update({"irr_result": float(round(annual_irr_percent, 2))})\
                         .eq("id", irr_id)\
                         .execute()
                     logger.info(f"Updated existing IRR record {irr_id} with value {annual_irr_percent:.2f}%")
                 else:
                     # Insert new
-                    db.table("irr_values").insert(irr_value_data).execute()
+                    db.table("portfolio_fund_irr_values").insert(irr_value_data).execute()
                     logger.info(f"Created new IRR record with value {annual_irr_percent:.2f}%")
             
             # Convert IRR to float for JSON serialization
@@ -2638,7 +2634,7 @@ async def recalculate_fund_irr_for_date(
             }
             
         valuation_record = valuation_result.data[0]
-        valuation_amount = float(valuation_record["value"])
+        valuation_amount = float(valuation_record["valuation"])
         fund_valuation_id = valuation_record["id"]
         
         logger.info(f"Found valuation record: id={fund_valuation_id}, amount={valuation_amount}")
@@ -3091,7 +3087,7 @@ async def replace_irr_value(
             raise HTTPException(status_code=422, detail=f"Invalid date format. Expected YYYY-MM-DD, got: {irr_date}")
         
         # Step 1: Delete existing IRR value(s) for this fund and date
-        existing_irr_response = db.table("irr_values")\
+        existing_irr_response = db.table("portfolio_fund_irr_values")\
             .select("id")\
             .eq("fund_id", portfolio_fund_id)\
             .eq("date", irr_date_iso)\
@@ -3101,7 +3097,7 @@ async def replace_irr_value(
         if existing_irr_response.data:
             # Delete all existing IRR values for this fund and date
             for irr_record in existing_irr_response.data:
-                db.table("irr_values").delete().eq("id", irr_record["id"]).execute()
+                db.table("portfolio_fund_irr_values").delete().eq("id", irr_record["id"]).execute()
                 deleted_count += 1
             
             logger.info(f"Deleted {deleted_count} existing IRR value(s) for fund {portfolio_fund_id} on {irr_date}")
@@ -3116,7 +3112,7 @@ async def replace_irr_value(
             "fund_valuation_id": fund_valuation_id
         }
         
-        insert_response = db.table("irr_values").insert(new_irr_data).execute()
+        insert_response = db.table("portfolio_fund_irr_values").insert(new_irr_data).execute()
         
         if not insert_response.data:
             raise HTTPException(status_code=500, detail="Failed to insert new IRR value")
@@ -3228,7 +3224,7 @@ async def batch_replace_irr_values(
             
             try:
                 # Delete existing IRR value(s) for this fund and date
-                existing_irr_response = db.table("irr_values")\
+                existing_irr_response = db.table("portfolio_fund_irr_values")\
                     .select("id")\
                     .eq("fund_id", portfolio_fund_id)\
                     .eq("date", irr_date_iso)\
@@ -3237,7 +3233,7 @@ async def batch_replace_irr_values(
                 deleted_count = 0
                 if existing_irr_response.data:
                     for irr_record in existing_irr_response.data:
-                        db.table("irr_values").delete().eq("id", irr_record["id"]).execute()
+                        db.table("portfolio_fund_irr_values").delete().eq("id", irr_record["id"]).execute()
                         deleted_count += 1
                 
                 # Insert the new IRR value
@@ -3248,7 +3244,7 @@ async def batch_replace_irr_values(
                     "fund_valuation_id": fund_valuation_id
                 }
                 
-                insert_response = db.table("irr_values").insert(new_irr_data).execute()
+                insert_response = db.table("portfolio_fund_irr_values").insert(new_irr_data).execute()
                 
                 if insert_response.data:
                     new_irr_record = insert_response.data[0]

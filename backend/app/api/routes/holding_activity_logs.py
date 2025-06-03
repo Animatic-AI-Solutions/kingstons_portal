@@ -97,45 +97,33 @@ async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, acti
             else:
                 logger.warning(f"Failed to recalculate IRR for date {irr_date}")
         
-        # Step 5: Check if we should create new IRR entries
-        # Only if all portfolio funds share common valuation dates
-        all_portfolio_funds = db.table("portfolio_funds")\
-            .select("id")\
-            .eq("portfolio_id", portfolio_id)\
-            .eq("status", "active")\
+        # Step 5: Create individual fund IRR entries for any valuation dates where IRR doesn't exist
+        # First, get all valuation dates for this specific portfolio fund from activity date onwards
+        fund_valuations = db.table("portfolio_fund_valuations")\
+            .select("valuation_date")\
+            .eq("portfolio_fund_id", portfolio_fund_id)\
+            .gte("valuation_date", activity_date)\
             .execute()
         
-        if not all_portfolio_funds.data:
-            logger.warning(f"No active portfolio funds found for portfolio {portfolio_id}")
-            return {
-                "success": True,
-                "recalculated_existing": recalculated_count,
-                "new_entries_created": 0,
-                "portfolio_irr_recalculated": 0,
-                "message": "No active portfolio funds for new entry creation"
-            }
-        
-        active_fund_ids = [pf["id"] for pf in all_portfolio_funds.data]
-        logger.info(f"Found {len(active_fund_ids)} active funds for common date analysis")
-        
-        # Find common valuation dates across all funds from the activity date onwards
-        common_dates = await find_common_valuation_dates_from_date(active_fund_ids, activity_date, db)
-        logger.info(f"Found {len(common_dates)} common valuation dates from {activity_date} onwards: {common_dates}")
+        fund_valuation_dates = [val["valuation_date"].split('T')[0] for val in fund_valuations.data]
+        logger.info(f"Found {len(fund_valuation_dates)} valuation dates for portfolio fund {portfolio_fund_id} from {activity_date} onwards: {fund_valuation_dates}")
         
         new_entries_created = 0
-        for common_date in common_dates:
+        
+        # Create IRR entries for each valuation date where IRR doesn't exist
+        for valuation_date in fund_valuation_dates:
             # Check if IRR already exists for this fund and date
             existing_check = db.table("portfolio_fund_irr_values")\
                 .select("id")\
                 .eq("fund_id", portfolio_fund_id)\
-                .eq("date", common_date)\
+                .eq("date", valuation_date)\
                 .execute()
             
             if not existing_check.data:
-                # Create new IRR entry
+                # Create new IRR entry for this specific fund
                 fund_irr_result = await calculate_single_portfolio_fund_irr(
                     portfolio_fund_id=portfolio_fund_id,
-                    irr_date=common_date,
+                    irr_date=valuation_date,
                     db=db
                 )
                 
@@ -146,7 +134,7 @@ async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, acti
                     valuation_result = db.table("portfolio_fund_valuations")\
                         .select("id")\
                         .eq("portfolio_fund_id", portfolio_fund_id)\
-                        .eq("valuation_date", common_date)\
+                        .eq("valuation_date", valuation_date)\
                         .execute()
                     
                     valuation_id = valuation_result.data[0]["id"] if valuation_result.data else None
@@ -154,17 +142,35 @@ async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, acti
                     irr_value_data = {
                         "fund_id": portfolio_fund_id,
                         "irr_result": float(irr_percentage),
-                        "date": common_date,
+                        "date": valuation_date,
                         "fund_valuation_id": valuation_id
                     }
                     
                     db.table("portfolio_fund_irr_values").insert(irr_value_data).execute()
-                    logger.info(f"Created new IRR entry for date {common_date}: {irr_percentage}%")
+                    logger.info(f"Created new fund IRR entry for date {valuation_date}: {irr_percentage}%")
                     new_entries_created += 1
                 else:
-                    logger.warning(f"Failed to calculate IRR for new entry on date {common_date}")
+                    logger.warning(f"Failed to calculate IRR for portfolio fund {portfolio_fund_id} on date {valuation_date}")
         
-        # Step 6: Recalculate portfolio-level IRR values from the activity date onwards
+        # Step 6: Check for portfolio-level IRR calculations based on common dates
+        all_portfolio_funds = db.table("portfolio_funds")\
+            .select("id")\
+            .eq("portfolio_id", portfolio_id)\
+            .eq("status", "active")\
+            .execute()
+        
+        common_dates = []
+        if all_portfolio_funds.data and len(all_portfolio_funds.data) > 1:
+            active_fund_ids = [pf["id"] for pf in all_portfolio_funds.data]
+            logger.info(f"Found {len(active_fund_ids)} active funds for portfolio-level common date analysis")
+            
+            # Find common valuation dates across all funds from the activity date onwards
+            common_dates = await find_common_valuation_dates_from_date(active_fund_ids, activity_date, db)
+            logger.info(f"Found {len(common_dates)} common valuation dates from {activity_date} onwards for portfolio-level IRR: {common_dates}")
+        else:
+            logger.info(f"Only {len(all_portfolio_funds.data) if all_portfolio_funds.data else 0} active funds in portfolio, skipping portfolio-level IRR common date analysis")
+        
+        # Step 7: Recalculate portfolio-level IRR values from the activity date onwards
         portfolio_irr_recalculated = await recalculate_portfolio_irr_values_from_date(
             portfolio_id, activity_date, db
         )
@@ -246,7 +252,7 @@ async def find_common_valuation_dates_from_date(fund_ids: List[int], start_date:
 async def recalculate_portfolio_irr_values_from_date(portfolio_id: int, start_date: str, db) -> int:
     """
     Recalculate portfolio-level IRR values from a start date onwards.
-    This recalculates existing portfolio IRR entries and updates their irr_result values.
+    This recalculates existing portfolio IRR entries and creates new ones for common valuation dates.
     
     Args:
         portfolio_id: The portfolio ID
@@ -254,22 +260,10 @@ async def recalculate_portfolio_irr_values_from_date(portfolio_id: int, start_da
         db: Database connection
     
     Returns:
-        The number of portfolio IRR values recalculated
+        The number of portfolio IRR values processed (recalculated + created)
     """
     try:
         logger.info(f"Recalculating portfolio-level IRR values for portfolio {portfolio_id} from {start_date} onwards")
-        
-        # Get existing portfolio IRR values from start date onwards
-        existing_portfolio_irr = db.table("portfolio_irr_values")\
-            .select("*")\
-            .eq("portfolio_id", portfolio_id)\
-            .gte("date", start_date)\
-            .order("date", desc=True)\
-            .execute()
-        
-        if not existing_portfolio_irr.data:
-            logger.info(f"No existing portfolio IRR values found for portfolio {portfolio_id} from {start_date} onwards")
-            return 0
         
         # Get all active funds for this portfolio
         portfolio_funds = db.table("portfolio_funds")\
@@ -283,6 +277,16 @@ async def recalculate_portfolio_irr_values_from_date(portfolio_id: int, start_da
             return 0
         
         active_fund_ids = [pf["id"] for pf in portfolio_funds.data]
+        logger.info(f"Found {len(active_fund_ids)} active funds for portfolio {portfolio_id}")
+        
+        # Get existing portfolio IRR values from start date onwards
+        existing_portfolio_irr = db.table("portfolio_irr_values")\
+            .select("*")\
+            .eq("portfolio_id", portfolio_id)\
+            .gte("date", start_date)\
+            .order("date", desc=True)\
+            .execute()
+        
         recalculated_count = 0
         
         # Recalculate each existing portfolio IRR value
@@ -310,8 +314,61 @@ async def recalculate_portfolio_irr_values_from_date(portfolio_id: int, start_da
             else:
                 logger.warning(f"Failed to recalculate portfolio IRR for date {irr_date}")
         
-        logger.info(f"Recalculated {recalculated_count} portfolio IRR values for portfolio {portfolio_id} from {start_date} onwards")
-        return recalculated_count
+        # NEW: Find common valuation dates and create portfolio IRR entries where they don't exist
+        if len(active_fund_ids) > 1:
+            common_dates = await find_common_valuation_dates_from_date(active_fund_ids, start_date, db)
+            logger.info(f"Found {len(common_dates)} common valuation dates from {start_date} onwards: {common_dates}")
+            
+            created_count = 0
+            for common_date in common_dates:
+                # Check if portfolio IRR already exists for this date
+                existing_check = db.table("portfolio_irr_values")\
+                    .select("id")\
+                    .eq("portfolio_id", portfolio_id)\
+                    .eq("date", common_date)\
+                    .execute()
+                
+                if not existing_check.data:
+                    # Create new portfolio IRR entry for this common date
+                    portfolio_irr_result = await calculate_multiple_portfolio_funds_irr(
+                        portfolio_fund_ids=active_fund_ids,
+                        irr_date=common_date,
+                        db=db
+                    )
+                    
+                    if portfolio_irr_result.get("success"):
+                        portfolio_irr_percentage = portfolio_irr_result.get("irr_percentage", 0.0)
+                        
+                        # Get portfolio valuation ID for this date if it exists
+                        portfolio_valuation_result = db.table("portfolio_valuations")\
+                            .select("id")\
+                            .eq("portfolio_id", portfolio_id)\
+                            .eq("valuation_date", common_date)\
+                            .execute()
+                        
+                        portfolio_valuation_id = portfolio_valuation_result.data[0]["id"] if portfolio_valuation_result.data else None
+                        
+                        portfolio_irr_data = {
+                            "portfolio_id": portfolio_id,
+                            "irr_result": float(portfolio_irr_percentage),
+                            "date": common_date,
+                            "portfolio_valuation_id": portfolio_valuation_id
+                        }
+                        
+                        db.table("portfolio_irr_values").insert(portfolio_irr_data).execute()
+                        logger.info(f"Created new portfolio IRR entry for date {common_date}: {portfolio_irr_percentage}%")
+                        created_count += 1
+                    else:
+                        logger.warning(f"Failed to calculate portfolio IRR for common date {common_date}")
+                else:
+                    logger.info(f"Portfolio IRR already exists for date {common_date}, skipping creation")
+            
+            total_processed = recalculated_count + created_count
+            logger.info(f"Portfolio IRR processing complete: {recalculated_count} recalculated, {created_count} created, {total_processed} total")
+            return total_processed
+        else:
+            logger.info(f"Only {len(active_fund_ids)} active funds, skipping portfolio IRR creation for common dates")
+            return recalculated_count
         
     except Exception as e:
         logger.error(f"Error recalculating portfolio IRR values from date: {str(e)}")

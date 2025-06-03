@@ -1235,7 +1235,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                 <td className="px-1 py-1 whitespace-nowrap">
                                   <div>
                                     <div className={`text-sm ${
-                                      holding.irr !== undefined 
+                                      holding.irr !== undefined && holding.irr !== null
                                         ? (holding.irr >= 0 
                                           ? (holding.isVirtual ? "font-medium text-green-700" : "text-green-700") 
                                           : (holding.isVirtual ? "font-medium text-red-700" : "text-red-700"))
@@ -1244,7 +1244,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                       {holding.isVirtual ? (
                                         <span>N/A</span>
                                       ) : (
-                                        holding.irr !== undefined ? (
+                                        holding.irr !== undefined && holding.irr !== null ? (
                                           <>
                                             {Math.abs(holding.irr) > 1 
                                               ? `${holding.irr.toFixed(1)}%` 

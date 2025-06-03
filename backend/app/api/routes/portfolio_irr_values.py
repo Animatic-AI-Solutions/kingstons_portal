@@ -172,7 +172,7 @@ async def calculate_irr_with_valuation(
             # Get fund valuations for the target date (or closest date before)
             for pf_id in portfolio_fund_ids:
                 valuation_result = db.table("portfolio_fund_valuations")\
-                    .select("value")\
+                    .select("valuation")\
                     .eq("portfolio_fund_id", pf_id)\
                     .lte("valuation_date", target_date.isoformat())\
                     .order("valuation_date", ascending=False)\
@@ -180,7 +180,7 @@ async def calculate_irr_with_valuation(
                     .execute()
                 
                 if valuation_result.data:
-                    total_value += float(valuation_result.data[0]["value"])
+                    total_value += float(valuation_result.data[0]["valuation"])
         
         # Create portfolio valuation data
         valuation_data = {

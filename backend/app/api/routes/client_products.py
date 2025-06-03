@@ -1292,12 +1292,17 @@ async def get_complete_product_details(client_product_id: int, db = Depends(get_
                             pf["market_value"] = valuation.get("valuation")
                             pf["valuation_date"] = valuation.get("valuation_date")
                         
-                        # Add IRR data
+                        # Add IRR data - ensure all funds have these properties
                         if portfolio_fund_id and portfolio_fund_id in irr_map:
                             irr = irr_map[portfolio_fund_id]
                             pf["latest_irr"] = irr
                             pf["irr_result"] = irr.get("irr_result")
                             pf["irr_date"] = irr.get("irr_date")
+                        else:
+                            # Fund has no IRR data, set default values
+                            pf["latest_irr"] = None
+                            pf["irr_result"] = None
+                            pf["irr_date"] = None
                         
                         enhanced_funds.append(pf)
                     

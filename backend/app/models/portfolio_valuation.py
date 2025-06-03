@@ -5,14 +5,14 @@ from datetime import datetime, date
 class PortfolioValuationBase(BaseModel):
     portfolio_id: int
     valuation_date: datetime
-    value: float
+    valuation: float
 
 class PortfolioValuationCreate(PortfolioValuationBase):
     pass
 
 class PortfolioValuationUpdate(BaseModel):
     valuation_date: Optional[datetime] = None
-    value: Optional[float] = None
+    valuation: Optional[float] = None
 
 class PortfolioValuation(PortfolioValuationBase):
     id: int

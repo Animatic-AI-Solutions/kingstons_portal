@@ -283,7 +283,7 @@ async def calculate_and_store_portfolio_valuation(
             for pf_id in portfolio_fund_ids:
                 # Get the closest valuation on or before the target date
                 valuation_result = db.table("portfolio_fund_valuations")\
-                    .select("value")\
+                    .select("valuation")\
                     .eq("portfolio_fund_id", pf_id)\
                     .lte("valuation_date", target_date.isoformat())\
                     .order("valuation_date", ascending=False)\
@@ -291,7 +291,7 @@ async def calculate_and_store_portfolio_valuation(
                     .execute()
                 
                 if valuation_result.data:
-                    total_value += float(valuation_result.data[0]["value"])
+                    total_value += float(valuation_result.data[0]["valuation"])
                     fund_values_found += 1
                 else:
                     logger.warning(f"No valuation found for portfolio fund {pf_id} on or before {target_date}")
@@ -373,11 +373,11 @@ async def get_current_portfolio_value(portfolio_id: int, db = Depends(get_db)):
         
         # Get latest valuations using the optimized view
         latest_valuations_result = db.table("latest_portfolio_fund_valuations")\
-            .select("portfolio_fund_id, value")\
+            .select("portfolio_fund_id, valuation")\
             .in_("portfolio_fund_id", portfolio_fund_ids)\
             .execute()
         
-        total_value = sum(float(fv["value"]) for fv in latest_valuations_result.data)
+        total_value = sum(float(fv["valuation"]) for fv in latest_valuations_result.data)
         
         return {
             "portfolio_id": portfolio_id,
