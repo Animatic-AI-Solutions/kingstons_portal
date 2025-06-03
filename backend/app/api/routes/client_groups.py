@@ -511,12 +511,12 @@ async def get_client_group_fum_summary(db = Depends(get_db)):
                                     total_fum += float(fund_val_result.data[0]["value"] or 0)
             
             # Combine the data
-            combined_record = {
-                "client_group_id": client_group_id,
+                combined_record = {
+                    "client_group_id": client_group_id,
                 "fum": total_fum,
                 **client_group  # Add all client group fields
-            }
-            combined_data.append(combined_record)
+                }
+                combined_data.append(combined_record)
         
         logger.info(f"Calculated FUM for {len(combined_data)} client groups")
         return combined_data
@@ -539,10 +539,10 @@ async def get_client_group_fum_by_id(client_group_id: int, db = Depends(get_db))
     try:
         # Verify client group exists
         client_group = db.table("client_groups").select("id").eq("id", client_group_id).execute()
-        
+            
         if not client_group.data:
-            raise HTTPException(status_code=404, detail=f"Client group with ID {client_group_id} not found")
-        
+                raise HTTPException(status_code=404, detail=f"Client group with ID {client_group_id} not found")
+            
         # Calculate FUM for this client group
         # Get all active products for this client group
         products_result = db.table("client_products")\

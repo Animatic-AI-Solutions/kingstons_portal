@@ -1215,7 +1215,7 @@ async def calculate_portfolio_total_irr(
         irr_date = irr_data.get("irr_date")
         
         logger.info(f"Retrieved portfolio IRR for portfolio {portfolio_id}: {irr_percentage}%")
-        
+            
         return {
             "status": "success",
             "portfolio_id": portfolio_id,
@@ -1223,7 +1223,7 @@ async def calculate_portfolio_total_irr(
             "calculation_date": irr_date if irr_date else datetime.now().isoformat(),
             "note": "Retrieved from latest_portfolio_irr_values"
         }
-        
+            
     except HTTPException:
         raise
     except Exception as e:

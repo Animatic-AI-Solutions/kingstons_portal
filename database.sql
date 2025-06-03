@@ -534,7 +534,7 @@ SELECT DISTINCT ON (portfolio_fund_valuations.portfolio_fund_id)
     portfolio_fund_valuations.valuation_date,
     portfolio_fund_valuations.valuation
 FROM portfolio_fund_valuations
-ORDER BY 
+ORDER BY
     portfolio_fund_valuations.portfolio_fund_id,
     portfolio_fund_valuations.valuation_date DESC;
 
@@ -546,7 +546,7 @@ SELECT DISTINCT ON (piv.portfolio_id)
     piv.date AS irr_date,
     piv.portfolio_valuation_id
 FROM portfolio_irr_values piv
-ORDER BY 
+ORDER BY
     piv.portfolio_id,
     piv.date DESC;
 
@@ -568,7 +568,7 @@ ORDER BY
 
 -- View combining product owners with their products for dashboard
 CREATE OR REPLACE VIEW public.product_owner_details AS
-SELECT 
+SELECT
     po.id AS product_owner_id,
     po.name AS product_owner_name,
     po.status AS product_owner_status,

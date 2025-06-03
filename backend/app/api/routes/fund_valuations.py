@@ -61,9 +61,12 @@ async def create_fund_valuation(
                 # NEW: Automatically recalculate IRR after updating existing valuation
                 # ========================================================================
                 try:
-                    logger.info(f"Triggering automatic IRR recalculation after updating existing valuation for portfolio fund {fund_valuation.portfolio_fund_id}")
-                    irr_recalc_result = await recalculate_irr_after_activity_change(fund_valuation.portfolio_fund_id, db)
-                    logger.info(f"IRR recalculation result: {irr_recalc_result}")
+                    # Get the valuation date for sophisticated recalculation
+                    valuation_date = fund_valuation.valuation_date.isoformat().split('T')[0]
+                    
+                    logger.info(f"Triggering sophisticated IRR recalculation after updating existing valuation for portfolio fund {fund_valuation.portfolio_fund_id} on date {valuation_date}")
+                    irr_recalc_result = await recalculate_irr_after_activity_change(fund_valuation.portfolio_fund_id, db, valuation_date)
+                    logger.info(f"Sophisticated IRR recalculation result: {irr_recalc_result}")
                 except Exception as e:
                     # Don't fail the valuation update if IRR recalculation fails
                     logger.error(f"IRR recalculation failed after valuation update: {str(e)}")
@@ -91,9 +94,12 @@ async def create_fund_valuation(
         # NEW: Automatically recalculate IRR after creating fund valuation
         # ========================================================================
         try:
-            logger.info(f"Triggering automatic IRR recalculation after creating valuation for portfolio fund {fund_valuation.portfolio_fund_id}")
-            irr_recalc_result = await recalculate_irr_after_activity_change(fund_valuation.portfolio_fund_id, db)
-            logger.info(f"IRR recalculation result: {irr_recalc_result}")
+            # Get the valuation date for sophisticated recalculation
+            valuation_date = fund_valuation.valuation_date.isoformat().split('T')[0]
+            
+            logger.info(f"Triggering sophisticated IRR recalculation after creating valuation for portfolio fund {fund_valuation.portfolio_fund_id} on date {valuation_date}")
+            irr_recalc_result = await recalculate_irr_after_activity_change(fund_valuation.portfolio_fund_id, db, valuation_date)
+            logger.info(f"Sophisticated IRR recalculation result: {irr_recalc_result}")
         except Exception as e:
             # Don't fail the valuation creation if IRR recalculation fails
             logger.error(f"IRR recalculation failed after valuation creation: {str(e)}")
@@ -287,9 +293,12 @@ async def update_fund_valuation(
             # NEW: Automatically recalculate IRR after deleting valuation
             # ========================================================================
             try:
-                logger.info(f"Triggering automatic IRR recalculation after deleting valuation for portfolio fund {portfolio_fund_id}")
-                irr_recalc_result = await recalculate_irr_after_activity_change(portfolio_fund_id, db)
-                logger.info(f"IRR recalculation result: {irr_recalc_result}")
+                # Get the valuation date for sophisticated recalculation
+                valuation_date = existing_result.data[0].get("valuation_date", "").split('T')[0]
+                
+                logger.info(f"Triggering sophisticated IRR recalculation after deleting valuation for portfolio fund {portfolio_fund_id} on date {valuation_date}")
+                irr_recalc_result = await recalculate_irr_after_activity_change(portfolio_fund_id, db, valuation_date)
+                logger.info(f"Sophisticated IRR recalculation result: {irr_recalc_result}")
             except Exception as e:
                 # Don't fail the valuation deletion if IRR recalculation fails
                 logger.error(f"IRR recalculation failed after valuation deletion: {str(e)}")
@@ -334,9 +343,14 @@ async def update_fund_valuation(
             # Get portfolio_fund_id from the updated record or existing record
             portfolio_fund_id = updated_valuation.get("portfolio_fund_id") or existing_result.data[0]["portfolio_fund_id"]
             
-            logger.info(f"Triggering automatic IRR recalculation after updating valuation for portfolio fund {portfolio_fund_id}")
-            irr_recalc_result = await recalculate_irr_after_activity_change(portfolio_fund_id, db)
-            logger.info(f"IRR recalculation result: {irr_recalc_result}")
+            # Get the valuation date for sophisticated recalculation (use updated date if provided, otherwise existing)
+            valuation_date = updated_valuation.get("valuation_date") or existing_result.data[0]["valuation_date"]
+            if isinstance(valuation_date, str):
+                valuation_date = valuation_date.split('T')[0]
+            
+            logger.info(f"Triggering sophisticated IRR recalculation after updating valuation for portfolio fund {portfolio_fund_id} on date {valuation_date}")
+            irr_recalc_result = await recalculate_irr_after_activity_change(portfolio_fund_id, db, valuation_date)
+            logger.info(f"Sophisticated IRR recalculation result: {irr_recalc_result}")
         except Exception as e:
             # Don't fail the valuation update if IRR recalculation fails
             logger.error(f"IRR recalculation failed after valuation update: {str(e)}")
@@ -401,9 +415,12 @@ async def delete_fund_valuation(
         # NEW: Automatically recalculate IRR after deleting fund valuation
         # ========================================================================
         try:
-            logger.info(f"Triggering automatic IRR recalculation after deleting valuation for portfolio fund {portfolio_fund_id}")
-            irr_recalc_result = await recalculate_irr_after_activity_change(portfolio_fund_id, db)
-            logger.info(f"IRR recalculation result: {irr_recalc_result}")
+            # Get the valuation date for sophisticated recalculation
+            valuation_date = existing_result.data[0].get("valuation_date", "").split('T')[0]
+            
+            logger.info(f"Triggering sophisticated IRR recalculation after deleting valuation for portfolio fund {portfolio_fund_id} on date {valuation_date}")
+            irr_recalc_result = await recalculate_irr_after_activity_change(portfolio_fund_id, db, valuation_date)
+            logger.info(f"Sophisticated IRR recalculation result: {irr_recalc_result}")
         except Exception as e:
             # Don't fail the valuation deletion if IRR recalculation fails
             logger.error(f"IRR recalculation failed after valuation deletion: {str(e)}")

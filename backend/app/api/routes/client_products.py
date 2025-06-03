@@ -120,7 +120,7 @@ async def get_client_products_with_owners(
                     if irr_dates_result.data:
                         # Create a map of fund_id to irr_date
                         fund_to_irr_date = {item.get("fund_id"): item.get("irr_date") for item in irr_dates_result.data if item.get("irr_date")}
-                        
+                            
                         # For each portfolio, find the most recent IRR date
                         for portfolio_id, fund_ids in portfolio_to_funds.items():
                             portfolio_irr_dates = [fund_to_irr_date.get(fund_id) for fund_id in fund_ids if fund_to_irr_date.get(fund_id)]
@@ -238,12 +238,12 @@ async def get_client_products_with_owners(
                 product["irr"] = portfolio_irr_map[portfolio_id]
             else:
                 product["irr"] = "-"  # Display as dash if no portfolio IRR available
-            
-            # Add IRR date from the bulk-fetched data
-            if portfolio_id and portfolio_id in irr_dates_map:
-                product["irr_date"] = irr_dates_map[portfolio_id]
-            else:
-                product["irr_date"] = None
+                
+                # Add IRR date from the bulk-fetched data
+                if portfolio_id and portfolio_id in irr_dates_map:
+                    product["irr_date"] = irr_dates_map[portfolio_id]
+                else:
+                    product["irr_date"] = None
             
             # Add product owners - this is the key improvement
             product_owners = []
@@ -370,7 +370,7 @@ async def get_client_products(
                     if irr_dates_result.data:
                         # Create a map of fund_id to irr_date
                         fund_to_irr_date = {item.get("fund_id"): item.get("irr_date") for item in irr_dates_result.data if item.get("irr_date")}
-                        
+                            
                         # For each portfolio, find the most recent IRR date
                         for portfolio_id, fund_ids in portfolio_to_funds.items():
                             portfolio_irr_dates = [fund_to_irr_date.get(fund_id) for fund_id in fund_ids if fund_to_irr_date.get(fund_id)]
@@ -488,12 +488,12 @@ async def get_client_products(
                 product["irr"] = portfolio_irr_map[portfolio_id]
             else:
                 product["irr"] = "-"  # Display as dash if no portfolio IRR available
-            
-            # Add IRR date from the bulk-fetched data
-            if portfolio_id and portfolio_id in irr_dates_map:
-                product["irr_date"] = irr_dates_map[portfolio_id]
-            else:
-                product["irr_date"] = None
+                
+                # Add IRR date from the bulk-fetched data
+                if portfolio_id and portfolio_id in irr_dates_map:
+                    product["irr_date"] = irr_dates_map[portfolio_id]
+                else:
+                    product["irr_date"] = None
             
             # Add product owners - this is the key improvement
             product_owners = []
@@ -912,7 +912,7 @@ async def get_product_fum(product_id: int, db = Depends(get_db)):
         
         # Use the latest_portfolio_fund_valuations view to get current values
         valuations_result = db.table("latest_portfolio_fund_valuations").select("valuation").in_("portfolio_fund_id", portfolio_fund_ids).execute()
-        
+            
         total_fum = 0
         if valuations_result.data:
             for valuation in valuations_result.data:

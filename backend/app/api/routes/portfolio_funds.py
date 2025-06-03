@@ -326,7 +326,7 @@ async def get_portfolio_funds(
                     .in_("portfolio_fund_id", portfolio_fund_ids)\
                     .order("valuation_date", desc=True)\
                     .execute()
-
+                    
                 # Group valuations by portfolio_fund_id and keep only the latest for each
                 valuations_map = {}
                 if valuation_result.data:
