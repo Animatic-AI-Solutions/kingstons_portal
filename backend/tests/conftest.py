@@ -1,5 +1,5 @@
 """
-Test configuration and fixtures for the scheduled transactions tests.
+Test configuration and fixtures for the application.
 """
 import pytest
 import asyncio
@@ -77,52 +77,4 @@ def sample_client_product():
         "portfolio_id": 1
     }
 
-@pytest.fixture
-def sample_scheduled_transaction():
-    """Sample scheduled transaction data for testing."""
-    return {
-        "portfolio_fund_id": 1,
-        "transaction_type": "Investment",
-        "amount": 1000.00,
-        "execution_day": 15,
-        "description": "Test investment",
-        "is_recurring": False,
-        "recurrence_interval": None,
-        "max_executions": None
-    }
-
-@pytest.fixture
-def sample_recurring_transaction():
-    """Sample recurring scheduled transaction data for testing."""
-    return {
-        "portfolio_fund_id": 1,
-        "transaction_type": "RegularInvestment",
-        "amount": 500.00,
-        "execution_day": 1,
-        "description": "Monthly investment",
-        "is_recurring": True,
-        "recurrence_interval": "monthly",
-        "max_executions": 12
-    }
-
-@pytest.fixture
-def sample_scheduled_transaction_in_db():
-    """Sample scheduled transaction as it would appear in the database."""
-    return {
-        "id": 1,
-        "portfolio_fund_id": 1,
-        "transaction_type": "Investment",
-        "amount": 1000.00,
-        "execution_day": 15,
-        "description": "Test investment",
-        "is_recurring": False,
-        "recurrence_interval": None,
-        "max_executions": None,
-        "next_execution_date": date.today().isoformat(),
-        "status": "active",
-        "last_executed_date": None,
-        "total_executions": 0,
-        "created_by": None,
-        "created_at": datetime.now().isoformat(),
-        "updated_at": datetime.now().isoformat()
-    } 
+ 

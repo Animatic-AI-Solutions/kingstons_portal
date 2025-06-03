@@ -9,5 +9,5 @@ export { Skeleton, StatBoxSkeleton, ChartSkeleton, TableSkeleton } from './Skele
 export { default as ProfileAvatar } from './ProfileAvatar';
 export { default as SearchableDropdown } from './SearchableDropdown';
 export { default as GlobalSearch } from './GlobalSearch';
-export { default as UpcomingTransactions } from './UpcomingTransactions';
+export { default as UpcomingTransactions } from './UpcomingMeetings';
 export { default as RiskDifferences } from './RiskDifferences';
