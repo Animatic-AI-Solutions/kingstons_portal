@@ -298,7 +298,7 @@ const ProductCard: React.FC<{
                 className="ml-3 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                 style={{ 
                   backgroundColor: `${themeColor}15`,
-                  color: themeColor
+                  color: '#374151'
                 }}
               >
                 {account.template_generation_id 
