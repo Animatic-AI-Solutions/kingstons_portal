@@ -262,7 +262,7 @@ export const getLatestFundValuation = (portfolioFundId: number) => {
 export const createFundValuation = (data: {
   portfolio_fund_id: number;
   valuation_date: string;
-  value: number;
+  valuation: number;
 }) => {
   return api.post('fund_valuations', data);
 };
@@ -279,7 +279,7 @@ export const createFundValuation = (data: {
 export const updateFundValuation = (valuationId: number, data: {
   portfolio_fund_id?: number;
   valuation_date?: string;
-  value?: number;
+  valuation?: number;
 }) => {
   return api.patch(`fund_valuations/${valuationId}`, data);
 };

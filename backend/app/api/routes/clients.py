@@ -371,11 +371,11 @@ async def delete_client_group_products(
         if portfolio_fund_ids:
             for pf_id in portfolio_fund_ids:
                         # Delete fund valuations
-                valuations = db.table("fund_valuations").delete().eq("portfolio_fund_id", pf_id).execute()
+                valuations = db.table("portfolio_fund_valuations").delete().eq("portfolio_fund_id", pf_id).execute()
                 valuations_deleted += len(valuations.data) if valuations.data else 0
                         
                         # Delete IRR values
-                irr_values = db.table("irr_values").delete().eq("fund_id", pf_id).execute()
+                irr_values = db.table("portfolio_fund_irr_values").delete().eq("fund_id", pf_id).execute()
                 irr_values_deleted += len(irr_values.data) if irr_values.data else 0
         
         # Delete portfolio funds
@@ -415,22 +415,74 @@ async def delete_client_group_products(
 @router.get("/client_group_fum_summary", response_model=List[dict])
 async def get_client_group_fum_summary(db = Depends(get_db)):
     """
-    What it does: Retrieves a summary of funds under management (FUM) per client group.
+    What it does: Calculates funds under management (FUM) per client group on-demand.
     Why it's needed: Provides aggregated financial metrics for each client group for reporting.
     How it works:
-        1. Queries the 'client_group_fum_summary' view which aggregates product values per client group
-        2. Joins with client_groups to get client group details
-        3. Returns a combined dataset with client group info and their total FUM
+        1. Gets all active client groups
+        2. For each client group, calculates FUM by summing current portfolio values
+        3. Returns combined dataset with client group info and calculated FUM
     Expected output: A JSON array with client group info and their total FUM value
     """
     try:
-        result = db.table("client_group_fum_summary").\
-            select("client_group_fum_summary.client_group_id, client_group_fum_summary.fum, client_groups.*").\
-            eq("client_groups.status", "active").\
-            join("client_groups", "client_group_fum_summary.client_group_id", "client_groups.id").\
-            execute()
+        # Fetch active client groups
+        client_groups_result = db.table("client_groups").select("*").eq("status", "active").execute()
+        
+        if not client_groups_result.data:
+            return []
+        
+        combined_data = []
+        
+        for client_group in client_groups_result.data:
+            client_group_id = client_group["id"]
             
-        return result.data
+            # Calculate FUM for this client group
+            # Get all active products for this client group
+            products_result = db.table("client_products")\
+                .select("id, portfolio_id")\
+                .eq("client_id", client_group_id)\
+                .eq("status", "active")\
+                .execute()
+            
+            total_fum = 0.0
+            
+            if products_result.data:
+                # Get portfolio IDs
+                portfolio_ids = [p["portfolio_id"] for p in products_result.data if p["portfolio_id"]]
+                
+                if portfolio_ids:
+                    # Calculate FUM by summing fund valuations directly
+                    for portfolio_id in portfolio_ids:
+                        # Get all active funds for this portfolio
+                        funds_result = db.table("portfolio_funds")\
+                            .select("id")\
+                            .eq("portfolio_id", portfolio_id)\
+                            .eq("status", "active")\
+                            .execute()
+                        
+                        if funds_result.data:
+                            for fund in funds_result.data:
+                                # Get the latest valuation for this fund
+                                fund_val_result = db.table("portfolio_fund_valuations")\
+                                    .select("valuation")\
+                                    .eq("portfolio_fund_id", fund["id"])\
+                                    .order("valuation_date", desc=True)\
+                                    .limit(1)\
+                                    .execute()
+                                
+                                if fund_val_result.data:
+                                    total_fum += float(fund_val_result.data[0]["valuation"] or 0)
+            
+            # Combine the data  
+            combined_record = {
+                "client_group_id": client_group_id,
+                "fum": total_fum,
+                **client_group  # Add all client group fields
+            }
+            combined_data.append(combined_record)
+        
+        logger.info(f"Calculated FUM for {len(combined_data)} client groups")
+        return combined_data
+        
     except Exception as e:
-        logger.error(f"Error fetching client group FUM summary: {str(e)}")
+        logger.error(f"Error calculating client group FUM summary: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}") 
