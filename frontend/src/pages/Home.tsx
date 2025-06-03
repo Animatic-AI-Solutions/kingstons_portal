@@ -1,5 +1,5 @@
 import React, { Suspense, useState } from 'react';
-import { StatBox, FundDistributionChart, DataTable, StatBoxSkeleton, ChartSkeleton, TableSkeleton, UpcomingTransactions, RiskDifferences } from '../components/ui';
+import { StatBox, FundDistributionChart, DataTable, StatBoxSkeleton, ChartSkeleton, TableSkeleton, UpcomingTransactions as UpcomingMeetings, RiskDifferences } from '../components/ui';
 import useDashboardData from '../hooks/useDashboardData';
 
 // Icons for the stats boxes
@@ -159,7 +159,7 @@ const Home: React.FC = () => {
             {/* Dashboard Widgets */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
-                <UpcomingTransactions />
+                <UpcomingMeetings />
               </div>
               <div>
                 <RiskDifferences />
