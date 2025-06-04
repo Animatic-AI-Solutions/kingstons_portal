@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getProductFUM, calculateStandardizedMultipleFundsIRR } from '../services/api';
 import { MultiSelectSearchableDropdown } from '../components/ui/SearchableDropdown';
+import { isCashFund } from '../utils/fundUtils';
 
 // Basic interfaces for type safety
 interface Account {
@@ -408,9 +409,9 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           if (a.isVirtual) return 1;
           if (b.isVirtual) return -1;
           
-          // Cash fund (name 'Cash', ISIN 'N/A') always goes second-to-last (before Previous Funds)
-          const aIsCash = a.fund_name === 'Cash' && a.isin_number === 'N/A';
-          const bIsCash = b.fund_name === 'Cash' && b.isin_number === 'N/A';
+          // Cash fund always goes second-to-last (before Previous Funds)
+          const aIsCash = isCashFund({ fund_name: a.fund_name, isin_number: a.isin_number } as any);
+          const bIsCash = isCashFund({ fund_name: b.fund_name, isin_number: b.isin_number } as any);
 
           if (aIsCash) return 1;
           if (bIsCash) return -1;

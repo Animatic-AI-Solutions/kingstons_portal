@@ -9,6 +9,7 @@ import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import SearchableDropdown from '../components/ui/SearchableDropdown';
 import { getProviderColor } from '../services/providerColors';
+import { findCashFund, isCashFund, excludeCashFunds } from '../utils/fundUtils';
 
 interface Client {
   id: number;
@@ -663,7 +664,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     }, 0);
     
     // For bespoke portfolios, also include Cash fund weighting if it's not in selectedFunds
-    const cashFund = funds.find(f => f.fund_name === 'Cash' && f.isin_number === 'N/A');
+    const cashFund = findCashFund(funds);
     if (cashFund && !product.portfolio.selectedFunds.includes(cashFund.id)) {
       const cashWeighting = product.portfolio.fundWeightings[cashFund.id.toString()];
       const cashValue = cashWeighting ? parseFloat(cashWeighting) : 0;
@@ -695,7 +696,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     }
     
     // For bespoke portfolios, also include Cash fund if it's not in selectedFunds
-    const cashFund = funds.find(f => f.fund_name === 'Cash' && f.isin_number === 'N/A');
+    const cashFund = findCashFund(funds);
     if (cashFund && !product.portfolio.selectedFunds.includes(cashFund.id)) {
       const cashWeighting = product.portfolio.fundWeightings[cashFund.id.toString()];
       const cashWeightValue = cashWeighting ? parseFloat(cashWeighting) : 0;
@@ -771,7 +772,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           product.portfolio.selectedFunds.forEach(fundId => {
             const fund = funds.find(f => f.id === fundId);
             // Initialize Cash fund with 0, others with empty string
-            if (fund?.fund_name === 'Cash' && fund?.isin_number === 'N/A') {
+            if (fund && isCashFund(fund)) {
               updatedPortfolio.fundWeightings[fundId.toString()] = '0';
             } else {
               updatedPortfolio.fundWeightings[fundId.toString()] = '';
@@ -986,7 +987,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         });
         
         // Check Cash fund weighting too
-        const cashFund = funds.find(f => f.fund_name === 'Cash' && f.isin_number === 'N/A');
+        const cashFund = findCashFund(funds);
         const hasCashWeighting = cashFund && product.portfolio.fundWeightings[cashFund.id.toString()]?.trim();
         
         // If user has entered any weightings, validate them
@@ -1071,9 +1072,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       
       // Find the Cash fund ID (if it exists in our funds list)
       // This might not be strictly necessary if backend handles it, but good for consistency
-      const cashFund = funds.find(fund => 
-        fund.fund_name === 'Cash' && fund.isin_number === 'N/A'
-      );
+      const cashFund = findCashFund(funds);
       
       for (const product of products) {
         let portfolioId: number | undefined;
@@ -1273,7 +1272,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     const filtered = funds.filter((fund: Fund) => 
       (fund.fund_name.toLowerCase().includes(term) || 
       (fund.isin_number && fund.isin_number.toLowerCase().includes(term))) &&
-      !(fund.fund_name === 'Cash' && fund.isin_number === 'N/A') // Also exclude Cash fund from search results
+      !isCashFund(fund) // Also exclude Cash fund from search results
     );
     
     // Sort search results alphabetically by fund name
@@ -1528,7 +1527,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                 <div className="p-2 space-y-2">
                   {/* Cash fund for bespoke portfolios */}
                   {product.portfolio.type === 'bespoke' && (() => {
-                    const cashFund = funds.find(f => f.fund_name === 'Cash' && f.isin_number === 'N/A');
+                    const cashFund = findCashFund(funds);
                     if (cashFund) {
                       return (
                         <div key={`cash-${cashFund.id}`} className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded p-2">
@@ -1561,7 +1560,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                   {product.portfolio.selectedFunds.map((fundId) => {
                     const fund = funds.find(f => f.id === fundId);
                     // Skip Cash fund as it's shown above for bespoke
-                    if (product.portfolio.type === 'bespoke' && fund?.fund_name === 'Cash' && fund?.isin_number === 'N/A') {
+                    if (product.portfolio.type === 'bespoke' && fund && isCashFund(fund)) {
                       return null;
                     }
                     
