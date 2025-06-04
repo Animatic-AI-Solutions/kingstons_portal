@@ -621,8 +621,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
   const formatCurrency = (value: number): string => {
     return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: 'GBP',
+      style: 'decimal',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(value);
@@ -1189,8 +1188,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     const hasDecimal = total % 1 !== 0;
     const formatted = hasDecimal ? total.toFixed(2) : total.toFixed(0);
     
-    // Add currency symbol
-    return `£${formatted}`;
+    // Return without currency symbol
+    return formatted;
   };
 
   
@@ -1900,7 +1899,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                     outline: 'none',
                                     boxShadow: 'none',
                                     background: 'transparent',
-                                    padding: '0 4px',
+                                    padding: '0 1px',
                                     width: '100%',
                                     fontSize: '0.875rem',
                                     opacity: fund.isActive === false || fund.isInactiveBreakdown ? 0.7 : 1
