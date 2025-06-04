@@ -802,6 +802,8 @@ async def delete_client_product(client_product_id: int, db = Depends(get_db)):
         fund_valuations_deleted = 0
         irr_values_deleted = 0
         activity_logs_deleted = 0
+        portfolio_irr_deleted = 0
+        portfolio_val_deleted = 0
         
         # Process the portfolio if it exists
         if portfolio_id:
@@ -819,7 +821,7 @@ async def delete_client_product(client_product_id: int, db = Depends(get_db)):
                     fund_id = fund["id"]
                     
                     # First, delete IRR values for this fund (IMPORTANT: do this BEFORE deleting fund_valuations)
-                    irr_result = db.table("irr_values").delete().eq("fund_id", fund_id).execute()
+                    irr_result = db.table("portfolio_fund_irr_values").delete().eq("fund_id", fund_id).execute()
                     deleted_count = len(irr_result.data) if irr_result.data else 0
                     irr_values_deleted += deleted_count
                     logger.info(f"Deleted {deleted_count} IRR values for portfolio fund {fund_id}")
@@ -831,7 +833,7 @@ async def delete_client_product(client_product_id: int, db = Depends(get_db)):
                         valuation_ids = [v["id"] for v in fund_valuation_ids_result.data]
                         # Delete IRR values referencing these fund valuation IDs
                         for val_id in valuation_ids:
-                            val_irr_result = db.table("irr_values").delete().eq("fund_valuation_id", val_id).execute()
+                            val_irr_result = db.table("portfolio_fund_irr_values").delete().eq("fund_valuation_id", val_id).execute()
                             deleted_count = len(val_irr_result.data) if val_irr_result.data else 0
                             irr_values_deleted += deleted_count
                             logger.info(f"Deleted {deleted_count} IRR values for fund valuation {val_id}")
@@ -856,8 +858,19 @@ async def delete_client_product(client_product_id: int, db = Depends(get_db)):
         result = db.table("client_products").delete().eq("id", client_product_id).execute()
         logger.info(f"Deleted client product {client_product_id}")
         
-        # Now it's safe to delete the portfolio
+        # Now clean up portfolio-level records before deleting the portfolio
         if portfolio_id:
+            # Delete portfolio IRR values
+            portfolio_irr_result = db.table("portfolio_irr_values").delete().eq("portfolio_id", portfolio_id).execute()
+            portfolio_irr_deleted = len(portfolio_irr_result.data) if portfolio_irr_result.data else 0
+            logger.info(f"Deleted {portfolio_irr_deleted} portfolio IRR values for portfolio {portfolio_id}")
+            
+            # Delete portfolio valuations (this was the missing step causing the foreign key error)
+            portfolio_val_result = db.table("portfolio_valuations").delete().eq("portfolio_id", portfolio_id).execute()
+            portfolio_val_deleted = len(portfolio_val_result.data) if portfolio_val_result.data else 0
+            logger.info(f"Deleted {portfolio_val_deleted} portfolio valuations for portfolio {portfolio_id}")
+            
+            # Now it's safe to delete the portfolio
             db.table("portfolios").delete().eq("id", portfolio_id).execute()
             logger.info(f"Deleted portfolio {portfolio_id}")
         
@@ -868,7 +881,9 @@ async def delete_client_product(client_product_id: int, db = Depends(get_db)):
                 "portfolio_funds_deleted": portfolio_funds_deleted,
                 "fund_valuations_deleted": fund_valuations_deleted,
                 "irr_values_deleted": irr_values_deleted,
-                "activity_logs_deleted": activity_logs_deleted
+                "activity_logs_deleted": activity_logs_deleted,
+                "portfolio_irr_values_deleted": portfolio_irr_deleted if portfolio_id else 0,
+                "portfolio_valuations_deleted": portfolio_val_deleted if portfolio_id else 0
             }
         }
     except HTTPException:
@@ -1014,33 +1029,37 @@ async def get_product_irr(product_id: int, db = Depends(get_db)):
                         elif activity_type in ["fee", "charge", "expense"]:
                             all_cash_flows[normalized_date] -= amount
             
-            # Get the latest valuation for each fund as the final positive cash flow
+            # Get the latest valuations for all funds in one bulk query
             total_current_value = 0
             latest_valuation_date = None
             
-            for fund_id in portfolio_fund_ids:
-                valuation_result = db.table("portfolio_fund_valuations").select("valuation,valuation_date").eq("portfolio_fund_id", fund_id).order("valuation_date", desc=True).limit(1).execute()
+            if portfolio_fund_ids:
+                # Get all latest valuations in one bulk query using the view
+                valuations_result = db.table("latest_portfolio_fund_valuations")\
+                    .select("valuation, valuation_date")\
+                    .in_("portfolio_fund_id", portfolio_fund_ids)\
+                    .execute()
                 
-                if valuation_result.data and len(valuation_result.data) > 0:
-                    valuation = valuation_result.data[0]
-                    current_value = float(valuation.get("valuation", 0))
-                    total_current_value += current_value
-                    
-                    # Track the latest valuation date across all funds
-                    val_date = valuation.get("valuation_date")
-                    if val_date:
-                        from datetime import datetime
-                        if isinstance(val_date, str):
-                            # Handle full datetime format from database (e.g., "2025-03-01T00:00:00")
-                            if 'T' in val_date:
-                                val_date_obj = datetime.strptime(val_date, '%Y-%m-%dT%H:%M:%S').date()
-                        else:
-                            val_date_obj = datetime.strptime(val_date, '%Y-%m-%d').date()
-                    else:
-                        val_date_obj = None
+                if valuations_result.data:
+                    for valuation in valuations_result.data:
+                        current_value = float(valuation.get("valuation", 0))
+                        total_current_value += current_value
                         
-                    if latest_valuation_date is None or val_date_obj > latest_valuation_date:
-                        latest_valuation_date = val_date_obj
+                        # Track the latest valuation date across all funds
+                        val_date = valuation.get("valuation_date")
+                        if val_date:
+                            from datetime import datetime
+                            if isinstance(val_date, str):
+                                # Handle full datetime format from database (e.g., "2025-03-01T00:00:00")
+                                if 'T' in val_date:
+                                    val_date_obj = datetime.strptime(val_date, '%Y-%m-%dT%H:%M:%S').date()
+                            else:
+                                val_date_obj = datetime.strptime(val_date, '%Y-%m-%d').date()
+                        else:
+                            val_date_obj = None
+                            
+                        if latest_valuation_date is None or val_date_obj > latest_valuation_date:
+                            latest_valuation_date = val_date_obj
             
             # Add the total current value as the final cash flow (normalized to END of valuation month)
             if total_current_value > 0 and latest_valuation_date:

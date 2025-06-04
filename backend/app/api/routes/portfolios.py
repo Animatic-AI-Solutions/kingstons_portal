@@ -761,7 +761,7 @@ async def calculate_portfolio_irr(
                 portfolio_valuation_data = {
                     "portfolio_id": portfolio_id,
                     "valuation_date": common_date_iso,
-                    "value": total_portfolio_value
+                    "valuation": total_portfolio_value
                 }
                 
                 # Check if portfolio valuation already exists for this date
@@ -774,7 +774,7 @@ async def calculate_portfolio_irr(
                 if existing_portfolio_valuation.data:
                     # Update existing portfolio valuation
                     portfolio_valuation_result = db.table("portfolio_valuations")\
-                        .update({"value": total_portfolio_value})\
+                        .update({"valuation": total_portfolio_value})\
                         .eq("id", existing_portfolio_valuation.data[0]["id"])\
                         .execute()
                     portfolio_valuation_id = existing_portfolio_valuation.data[0]["id"]

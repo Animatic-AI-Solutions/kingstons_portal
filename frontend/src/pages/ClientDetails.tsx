@@ -117,15 +117,10 @@ const ClientHeader = ({
 
   return (
     <div className="mb-6 bg-white shadow-sm rounded-lg border border-gray-100 relative transition-all duration-300 hover:shadow-md">
-      <Link to="/client_groups" className="absolute left-4 top-4 text-primary-700 hover:text-primary-800 transition-colors duration-200">
-        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-        </svg>
-      </Link>
       <div className="flex flex-col md:flex-row md:items-center md:justify-between p-6">
         <div>
           <div className="flex items-center">
-            <div className="pl-9">
+            <div>
               <h1 className="text-4xl font-normal text-gray-900 font-sans tracking-wide">
                 {client.name}
               </h1>
@@ -1016,6 +1011,27 @@ const ClientDetails: React.FC = () => {
                   />
                 </div>
               </div>
+              
+              {/* Additional Actions */}
+              <div className="px-4 py-3 border-t border-gray-100">
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-gray-500">Additional Actions</div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={handleMakeDormant}
+                      className="px-3 py-1.5 text-sm font-medium text-white bg-orange-600 rounded-lg shadow-sm hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-200"
+                    >
+                      Make Dormant
+                    </button>
+                    <button
+                      onClick={handleDelete}
+                      className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-lg shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
+                    >
+                      Delete Client
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -1071,36 +1087,7 @@ const ClientDetails: React.FC = () => {
           )}
         </div>
         
-        {/* Additional Action Buttons */}
-        <div className="mb-6 flex space-x-4">
-          {client.status === 'active' ? (
-            <button
-              onClick={handleMakeDormant}
-              className="px-4 py-1.5 text-sm font-medium text-white bg-orange-600 rounded-xl shadow-sm hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
-            >
-              Set Dormant
-            </button>
-          ) : (
-            <button
-              onClick={handleMakeActive}
-              className="px-4 py-1.5 text-sm font-medium text-white bg-green-600 rounded-xl shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-            >
-              Set Active
-            </button>
-          )}
-          <button
-            onClick={handleVersionHistory}
-            className="px-4 py-1.5 text-sm font-medium text-white bg-yellow-600 rounded-xl shadow-sm hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
-          >
-            Version History
-          </button>
-          <button
-            onClick={handleDelete}
-            className="px-4 py-1.5 text-sm font-medium text-white bg-red-600 rounded-xl shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-          >
-            Delete Client
-          </button>
-        </div>
+
       </div>
     </>
   );

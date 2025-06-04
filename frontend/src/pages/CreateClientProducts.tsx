@@ -88,6 +88,29 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   const navigate = useNavigate();
   const location = useLocation();
   const { api } = useAuth();
+  
+  // Add custom styles for validation errors
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      .product-owners-error .ant-select-selector {
+        border-color: #dc2626 !important;
+        box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2) !important;
+      }
+      .product-owners-error .ant-select-selector:hover {
+        border-color: #dc2626 !important;
+      }
+      .product-owners-error .ant-select-focused .ant-select-selector {
+        border-color: #dc2626 !important;
+        box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2) !important;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
   const [clients, setClients] = useState<Client[]>([]);
   const [providers, setProviders] = useState<Provider[]>([]);
   const [productOwners, setProductOwners] = useState<ProductOwner[]>([]);
@@ -901,6 +924,16 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       return false;
     }
 
+    // Check for product owner assignments across all products first
+    const productsWithoutOwners = products.filter(p => !p.product_owner_ids || p.product_owner_ids.length === 0);
+    if (productsWithoutOwners.length > 0) {
+      const productNames = productsWithoutOwners.map(p => 
+        p.product_name.trim() || generateProductName(p)
+      ).join(', ');
+      showError(`Please assign at least one product owner to: ${productNames}`);
+      return false;
+    }
+
     for (const product of products) {
       const productErrors: Record<string, string> = {};
       const productWeightingErrors: Record<string, string> = {};
@@ -914,6 +947,12 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
 
       if (!product.product_type) {
         productErrors.productType = 'Please select a product type';
+        hasErrors = true;
+      }
+
+      // Product owner validation - at least one must be assigned
+      if (!product.product_owner_ids || product.product_owner_ids.length === 0) {
+        productErrors.productOwners = 'Please assign at least one product owner';
         hasErrors = true;
       }
 
@@ -2041,7 +2080,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                   {/* Row 2: Product Owners */}
                                   <div>
                                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                                      Product Owners
+                                      Product Owners <span className="text-red-500">*</span>
                                     </label>
                                     <div className="flex space-x-2">
                                       <div className="flex-grow">
@@ -2051,9 +2090,20 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                           value={product.product_owner_ids}
                                           onChange={(values: number[]) => {
                                             handleProductChange(product.id, 'product_owner_ids', values);
+                                            // Clear validation error when user selects product owners
+                                            if (values.length > 0 && validationErrors[product.id]?.productOwners) {
+                                              const newErrors = { ...validationErrors };
+                                              if (newErrors[product.id]) {
+                                                delete newErrors[product.id].productOwners;
+                                                if (Object.keys(newErrors[product.id]).length === 0) {
+                                                  delete newErrors[product.id];
+                                                }
+                                              }
+                                              setValidationErrors(newErrors);
+                                            }
                                           }}
-                                          placeholder="Search and select product owners"
-                                          className="w-full"
+                                          placeholder="Search and select product owners (required)"
+                                          className={`w-full ${validationErrors[product.id]?.productOwners ? 'product-owners-error' : ''}`}
                                           size="middle"
                                           allowClear
                                           maxTagCount="responsive"
@@ -2103,6 +2153,11 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                         </svg>
                                       </button>
                                     </div>
+                                    {validationErrors[product.id]?.productOwners && (
+                                      <div className="text-xs text-red-600 mt-1">
+                                        {validationErrors[product.id].productOwners}
+                                      </div>
+                                    )}
                                   </div>
 
                                   {/* Portfolio Configuration */}
