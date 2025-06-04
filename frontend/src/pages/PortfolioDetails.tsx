@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { calculatePortfolioIRR } from '../services/api';
+import { isCashFund } from '../utils/fundUtils';
 
 interface Portfolio {
   id: number;
@@ -515,7 +516,7 @@ const PortfolioDetails: React.FC = () => {
                   <tbody className="bg-white divide-y divide-gray-200">
                   {portfolioFunds.map((portfolioFund) => {
                     // Check if this is the cash fund
-                    const isCash = portfolioFund.fund_details?.fund_name === "Cash" && portfolioFund.fund_details?.isin_number === "N/A";
+                    const isCash = portfolioFund.fund_details && isCashFund(portfolioFund.fund_details);
                     
                     return (
                       <tr 

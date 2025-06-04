@@ -6,6 +6,7 @@ import IRRCalculationModal from '../components/IRRCalculationModal';
 import { calculatePortfolioIRRForDate, calculatePortfolioIRR } from '../services/api';
 import { Dialog, Transition } from '@headlessui/react';
 import { formatCurrency, formatPercentage } from '../utils/formatters';
+import { isCashFund } from '../utils/fundUtils';
 
 interface Account {
   id: number;
@@ -947,9 +948,9 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                               if (a.isVirtual) return 1;
                               if (b.isVirtual) return -1;
                               
-                              // Cash fund (name 'Cash', ISIN 'N/A') always goes second-to-last (before Previous Funds)
-                              const aIsCash = a.fund_name === 'Cash' && a.isin_number === 'N/A';
-                              const bIsCash = b.fund_name === 'Cash' && b.isin_number === 'N/A';
+                              // Cash fund always goes second-to-last (before Previous Funds)
+                              const aIsCash = isCashFund({ fund_name: a.fund_name, isin_number: a.isin_number } as any);
+                              const bIsCash = isCashFund({ fund_name: b.fund_name, isin_number: b.isin_number } as any);
 
                               if (aIsCash && !b.isVirtual) return 1; // Cash before virtual if b is not virtual
                               if (bIsCash && !a.isVirtual) return -1; // Similar for b
@@ -1259,9 +1260,9 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                 if (a.id === -1) return 1;
                 if (b.id === -1) return -1;
                 
-                // Cash fund (name 'Cash', ISIN 'N/A') always goes second-to-last (before Previous Funds)
-                const aIsCash = a.fund_name === 'Cash' && a.isin_number === 'N/A';
-                const bIsCash = b.fund_name === 'Cash' && b.isin_number === 'N/A';
+                // Cash fund always goes second-to-last (before Previous Funds)
+                const aIsCash = isCashFund({ fund_name: a.fund_name, isin_number: a.isin_number } as any);
+                const bIsCash = isCashFund({ fund_name: b.fund_name, isin_number: b.isin_number } as any);
 
                 if (aIsCash) return 1; // If a is Cash, it should come after non-Cash, non-Virtual
                 if (bIsCash) return -1; // If b is Cash, it should come after non-Cash, non-Virtual
