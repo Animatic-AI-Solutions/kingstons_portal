@@ -28,10 +28,9 @@ import Products from './pages/Products';
 import ProductDetails from './pages/ProductDetails';
 
 // Definitions Pages - System configuration and reference data management
-import Definitions from './pages/Definitions';
-import Providers from './pages/Providers';  // Investment providers
-import Funds from './pages/Funds';          // Investment funds
-import Portfolios from './pages/Portfolios'; // Portfolio management
+import DefinitionsFunds from './pages/DefinitionsFunds';
+import DefinitionsProviders from './pages/DefinitionsProviders';
+import DefinitionsTemplates from './pages/DefinitionsTemplates';
 import ProviderDetails from './pages/ProviderDetails';
 import FundDetails from './pages/FundDetails';
 import PortfolioDetails from './pages/PortfolioDetails';
@@ -94,12 +93,16 @@ const AppContent: React.FC = () => {
           <Route path="/products/:productId/*" element={<AppLayout><ProductDetails /></AppLayout>} />
           
           {/* Definitions Section - System setup and configuration */}
-          <Route path="/definitions" element={<AppLayout><Definitions /></AppLayout>} />
+          {/* Separate definition pages */}
+          <Route path="/definitions/funds" element={<AppLayout><DefinitionsFunds /></AppLayout>} />
+          <Route path="/definitions/providers" element={<AppLayout><DefinitionsProviders /></AppLayout>} />
+          <Route path="/definitions/portfolio-templates" element={<AppLayout><DefinitionsTemplates /></AppLayout>} />
           
-          {/* Redirect routes for unified definitions page */}
-          <Route path="/definitions/providers" element={<Navigate to="/definitions?tab=providers" replace />} />
-          <Route path="/definitions/funds" element={<Navigate to="/definitions?tab=funds" replace />} />
-          <Route path="/definitions/portfolio-templates" element={<Navigate to="/definitions?tab=portfolios" replace />} />
+          {/* Legacy unified definitions page (redirect to funds by default) */}
+          <Route path="/definitions" element={<Navigate to="/definitions/funds" replace />} />
+          
+          {/* Redirect routes for backward compatibility */}
+          <Route path="/definitions/templates" element={<Navigate to="/definitions/portfolio-templates" replace />} />
           
           <Route path="/definitions/providers/:providerId" element={<AppLayout><ProviderDetails /></AppLayout>} />
           <Route path="/definitions/providers/add" element={<AppLayout><AddProvider /></AppLayout>} />
@@ -107,6 +110,8 @@ const AppContent: React.FC = () => {
           <Route path="/definitions/funds/add" element={<AppLayout><AddFund /></AppLayout>} />
           <Route path="/definitions/portfolio-templates/:portfolioId" element={<AppLayout><PortfolioTemplateDetails /></AppLayout>} />
           <Route path="/definitions/portfolio-templates/add" element={<AppLayout><AddPortfolioTemplate /></AppLayout>} />
+          <Route path="/definitions/templates/:portfolioId" element={<AppLayout><PortfolioTemplateDetails /></AppLayout>} />
+          <Route path="/definitions/templates/add" element={<AppLayout><AddPortfolioTemplate /></AppLayout>} />
           <Route path="/add-generation/:portfolioId" element={<AppLayout><AddPortfolioGeneration /></AppLayout>} />
           <Route path="/edit-generation/:portfolioId/:generationId" element={<AppLayout><EditPortfolioGeneration /></AppLayout>} />
           
