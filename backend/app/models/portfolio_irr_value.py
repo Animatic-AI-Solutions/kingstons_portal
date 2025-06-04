@@ -27,10 +27,9 @@ class PortfolioIRRValue(PortfolioIRRValueBase):
 
 class LatestPortfolioIRRValue(BaseModel):
     portfolio_id: int
-    current_irr: float
-    calculation_date: datetime
+    irr_result: float  # Match what the database actually returns
+    irr_date: datetime  # Match what the database actually returns
     portfolio_valuation_id: Optional[int] = None
-    calculation_method: Optional[str] = None
 
     class Config:
         from_attributes = True

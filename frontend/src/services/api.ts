@@ -303,6 +303,15 @@ export const calculatePortfolioIRR = (portfolioId: number) => {
 };
 
 /**
+ * Get the latest stored portfolio IRR value
+ * @param {number} portfolioId - Portfolio ID
+ * @returns {Promise} - API response with the latest portfolio IRR
+ */
+export const getLatestPortfolioIRR = (portfolioId: number) => {
+  return api.get(`portfolios/${portfolioId}/latest_irr`);
+};
+
+/**
  * Calculate IRRs for all portfolio funds in a portfolio for a specific date
  * @param {number} portfolioId - Portfolio ID
  * @param {string} date - Date in YYYY-MM-DD format

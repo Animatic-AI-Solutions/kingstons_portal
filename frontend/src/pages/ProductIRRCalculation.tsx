@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import EditableMonthlyActivitiesTable from '../components/EditableMonthlyActivitiesTable';
 import IRRCalculationModal from '../components/IRRCalculationModal';
-import { calculatePortfolioIRRForDate, calculatePortfolioIRR } from '../services/api';
+import { calculatePortfolioIRRForDate, calculatePortfolioIRR, getLatestPortfolioIRR } from '../services/api';
 import { Dialog, Transition } from '@headlessui/react';
 import { formatCurrency, formatPercentage } from '../utils/formatters';
 import { isCashFund } from '../utils/fundUtils';
@@ -509,22 +509,28 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
             setIsTotalPortfolioIRRLoading(false);
             return;
           }
-          const response = await calculatePortfolioIRR(account.portfolio_id);
-          console.log('Total portfolio IRR response:', response.data);
-          if (response.data.status === 'success') {
-            setTotalPortfolioIRR(response.data.irr_percentage);
-            setTotalPortfolioIRRDate(response.data.valuation_date || response.data.calculation_date);
+          const response = await getLatestPortfolioIRR(account.portfolio_id);
+          console.log('Latest portfolio IRR response:', response.data);
+          // The latest IRR endpoint returns the IRR data directly
+          if (response.data && response.data.irr_result !== null && response.data.irr_result !== undefined) {
+            setTotalPortfolioIRR(response.data.irr_result);
+            setTotalPortfolioIRRDate(response.data.irr_date);
           } else {
             setTotalPortfolioIRR(null);
             setTotalPortfolioIRRDate(undefined);
-            setTotalPortfolioIRRError(response.data.error || 'Failed to calculate total portfolio IRR');
-            console.error('Error calculating total portfolio IRR from API:', response.data.error);
+            setTotalPortfolioIRRError('No portfolio IRR data available');
+            console.error('No portfolio IRR data found');
           }
         } catch (err: any) {
-          console.error('API Call Error fetching total portfolio IRR:', err);
+          console.error('API Call Error fetching latest portfolio IRR:', err);
           setTotalPortfolioIRR(null);
           setTotalPortfolioIRRDate(undefined);
-          setTotalPortfolioIRRError(err.response?.data?.detail || err.message || 'An unknown error occurred while fetching total IRR.');
+          // Handle 404 errors specifically (no IRR data available)
+          if (err.response?.status === 404) {
+            setTotalPortfolioIRRError('No portfolio IRR calculated yet. Click "Calculate Latest IRRs" to generate.');
+          } else {
+            setTotalPortfolioIRRError(err.response?.data?.detail || err.message || 'An unknown error occurred while fetching portfolio IRR.');
+          }
         } finally {
           setIsTotalPortfolioIRRLoading(false);
         }
