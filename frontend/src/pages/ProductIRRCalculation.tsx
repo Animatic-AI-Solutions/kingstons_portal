@@ -1104,48 +1104,50 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                       
                       {/* Total Row - Updated to use state for total portfolio IRR */}
                       <tr className="bg-gray-50 font-medium">
-                        <td className="px-3 py-3 whitespace-nowrap text-base font-bold text-red-600">TOTAL</td>
-                        <td className="px-3 py-3 whitespace-nowrap">
+                        <td className="px-1 py-1 whitespace-nowrap">
+                          <div className="ml-4 text-base font-bold text-red-600">TOTAL</div>
+                        </td>
+                        <td className="px-1 py-1 whitespace-nowrap">
                           <div className="text-sm font-bold text-red-600">
                             {formatCurrency(calculateTotalInvestments(allTimeActivities, holdings))}
                           </div>
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap">
+                        <td className="px-1 py-1 whitespace-nowrap">
                           <div className="text-sm font-bold text-red-600">
                             {formatCurrency(calculateTotalRegularInvestments(allTimeActivities, holdings))}
                           </div>
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap">
+                        <td className="px-1 py-1 whitespace-nowrap">
                           <div className="text-sm font-bold text-red-600">
                             {formatCurrency(calculateTotalGovernmentUplifts(allTimeActivities, holdings))}
                           </div>
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap">
+                        <td className="px-1 py-1 whitespace-nowrap">
                           <div className="text-sm font-bold text-red-600">
                             {formatCurrency(calculateTotalSwitchIns(allTimeActivities, holdings))}
                           </div>
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap">
+                        <td className="px-1 py-1 whitespace-nowrap">
                           <div className="text-sm font-bold text-red-600">
                             {formatCurrency(calculateTotalSwitchOuts(allTimeActivities, holdings))}
                           </div>
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap">
+                        <td className="px-1 py-1 whitespace-nowrap">
                           <div className="text-sm font-bold text-red-600">
                             {formatCurrency(calculateTotalRegularWithdrawals(allTimeActivities, holdings))}
                           </div>
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap">
+                        <td className="px-1 py-1 whitespace-nowrap">
                           <div className="text-sm font-bold text-red-600">
                             {formatCurrency(calculateTotalWithdrawals(allTimeActivities, holdings))}
                           </div>
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap">
+                        <td className="px-1 py-1 whitespace-nowrap">
                           <div className="text-sm font-bold text-red-600">
                             {formatCurrency(calculateTotalValue(holdings))}
                           </div>
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap">
+                        <td className="px-1 py-1 whitespace-nowrap">
                           {isTotalPortfolioIRRLoading ? (
                             <span className="text-sm text-gray-500">Loading...</span>
                           ) : totalPortfolioIRRError ? (
@@ -1170,7 +1172,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                             <span className="text-sm text-gray-500">N/A</span>
                           )}
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap"></td>
+                        <td className="px-1 py-1 whitespace-nowrap"></td>
                       </tr>
                     </tbody>
                   </table>
