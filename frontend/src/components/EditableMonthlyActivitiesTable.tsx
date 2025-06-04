@@ -92,7 +92,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   const [months, setMonths] = useState<string[]>([]);
   const [allAvailableMonths, setAllAvailableMonths] = useState<string[]>([]);
   const [currentMonthPage, setCurrentMonthPage] = useState(0);
-  const [monthsPerPage] = useState(6); // Show 6 months at a time
+  const [monthsPerPage] = useState(12); // Show 12 months at a time
   const [pendingEdits, setPendingEdits] = useState<CellEdit[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
