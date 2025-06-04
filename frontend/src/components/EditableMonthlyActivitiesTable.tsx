@@ -1899,7 +1899,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                     outline: 'none',
                                     boxShadow: 'none',
                                     background: 'transparent',
-                                    padding: '0 4px',
+                                    padding: '0 1px',
                                     width: '100%',
                                     fontSize: '0.875rem',
                                     opacity: fund.isActive === false || fund.isInactiveBreakdown ? 0.7 : 1
