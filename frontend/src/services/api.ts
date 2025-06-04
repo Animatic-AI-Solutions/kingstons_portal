@@ -446,6 +446,14 @@ export const getClientGroupFUMSummary = () => {
 };
 
 /**
+ * Fetches all client groups with complete data and FUM calculations in one optimized call
+ * @returns {Promise} - API response with client groups including products, FUM, and metadata
+ */
+export const getBulkClientData = () => {
+  return api.get('bulk_client_data');
+};
+
+/**
  * Fetches fund under management summary for a specific client group
  * @param {number} clientGroupId - Client group ID
  * @returns {Promise} - API response with client group FUM data

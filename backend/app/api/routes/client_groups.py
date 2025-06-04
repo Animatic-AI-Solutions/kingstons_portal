@@ -12,6 +12,95 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+@router.get("/bulk_client_data")
+async def get_bulk_client_data(db = Depends(get_db)):
+    """
+    Get all client groups with their complete data including FUM calculations
+    in a single optimized query for faster page loading.
+    """
+    try:
+        logger.info("Fetching bulk client data with FUM calculations")
+        
+        # Use the existing client_group_complete_data view for efficient data retrieval
+        bulk_data_result = db.table("client_group_complete_data")\
+            .select("*")\
+            .eq("client_group_status", "active")\
+            .execute()
+        
+        if not bulk_data_result.data:
+            logger.info("No client groups found")
+            return {"client_groups": []}
+        
+        # Group the flat data by client_group_id and calculate FUM
+        client_groups_dict = {}
+        
+        for row in bulk_data_result.data:
+            client_id = row["client_group_id"]
+            
+            # Initialize client group if not exists
+            if client_id not in client_groups_dict:
+                client_groups_dict[client_id] = {
+                    "id": client_id,
+                    "name": row["client_group_name"],
+                    "advisor": row["advisor"],
+                    "status": row["client_group_status"],
+                    "type": row.get("type"),
+                    "created_at": row.get("created_at"),
+                    "products": [],
+                    "fum": 0,
+                    "active_products": 0,
+                    "total_funds": 0
+                }
+            
+            client_group = client_groups_dict[client_id]
+            
+            # Add product if it exists and hasn't been added yet
+            if row["product_id"] and not any(p["id"] == row["product_id"] for p in client_group["products"]):
+                product_data = {
+                    "id": row["product_id"],
+                    "product_name": row["product_name"],
+                    "product_type": row["product_type"],
+                    "start_date": row["product_start_date"],
+                    "end_date": row["product_end_date"],
+                    "status": row["product_status"],
+                    "portfolio_id": row["portfolio_id"],
+                    "provider_id": row["provider_id"],
+                    "provider_name": row["provider_name"],
+                    "provider_theme_color": row["provider_theme_color"],
+                    "portfolio_name": row["portfolio_name"],
+                    "active_fund_count": row.get("active_fund_count", 0),
+                    "inactive_fund_count": row.get("inactive_fund_count", 0),
+                    "product_total_value": float(row.get("product_total_value", 0))
+                }
+                
+                client_group["products"].append(product_data)
+                
+                # Update client group totals
+                if row["product_status"] == "active":
+                    client_group["active_products"] += 1
+                    client_group["fum"] += product_data["product_total_value"]
+                    client_group["total_funds"] += row.get("active_fund_count", 0)
+        
+        # Convert to list and sort by name
+        client_groups_list = list(client_groups_dict.values())
+        client_groups_list.sort(key=lambda x: x["name"] or "")
+        
+        logger.info(f"Successfully fetched bulk data for {len(client_groups_list)} client groups")
+        
+        return {
+            "client_groups": client_groups_list,
+            "total_count": len(client_groups_list),
+            "total_fum": sum(cg["fum"] for cg in client_groups_list),
+            "metadata": {
+                "query_time": "bulk_optimized",
+                "cache_eligible": True
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching bulk client data: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
 @router.get("/client_groups", response_model=List[ClientGroup])
 async def get_client_groups(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
@@ -488,27 +577,27 @@ async def get_client_group_fum_summary(db = Depends(get_db)):
                 portfolio_ids = [p["portfolio_id"] for p in products_result.data if p["portfolio_id"]]
                 
                 if portfolio_ids:
-                    # Calculate FUM by summing fund valuations directly
-                    for portfolio_id in portfolio_ids:
-                        # Get all active funds for this portfolio
-                        funds_result = db.table("portfolio_funds")\
-                            .select("id")\
-                            .eq("portfolio_id", portfolio_id)\
-                            .eq("status", "active")\
+                    # Get all active funds for all portfolios in bulk
+                    all_funds_result = db.table("portfolio_funds")\
+                        .select("id")\
+                        .in_("portfolio_id", portfolio_ids)\
+                        .eq("status", "active")\
+                        .execute()
+                    
+                    if all_funds_result.data:
+                        # Extract all fund IDs
+                        fund_ids = [fund["id"] for fund in all_funds_result.data]
+                        
+                        # Get all latest valuations in one bulk query using the view
+                        valuations_result = db.table("latest_portfolio_fund_valuations")\
+                            .select("valuation")\
+                            .in_("portfolio_fund_id", fund_ids)\
                             .execute()
                         
-                        if funds_result.data:
-                            for fund in funds_result.data:
-                                # Get the latest valuation for this fund
-                                fund_val_result = db.table("portfolio_fund_valuations")\
-                                    .select("valuation")\
-                                    .eq("portfolio_fund_id", fund["id"])\
-                                    .order("valuation_date", desc=True)\
-                                    .limit(1)\
-                                    .execute()
-                                
-                                if fund_val_result.data:
-                                    total_fum += float(fund_val_result.data[0]["valuation"] or 0)
+                        # Sum all valuations
+                        if valuations_result.data:
+                            for valuation in valuations_result.data:
+                                total_fum += float(valuation["valuation"] or 0)
             
             # Combine the data
                 combined_record = {
@@ -558,27 +647,27 @@ async def get_client_group_fum_by_id(client_group_id: int, db = Depends(get_db))
             portfolio_ids = [p["portfolio_id"] for p in products_result.data if p["portfolio_id"]]
             
             if portfolio_ids:
-                # Calculate FUM by summing fund valuations directly
-                for portfolio_id in portfolio_ids:
-                    # Get all active funds for this portfolio
-                    funds_result = db.table("portfolio_funds")\
-                        .select("id")\
-                        .eq("portfolio_id", portfolio_id)\
-                        .eq("status", "active")\
+                # Get all active funds for all portfolios in bulk
+                all_funds_result = db.table("portfolio_funds")\
+                    .select("id")\
+                    .in_("portfolio_id", portfolio_ids)\
+                    .eq("status", "active")\
+                    .execute()
+                
+                if all_funds_result.data:
+                    # Extract all fund IDs
+                    fund_ids = [fund["id"] for fund in all_funds_result.data]
+                    
+                    # Get all latest valuations in one bulk query using the view
+                    valuations_result = db.table("latest_portfolio_fund_valuations")\
+                        .select("valuation")\
+                        .in_("portfolio_fund_id", fund_ids)\
                         .execute()
                     
-                    if funds_result.data:
-                        for fund in funds_result.data:
-                            # Get the latest valuation for this fund
-                            fund_val_result = db.table("portfolio_fund_valuations")\
-                                .select("valuation")\
-                                .eq("portfolio_fund_id", fund["id"])\
-                                .order("valuation_date", desc=True)\
-                                .limit(1)\
-                                .execute()
-                            
-                            if fund_val_result.data:
-                                total_fum += float(fund_val_result.data[0]["valuation"] or 0)
+                    # Sum all valuations
+                    if valuations_result.data:
+                        for valuation in valuations_result.data:
+                            total_fum += float(valuation["valuation"] or 0)
         
         logger.info(f"Calculated FUM for client group {client_group_id}: {total_fum}")
         return {"client_group_id": client_group_id, "fum": total_fum}
@@ -900,4 +989,6 @@ async def get_client_group_irr(client_group_id: int, db = Depends(get_db)):
         raise
     except Exception as e:
         logger.error(f"Error calculating IRR for client group {client_group_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+ 

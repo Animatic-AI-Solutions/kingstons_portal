@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
 import { SearchableDropdown } from '../components/ui';
 import FilterDropdown from '../components/ui/FilterDropdown';
+import { useClientData } from '../hooks/useClientData';
 
 interface Client {
   id: string;
@@ -22,17 +22,16 @@ type SortOrder = 'asc' | 'desc';
 const Clients: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { api } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
-  const [clients, setClients] = useState<Client[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showDormant, setShowDormant] = useState(false);
   const [advisorFilter, setAdvisorFilter] = useState<string[]>([]);
   const [showAdvisorFilter, setShowAdvisorFilter] = useState(false);
   const advisorFilterRef = useRef<HTMLDivElement>(null);
+  
+  // Use React Query hook for optimized client data fetching
+  const { data: bulkClientData, isLoading, error: queryError, refetch } = useClientData();
   
   // Refs for positioning dropdown menus
   const [advisorDropdownPosition, setAdvisorDropdownPosition] = useState({ top: 0, left: 0 });
@@ -69,8 +68,6 @@ const Clients: React.FC = () => {
   }, [showAdvisorFilter]);
 
   useEffect(() => {
-    fetchClients();
-    
     // Check for success message in location state
     if (location.state && location.state.message) {
       setSuccessMessage(location.state.message);
@@ -99,55 +96,20 @@ const Clients: React.FC = () => {
     };
   }, []);
 
-  const fetchClients = async () => {
-    try {
-      setIsLoading(true);
-      console.log("Fetching client groups...");
-      console.log("API object:", api);
+  // Transform React Query data to match component expectations
+  const clients: Client[] = bulkClientData?.client_groups.map((client) => ({
+    id: client.id,
+    name: client.name,
+    status: client.status,
+    advisor: client.advisor,
+    type: client.type,
+    created_at: client.created_at,
+    updated_at: client.created_at, // Use created_at as fallback for updated_at
+    fum: client.fum
+  })) || [];
 
-      let clientData = [];
-      let fumData = [];
-
-      if (!api || typeof api.get !== 'function') {
-        console.error("API instance is not valid. Creating a direct axios request instead.");
-        // Fallback to direct axios request if api is not properly initialized
-        const [clientsResponse, fumResponse] = await Promise.all([
-          axios.get('http://localhost:8000/clients', {
-            params: { show_dormant: true },
-            withCredentials: true
-          }),
-          axios.get('http://localhost:8000/client_group_fum_summary', { withCredentials: true })
-        ]);
-        clientData = clientsResponse.data;
-        fumData = fumResponse.data;
-      } else {
-        // Use the regular api instance from context
-        const [clientsResponse, fumResponse] = await Promise.all([
-          api.get('/client_groups', { params: { show_dormant: true } }),
-          api.get('/client_group_fum_summary')
-        ]);
-        clientData = clientsResponse.data;
-        fumData = fumResponse.data;
-      }
-
-      // Map FUM data by client_group_id for quick lookup
-      const fumMap = new Map(fumData.map((row: any) => [row.client_group_id, row.fum]));
-
-      // Merge FUM into clients
-      const clientsWithFum = clientData.map((client: Client) => ({
-        ...client,
-        fum: fumMap.get(client.id) ?? 0
-      }));
-
-      setClients(clientsWithFum);
-      setError(null);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to fetch client groups');
-      console.error('Error fetching client groups:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Convert React Query error to string for component compatibility
+  const error = queryError ? (queryError as any).response?.data?.detail || 'Failed to fetch client groups' : null;
 
   const handleSortFieldChange = (field: SortField) => {
     if (field === sortField) {

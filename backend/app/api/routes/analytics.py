@@ -278,7 +278,7 @@ async def get_performance_data(
                 
                 for pf in pf_result.data:
                     # Get latest IRR value for this portfolio fund
-                    irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                    irr_result = db.table("portfolio_fund_irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                     
                     if irr_result.data and pf["amount_invested"]:
                         total_fum += pf["amount_invested"]
@@ -315,7 +315,7 @@ async def get_performance_data(
                 total_weight = 0
                 
                 for pf in pf_result.data:
-                    irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                    irr_result = db.table("portfolio_fund_irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                     
                     if irr_result.data and pf["amount_invested"]:
                         total_fum += pf["amount_invested"]
@@ -354,7 +354,7 @@ async def get_performance_data(
                     pf_result = db.table("portfolio_funds").select("id,amount_invested").eq("portfolio_id", product["portfolio_id"]).execute()
                     
                     for pf in pf_result.data:
-                        irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                        irr_result = db.table("portfolio_fund_irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                         
                         if irr_result.data and pf["amount_invested"]:
                             total_fum += pf["amount_invested"]
@@ -402,7 +402,7 @@ async def get_performance_data(
                         pf_result = db.table("portfolio_funds").select("id,amount_invested").eq("portfolio_id", product["portfolio_id"]).execute()
                         
                         for pf in pf_result.data:
-                            irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                            irr_result = db.table("portfolio_fund_irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                             
                             if irr_result.data and pf["amount_invested"]:
                                 total_fum += pf["amount_invested"]
@@ -445,7 +445,7 @@ async def get_performance_data(
                 total_weight = 0
                 
                 for pf in pf_result.data:
-                    irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                    irr_result = db.table("portfolio_fund_irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                     
                     if irr_result.data and pf["amount_invested"]:
                         total_fum += pf["amount_invested"]
@@ -472,7 +472,7 @@ async def get_performance_data(
                 total_weight = 0
                 
                 for pf in pf_result.data:
-                    irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                    irr_result = db.table("portfolio_fund_irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                     
                     if irr_result.data and pf["amount_invested"]:
                         total_fum += pf["amount_invested"]
@@ -501,7 +501,7 @@ async def get_performance_data(
                     pf_result = db.table("portfolio_funds").select("id,amount_invested").eq("portfolio_id", product["portfolio_id"]).execute()
                     
                     for pf in pf_result.data:
-                        irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                        irr_result = db.table("portfolio_fund_irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                         
                         if irr_result.data and pf["amount_invested"]:
                             total_fum += pf["amount_invested"]
@@ -537,7 +537,7 @@ async def get_performance_data(
                         pf_result = db.table("portfolio_funds").select("id,amount_invested").eq("portfolio_id", product["portfolio_id"]).execute()
                         
                         for pf in pf_result.data:
-                            irr_result = db.table("irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                            irr_result = db.table("portfolio_fund_irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
                             
                             if irr_result.data and pf["amount_invested"]:
                                 total_fum += pf["amount_invested"]
@@ -1138,7 +1138,7 @@ async def calculate_portfolio_irr(portfolio_id: int, db = Depends(get_db)):
         for fund in portfolio_funds_result.data:
             try:
                 # Get the latest IRR value for this fund
-                irr_result = db.table("irr_values")\
+                irr_result = db.table("portfolio_fund_irr_values")\
                     .select("irr_result")\
                     .eq("fund_id", fund["id"])\
                     .order("date", desc=True)\
