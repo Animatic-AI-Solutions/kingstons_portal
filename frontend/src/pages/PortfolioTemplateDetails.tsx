@@ -359,7 +359,7 @@ const PortfolioTemplateDetails: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-4">
+      <div className="container mx-auto px-4 lg:px-8 py-4">
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600"></div>
         </div>
@@ -369,7 +369,7 @@ const PortfolioTemplateDetails: React.FC = () => {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-4">
+      <div className="container mx-auto px-4 lg:px-8 py-4">
         <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -396,7 +396,7 @@ const PortfolioTemplateDetails: React.FC = () => {
 
   if (!template) {
     return (
-      <div className="container mx-auto px-4 py-4">
+      <div className="container mx-auto px-4 lg:px-8 py-4">
         <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-4">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -422,14 +422,16 @@ const PortfolioTemplateDetails: React.FC = () => {
   const weightedRisk = calculateWeightedRisk();
 
   return (
-    <div className="container mx-auto px-4 py-4">
+    <div className="container mx-auto px-4 lg:px-8 py-4 border-l-8 border-teal-500 bg-gradient-to-r from-teal-50/30 to-transparent">
+      {/* Sidebar Color Strip implemented via left border and subtle background gradient */}
+      
       {/* Breadcrumbs */}
       <nav className="mb-4 flex" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
           <li className="inline-flex items-center">
             <button
               onClick={handleBack}
-              className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-primary-700"
+              className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-teal-700 transition-colors"
             >
               <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
@@ -442,77 +444,101 @@ const PortfolioTemplateDetails: React.FC = () => {
               <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                 <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
               </svg>
-              <span className="ml-1 text-sm font-medium text-primary-700 md:ml-2">{template ? template.name : 'Portfolio Template Details'}</span>
+              <span className="ml-1 text-sm font-medium text-teal-700 md:ml-2">{template ? template.name : 'Portfolio Template Details'}</span>
             </div>
           </li>
         </ol>
       </nav>
 
-      {/* Header */}
-      <div className="bg-white shadow-sm rounded-lg mb-4">
-        <div className="p-4">
-          <div className="flex items-center">
-            <div className="flex items-center">
-              <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">
-                {template?.name || 'Unnamed Template'}
-              </h1>
+      {/* Header Card */}
+      <div className="bg-white shadow-sm rounded-lg border-2 border-teal-500 mb-4">
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              {/* Portfolio Icon */}
+              <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg className="w-6 h-6 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              
+              <div>
+                <h1 className="text-2xl font-semibold text-gray-900">
+                  {template?.name || 'Unnamed Template'}
+                </h1>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <span className="inline-flex items-center text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                    {generations?.length || 0} Generation{generations?.length !== 1 ? 's' : ''}
+                  </span>
+                  <span className="inline-flex items-center text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                    Risk: {weightedRisk}/7
+                  </span>
+                  {template?.funds && template.funds.length > 0 && (
+                    <span className="inline-flex items-center text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                      {template.funds.length} Fund{template.funds.length !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
-            <div className="flex-grow"></div>
+            
             <div className="relative">
               <button
                 onClick={handleDeleteClick}
                 disabled={hasProductsUsingTemplate || isCheckingProducts}
-                className={`px-4 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                className={`px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                   hasProductsUsingTemplate || isCheckingProducts
                     ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
                     : 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500'
-                }`}
+                } transition-colors`}
                 title={hasProductsUsingTemplate ? 'Cannot delete template - products are using this template' : 'Delete Template'}
               >
                 {isCheckingProducts ? 'Checking...' : 'Delete Template'}
               </button>
             </div>
           </div>
-          
-          {/* Template Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-4">
-            <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-              <p className="text-xs font-semibold text-gray-500 uppercase">Template Name</p>
-              <p className="text-lg font-medium text-gray-800 mt-1">{template?.name || 'Unnamed'}</p>
-            </div>
-            <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-              <p className="text-xs font-semibold text-gray-500 uppercase">Created Date</p>
-              <p className="text-lg font-medium text-gray-800 mt-1">{formatDate(template?.created_at)}</p>
-            </div>
-            <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-              <p className="text-xs font-semibold text-gray-500 uppercase">Products Using Template</p>
-              <p className="text-lg font-medium text-gray-800 mt-1">{productsCount}</p>
-            </div>
-            <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-              <p className="text-xs font-semibold text-gray-500 uppercase">Generations</p>
-              <p className="text-lg font-medium text-gray-800 mt-1">{generations?.length || 0}</p>
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Generations Tabs */}
+      {/* Priority Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
+          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Template Name</div>
+          <div className="mt-1 text-lg font-semibold text-gray-900">{template?.name || 'Unnamed'}</div>
+        </div>
+        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
+          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Created Date</div>
+          <div className="mt-1 text-lg font-semibold text-gray-900">{formatDate(template?.created_at)}</div>
+        </div>
+        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
+          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Products Using Template</div>
+          <div className="mt-1 text-lg font-semibold text-gray-900">{productsCount}</div>
+        </div>
+        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
+          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Generations</div>
+          <div className="mt-1 text-lg font-semibold text-gray-900">{generations?.length || 0}</div>
+        </div>
+      </div>
+
+      {/* Generations Section */}
       {generations.length > 0 && (
-        <div className="bg-white shadow-sm rounded-lg mb-4">
-          <div className="p-4">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-xl font-semibold text-gray-900">Portfolio Generations</h2>
+        <div className="bg-white shadow-sm rounded-lg border border-gray-100 mb-4">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-gray-900">Portfolio Generations</h2>
               <Link
                 to={`/add-generation/${portfolioId}`}
-                className="bg-primary-700 text-white px-4 py-2 rounded-full hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 text-sm flex items-center shadow-sm transition-colors duration-200"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
               >
-                <svg className="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
                 Add Generation
               </Link>
             </div>
-            
+          </div>
+          
+          <div className="p-6">
             <div className="mb-4">
               <nav className="flex space-x-2 px-2 py-2 bg-gray-50 rounded-lg" role="tablist">
                 {generations.map((generation) => (
@@ -521,7 +547,7 @@ const PortfolioTemplateDetails: React.FC = () => {
                     onClick={() => handleGenerationSelect(generation)}
                     className={`${
                       selectedGeneration?.id === generation.id
-                        ? 'bg-primary-700 text-white shadow-sm'
+                        ? 'bg-teal-600 text-white shadow-sm'
                         : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
                     } rounded-lg px-4 py-2 font-medium text-sm transition-all duration-200 ease-in-out`}
                     role="tab"
@@ -562,7 +588,7 @@ const PortfolioTemplateDetails: React.FC = () => {
                     <div className="mt-2 md:mt-0 flex space-x-2">
                       <Link
                         to={`/edit-generation/${portfolioId}/${selectedGeneration.id}`}
-                        className="bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm flex items-center"
+                        className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
                       >
                         <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -573,7 +599,7 @@ const PortfolioTemplateDetails: React.FC = () => {
                       {selectedGeneration.status === 'draft' && (
                         <button
                           onClick={() => handleActivateGeneration(selectedGeneration.id)}
-                          className="bg-green-600 text-white px-3 py-1.5 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 text-sm flex items-center"
+                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
                         >
                           <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -585,7 +611,7 @@ const PortfolioTemplateDetails: React.FC = () => {
                       <button
                         onClick={() => handleDeleteGenerationClick(selectedGeneration)}
                         disabled={isCheckingProducts || (generationProductCounts[selectedGeneration.id] || 0) > 0}
-                        className={`px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 text-sm flex items-center ${
+                        className={`inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
                           isCheckingProducts || (generationProductCounts[selectedGeneration.id] || 0) > 0
                             ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
                             : 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500'
@@ -639,20 +665,20 @@ const PortfolioTemplateDetails: React.FC = () => {
                 <div className="mt-3">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Funds</h3>
                   {template?.funds && template.funds.length > 0 ? (
-                    <div className="overflow-x-auto rounded-lg border border-gray-200">
+                    <div className="overflow-x-auto">
                       <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-100">
                           <tr>
-                            <th scope="col" className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
                               Fund Name
                             </th>
-                            <th scope="col" className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
                               ISIN
                             </th>
-                            <th scope="col" className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
                               Target %
                             </th>
-                            <th scope="col" className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
                               Risk
                             </th>
                           </tr>
@@ -662,23 +688,23 @@ const PortfolioTemplateDetails: React.FC = () => {
                             (a.available_funds?.fund_name || '').localeCompare(b.available_funds?.fund_name || '')
                           ).map((fund) => (
                             <tr key={fund.id} className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100">
-                              <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                              <td className="px-6 py-3 whitespace-nowrap">
                                 {fund.available_funds ? (
-                                  <Link to={`/definitions/funds/${fund.available_funds.id}`} className="text-indigo-600 hover:text-indigo-800">
+                                  <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">
                                     {fund.available_funds.fund_name}
-                                  </Link>
+                                  </div>
                                 ) : (
-                                  `Fund ID: ${fund.fund_id}`
+                                  <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{`Fund ID: ${fund.fund_id}`}</div>
                                 )}
                               </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                                {fund.available_funds?.isin_number || 'N/A'}
+                              <td className="px-6 py-3 whitespace-nowrap">
+                                <div className="text-sm text-gray-600 font-sans">{fund.available_funds?.isin_number || 'N/A'}</div>
                               </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                                {formatPercentage(fund.target_weighting)}
+                              <td className="px-6 py-3 whitespace-nowrap">
+                                <div className="text-sm text-gray-600 font-sans">{formatPercentage(fund.target_weighting)}</div>
                               </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                                {fund.available_funds?.risk_factor || 'N/A'}
+                              <td className="px-6 py-3 whitespace-nowrap">
+                                <div className="text-sm text-gray-600 font-sans">{fund.available_funds?.risk_factor || 'N/A'}</div>
                               </td>
                             </tr>
                           ))}
@@ -728,7 +754,7 @@ const PortfolioTemplateDetails: React.FC = () => {
                   type="button"
                   className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm ${
                     isDeleting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-700'
-                  }`}
+                  } transition-colors`}
                   onClick={handleConfirmDelete}
                   disabled={isDeleting}
                 >
@@ -736,7 +762,7 @@ const PortfolioTemplateDetails: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors"
                   onClick={handleCancelDelete}
                   disabled={isDeleting}
                 >
@@ -779,7 +805,7 @@ const PortfolioTemplateDetails: React.FC = () => {
                   type="button"
                   className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm ${
                     isDeletingGeneration ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-700'
-                  }`}
+                  } transition-colors`}
                   onClick={handleConfirmDeleteGeneration}
                   disabled={isDeletingGeneration}
                 >
@@ -787,7 +813,7 @@ const PortfolioTemplateDetails: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors"
                   onClick={handleCancelDeleteGeneration}
                   disabled={isDeletingGeneration}
                 >
