@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, Fragment } from 'react';
 import { formatCurrency } from '../utils/formatters';
-import api, { createFundValuation } from '../services/api';
+import api, { createFundValuation, calculatePortfolioIRR } from '../services/api';
 import BulkMonthActivitiesModal from './BulkMonthActivitiesModal';
 
 interface Activity {
@@ -53,6 +53,7 @@ interface EditableMonthlyActivitiesTableProps {
   productStartDate?: string;
   allFunds?: any[];
   providerSwitches?: ProviderSwitch[];
+  portfolioId?: number;
 }
 
 interface FundValuation {
@@ -87,7 +88,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   onActivitiesUpdated,
   productStartDate,
   allFunds = [],
-  providerSwitches = []
+  providerSwitches = [],
+  portfolioId
 }) => {
   const [months, setMonths] = useState<string[]>([]);
   const [allAvailableMonths, setAllAvailableMonths] = useState<string[]>([]);
@@ -782,6 +784,24 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
             await api.patch(`holding_activity_logs/${edit.originalActivityId}`, activityData);
           }
         }
+      }
+      
+      // Trigger IRR recalculation for affected funds after all edits are saved
+      console.log('Triggering IRR recalculation for affected funds...');
+      const affectedFundIds = [...new Set(pendingEdits.map(edit => edit.fundId))];
+      
+      if (portfolioId && affectedFundIds.length > 0) {
+        try {
+          // Trigger portfolio-level IRR recalculation since activities were updated
+          console.log(`Triggering portfolio IRR recalculation for portfolio ${portfolioId}`);
+          await calculatePortfolioIRR(portfolioId);
+          console.log(`Portfolio IRR recalculation completed for portfolio ${portfolioId}`);
+        } catch (irrError) {
+          console.warn(`Failed to trigger portfolio IRR recalculation for portfolio ${portfolioId}:`, irrError);
+          // Don't fail the entire save operation if IRR recalculation fails
+        }
+      } else if (!portfolioId) {
+        console.warn('Portfolio ID not available for IRR recalculation');
       }
       
       // Clear pending edits and refresh data

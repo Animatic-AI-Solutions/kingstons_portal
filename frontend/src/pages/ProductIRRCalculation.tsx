@@ -1286,6 +1286,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                     productStartDate={account?.start_date} // Pass product start date instead of selectedYear
                     allFunds={allFunds} // Pass all funds from the API instead of just holdings
                     providerSwitches={providerSwitches} // Pass provider switches
+                    portfolioId={account?.portfolio_id} // Pass portfolio ID for IRR recalculation
                   />
                 </div>
               );
