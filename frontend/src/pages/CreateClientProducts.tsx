@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Modal } from 'antd';
 import AddFundModal from '../components/AddFundModal';
 
@@ -9,7 +9,7 @@ import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import SearchableDropdown from '../components/ui/SearchableDropdown';
 import { getProviderColor } from '../services/providerColors';
-import { findCashFund, isCashFund, excludeCashFunds } from '../utils/fundUtils';
+import { findCashFund, isCashFund } from '../utils/fundUtils';
 
 interface Client {
   id: number;
@@ -145,7 +145,6 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
 
   // Fund search state
   const [fundSearchTerm, setFundSearchTerm] = useState<string>('');
-  const [filteredFunds, setFilteredFunds] = useState<Fund[]>([]);
   
   // Start date state
   const [startDate, setStartDate] = useState<dayjs.Dayjs>(dayjs());
@@ -369,33 +368,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     fetchData();
   }, [api]);
 
-  // Add a new useEffect to load all available funds on component mount
-  useEffect(() => {
-    const loadAllFunds = async () => {
-      try {
-        setIsLoading(true);
-        const fundsResponse = await api.get('/funds');
-        const allFunds = fundsResponse.data;
-        
-        // Filter out cash funds - they'll be added automatically or handled by backend
-        const nonCashFunds = allFunds.filter((fund: Fund) => 
-          !(fund.fund_name === 'Cash' && fund.isin_number === 'N/A')
-        );
 
-        // Sort funds alphabetically by fund name
-        nonCashFunds.sort((a: Fund, b: Fund) => a.fund_name.localeCompare(b.fund_name));
-        
-        setFunds(allFunds); // Keep all funds in state for reference
-        setFilteredFunds(nonCashFunds); // But only show non-cash funds in the UI, sorted alphabetically
-      } catch (err) {
-        console.error('Error loading all funds:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadAllFunds();
-  }, [api]);
 
   // Add a new useEffect to load funds for products that already have a provider selected
   useEffect(() => {
@@ -1257,27 +1230,22 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   // Update fund filtering to exclude cash funds
   const handleFundSearch = (searchTerm: string): void => {
     setFundSearchTerm(searchTerm);
+  };
+
+  // Compute filtered funds dynamically
+  const getFilteredFunds = (): Fund[] => {
+    let filtered = funds.filter((fund: Fund) => !isCashFund(fund));
     
-    if (!searchTerm) {
-      const nonCashFunds = funds.filter((fund: Fund) => 
-        !(fund.fund_name === 'Cash' && fund.isin_number === 'N/A') // Exclude Cash fund
+    if (fundSearchTerm) {
+      const term = fundSearchTerm.toLowerCase();
+      filtered = filtered.filter((fund: Fund) => 
+        fund.fund_name.toLowerCase().includes(term) || 
+        (fund.isin_number && fund.isin_number.toLowerCase().includes(term))
       );
-      // Sort alphabetically by fund name
-      nonCashFunds.sort((a: Fund, b: Fund) => a.fund_name.localeCompare(b.fund_name));
-      setFilteredFunds(nonCashFunds);
-      return;
     }
     
-    const term = searchTerm.toLowerCase();
-    const filtered = funds.filter((fund: Fund) => 
-      (fund.fund_name.toLowerCase().includes(term) || 
-      (fund.isin_number && fund.isin_number.toLowerCase().includes(term))) &&
-      !isCashFund(fund) // Also exclude Cash fund from search results
-    );
-    
-    // Sort search results alphabetically by fund name
-    filtered.sort((a: Fund, b: Fund) => a.fund_name.localeCompare(b.fund_name));
-    setFilteredFunds(filtered);
+    // Sort alphabetically by fund name
+    return filtered.sort((a: Fund, b: Fund) => a.fund_name.localeCompare(b.fund_name));
   };
 
   const renderPortfolioSection = (product: ProductItem): JSX.Element => {
@@ -1440,13 +1408,13 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             <div className={`h-48 overflow-y-auto border rounded p-2 bg-gray-50 ${
               validationErrors[product.id]?.funds ? 'border-red-500 bg-red-50' : 'border-gray-200'
           }`}>
-              {filteredFunds.length === 0 ? (
+              {getFilteredFunds().length === 0 ? (
                 <div className="text-xs text-gray-500 text-center py-4">
                   No funds found. Try adjusting your search.
                 </div>
               ) : (
                 <div className="space-y-1">
-            {filteredFunds.map(fund => (
+            {getFilteredFunds().map(fund => (
                     <div 
                       key={fund.id} 
                       className="flex items-center space-x-2 p-2 hover:bg-white rounded text-xs cursor-pointer transition-colors"
@@ -1695,7 +1663,6 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   const handleFundAdded = (newFund: Fund) => {
     // Add the new fund to the available funds
     setFunds(prev => [...prev, newFund]);
-    setFilteredFunds(prev => [...prev, newFund]);
     
     // Automatically add the fund to the product that opened the modal
     if (addFundForProductId) {
