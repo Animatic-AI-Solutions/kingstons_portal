@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getProductFUM, calculateStandardizedMultipleFundsIRR } from '../services/api';
 import { MultiSelectSearchableDropdown } from '../components/ui/SearchableDropdown';
@@ -235,21 +235,6 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         setAllProductOwners(allOwnersResponse.data);
       } catch (err) {
         console.error('Error fetching all product owners:', err);
-      }
-
-      // Fetch providers and portfolios for editing
-      try {
-        const providersResponse = await api.get('/available_providers');
-        setProviders(providersResponse.data);
-      } catch (err) {
-        console.error('Error fetching providers:', err);
-      }
-
-      try {
-        const portfoliosResponse = await api.get('/portfolios');
-        setPortfolios(portfoliosResponse.data);
-      } catch (err) {
-        console.error('Error fetching portfolios:', err);
       }
       
       console.log('ProductOverview: Complete product data received:', completeData);
