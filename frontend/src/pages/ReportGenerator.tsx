@@ -1,9 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getProviderColor } from '../services/providerColors';
 import { MultiSelectSearchableDropdown } from '../components/ui/SearchableDropdown';
 import { calculateStandardizedMultipleFundsIRR } from '../services/api';
-import { formatMoney } from '../utils';
 
 // Interfaces for data types
 interface ClientGroup {
@@ -58,11 +56,6 @@ interface MonthlyTransaction {
   valuation: number;
 }
 
-interface SelectedItem {
-  id: number;
-  name: string;
-}
-
 // Add new interface for product period summary
 interface ProductPeriodSummary {
   id: number;
@@ -107,8 +100,6 @@ const ReportGenerator: React.FC = () => {
   const [clientGroups, setClientGroups] = useState<ClientGroup[]>([]);
   const [productOwners, setProductOwners] = useState<ProductOwner[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [fundData, setFundData] = useState<Fund[]>([]);
-  const [portfolioFunds, setPortfolioFunds] = useState<PortfolioFund[]>([]);
   
   // State for selections
   const [selectedClientGroupIds, setSelectedClientGroupIds] = useState<(string | number)[]>([]);
@@ -202,18 +193,15 @@ const formatPercentageFallback = (value: number | null): string => {
         const [
           clientGroupsRes,
           allProductsRes,
-          fundsRes,
           actualProductOwnersRes
         ] = await Promise.all([
           api.get('/client_groups'),
           api.get('/client_products'),
-          api.get('/funds'),
           api.get('/product_owners')
         ]);
         
         setClientGroups(clientGroupsRes.data || []);
         setProducts(allProductsRes.data || []);
-        setFundData(fundsRes.data || []);
         
         if (actualProductOwnersRes && actualProductOwnersRes.data) {
           setProductOwners(actualProductOwnersRes.data.map((owner: any) => ({
@@ -724,36 +712,6 @@ const formatPercentageFallback = (value: number | null): string => {
     
     fetchAvailableValuationDates();
   }, [relatedProducts, excludedProductIds, cascadeExcludedProductIds, api, selectedValuationDate]);
-
-  const calculateIRR = (cashFlows: {date: Date, amount: number}[], maxIterations = 100, precision = 0.000001): number | null => {
-    if (cashFlows.length < 2 || cashFlows.filter(cf => cf.amount !== 0).length < 2) {
-      console.warn("IRR calculation requires at least two non-zero cash flows.");
-      return null;
-    }
-    const sortedFlows = [...cashFlows].sort((a, b) => a.date.getTime() - b.date.getTime());
-    const firstFlowDate = sortedFlows[0].date;
-  
-    let rate = 0.1; // Initial guess
-    for (let i = 0; i < maxIterations; i++) {
-      let npv = 0;
-      let derivative = 0;
-      for (const flow of sortedFlows) {
-        const years = (flow.date.getTime() - firstFlowDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
-        npv += flow.amount / Math.pow(1 + rate, years);
-        if (rate > -1) { 
-          derivative += -years * flow.amount / Math.pow(1 + rate, years + 1);
-        } else {
-          return null; 
-        }
-      }
-      if (Math.abs(npv) < precision) return rate * 100; 
-      if (derivative === 0) return null; 
-      rate -= npv / derivative;
-      if (rate < -0.99) rate = -0.99; 
-    }
-    console.warn("IRR did not converge after max iterations.");
-    return null; 
-  };
 
   const generateReport = async () => {
     if (selectedClientGroupIds.length === 0 && selectedProductOwnerIds.length === 0 && selectedProductIds.length === 0) {
