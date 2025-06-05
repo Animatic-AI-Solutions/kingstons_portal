@@ -321,9 +321,9 @@ const ProviderDetails: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 lg:px-8 py-4">
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600"></div>
         </div>
       </div>
     );
@@ -331,7 +331,7 @@ const ProviderDetails: React.FC = () => {
 
   if (error || !provider) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 lg:px-8 py-4">
         <div className="bg-red-50 border-l-4 border-red-500 p-4 mt-8">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -357,12 +357,24 @@ const ProviderDetails: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div 
+      className="max-w-7xl mx-auto px-4 lg:px-8 py-4 border-l-8"
+      style={{ 
+        borderLeftColor: provider.theme_color || '#FB7185'
+      }}
+    >
+      {/* Sidebar Color Strip implemented via left border */}
+      
       {/* Breadcrumbs */}
-      <nav className="mb-6 flex" aria-label="Breadcrumb">
+      <nav className="mb-4 flex" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
           <li className="inline-flex items-center">
-            <Link to="/definitions?tab=providers" className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-primary-700 transition-colors duration-200">
+            <Link 
+              to="/definitions?tab=providers" 
+              className="inline-flex items-center text-sm font-medium text-gray-500 transition-colors duration-200"
+              onMouseEnter={(e) => e.currentTarget.style.color = provider.theme_color || '#EC4899'}
+              onMouseLeave={(e) => e.currentTarget.style.color = ''}
+            >
               <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
               </svg>
@@ -374,104 +386,76 @@ const ProviderDetails: React.FC = () => {
               <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                 <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
               </svg>
-              <span className="ml-1 text-sm font-medium text-primary-700 md:ml-2">{provider.name}</span>
+              <span 
+                className="ml-1 text-sm font-medium md:ml-2"
+                style={{ color: provider.theme_color || '#EC4899' }}
+              >
+                {provider.name}
+              </span>
             </div>
           </li>
         </ol>
       </nav>
 
-      {/* Header Card with Provider Details */}
-      <div className="bg-white shadow-sm rounded-lg border border-gray-100 mb-6">
-        <div className="px-6 py-6">
+      {/* Header Card */}
+      <div 
+        className="bg-white shadow-sm rounded-lg border-2 mb-4"
+        style={{ borderColor: provider.theme_color || '#FB7185' }}
+      >
+        <div className="px-6 py-4">
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between">
             <div className="flex items-start space-x-4">
               {/* Provider Color Indicator */}
               <div 
-                className="w-16 h-16 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-sm flex-shrink-0"
+                className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-sm flex-shrink-0"
                 style={{ backgroundColor: provider.theme_color || '#6B7280' }}
               >
                 {provider.name.charAt(0).toUpperCase()}
               </div>
               
               <div className="flex-1">
-                <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">{provider.name}</h1>
+                <h1 className="text-2xl font-semibold text-gray-900">{provider.name}</h1>
                 
-                {/* Provider Details Grid */}
-                {isEditing ? (
-                  <div className="mb-6">
-                    {error && (
-                      <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                        <p className="text-sm text-red-700">{error}</p>
-                      </div>
-                    )}
-                    {renderEditForm()}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider">Status</dt>
-                      <dd className="mt-1">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          provider.status === 'active' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {provider.status}
-                        </span>
-                      </dd>
-                    </div>
-                    
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider">Theme Color</dt>
-                      <dd className="mt-1 flex items-center space-x-2">
-                        <div 
-                          className="w-4 h-4 rounded-full border border-gray-300"
-                          style={{ backgroundColor: provider.theme_color || '#6B7280' }}
-                        />
-                        <span className="text-sm font-medium text-gray-900">
-                          {getColorNameByValue(provider.theme_color || '') || 'Default'}
-                        </span>
-                      </dd>
-                    </div>
-                    
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider">Created Date</dt>
-                      <dd className="mt-1 text-sm font-medium text-gray-900">
-                        {new Date(provider.created_at).toLocaleDateString('en-GB', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })}
-                      </dd>
-                    </div>
-                    
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Products</dt>
-                      <dd className="mt-1 text-sm font-medium text-gray-900">{products.length}</dd>
-                    </div>
-                  </div>
-                )}
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded ${
+                    provider.status === 'active' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {provider.status}
+                  </span>
+                  <span className="inline-flex items-center text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                    <div 
+                      className="w-3 h-3 rounded-full border border-gray-300 mr-1"
+                      style={{ backgroundColor: provider.theme_color || '#6B7280' }}
+                    />
+                    {getColorNameByValue(provider.theme_color || '') || 'Default'}
+                  </span>
+                  <span className="inline-flex items-center text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                    {products.length} Product{products.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
               </div>
             </div>
             
             {/* Action Buttons */}
-            <div className="mt-6 lg:mt-0 flex flex-wrap gap-2 lg:flex-col lg:items-end">
+            <div className="mt-4 lg:mt-0 flex flex-wrap gap-2 lg:flex-col lg:items-end">
               {!isEditing ? (
                 <>
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200"
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
                   >
-                    <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
-                    Edit Provider
+                    Edit
                   </button>
                   <button
                     onClick={handleDeleteClick}
-                    className="inline-flex items-center px-3 py-2 border border-red-300 text-sm leading-4 font-medium rounded-lg text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
+                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
                   >
-                    <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                     Delete
@@ -481,14 +465,14 @@ const ProviderDetails: React.FC = () => {
                 <>
                   <button
                     onClick={handleCancel}
-                    className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200"
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleSaveChanges}
                     disabled={isSaving}
-                    className={`inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200 ${
+                    className={`inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors ${
                       isSaving ? 'opacity-70 cursor-not-allowed' : ''
                     }`}
                   >
@@ -502,7 +486,7 @@ const ProviderDetails: React.FC = () => {
                       </>
                     ) : (
                       <>
-                        <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                         Save Changes
@@ -516,19 +500,81 @@ const ProviderDetails: React.FC = () => {
         </div>
       </div>
 
+      {/* Priority Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
+          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Status</div>
+          <div className="mt-1 text-lg font-semibold text-gray-900">
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              provider.status === 'active' 
+                ? 'bg-green-100 text-green-800' 
+                : 'bg-gray-100 text-gray-800'
+            }`}>
+              {provider.status}
+            </span>
+          </div>
+        </div>
+        
+        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
+          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Theme Color</div>
+          <div className="mt-1 flex items-center space-x-2">
+            <div 
+              className="w-4 h-4 rounded-full border border-gray-300"
+              style={{ backgroundColor: provider.theme_color || '#6B7280' }}
+            />
+            <span className="text-sm font-medium text-gray-900">
+              {getColorNameByValue(provider.theme_color || '') || 'Default'}
+            </span>
+          </div>
+        </div>
+        
+        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
+          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Created Date</div>
+          <div className="mt-1 text-lg font-semibold text-gray-900">
+            {new Date(provider.created_at).toLocaleDateString('en-GB', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            })}
+          </div>
+        </div>
+        
+        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
+          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Products</div>
+          <div className="mt-1 text-lg font-semibold text-gray-900">{products.length}</div>
+        </div>
+      </div>
+
+      {/* Edit Form */}
+      {isEditing && (
+        <div className="bg-white shadow-sm rounded-lg border border-gray-100 mb-4">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Edit Provider Details</h2>
+          </div>
+          <div className="p-6">
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            )}
+            {renderEditForm()}
+          </div>
+        </div>
+      )}
+
       {/* Products Section */}
       <div className="bg-white shadow-sm rounded-lg border border-gray-100">
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-lg font-medium text-gray-900">Client Products</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Client Products</h2>
               <p className="text-sm text-gray-500 mt-1">
                 Products using this provider across all clients
               </p>
             </div>
             <button
               onClick={handleAddProduct}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -551,7 +597,7 @@ const ProviderDetails: React.FC = () => {
               <div className="mt-6">
                 <button
                   onClick={handleAddProduct}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -561,23 +607,23 @@ const ProviderDetails: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg">
-              <table className="min-w-full divide-y divide-gray-300">
-                <thead className="bg-gray-50">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-100">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
                       Product Name
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
                       Type
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
                       Client Group
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
                       Created
                     </th>
                   </tr>
@@ -586,20 +632,20 @@ const ProviderDetails: React.FC = () => {
                   {products.map((product) => (
                     <tr 
                       key={product.id} 
-                      className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
+                      className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
                       onClick={() => navigate(`/products/${product.id}`)}
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{product.product_name}</div>
+                      <td className="px-6 py-3 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{product.product_name}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{product.product_type || "N/A"}</div>
+                      <td className="px-6 py-3 whitespace-nowrap">
+                        <div className="text-sm text-gray-600 font-sans">{product.product_type || "N/A"}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{product.client_name || "Unknown"}</div>
+                      <td className="px-6 py-3 whitespace-nowrap">
+                        <div className="text-sm text-gray-600 font-sans">{product.client_name || "Unknown"}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      <td className="px-6 py-3 whitespace-nowrap">
+                        <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           product.status === 'active' 
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-gray-100 text-gray-800'
@@ -607,8 +653,8 @@ const ProviderDetails: React.FC = () => {
                           {product.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
+                      <td className="px-6 py-3 whitespace-nowrap">
+                        <div className="text-sm text-gray-600 font-sans">
                           {new Date(product.created_at).toLocaleDateString('en-GB', {
                             year: 'numeric',
                             month: 'short',
@@ -648,14 +694,14 @@ const ProviderDetails: React.FC = () => {
                 <div className="flex justify-end gap-3">
                   <button
                     onClick={handleCancelDelete}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200"
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
                     disabled={isDeleting}
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleDelete}
-                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
+                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
                     disabled={isDeleting}
                   >
                     {isDeleting ? (

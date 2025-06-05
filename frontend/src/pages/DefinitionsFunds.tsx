@@ -147,7 +147,7 @@ const DefinitionsFunds: React.FC = () => {
   if (!user) return null;
 
   return (
-    <div className="container mx-auto px-4 py-3">
+    <div className="container mx-auto px-2 py-1 bg-blue-100/70">
       <div className="flex justify-between items-center mb-3">
         <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Funds</h1>
         <div className="flex items-center gap-4">
@@ -163,7 +163,7 @@ const DefinitionsFunds: React.FC = () => {
           </label>
           <button
             onClick={handleAddNew}
-            className="bg-primary-700 text-white px-4 py-1.5 rounded-xl font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 shadow-sm flex items-center gap-1"
+            className="bg-blue-600 text-white px-4 py-1.5 rounded-xl font-medium hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-sm flex items-center gap-1"
             aria-label="Add new fund"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -183,7 +183,7 @@ const DefinitionsFunds: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search funds..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-700 focus:border-primary-700 transition-colors duration-200"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
               aria-label="Search funds"
             />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -211,7 +211,7 @@ const DefinitionsFunds: React.FC = () => {
               <thead className="bg-gray-100">
                 <tr>
                   <th 
-                    className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5 cursor-pointer hover:bg-indigo-50"
+                    className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5 cursor-pointer hover:bg-blue-50"
                     onClick={() => handleFundSortChange('fund_name')}
                   >
                     <div className="flex items-center">
@@ -224,7 +224,7 @@ const DefinitionsFunds: React.FC = () => {
                     </div>
                   </th>
                   <th 
-                    className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5 cursor-pointer hover:bg-indigo-50"
+                    className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5 cursor-pointer hover:bg-blue-50"
                     onClick={() => handleFundSortChange('isin_number')}
                   >
                     <div className="flex items-center">
@@ -239,7 +239,7 @@ const DefinitionsFunds: React.FC = () => {
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5">
                     <div className="flex flex-col items-start gap-1">
                       <div 
-                        className="flex items-center cursor-pointer hover:bg-indigo-50"
+                        className="flex items-center cursor-pointer hover:bg-blue-50"
                         onClick={() => handleFundSortChange('risk_factor')}
                       >
                         <span>Risk Factor</span>
@@ -260,7 +260,7 @@ const DefinitionsFunds: React.FC = () => {
                     </div>
                   </th>
                   <th 
-                    className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5 cursor-pointer hover:bg-indigo-50"
+                    className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5 cursor-pointer hover:bg-blue-50"
                     onClick={() => handleFundSortChange('fund_cost')}
                   >
                     <div className="flex items-center">
@@ -292,7 +292,7 @@ const DefinitionsFunds: React.FC = () => {
                   filteredAndSortedFunds.map(fund => (
                     <tr 
                       key={fund.id} 
-                      className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
+                      className="hover:bg-blue-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
                       onClick={() => handleItemClick(fund.id)}
                     >
                       <td className="px-6 py-3 whitespace-nowrap">

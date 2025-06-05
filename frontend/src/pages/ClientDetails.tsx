@@ -116,63 +116,117 @@ const ClientHeader = ({
   };
 
   return (
-    <div className="mb-6 bg-white shadow-sm rounded-lg border border-gray-100 relative transition-all duration-300 hover:shadow-md">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between p-6">
-        <div>
-          <div className="flex items-center">
-            <div>
-              <h1 className="text-4xl font-normal text-gray-900 font-sans tracking-wide">
-                {client.name}
-              </h1>
-              <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1">
-                <div className="text-base text-gray-600 font-sans tracking-wide">
-                  Status: <span className={`px-2 py-0.5 text-xs leading-5 font-semibold rounded-full ${
-                    client.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                  }`}>{client.status}</span>
-                </div>
-                <div className="text-base text-gray-600 font-sans tracking-wide">
-                  Type: {client.type || 'Family'}
-                </div>
-                <div className="text-base text-gray-600 font-sans tracking-wide">
-                  Advisor: {client.advisor || 'Not assigned'}
-                </div>
-                <div className="text-base text-gray-600 font-sans tracking-wide">
-                  Member since: {formatDate(client.created_at)}
+    <div className="mb-6 bg-white shadow-sm rounded-xl border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-md">
+      {/* Main Header Section */}
+      <div className="px-6 py-5">
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+          {/* Left Side - Client Name and Banner */}
+          <div className="flex-1 min-w-0">
+            {/* Client Name Row */}
+            <div className="mb-5">
+              <div className="min-w-0 flex-1">
+                {/* Client Name */}
+                <h1 className="text-5xl font-normal text-primary-700 tracking-tight leading-tight">
+                  {client.name}
+                </h1>
+              </div>
+            </div>
+
+            {/* Client Information Banner */}
+            <div className="w-full lg:w-11/12">
+              <div className="bg-gray-50 rounded-lg px-5 py-3 border border-gray-200">
+                <div className="flex flex-wrap items-center justify-between gap-6">
+                  <div className="flex flex-wrap items-center gap-6">
+                    <div className="flex items-center">
+                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2">Type:</span>
+                      <span className="text-sm font-semibold text-gray-900">
+                        {client.type || 'Family'}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2">Advisor:</span>
+                      <span className="text-sm font-semibold text-gray-900">
+                        {client.advisor || 'Unassigned'}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2">Status:</span>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                        client.status === 'active' 
+                          ? 'bg-green-100 text-green-800 border border-green-200' 
+                          : 'bg-gray-100 text-gray-800 border border-gray-200'
+                      }`}>
+                        <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
+                          client.status === 'active' ? 'bg-green-500' : 'bg-gray-500'
+                        }`} />
+                        {client.status}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2">Member Since:</span>
+                      <div className="flex items-center text-sm font-semibold text-gray-900">
+                        <svg className="w-3 h-3 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        {formatDate(client.created_at)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Edit Button - Integrated into Banner */}
+                  <button
+                    onClick={onEditClick}
+                    className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-primary-700 bg-white border border-primary-200 rounded-md hover:bg-primary-50 hover:border-primary-300 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 shadow-sm flex-shrink-0"
+                  >
+                    <svg className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex flex-col gap-4 mt-4 md:mt-0 w-64">
-          {/* Total Funds */}
-          <div className="py-3 pb-0">
-            <div className="text-sm font-medium text-gray-500">Total Funds Under Management</div>
-            <div className="mt-1 flex justify-end">
-              <span className="text-5xl font-semibold text-gray-900 font-sans tracking-tight">
-                {formatCurrency(totalValue)}
-              </span>
-            </div>
-          </div>
+          {/* Right Side - Financial Metrics */}
+          <div className="lg:w-72 flex-shrink-0">
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+              <div className="space-y-6">
+                {/* Total Funds Under Management */}
+                <div>
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                    Total FUM
+                  </div>
+                  <div className="text-3xl font-bold text-gray-900 tracking-tight">
+                    {formatCurrency(totalValue)}
+                  </div>
+                </div>
 
-          {/* Total IRR with enhanced visualization */}
-          <div className="py-1">
-            <div className="text-sm font-medium text-gray-500">Total IRR Number</div>
-            <div className="flex justify-end items-center">
-              <span className={`text-2xl font-semibold ${typeof totalIRR === 'number' && totalIRR >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                {formatPercentage(totalIRR)}
-              </span>
+                {/* Total IRR */}
+                <div>
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                    Total IRR
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-2xl font-bold tracking-tight ${
+                      typeof totalIRR === 'number' && totalIRR >= 0 
+                        ? 'text-green-600' 
+                        : 'text-red-600'
+                    }`}>
+                      {formatPercentage(totalIRR)}
+                    </span>
+                    {typeof totalIRR === 'number' && (
+                      <div className={`w-3 h-3 rounded-full ${
+                        totalIRR >= 0 ? 'bg-green-500' : 'bg-red-500'
+                      }`} />
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-          
-          {/* Action Buttons */}
-          <div className="flex space-x-2 mt-2">
-            <button
-              onClick={onEditClick}
-              className="bg-primary-700 text-white px-4 py-1.5 rounded-xl font-medium hover:bg-primary-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 shadow-sm flex-1 text-center"
-            >
-              Edit Details
-            </button>
           </div>
         </div>
       </div>
