@@ -556,16 +556,6 @@ SELECT DISTINCT ON (pv.portfolio_id)
 FROM public.portfolio_valuations pv
 ORDER BY pv.portfolio_id, pv.valuation_date DESC;
 
--- View for latest portfolio IRR values
-CREATE OR REPLACE VIEW public.latest_portfolio_irr_values AS
-SELECT DISTINCT ON (piv.portfolio_id)
-    piv.portfolio_id,
-    piv.irr_result AS irr_value,
-    piv.date AS irr_date,
-    piv.portfolio_valuation_id
-FROM public.portfolio_irr_values piv
-ORDER BY piv.portfolio_id, piv.date DESC;
-
 
 
 -- Portfolio performance history view (aggregated monthly)

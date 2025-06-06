@@ -1365,9 +1365,9 @@ async def get_latest_portfolio_irr(portfolio_id: int, db = Depends(get_db)):
     This eliminates the need to recalculate IRR when the stored value is sufficient.
     """
     try:
-        # Query the latest_portfolio_irr_values view
+        # Query the latest_portfolio_irr_values view - using correct column names from database.sql
         result = db.table("latest_portfolio_irr_values") \
-                   .select("portfolio_id, irr_value, irr_date") \
+                   .select("portfolio_id, irr_result, irr_date") \
                    .eq("portfolio_id", portfolio_id) \
                    .execute()
         
@@ -1375,7 +1375,7 @@ async def get_latest_portfolio_irr(portfolio_id: int, db = Depends(get_db)):
             irr_data = result.data[0]
             return {
                 "portfolio_id": portfolio_id,
-                "irr_result": irr_data["irr_value"],
+                "irr_result": irr_data["irr_result"],  # Use irr_result not irr_value
                 "irr_date": irr_data["irr_date"],
                 "source": "stored"
             }
