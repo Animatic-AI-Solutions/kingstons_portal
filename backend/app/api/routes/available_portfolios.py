@@ -1019,4 +1019,52 @@ async def get_active_template_portfolio_generations(db = Depends(get_db)):
         
     except Exception as e:
         logger.error(f"Error fetching active template portfolio generations: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/batch/generation-with-funds/{generation_id}", response_model=dict)
+async def get_generation_with_funds_batch(generation_id: int, db = Depends(get_db)):
+    """
+    Optimized batch endpoint to fetch both generation details and portfolio funds in a single request.
+    This eliminates the need for 2 separate API calls in the ProductOverview component.
+    
+    Returns combined data structure with both generation info and funds.
+    """
+    try:
+        logger.info(f"🚀 Batch fetching generation and funds for generation_id: {generation_id}")
+        
+        # Fetch both generation details and portfolio funds in parallel
+        generation_response = db.table('template_portfolio_generations').select('*').eq('id', generation_id).execute()
+        funds_response = db.table('available_portfolio_funds').select('*').eq('template_portfolio_generation_id', generation_id).execute()
+        
+        if not generation_response.data:
+            logger.warning(f"No generation found with ID: {generation_id}")
+            raise HTTPException(status_code=404, detail="Template generation not found")
+        
+        generation_data = generation_response.data[0]
+        funds_data = funds_response.data if funds_response.data else []
+        
+        # Create template weightings map for easier frontend consumption
+        template_weightings = {}
+        for fund in funds_data:
+            if fund.get('fund_id') and fund.get('target_weighting') is not None:
+                template_weightings[fund['fund_id']] = fund['target_weighting']
+        
+        result = {
+            "generation": generation_data,
+            "funds": funds_data,
+            "template_weightings": template_weightings,
+            "count": {
+                "generation": len(generation_response.data),
+                "funds": len(funds_data)
+            }
+        }
+        
+        logger.info(f"✅ Batch fetch complete - Generation: {generation_data.get('generation_name')}, Funds: {len(funds_data)}")
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in batch generation/funds fetch: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e)) 

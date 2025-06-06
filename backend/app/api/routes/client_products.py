@@ -314,6 +314,7 @@ async def get_client_products(
         provider_ids = [p.get("provider_id") for p in client_products if p.get("provider_id") is not None]
         client_ids = [p.get("client_id") for p in client_products if p.get("client_id") is not None]
         portfolio_ids = [p.get("portfolio_id") for p in client_products if p.get("portfolio_id") is not None]
+        product_ids = [p.get("id") for p in client_products]
         
         # Only fetch providers if we have provider IDs
         providers_map = {}

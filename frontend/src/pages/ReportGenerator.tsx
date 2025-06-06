@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getProviderColor } from '../services/providerColors';
 import { MultiSelectSearchableDropdown } from '../components/ui/SearchableDropdown';
 import { calculateStandardizedMultipleFundsIRR } from '../services/api';
-import { formatMoney } from '../utils';
+import { createIRRDataService } from '../services/irrDataService';
+import { createValuationDataService } from '../services/valuationDataService';
+import { createPortfolioFundsService } from '../services/portfolioFundsService';
+import { formatDateFallback, formatCurrencyFallback, formatPercentageFallback } from '../components/reports/shared/ReportFormatters';
 
 // Interfaces for data types
 interface ClientGroup {
@@ -58,11 +60,6 @@ interface MonthlyTransaction {
   valuation: number;
 }
 
-interface SelectedItem {
-  id: number;
-  name: string;
-}
-
 // Add new interface for product period summary
 interface ProductPeriodSummary {
   id: number;
@@ -103,12 +100,15 @@ interface FundSummary {
 const ReportGenerator: React.FC = () => {
   const { api } = useAuth();
   
+  // Initialize optimized services
+  const irrDataService = useMemo(() => createIRRDataService(api), [api]);
+  const valuationService = useMemo(() => createValuationDataService(api), [api]);
+  const portfolioFundsService = useMemo(() => createPortfolioFundsService(api), [api]);
+  
   // State for data
   const [clientGroups, setClientGroups] = useState<ClientGroup[]>([]);
   const [productOwners, setProductOwners] = useState<ProductOwner[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [fundData, setFundData] = useState<Fund[]>([]);
-  const [portfolioFunds, setPortfolioFunds] = useState<PortfolioFund[]>([]);
   
   // State for selections
   const [selectedClientGroupIds, setSelectedClientGroupIds] = useState<(string | number)[]>([]);
@@ -148,45 +148,7 @@ const ReportGenerator: React.FC = () => {
   // State to track product owner to products relationship
   const [productOwnerToProducts, setProductOwnerToProducts] = useState<Map<number, number[]>>(new Map());
 
-// Fallback formatters - replace with your actual implementations if they exist elsewhere
-const formatDateFallback = (dateString: string | null): string => {
-  if (!dateString) return '-';
-  
-  // Handle YYYY-MM format (year-month only)
-  const parts = dateString.split('-');
-  if (parts.length === 2) {
-    const year = parseInt(parts[0]);
-    const month = parseInt(parts[1]);
-    if (isNaN(year) || isNaN(month)) return dateString;
-    const dateObj = new Date(year, month - 1);
-    if (isNaN(dateObj.getTime())) return dateString;
-    return dateObj.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
-  }
-  
-  // Handle full dates (YYYY-MM-DD)
-  if (parts.length === 3) {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return dateString;
-    return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
-  }
-  
-  return dateString;
-};
-
-const formatCurrencyFallback = (amount: number | null): string => {
-  if (amount === null || amount === undefined) return '-';
-  return new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: 'GBP',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(amount);
-};
-
-const formatPercentageFallback = (value: number | null): string => {
-  if (value === null || value === undefined) return '-';
-  return `${value.toFixed(2)}%`;
-};
+// Formatters now imported from shared components to eliminate duplication
   
   // Loading and error states
   const [isLoading, setIsLoading] = useState(false);
@@ -202,18 +164,15 @@ const formatPercentageFallback = (value: number | null): string => {
         const [
           clientGroupsRes,
           allProductsRes,
-          fundsRes,
           actualProductOwnersRes
         ] = await Promise.all([
           api.get('/client_groups'),
           api.get('/client_products'),
-          api.get('/funds'),
           api.get('/product_owners')
         ]);
         
         setClientGroups(clientGroupsRes.data || []);
         setProducts(allProductsRes.data || []);
-        setFundData(fundsRes.data || []);
         
         if (actualProductOwnersRes && actualProductOwnersRes.data) {
           setProductOwners(actualProductOwnersRes.data.map((owner: any) => ({
@@ -619,13 +578,9 @@ const formatPercentageFallback = (value: number | null): string => {
           return;
         }
         
-        // Collect all portfolio funds for the selected products
-        const portfolioFundsPromises = portfolioIds.map((portfolioId: number) => 
-          api.get(`/portfolio_funds?portfolio_id=${portfolioId}`)
-        );
-        
-        const portfolioFundsResponses = await Promise.all(portfolioFundsPromises);
-        const allPortfolioFunds = portfolioFundsResponses.flatMap(res => res.data);
+        // Collect all portfolio funds for the selected products using batch service
+        const batchPortfolioFundsResult = await portfolioFundsService.getBatchPortfolioFunds(portfolioIds);
+        const allPortfolioFunds = Array.from(batchPortfolioFundsResult.values()).flat();
         
         if (allPortfolioFunds.length === 0) {
           setAvailableValuationDates([]);
@@ -657,12 +612,13 @@ const formatPercentageFallback = (value: number | null): string => {
           fundValuationMonths.set(fundId, new Set<string>());
         });
         
-        // Get all historical valuations for each fund (not just the latest)
-        const valuationPromises = activeFundIds.map(fundId =>
-          api.get(`/fund_valuations`, { params: { portfolio_fund_id: fundId } })
-        );
+        // Get all historical valuations for each fund using batch service
+        const batchValuationResult = await valuationService.getBatchHistoricalValuations(activeFundIds);
         
-        const valuationResponses = await Promise.all(valuationPromises);
+        // Convert batch result to expected format for compatibility
+        const valuationResponses = activeFundIds.map(fundId => ({
+          data: batchValuationResult.get(fundId) || []
+        }));
         
         // Process all valuations to track which months each fund has valuations for
         valuationResponses.forEach((response, index) => {
@@ -724,36 +680,6 @@ const formatPercentageFallback = (value: number | null): string => {
     
     fetchAvailableValuationDates();
   }, [relatedProducts, excludedProductIds, cascadeExcludedProductIds, api, selectedValuationDate]);
-
-  const calculateIRR = (cashFlows: {date: Date, amount: number}[], maxIterations = 100, precision = 0.000001): number | null => {
-    if (cashFlows.length < 2 || cashFlows.filter(cf => cf.amount !== 0).length < 2) {
-      console.warn("IRR calculation requires at least two non-zero cash flows.");
-      return null;
-    }
-    const sortedFlows = [...cashFlows].sort((a, b) => a.date.getTime() - b.date.getTime());
-    const firstFlowDate = sortedFlows[0].date;
-  
-    let rate = 0.1; // Initial guess
-    for (let i = 0; i < maxIterations; i++) {
-      let npv = 0;
-      let derivative = 0;
-      for (const flow of sortedFlows) {
-        const years = (flow.date.getTime() - firstFlowDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
-        npv += flow.amount / Math.pow(1 + rate, years);
-        if (rate > -1) { 
-          derivative += -years * flow.amount / Math.pow(1 + rate, years + 1);
-        } else {
-          return null; 
-        }
-      }
-      if (Math.abs(npv) < precision) return rate * 100; 
-      if (derivative === 0) return null; 
-      rate -= npv / derivative;
-      if (rate < -0.99) rate = -0.99; 
-    }
-    console.warn("IRR did not converge after max iterations.");
-    return null; 
-  };
 
   const generateReport = async () => {
     if (selectedClientGroupIds.length === 0 && selectedProductOwnerIds.length === 0 && selectedProductIds.length === 0) {
@@ -904,9 +830,8 @@ const formatPercentageFallback = (value: number | null): string => {
         const portfolioId = productDetails.portfolio_id;
         if (!portfolioId) continue;
         
-        // Get portfolio funds for this product
-        const portfolioFundsResponse = await api.get(`/portfolio_funds?portfolio_id=${portfolioId}`);
-        const productPortfolioFunds = portfolioFundsResponse.data as PortfolioFund[];
+        // Get portfolio funds for this product using batch service
+        const productPortfolioFunds = await portfolioFundsService.getPortfolioFunds(portfolioId);
         
         if (productPortfolioFunds.length === 0) continue;
         
@@ -946,12 +871,14 @@ const formatPercentageFallback = (value: number | null): string => {
       // Create a map to track all valuations by fund ID and date
       const allFundValuations = new Map<number, { [dateKey: string]: { value: number, valuation_date: string } }>();
       
-      // Fetch all historical valuations for each fund
-      const valuationPromises = productPortfolioFunds.map(pf => 
-        api.get(`/fund_valuations?portfolio_fund_id=${pf.id}`)
-      );
-      
-      const valuationResponses = await Promise.all(valuationPromises);
+                    // Fetch all historical valuations for each fund using batch service
+       const productFundIds = productPortfolioFunds.map(pf => pf.id);
+        const batchValuationResult = await valuationService.getBatchHistoricalValuations(productFundIds);
+        
+        // Convert batch result to expected format for compatibility
+        const valuationResponses = productPortfolioFunds.map(pf => ({
+          data: batchValuationResult.get(pf.id) || []
+        }));
       
       // First pass: collect all valuations
       valuationResponses.forEach((response, index) => {
@@ -1264,15 +1191,16 @@ const formatPercentageFallback = (value: number | null): string => {
                 formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
               }
               
-              // Call the standardized multiple funds IRR endpoint for this product
-              const irrResponse = await calculateStandardizedMultipleFundsIRR({
+              // Use optimized IRR service instead of duplicate calculations
+              const optimizedIRRData = await irrDataService.getOptimizedIRRData({
+                portfolioId: productDetails.portfolio_id,
                 portfolioFundIds: productPortfolioFundIds,
-                irrDate: formattedDate
+                endDate: formattedDate,
+                includeHistorical: false
               });
               
-              // The response should already be in percentage format
-              productIRR = irrResponse.data.irr_percentage;
-              console.log(`Calculated IRR for product ${productId} using standardized endpoint: ${productIRR}`);
+              productIRR = optimizedIRRData.portfolioIRR;
+              console.log(`Optimized IRR for product ${productId}: ${productIRR}% (source: ${optimizedIRRData.irrDate})`);
           } else {
               console.warn(`No valid portfolio fund IDs found for product ${productId} IRR calculation`);
             }
@@ -1408,9 +1336,8 @@ Please select a different valuation date or ensure all active funds have valuati
             const portfolioId = productDetails.portfolio_id;
             if (!portfolioId) continue;
             
-            // Get portfolio funds for this product
-            const portfolioFundsResponse = await api.get(`/portfolio_funds?portfolio_id=${portfolioId}`);
-            const productPortfolioFunds = portfolioFundsResponse.data as PortfolioFund[];
+            // Get portfolio funds for this product using batch service
+            const productPortfolioFunds = await portfolioFundsService.getPortfolioFunds(portfolioId);
             
             // Add ALL portfolio fund IDs (active and inactive)
             productPortfolioFunds.forEach(pf => {
@@ -1432,23 +1359,22 @@ Please select a different valuation date or ensure all active funds have valuati
               formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
             }
             
-            console.log('Calling standardized multiple funds IRR endpoint with:', {
+            console.log('Using optimized batch IRR service for total IRR:', {
               portfolioFundIds: allPortfolioFundIds,
               irrDate: formattedDate
             });
             
-            // Call the standardized multiple funds IRR endpoint
-            const irrResponse = await calculateStandardizedMultipleFundsIRR({
+            // Use optimized IRR service for total IRR calculation (eliminates second duplicate)
+            const totalIRRData = await irrDataService.getOptimizedIRRData({
               portfolioFundIds: allPortfolioFundIds,
-              irrDate: formattedDate
+              endDate: formattedDate,
+              includeHistorical: false
             });
             
-            console.log('Standardized IRR response:', irrResponse.data);
+            console.log('Optimized total IRR response:', totalIRRData);
             
-            // The response should already be in percentage format
-            const irrPercentage = irrResponse.data.irr_percentage;
-            setTotalIRR(irrPercentage);
-            console.log('Calculated total IRR using standardized endpoint (including inactive funds):', irrPercentage);
+            setTotalIRR(totalIRRData.portfolioIRR);
+            console.log('✅ Optimized total IRR calculation complete:', totalIRRData.portfolioIRR);
         } else {
             console.warn('No valid portfolio fund IDs found for IRR calculation');
           setTotalIRR(null);
