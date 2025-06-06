@@ -1358,6 +1358,66 @@ async def get_complete_portfolio(
         logger.error(f"Error fetching complete portfolio data: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
+@router.get("/portfolios/{portfolio_id}/latest-irr", response_model=dict)
+async def get_latest_portfolio_irr(portfolio_id: int, db = Depends(get_db)):
+    """
+    Optimized endpoint to fetch stored portfolio IRR from latest_portfolio_irr_values view.
+    This eliminates the need to recalculate IRR when the stored value is sufficient.
+    """
+    try:
+        # Query the latest_portfolio_irr_values view
+        result = db.table("latest_portfolio_irr_values") \
+                   .select("portfolio_id, irr_value, irr_date") \
+                   .eq("portfolio_id", portfolio_id) \
+                   .execute()
+        
+        if result.data and len(result.data) > 0:
+            irr_data = result.data[0]
+            return {
+                "portfolio_id": portfolio_id,
+                "irr_result": irr_data["irr_value"],
+                "irr_date": irr_data["irr_date"],
+                "source": "stored"
+            }
+        else:
+            return {
+                "portfolio_id": portfolio_id,
+                "irr_result": None,
+                "irr_date": None,
+                "source": "not_found"
+            }
+    except Exception as e:
+        logger.error(f"Error fetching stored IRR for portfolio {portfolio_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@router.get("/portfolios/{portfolio_id}/irr-history", response_model=dict)
+async def get_portfolio_irr_history(
+    portfolio_id: int, 
+    months: int = Query(12, ge=1, le=60, description="Number of months of history to return"),
+    db = Depends(get_db)
+):
+    """
+    Get historical IRR values for portfolio comparison reporting.
+    Used when historical IRR analysis is specifically requested.
+    """
+    try:
+        # Query historical IRR values from portfolio_irr_values table
+        result = db.table("portfolio_irr_values") \
+                   .select("irr_result, date, calculation_method") \
+                   .eq("portfolio_id", portfolio_id) \
+                   .order("date", desc=True) \
+                   .limit(months) \
+                   .execute()
+        
+        return {
+            "portfolio_id": portfolio_id,
+            "history": result.data or [],
+            "count": len(result.data) if result.data else 0
+        }
+    except Exception as e:
+        logger.error(f"Error fetching IRR history for portfolio {portfolio_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
 @router.get("/portfolios/{portfolio_id}/activity_logs", response_model=dict)
 async def get_portfolio_activity_logs(
     portfolio_id: int,
