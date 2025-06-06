@@ -2781,32 +2781,42 @@ async def calculate_multiple_portfolio_funds_irr(
         # This ensures that activities and valuations in the same calendar month
         # are treated as separate time periods for IRR calculation
         
-        # Calculate the end of the valuation month
-        if irr_date_obj.month == 12:
-            next_month = irr_date_obj.replace(year=irr_date_obj.year + 1, month=1, day=1)
+        # UPDATED LOGIC: For inactive funds with zero valuation, don't add final valuation
+        total_valuation = sum(fund_valuations.values())
+        
+        # Only add final valuation if it's positive (i.e., funds are still active)
+        if total_valuation > 0:
+            # Calculate the end of the valuation month
+            if irr_date_obj.month == 12:
+                next_month = irr_date_obj.replace(year=irr_date_obj.year + 1, month=1, day=1)
+            else:
+                next_month = irr_date_obj.replace(month=irr_date_obj.month + 1, day=1)
+            
+            end_of_month = next_month - timedelta(days=1)
+            
+            # Use the end of month as a separate key for valuation
+            # This ensures valuations don't get aggregated with activities from the same month
+            valuation_month_key = end_of_month.replace(day=1)
+            
+            # If there are activities in the same month as the valuation, we need to ensure
+            # the valuation is treated as a separate cash flow
+            irr_month_key = irr_date_obj.replace(day=1)
+            if irr_month_key in cash_flows and len(activities) > 0:
+                # There are activities in the same month as the valuation
+                # Add one day to the valuation month to ensure it's treated separately
+                valuation_month_key = (end_of_month + timedelta(days=1)).replace(day=1)
+            
+            if valuation_month_key not in cash_flows:
+                cash_flows[valuation_month_key] = 0.0
+            cash_flows[valuation_month_key] += total_valuation  # Positive for final value
+            
+            logger.info(f"Added final valuation of {total_valuation} at {valuation_month_key}")
         else:
-            next_month = irr_date_obj.replace(month=irr_date_obj.month + 1, day=1)
+            logger.info(f"Skipping final valuation addition - total valuation is {total_valuation} (inactive funds)")
+            logger.info("IRR will be calculated using activities only (up to latest exit)")
         
-        end_of_month = next_month - timedelta(days=1)
-        
-        # Use the end of month as a separate key for valuation
-        # This ensures valuations don't get aggregated with activities from the same month
-        valuation_month_key = end_of_month.replace(day=1)
-        
-        # If there are activities in the same month as the valuation, we need to ensure
-        # the valuation is treated as a separate cash flow
-        irr_month_key = irr_date_obj.replace(day=1)
-        if irr_month_key in cash_flows and len(activities) > 0:
-            # There are activities in the same month as the valuation
-            # Add one day to the valuation month to ensure it's treated separately
-            valuation_month_key = (end_of_month + timedelta(days=1)).replace(day=1)
-        
-        if valuation_month_key not in cash_flows:
-            cash_flows[valuation_month_key] = 0.0
-        cash_flows[valuation_month_key] += sum(fund_valuations.values())  # Positive for final value
-        
-        logger.info(f"Aggregated cash flows: {len(cash_flows)} flows from {min(cash_flows.keys())} to {max(cash_flows.keys())}")
-        logger.info(f"Total valuation: {sum(fund_valuations.values())}")
+        logger.info(f"Aggregated cash flows: {len(cash_flows)} flows from {min(cash_flows.keys()) if cash_flows else 'N/A'} to {max(cash_flows.keys()) if cash_flows else 'N/A'}")
+        logger.info(f"Total valuation: {total_valuation}")
         
         # Check if we have no activities (only valuations)
         if len(activities) == 0:
@@ -2817,7 +2827,7 @@ async def calculate_multiple_portfolio_funds_irr(
                 "irr_decimal": 0.0,
                 "calculation_date": irr_date_obj.isoformat(),
                 "portfolio_fund_ids": portfolio_fund_ids,
-                "total_valuation": sum(fund_valuations.values()),
+                "total_valuation": total_valuation,
                 "fund_valuations": fund_valuations,
                 "cash_flows_count": 0,
                 "period_start": irr_date_obj.isoformat(),
@@ -2847,7 +2857,7 @@ async def calculate_multiple_portfolio_funds_irr(
             "irr_decimal": irr_decimal,
             "calculation_date": irr_date_obj.isoformat(),
             "portfolio_fund_ids": portfolio_fund_ids,
-            "total_valuation": sum(fund_valuations.values()),
+            "total_valuation": total_valuation,
             "fund_valuations": fund_valuations,
             "cash_flows_count": len(cash_flows),
             "period_start": min(cash_flows.keys()).isoformat(),
@@ -2967,31 +2977,39 @@ async def calculate_single_portfolio_fund_irr(
         # This ensures that activities and valuations in the same calendar month
         # are treated as separate time periods for IRR calculation
         
-        # Calculate the end of the valuation month
-        if irr_date_obj.month == 12:
-            next_month = irr_date_obj.replace(year=irr_date_obj.year + 1, month=1, day=1)
+        # UPDATED LOGIC: For inactive funds with zero valuation, don't add final valuation
+        # Only add final valuation if it's positive (i.e., fund is still active)
+        if valuation_amount > 0:
+            # Calculate the end of the valuation month
+            if irr_date_obj.month == 12:
+                next_month = irr_date_obj.replace(year=irr_date_obj.year + 1, month=1, day=1)
+            else:
+                next_month = irr_date_obj.replace(month=irr_date_obj.month + 1, day=1)
+            
+            end_of_month = next_month - timedelta(days=1)
+            
+            # Use the end of month as a separate key for valuation
+            # This ensures valuations don't get aggregated with activities from the same month
+            valuation_month_key = end_of_month.replace(day=1)
+            
+            # If there are activities in the same month as the valuation, we need to ensure
+            # the valuation is treated as a separate cash flow
+            irr_month_key = irr_date_obj.replace(day=1)
+            if irr_month_key in cash_flows and len(activities) > 0:
+                # There are activities in the same month as the valuation
+                # Add one day to the valuation month to ensure it's treated separately
+                valuation_month_key = (end_of_month + timedelta(days=1)).replace(day=1)
+            
+            if valuation_month_key not in cash_flows:
+                cash_flows[valuation_month_key] = 0.0
+            cash_flows[valuation_month_key] += valuation_amount  # Positive for final value
+            
+            logger.info(f"Added final valuation of {valuation_amount} at {valuation_month_key}")
         else:
-            next_month = irr_date_obj.replace(month=irr_date_obj.month + 1, day=1)
+            logger.info(f"Skipping final valuation addition - valuation is {valuation_amount} (inactive fund)")
+            logger.info("IRR will be calculated using activities only (up to latest exit)")
         
-        end_of_month = next_month - timedelta(days=1)
-        
-        # Use the end of month as a separate key for valuation
-        # This ensures valuations don't get aggregated with activities from the same month
-        valuation_month_key = end_of_month.replace(day=1)
-        
-        # If there are activities in the same month as the valuation, we need to ensure
-        # the valuation is treated as a separate cash flow
-        irr_month_key = irr_date_obj.replace(day=1)
-        if irr_month_key in cash_flows and len(activities) > 0:
-            # There are activities in the same month as the valuation
-            # Add one day to the valuation month to ensure it's treated separately
-            valuation_month_key = (end_of_month + timedelta(days=1)).replace(day=1)
-        
-        if valuation_month_key not in cash_flows:
-            cash_flows[valuation_month_key] = 0.0
-        cash_flows[valuation_month_key] += valuation_amount  # Positive for final value
-        
-        logger.info(f"Aggregated cash flows: {len(cash_flows)} flows from {min(cash_flows.keys())} to {max(cash_flows.keys())}")
+        logger.info(f"Aggregated cash flows: {len(cash_flows)} flows from {min(cash_flows.keys()) if cash_flows else 'N/A'} to {max(cash_flows.keys()) if cash_flows else 'N/A'}")
         
         # Check if we have no activities (only valuation)
         if len(activities) == 0:

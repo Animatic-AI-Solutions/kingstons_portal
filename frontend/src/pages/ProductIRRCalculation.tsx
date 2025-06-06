@@ -1,9 +1,9 @@
-import React, { useState, useEffect, Fragment } from 'react';
+import React, { useState, useEffect, Fragment, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import EditableMonthlyActivitiesTable from '../components/EditableMonthlyActivitiesTable';
 import IRRCalculationModal from '../components/IRRCalculationModal';
-import { calculatePortfolioIRRForDate, calculatePortfolioIRR, getLatestPortfolioIRR } from '../services/api';
+import { calculatePortfolioIRRForDate, calculatePortfolioIRR, getLatestPortfolioIRR, calculateStandardizedMultipleFundsIRR } from '../services/api';
 import { Dialog, Transition } from '@headlessui/react';
 import { formatCurrency, formatPercentage } from '../utils/formatters';
 import { isCashFund } from '../utils/fundUtils';
@@ -125,11 +125,11 @@ const calculateGovernmentUplifts = (activities: ActivityLog[], fundId: number): 
 };
 
 const calculateSwitchIns = (activities: ActivityLog[], fundId: number): number => {
-  return calculateActivityTotalByType(activities, 'SwitchIn', fundId);
+  return calculateActivityTotalByType(activities, 'FundSwitchIn', fundId);
 };
 
 const calculateSwitchOuts = (activities: ActivityLog[], fundId: number): number => {
-  return calculateActivityTotalByType(activities, 'SwitchOut', fundId);
+  return calculateActivityTotalByType(activities, 'FundSwitchOut', fundId);
 };
 
 const calculateWithdrawals = (activities: ActivityLog[], fundId: number): number => {
@@ -283,12 +283,56 @@ const createPreviousFundsEntry = (inactiveHoldings: Holding[], activityLogs: Act
   return previousFundsEntry;
 };
 
+// Helper functions to calculate Previous Funds totals from inactive holdings
+const calculatePreviousFundsInvestments = (activities: ActivityLog[], inactiveHoldings: Holding[]): number => {
+  return inactiveHoldings.reduce((total, holding) => {
+    return total + calculateInvestments(activities, holding.id);
+  }, 0);
+};
+
+const calculatePreviousFundsRegularInvestments = (activities: ActivityLog[], inactiveHoldings: Holding[]): number => {
+  return inactiveHoldings.reduce((total, holding) => {
+    return total + calculateRegularInvestments(activities, holding.id);
+  }, 0);
+};
+
+const calculatePreviousFundsGovernmentUplifts = (activities: ActivityLog[], inactiveHoldings: Holding[]): number => {
+  return inactiveHoldings.reduce((total, holding) => {
+    return total + calculateGovernmentUplifts(activities, holding.id);
+  }, 0);
+};
+
+const calculatePreviousFundsSwitchIns = (activities: ActivityLog[], inactiveHoldings: Holding[]): number => {
+  return inactiveHoldings.reduce((total, holding) => {
+    return total + calculateSwitchIns(activities, holding.id);
+  }, 0);
+};
+
+const calculatePreviousFundsSwitchOuts = (activities: ActivityLog[], inactiveHoldings: Holding[]): number => {
+  return inactiveHoldings.reduce((total, holding) => {
+    return total + calculateSwitchOuts(activities, holding.id);
+  }, 0);
+};
+
+const calculatePreviousFundsRegularWithdrawals = (activities: ActivityLog[], inactiveHoldings: Holding[]): number => {
+  return inactiveHoldings.reduce((total, holding) => {
+    return total + calculateRegularWithdrawals(activities, holding.id);
+  }, 0);
+};
+
+const calculatePreviousFundsWithdrawals = (activities: ActivityLog[], inactiveHoldings: Holding[]): number => {
+  return inactiveHoldings.reduce((total, holding) => {
+    return total + calculateWithdrawals(activities, holding.id);
+  }, 0);
+};
+
 const calculateTotalRegularInvestments = (activities: ActivityLog[], holdings: Holding[]): number => {
   console.log('Calculating total regular investments...');
   console.log(`Activities count: ${activities.length}, Holdings count: ${holdings.length}`);
   
-  const activeHoldings = holdings.filter(h => h.status !== 'inactive' && !h.isVirtual);
-  const total = activeHoldings.reduce((total, holding) => {
+  // Include ALL real holdings (active and inactive) but exclude virtual entries
+  const allRealHoldings = holdings.filter(h => !h.isVirtual);
+  const total = allRealHoldings.reduce((total, holding) => {
     const amount = calculateRegularInvestments(activities, holding.id);
     console.log(`Regular investments for holding ${holding.id} (${holding.fund_name}): ${amount}`);
     return total + amount;
@@ -301,8 +345,9 @@ const calculateTotalRegularInvestments = (activities: ActivityLog[], holdings: H
 const calculateTotalGovernmentUplifts = (activities: ActivityLog[], holdings: Holding[]): number => {
   console.log('Calculating total government uplifts...');
   
-  const activeHoldings = holdings.filter(h => h.status !== 'inactive' && !h.isVirtual);
-  const total = activeHoldings.reduce((total, holding) => {
+  // Include ALL real holdings (active and inactive) but exclude virtual entries
+  const allRealHoldings = holdings.filter(h => !h.isVirtual);
+  const total = allRealHoldings.reduce((total, holding) => {
     const amount = calculateGovernmentUplifts(activities, holding.id);
     console.log(`Government uplifts for holding ${holding.id} (${holding.fund_name}): ${amount}`);
     return total + amount;
@@ -315,8 +360,9 @@ const calculateTotalGovernmentUplifts = (activities: ActivityLog[], holdings: Ho
 const calculateTotalSwitchIns = (activities: ActivityLog[], holdings: Holding[]): number => {
   console.log('Calculating total fund switch ins...');
   
-  const activeHoldings = holdings.filter(h => h.status !== 'inactive' && !h.isVirtual);
-  const total = activeHoldings.reduce((total, holding) => {
+  // Include ALL real holdings (active and inactive) but exclude virtual entries
+  const allRealHoldings = holdings.filter(h => !h.isVirtual);
+  const total = allRealHoldings.reduce((total, holding) => {
     const amount = calculateSwitchIns(activities, holding.id);
     console.log(`Fund switch ins for holding ${holding.id} (${holding.fund_name}): ${amount}`);
     return total + amount;
@@ -329,8 +375,9 @@ const calculateTotalSwitchIns = (activities: ActivityLog[], holdings: Holding[])
 const calculateTotalSwitchOuts = (activities: ActivityLog[], holdings: Holding[]): number => {
   console.log('Calculating total fund switch outs...');
   
-  const activeHoldings = holdings.filter(h => h.status !== 'inactive' && !h.isVirtual);
-  const total = activeHoldings.reduce((total, holding) => {
+  // Include ALL real holdings (active and inactive) but exclude virtual entries
+  const allRealHoldings = holdings.filter(h => !h.isVirtual);
+  const total = allRealHoldings.reduce((total, holding) => {
     const amount = calculateSwitchOuts(activities, holding.id);
     console.log(`Fund switch outs for holding ${holding.id} (${holding.fund_name}): ${amount}`);
     return total + amount;
@@ -343,8 +390,9 @@ const calculateTotalSwitchOuts = (activities: ActivityLog[], holdings: Holding[]
 const calculateTotalWithdrawals = (activities: ActivityLog[], holdings: Holding[]): number => {
   console.log('Calculating total withdrawals...');
   
-  const activeHoldings = holdings.filter(h => h.status !== 'inactive' && !h.isVirtual);
-  const total = activeHoldings.reduce((total, holding) => {
+  // Include ALL real holdings (active and inactive) but exclude virtual entries
+  const allRealHoldings = holdings.filter(h => !h.isVirtual);
+  const total = allRealHoldings.reduce((total, holding) => {
     const amount = calculateActivityTotalByType(activities, 'Withdrawal', holding.id);
     console.log(`Withdrawals for holding ${holding.id} (${holding.fund_name}): ${amount}`);
     return total + amount;
@@ -357,8 +405,9 @@ const calculateTotalWithdrawals = (activities: ActivityLog[], holdings: Holding[
 const calculateTotalRegularWithdrawals = (activities: ActivityLog[], holdings: Holding[]): number => {
   console.log('Calculating total regular withdrawals...');
   
-  const activeHoldings = holdings.filter(h => h.status !== 'inactive' && !h.isVirtual);
-  const total = activeHoldings.reduce((total, holding) => {
+  // Include ALL real holdings (active and inactive) but exclude virtual entries
+  const allRealHoldings = holdings.filter(h => !h.isVirtual);
+  const total = allRealHoldings.reduce((total, holding) => {
     const amount = calculateRegularWithdrawals(activities, holding.id);
     console.log(`Regular withdrawals for holding ${holding.id} (${holding.fund_name}): ${amount}`);
     return total + amount;
@@ -381,14 +430,16 @@ const calculateTotalValue = (holdings: Holding[]): number => {
 
 
 const calculateTotalValueMinusWithdrawals = (holdings: Holding[], activities: ActivityLog[]): number => {
-  const activeHoldings = holdings.filter(h => h.status !== 'inactive' && !h.isVirtual);
-  return activeHoldings.reduce((total, holding) => 
+  // Include ALL real holdings (active and inactive) but exclude virtual entries
+  const allRealHoldings = holdings.filter(h => !h.isVirtual);
+  return allRealHoldings.reduce((total, holding) => 
     total + calculateValueMinusWithdrawals(holding.market_value || 0, activities, holding.id), 0);
 };
 
 const calculateTotalInvestmentsPlusSwitchIns = (activities: ActivityLog[], holdings: Holding[]): number => {
-  const activeHoldings = holdings.filter(h => h.status !== 'inactive' && !h.isVirtual);
-  return activeHoldings.reduce((total, holding) => total + calculateInvestmentsPlusSwitchIns(activities, holding.id), 0);
+  // Include ALL real holdings (active and inactive) but exclude virtual entries
+  const allRealHoldings = holdings.filter(h => !h.isVirtual);
+  return allRealHoldings.reduce((total, holding) => total + calculateInvestmentsPlusSwitchIns(activities, holding.id), 0);
 };
 
 // Add this new function to filter activity logs by year
@@ -418,8 +469,9 @@ const filterActivitiesByYear = (activities: ActivityLog[], year: number): Activi
 const calculateTotalInvestments = (activities: ActivityLog[], holdings: Holding[]): number => {
   console.log('Calculating total investments...');
   
-  const activeHoldings = holdings.filter(h => h.status !== 'inactive' && !h.isVirtual);
-  const total = activeHoldings.reduce((total, holding) => {
+  // Include ALL real holdings (active and inactive) but exclude virtual entries
+  const allRealHoldings = holdings.filter(h => !h.isVirtual);
+  const total = allRealHoldings.reduce((total, holding) => {
     const amount = calculateInvestments(activities, holding.id);
     console.log(`Investments for holding ${holding.id} (${holding.fund_name}): ${amount}`);
     return total + amount;
@@ -470,6 +522,12 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
   const [totalPortfolioIRRDate, setTotalPortfolioIRRDate] = useState<string | undefined>(undefined);
   const [isTotalPortfolioIRRLoading, setIsTotalPortfolioIRRLoading] = useState<boolean>(false);
   const [totalPortfolioIRRError, setTotalPortfolioIRRError] = useState<string | null>(null);
+  
+  // Previous Funds IRR state
+  const [previousFundsIRR, setPreviousFundsIRR] = useState<number | null>(null);
+  const [previousFundsIRRDate, setPreviousFundsIRRDate] = useState<string | undefined>(undefined);
+  const [isPreviousFundsIRRLoading, setIsPreviousFundsIRRLoading] = useState<boolean>(false);
+  const [previousFundsIRRError, setPreviousFundsIRRError] = useState<string | null>(null);
 
   useEffect(() => {
     if (accountId) {
@@ -544,6 +602,64 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
 
     fetchTotalPortfolioIRR();
   }, [account?.portfolio_id, api, holdings, activityLogs]); // Added holdings and activityLogs as dependencies
+
+  // Effect to calculate Previous Funds IRR when inactive holdings change
+  useEffect(() => {
+    const fetchPreviousFundsIRR = async () => {
+      const inactiveHoldings = filterInactiveHoldings(holdings);
+      
+      if (inactiveHoldings.length === 0) {
+        setPreviousFundsIRR(null);
+        setPreviousFundsIRRDate(undefined);
+        setPreviousFundsIRRError(null);
+        setIsPreviousFundsIRRLoading(false);
+        return;
+      }
+
+      setIsPreviousFundsIRRLoading(true);
+      setPreviousFundsIRRError(null);
+      
+      try {
+        console.log(`Calculating Previous Funds IRR for ${inactiveHoldings.length} inactive funds`);
+        
+        // Get portfolio fund IDs for inactive holdings
+        const inactiveFundIds = inactiveHoldings.map(h => h.id);
+        console.log('Inactive fund IDs:', inactiveFundIds);
+        
+        // Use the standardized multiple IRR endpoint
+        const response = await calculateStandardizedMultipleFundsIRR({
+          portfolioFundIds: inactiveFundIds
+        });
+        
+        console.log('Previous Funds IRR response:', response.data);
+        
+        if (response.data && response.data.success && response.data.irr_percentage !== null) {
+          setPreviousFundsIRR(response.data.irr_percentage);
+          setPreviousFundsIRRDate(response.data.calculation_date);
+        } else {
+          setPreviousFundsIRR(null);
+          setPreviousFundsIRRDate(undefined);
+          setPreviousFundsIRRError('No IRR data available for previous funds');
+          console.warn('No Previous Funds IRR data found');
+        }
+        
+      } catch (err: any) {
+        console.error('Error calculating Previous Funds IRR:', err);
+        setPreviousFundsIRR(null);
+        setPreviousFundsIRRDate(undefined);
+        
+        if (err.response?.status === 404) {
+          setPreviousFundsIRRError('No IRR data available for previous funds');
+        } else {
+          setPreviousFundsIRRError(err.response?.data?.detail || err.message || 'Error calculating Previous Funds IRR');
+        }
+      } finally {
+        setIsPreviousFundsIRRLoading(false);
+      }
+    };
+
+    fetchPreviousFundsIRR();
+  }, [holdings]); // Recalculate when holdings change
 
 
   const fetchData = async (accountId: string) => {
@@ -989,49 +1105,49 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                 <td className="px-1 py-1 whitespace-nowrap">
                                   <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual 
-                                      ? <span className="text-gray-500">N/A</span> 
+                                      ? formatCurrency(calculatePreviousFundsInvestments(allTimeActivities, inactiveHoldings))
                                       : formatCurrency(calculateInvestments(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
                                   <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual 
-                                      ? <span className="text-gray-500">N/A</span> 
+                                      ? formatCurrency(calculatePreviousFundsRegularInvestments(allTimeActivities, inactiveHoldings))
                                       : formatCurrency(calculateRegularInvestments(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
                                   <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
-                                      ? <span className="text-gray-500">N/A</span>
+                                      ? formatCurrency(calculatePreviousFundsGovernmentUplifts(allTimeActivities, inactiveHoldings))
                                       : formatCurrency(calculateGovernmentUplifts(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
                                   <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
-                                      ? <span className="text-gray-500">N/A</span>
+                                      ? formatCurrency(calculatePreviousFundsSwitchIns(allTimeActivities, inactiveHoldings))
                                       : formatCurrency(calculateSwitchIns(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
                                   <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
-                                      ? <span className="text-gray-500">N/A</span>
+                                      ? formatCurrency(calculatePreviousFundsSwitchOuts(allTimeActivities, inactiveHoldings))
                                       : formatCurrency(calculateSwitchOuts(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
                                   <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
-                                      ? <span className="text-gray-500">N/A</span>
+                                      ? formatCurrency(calculatePreviousFundsRegularWithdrawals(allTimeActivities, inactiveHoldings))
                                       : formatCurrency(calculateRegularWithdrawals(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
                                   <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
-                                      ? <span className="text-gray-500">N/A</span>
+                                      ? formatCurrency(calculatePreviousFundsWithdrawals(allTimeActivities, inactiveHoldings))
                                       : formatCurrency(calculateWithdrawals(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
@@ -1063,7 +1179,23 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                         : "text-gray-500"
                                     }`}>
                                       {holding.isVirtual ? (
-                                        <span>N/A</span>
+                                        // Show calculated Previous Funds IRR instead of N/A
+                                        isPreviousFundsIRRLoading ? (
+                                          <span className="text-xs text-gray-500">Loading...</span>
+                                        ) : previousFundsIRRError ? (
+                                          <span className="text-xs text-red-500" title={previousFundsIRRError}>Error</span>
+                                        ) : previousFundsIRR !== null ? (
+                                          <>
+                                            {Math.abs(previousFundsIRR) > 1 
+                                              ? `${previousFundsIRR.toFixed(1)}%` 
+                                              : formatPercentage(previousFundsIRR)}
+                                            <span className="ml-1">
+                                              {previousFundsIRR >= 0 ? '▲' : '▼'}
+                                            </span>
+                                          </>
+                                        ) : (
+                                          <span className="text-gray-500">N/A</span>
+                                        )
                                       ) : (
                                         holding.irr !== undefined && holding.irr !== null ? (
                                           <>
@@ -1077,9 +1209,14 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                         ) : 'N/A'
                                       )}
                                     </div>
-                                    {holding.irr_calculation_date && !holding.isVirtual && (
+                                    {!holding.isVirtual && holding.irr_calculation_date && (
                                       <div className="text-xs text-gray-500 mt-1">
                                         as of {formatDate(holding.irr_calculation_date)}
+                                      </div>
+                                    )}
+                                    {holding.isVirtual && previousFundsIRRDate && !previousFundsIRRError && (
+                                      <div className="text-xs text-gray-500 mt-1">
+                                        as of {formatDate(previousFundsIRRDate)}
                                       </div>
                                     )}
                                   </div>
