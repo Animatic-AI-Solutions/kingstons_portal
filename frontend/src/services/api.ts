@@ -526,7 +526,9 @@ export const calculateStandardizedSingleFundIRR = (params: {
   portfolioFundId: number;
   irrDate?: string;
 }) => {
-  return api.post(`portfolio_funds/${params.portfolioFundId}/irr`, params.irrDate || null);
+  return api.post(`portfolio_funds/${params.portfolioFundId}/irr`, {
+    irr_date: params.irrDate || null
+  });
 };
 
 /**

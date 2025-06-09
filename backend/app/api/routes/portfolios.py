@@ -580,44 +580,8 @@ async def calculate_portfolio_irr(
             
             logger.info(f"Found {len(existing_irr.data) if existing_irr.data else 0} existing IRR record(s) for fund {portfolio_fund_id}")
             
-            # Special handling for zero valuations - always set IRR to zero
-            if valuation == 0:
-                logger.info(f"Zero valuation detected for fund {portfolio_fund_id} - storing IRR value of 0")
-                
-                irr_value_data = {
-                    "fund_id": portfolio_fund_id,
-                    "irr_result": 0.0,  # Updated column name
-                    "date": valuation_date.isoformat(),  # Already correct
-                    "fund_valuation_id": fund_data.get("valuation_id")
-                }
-                
-                if existing_irr.data and len(existing_irr.data) > 0:
-                    # Update existing record
-                    irr_id = existing_irr.data[0]["id"]
-                    db.table("portfolio_fund_irr_values")\
-                        .update({"irr_result": 0.0})\
-                        .eq("id", irr_id)\
-                        .execute()
-                    
-                    calculation_results.append({
-                        "portfolio_fund_id": portfolio_fund_id,
-                        "status": "calculated",
-                        "irr_value": 0.0,
-                        "existing_irr": existing_irr.data[0]["irr_result"] if "irr_result" in existing_irr.data[0] else None  # Updated column name
-                    })
-                else:
-                    # Create new record
-                    db.table("portfolio_fund_irr_values").insert(irr_value_data).execute()
-                    
-                    calculation_results.append({
-                        "portfolio_fund_id": portfolio_fund_id,
-                        "status": "calculated",
-                        "irr_value": 0.0,
-                        "existing_irr": None
-                    })
-                
-                logger.info(f"Successfully set IRR to 0 for zero valuation on date: {valuation_date.isoformat()}")
-                continue
+            # Handle zero valuations using the proper standardized calculation (exclude from final valuation)
+            # No special hardcoding - let the standardized endpoint handle the £0 edge case
             
             # For negative valuations, log error and skip
             if valuation < 0:
@@ -973,48 +937,8 @@ async def calculate_portfolio_irr_for_date(
             valuation = fund_info["valuation"]
             
             try:
-                # Special handling for zero valuations
-                if valuation == 0:
-                    logger.info(f"Zero valuation detected for fund {portfolio_fund_id} - storing IRR value of 0")
-                    
-                    # Get the valuation date from the valuation record
-                    valuation_date = datetime.fromisoformat(fund_info["valuation_date"])
-                    
-                    # Check if IRR already exists for this date
-                    existing_irr = db.table("portfolio_fund_irr_values")\
-                        .select("*")\
-                        .eq("fund_id", portfolio_fund_id)\
-                        .eq("date", valuation_date.isoformat())\
-                        .execute()
-                    
-                    irr_value_data = {
-                        "fund_id": portfolio_fund_id,
-                        "irr_result": 0.0,  # Updated column name
-                        "date": valuation_date.isoformat(),  # Already correct
-                        "fund_valuation_id": fund_info.get("valuation_id")
-                    }
-                    
-                    if existing_irr.data and len(existing_irr.data) > 0:
-                        # Update existing record
-                        irr_id = existing_irr.data[0]["id"]
-                        db.table("portfolio_fund_irr_values")\
-                            .update({"irr_result": 0.0})\
-                            .eq("id", irr_id)\
-                            .execute()
-                    else:
-                        # Create new record
-                        db.table("portfolio_fund_irr_values").insert(irr_value_data).execute()
-                    
-                    calculation_results.append({
-                        "status": "success",
-                        "irr_value": 0.0,
-                        "portfolio_fund_id": portfolio_fund_id,
-                        "date": valuation_date.isoformat(),
-                        "calculation_type": "zero_valuation"
-                    })
-                    
-                    logger.info(f"Successfully set IRR to 0 for zero valuation on date: {valuation_date.isoformat()}")
-                    continue
+                # Handle zero valuations using proper standardized calculation (exclude from final valuation)
+                # No special hardcoding - let the standardized endpoint handle the £0 edge case
                 
                 # For negative valuations, log error and skip
                 if valuation < 0:

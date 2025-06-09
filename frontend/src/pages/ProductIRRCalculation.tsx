@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import EditableMonthlyActivitiesTable from '../components/EditableMonthlyActivitiesTable';
 import IRRCalculationModal from '../components/IRRCalculationModal';
-import { calculatePortfolioIRRForDate, calculatePortfolioIRR, getLatestPortfolioIRR, calculateStandardizedMultipleFundsIRR } from '../services/api';
+import { calculatePortfolioIRRForDate, calculatePortfolioIRR, getLatestPortfolioIRR, calculateStandardizedMultipleFundsIRR, calculateStandardizedSingleFundIRR } from '../services/api';
 import { Dialog, Transition } from '@headlessui/react';
 import { formatCurrency, formatPercentage } from '../utils/formatters';
 import { isCashFund } from '../utils/fundUtils';
@@ -523,11 +523,15 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
   const [isTotalPortfolioIRRLoading, setIsTotalPortfolioIRRLoading] = useState<boolean>(false);
   const [totalPortfolioIRRError, setTotalPortfolioIRRError] = useState<string | null>(null);
   
-  // Previous Funds IRR state
-  const [previousFundsIRR, setPreviousFundsIRR] = useState<number | null>(null);
-  const [previousFundsIRRDate, setPreviousFundsIRRDate] = useState<string | undefined>(undefined);
-  const [isPreviousFundsIRRLoading, setIsPreviousFundsIRRLoading] = useState<boolean>(false);
-  const [previousFundsIRRError, setPreviousFundsIRRError] = useState<string | null>(null);
+  // Previous Funds expansion state
+  const [isPreviousFundsExpanded, setIsPreviousFundsExpanded] = useState<boolean>(false);
+
+  // Unified single fund IRR state (for both active and inactive funds)
+  const [singleFundIRRs, setSingleFundIRRs] = useState<{[fundId: number]: {irr: number, date: string} | null}>({});
+  const [isLoadingSingleFundIRRs, setIsLoadingSingleFundIRRs] = useState(false);
+
+  // Manual IRR recalculation state
+  const [isRecalculatingAllIRRs, setIsRecalculatingAllIRRs] = useState(false);
 
   useEffect(() => {
     if (accountId) {
@@ -603,63 +607,50 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
     fetchTotalPortfolioIRR();
   }, [account?.portfolio_id, api, holdings, activityLogs]); // Added holdings and activityLogs as dependencies
 
-  // Effect to calculate Previous Funds IRR when inactive holdings change
+  // Effect to fetch single fund IRRs from view when holdings change
   useEffect(() => {
-    const fetchPreviousFundsIRR = async () => {
-      const inactiveHoldings = filterInactiveHoldings(holdings);
-      
-      if (inactiveHoldings.length === 0) {
-        setPreviousFundsIRR(null);
-        setPreviousFundsIRRDate(undefined);
-        setPreviousFundsIRRError(null);
-        setIsPreviousFundsIRRLoading(false);
-        return;
-      }
-
-      setIsPreviousFundsIRRLoading(true);
-      setPreviousFundsIRRError(null);
+    const fetchSingleFundIRRsFromView = async () => {
+      if (holdings.length === 0) return;
       
       try {
-        console.log(`Calculating Previous Funds IRR for ${inactiveHoldings.length} inactive funds`);
+        setIsLoadingSingleFundIRRs(true);
+        console.log(`Fetching stored IRR values for ${holdings.length} funds from view`);
         
-        // Get portfolio fund IDs for inactive holdings
-        const inactiveFundIds = inactiveHoldings.map(h => h.id);
-        console.log('Inactive fund IDs:', inactiveFundIds);
-        
-        // Use the standardized multiple IRR endpoint
-        const response = await calculateStandardizedMultipleFundsIRR({
-          portfolioFundIds: inactiveFundIds
-        });
-        
-        console.log('Previous Funds IRR response:', response.data);
-        
-        if (response.data && response.data.success && response.data.irr_percentage !== null) {
-          setPreviousFundsIRR(response.data.irr_percentage);
-          setPreviousFundsIRRDate(response.data.calculation_date);
+        // Fetch from latest_portfolio_fund_irr_values view
+        if (accountId) {
+          const response = await api.get(`/api/client_products/${accountId}/complete`);
+          const viewIRRs = response.data?.irr_values || {};
+          
+          // Map the view IRR values to our state format
+          const mappedIRRs: {[fundId: number]: {irr: number, date: string} | null} = {};
+          
+          holdings.forEach(holding => {
+            if (holding.isVirtual) return; // Skip virtual entries
+            
+            const viewIRR = viewIRRs[holding.id];
+            if (viewIRR && viewIRR.irr_result !== null) {
+              mappedIRRs[holding.id] = {
+                irr: viewIRR.irr_result,
+                date: viewIRR.irr_date
+              };
+              console.log(`View IRR for fund ${holding.id} (${holding.fund_name}):`, mappedIRRs[holding.id]);
         } else {
-          setPreviousFundsIRR(null);
-          setPreviousFundsIRRDate(undefined);
-          setPreviousFundsIRRError('No IRR data available for previous funds');
-          console.warn('No Previous Funds IRR data found');
+              mappedIRRs[holding.id] = null;
+              console.log(`No view IRR found for fund ${holding.id} (${holding.fund_name})`);
+            }
+          });
+          
+          setSingleFundIRRs(mappedIRRs);
         }
-        
-      } catch (err: any) {
-        console.error('Error calculating Previous Funds IRR:', err);
-        setPreviousFundsIRR(null);
-        setPreviousFundsIRRDate(undefined);
-        
-        if (err.response?.status === 404) {
-          setPreviousFundsIRRError('No IRR data available for previous funds');
-        } else {
-          setPreviousFundsIRRError(err.response?.data?.detail || err.message || 'Error calculating Previous Funds IRR');
-        }
+      } catch (error) {
+        console.error('Error fetching single fund IRR values from view:', error);
       } finally {
-        setIsPreviousFundsIRRLoading(false);
+        setIsLoadingSingleFundIRRs(false);
       }
     };
 
-    fetchPreviousFundsIRR();
-  }, [holdings]); // Recalculate when holdings change
+    fetchSingleFundIRRsFromView();
+  }, [holdings, accountId, api]); // Trigger when holdings change
 
 
   const fetchData = async (accountId: string) => {
@@ -735,6 +726,15 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
             target_weighting: portfolioFund.target_weighting?.toString()
           };
           
+          // Debug logging for IRR data
+          if (portfolioFund.status === 'inactive') {
+            console.log(`Inactive fund ${portfolioFund.fund_name} (ID: ${portfolioFund.id}):`, {
+              irr_result: portfolioFund.irr_result,
+              irr_date: portfolioFund.irr_date,
+              status: portfolioFund.status
+            });
+          }
+          
           processedHoldings.push(holding);
         });
       }
@@ -743,6 +743,10 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       setHoldings(processedHoldings);
       setAllFunds(completeData.all_funds || []);
       setActivityLogs(activityData.activity_logs || []);
+      
+      // Individual fund IRRs (including inactive funds) will come from the 
+      // singleFundIRRs state populated by fetchSingleFundIRRsFromView.
+      // No need to calculate them here on page reload.
       
       // Find the latest valuation date
       let latestDate: string | null = null;
@@ -771,23 +775,167 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
 
 
 
-  const refreshData = () => {
+  const refreshData = useCallback(async () => {
     if (accountId) {
       console.log('DEBUG - Starting data refresh after activities updated');
       
+      // Clear single fund IRR cache to ensure fresh data
+      setSingleFundIRRs({});
+      setIsLoadingSingleFundIRRs(false);
+      
       // Force a small delay to ensure backend operations have completed
-      setTimeout(() => {
+      setTimeout(async () => {
         console.log('DEBUG - Executing fetchData after delay');
-        fetchData(accountId)
-          .then(() => {
+        try {
+          await fetchData(accountId);
             console.log('DEBUG - Data refresh completed successfully');
-          })
-          .catch(err => console.error('DEBUG - Error during data refresh:', err));
+        } catch (err) {
+          console.error('DEBUG - Error during data refresh:', err);
+        }
       }, 500);
     } else {
       console.warn('DEBUG - Cannot refresh data: accountId is missing');
     }
-  };
+  }, [accountId]);
+
+  // Function to trigger single fund IRR recalculation when activities change
+  const triggerSingleFundIRRRecalculation = useCallback(async (portfolioFundIds: number[]) => {
+    if (!api) return;
+    
+    console.log('Triggering single fund IRR recalculation for funds:', portfolioFundIds);
+    
+    try {
+      // Use StandardisedSingleFundIRR for each affected fund
+      const recalculationPromises = portfolioFundIds.map(async (fundId) => {
+        try {
+          console.log(`Recalculating IRR for fund ${fundId}`);
+          await calculateStandardizedSingleFundIRR({ portfolioFundId: fundId });
+          console.log(`IRR recalculation completed for fund ${fundId}`);
+        } catch (error) {
+          console.error(`Error recalculating IRR for fund ${fundId}:`, error);
+        }
+      });
+      
+      await Promise.all(recalculationPromises);
+      
+      // Trigger portfolio IRR recalculation if we have a portfolio ID
+      if (account?.portfolio_id) {
+        console.log('Triggering portfolio IRR recalculation');
+        try {
+          await calculatePortfolioIRR(account.portfolio_id);
+          console.log('Portfolio IRR recalculation completed');
+        } catch (error) {
+          console.error('Error recalculating portfolio IRR:', error);
+        }
+      }
+      
+    } catch (error) {
+      console.error('Error in IRR recalculation process:', error);
+    }
+  }, [api, account?.portfolio_id]);
+
+  // Function to manually recalculate all IRRs for testing
+  const recalculateAllIRRs = useCallback(async () => {
+    if (!api || !account?.portfolio_id) {
+      console.warn('Cannot recalculate IRRs: missing API or portfolio ID');
+      return;
+    }
+
+    setIsRecalculatingAllIRRs(true);
+    
+    try {
+      console.log('=== MANUAL IRR RECALCULATION STARTED ===');
+      
+      // Get all real holdings (both active and inactive, excluding virtual entries)
+      const allRealHoldings = holdings.filter(h => !h.isVirtual);
+      console.log(`Recalculating IRRs for ${allRealHoldings.length} funds:`, 
+        allRealHoldings.map(h => `${h.id}: ${h.fund_name} (${h.status})`));
+
+      // Step 1: Recalculate single fund IRRs for ALL real funds (active + inactive)
+      console.log('Step 1: Recalculating single fund IRRs...');
+      const singleFundPromises = allRealHoldings.map(async (fund) => {
+        try {
+          console.log(`Recalculating single fund IRR for ${fund.id}: ${fund.fund_name} (${fund.status})`);
+          const response = await calculateStandardizedSingleFundIRR({ 
+            portfolioFundId: fund.id 
+          });
+          console.log(`✓ Single fund IRR completed for ${fund.id}: ${fund.fund_name}`, response.data);
+          return { success: true, fundId: fund.id, fundName: fund.fund_name };
+        } catch (error) {
+          console.error(`✗ Single fund IRR failed for ${fund.id}: ${fund.fund_name}`, error);
+          return { success: false, fundId: fund.id, fundName: fund.fund_name, error };
+        }
+      });
+
+      const singleFundResults = await Promise.all(singleFundPromises);
+      const successfulSingleFunds = singleFundResults.filter(r => r.success);
+      const failedSingleFunds = singleFundResults.filter(r => !r.success);
+      
+      console.log(`Single fund IRRs completed: ${successfulSingleFunds.length} successful, ${failedSingleFunds.length} failed`);
+      if (failedSingleFunds.length > 0) {
+        console.warn('Failed single fund IRRs:', failedSingleFunds);
+      }
+
+      // Step 2: Recalculate Previous Funds total IRR (inactive funds only)
+      const inactiveHoldings = filterInactiveHoldings(holdings);
+      if (inactiveHoldings.length > 0) {
+        console.log(`Step 2: Recalculating Previous Funds IRR for ${inactiveHoldings.length} inactive funds...`);
+        try {
+          const inactiveFundIds = inactiveHoldings.map(h => h.id);
+          const previousFundsResponse = await calculateStandardizedMultipleFundsIRR({
+            portfolioFundIds: inactiveFundIds
+          });
+          console.log('✓ Previous Funds IRR calculation completed:', previousFundsResponse.data);
+        } catch (error) {
+          console.error('✗ Previous Funds IRR calculation failed:', error);
+        }
+      } else {
+        console.log('Step 2: No inactive funds found, skipping Previous Funds IRR calculation');
+      }
+
+      // Step 3: Force recalculate total portfolio IRR using multiple fund calculation
+      console.log('Step 3: Recalculating total portfolio IRR using multiple fund calculation...');
+      try {
+        // Use the multiple fund IRR calculation for ALL funds (active + inactive) to get portfolio IRR
+        const allFundIds = allRealHoldings.map(h => h.id);
+        console.log(`Recalculating portfolio IRR for all ${allFundIds.length} funds:`, allFundIds);
+        
+        const portfolioIRRResponse = await calculateStandardizedMultipleFundsIRR({
+          portfolioFundIds: allFundIds
+        });
+        console.log('✓ Total portfolio IRR calculation completed:', portfolioIRRResponse.data);
+        
+        // Step 3b: Store the calculated portfolio IRR in the database
+        if (portfolioIRRResponse.data?.irr_percentage !== undefined) {
+          console.log('Step 3b: Storing portfolio IRR in database...');
+          try {
+            const storeResponse = await api.post(`/portfolio_irr_values`, {
+              portfolio_id: account.portfolio_id,
+              irr_result: portfolioIRRResponse.data.irr_percentage,
+              calculation_date: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
+              calculation_method: 'multiple_fund_standardized'
+            });
+            console.log('✓ Portfolio IRR stored successfully:', storeResponse.data);
+          } catch (storeError) {
+            console.error('✗ Failed to store portfolio IRR:', storeError);
+          }
+        }
+      } catch (error) {
+        console.error('✗ Total portfolio IRR calculation failed:', error);
+      }
+
+      // Step 4: Refresh all data to fetch updated IRRs from views
+      console.log('Step 4: Refreshing data to fetch updated IRRs...');
+      await refreshData();
+      
+      console.log('=== MANUAL IRR RECALCULATION COMPLETED ===');
+      
+    } catch (error) {
+      console.error('Error during manual IRR recalculation:', error);
+    } finally {
+      setIsRecalculatingAllIRRs(false);
+    }
+  }, [api, account?.portfolio_id, holdings, refreshData]);
 
   // Format currency with commas and 2 decimal places
   const formatCurrency = (amount: number): string => {
@@ -972,6 +1120,166 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
     }
   };
 
+  // Toggle Previous Funds expansion
+  const togglePreviousFundsExpansion = () => {
+    setIsPreviousFundsExpanded(!isPreviousFundsExpanded);
+  };
+
+  // Unified function to get IRR display for any fund (active or inactive)
+  const getSingleFundIRRDisplay = (fund: Holding) => {
+    const viewIRR = singleFundIRRs[fund.id];
+    const isLoading = isLoadingSingleFundIRRs;
+
+    if (isLoading) {
+      return (
+        <span className="text-xs text-gray-500">Loading...</span>
+      );
+    }
+
+    if (viewIRR && viewIRR.irr !== null) {
+      return (
+        <>
+          <div className={`${
+            viewIRR.irr >= 0 ? 'text-green-700' : 'text-red-700'
+          }`}>
+            {Math.abs(viewIRR.irr) > 1 
+              ? `${viewIRR.irr.toFixed(1)}%` 
+              : formatPercentage(viewIRR.irr)}
+            <span className="ml-1">
+              {viewIRR.irr >= 0 ? '▲' : '▼'}
+            </span>
+          </div>
+          {viewIRR.date && (
+            <div className="text-xs text-gray-500 mt-1">
+              as of {formatDate(viewIRR.date)}
+            </div>
+          )}
+        </>
+      );
+    }
+
+    // Fallback to database IRR if no view value (for backward compatibility)
+    if (fund.irr !== undefined && fund.irr !== null) {
+      return (
+        <>
+          <div className={`${
+            fund.irr >= 0 ? 'text-green-700' : 'text-red-700'
+          }`}>
+            {Math.abs(fund.irr) > 1 
+              ? `${fund.irr.toFixed(1)}%` 
+              : formatPercentage(fund.irr)}
+            <span className="ml-1">
+              {fund.irr >= 0 ? '▲' : '▼'}
+            </span>
+          </div>
+          {fund.irr_calculation_date && (
+            <div className="text-xs text-gray-500 mt-1">
+              as of {formatDate(fund.irr_calculation_date)}
+            </div>
+          )}
+        </>
+      );
+    }
+
+    // If no IRR available, show N/A
+    return (
+      <span className="text-gray-500">N/A</span>
+    );
+  };
+
+  // Component to display live Previous Funds IRR (calculates every render)
+  const PreviousFundsIRRDisplay: React.FC<{ inactiveHoldings: Holding[] }> = ({ inactiveHoldings }) => {
+    const [livePreviousFundsIRR, setLivePreviousFundsIRR] = useState<{irr: number, date: string} | null>(null);
+    const [isLoadingLivePreviousFundsIRR, setIsLoadingLivePreviousFundsIRR] = useState<boolean>(false);
+    const [livePreviousFundsIRRError, setLivePreviousFundsIRRError] = useState<string | null>(null);
+
+    useEffect(() => {
+      const calculateLivePreviousFundsIRR = async () => {
+        if (inactiveHoldings.length === 0) {
+          setLivePreviousFundsIRR(null);
+          setLivePreviousFundsIRRError(null);
+          setIsLoadingLivePreviousFundsIRR(false);
+          return;
+        }
+
+        setIsLoadingLivePreviousFundsIRR(true);
+        setLivePreviousFundsIRRError(null);
+
+        try {
+          console.log(`Calculating live Previous Funds IRR for ${inactiveHoldings.length} inactive funds`);
+          
+          // Get portfolio fund IDs for inactive holdings
+          const inactiveFundIds = inactiveHoldings.map(h => h.id);
+          console.log('Inactive fund IDs for live calculation:', inactiveFundIds);
+          
+          // Use the standardized multiple IRR endpoint with £0 valuation handling
+          const response = await calculateStandardizedMultipleFundsIRR({
+            portfolioFundIds: inactiveFundIds
+          });
+          
+          console.log('Live Previous Funds IRR response:', response.data);
+          
+          if (response.data && response.data.success && response.data.irr_percentage !== null) {
+            setLivePreviousFundsIRR({
+              irr: response.data.irr_percentage,
+              date: response.data.calculation_date
+            });
+          } else {
+            setLivePreviousFundsIRR(null);
+            setLivePreviousFundsIRRError('No IRR data available for previous funds');
+            console.warn('No live Previous Funds IRR data found');
+          }
+          
+        } catch (err: any) {
+          console.error('Error calculating live Previous Funds IRR:', err);
+          setLivePreviousFundsIRR(null);
+          
+          if (err.response?.status === 404) {
+            setLivePreviousFundsIRRError('No IRR data available for previous funds');
+          } else {
+            setLivePreviousFundsIRRError(err.response?.data?.detail || err.message || 'Error calculating Previous Funds IRR');
+          }
+    } finally {
+          setIsLoadingLivePreviousFundsIRR(false);
+        }
+      };
+
+      calculateLivePreviousFundsIRR();
+    }, [inactiveHoldings]); // Recalculate every time inactiveHoldings changes
+
+    if (isLoadingLivePreviousFundsIRR) {
+      return <span className="text-xs text-gray-500">Loading...</span>;
+    }
+
+    if (livePreviousFundsIRRError) {
+      return <span className="text-xs text-red-500" title={livePreviousFundsIRRError}>Error</span>;
+    }
+
+    if (livePreviousFundsIRR !== null) {
+      return (
+        <>
+          <div className={`font-medium ${
+            livePreviousFundsIRR.irr >= 0 ? 'text-green-700' : 'text-red-700'
+          }`}>
+            {Math.abs(livePreviousFundsIRR.irr) > 1 
+              ? `${livePreviousFundsIRR.irr.toFixed(1)}%` 
+              : formatPercentage(livePreviousFundsIRR.irr)}
+            <span className="ml-1">
+              {livePreviousFundsIRR.irr >= 0 ? '▲' : '▼'}
+            </span>
+          </div>
+          {livePreviousFundsIRR.date && (
+            <div className="text-xs text-gray-500 mt-1">
+              as of {formatDate(livePreviousFundsIRR.date)}
+            </div>
+          )}
+        </>
+      );
+    }
+
+    return <span className="text-gray-500">N/A</span>;
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -1084,10 +1392,26 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
 
                               return (a.fund_name || '').localeCompare(b.fund_name || '');
                             }).map((holding) => (
-                              <tr key={holding.id} className={holding.isVirtual ? "bg-gray-100 border-t border-gray-300" : ""}>
+                              <tr 
+                                key={holding.id} 
+                                className={holding.isVirtual ? "bg-gray-100 border-t border-gray-300 cursor-pointer hover:bg-gray-200" : ""}
+                                onClick={holding.isVirtual ? togglePreviousFundsExpansion : undefined}
+                              >
                                 <td className="px-1 py-1 whitespace-nowrap">
                                   <div className="flex items-center">
-                                    <div className={holding.isVirtual ? "ml-4 font-medium" : "ml-4"}>
+                                    {holding.isVirtual && (
+                                      <div className="mr-2">
+                                        <svg
+                                          className={`w-4 h-4 transform transition-transform duration-200 ${isPreviousFundsExpanded ? 'rotate-90' : ''}`}
+                                          fill="none"
+                                          stroke="currentColor"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                        </svg>
+                                      </div>
+                                    )}
+                                    <div className={holding.isVirtual ? "ml-2 font-medium" : "ml-4"}>
                                       <div className={`text-sm ${holding.isVirtual ? "font-semibold text-blue-800" : "font-medium text-gray-900"}`}>
                                         {holding.fund_name}
                                         {holding.status === 'inactive' && !holding.isVirtual && (
@@ -1096,7 +1420,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                       </div>
                                       {holding.isVirtual && inactiveHoldings.length > 0 && (
                                         <div className="text-xs text-gray-500 mt-1">
-                                          ({inactiveHoldings.length} inactive {inactiveHoldings.length === 1 ? 'fund' : 'funds'})
+                                          ({inactiveHoldings.length} inactive {inactiveHoldings.length === 1 ? 'fund' : 'funds'}) - Click to expand
                                         </div>
                                       )}
                                     </div>
@@ -1154,7 +1478,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                 <td className="px-1 py-1 whitespace-nowrap">
                                   <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual ? (
-                                      <span>N/A</span>
+                                      formatCurrency(0)
                                     ) : (
                                       holding.market_value !== undefined && holding.market_value !== null ? (
                                         <div>
@@ -1171,53 +1495,12 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
                                   <div>
-                                    <div className={`text-sm ${
-                                      holding.irr !== undefined && holding.irr !== null
-                                        ? (holding.irr >= 0 
-                                          ? (holding.isVirtual ? "font-medium text-green-700" : "text-green-700") 
-                                          : (holding.isVirtual ? "font-medium text-red-700" : "text-red-700"))
-                                        : "text-gray-500"
-                                    }`}>
                                       {holding.isVirtual ? (
-                                        // Show calculated Previous Funds IRR instead of N/A
-                                        isPreviousFundsIRRLoading ? (
-                                          <span className="text-xs text-gray-500">Loading...</span>
-                                        ) : previousFundsIRRError ? (
-                                          <span className="text-xs text-red-500" title={previousFundsIRRError}>Error</span>
-                                        ) : previousFundsIRR !== null ? (
-                                          <>
-                                            {Math.abs(previousFundsIRR) > 1 
-                                              ? `${previousFundsIRR.toFixed(1)}%` 
-                                              : formatPercentage(previousFundsIRR)}
-                                            <span className="ml-1">
-                                              {previousFundsIRR >= 0 ? '▲' : '▼'}
-                                            </span>
-                                          </>
-                                        ) : (
-                                          <span className="text-gray-500">N/A</span>
-                                        )
-                                      ) : (
-                                        holding.irr !== undefined && holding.irr !== null ? (
-                                          <>
-                                            {Math.abs(holding.irr) > 1 
-                                              ? `${holding.irr.toFixed(1)}%` 
-                                              : formatPercentage(holding.irr)}
-                                            <span className="ml-1">
-                                              {holding.irr >= 0 ? '▲' : '▼'}
-                                            </span>
-                                          </>
-                                        ) : 'N/A'
-                                      )}
-                                    </div>
-                                    {!holding.isVirtual && holding.irr_calculation_date && (
-                                      <div className="text-xs text-gray-500 mt-1">
-                                        as of {formatDate(holding.irr_calculation_date)}
-                                      </div>
-                                    )}
-                                    {holding.isVirtual && previousFundsIRRDate && !previousFundsIRRError && (
-                                      <div className="text-xs text-gray-500 mt-1">
-                                        as of {formatDate(previousFundsIRRDate)}
-                                      </div>
+                                      // Use live Previous Funds IRR component
+                                      <PreviousFundsIRRDisplay inactiveHoldings={inactiveHoldings} />
+                                    ) : (
+                                      // Use unified single fund IRR display
+                                      getSingleFundIRRDisplay(holding)
                                     )}
                                   </div>
                                 </td>
@@ -1241,6 +1524,75 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                 </td>
                               </tr>
                             ))}
+                            
+                            {/* Expanded Individual Inactive Funds */}
+                            {isPreviousFundsExpanded && inactiveHoldings.length > 0 && (
+                              inactiveHoldings.map((inactiveHolding) => (
+                                <tr key={`inactive-${inactiveHolding.id}`} className="bg-blue-50 border-l-4 border-blue-300">
+                                  <td className="px-1 py-1 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                      <div className="ml-8 text-sm text-gray-700">
+                                        ↳ {inactiveHolding.fund_name}
+                                        <span className="ml-2 text-xs text-red-600">(Inactive)</span>
+                                        {inactiveHolding.end_date && (
+                                          <div className="text-xs text-gray-500 mt-1">
+                                            Ended: {formatDate(inactiveHolding.end_date)}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-1 py-1 whitespace-nowrap">
+                                    <div className="text-sm text-gray-700">
+                                      {formatCurrency(calculateInvestments(allTimeActivities, inactiveHolding.id))}
+                                    </div>
+                                  </td>
+                                  <td className="px-1 py-1 whitespace-nowrap">
+                                    <div className="text-sm text-gray-700">
+                                      {formatCurrency(calculateRegularInvestments(allTimeActivities, inactiveHolding.id))}
+                                    </div>
+                                  </td>
+                                  <td className="px-1 py-1 whitespace-nowrap">
+                                    <div className="text-sm text-gray-700">
+                                      {formatCurrency(calculateGovernmentUplifts(allTimeActivities, inactiveHolding.id))}
+                                    </div>
+                                  </td>
+                                  <td className="px-1 py-1 whitespace-nowrap">
+                                    <div className="text-sm text-gray-700">
+                                      {formatCurrency(calculateSwitchIns(allTimeActivities, inactiveHolding.id))}
+                                    </div>
+                                  </td>
+                                  <td className="px-1 py-1 whitespace-nowrap">
+                                    <div className="text-sm text-gray-700">
+                                      {formatCurrency(calculateSwitchOuts(allTimeActivities, inactiveHolding.id))}
+                                    </div>
+                                  </td>
+                                  <td className="px-1 py-1 whitespace-nowrap">
+                                    <div className="text-sm text-gray-700">
+                                      {formatCurrency(calculateRegularWithdrawals(allTimeActivities, inactiveHolding.id))}
+                                    </div>
+                                  </td>
+                                  <td className="px-1 py-1 whitespace-nowrap">
+                                    <div className="text-sm text-gray-700">
+                                      {formatCurrency(calculateWithdrawals(allTimeActivities, inactiveHolding.id))}
+                                    </div>
+                                  </td>
+                                  <td className="px-1 py-1 whitespace-nowrap">
+                                    <div className="text-sm text-gray-700">
+                                      {formatCurrency(0)}
+                                    </div>
+                                  </td>
+                                  <td className="px-1 py-1 whitespace-nowrap">
+                                    <div className="text-sm text-gray-700">
+                                      {getSingleFundIRRDisplay(inactiveHolding)}
+                                    </div>
+                                  </td>
+                                  <td className="px-1 py-1 whitespace-nowrap">
+                                    {/* No actions for inactive funds */}
+                                  </td>
+                                </tr>
+                              ))
+                            )}
                           </>
                         );
                       })()}
@@ -1328,7 +1680,24 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
           <div className="mt-10">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-gray-900">Monthly Activities</h2>
-              <div className="flex items-center">
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={recalculateAllIRRs}
+                  disabled={isRecalculatingAllIRRs}
+                  className="px-4 py-2 bg-green-600 text-white font-medium rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-green-300 disabled:cursor-not-allowed flex items-center"
+                >
+                  {isRecalculatingAllIRRs ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Recalculating...
+                    </>
+                  ) : (
+                    'Recalculate All IRRs'
+                  )}
+                </button>
                 <button
                   onClick={() => setIsProviderSwitchModalOpen(true)}
                   className="px-4 py-2 bg-indigo-600 text-white font-medium rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
@@ -1384,7 +1753,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                 }))
               } : null;
               
-              // Prepare the list of funds for the table
+              // Prepare the list of funds for the table - only show active funds + Previous Funds virtual entry
               const tableFunds = [...activeHoldings.map(holding => ({
                 id: holding.id,
                 holding_id: holding.account_holding_id,
@@ -1398,7 +1767,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
               if (previousFundsEntry) {
                 tableFunds.push(previousFundsEntry);
               }
-              
+
               // Sort funds alphabetically, but place Cash at the end and Previous Funds at the very end
               tableFunds.sort((a, b) => {
                 // Previous Funds entry always goes last
@@ -1413,7 +1782,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                 if (bIsCash) return -1; // If b is Cash, it should come after non-Cash, non-Virtual
                                 
                 // All other funds are sorted alphabetically
-                return (a.fund_name || '').localeCompare(b.fund_name || '');
+                return a.fund_name.localeCompare(b.fund_name);
               });
               
               // Use all activities instead of year-filtered
@@ -1421,11 +1790,19 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
               
               return (
                 <div className="overflow-x-auto">
-                  <EditableMonthlyActivitiesTable 
+                  <EditableMonthlyActivitiesTable
                     funds={tableFunds}
+                    inactiveFundsForTotals={inactiveHoldings}  // Pass inactive funds separately for totals calculation
                     activities={convertActivityLogs(allActivities)}
                     accountHoldingId={accountId ? parseInt(accountId) : 0}
-                    onActivitiesUpdated={refreshData}
+                    onActivitiesUpdated={async (affectedFundIds?: number[]) => {
+                      // Trigger single fund IRR recalculation for affected funds
+                      if (affectedFundIds && affectedFundIds.length > 0) {
+                        await triggerSingleFundIRRRecalculation(affectedFundIds);
+                      }
+                      // Refresh the data to get updated IRRs from views
+                      await refreshData();
+                    }}
                     productStartDate={account?.start_date} // Pass product start date instead of selectedYear
                     allFunds={allFunds} // Pass all funds from the API instead of just holdings
                     providerSwitches={providerSwitches} // Pass provider switches
