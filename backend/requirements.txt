@@ -1,23 +1,33 @@
+# Core FastAPI and server
 fastapi==0.104.1
-uvicorn==0.24.0
+uvicorn[standard]==0.24.0
 gunicorn==21.2.0
+
+# Environment and configuration
 python-dotenv==1.0.0
+
+# Database and authentication
 supabase==2.8.1
-python-jose==3.3.0
-passlib==1.7.4
-email-validator==2.1.0.post1
-asyncpg==0.29.0
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Financial calculations (using compatible versions)
+numpy
 numpy-financial==1.0.0
-numpy==1.26.2
-pyxirr==0.10.6  # For more advanced financial calculations
-python-multipart==0.0.6  # For form-data processing
-pydantic==2.5.2  # For data validation
-pydantic-settings==2.1.0  # For settings management
-bcrypt==4.0.1  # For password hashing
-python-dateutil==2.8.2  # For advanced date calculations and formatting
-requests==2.31.0  # For HTTP requests in cron scripts
-pytest==8.2.0  # Testing framework
-pytest-asyncio==0.25.0  # Async support for pytest
-# Email service libraries (choose one based on your preferred email provider)
-# sendgrid==6.10.0  # Uncomment if using SendGrid for email service
-# boto3==1.34.69  # Uncomment if using AWS SES for email service
+
+# Data validation (using version with pre-compiled wheels)
+pydantic>=2.4.0,<2.6.0
+
+# Testing framework
+pytest==7.4.3
+pytest-asyncio==0.21.1
+
+# Note: Removed unused dependencies:
+# - asyncpg (using Supabase client instead)
+# - pyxirr (using numpy-financial instead)
+# - requests (not used in codebase)
+# - python-dateutil (using standard datetime)
+# - email-validator (not used)
+# - pydantic-settings (using python-dotenv)
+# - bcrypt (passlib[bcrypt] includes this)
+# - python-multipart (no file uploads detected)

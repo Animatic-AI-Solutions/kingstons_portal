@@ -5,10 +5,19 @@ from datetime import datetime, date, timedelta
 import numpy_financial as npf
 from decimal import Decimal
 import numpy as np
+from pydantic import BaseModel
 
 from app.models.portfolio_fund import PortfolioFund, PortfolioFundCreate, PortfolioFundUpdate
 from app.models.irr_value import IRRValueCreate
 from app.db.database import get_db
+
+# Pydantic models for batch requests
+class BatchHistoricalValuationsRequest(BaseModel):
+    fund_ids: List[int]
+
+class BatchValuationsRequest(BaseModel):
+    fund_ids: List[int]
+    valuation_date: Optional[str] = None
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -589,314 +598,50 @@ async def delete_portfolio_fund(portfolio_fund_id: int, db = Depends(get_db)):
         logger.error(f"Error deleting portfolio fund: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-@router.post("/portfolio_funds/{portfolio_fund_id}/calculate-irr", response_model=dict)
-async def calculate_portfolio_fund_irr(
-    portfolio_fund_id: int,
-    month: int = Query(..., ge=1, le=12, description="Month for the valuation"),
-    year: int = Query(..., ge=1900, le=2100, description="Year for the valuation"),
-    valuation: float = Query(..., gt=0, description="Current market value"),
-    guess: float = Query(0.02, description="Initial guess for IRR calculation (not used)"),
+
+@router.get("/portfolio-funds/latest-irr", response_model=dict)
+async def get_latest_fund_irrs(
+    fund_ids: str = Query(..., description="Comma-separated list of portfolio fund IDs"),
     db = Depends(get_db)
 ):
     """
-    What it does: Calculates the Internal Rate of Return (IRR) for a portfolio fund.
-    Why it's needed: Provides performance metrics for portfolio funds over time.
-    How it works:
-        1. Gets all cash flow activities for the portfolio fund
-        2. Adjusts the sign of cash flows based on activity type
-        3. Adds the current valuation as a final positive cash flow
-        4. Calculates the IRR using the Excel-style method
-        5. Stores the IRR value in the irr_values table
-        6. Returns the IRR and details of the calculation
-    Expected output: A JSON object with the calculated IRR value and verification information
+    Optimized endpoint to fetch stored fund IRRs from latest_portfolio_fund_irr_values view.
+    This eliminates the need to recalculate individual fund IRRs when stored values are sufficient.
     """
     try:
-        logger.info(f"Starting IRR calculation for portfolio_fund_id: {portfolio_fund_id}")
-        logger.info(f"Input parameters - month: {month}, year: {year}, valuation: {valuation}")
-        logger.info(f"Parameter types - month: {type(month)}, year: {type(year)}")
+        # Parse the comma-separated fund IDs
+        fund_id_list = [int(id.strip()) for id in fund_ids.split(',') if id.strip()]
         
-        # Validate input month and year
-        if not isinstance(month, int) or month < 1 or month > 12:
-            logger.error(f"Invalid month value: {month}. Must be an integer between 1 and 12.")
-            raise HTTPException(status_code=400, detail=f"Invalid month value: {month}. Must be an integer between 1 and 12.")
-            
-        if not isinstance(year, int) or year < 1900 or year > 2100:
-            logger.error(f"Invalid year value: {year}. Must be an integer between 1900 and 2100.")
-            raise HTTPException(status_code=400, detail=f"Invalid year value: {year}. Must be an integer between 1900 and 2100.")
-
-        # Verify that a valuation exists for this month/year
-        first_day = datetime(year, month, 1)
-        if month == 12:
-            next_month = datetime(year + 1, 1, 1)
-        else:
-            next_month = datetime(year, month + 1, 1)
-
-        valuation_result = db.table("portfolio_fund_valuations") \
-            .select("*") \
-            .eq("portfolio_fund_id", portfolio_fund_id) \
-            .gte("valuation_date", first_day.isoformat()) \
-            .lt("valuation_date", next_month.isoformat()) \
-            .execute()
-
-        if not valuation_result.data or len(valuation_result.data) == 0:
-            raise HTTPException(
-                status_code=400,
-                detail=f"No valuation record exists for {datetime(year, month, 1).strftime('%B %Y')}. Please add a valuation first."
-            )
-
-        # Use the valuation from the database instead of the provided value
-        existing_valuation = valuation_result.data[0]
-        logger.info(f"Found existing valuation: {existing_valuation}")
-        valuation = float(existing_valuation["valuation"])
-        logger.info(f"Using valuation from database: {valuation}")
-
-        # Add the fund_valuation_id from the existing valuation
-        fund_valuation_id = existing_valuation["id"]
-        logger.info(f"Using fund_valuation_id: {fund_valuation_id}")
-
-        # Check if portfolio fund exists
-        check_result = db.table("portfolio_funds").select("*").eq("id", portfolio_fund_id).execute()
-        if not check_result.data or len(check_result.data) == 0:
-            logger.error(f"Portfolio fund not found with ID: {portfolio_fund_id}")
-            raise HTTPException(status_code=404, detail=f"Portfolio fund with ID {portfolio_fund_id} not found")
-
-        logger.info(f"Found portfolio fund: {check_result.data[0]}")
-
-        # Get all activity logs for this portfolio fund
-        activity_logs = db.table("holding_activity_log")\
-            .select("*")\
-            .eq("portfolio_fund_id", portfolio_fund_id)\
-            .order("activity_timestamp")\
-            .execute()
-
-        if not activity_logs.data:
-            error_msg = "No activity logs found for this portfolio fund"
-            logger.error(error_msg)
-            return {
-                "status": "error",
-                "error": error_msg,
-                "portfolio_fund_id": portfolio_fund_id,
-                "irr_percentage": None
-            }
-
-        logger.info(f"Found {len(activity_logs.data)} activity logs")
-
-        # Check if there's only a single activity log on the same date as valuation
-        if len(activity_logs.data) == 1:
-            activity_date = datetime.fromisoformat(activity_logs.data[0]["activity_timestamp"])
-            # Use the actual valuation date from the database record
-            if activity_date.year == valuation_date.year and activity_date.month == valuation_date.month:
-                logger.warning(f"Only a single activity on the same date as valuation for fund {portfolio_fund_id}")
-                
-                # Calculate simple return based on investment and valuation
-                activity_amount = float(activity_logs.data[0]["amount"])
-                activity_type = activity_logs.data[0]["activity_type"]
-                
-                if activity_type in ["Investment", "RegularInvestment", "GovernmentUplift"]:
-                    # Prevent division by zero or very small numbers
-                    if activity_amount <= 0.01:
-                        logger.warning(f"Investment amount is too small: {activity_amount}, using minimum value of 0.01")
-                        activity_amount = 0.01  # Use a small non-zero value to avoid division by zero
-                    
-                    # Simple return = (Valuation / Investment) - 1
-                    simple_return = (valuation / activity_amount) - 1
-
-                    
-                    
-                    irr_percentage = simple_return * 100
-                    
-                    logger.info(f"Calculated simple return: {simple_return} ({irr_percentage}%)")
-                    
-                    # Validate IRR value against database constraints
-                    if abs(irr_percentage) > 99999.99:
-                        logger.warning(f"IRR value {irr_percentage} exceeds database limits, capping to 99999.99")
-                        irr_percentage = 99999.99 if irr_percentage > 0 else -99999.99
-                    
-                    # Store the IRR value using the correct valuation date
-                    irr_value_data = {
-                        "fund_id": portfolio_fund_id,
-                        "irr_result": float(round(irr_percentage, 2)),
-                        "date": valuation_date.isoformat(),
-                        "fund_valuation_id": fund_valuation_id  # Add the fund_valuation_id reference
-                    }
-                    
-                    # Check if IRR already exists
-                    existing_irr = db.table("portfolio_fund_irr_values")\
-                        .select("*")\
-                        .eq("fund_id", portfolio_fund_id)\
-                        .eq("date", valuation_date.isoformat())\
-                        .execute()
-                    
-                    if existing_irr.data and len(existing_irr.data) > 0:
-                        # Update existing
-                        irr_id = existing_irr.data[0]["id"]
-                        db.table("portfolio_fund_irr_values")\
-                            .update({"irr_result": float(round(irr_percentage, 2))})\
-                            .eq("id", irr_id)\
-                            .execute()
-                    else:
-                        # Insert new
-                        db.table("portfolio_fund_irr_values").insert(irr_value_data).execute()
-                    
-                    return {
-                        "status": "success",
-                        "irr_percentage": round(irr_percentage, 2),
-                        "portfolio_fund_id": portfolio_fund_id,
-                        "date": valuation_date.isoformat(),
-                        "calculation_type": "simple_return"
-                    }
-                else:
-                    error_msg = f"Cannot calculate return: The only activity is not an investment ({activity_type})"
-                    logger.error(error_msg)
-                    return {
-                        "status": "error",
-                        "error": error_msg,
-                        "portfolio_fund_id": portfolio_fund_id,
-                        "irr_percentage": None
-                    }
-
-        # Prepare cash flows and dates for IRR calculation
-        dates = []
-        amounts = []
-
-        # Add historical cash flows with traditional IRR convention:
-        # - Money going out (investments) is negative
-        # - Money coming in (withdrawals, returns) is positive
-        for log in activity_logs.data:
-            amount = float(log["amount"])
-            # Apply sign convention based on activity type
-            if log["activity_type"] in ["Investment", "RegularInvestment", "GovernmentUplift"]:
-                # Investments are money going out (negative)
-                amount = -amount
-            elif log["activity_type"] in ["Withdrawal", "RegularWithdrawal", "SwitchOut"]:
-                # Withdrawals and SwitchOut are money coming in (positive)
-                amount = abs(amount)  # Ensure positive
-            elif log["activity_type"] == "SwitchIn":
-                # SwitchIn is money going out (negative) as it's an investment
-                amount = -amount
-            
-            date = datetime.fromisoformat(log["activity_timestamp"])
-            dates.append(date)
-            amounts.append(amount)
-            logger.info(f"Added {log['activity_type']} cash flow: {amount} on {date}")
-
-        # Add current valuation as final positive cash flow (money coming in)
-        try:
-            logger.info(f"Creating valuation date with year={year}, month={month}, day=1")
-            valuation_date = datetime(year, month, 1)
-            logger.info(f"Successfully created valuation date: {valuation_date.isoformat()}")
-            
-            dates.append(valuation_date)
-            amounts.append(valuation)  # Positive because it's money coming in
-            logger.info(f"Added final valuation: {valuation} on {valuation_date}")
-            
-        except ValueError as e:
-            logger.error(f"Error creating valuation date with year={year}, month={month}: {str(e)}")
-            raise HTTPException(status_code=400, detail=f"Invalid date parameters: {str(e)}")
-
-        # Calculate IRR using numpy_financial method
-        logger.info("Calling calculate_excel_style_irr with prepared data")
-        try:
-            # Check if we have any investments
-            total_investment = sum(-amount for amount, date in zip(amounts, dates) 
-                          if amount < 0 and date < valuation_date)
-            
-            # Check for very small or zero investments which can cause extreme IRR values
-            if total_investment <= 0.01:
-                logger.warning(f"Total investment is too small or zero: {total_investment}")
-                
-                # Use a simple return calculation instead with a reasonable minimum investment
-                simple_return = (valuation / 0.01) - 1
-                
-                
-                
-                irr_percentage = simple_return * 100
-                logger.info(f"Using simple return instead of IRR: {irr_percentage}%")
-                
-                # Flag that we used a simple return
-                irr_result = {
-                    'period_irr': simple_return,
-                    'is_simple_return': True
-                }
-            else:
-                # Normal case - calculate IRR using the full cash flow data
-                irr_result = calculate_excel_style_irr(dates, amounts)
-                logger.info(f"IRR calculation result: {irr_result}")
-            
-            # Convert period IRR to percentage for storage
-            irr_percentage = irr_result['period_irr'] * 100
-            # Round to 2 decimal places
-            irr_percentage = round(irr_percentage, 2)
-            logger.info(f"Calculated IRR: {irr_percentage}%")
-            
-            # Check if an IRR value already exists for this fund and date
-            existing_irr = db.table("portfolio_fund_irr_values")\
-                .select("*")\
-                .eq("fund_id", portfolio_fund_id)\
-                .eq("date", valuation_date.isoformat())\
-                .execute()
-                
-            logger.info(f"Checking for existing IRR values for fund_id={portfolio_fund_id}, date={valuation_date.isoformat()}")
-            
-            # Ensure we're storing as a float, not an integer
-            irr_value_data = {
-                "irr_result": float(irr_percentage),  # Explicitly cast to float to ensure proper storage
-                "fund_valuation_id": fund_valuation_id  # Add the fund_valuation_id reference
-            }
-            
-            # Validate IRR value against database constraints (numeric(7,2) allows max 99999.99)
-            if abs(irr_value_data["irr_result"]) > 99999.99:
-                logger.warning(f"IRR value {irr_value_data['irr_result']} exceeds database limits, capping to 99999.99")
-                irr_value_data["irr_result"] = 99999.99 if irr_value_data["irr_result"] > 0 else -99999.99
-            
-            if existing_irr.data and len(existing_irr.data) > 0:
-                # Update the existing IRR value
-                oldest_record = existing_irr.data[0]
-                irr_value_id = oldest_record["id"]
-                
-                db.table("portfolio_fund_irr_values")\
-                    .update(irr_value_data)\
-                    .eq("id", irr_value_id)\
-                    .execute()
-                    
-                logger.info(f"Updated existing IRR value with ID: {irr_value_id}")
-                    
-            else:
-                # No existing record, insert a new one
-                full_irr_data = {
-                    "fund_id": portfolio_fund_id,
-                    "irr_result": irr_value_data["irr_result"],  # Use the possibly capped value
-                    "date": valuation_date.isoformat(),
-                    "fund_valuation_id": fund_valuation_id  # Add the fund_valuation_id reference
-                }
-                
-                logger.info(f"Storing new IRR value: {full_irr_data}")
-                db.table("portfolio_fund_irr_values").insert(full_irr_data).execute()
-            
-            calculation_type = "standard_irr"
-            if irr_result.get('is_simple_return'):
-                calculation_type = "simple_return"
-                
-            return {
-                "status": "success",
-                "irr_percentage": irr_percentage,
-                "portfolio_fund_id": portfolio_fund_id,
-                "date": valuation_date.isoformat(),
-                "calculation_type": calculation_type
-            }
-        except ValueError as ve:
-            error_message = str(ve)
-            logger.error(f"IRR calculation error: {error_message}")
-            raise HTTPException(status_code=400, detail=f"IRR calculation failed: {error_message}")
-        except Exception as e:
-            logger.error(f"Unexpected error in IRR calculation: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Unexpected error in IRR calculation: {str(e)}")
-
+        if not fund_id_list:
+            return {"fund_irrs": [], "count": 0}
+        
+        # Query the latest_portfolio_fund_irr_values view for multiple funds
+        result = db.table("latest_portfolio_fund_irr_values") \
+                   .select("fund_id, irr_result, irr_date") \
+                   .in_("fund_id", fund_id_list) \
+                   .execute()
+        
+        # Transform the data to match expected format
+        fund_irrs = []
+        if result.data:
+            for irr_record in result.data:
+                fund_irrs.append({
+                    "fund_id": irr_record["fund_id"],
+                    "irr_result": irr_record["irr_result"],
+                    "irr_date": irr_record["irr_date"]
+                })
+        
+        return {
+            "fund_irrs": fund_irrs,
+            "count": len(fund_irrs),
+            "requested_funds": len(fund_id_list),
+            "source": "stored"
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid fund_ids parameter: {str(e)}")
     except Exception as e:
-        logger.error(f"Error calculating IRR: {str(e)}")
-        import traceback
-        logger.error(f"IRR calculation stack trace: {traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=f"Error calculating IRR: {str(e)}")
+        logger.error(f"Error fetching stored fund IRRs: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.get("/portfolio_funds/{portfolio_fund_id}/latest-irr", response_model=dict)
 async def get_latest_irr(portfolio_fund_id: int, db = Depends(get_db)):
@@ -1144,342 +889,7 @@ def calculate_portfolio_fund_irr_sync(
                 "irr_percentage": None
             }
 
-        # If fund_valuation_id is provided, use it directly
-        if fund_valuation_id:
-            valuation_result = db.table("portfolio_fund_valuations") \
-                .select("*") \
-                .eq("id", fund_valuation_id) \
-                .execute()
-                
-            if not valuation_result.data or len(valuation_result.data) == 0:
-                error_msg = f"Specified valuation record with ID {fund_valuation_id} not found."
-                logger.error(error_msg)
-                return {
-                    "status": "error",
-                    "error": error_msg,
-                    "portfolio_fund_id": portfolio_fund_id,
-                    "irr_percentage": None
-                }
-        else:
-            # Otherwise query by month/year as before
-            first_day = datetime(year, month, 1)
-            if month == 12:
-                next_month = datetime(year + 1, 1, 1)
-            else:
-                next_month = datetime(year, month + 1, 1)
 
-            valuation_result = db.table("portfolio_fund_valuations") \
-                .select("*") \
-                .eq("portfolio_fund_id", portfolio_fund_id) \
-                .gte("valuation_date", first_day.isoformat()) \
-                .lt("valuation_date", next_month.isoformat()) \
-                .execute()
-
-            if not valuation_result.data or len(valuation_result.data) == 0:
-                error_msg = f"No valuation record exists for {datetime(year, month, 1).strftime('%B %Y')}. Please add a valuation first."
-                logger.error(error_msg)
-                return {
-                    "status": "error",
-                    "error": error_msg,
-                    "portfolio_fund_id": portfolio_fund_id,
-                    "irr_percentage": None
-                }
-
-        # Use the valuation from the database
-        existing_valuation = valuation_result.data[0]
-        logger.info(f"Found existing valuation: {existing_valuation}")
-        valuation = float(existing_valuation["valuation"])
-        logger.info(f"Using valuation from database: {valuation}")
-
-        # Add the fund_valuation_id from the existing valuation
-        fund_valuation_id = existing_valuation["id"]
-        logger.info(f"Using fund_valuation_id: {fund_valuation_id}")
-        
-        # Get correct valuation date from the record
-        valuation_date = datetime.fromisoformat(existing_valuation["valuation_date"])
-        logger.info(f"Using valuation date: {valuation_date.isoformat()}")
-
-        # Check if portfolio fund exists
-        check_result = db.table("portfolio_funds").select("*").eq("id", portfolio_fund_id).execute()
-        if not check_result.data or len(check_result.data) == 0:
-            error_msg = f"Portfolio fund with ID {portfolio_fund_id} not found"
-            logger.error(error_msg)
-            return {
-                "status": "error",
-                "error": error_msg,
-                "portfolio_fund_id": portfolio_fund_id,
-                "irr_percentage": None
-            }
-
-        # Get all activity logs for this portfolio fund
-        activity_logs = db.table("holding_activity_log")\
-            .select("*")\
-            .eq("portfolio_fund_id", portfolio_fund_id)\
-            .order("activity_timestamp")\
-            .execute()
-
-        if not activity_logs.data:
-            error_msg = "No activity logs found for this portfolio fund"
-            logger.error(error_msg)
-            return {
-                "status": "error",
-                "error": error_msg,
-                "portfolio_fund_id": portfolio_fund_id,
-                "irr_percentage": None
-            }
-
-        logger.info(f"Found {len(activity_logs.data)} activity logs")
-
-        # Check if there's only a single activity log on the same date as valuation
-        if len(activity_logs.data) == 1:
-            activity_date = datetime.fromisoformat(activity_logs.data[0]["activity_timestamp"])
-            # Use the actual valuation date from the database record
-            if activity_date.year == valuation_date.year and activity_date.month == valuation_date.month:
-                logger.warning(f"Only a single activity on the same date as valuation for fund {portfolio_fund_id}")
-                
-                # Calculate simple return based on investment and valuation
-                activity_amount = float(activity_logs.data[0]["amount"])
-                activity_type = activity_logs.data[0]["activity_type"]
-                
-                if activity_type in ["Investment", "RegularInvestment", "GovernmentUplift"]:
-                    # Prevent division by zero or very small numbers
-                    if activity_amount <= 0.01:
-                        logger.warning(f"Investment amount is too small: {activity_amount}, using minimum value of 0.01")
-                        activity_amount = 0.01  # Use a small non-zero value to avoid division by zero
-                    
-                    # Simple return = (Valuation / Investment) - 1
-                    simple_return = (valuation / activity_amount) - 1
-                    
-
-                    
-                    irr_percentage = simple_return * 100
-                    
-                    logger.info(f"Calculated simple return: {simple_return} ({irr_percentage}%)")
-                    
-                    # Validate IRR value against database constraints
-                    if abs(irr_percentage) > 99999.99:
-                        logger.warning(f"IRR value {irr_percentage} exceeds database limits, capping to 99999.99")
-                        irr_percentage = 99999.99 if irr_percentage > 0 else -99999.99
-                    
-                    # Store the IRR value using the correct valuation date
-                    irr_value_data = {
-                        "fund_id": portfolio_fund_id,
-                        "irr_result": float(round(irr_percentage, 2)),
-                        "date": valuation_date.isoformat(),
-                        "fund_valuation_id": fund_valuation_id  # Add the fund_valuation_id reference
-                    }
-                    
-                    # Check if IRR already exists
-                    existing_irr = db.table("portfolio_fund_irr_values")\
-                        .select("*")\
-                        .eq("fund_id", portfolio_fund_id)\
-                        .eq("date", valuation_date.isoformat())\
-                        .execute()
-                    
-                    if existing_irr.data and len(existing_irr.data) > 0:
-                        # Update existing
-                        irr_id = existing_irr.data[0]["id"]
-                        db.table("portfolio_fund_irr_values")\
-                            .update({"irr_result": float(round(irr_percentage, 2))})\
-                            .eq("id", irr_id)\
-                            .execute()
-                    else:
-                        # Insert new
-                        db.table("portfolio_fund_irr_values").insert(irr_value_data).execute()
-                    
-                    return {
-                        "status": "success",
-                        "irr_percentage": round(irr_percentage, 2),
-                        "portfolio_fund_id": portfolio_fund_id,
-                        "date": valuation_date.isoformat(),
-                        "calculation_type": "simple_return"
-                    }
-                else:
-                    error_msg = f"Cannot calculate return: The only activity is not an investment ({activity_type})"
-                    logger.error(error_msg)
-                    return {
-                        "status": "error",
-                        "error": error_msg,
-                        "portfolio_fund_id": portfolio_fund_id,
-                        "irr_percentage": None
-                    }
-
-        # Prepare cash flows and dates for IRR calculation
-        dates = []
-        amounts = []
-
-        # Add historical cash flows with traditional IRR convention:
-        # - Money going out (investments) is negative
-        # - Money coming in (withdrawals, returns) is positive
-        for log in activity_logs.data:
-            amount = float(log["amount"])
-            # Apply sign convention based on activity type
-            if log["activity_type"] in ["Investment", "RegularInvestment", "GovernmentUplift"]:
-                # Investments are money going out (negative)
-                amount = -amount
-            elif log["activity_type"] in ["Withdrawal", "RegularWithdrawal", "SwitchOut"]:
-                # Withdrawals and SwitchOut are money coming in (positive)
-                amount = abs(amount)  # Ensure positive
-            elif log["activity_type"] == "SwitchIn":
-                # SwitchIn is money going out (negative) as it's an investment
-                amount = -amount
-            
-            date = datetime.fromisoformat(log["activity_timestamp"])
-            dates.append(date)
-            amounts.append(amount)
-            logger.info(f"Added {log['activity_type']} cash flow: {amount} on {date}")
-
-        # Add current valuation as final positive cash flow (money coming in)
-        try:
-            # Use the actual valuation date from the database record
-            logger.info(f"Using valuation date: {valuation_date.isoformat()}")
-            
-            # Check if all activities are on the same date as the valuation
-            all_same_date = True
-            for date in dates:
-                if date.year != valuation_date.year or date.month != valuation_date.month:
-                    all_same_date = False
-                    break
-            
-            # If all activities are on the same date as valuation, add the valuation with a small time offset
-            if all_same_date:
-                logger.warning("All cash flows are on the same date - adjusting valuation date slightly")
-                # Add one day to the valuation date to create a minimum time difference
-                modified_valuation_date = valuation_date.replace(day=min(valuation_date.day + 1, 28))
-                dates.append(modified_valuation_date)
-            else:
-                dates.append(valuation_date)
-                
-            amounts.append(valuation)  # Positive because it's money coming in
-            logger.info(f"Added final valuation: date={valuation_date}, amount={valuation}")
-            
-        except ValueError as e:
-            error_msg = f"Invalid date parameters: {str(e)}"
-            logger.error(error_msg)
-            return {
-                "status": "error",
-                "error": error_msg,
-                "portfolio_fund_id": portfolio_fund_id,
-                "irr_percentage": None
-            }
-
-        # Calculate IRR using numpy_financial method
-        logger.info("Calling calculate_excel_style_irr with prepared data")
-        try:
-            # Check if we have any investments
-            total_investment = sum(-amount for amount, date in zip(amounts, dates) 
-                          if amount < 0 and date < valuation_date)
-            
-            # Check for very small or zero investments which can cause extreme IRR values
-            if total_investment <= 0.01:
-                logger.warning(f"Total investment is too small or zero: {total_investment}")
-                
-                # Use a simple return calculation instead with a reasonable minimum investment
-                simple_return = (valuation / 0.01) - 1
-                
-
-                
-                irr_percentage = simple_return * 100
-                logger.info(f"Using simple return instead of IRR: {irr_percentage}%")
-                
-                # Flag that we used a simple return
-                irr_result = {
-                    'period_irr': simple_return,
-                    'is_simple_return': True
-                }
-            else:
-                # Normal case - calculate IRR using the full cash flow data
-                irr_result = calculate_excel_style_irr(dates, amounts)
-                logger.info(f"IRR calculation result: {irr_result}")
-            
-            # Convert period IRR to percentage for storage
-            irr_percentage = irr_result['period_irr'] * 100
-            # Round to 2 decimal places
-            irr_percentage = round(irr_percentage, 2)
-            logger.info(f"Calculated IRR: {irr_percentage}%")
-            
-            # Check if an IRR value already exists for this fund and date
-            existing_irr = db.table("portfolio_fund_irr_values")\
-                .select("*")\
-                .eq("fund_id", portfolio_fund_id)\
-                .eq("date", valuation_date.isoformat())\
-                .execute()
-                
-            logger.info(f"Checking for existing IRR values for fund_id={portfolio_fund_id}, date={valuation_date.isoformat()}")
-            
-            # Ensure we're storing as a float, not an integer
-            irr_value_data = {
-                "irr_result": float(irr_percentage),  # Explicitly cast to float to ensure proper storage
-                "fund_valuation_id": fund_valuation_id  # Add the fund_valuation_id reference
-            }
-            
-            # Validate IRR value against database constraints (numeric(7,2) allows max 99999.99)
-            if abs(irr_value_data["irr_result"]) > 99999.99:
-                logger.warning(f"IRR value {irr_value_data['irr_result']} exceeds database limits, capping to 99999.99")
-                irr_value_data["irr_result"] = 99999.99 if irr_value_data["irr_result"] > 0 else -99999.99
-            
-            if existing_irr.data and len(existing_irr.data) > 0:
-                # Update the existing IRR value
-                oldest_record = existing_irr.data[0]
-                irr_value_id = oldest_record["id"]
-                
-                db.table("portfolio_fund_irr_values")\
-                    .update(irr_value_data)\
-                    .eq("id", irr_value_id)\
-                    .execute()
-                    
-                logger.info(f"Updated existing IRR value with ID: {irr_value_id}")
-                    
-            else:
-                # No existing record, insert a new one
-                full_irr_data = {
-                    "fund_id": portfolio_fund_id,
-                    "irr_result": irr_value_data["irr_result"],  # Use the possibly capped value
-                    "date": valuation_date.isoformat(),
-                    "fund_valuation_id": fund_valuation_id  # Add the fund_valuation_id reference
-                }
-                
-                logger.info(f"Storing new IRR value: {full_irr_data}")
-                db.table("portfolio_fund_irr_values").insert(full_irr_data).execute()
-            
-            calculation_type = "standard_irr"
-            if irr_result.get('is_simple_return'):
-                calculation_type = "simple_return"
-                
-            return {
-                "status": "success",
-                "irr_percentage": irr_percentage,
-                "portfolio_fund_id": portfolio_fund_id,
-                "date": valuation_date.isoformat(),
-                "calculation_type": calculation_type
-            }
-        except ValueError as ve:
-            error_message = str(ve)
-            logger.error(f"IRR calculation error: {error_message}")
-            return {
-                "status": "error",
-                "error": error_message,
-                "portfolio_fund_id": portfolio_fund_id,
-                "irr_percentage": None
-            }
-        except Exception as e:
-            logger.error(f"Unexpected error in IRR calculation: {str(e)}")
-            logger.error(f"IRR calculation stack trace: {traceback.format_exc()}")
-            return {
-                "status": "error",
-                "error": f"Unexpected error in IRR calculation: {str(e)}",
-                "portfolio_fund_id": portfolio_fund_id,
-                "irr_percentage": None
-            }
-    except Exception as e:
-        logger.error(f"Error in synchronous IRR calculation: {str(e)}")
-        logger.error(f"Stack trace: {traceback.format_exc()}")
-        return {
-            "status": "error",
-            "error": str(e),
-            "portfolio_fund_id": portfolio_fund_id,
-            "irr_percentage": None
-        }
 
 @router.get("/portfolio_funds/{portfolio_fund_id}/irr-values", response_model=List[dict])
 async def get_fund_irr_values(portfolio_fund_id: int, db = Depends(get_db)):
@@ -2551,91 +1961,6 @@ async def calculate_portfolio_fund_irr(
         logger.error(f"Error in calculate_portfolio_fund_irr: {str(e)}")
         return None
 
-@router.post("/portfolio_funds/{portfolio_fund_id}/recalculate_irr", response_model=dict)
-async def recalculate_fund_irr_for_date(
-    portfolio_fund_id: int,
-    valuation_date: date,
-    db = Depends(get_db)
-):
-    """
-    What it does: Recalculates IRR for a specific portfolio fund and valuation date.
-    Why it's needed: When a valuation is updated, the corresponding IRR value needs to be recalculated.
-    How it works:
-        1. Validates the portfolio fund exists
-        2. Gets the valuation for the specified date
-        3. Recalculates the IRR for that specific date
-        4. Updates existing IRR record or creates a new one
-        5. Returns the updated IRR value
-    Expected output: A JSON object with details of the recalculation operation
-    """
-    try:
-        logger.info(f"Recalculating IRR for portfolio_fund_id: {portfolio_fund_id}, valuation_date: {valuation_date}")
-        
-        # Check if portfolio fund exists
-        check_result = db.table("portfolio_funds").select("*").eq("id", portfolio_fund_id).execute()
-        if not check_result.data or len(check_result.data) == 0:
-            logger.error(f"Portfolio fund not found with ID: {portfolio_fund_id}")
-            raise HTTPException(status_code=404, detail=f"Portfolio fund with ID {portfolio_fund_id} not found")
-        
-        # Find the valuation for this specific date
-        # First day of the month
-        month_start = valuation_date.replace(day=1)
-        
-        # Calculate next month's first day
-        if month_start.month == 12:
-            next_month = month_start.replace(year=month_start.year + 1, month=1)
-        else:
-            next_month = month_start.replace(month=month_start.month + 1)
-        
-        # Find valuation for this month
-        valuation_result = db.table("portfolio_fund_valuations")\
-            .select("*")\
-            .eq("portfolio_fund_id", portfolio_fund_id)\
-            .gte("valuation_date", month_start.isoformat())\
-            .lt("valuation_date", next_month.isoformat())\
-            .execute()
-            
-        if not valuation_result.data or len(valuation_result.data) == 0:
-            logger.warning(f"No valuation found for date {valuation_date.isoformat()}, cannot calculate IRR")
-            return {
-                "status": "error",
-                "message": f"No valuation found for date {valuation_date.isoformat()}",
-                "portfolio_fund_id": portfolio_fund_id
-            }
-            
-        valuation_record = valuation_result.data[0]
-        valuation_amount = float(valuation_record["valuation"])
-        fund_valuation_id = valuation_record["id"]
-        
-        logger.info(f"Found valuation record: id={fund_valuation_id}, amount={valuation_amount}")
-        
-        # Calculate IRR for this specific date using standardized endpoint
-        irr_result = await calculate_single_portfolio_fund_irr(
-            portfolio_fund_id=portfolio_fund_id,
-            irr_date=valuation_date.strftime("%Y-%m-%d"),
-            db=db
-        )
-        
-        if irr_result.get("success"):
-            logger.info(f"Successfully recalculated IRR for date: {valuation_date.isoformat()}")
-            return {
-                "status": "success",
-                "portfolio_fund_id": portfolio_fund_id,
-                "valuation_date": valuation_date.isoformat(),
-                "irr_result": irr_result
-            }
-        else:
-            logger.error(f"Failed to recalculate IRR: {irr_result}")
-            return {
-                "status": "error",
-                "message": f"Failed to recalculate IRR: {irr_result}",
-                "portfolio_fund_id": portfolio_fund_id,
-                "valuation_date": valuation_date.isoformat()
-            }
-    except Exception as e:
-        logger.error(f"Error recalculating IRR for fund {portfolio_fund_id}, date {valuation_date}: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error recalculating IRR: {str(e)}")
-
 
 # ==================== NEW STANDARDIZED IRR ENDPOINTS ====================
 
@@ -2692,18 +2017,37 @@ async def calculate_multiple_portfolio_funds_irr(
         
         logger.info(f"IRR calculation date: {irr_date_obj}")
         
-        # Fetch valuations for each fund as of the IRR date
+        # ✅ OPTIMIZED: Batch fetch valuations for ALL funds in a single query (eliminates N+1 problem)
         fund_valuations = {}
+        
+        logger.info(f"🚀 Batch fetching valuations for {len(portfolio_fund_ids)} funds (eliminates {len(portfolio_fund_ids)} individual requests)")
+        
+        # Single batch query instead of individual requests per fund
+        batch_valuation_response = db.table("portfolio_fund_valuations") \
+                                     .select("portfolio_fund_id, valuation, valuation_date") \
+                                     .in_("portfolio_fund_id", portfolio_fund_ids) \
+                                     .lte("valuation_date", irr_date_obj.isoformat()) \
+                                     .order("portfolio_fund_id, valuation_date", desc=True) \
+                                     .execute()
+        
+        # Process batch results to get latest valuation per fund
+        seen_funds = set()
+        if batch_valuation_response.data:
+            for valuation_record in batch_valuation_response.data:
+                fund_id = valuation_record["portfolio_fund_id"]
+                
+                # Since we ordered by fund_id, valuation_date DESC, first occurrence is latest
+                if fund_id not in seen_funds:
+                    fund_valuations[fund_id] = float(valuation_record["valuation"])
+                    seen_funds.add(fund_id)
+        
+        # Ensure all requested funds are represented (some might have no valuations)
         for fund_id in portfolio_fund_ids:
-            valuation_response = db.table("portfolio_fund_valuations").select("valuation").eq("portfolio_fund_id", fund_id).lte("valuation_date", irr_date_obj.isoformat()).order("valuation_date", desc=True).limit(1).execute()
-            
-            if valuation_response.data:
-                fund_valuations[fund_id] = float(valuation_response.data[0]["valuation"])
-            else:
+            if fund_id not in fund_valuations:
                 logger.warning(f"No valuation found for fund {fund_id} as of {irr_date_obj}")
                 fund_valuations[fund_id] = 0.0
         
-        logger.info(f"Fund valuations: {fund_valuations}")
+        logger.info(f"✅ Batch valuation optimization complete - Fund valuations: {fund_valuations}")
         
         # Verify all portfolio funds exist
         funds_response = db.table("portfolio_funds").select("id").in_("id", portfolio_fund_ids).execute()
@@ -3053,254 +2397,143 @@ async def calculate_single_portfolio_fund_irr(
 
 # ==================== END NEW STANDARDIZED IRR ENDPOINTS ====================
 
-@router.post("/portfolio_funds/{portfolio_fund_id}/replace-irr", response_model=dict)
-async def replace_irr_value(
-    portfolio_fund_id: int,
-    irr_date: str = Body(..., description="Date for the IRR value in YYYY-MM-DD format"),
-    new_irr_percentage: float = Body(..., description="New IRR percentage value (e.g., 5.25 for 5.25%)"),
-    fund_valuation_id: Optional[int] = Body(None, description="Optional fund valuation ID reference"),
+@router.post("/portfolio-funds/batch-valuations", response_model=dict)
+async def get_batch_fund_valuations(
+    request: BatchValuationsRequest,
     db = Depends(get_db)
 ):
     """
-    Replace an existing IRR value by deleting the old one and inserting the new one.
+    Optimized batch endpoint to fetch fund valuations for multiple funds in a single request.
+    This eliminates the N+1 query problem where individual valuation requests are made per fund.
     
-    This endpoint:
-    1. Deletes any existing IRR value for the fund and date
-    2. Inserts the new IRR value
-    3. Returns confirmation of the replacement
-    
-    Args:
-        portfolio_fund_id: ID of the portfolio fund
-        irr_date: Date for the IRR value in YYYY-MM-DD format
-        new_irr_percentage: New IRR percentage value
-        fund_valuation_id: Optional fund valuation ID reference
-        
-    Returns:
-        Dictionary containing replacement confirmation and details
+    Returns the latest valuation for each fund up to the specified date.
     """
     try:
-        logger.info(f"Replacing IRR value for portfolio fund {portfolio_fund_id} on date {irr_date}")
+        fund_ids = request.fund_ids
+        valuation_date = request.valuation_date
         
-        # Verify portfolio fund exists
-        fund_response = db.table("portfolio_funds").select("id").eq("id", portfolio_fund_id).execute()
-        if not fund_response.data:
-            raise HTTPException(status_code=404, detail=f"Portfolio fund {portfolio_fund_id} not found")
+        if not fund_ids:
+            return {"fund_valuations": {}, "count": 0}
         
-        # Parse and validate date
-        try:
-            irr_date_obj = datetime.strptime(irr_date, "%Y-%m-%d").date()
-            irr_date_iso = irr_date_obj.isoformat()
-        except ValueError:
-            raise HTTPException(status_code=422, detail=f"Invalid date format. Expected YYYY-MM-DD, got: {irr_date}")
+        logger.info(f"Batch fetching valuations for {len(fund_ids)} funds up to date: {valuation_date}")
         
-        # Step 1: Delete existing IRR value(s) for this fund and date
-        existing_irr_response = db.table("portfolio_fund_irr_values")\
-            .select("id")\
-            .eq("fund_id", portfolio_fund_id)\
-            .eq("date", irr_date_iso)\
-            .execute()
+        # Build the query for batch valuation fetching
+        query = db.table("portfolio_fund_valuations") \
+                  .select("portfolio_fund_id, valuation, valuation_date") \
+                  .in_("portfolio_fund_id", fund_ids) \
+                  .order("portfolio_fund_id, valuation_date", desc=True)
         
-        deleted_count = 0
-        if existing_irr_response.data:
-            # Delete all existing IRR values for this fund and date
-            for irr_record in existing_irr_response.data:
-                db.table("portfolio_fund_irr_values").delete().eq("id", irr_record["id"]).execute()
-                deleted_count += 1
+        # Apply date filter if provided
+        if valuation_date:
+            query = query.lte("valuation_date", valuation_date)
+        
+        # Execute the batch query
+        result = query.execute()
+        
+        if not result.data:
+            return {"fund_valuations": {}, "count": 0}
+        
+        # Process results to get latest valuation per fund
+        fund_valuations = {}
+        seen_funds = set()
+        
+        # Since we ordered by portfolio_fund_id, valuation_date DESC, 
+        # the first occurrence of each fund is its latest valuation
+        for valuation_record in result.data:
+            fund_id = valuation_record["portfolio_fund_id"]
             
-            logger.info(f"Deleted {deleted_count} existing IRR value(s) for fund {portfolio_fund_id} on {irr_date}")
-        else:
-            logger.info(f"No existing IRR values found for fund {portfolio_fund_id} on {irr_date}")
-        
-        # Step 2: Insert the new IRR value
-        new_irr_data = {
-            "fund_id": portfolio_fund_id,
-            "irr_result": float(new_irr_percentage),
-            "date": irr_date_iso,
-            "fund_valuation_id": fund_valuation_id
-        }
-        
-        insert_response = db.table("portfolio_fund_irr_values").insert(new_irr_data).execute()
-        
-        if not insert_response.data:
-            raise HTTPException(status_code=500, detail="Failed to insert new IRR value")
-        
-        new_irr_record = insert_response.data[0]
-        logger.info(f"Successfully inserted new IRR value: {new_irr_percentage}% for fund {portfolio_fund_id} on {irr_date}")
-        
-        return {
-            "success": True,
-            "message": "IRR value replaced successfully",
-            "portfolio_fund_id": portfolio_fund_id,
-            "irr_date": irr_date,
-            "deleted_count": deleted_count,
-            "new_irr_value": {
-                "id": new_irr_record["id"],
-                "irr_percentage": new_irr_percentage,
-                "date": irr_date_iso,
-                "fund_valuation_id": fund_valuation_id
-            }
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error replacing IRR value: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to replace IRR value: {str(e)}")
-
-@router.post("/portfolio_funds/batch/replace-irr", response_model=dict)
-async def batch_replace_irr_values(
-    replacements: List[dict] = Body(..., description="List of IRR replacement data"),
-    db = Depends(get_db)
-):
-    """
-    Replace multiple IRR values in a single batch operation.
-    
-    This endpoint:
-    1. Validates all replacement data
-    2. Deletes existing IRR values for each fund/date combination
-    3. Inserts all new IRR values
-    4. Returns summary of the batch replacement
-    
-    Args:
-        replacements: List of dictionaries containing:
-            - portfolio_fund_id: ID of the portfolio fund
-            - irr_date: Date for the IRR value in YYYY-MM-DD format
-            - new_irr_percentage: New IRR percentage value
-            - fund_valuation_id: Optional fund valuation ID reference
-        
-    Returns:
-        Dictionary containing batch replacement summary
-    """
-    try:
-        logger.info(f"Batch replacing {len(replacements)} IRR values")
-        
-        if not replacements:
-            raise HTTPException(status_code=400, detail="No replacement data provided")
-        
-        # Validate all replacement data first
-        validated_replacements = []
-        for i, replacement in enumerate(replacements):
-            try:
-                portfolio_fund_id = replacement.get("portfolio_fund_id")
-                irr_date = replacement.get("irr_date")
-                new_irr_percentage = replacement.get("new_irr_percentage")
-                fund_valuation_id = replacement.get("fund_valuation_id")
-                
-                if not portfolio_fund_id:
-                    raise ValueError(f"Missing portfolio_fund_id in replacement {i}")
-                if not irr_date:
-                    raise ValueError(f"Missing irr_date in replacement {i}")
-                if new_irr_percentage is None:
-                    raise ValueError(f"Missing new_irr_percentage in replacement {i}")
-                
-                # Validate date format
-                irr_date_obj = datetime.strptime(irr_date, "%Y-%m-%d").date()
-                irr_date_iso = irr_date_obj.isoformat()
-                
-                validated_replacements.append({
-                    "portfolio_fund_id": int(portfolio_fund_id),
-                    "irr_date": irr_date,
-                    "irr_date_iso": irr_date_iso,
-                    "new_irr_percentage": float(new_irr_percentage),
-                    "fund_valuation_id": fund_valuation_id
-                })
-                
-            except (ValueError, TypeError) as e:
-                raise HTTPException(status_code=422, detail=f"Invalid replacement data at index {i}: {str(e)}")
-        
-        # Verify all portfolio funds exist
-        fund_ids = [r["portfolio_fund_id"] for r in validated_replacements]
-        funds_response = db.table("portfolio_funds").select("id").in_("id", fund_ids).execute()
-        found_fund_ids = {fund["id"] for fund in funds_response.data}
-        
-        missing_fund_ids = set(fund_ids) - found_fund_ids
-        if missing_fund_ids:
-            raise HTTPException(status_code=404, detail=f"Portfolio funds not found: {missing_fund_ids}")
-        
-        # Process each replacement
-        results = []
-        total_deleted = 0
-        total_inserted = 0
-        
-        for replacement in validated_replacements:
-            portfolio_fund_id = replacement["portfolio_fund_id"]
-            irr_date = replacement["irr_date"]
-            irr_date_iso = replacement["irr_date_iso"]
-            new_irr_percentage = replacement["new_irr_percentage"]
-            fund_valuation_id = replacement["fund_valuation_id"]
-            
-            try:
-                # Delete existing IRR value(s) for this fund and date
-                existing_irr_response = db.table("portfolio_fund_irr_values")\
-                    .select("id")\
-                    .eq("fund_id", portfolio_fund_id)\
-                    .eq("date", irr_date_iso)\
-                    .execute()
-                
-                deleted_count = 0
-                if existing_irr_response.data:
-                    for irr_record in existing_irr_response.data:
-                        db.table("portfolio_fund_irr_values").delete().eq("id", irr_record["id"]).execute()
-                        deleted_count += 1
-                
-                # Insert the new IRR value
-                new_irr_data = {
-                    "fund_id": portfolio_fund_id,
-                    "irr_result": new_irr_percentage,
-                    "date": irr_date_iso,
-                    "fund_valuation_id": fund_valuation_id
+            if fund_id not in seen_funds:
+                fund_valuations[fund_id] = {
+                    "valuation": valuation_record["valuation"],
+                    "valuation_date": valuation_record["valuation_date"]
                 }
-                
-                insert_response = db.table("portfolio_fund_irr_values").insert(new_irr_data).execute()
-                
-                if insert_response.data:
-                    new_irr_record = insert_response.data[0]
-                    total_deleted += deleted_count
-                    total_inserted += 1
-                    
-                    results.append({
-                        "portfolio_fund_id": portfolio_fund_id,
-                        "irr_date": irr_date,
-                        "status": "success",
-                        "deleted_count": deleted_count,
-                        "new_irr_id": new_irr_record["id"],
-                        "new_irr_percentage": new_irr_percentage
-                    })
-                else:
-                    results.append({
-                        "portfolio_fund_id": portfolio_fund_id,
-                        "irr_date": irr_date,
-                        "status": "error",
-                        "message": "Failed to insert new IRR value"
-                    })
-                    
-            except Exception as e:
-                logger.error(f"Error processing replacement for fund {portfolio_fund_id} on {irr_date}: {str(e)}")
-                results.append({
-                    "portfolio_fund_id": portfolio_fund_id,
-                    "irr_date": irr_date,
-                    "status": "error",
-                    "message": str(e)
-                })
+                seen_funds.add(fund_id)
         
-        successful_replacements = [r for r in results if r["status"] == "success"]
-        failed_replacements = [r for r in results if r["status"] == "error"]
+        # Ensure all requested funds are represented (some might have 0 valuation)
+        for fund_id in fund_ids:
+            if fund_id not in fund_valuations:
+                fund_valuations[fund_id] = {
+                    "valuation": 0.0,
+                    "valuation_date": None
+                }
         
-        logger.info(f"Batch replacement complete: {len(successful_replacements)} successful, {len(failed_replacements)} failed")
+        logger.info(f"✅ Batch valuation fetch complete: {len(fund_valuations)} funds processed")
         
         return {
-            "success": len(failed_replacements) == 0,
-            "message": f"Batch IRR replacement completed: {len(successful_replacements)} successful, {len(failed_replacements)} failed",
-            "total_processed": len(replacements),
-            "successful_count": len(successful_replacements),
-            "failed_count": len(failed_replacements),
-            "total_deleted": total_deleted,
-            "total_inserted": total_inserted,
-            "results": results
+            "fund_valuations": fund_valuations,
+            "count": len(fund_valuations),
+            "requested_funds": len(fund_ids),
+            "source": "batch_optimized"
         }
         
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"Error in batch IRR replacement: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to batch replace IRR values: {str(e)}")
+        logger.error(f"Error in batch fund valuations: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@router.post("/portfolio-funds/batch-historical-valuations", response_model=dict)
+async def get_batch_historical_fund_valuations(
+    request: BatchHistoricalValuationsRequest,
+    db = Depends(get_db)
+):
+    """
+    Optimized batch endpoint to fetch ALL historical valuations for multiple funds in a single request.
+    This eliminates the N+1 query problem for historical data fetching in the ReportGenerator.
+    
+    Returns all historical valuations organized by fund ID.
+    """
+    try:
+        fund_ids = request.fund_ids
+        
+        if not fund_ids:
+            return {"fund_historical_valuations": {}, "count": 0}
+        
+        logger.info(f"🚀 Batch fetching ALL historical valuations for {len(fund_ids)} funds")
+        
+        # Single batch query to get ALL historical valuations for all funds
+        query = db.table("portfolio_fund_valuations") \
+                  .select("portfolio_fund_id, valuation, valuation_date") \
+                  .in_("portfolio_fund_id", fund_ids) \
+                  .order("portfolio_fund_id, valuation_date", desc=True)
+        
+        # Execute the batch query
+        result = query.execute()
+        
+        if not result.data:
+            return {"fund_historical_valuations": {}, "count": 0}
+        
+        # Organize results by fund ID
+        fund_historical_valuations = {}
+        total_valuations = 0
+        
+        for valuation_record in result.data:
+            fund_id = valuation_record["portfolio_fund_id"]
+            
+            if fund_id not in fund_historical_valuations:
+                fund_historical_valuations[fund_id] = []
+            
+            fund_historical_valuations[fund_id].append({
+                "valuation": valuation_record["valuation"],
+                "valuation_date": valuation_record["valuation_date"]
+            })
+            total_valuations += 1
+        
+        # Ensure all requested funds are represented (some might have no valuations)
+        for fund_id in fund_ids:
+            if fund_id not in fund_historical_valuations:
+                fund_historical_valuations[fund_id] = []
+        
+        logger.info(f"✅ Batch historical valuation fetch complete: {total_valuations} total valuations for {len(fund_historical_valuations)} funds")
+        
+        return {
+            "fund_historical_valuations": fund_historical_valuations,
+            "count": len(fund_historical_valuations),
+            "total_valuations": total_valuations,
+            "requested_funds": len(fund_ids),
+            "source": "batch_historical_optimized"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in batch historical fund valuations: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+# Add this after the existing latest-irr endpoint:

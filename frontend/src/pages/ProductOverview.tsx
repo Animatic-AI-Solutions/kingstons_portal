@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getProductFUM, calculateStandardizedMultipleFundsIRR } from '../services/api';
 import { MultiSelectSearchableDropdown } from '../components/ui/SearchableDropdown';
@@ -161,14 +161,37 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   const [fundSearchTerm, setFundSearchTerm] = useState('');
   const [availableFunds, setAvailableFunds] = useState<Fund[]>([]);
 
+  // Add caching state for template data to prevent duplicate calls
+  const [templateDataCache, setTemplateDataCache] = useState<Map<number, {
+    generation: any;
+    templateWeightings: Map<number, number>;
+  }>>(new Map());
+
+  // Memoize fetchData to prevent unnecessary re-calls
+  const memoizedFetchData = useMemo(() => {
+    let lastCallTime = 0;
+    const cooldownPeriod = 1000; // 1 second cooldown
+    
+    return async (accountId: string) => {
+      const now = Date.now();
+      if (now - lastCallTime < cooldownPeriod) {
+        console.log('🔄 Preventing duplicate fetchData call within cooldown period');
+        return;
+      }
+      lastCallTime = now;
+      
+      console.log('ProductOverview: Fetching data for accountId:', accountId);
+      await fetchData(accountId);
+    };
+  }, [api]); // Only depend on api
+
   useEffect(() => {
     if (accountId) {
-      console.log('ProductOverview: Fetching data for accountId:', accountId);
-      fetchData(accountId);
+      memoizedFetchData(accountId);
     } else {
       console.error('ProductOverview: No accountId available for data fetching');
     }
-  }, [accountId, api]);
+  }, [accountId, memoizedFetchData]);
 
   // Call the async function to calculate target risk and update state - runs whenever account changes
   useEffect(() => {
@@ -236,21 +259,6 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       } catch (err) {
         console.error('Error fetching all product owners:', err);
       }
-
-      // Fetch providers and portfolios for editing
-      try {
-        const providersResponse = await api.get('/available_providers');
-        setProviders(providersResponse.data);
-      } catch (err) {
-        console.error('Error fetching providers:', err);
-      }
-
-      try {
-        const portfoliosResponse = await api.get('/portfolios');
-        setPortfolios(portfoliosResponse.data);
-      } catch (err) {
-        console.error('Error fetching portfolios:', err);
-      }
       
       console.log('ProductOverview: Complete product data received:', completeData);
       
@@ -274,23 +282,39 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       }
       setFundsData(fundsMap);
       
-      // Fetch template weightings if template_generation_id exists
+      // Fetch template weightings if template_generation_id exists (with caching and batch endpoint)
       let templateWeightings = new Map<number, number>();
       if (completeData.template_generation_id) {
-        try {
-          // Get the generation details
-          const generationResponse = await api.get(`/api/available_portfolios/generations/${completeData.template_generation_id}`);
-          
-          // Get the template funds for this generation
-          const templateFundsResponse = await api.get(`/api/available_portfolios/available_portfolio_funds/generation/${completeData.template_generation_id}`);
-          
-          if (templateFundsResponse.data) {
-            templateFundsResponse.data.forEach((templateFund: any) => {
-              templateWeightings.set(templateFund.fund_id, templateFund.target_weighting);
-            });
+        // Check cache first
+        const cachedData = templateDataCache.get(completeData.template_generation_id);
+        if (cachedData) {
+          console.log('✅ Using cached template data for generation:', completeData.template_generation_id);
+          templateWeightings = cachedData.templateWeightings;
+        } else {
+          try {
+            console.log('🚀 Fetching fresh template data using batch endpoint for generation:', completeData.template_generation_id);
+            
+            // Use the new batch endpoint to get both generation and funds in a single call
+            const batchResponse = await api.get(`/api/available_portfolios/batch/generation-with-funds/${completeData.template_generation_id}`);
+            
+            if (batchResponse.data && batchResponse.data.template_weightings) {
+              // Convert the template_weightings object to a Map
+              Object.entries(batchResponse.data.template_weightings).forEach(([fundId, weighting]) => {
+                templateWeightings.set(parseInt(fundId), weighting as number);
+              });
+            }
+            
+            // Cache the results
+            setTemplateDataCache(prev => new Map(prev).set(completeData.template_generation_id, {
+              generation: batchResponse.data.generation,
+              templateWeightings: new Map(templateWeightings)
+            }));
+            
+            console.log('✅ Cached template data from batch endpoint for generation:', completeData.template_generation_id);
+            console.log(`✅ Reduced 2 API calls to 1 batch call - Funds loaded: ${Object.keys(batchResponse.data.template_weightings || {}).length}`);
+          } catch (err) {
+            console.warn('Failed to fetch template weightings:', err);
           }
-        } catch (err) {
-          console.warn('Failed to fetch template weightings:', err);
         }
       }
       
@@ -453,77 +477,31 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       console.log('FUM response:', fumResponse.data);
       setPortfolioTotalValue(fumResponse.data.fum || 0);
       
-      // Get portfolio funds for IRR calculation from completeData
-      if (completeData.portfolio_funds && completeData.portfolio_funds.length > 0) {
+      // Fetch portfolio IRR from stored values (using latest_portfolio_irr_values view)
+      if (completeData.portfolio_id) {
         try {
-          const portfolioFunds = completeData.portfolio_funds;
-          console.log('Portfolio funds for IRR calculation:', portfolioFunds);
+          console.log('🚀 Fetching stored portfolio IRR for portfolio:', completeData.portfolio_id);
           
-          // Get the latest valuation date that ALL funds have (most recent common date)
-          let latestCommonValuationDate: string | null = null;
-          const fundValuationDates: string[] = [];
+          // Use the optimized endpoint to get stored IRR from latest_portfolio_irr_values view
+          const irrResponse = await api.get(`/api/portfolios/${completeData.portfolio_id}/latest-irr`);
           
-          for (const fund of portfolioFunds) {
-            try {
-              const valuationResponse = await api.get(`/fund_valuations?portfolio_fund_id=${fund.id}&order=valuation_date.desc&limit=1`);
-              const valuations = valuationResponse.data || [];
-              
-              if (valuations.length > 0) {
-                const valuationDate = valuations[0].valuation_date;
-                console.log(`Fund ${fund.id} latest valuation date: ${valuationDate}`);
-                fundValuationDates.push(valuationDate);
-              }
-            } catch (err) {
-              console.warn(`Could not get valuation for fund ${fund.id}:`, err);
-            }
-          }
+          console.log('✅ Stored IRR response:', irrResponse.data);
           
-          // Find the latest date that all funds have (minimum of all latest dates)
-          // This ensures we calculate IRR on a date where all funds have valuations
-          if (fundValuationDates.length > 0) {
-            // Sort dates and take the earliest of the latest dates (most recent common date)
-            fundValuationDates.sort();
-            latestCommonValuationDate = fundValuationDates[0]; // This is the earliest among the latest dates
-            
-            // Actually, we want the latest date where ALL funds have data
-            // So we should take the minimum date to ensure all funds have valuations up to that point
-            console.log('All fund valuation dates:', fundValuationDates);
-            console.log('Using latest common valuation date:', latestCommonValuationDate);
-          }
-          
-          // Only calculate IRR if we have a valid date
-          if (latestCommonValuationDate) {
-            const portfolioFundIds = portfolioFunds.map((pf: any) => pf.id);
-            
-            // Ensure the date is in YYYY-MM-DD format for the backend
-            const formattedDate = latestCommonValuationDate.split('T')[0]; // Extract just the date part if it's a datetime string
-            
-            console.log('Calling simplified standardized IRR endpoint with:', {
-              portfolioFundIds,
-              irrDate: formattedDate
-            });
-            
-            // Call the new simplified standardized IRR endpoint
-            const irrResponse = await calculateStandardizedMultipleFundsIRR({
-              portfolioFundIds,
-              irrDate: formattedDate
-            });
-            
-            console.log('Standardized IRR response:', irrResponse.data);
-            
-            // The response should already be in percentage format
-            const irrPercentage = irrResponse.data.irr_percentage;
-            setPortfolioIRR(irrPercentage);
-          } else {
-            console.warn('No valuation dates available for IRR calculation');
+                     if (irrResponse.data && irrResponse.data.irr_result !== null) {
+             // IRR is stored as percentage in database (e.g., -0.33 for -0.33%), use directly
+             const irrPercentage = irrResponse.data.irr_result;
+             setPortfolioIRR(irrPercentage);
+             console.log(`✅ Portfolio IRR loaded from database: ${irrPercentage.toFixed(2)}%`);
+           } else {
+            console.warn('⚠️ No stored IRR found for portfolio:', completeData.portfolio_id);
             setPortfolioIRR(null);
           }
         } catch (irrErr) {
-          console.error('Error calculating standardized IRR:', irrErr);
+          console.error('❌ Error fetching stored portfolio IRR:', irrErr);
           setPortfolioIRR(null);
         }
       } else {
-        console.warn('No portfolio funds available for standardized IRR calculation');
+        console.warn('⚠️ No portfolio_id available for IRR lookup');
         setPortfolioIRR(null);
       }
       
