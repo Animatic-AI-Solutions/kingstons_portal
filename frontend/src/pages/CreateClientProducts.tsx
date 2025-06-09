@@ -174,6 +174,58 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   const [validationErrors, setValidationErrors] = useState<Record<string, Record<string, string>>>({});
   const [weightingErrors, setWeightingErrors] = useState<Record<string, Record<string, string>>>({});
   
+  // Computed state to check if form is valid for submit button
+  const isFormValid = React.useMemo(() => {
+    if (!selectedClientId || products.length === 0) return false;
+    
+    // Check if any product lacks required fields
+    return products.every(product => {
+      // Check required fields
+      const hasProvider = !!product.provider_id;
+      const hasProductType = !!product.product_type;
+      const hasProductOwners = product.product_owner_ids && product.product_owner_ids.length > 0;
+      
+      // Portfolio validation
+      let hasValidPortfolio = false;
+      if (product.portfolio.type === 'template') {
+        hasValidPortfolio = !!product.portfolio.templateId && !!product.portfolio.generationId;
+      } else {
+        hasValidPortfolio = product.portfolio.selectedFunds.length > 0;
+      }
+      
+      return hasProvider && hasProductType && hasProductOwners && hasValidPortfolio;
+    });
+  }, [selectedClientId, products]);
+  
+  // Helper function to get missing required fields for validation message
+  const getMissingFields = React.useMemo(() => {
+    if (!selectedClientId || products.length === 0) return [];
+    
+    const missing: string[] = [];
+    products.forEach((product, index) => {
+      // Simple product naming without dependency on generateProductName function
+      const productName = product.product_name.trim() || `Product ${index + 1}`;
+      const issues = [];
+      
+      if (!product.provider_id) issues.push('Provider');
+      if (!product.product_type) issues.push('Product Type');
+      if (!product.product_owner_ids || product.product_owner_ids.length === 0) issues.push('Product Owner');
+      
+      if (product.portfolio.type === 'template') {
+        if (!product.portfolio.templateId) issues.push('Portfolio Template');
+        if (!product.portfolio.generationId) issues.push('Portfolio Generation');
+      } else {
+        if (product.portfolio.selectedFunds.length === 0) issues.push('Portfolio Funds');
+      }
+      
+      if (issues.length > 0) {
+        missing.push(`${productName}: ${issues.join(', ')}`);
+      }
+    });
+    
+    return missing;
+  }, [selectedClientId, products]);
+  
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -183,7 +235,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       }
       
       // Ctrl+Enter or Cmd+Enter - Save products
-      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && !isSaving && products.length > 0) {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && !isSaving && products.length > 0 && isFormValid) {
         event.preventDefault();
         const form = document.querySelector('form') as HTMLFormElement;
         if (form) {
@@ -2154,8 +2206,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                   </button>
                 <button
                   type="submit"
-                  disabled={isSaving}
+                  disabled={isSaving || !isFormValid}
                     className="bg-primary-700 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={!isFormValid ? 'Please complete all required fields for all products' : ''}
                 >
                     {isSaving ? (
                       <div className="flex items-center">
@@ -2166,6 +2219,20 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                       `Create ${products.length} Product${products.length !== 1 ? 's' : ''} for ${clients.find(c => c.id === selectedClientId)?.name || 'Client'}`
                     )}
                 </button>
+                {!isFormValid && products.length > 0 && (
+                  <div className="text-xs text-red-600 mt-2 max-h-24 overflow-y-auto">
+                    <div className="font-medium mb-1">Missing required fields:</div>
+                    {getMissingFields.length > 0 ? (
+                      <ul className="space-y-1">
+                        {getMissingFields.map((field, index) => (
+                          <li key={index} className="text-xs">• {field}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="text-xs">Please ensure all products have: Provider, Product Type, at least one Product Owner, and Portfolio configuration</div>
+                    )}
+                  </div>
+                )}
               </div>
               )}
             </form>
