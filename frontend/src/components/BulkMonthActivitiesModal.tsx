@@ -318,6 +318,27 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
     return ACTIVITY_TYPES.filter(activity => selectedActivities.has(activity));
   };
 
+  // Dynamic width calculation functions for tiered scaling
+  const getInputWidth = (activityCount: number): number => {
+    if (activityCount <= 3) return 80;       // Tier 1: Compact & clean
+    if (activityCount <= 6) return 110;      // Tier 2: Comfortable medium  
+    return 100;                              // Tier 3: Efficient (7-8 activities)
+  };
+
+  const getColumnWidth = (activityCount: number): number => {
+    return getInputWidth(activityCount) + 24; // +24px for px-3 padding on both sides
+  };
+
+  const getInputWidthClass = (activityCount: number): string => {
+    const width = getInputWidth(activityCount);
+    return `w-[${width}px]`;
+  };
+
+  const getColumnWidthClass = (activityCount: number): string => {
+    const width = getColumnWidth(activityCount);
+    return `w-[${width}px]`;
+  };
+
   const activeFunds = funds.filter(fund => 
     fund.isActive !== false && !fund.isInactiveBreakdown
   );
@@ -338,7 +359,7 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4 text-center">
+          <div className="flex min-h-full items-center justify-center p-2 text-center">
             <Transition.Child
               as={Fragment}
               enter="ease-out duration-300"
@@ -348,7 +369,7 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-6xl transform overflow-hidden rounded-lg bg-white p-6 text-left align-middle shadow-xl transition-all">
+              <Dialog.Panel className="w-full max-w-[95vw] transform overflow-hidden rounded-lg bg-white p-6 text-left align-middle shadow-xl transition-all">
                 {/* Activity Selection */}
                 <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="flex items-center justify-between mb-2">
@@ -380,87 +401,85 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
                   </div>
                 </div>
 
-                {/* Table Container - Fixed Height to Prevent Shifting */}
-                <div className="border rounded-lg bg-white" style={{ minHeight: '300px' }}>
+                {/* Table Container - Full Height Display */}
+                <div className="border border-gray-300 rounded-lg bg-white">
                   {selectedActivities.size > 0 ? (
-                    <div className="max-h-[80vh] overflow-y-auto">
-                      <div className="overflow-x-auto">
-                        <table className="w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50 sticky top-0">
-                            <tr>
-                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
-                                Fund Name
+                    <div className="overflow-x-auto">
+                      <table className="w-full !divide-y !divide-gray-300">
+                        <thead className="bg-gray-50 sticky top-0 !border-b-2 !border-gray-300">
+                          <tr>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
+                              Fund Name
+                            </th>
+                            {getDisplayedActivities().map(activityType => (
+                              <th
+                                key={activityType}
+                                className={`px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider ${getColumnWidthClass(getDisplayedActivities().length)}`}
+                              >
+                                {formatActivityType(activityType)}
                               </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white !divide-y !divide-gray-300">
+                          {activeFunds.map((fund, index) => (
+                            <tr key={fund.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-blue-50'} ${index === 0 ? '!border-t-2 !border-gray-300' : ''} !border-b !border-gray-300`}>
+                              <td className="px-4 py-1.5 text-xs font-medium text-gray-900 truncate" title={fund.fund_name}>
+                                {fund.fund_name}
+                              </td>
                               {getDisplayedActivities().map(activityType => (
-                                <th
-                                  key={activityType}
-                                  className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24"
-                                >
-                                  {formatActivityType(activityType)}
-                                </th>
+                                <td key={`${fund.id}-${activityType}`} className="px-3 py-1.5 text-center">
+                                  <input
+                                    type="text"
+                                    id={`bulk-input-${index}-${getDisplayedActivities().indexOf(activityType)}`}
+                                    className={`${getInputWidthClass(getDisplayedActivities().length)} px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-center ${
+                                      focusedCell?.fundIndex === index && focusedCell?.activityIndex === getDisplayedActivities().indexOf(activityType)
+                                        ? 'ring-1 ring-blue-500 border-blue-500'
+                                        : ''
+                                    }`}
+                                    value={bulkData[fund.id]?.[activityType] || ''}
+                                    onChange={(e) => handleValueChange(fund.id, activityType, e.target.value)}
+                                    onFocus={() => setFocusedCell({ fundIndex: index, activityIndex: getDisplayedActivities().indexOf(activityType) })}
+                                    onKeyDown={(e) => handleKeyDown(e, index, getDisplayedActivities().indexOf(activityType))}
+                                    placeholder="0"
+                                  />
+                                </td>
                               ))}
                             </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {activeFunds.map((fund, index) => (
-                              <tr key={fund.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                <td className="px-3 py-1.5 text-xs font-medium text-gray-900 truncate" title={fund.fund_name}>
-                                  {fund.fund_name}
+                          ))}
+                          
+                          {/* Totals row */}
+                          <tr className="bg-red-50 border-t-2 border-red-200 font-semibold">
+                            <td className="px-4 py-2 text-xs font-bold text-red-700">
+                              TOTALS
+                            </td>
+                            {getDisplayedActivities().map(activityType => {
+                              const total = calculateActivityTotal(activityType);
+                              const isCurrentValue = activityType === 'Current Value';
+                              const isSwitchActivity = activityType === 'Fund Switch In' || activityType === 'Fund Switch Out';
+                              
+                              return (
+                                <td
+                                  key={`total-${activityType}`}
+                                  className={`px-3 py-2 text-center text-xs font-semibold ${
+                                    isSwitchActivity 
+                                      ? 'text-orange-600' // Switch activities shown in orange to indicate they're movements, not net changes
+                                      : isCurrentValue 
+                                        ? 'text-blue-700' 
+                                        : total === 0 
+                                          ? 'text-gray-500' 
+                                          : total > 0 
+                                            ? 'text-green-700' 
+                                            : 'text-red-700'
+                                  }`}
+                                >
+                                  {total !== 0 ? formatCurrency(total) : ''}
                                 </td>
-                                {getDisplayedActivities().map(activityType => (
-                                  <td key={`${fund.id}-${activityType}`} className="px-2 py-1.5 text-center">
-                                    <input
-                                      type="text"
-                                      id={`bulk-input-${index}-${getDisplayedActivities().indexOf(activityType)}`}
-                                      className={`w-full px-1.5 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-center ${
-                                        focusedCell?.fundIndex === index && focusedCell?.activityIndex === getDisplayedActivities().indexOf(activityType)
-                                          ? 'ring-1 ring-blue-500 border-blue-500'
-                                          : ''
-                                      }`}
-                                      value={bulkData[fund.id]?.[activityType] || ''}
-                                      onChange={(e) => handleValueChange(fund.id, activityType, e.target.value)}
-                                      onFocus={() => setFocusedCell({ fundIndex: index, activityIndex: getDisplayedActivities().indexOf(activityType) })}
-                                      onKeyDown={(e) => handleKeyDown(e, index, getDisplayedActivities().indexOf(activityType))}
-                                      placeholder="0"
-                                    />
-                                  </td>
-                                ))}
-                              </tr>
-                            ))}
-                            
-                            {/* Totals row */}
-                            <tr className="bg-blue-50 border-t-2 border-blue-200 font-semibold">
-                              <td className="px-3 py-2 text-xs font-bold text-blue-900">
-                                TOTALS
-                              </td>
-                              {getDisplayedActivities().map(activityType => {
-                                const total = calculateActivityTotal(activityType);
-                                const isCurrentValue = activityType === 'Current Value';
-                                const isSwitchActivity = activityType === 'Fund Switch In' || activityType === 'Fund Switch Out';
-                                
-                                return (
-                                  <td
-                                    key={`total-${activityType}`}
-                                    className={`px-2 py-2 text-center text-xs font-semibold ${
-                                      isSwitchActivity 
-                                        ? 'text-orange-600' // Switch activities shown in orange to indicate they're movements, not net changes
-                                        : isCurrentValue 
-                                          ? 'text-blue-700' 
-                                          : total === 0 
-                                            ? 'text-gray-500' 
-                                            : total > 0 
-                                              ? 'text-green-700' 
-                                              : 'text-red-700'
-                                    }`}
-                                  >
-                                    {total !== 0 ? formatCurrency(total) : ''}
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
+                              );
+                            })}
+                          </tr>
+                        </tbody>
+                      </table>
                     </div>
                   ) : (
                     <div className="flex items-center justify-center h-full text-gray-500" style={{ minHeight: '200px' }}>
