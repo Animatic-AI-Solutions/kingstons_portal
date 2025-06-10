@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
-import { formatCurrency } from '../utils/formatters';
 
 interface Fund {
   id: number;
@@ -12,6 +11,9 @@ interface Fund {
   isActive?: boolean;
   inactiveHoldingIds?: any[];
   isInactiveBreakdown?: boolean;
+  category: string;
+  institution: string;
+  current_value?: number;
 }
 
 interface BulkActivityData {
@@ -25,8 +27,111 @@ interface BulkMonthActivitiesModalProps {
   onClose: () => void;
   month: string;
   funds: Fund[];
-  onSave: (bulkData: BulkActivityData) => void;
+  onSave: (bulkData: any) => void;
   getCurrentValue: (fundId: number, activityType: string) => string;
+}
+
+interface FocusedCell {
+  fundIndex: number;
+  activityIndex: number;
+}
+
+// Custom styles to override global CSS
+const modalStyles = `
+  .bulk-activity-modal * {
+    box-sizing: border-box !important;
+  }
+  
+  .bulk-activity-modal .bulk-activity-modal-table {
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    background-color: white !important;
+  }
+  
+  .bulk-activity-modal .bulk-activity-modal-thead {
+    background-color: rgb(249 250 251) !important;
+  }
+  
+  .bulk-activity-modal .bulk-activity-modal-th {
+    background-color: rgb(249 250 251) !important;
+    border-bottom: 2px solid rgb(209 213 219) !important;
+    padding: 8px 12px !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    color: rgb(107 114 128) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+  }
+  
+  .bulk-activity-modal .bulk-activity-modal-tbody {
+    background-color: white !important;
+  }
+  
+  .bulk-activity-modal .bulk-activity-modal-row {
+    background-color: white !important;
+    transition: background-color 0.15s ease-in-out !important;
+  }
+  
+  .bulk-activity-modal .bulk-activity-modal-row:hover {
+    background-color: rgb(237 233 254) !important; /* Medium purple hover */
+  }
+  
+  .bulk-activity-modal .bulk-activity-modal-td {
+    border-bottom: 1px solid rgb(209 213 219) !important;
+    padding: 6px 12px !important;
+    font-size: 11px !important;
+  }
+  
+  .bulk-activity-modal .bulk-activity-modal-input {
+    border: 1px solid rgb(209 213 219) !important;
+    border-radius: 4px !important;
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+    text-align: center !important;
+    background-color: white !important;
+    transition: all 0.15s ease-in-out !important;
+  }
+  
+  .bulk-activity-modal .bulk-activity-modal-input:hover {
+    background-color: rgb(250 245 255) !important; /* Light purple input hover */
+    border-color: rgb(156 163 175) !important;
+  }
+  
+  .bulk-activity-modal .bulk-activity-modal-input:focus {
+    outline: none !important;
+    border-color: rgb(59 130 246) !important;
+    box-shadow: 0 0 0 1px rgb(59 130 246) !important;
+    background-color: white !important;
+  }
+  
+  .bulk-activity-modal .bulk-activity-modal-totals-row {
+    background-color: rgb(254 242 242) !important;
+    border-top: 2px solid rgb(252 165 165) !important;
+    font-weight: 600 !important;
+    transition: background-color 0.15s ease-in-out !important;
+  }
+  
+  .bulk-activity-modal .bulk-activity-modal-totals-row:hover {
+    background-color: rgb(254 226 226) !important;
+  }
+  
+  .bulk-activity-modal .bulk-activity-modal-totals-td {
+    border-top: 2px solid rgb(252 165 165) !important;
+    padding: 8px 12px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+  }
+`;
+
+// Add styles to document head
+if (typeof document !== 'undefined') {
+  const styleElement = document.getElementById('bulk-modal-styles');
+  if (!styleElement) {
+    const style = document.createElement('style');
+    style.id = 'bulk-modal-styles';
+    style.innerHTML = modalStyles;
+    document.head.appendChild(style);
+  }
 }
 
 const ACTIVITY_TYPES = [
@@ -52,21 +157,32 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
   const [hasChanges, setHasChanges] = useState(false);
   const [focusedCell, setFocusedCell] = useState<{ fundIndex: number; activityIndex: number } | null>(null);
   const [selectedActivities, setSelectedActivities] = useState<Set<string>>(new Set());
+  const [inputErrors, setInputErrors] = useState<{ [key: string]: string }>({});
+
+  // Handle case where funds might be undefined/null and filter active funds
+  const activeFunds = funds ? funds.filter(fund => 
+    fund.isActive !== false && !fund.isInactiveBreakdown
+  ) : [];
+
+  // Convert UI-friendly activity types to backend format (same as main table)
+  const convertActivityTypeForBackend = (uiActivityType: string): string => {
+    switch (uiActivityType) {
+      case 'Fund Switch In': return 'FundSwitchIn';
+      case 'Fund Switch Out': return 'FundSwitchOut';
+      case 'Current Value': return 'Valuation';
+      default: return uiActivityType;
+    }
+  };
 
   // Initialize bulk data when modal opens or month changes
   useEffect(() => {
     if (isOpen) {
       const initialData: BulkActivityData = {};
       
-      // Filter out inactive funds and breakdown funds
-      const activeFunds = funds.filter(fund => 
-        fund.isActive !== false && !fund.isInactiveBreakdown
-      );
-      
       activeFunds.forEach(fund => {
         initialData[fund.id] = {};
         ACTIVITY_TYPES.forEach(activityType => {
-          initialData[fund.id][activityType] = getCurrentValue(fund.id, activityType);
+          initialData[fund.id][activityType] = getCurrentValue(fund.id, activityType) || '';
         });
       });
       
@@ -92,25 +208,188 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
   }, [selectedActivities]);
 
   const formatMonth = (monthStr: string): string => {
+    if (!monthStr) return '';
     const [year, month] = monthStr.split('-');
     const date = new Date(parseInt(year), parseInt(month) - 1, 1);
     return date.toLocaleDateString('en-GB', { year: 'numeric', month: 'long' });
   };
 
+  // Format activity type for display (same as main table)
   const formatActivityType = (activityType: string): string => {
     if (!activityType) return '';
     
+    // Handle specific case for Current Value -> Valuation
     if (activityType === 'Current Value') {
       return 'Valuation';
     }
     
+    // Replace underscores with spaces
     let formatted = activityType.replace(/_/g, ' ');
+    
+    // Add spaces between camelCase words
     formatted = formatted.replace(/([a-z])([A-Z])/g, '$1 $2');
     
+    // Capitalize first letter of each word
     return formatted
       .split(' ')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(' ');
+  };
+
+  // Format currency for display with comma separators and no abbreviations
+  const formatCurrency = (value: number): string => {
+    // Use toLocaleString with UK formatting for comma separators
+    // Set minimumFractionDigits to 0 and maximumFractionDigits to preserve exact decimals
+    const formatted = value.toLocaleString('en-GB', {
+      style: 'currency',
+      currency: 'GBP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 20 // High number to preserve all decimal places
+    });
+    
+    return formatted;
+  };
+
+  // Enhanced expression evaluation with validation (adapted from main table)
+  const evaluateExpression = (expression: string, fundId: number, activityType: string): { result: string; error: string | null } => {
+    // Special case: if expression is "0", we should keep it as "0"
+    if (expression === "0") return { result: "0", error: null };
+    
+    // If it's empty, return as is
+    if (!expression || expression.trim() === '') return { result: '', error: null };
+    
+    // Check for alphabetic characters first (a-z, A-Z)
+    const alphabeticChars = expression.match(/[a-zA-Z]/g);
+    if (alphabeticChars) {
+      const uniqueAlphabetic = [...new Set(alphabeticChars)].join(', ');
+      return { result: expression, error: `Letters not allowed: ${uniqueAlphabetic}` };
+    }
+    
+    // Check for other invalid characters (excluding numbers, operators, decimals, parentheses, spaces)
+    const invalidChars = expression.match(/[^0-9.+\-*/()\\s]/g);
+    if (invalidChars) {
+      const uniqueInvalidChars = [...new Set(invalidChars)].join(', ');
+      return { result: expression, error: `Invalid characters: ${uniqueInvalidChars}` };
+    }
+    
+    // If it's already a valid number, validate it's not negative
+    if (!isNaN(Number(expression))) {
+      const num = Number(expression);
+      if (num < 0) {
+        return { result: expression, error: "Values cannot be negative" };
+      }
+      return { result: expression, error: null };
+    }
+    
+    try {
+      // Check if the input contains any mathematical operators
+      if (/[+\-*/()]/.test(expression)) {
+        // Clean the expression to ensure it's safe to evaluate
+        // Only allow numbers, operators, decimals, and parentheses
+        const cleanExpression = expression.replace(/[^0-9.+\-*/()]/g, '');
+        
+        // Check if cleaning removed characters (would indicate invalid input)
+        if (cleanExpression.length !== expression.replace(/\s/g, '').length) {
+          return { result: expression, error: "Contains invalid characters for mathematical expression" };
+        }
+        
+        // Check for division by zero before evaluation
+        if (/\/\s*0(?![0-9.])/.test(cleanExpression)) {
+          return { result: expression, error: "Cannot divide by zero" };
+        }
+        
+        // Check for empty operators (like 5++3, 5**3, etc.)
+        if (/[+\-*/]{2,}/.test(cleanExpression.replace(/\s/g, ''))) {
+          return { result: expression, error: "Invalid operator sequence" };
+        }
+        
+        // Check for operators at beginning or end
+        if (/^[+\-*/]/.test(cleanExpression.trim()) || /[+\-*/]$/.test(cleanExpression.trim())) {
+          return { result: expression, error: "Expression cannot start or end with an operator" };
+        }
+        
+        // Use Function constructor to safely evaluate the expression
+        // This avoids using eval() which can be dangerous
+        const result = new Function(`return ${cleanExpression}`)();
+        
+        // Check if the result is a valid number
+        if (typeof result === 'number' && !isNaN(result) && isFinite(result)) {
+          // Check for negative results
+          if (result < 0) {
+            return { result: expression, error: "Result cannot be negative" };
+          }
+          
+          // Handle zero case explicitly
+          if (result === 0) return { result: "0", error: null };
+          
+          // Check if the original expression had a decimal point
+          const hadDecimalPoint = expression.includes('.');
+          
+          // Preserve decimal format if the original expression had one
+          // or if the result has a fractional part
+          if (hadDecimalPoint || result % 1 !== 0) {
+            // Format with 2 decimal places if result has a fractional part
+            const formatted = result % 1 !== 0 ? result.toFixed(2) : result.toFixed(1);
+            return { result: formatted, error: null };
+          } else {
+            // Return as an integer otherwise
+            return { result: result.toFixed(0), error: null };
+          }
+        } else {
+          return { result: expression, error: "Invalid mathematical expression" };
+        }
+      }
+      
+      // If no operators, return the original expression
+      return { result: expression, error: null };
+    } catch (error) {
+      // If evaluation fails (syntax error), return error
+      return { result: expression, error: "Invalid mathematical expression" };
+    }
+  };
+
+  // Generate unique key for input field errors
+  const getInputKey = (fundId: number, activityType: string): string => {
+    return `${fundId}-${activityType}`;
+  };
+
+  // Handle input blur with expression evaluation
+  const handleInputBlur = (fundId: number, activityType: string) => {
+    const currentValue = bulkData[fundId]?.[activityType] || '';
+    const inputKey = getInputKey(fundId, activityType);
+    
+    if (currentValue.trim()) {
+      const { result, error } = evaluateExpression(currentValue, fundId, activityType);
+      
+      if (error) {
+        // Set error state but keep original value
+        setInputErrors(prev => ({ ...prev, [inputKey]: error }));
+      } else {
+        // Clear error and update value if it changed
+        setInputErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[inputKey];
+          return newErrors;
+        });
+        
+        if (result !== currentValue) {
+          setBulkData(prev => ({
+            ...prev,
+            [fundId]: {
+              ...prev[fundId],
+              [activityType]: result
+            }
+          }));
+        }
+      }
+    } else {
+      // Clear error for empty values
+      setInputErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[inputKey];
+        return newErrors;
+      });
+    }
   };
 
   const handleValueChange = (fundId: number, activityType: string, value: string) => {
@@ -122,9 +401,23 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
       }
     }));
     setHasChanges(true);
+    
+    // Clear any existing error when user starts typing
+    const inputKey = getInputKey(fundId, activityType);
+    setInputErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[inputKey];
+      return newErrors;
+    });
   };
 
   const handleSave = () => {
+    // Check for input validation errors first
+    if (Object.keys(inputErrors).length > 0) {
+      alert('Please fix all validation errors before saving.');
+      return;
+    }
+
     // Check if switch activities are balanced before saving
     const { hasWarning } = getSwitchBalanceWarning();
     if (hasWarning) {
@@ -139,12 +432,13 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
       const fundId = parseInt(fundIdStr);
       Object.keys(bulkData[fundId]).forEach(activityType => {
         const currentValue = bulkData[fundId][activityType];
-        const originalValue = getCurrentValue(fundId, activityType);
+        const originalValue = getCurrentValue(fundId, activityType) || '';
         
         if (currentValue !== originalValue) {
           if (!changedData[fundId]) {
             changedData[fundId] = {};
           }
+          // Keep activity types in UI format for compatibility with main table
           changedData[fundId][activityType] = currentValue;
         }
       });
@@ -170,8 +464,49 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
     fundIndex: number,
     activityIndex: number
   ) => {
-    // Only handle arrow keys, Enter, and Tab
-    if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Tab'].includes(e.key)) {
+    // Handle Enter key for expression evaluation
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      // Get the current fund and activity type
+      const fund = activeFunds[fundIndex];
+      const activityType = getDisplayedActivities()[activityIndex];
+      
+      // Evaluate the current expression
+      handleInputBlur(fund.id, activityType);
+      
+      // Then move to next cell
+      let newFundIndex = fundIndex;
+      let newActivityIndex = activityIndex;
+      
+      // Move down one fund, stay in same activity column
+      if (fundIndex < activeFunds.length - 1) {
+        newFundIndex = fundIndex + 1;
+      } else {
+        // Wrap to top fund
+        newFundIndex = 0;
+      }
+      
+      // Update focused cell state
+      setFocusedCell({
+        fundIndex: newFundIndex,
+        activityIndex: newActivityIndex
+      });
+      
+      // Focus the new input field
+      setTimeout(() => {
+        const newInput = document.getElementById(`bulk-input-${newFundIndex}-${newActivityIndex}`) as HTMLInputElement;
+        if (newInput) {
+          newInput.focus();
+          newInput.select(); // Select all text for easy replacement
+        }
+      }, 0);
+      
+      return;
+    }
+
+    // Only handle arrow keys and Tab for navigation
+    if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
       return;
     }
 
@@ -192,13 +527,12 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
           newFundIndex = fundIndex - 1;
         } else {
           // Wrap to bottom fund
-          newFundIndex = funds.length - 1;
+          newFundIndex = activeFunds.length - 1;
         }
         break;
       case 'ArrowDown':
-      case 'Enter': // Make Enter behave like Down Arrow
         // Move down one fund, stay in same activity column
-        if (fundIndex < funds.length - 1) {
+        if (fundIndex < activeFunds.length - 1) {
           newFundIndex = fundIndex + 1;
         } else {
           // Wrap to top fund
@@ -231,34 +565,34 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
       activityIndex: newActivityIndex
     });
 
-    // Focus the new input element
+    // Focus the new input field after a short delay
     setTimeout(() => {
-      const newInput = document.getElementById(
-        `bulk-input-${newFundIndex}-${newActivityIndex}`
-      ) as HTMLInputElement;
+      const newInput = document.getElementById(`bulk-input-${newFundIndex}-${newActivityIndex}`) as HTMLInputElement;
       if (newInput) {
         newInput.focus();
-        // Select all text for easy replacement
-        newInput.select();
+        newInput.select(); // Select all text for easy replacement
       }
     }, 0);
   };
 
   // Calculate totals for each activity type
   const calculateActivityTotal = (activityType: string): number => {
-    return Object.keys(bulkData).reduce((total, fundIdStr) => {
-      const fundId = parseInt(fundIdStr);
-      const value = bulkData[fundId]?.[activityType] || '';
+    return activeFunds.reduce((total, fund) => {
+      const value = bulkData[fund.id]?.[activityType] || '';
       const numValue = parseFloat(value);
       
       if (!isNaN(numValue)) {
+        // Withdrawals should be subtracted from totals
         if (activityType === 'Withdrawal' || activityType === 'RegularWithdrawal') {
           return total - numValue;
-        } else if (activityType === 'Fund Switch In' || activityType === 'Fund Switch Out') {
-          // For switch activities, show the total amount being switched
-          // (these will be displayed but marked as neutral since they don't affect net position)
+        } 
+        // Switch activities are shown as total amounts (neutral for net calculations)
+        else if (activityType === 'Fund Switch In' || activityType === 'Fund Switch Out') {
           return total + numValue;
-        } else if (activityType !== 'Current Value') {
+        } 
+        // Other activities (Investment, RegularInvestment, GovernmentUplift) are added
+        // Current Value is not included in totals calculations typically
+        else if (activityType !== 'Current Value') {
           return total + numValue;
         }
       }
@@ -320,9 +654,15 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
 
   // Dynamic width calculation functions for tiered scaling
   const getInputWidth = (activityCount: number): number => {
-    if (activityCount <= 3) return 80;       // Tier 1: Compact & clean
-    if (activityCount <= 6) return 110;      // Tier 2: Comfortable medium  
-    return 100;                              // Tier 3: Efficient (7-8 activities)
+    if (activityCount === 1 || activityCount === 2) {
+      return 100; // 100px for 1 or 2 activities
+    } else if (activityCount >= 3 && activityCount <= 6) {
+      return 110; // Comfortable medium size for 3-6 activities
+    } else if (activityCount >= 7 && activityCount <= 8) {
+      return 100; // Efficient size for 7-8 activities (all fit without scrolling)
+    } else {
+      return 80; // Compact for 9+ activities
+    }
   };
 
   const getColumnWidth = (activityCount: number): number => {
@@ -338,10 +678,6 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
     const width = getColumnWidth(activityCount);
     return `w-[${width}px]`;
   };
-
-  const activeFunds = funds.filter(fund => 
-    fund.isActive !== false && !fund.isInactiveBreakdown
-  );
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -369,7 +705,12 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-[95vw] transform overflow-hidden rounded-lg bg-white p-6 text-left align-middle shadow-xl transition-all">
+              <Dialog.Panel className="bulk-activity-modal w-full max-w-[95vw] transform overflow-hidden rounded-lg bg-white p-6 text-left align-middle shadow-xl transition-all">
+                {/* Modal Title */}
+                <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900 mb-4">
+                  Bulk Edit Activities for {formatMonth(month)}
+                </Dialog.Title>
+
                 {/* Activity Selection */}
                 <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="flex items-center justify-between mb-2">
@@ -404,82 +745,102 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
                 {/* Table Container - Full Height Display */}
                 <div className="border border-gray-300 rounded-lg bg-white">
                   {selectedActivities.size > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="w-full !divide-y !divide-gray-300">
-                        <thead className="bg-gray-50 sticky top-0 !border-b-2 !border-gray-300">
-                          <tr>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
-                              Fund Name
-                            </th>
-                            {getDisplayedActivities().map(activityType => (
-                              <th
-                                key={activityType}
-                                className={`px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider ${getColumnWidthClass(getDisplayedActivities().length)}`}
-                              >
-                                {formatActivityType(activityType)}
+                      <div className="overflow-x-auto">
+                      <table className="bulk-activity-modal-table w-full border-separate border-spacing-0 !divide-y-0">
+                        <thead className="bulk-activity-modal-thead bg-gray-50 sticky top-0">
+                          <tr className="bulk-activity-modal-header-row border-b-2 border-gray-300">
+                            <th className="bulk-activity-modal-th px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48 bg-gray-50 border-b-2 border-gray-300">
+                                Fund Name
                               </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white !divide-y !divide-gray-300">
-                          {activeFunds.map((fund, index) => (
-                            <tr key={fund.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-blue-50'} ${index === 0 ? '!border-t-2 !border-gray-300' : ''} !border-b !border-gray-300`}>
-                              <td className="px-4 py-1.5 text-xs font-medium text-gray-900 truncate" title={fund.fund_name}>
-                                {fund.fund_name}
-                              </td>
                               {getDisplayedActivities().map(activityType => (
-                                <td key={`${fund.id}-${activityType}`} className="px-3 py-1.5 text-center">
+                                <th
+                                  key={activityType}
+                                className={`bulk-activity-modal-th px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 border-b-2 border-gray-300 ${getColumnWidthClass(getDisplayedActivities().length)}`}
+                                >
+                                  {formatActivityType(activityType)}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                        <tbody className="bulk-activity-modal-tbody bg-white !divide-y-0">
+                            {activeFunds.map((fund, index) => (
+                            <tr 
+                              key={fund.id} 
+                              className={`bulk-activity-modal-row transition-colors duration-150 hover:bg-purple-100 border-b border-gray-300 bg-white ${index === 0 ? 'border-t-2 border-gray-300' : ''}`}
+                            >
+                              <td className="bulk-activity-modal-td px-4 py-1.5 text-xs font-medium text-gray-900 truncate border-b border-gray-300" title={fund.fund_name}>
+                                  {fund.fund_name}
+                                </td>
+                                {getDisplayedActivities().map(activityType => (
+                                <td key={`${fund.id}-${activityType}`} className="bulk-activity-modal-td px-3 py-1.5 text-center border-b border-gray-300">
                                   <input
                                     type="text"
                                     id={`bulk-input-${index}-${getDisplayedActivities().indexOf(activityType)}`}
-                                    className={`${getInputWidthClass(getDisplayedActivities().length)} px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-center ${
-                                      focusedCell?.fundIndex === index && focusedCell?.activityIndex === getDisplayedActivities().indexOf(activityType)
-                                        ? 'ring-1 ring-blue-500 border-blue-500'
-                                        : ''
+                                    className={`bulk-activity-modal-input ${getInputWidthClass(getDisplayedActivities().length)} px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 text-center transition-colors duration-150 ${
+                                      inputErrors[getInputKey(fund.id, activityType)]
+                                        ? 'border-red-500 bg-red-50 focus:ring-red-500 focus:border-red-500' // Error state
+                                        : focusedCell?.fundIndex === index && focusedCell?.activityIndex === getDisplayedActivities().indexOf(activityType)
+                                          ? 'border-blue-500 ring-1 ring-blue-500' // Focused state
+                                          : 'border-gray-300 hover:bg-purple-50 focus:ring-blue-500 focus:border-blue-500' // Normal state
                                     }`}
                                     value={bulkData[fund.id]?.[activityType] || ''}
                                     onChange={(e) => handleValueChange(fund.id, activityType, e.target.value)}
                                     onFocus={() => setFocusedCell({ fundIndex: index, activityIndex: getDisplayedActivities().indexOf(activityType) })}
                                     onKeyDown={(e) => handleKeyDown(e, index, getDisplayedActivities().indexOf(activityType))}
+                                    onBlur={(e) => handleInputBlur(fund.id, activityType)}
                                     placeholder="0"
                                   />
+                                  {/* Error message display */}
+                                  {inputErrors[getInputKey(fund.id, activityType)] && (
+                                    <div className="mt-1">
+                                      <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1 shadow-sm">
+                                        {inputErrors[getInputKey(fund.id, activityType)]}
+                                      </div>
+                                    </div>
+                                  )}
                                 </td>
                               ))}
+                              </tr>
+                            ))}
+                            
+                            {/* Totals row */}
+                          <tr className="bulk-activity-modal-totals-row bg-red-50 border-t-2 border-red-200 font-semibold hover:bg-red-100 transition-colors duration-150">
+                            <td className="bulk-activity-modal-totals-td px-4 py-2 text-xs font-bold text-red-700 border-t-2 border-red-200">
+                                TOTALS
+                              </td>
+                              {getDisplayedActivities().map(activityType => {
+                                const total = calculateActivityTotal(activityType);
+                                const isCurrentValue = activityType === 'Current Value';
+                                const isSwitchActivity = activityType === 'Fund Switch In' || activityType === 'Fund Switch Out';
+                              const isWithdrawal = activityType === 'Withdrawal' || activityType === 'RegularWithdrawal';
+                              const isInvestment = activityType === 'Investment' || activityType === 'RegularInvestment' || activityType === 'GovernmentUplift';
+                                
+                                return (
+                                  <td
+                                    key={`total-${activityType}`}
+                                  className={`bulk-activity-modal-totals-td px-3 py-2 text-center text-xs font-semibold border-t-2 border-red-200 ${
+                                      isSwitchActivity 
+                                      ? 'text-orange-600' // Switch activities shown in orange (neutral movements)
+                                        : isCurrentValue 
+                                        ? 'text-blue-700' // Current value/valuation in blue
+                                        : isWithdrawal
+                                          ? 'text-red-700' // Withdrawals in red (outflows)
+                                          : isInvestment
+                                            ? 'text-green-700' // Investments in green (inflows)
+                                          : total === 0 
+                                              ? 'text-gray-500' // Zero values in gray
+                                            : total > 0 
+                                              ? 'text-green-700' 
+                                              : 'text-red-700'
+                                    }`}
+                                  >
+                                    {total !== 0 ? formatCurrency(total) : ''}
+                                  </td>
+                                );
+                              })}
                             </tr>
-                          ))}
-                          
-                          {/* Totals row */}
-                          <tr className="bg-red-50 border-t-2 border-red-200 font-semibold">
-                            <td className="px-4 py-2 text-xs font-bold text-red-700">
-                              TOTALS
-                            </td>
-                            {getDisplayedActivities().map(activityType => {
-                              const total = calculateActivityTotal(activityType);
-                              const isCurrentValue = activityType === 'Current Value';
-                              const isSwitchActivity = activityType === 'Fund Switch In' || activityType === 'Fund Switch Out';
-                              
-                              return (
-                                <td
-                                  key={`total-${activityType}`}
-                                  className={`px-3 py-2 text-center text-xs font-semibold ${
-                                    isSwitchActivity 
-                                      ? 'text-orange-600' // Switch activities shown in orange to indicate they're movements, not net changes
-                                      : isCurrentValue 
-                                        ? 'text-blue-700' 
-                                        : total === 0 
-                                          ? 'text-gray-500' 
-                                          : total > 0 
-                                            ? 'text-green-700' 
-                                            : 'text-red-700'
-                                  }`}
-                                >
-                                  {total !== 0 ? formatCurrency(total) : ''}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        </tbody>
-                      </table>
+                          </tbody>
+                        </table>
                     </div>
                   ) : (
                     <div className="flex items-center justify-center h-full text-gray-500" style={{ minHeight: '200px' }}>
@@ -498,7 +859,18 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
                   <div className="text-xs text-gray-500">
                     {(() => {
                       const { hasWarning } = getSwitchBalanceWarning();
-                      if (hasWarning) {
+                      const hasValidationErrors = Object.keys(inputErrors).length > 0;
+                      
+                      if (hasValidationErrors) {
+                        return (
+                          <div className="flex items-center text-red-600">
+                            <svg className="h-3 w-3 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                            <span className="font-medium">Please fix validation errors</span>
+                          </div>
+                        );
+                      } else if (hasWarning) {
                         return (
                           <div className="flex items-center text-yellow-600">
                             <svg className="h-3 w-3 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
@@ -529,12 +901,12 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
                     <button
                       type="button"
                       className={`inline-flex justify-center rounded border border-transparent px-3 py-1.5 text-xs font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                        !hasChanges || getSwitchBalanceWarning().hasWarning
+                        !hasChanges || getSwitchBalanceWarning().hasWarning || Object.keys(inputErrors).length > 0
                           ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
                           : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'
                       }`}
                       onClick={handleSave}
-                      disabled={!hasChanges || getSwitchBalanceWarning().hasWarning}
+                      disabled={!hasChanges || getSwitchBalanceWarning().hasWarning || Object.keys(inputErrors).length > 0}
                     >
                       Save Changes
                     </button>
