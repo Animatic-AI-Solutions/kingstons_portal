@@ -850,47 +850,6 @@ async def recalculate_all_irr_values(
         logger.error(f"Stack trace: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Error recalculating IRR values: {str(e)}")
 
-def calculate_portfolio_fund_irr_sync(
-    portfolio_fund_id: int,
-    month: int,
-    year: int,
-    valuation: float,
-    db,
-    guess: float = 0.02,
-    fund_valuation_id: int = None
-):
-    """
-    Synchronous wrapper for IRR calculation functionality.
-    This function directly implements the IRR calculation without using asyncio,
-    avoiding the "event loop already running" error when called from another async context.
-    """
-    import traceback
-    
-    try:
-        logger.info(f"Starting synchronous IRR calculation for portfolio_fund_id: {portfolio_fund_id}")
-        logger.info(f"Input parameters - month: {month}, year: {year}, valuation: {valuation}")
-        
-        # Validate input month and year
-        if not isinstance(month, int) or month < 1 or month > 12:
-            logger.error(f"Invalid month value: {month}. Must be an integer between 1 and 12.")
-            return {
-                "status": "error",
-                "error": f"Invalid month value: {month}. Must be an integer between 1 and 12.",
-                "portfolio_fund_id": portfolio_fund_id,
-                "irr_percentage": None
-            }
-            
-        if not isinstance(year, int) or year < 1900 or year > 2100:
-            logger.error(f"Invalid year value: {year}. Must be an integer between 1900 and 2100.")
-            return {
-                "status": "error",
-                "error": f"Invalid year value: {year}. Must be an integer between 1900 and 2100.",
-                "portfolio_fund_id": portfolio_fund_id,
-                "irr_percentage": None
-            }
-
-
-
 @router.get("/portfolio_funds/{portfolio_fund_id}/irr-values", response_model=List[dict])
 async def get_fund_irr_values(portfolio_fund_id: int, db = Depends(get_db)):
     """
