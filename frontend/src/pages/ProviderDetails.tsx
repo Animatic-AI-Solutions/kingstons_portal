@@ -207,12 +207,27 @@ const ProviderDetails: React.FC = () => {
   };
 
   const handleSaveChanges = async () => {
+    // Check if any changes were made
+    const hasChanges = Object.keys(formData).some(key => {
+      const formValue = (formData as any)[key];
+      const originalValue = (provider as any)[key];
+      return formValue !== originalValue && formValue !== '';
+    });
+
+    if (!hasChanges) {
+      // No changes were made, just exit edit mode
+      setIsEditing(false);
+      setFormData({});
+      return;
+    }
+
     try {
       setIsSaving(true);
-      await api.put(`/available_providers/${providerId}`, formData);
-      setProvider({ ...provider!, ...formData });
-      setIsEditing(false);
       setError(null);
+      await api.patch(`/available_providers/${providerId}`, formData);
+      await fetchProvider();
+      setIsEditing(false);
+      setFormData({});
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to save changes');
     } finally {
@@ -221,15 +236,12 @@ const ProviderDetails: React.FC = () => {
   };
 
   const handleCancel = () => {
-    setFormData(provider || {});
+    setFormData({});
     setIsEditing(false);
     setError(null);
   };
 
-  const handleAddProduct = () => {
-    // Navigate to client products page with the provider ID pre-selected
-    navigate(`/create-client-products?provider=${providerId}&returnTo=${encodeURIComponent(`/definitions/providers/${providerId}`)}`);
-  };
+
 
   const handleDeleteClick = () => {
     setShowDeleteConfirm(true);
@@ -247,7 +259,7 @@ const ProviderDetails: React.FC = () => {
     try {
       setIsDeleting(true);
       await api.delete(`/available_providers/${providerId}`);
-      navigate('/definitions?tab=providers', { replace: true });
+      navigate('/definitions/providers', { replace: true });
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to delete provider');
     } finally {
@@ -255,69 +267,7 @@ const ProviderDetails: React.FC = () => {
     }
   };
 
-  const renderEditForm = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-            Provider Name
-          </label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={formData.name || ''}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500"
-          />
-        </div>
-        
-        <div>
-          <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
-            Status
-          </label>
-          <select
-            id="status"
-            name="status"
-            value={formData.status || ''}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500"
-          >
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-        </div>
-      </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-3">
-          Theme Color
-        </label>
-        {isLoadingColors ? (
-          <div className="flex items-center justify-center py-4">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-8 gap-3">
-            {availableColors.map((color) => (
-              <button
-                key={color.value}
-                type="button"
-                onClick={() => handleColorSelect(color.value)}
-                className={`w-10 h-10 rounded-lg border-2 transition-all duration-200 hover:scale-110 ${
-                  formData.theme_color === color.value
-                    ? 'border-gray-800 ring-2 ring-gray-300'
-                    : 'border-gray-300 hover:border-gray-400'
-                }`}
-                style={{ backgroundColor: color.value }}
-                title={color.name}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
 
   if (isLoading) {
     return (
@@ -344,7 +294,7 @@ const ProviderDetails: React.FC = () => {
                 {error || 'Failed to load provider details. Please try again later.'}
               </p>
               <button
-                onClick={() => navigate('/definitions?tab=providers')}
+                onClick={() => navigate('/definitions/providers')}
                 className="mt-2 text-red-700 underline"
               >
                 Return to Providers
@@ -370,7 +320,7 @@ const ProviderDetails: React.FC = () => {
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
           <li className="inline-flex items-center">
             <Link 
-              to="/definitions?tab=providers" 
+              to="/definitions/providers" 
               className="inline-flex items-center text-sm font-medium text-gray-500 transition-colors duration-200"
               onMouseEnter={(e) => e.currentTarget.style.color = provider.theme_color || '#EC4899'}
               onMouseLeave={(e) => e.currentTarget.style.color = ''}
@@ -402,44 +352,22 @@ const ProviderDetails: React.FC = () => {
         className="bg-white shadow-sm rounded-lg border-2 mb-4"
         style={{ borderColor: provider.theme_color || '#FB7185' }}
       >
-        <div className="px-6 py-4">
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between">
-            <div className="flex items-start space-x-4">
+        <div className="px-6 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
               {/* Provider Color Indicator */}
               <div 
-                className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-sm flex-shrink-0"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0"
                 style={{ backgroundColor: provider.theme_color || '#6B7280' }}
               >
                 {provider.name.charAt(0).toUpperCase()}
               </div>
               
-              <div className="flex-1">
-                <h1 className="text-2xl font-semibold text-gray-900">{provider.name}</h1>
-                
-                <div className="flex flex-wrap items-center gap-2 mt-2">
-                  <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded ${
-                    provider.status === 'active' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {provider.status}
-                  </span>
-                  <span className="inline-flex items-center text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                    <div 
-                      className="w-3 h-3 rounded-full border border-gray-300 mr-1"
-                      style={{ backgroundColor: provider.theme_color || '#6B7280' }}
-                    />
-                    {getColorNameByValue(provider.theme_color || '') || 'Default'}
-                  </span>
-                  <span className="inline-flex items-center text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                    {products.length} Product{products.length !== 1 ? 's' : ''}
-                  </span>
-                </div>
-              </div>
+              <h1 className="text-xl font-semibold text-gray-900">{provider.name}</h1>
             </div>
             
             {/* Action Buttons */}
-            <div className="mt-4 lg:mt-0 flex flex-wrap gap-2 lg:flex-col lg:items-end">
+            <div className="flex items-center gap-2">
               {!isEditing ? (
                 <>
                   <button
@@ -500,64 +428,146 @@ const ProviderDetails: React.FC = () => {
         </div>
       </div>
 
-      {/* Priority Stats */}
+      {/* Priority Stats with Inline Editing */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
-        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
+        {/* Provider Name Card */}
+        <div className={`bg-white shadow-sm rounded-lg border p-4 ${isEditing ? 'border-indigo-300 ring-1 ring-indigo-300' : 'border-gray-100'}`}>
+          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Provider Name</div>
+          <div className="mt-1">
+            {isEditing ? (
+              <input
+                type="text"
+                name="name"
+                value={formData.name || ''}
+                onChange={handleChange}
+                className="block w-full text-lg font-semibold border-0 p-0 focus:ring-0 focus:border-0 bg-transparent"
+                placeholder="Enter provider name"
+              />
+            ) : (
+              <div className="text-lg font-semibold text-gray-900">{provider.name}</div>
+            )}
+          </div>
+        </div>
+
+        {/* Status Card */}
+        <div className={`bg-white shadow-sm rounded-lg border p-4 ${isEditing ? 'border-indigo-300 ring-1 ring-indigo-300' : 'border-gray-100'}`}>
           <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Status</div>
-          <div className="mt-1 text-lg font-semibold text-gray-900">
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              provider.status === 'active' 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-gray-100 text-gray-800'
-            }`}>
-              {provider.status}
-            </span>
+          <div className="mt-1">
+            {isEditing ? (
+              <select
+                name="status"
+                value={formData.status || ''}
+                onChange={handleChange}
+                className="block w-full text-lg font-semibold border-0 p-0 focus:ring-0 focus:border-0 bg-transparent"
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            ) : (
+              <div className="text-lg font-semibold text-gray-900">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  provider.status === 'active' 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {provider.status}
+                </span>
+              </div>
+            )}
           </div>
         </div>
         
-        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
+        {/* Theme Color Card */}
+        <div className={`bg-white shadow-sm rounded-lg border p-4 ${isEditing ? 'border-indigo-300 ring-1 ring-indigo-300' : 'border-gray-100'}`}>
           <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Theme Color</div>
-          <div className="mt-1 flex items-center space-x-2">
-            <div 
-              className="w-4 h-4 rounded-full border border-gray-300"
-              style={{ backgroundColor: provider.theme_color || '#6B7280' }}
-            />
-            <span className="text-sm font-medium text-gray-900">
-              {getColorNameByValue(provider.theme_color || '') || 'Default'}
-            </span>
+          <div className="mt-1">
+            {isEditing ? (
+              <div className="space-y-2">
+                {isLoadingColors ? (
+                  <div className="flex items-center justify-center py-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-5 gap-1">
+                    {availableColors.slice(0, 10).map((color) => (
+                      <button
+                        key={color.value}
+                        type="button"
+                        onClick={() => handleColorSelect(color.value)}
+                        className={`w-6 h-6 rounded border transition-all duration-200 hover:scale-110 ${
+                          formData.theme_color === color.value
+                            ? 'border-gray-800 ring-1 ring-gray-300'
+                            : 'border-gray-300 hover:border-gray-400'
+                        }`}
+                        style={{ backgroundColor: color.value }}
+                        title={color.name}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <div 
+                  className="w-4 h-4 rounded-full border border-gray-300"
+                  style={{ backgroundColor: provider.theme_color || '#6B7280' }}
+                />
+                <span className="text-sm font-medium text-gray-900">
+                  {getColorNameByValue(provider.theme_color || '') || 'Default'}
+                </span>
+              </div>
+            )}
           </div>
         </div>
         
-        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
-          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Created Date</div>
-          <div className="mt-1 text-lg font-semibold text-gray-900">
-            {new Date(provider.created_at).toLocaleDateString('en-GB', {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric'
-            })}
-          </div>
-        </div>
-        
+        {/* Total Products Card */}
         <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
           <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Products</div>
           <div className="mt-1 text-lg font-semibold text-gray-900">{products.length}</div>
         </div>
       </div>
 
-      {/* Edit Form */}
+      {/* Save/Cancel buttons when editing */}
       {isEditing && (
-        <div className="bg-white shadow-sm rounded-lg border border-gray-100 mb-4">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Edit Provider Details</h2>
-          </div>
-          <div className="p-6">
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-700">{error}</p>
-              </div>
-            )}
-            {renderEditForm()}
+        <div className="mb-4 space-y-3">
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
+          <div className="flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveChanges}
+              disabled={isSaving}
+              className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors ${
+                isSaving ? 'opacity-70 cursor-not-allowed' : ''
+              }`}
+            >
+              {isSaving ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Save Changes
+                </>
+              )}
+            </button>
           </div>
         </div>
       )}
@@ -565,22 +575,11 @@ const ProviderDetails: React.FC = () => {
       {/* Products Section */}
       <div className="bg-white shadow-sm rounded-lg border border-gray-100">
         <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Client Products</h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Products using this provider across all clients
-              </p>
-            </div>
-            <button
-              onClick={handleAddProduct}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Add Product
-            </button>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Client Products</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Products using this provider across all clients
+            </p>
           </div>
         </div>
         
@@ -594,17 +593,6 @@ const ProviderDetails: React.FC = () => {
               <p className="mt-1 text-sm text-gray-500">
                 No client products are currently using this provider.
               </p>
-              <div className="mt-6">
-                <button
-                  onClick={handleAddProduct}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-                >
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  Add Your First Product
-                </button>
-              </div>
             </div>
           ) : (
             <div className="overflow-x-auto">

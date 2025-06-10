@@ -424,9 +424,21 @@ async def get_client_products(
             
             # Add client name if available
             client_id = product.get("client_id")
+            logger.info(f"Processing product {product.get('id')} with client_id: {client_id}")
             if client_id and client_id in clients_map:
                 client = clients_map[client_id]
-                product["client_name"] = client.get("name", "")
+                client_name = client.get("name")
+                logger.info(f"Found client {client_id} with name: '{client_name}'")
+                # Handle NULL/empty names by providing a meaningful fallback
+                if not client_name or client_name.strip() == "":
+                    product["client_name"] = f"Client Group {client_id}"
+                    logger.info(f"Using fallback name: Client Group {client_id}")
+                else:
+                    product["client_name"] = client_name
+                    logger.info(f"Using client name: {client_name}")
+            else:
+                logger.warning(f"Client {client_id} not found in clients_map")
+                product["client_name"] = f"Client Group {client_id}" if client_id else "Unknown Client"
             
             # Add portfolio and template info if available
             portfolio_id = product.get("portfolio_id")
@@ -614,7 +626,12 @@ async def get_client_product(client_product_id: int, db = Depends(get_db)):
             client_result = db.table("client_groups").select("*").eq("id", client_id).execute()
             if client_result.data and len(client_result.data) > 0:
                 client = client_result.data[0]
-                client_product["client_name"] = client.get("name", "")
+                client_name = client.get("name")
+                # Handle NULL/empty names by providing a meaningful fallback
+                if not client_name or client_name.strip() == "":
+                    client_product["client_name"] = f"Client Group {client_id}"
+                else:
+                    client_product["client_name"] = client_name
                 logger.info(f"Added client name: {client_product['client_name']}")
         
         # Fetch portfolio information if available
@@ -1170,8 +1187,14 @@ async def get_complete_product_details(client_product_id: int, db = Depends(get_
         if client_id:
             client_result = db.table("client_groups").select("*").eq("id", client_id).execute()
             if client_result.data and len(client_result.data) > 0:
-                response["client_details"] = client_result.data[0]
-                response["client_name"] = client_result.data[0].get("name")
+                client = client_result.data[0]
+                response["client_details"] = client
+                client_name = client.get("name")
+                # Handle NULL/empty names by providing a meaningful fallback
+                if not client_name or client_name.strip() == "":
+                    response["client_name"] = f"Client Group {client_id}"
+                else:
+                    response["client_name"] = client_name
         
         # Fetch product owners in a single query
         try:

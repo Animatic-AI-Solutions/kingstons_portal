@@ -29,6 +29,9 @@ class AvailablePortfolio(BaseModel):
     id: int
     created_at: str
     name: Optional[str] = None
+    weighted_risk: Optional[float] = None
+    generation_id: Optional[int] = None
+    generation_name: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -51,6 +54,7 @@ class PortfolioTemplateDetail(BaseModel):
     generation_id: Optional[int] = None
     generation_version: Optional[int] = None
     generation_name: Optional[str] = None
+    weighted_risk: Optional[float] = None
     funds: List[PortfolioFundDetail] = []
 
     class Config:
@@ -137,11 +141,55 @@ async def get_available_portfolios(db = Depends(get_db)):
                     logger.error(f"Portfolio {idx} missing created_at field")
                     continue
 
+                portfolio_id = int(portfolio['id'])
+                
+                # Get the latest active generation for this portfolio
+                weighted_risk = None
+                generation_id = None
+                generation_name = None
+                
+                try:
+                    logger.info(f"Fetching latest generation for portfolio {portfolio_id}")
+                    generations_response = db.table("template_portfolio_generations") \
+                        .select("id, generation_name, status") \
+                        .eq("available_portfolio_id", portfolio_id) \
+                        .eq("status", "active") \
+                        .order("version_number", desc=True) \
+                        .limit(1) \
+                        .execute()
+                    
+                    if generations_response.data:
+                        latest_generation = generations_response.data[0]
+                        generation_id = latest_generation["id"]
+                        generation_name = latest_generation["generation_name"]
+                        
+                        logger.info(f"Found latest generation {generation_id} for portfolio {portfolio_id}")
+                        
+                        # Get weighted risk from the view
+                        weighted_risk_response = db.table("template_generation_weighted_risk") \
+                            .select("weighted_risk") \
+                            .eq("generation_id", generation_id) \
+                            .execute()
+                        
+                        if weighted_risk_response.data and weighted_risk_response.data[0].get("weighted_risk"):
+                            weighted_risk = float(weighted_risk_response.data[0]["weighted_risk"])
+                            logger.info(f"Found weighted risk {weighted_risk} for generation {generation_id}")
+                        else:
+                            logger.info(f"No weighted risk found for generation {generation_id}")
+                    else:
+                        logger.info(f"No active generations found for portfolio {portfolio_id}")
+                        
+                except Exception as e:
+                    logger.warning(f"Failed to fetch weighted risk for portfolio {portfolio_id}: {e}")
+
                 # Create model with explicit type conversion
                 portfolio_model = AvailablePortfolio(
-                    id=int(portfolio['id']),
+                    id=portfolio_id,
                     created_at=str(portfolio['created_at']),
-                    name=portfolio.get('name')
+                    name=portfolio.get('name'),
+                    weighted_risk=weighted_risk,
+                    generation_id=generation_id,
+                    generation_name=generation_name
                 )
                 portfolios.append(portfolio_model)
                 logger.info(f"Successfully processed portfolio {idx}")
@@ -295,12 +343,32 @@ async def get_available_portfolio_details(request: Request, portfolio_id: int, g
                     logger.error(f"Error: {str(e)}")
                     continue
         
+        # Get weighted risk for the generation if available
+        weighted_risk = None
+        if generation:
+            try:
+                logger.info(f"Fetching weighted risk for generation ID: {generation['id']}")
+                weighted_risk_response = db.table("template_generation_weighted_risk") \
+                    .select("weighted_risk") \
+                    .eq("generation_id", generation['id']) \
+                    .execute()
+                
+                if weighted_risk_response.data and len(weighted_risk_response.data) > 0:
+                    weighted_risk = weighted_risk_response.data[0].get("weighted_risk")
+                    logger.info(f"Found weighted risk: {weighted_risk}")
+                else:
+                    logger.info("No weighted risk found for this generation")
+            except Exception as e:
+                logger.error(f"Error fetching weighted risk: {str(e)}")
+                # Continue without weighted risk rather than failing the whole request
+        
         # Construct the response
         response = {
             "id": portfolio["id"],
             "created_at": portfolio["created_at"],
             "name": portfolio["name"],
-            "funds": funds
+            "funds": funds,
+            "weighted_risk": weighted_risk  # Add weighted risk to the response
         }
         
         # Add generation information if available

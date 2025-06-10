@@ -4,6 +4,7 @@ from typing import Optional, Dict, Any
 
 class ClientproductBase(BaseModel):
     client_id: int
+    client_name: Optional[str] = None  # Added client_name field
     product_name: Optional[str] = None
     status: str = "active"
     start_date: date

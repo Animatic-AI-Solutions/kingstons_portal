@@ -669,6 +669,39 @@ FROM
     LEFT JOIN portfolios p ON p.id = cp.portfolio_id
     LEFT JOIN available_providers ap ON ap.id = cp.provider_id;
 
+-- View for portfolio template generation weighted risk calculation
+CREATE OR REPLACE VIEW public.template_generation_weighted_risk AS
+SELECT 
+    tpg.id as generation_id,
+    tpg.available_portfolio_id,
+    tpg.version_number,
+    tpg.generation_name,
+    tpg.status,
+    -- Calculate weighted risk
+    CASE 
+        WHEN SUM(apf.target_weighting) > 0 AND COUNT(apf.id) > 0 THEN
+            ROUND(
+                SUM(af.risk_factor * apf.target_weighting) / SUM(apf.target_weighting),
+                1
+            )
+        ELSE NULL
+    END as weighted_risk,
+    -- Additional metrics
+    COUNT(apf.id) as fund_count,
+    SUM(apf.target_weighting) as total_weighting,
+    -- Risk breakdown
+    SUM(CASE WHEN af.risk_factor <= 2 THEN apf.target_weighting ELSE 0 END) as low_risk_weighting,
+    SUM(CASE WHEN af.risk_factor BETWEEN 3 AND 5 THEN apf.target_weighting ELSE 0 END) as medium_risk_weighting,
+    SUM(CASE WHEN af.risk_factor >= 6 THEN apf.target_weighting ELSE 0 END) as high_risk_weighting
+FROM 
+    template_portfolio_generations tpg
+    LEFT JOIN available_portfolio_funds apf ON apf.template_portfolio_generation_id = tpg.id
+    LEFT JOIN available_funds af ON af.id = apf.fund_id
+WHERE 
+    af.status = 'active' OR af.status IS NULL
+GROUP BY 
+    tpg.id, tpg.available_portfolio_id, tpg.version_number, tpg.generation_name, tpg.status;
+
 -- New optimized view for products list with portfolio information
 CREATE OR REPLACE VIEW public.products_list_view AS
 SELECT 
@@ -684,7 +717,7 @@ SELECT
     cp.portfolio_id,
     cp.template_generation_id as product_template_generation_id,
     -- Client info
-    cg.name as client_name,
+    COALESCE(NULLIF(cg.name, ''), 'Client Group ' || cp.client_id) as client_name,
     -- Provider info
     ap.name as provider_name,
     ap.theme_color as provider_theme_color,

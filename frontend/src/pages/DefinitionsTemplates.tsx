@@ -88,18 +88,60 @@ const DefinitionsTemplates: React.FC = () => {
     }
   }, [portfolioSortField, portfolioSortOrder]);
 
-  // Display weighted risk with proper formatting
+  // Function to get color based on risk value (1-7 scale) - green to red gradient
+  const getRiskColor = useCallback((riskValue: number): string => {
+    if (riskValue <= 0) return 'text-gray-500'; // N/A case
+    
+    // Clamp the value between 1 and 7
+    const clampedRisk = Math.max(1, Math.min(7, riskValue));
+    
+    // Calculate color intensity based on position between 1 and 7
+    // 1 = green, 7 = red, smooth gradient in between
+    const normalizedRisk = (clampedRisk - 1) / 6; // 0 to 1 scale
+    
+    if (normalizedRisk <= 0.16) {
+      // Risk 1.0-2.0: Green
+      return 'text-green-600 font-medium';
+    } else if (normalizedRisk <= 0.33) {
+      // Risk 2.0-3.0: Yellow-green
+      return 'text-lime-600 font-medium';
+    } else if (normalizedRisk <= 0.5) {
+      // Risk 3.0-4.0: Yellow
+      return 'text-yellow-600 font-medium';
+    } else if (normalizedRisk <= 0.66) {
+      // Risk 4.0-5.0: Orange
+      return 'text-orange-600 font-medium';
+    } else if (normalizedRisk <= 0.83) {
+      // Risk 5.0-6.0: Red-orange
+      return 'text-red-500 font-medium';
+    } else {
+      // Risk 6.0-7.0: Red
+      return 'text-red-600 font-semibold';
+    }
+  }, []);
+
+  // Display weighted risk with proper formatting and color coding
   const displayWeightedRisk = useCallback((portfolio: Portfolio) => {
+    console.log('displayWeightedRisk called for portfolio:', {
+      id: portfolio.id,
+      name: portfolio.name,
+      weighted_risk: portfolio.weighted_risk,
+      has_funds: portfolio.funds?.length || 0
+    });
+    
     const averageRisk = calculateAverageRisk(portfolio);
-    const riskRange = getRiskRange(portfolio);
+    const colorClass = getRiskColor(averageRisk);
+    
+    console.log('Calculated values:', { averageRisk, colorClass });
     
     return (
-      <div className="text-sm text-gray-600 font-sans">
-        <div>{averageRisk > 0 ? averageRisk.toFixed(2) : 'N/A'}</div>
-        <div className="text-xs text-gray-500">({riskRange})</div>
+      <div className="text-sm font-sans">
+        <div className={`${colorClass} transition-colors duration-200`}>
+          {averageRisk > 0 ? averageRisk.toFixed(1) : 'N/A'}
+        </div>
       </div>
     );
-  }, []);
+  }, [getRiskColor]);
 
   // Filter and sort portfolios
   const filteredAndSortedPortfolios = useMemo(() => {
