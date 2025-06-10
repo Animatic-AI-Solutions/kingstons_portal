@@ -141,6 +141,16 @@ export const getLatestFundIRR = (portfolioFundId: number) => {
 };
 
 /**
+ * Fetches the latest IRR values for multiple portfolio funds
+ * @param {number[]} fundIds - Array of portfolio fund IDs
+ * @returns {Promise} - API response with latest IRR values
+ */
+export const getLatestFundIRRs = (fundIds: number[]) => {
+  const fundIdsString = fundIds.join(',');
+  return api.get(`portfolio-funds/latest-irr?fund_ids=${fundIdsString}`);
+};
+
+/**
  * Fetches IRR values for multiple funds in batch
  * @param {number[]} fundIds - Array of portfolio fund IDs
  * @returns {Promise} - API response with IRR values grouped by fund ID
