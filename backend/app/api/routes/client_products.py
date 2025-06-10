@@ -20,22 +20,22 @@ async def get_client_products_with_owners(
     client_id: Optional[int] = None,
     provider_id: Optional[int] = None,
     status: Optional[str] = None,
+    portfolio_type: Optional[str] = None,
     db = Depends(get_db)
 ):
     """
-    What it does: Retrieves a paginated list of client products with their owners already populated.
-    Why it's needed: Improves frontend performance by eliminating multiple sequential API calls.
+    What it does: Retrieves a paginated list of client products with their owners using the optimized products_list_view.
+    Why it's needed: Improves frontend performance by using a single optimized view with all portfolio information.
     How it works:
-        1. Connects to the Supabase database
-        2. Builds a query to get client products with filtering
-        3. In one operation, fetches related data: providers, clients, templates, portfolios
-        4. For each product, fetches its owners in a single batch operation
-        5. Returns a complete product list with all related data
-    Expected output: A JSON array of client product objects with all their details including owners
+        1. Uses the products_list_view which includes portfolio type determination
+        2. Adds IRR data from latest_portfolio_irr_values 
+        3. Fetches product owners efficiently
+        4. Returns complete product list with portfolio type information
+    Expected output: A JSON array of client product objects with portfolio type and all related data
     """
     try:
-        # Build the base query for client_products
-        query = db.table("client_products").select("*")
+        # Build the base query using the new optimized view
+        query = db.table("products_list_view").select("*")
         
         # Apply filters if provided
         if client_id is not None:
@@ -46,105 +46,33 @@ async def get_client_products_with_owners(
             
         if status is not None:
             query = query.eq("status", status)
+            
+        if portfolio_type is not None:
+            query = query.eq("portfolio_type_display", portfolio_type)
         
         # Get the client products with pagination
         result = query.range(skip, skip + limit - 1).execute()
-        client_products = result.data
+        products = result.data
         
-        if not client_products:
+        if not products:
             return []
         
-        # Fetch all needed providers and clients in bulk
-        provider_ids = [p.get("provider_id") for p in client_products if p.get("provider_id") is not None]
-        client_ids = [p.get("client_id") for p in client_products if p.get("client_id") is not None]
-        portfolio_ids = [p.get("portfolio_id") for p in client_products if p.get("portfolio_id") is not None]
-        product_ids = [p.get("id") for p in client_products]
+        # Extract product IDs and portfolio IDs for additional data
+        product_ids = [p.get("product_id") for p in products]
+        portfolio_ids = [p.get("portfolio_id") for p in products if p.get("portfolio_id") is not None]
         
-        # Fetch all data in parallel using bulk queries
-        # Only fetch providers if we have provider IDs
-        providers_map = {}
-        if provider_ids:
-            providers_result = db.table("available_providers").select("*").in_("id", provider_ids).execute()
-            # Create a lookup map of provider data by ID
-            providers_map = {p.get("id"): p for p in providers_result.data}
-            
-        # Only fetch clients if we have client IDs
-        clients_map = {}
-        if client_ids:
-            clients_result = db.table("client_groups").select("*").in_("id", client_ids).execute()
-            # Create a lookup map of client data by ID
-            clients_map = {c.get("id"): c for c in clients_result.data}
-        
-        # Fetch portfolio information to get template info
-        portfolios_map = {}
-        template_generation_ids = set()
-        if portfolio_ids:
-            portfolios_result = db.table("portfolios").select("*").in_("id", portfolio_ids).execute()
-            if portfolios_result.data:
-                portfolios_map = {p.get("id"): p for p in portfolios_result.data}
-                # Collect all template generation IDs to fetch in bulk
-                template_generation_ids = {p.get("template_generation_id") for p in portfolios_result.data 
-                              if p.get("template_generation_id") is not None}
-        
-        # Fetch all needed template generations in bulk
-        template_generations_map = {}
-        if template_generation_ids:
-            template_generations_result = db.table("template_portfolio_generations").select("*").in_("id", list(template_generation_ids)).execute()
-            if template_generations_result.data:
-                template_generations_map = {t.get("id"): t for t in template_generations_result.data}
-        
-        # Get all product_value_irr_summary data in one bulk query for better performance
-        # NOTE: product_value_irr_summary view doesn't exist - calculations are done on-demand
-        # Setting default values instead
-        
-        # Get IRR dates for all products in bulk
+        # Get IRR data for portfolios
+        portfolio_irr_map = {}
         irr_dates_map = {}
-        try:
-            if portfolio_ids:
-                # Get all portfolio funds for all portfolios
-                all_portfolio_funds_result = db.table("portfolio_funds").select("id,portfolio_id").in_("portfolio_id", portfolio_ids).execute()
-                if all_portfolio_funds_result.data:
-                    # Group fund IDs by portfolio ID
-                    portfolio_to_funds = {}
-                    all_fund_ids = []
-                    for pf in all_portfolio_funds_result.data:
-                        portfolio_id = pf.get("portfolio_id")
-                        fund_id = pf.get("id")
-                        if portfolio_id not in portfolio_to_funds:
-                            portfolio_to_funds[portfolio_id] = []
-                        portfolio_to_funds[portfolio_id].append(fund_id)
-                        all_fund_ids.append(fund_id)
-                    
-                    # Get latest IRR dates for funds that have them for efficient date filtering
-                    irr_dates_result = db.table("latest_portfolio_fund_irr_values").select("fund_id,irr_date").in_("fund_id", all_fund_ids).execute()
-                    if irr_dates_result.data:
-                        # Create a map of fund_id to irr_date
-                        fund_to_irr_date = {item.get("fund_id"): item.get("irr_date") for item in irr_dates_result.data if item.get("irr_date")}
-                            
-                        # For each portfolio, find the most recent IRR date
-                        for portfolio_id, fund_ids in portfolio_to_funds.items():
-                            portfolio_irr_dates = [fund_to_irr_date.get(fund_id) for fund_id in fund_ids if fund_to_irr_date.get(fund_id)]
-                            if portfolio_irr_dates:
-                                # Sort dates and get the most recent
-                                portfolio_irr_dates.sort(reverse=True)
-                                irr_dates_map[portfolio_id] = portfolio_irr_dates[0]
-        except Exception as e:
-            logger.warning(f"Error fetching IRR dates in bulk: {str(e)}")
-        
-        # Calculate FUM for each portfolio using latest_portfolio_fund_valuations view
-        portfolio_fum_map = {}
-        portfolio_irr_map = {}  # Add this to track portfolio IRRs
-        try:
-            if portfolio_ids:
+        if portfolio_ids:
+            try:
                 # Get latest portfolio IRR for all portfolios
                 portfolio_irr_result = db.table("latest_portfolio_irr_values").select("portfolio_id,irr_result").in_("portfolio_id", portfolio_ids).execute()
-                
                 portfolio_irr_map = {item.get("portfolio_id"): item.get("irr_result") for item in portfolio_irr_result.data}
                 
-                # Get all portfolio funds for all portfolios
-                all_portfolio_funds_result = db.table("portfolio_funds").select("id,portfolio_id").in_("portfolio_id", portfolio_ids).eq("status", "active").execute()
+                # Get IRR dates efficiently
+                all_portfolio_funds_result = db.table("portfolio_funds").select("id,portfolio_id").in_("portfolio_id", portfolio_ids).execute()
                 if all_portfolio_funds_result.data:
-                    # Group fund IDs by portfolio ID
                     portfolio_to_funds = {}
                     all_fund_ids = []
                     for pf in all_portfolio_funds_result.data:
@@ -155,97 +83,94 @@ async def get_client_products_with_owners(
                         portfolio_to_funds[portfolio_id].append(fund_id)
                         all_fund_ids.append(fund_id)
                     
-                    # Get latest valuations for all funds
                     if all_fund_ids:
-                        valuations_result = db.table("latest_portfolio_fund_valuations").select("portfolio_fund_id,valuation").in_("portfolio_fund_id", all_fund_ids).execute()
-                        if valuations_result.data:
-                            # Create fund_id to value map
-                            fund_to_value = {item.get("portfolio_fund_id"): float(item.get("valuation", 0)) for item in valuations_result.data}
+                        irr_dates_result = db.table("latest_portfolio_fund_irr_values").select("fund_id,irr_date").in_("fund_id", all_fund_ids).execute()
+                        if irr_dates_result.data:
+                            fund_to_irr_date = {item.get("fund_id"): item.get("irr_date") for item in irr_dates_result.data if item.get("irr_date")}
                             
-                            # Calculate FUM for each portfolio
                             for portfolio_id, fund_ids in portfolio_to_funds.items():
-                                portfolio_fum = sum(fund_to_value.get(fund_id, 0) for fund_id in fund_ids)
-                                portfolio_fum_map[portfolio_id] = portfolio_fum
-        except Exception as e:
-            logger.warning(f"Error calculating portfolio FUM and IRR: {str(e)}")
+                                portfolio_irr_dates = [fund_to_irr_date.get(fund_id) for fund_id in fund_ids if fund_to_irr_date.get(fund_id)]
+                                if portfolio_irr_dates:
+                                    portfolio_irr_dates.sort(reverse=True)
+                                    irr_dates_map[portfolio_id] = portfolio_irr_dates[0]
+                                    
+            except Exception as e:
+                logger.warning(f"Error fetching IRR data: {str(e)}")
         
-        # EFFICIENT PRODUCT OWNER FETCHING - This is the key improvement
-        # 1. Get all product_owner_products associations in one query
+        # Get product owners efficiently
         product_owner_associations = {}
+        product_owners_map = {}
+        
         try:
+            # Get all product_owner_products associations
             pop_result = db.table("product_owner_products").select("*").in_("product_id", product_ids).execute()
             if pop_result.data:
-                # Group by product_id for efficient lookup
                 for assoc in pop_result.data:
                     product_id = assoc.get("product_id")
                     if product_id not in product_owner_associations:
                         product_owner_associations[product_id] = []
                     product_owner_associations[product_id].append(assoc.get("product_owner_id"))
-        except Exception as e:
-            logger.error(f"Error fetching product owner associations: {str(e)}")
-        
-        # 2. Get all product owner details in one query
-        product_owner_ids = []
-        for owners in product_owner_associations.values():
-            product_owner_ids.extend(owners)
-        
-        product_owners_map = {}
-        if product_owner_ids:
-            try:
+            
+            # Get all product owner details
+            product_owner_ids = []
+            for owners in product_owner_associations.values():
+                product_owner_ids.extend(owners)
+            
+            if product_owner_ids:
                 owners_result = db.table("product_owners").select("*").in_("id", list(set(product_owner_ids))).execute()
                 if owners_result.data:
                     product_owners_map = {owner.get("id"): owner for owner in owners_result.data}
-            except Exception as e:
-                logger.error(f"Error fetching product owners: {str(e)}")
+                    
+        except Exception as e:
+            logger.error(f"Error fetching product owners: {str(e)}")
         
-        # Enhance the response data with all related information
+        # Enhance the response data
         enhanced_products = []
         
-        for product in client_products:
-            product_id = product.get("id")
-            
-            # Add provider data if available
-            provider_id = product.get("provider_id")
-            if provider_id and provider_id in providers_map:
-                provider = providers_map[provider_id]
-                product["provider_name"] = provider.get("name")
-                product["provider_theme_color"] = provider.get("theme_color")
-            
-            # Add client name if available
-            client_id = product.get("client_id")
-            if client_id and client_id in clients_map:
-                client = clients_map[client_id]
-                product["client_name"] = client.get("name", "")
-            
-            # Add portfolio and template info if available
+        for product in products:
+            product_id = product.get("product_id")
             portfolio_id = product.get("portfolio_id")
-            if portfolio_id and portfolio_id in portfolios_map:
-                portfolio = portfolios_map[portfolio_id]
-                template_generation_id = portfolio.get("template_generation_id")
-                if template_generation_id and template_generation_id in template_generations_map:
-                    template = template_generations_map[template_generation_id]
-                    product["template_generation_id"] = template_generation_id
-                    product["template_info"] = template
             
-            # Add total_value and irr from calculated FUM and latest portfolio IRR
-            if portfolio_id and portfolio_id in portfolio_fum_map:
-                product["total_value"] = portfolio_fum_map[portfolio_id]
-            else:
-                product["total_value"] = 0
+            # Map the view fields to the expected frontend format
+            enhanced_product = {
+                "id": product_id,
+                "client_id": product.get("client_id"),
+                "client_name": product.get("client_name"),
+                "product_name": product.get("product_name"),
+                "status": product.get("status"),
+                "start_date": product.get("start_date"),
+                "end_date": product.get("end_date"),
+                "provider_id": product.get("provider_id"),
+                "provider_name": product.get("provider_name"),
+                "provider_theme_color": product.get("provider_theme_color"),
+                "product_type": product.get("product_type"),
+                "plan_number": product.get("plan_number"),
+                "portfolio_id": portfolio_id,
+                "portfolio_name": product.get("portfolio_name"),
+                "total_value": product.get("total_value", 0),
+                "template_generation_id": product.get("effective_template_generation_id"),
+                "portfolio_type_display": product.get("portfolio_type_display"),
+                "template_info": {
+                    "id": product.get("effective_template_generation_id"),
+                    "generation_name": product.get("generation_name"),
+                    "name": product.get("template_name"),
+                    "version_number": product.get("version_number"),
+                    "description": product.get("template_description")
+                } if product.get("effective_template_generation_id") else None
+            }
             
-            # Use latest portfolio IRR if available
+            # Add IRR data
             if portfolio_id and portfolio_id in portfolio_irr_map:
-                product["irr"] = portfolio_irr_map[portfolio_id]
+                enhanced_product["irr"] = portfolio_irr_map[portfolio_id]
             else:
-                product["irr"] = "-"  # Display as dash if no portfolio IRR available
+                enhanced_product["irr"] = "-"
                 
-                # Add IRR date from the bulk-fetched data
-                if portfolio_id and portfolio_id in irr_dates_map:
-                    product["irr_date"] = irr_dates_map[portfolio_id]
-                else:
-                    product["irr_date"] = None
+            if portfolio_id and portfolio_id in irr_dates_map:
+                enhanced_product["irr_date"] = irr_dates_map[portfolio_id]
+            else:
+                enhanced_product["irr_date"] = None
             
-            # Add product owners - this is the key improvement
+            # Add product owners
             product_owners = []
             if product_id in product_owner_associations:
                 owner_ids = product_owner_associations[product_id]
@@ -253,15 +178,50 @@ async def get_client_products_with_owners(
                     if owner_id in product_owners_map:
                         product_owners.append(product_owners_map[owner_id])
             
-            product["product_owners"] = product_owners
-            
-            enhanced_products.append(product)
+            enhanced_product["product_owners"] = product_owners
+            enhanced_products.append(enhanced_product)
         
-        logger.info(f"Retrieved {len(enhanced_products)} client products with all related data including owners")
-        
+        logger.info(f"Retrieved {len(enhanced_products)} client products using optimized products_list_view")
         return enhanced_products
+        
     except Exception as e:
-        logger.error(f"Error fetching client products with owners: {str(e)}")
+        logger.error(f"Error fetching client products with optimized view: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@router.get("/portfolio_types", response_model=List[str])
+async def get_portfolio_types(db = Depends(get_db)):
+    """
+    What it does: Retrieves distinct portfolio types for filtering.
+    Why it's needed: Provides filter options for the portfolio type dropdown.
+    How it works:
+        1. Queries the products_list_view to get distinct portfolio_type_display values
+        2. Returns them as a list for frontend filtering
+    Expected output: A JSON array of distinct portfolio type strings
+    """
+    try:
+        result = db.table("products_list_view").select("portfolio_type_display").execute()
+        
+        if not result.data:
+            return []
+        
+        # Get distinct portfolio types and filter out nulls
+        portfolio_types = list(set(
+            item.get("portfolio_type_display") 
+            for item in result.data 
+            if item.get("portfolio_type_display")
+        ))
+        
+        # Sort alphabetically with "Bespoke" first
+        portfolio_types.sort()
+        if "Bespoke" in portfolio_types:
+            portfolio_types.remove("Bespoke")
+            portfolio_types.insert(0, "Bespoke")
+        
+        logger.info(f"Retrieved {len(portfolio_types)} distinct portfolio types")
+        return portfolio_types
+        
+    except Exception as e:
+        logger.error(f"Error fetching portfolio types: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.get("/client_products", response_model=List[Clientproduct])
@@ -546,7 +506,8 @@ async def create_client_product(client_product: ClientproductCreate, db = Depend
             "start_date": start_date_iso,
             "plan_number": client_product.plan_number,
             "provider_id": client_product.provider_id,
-            "product_type": client_product.product_type
+            "product_type": client_product.product_type,
+            "template_generation_id": client_product.template_generation_id
         }
         
         # Add portfolio_id if it exists

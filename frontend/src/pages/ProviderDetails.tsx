@@ -633,7 +633,14 @@ const ProviderDetails: React.FC = () => {
                     <tr 
                       key={product.id} 
                       className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
-                      onClick={() => navigate(`/products/${product.id}`)}
+                      onClick={() => navigate(`/products/${product.id}`, {
+                        state: {
+                          from: {
+                            pathname: `/definitions/providers/${providerId}`,
+                            label: provider?.name || 'Provider Details'
+                          }
+                        }
+                      })}
                     >
                       <td className="px-6 py-3 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{product.product_name}</div>

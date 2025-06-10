@@ -399,7 +399,13 @@ const PortfolioDetails: React.FC = () => {
           <div>
                 <dt className="text-sm font-medium text-gray-500">Linked Product</dt>
                 <dd className="mt-1 text-sm text-gray-900">
-                  <Link to={`/products/${assignedAccounts[0].client_product_id}`} className="text-indigo-600 hover:text-indigo-900">
+                  <Link 
+                    to={{
+                      pathname: `/products/${assignedAccounts[0].client_product_id}`,
+                      search: `?from=${encodeURIComponent('portfolio-details')}&portfolioId=${portfolioId}&portfolioName=${encodeURIComponent(portfolio?.portfolio_name || 'Portfolio Details')}`
+                    }}
+                    className="text-indigo-600 hover:text-indigo-900"
+                  >
                     {assignedAccounts[0].product_name || `Product ${assignedAccounts[0].client_product_id}`}
                     {assignedAccounts[0].client_name && ` (${assignedAccounts[0].client_name})`}
                   </Link>

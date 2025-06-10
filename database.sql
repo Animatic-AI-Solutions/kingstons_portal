@@ -199,11 +199,23 @@ create table public.client_products (
   product_type text null,
   portfolio_id bigint null,
   notes text null,
+  template_generation_id bigint null,
   constraint client_products_pkey primary key (id),
   constraint client_products_client_id_fkey foreign KEY (client_id) references client_groups (id),
   constraint client_products_portfolio_id_fkey foreign KEY (portfolio_id) references portfolios (id),
-  constraint client_products_provider_id_fkey foreign KEY (provider_id) references available_providers (id)
+  constraint client_products_provider_id_fkey foreign KEY (provider_id) references available_providers (id),
+  constraint client_products_template_generation_id_fkey foreign KEY (template_generation_id) references template_portfolio_generations (id)
 ) TABLESPACE pg_default;
+
+create index IF not exists idx_client_products_client_id on public.client_products using btree (client_id) TABLESPACE pg_default;
+
+create index IF not exists idx_client_products_status on public.client_products using btree (status) TABLESPACE pg_default;
+
+create index IF not exists idx_client_products_start_date on public.client_products using btree (start_date) TABLESPACE pg_default;
+
+create index IF not exists idx_client_products_provider_id on public.client_products using btree (provider_id) TABLESPACE pg_default
+where
+  (provider_id is not null);
 
 -- Junction table between product_owners and products
 CREATE TABLE public.product_owner_products (
@@ -656,6 +668,55 @@ FROM
     LEFT JOIN client_products cp ON cp.client_id = cg.id
     LEFT JOIN portfolios p ON p.id = cp.portfolio_id
     LEFT JOIN available_providers ap ON ap.id = cp.provider_id;
+
+-- New optimized view for products list with portfolio information
+CREATE OR REPLACE VIEW public.products_list_view AS
+SELECT 
+    cp.id as product_id,
+    cp.client_id,
+    cp.product_name,
+    cp.status,
+    cp.start_date,
+    cp.end_date,
+    cp.provider_id,
+    cp.product_type,
+    cp.plan_number,
+    cp.portfolio_id,
+    cp.template_generation_id as product_template_generation_id,
+    -- Client info
+    cg.name as client_name,
+    -- Provider info
+    ap.name as provider_name,
+    ap.theme_color as provider_theme_color,
+    -- Portfolio info with template details
+    p.portfolio_name,
+    p.template_generation_id as portfolio_template_generation_id,
+    -- Template generation info (prioritize product-level, fallback to portfolio-level)
+    COALESCE(cp.template_generation_id, p.template_generation_id) as effective_template_generation_id,
+    tpg.generation_name,
+    tpg.version_number,
+    tpg.description as template_description,
+    -- Available portfolio (template) name
+    avp.name as template_name,
+    -- Portfolio type determination
+    CASE 
+        WHEN COALESCE(cp.template_generation_id, p.template_generation_id) IS NOT NULL 
+        THEN COALESCE(tpg.generation_name, avp.name, 'Template')
+        ELSE 'Bespoke'
+    END as portfolio_type_display,
+    -- Portfolio total value calculation
+    (SELECT COALESCE(SUM(lfv.valuation), 0) 
+     FROM portfolio_funds pf 
+     LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id 
+     WHERE pf.portfolio_id = cp.portfolio_id 
+     AND pf.status = 'active') as total_value
+FROM 
+    client_products cp
+    LEFT JOIN client_groups cg ON cg.id = cp.client_id
+    LEFT JOIN available_providers ap ON ap.id = cp.provider_id
+    LEFT JOIN portfolios p ON p.id = cp.portfolio_id
+    LEFT JOIN template_portfolio_generations tpg ON tpg.id = COALESCE(cp.template_generation_id, p.template_generation_id)
+    LEFT JOIN available_portfolios avp ON avp.id = tpg.available_portfolio_id;
 
 -- =========================================================
 -- GLOBAL SEARCH FUNCTION

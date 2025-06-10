@@ -241,12 +241,14 @@ const ProductCard: React.FC<{
   onToggleExpand: () => void; 
   funds: ProductFund[];
   isLoadingFunds: boolean;
+  client?: Client;
 }> = ({ 
   account, 
   isExpanded, 
   onToggleExpand, 
   funds, 
-  isLoadingFunds 
+  isLoadingFunds,
+  client
 }) => {
   // Use the provider color service instead of direct fallback
   const themeColor = getProviderColor(
@@ -336,7 +338,10 @@ const ProductCard: React.FC<{
       {/* Main Content */}
       <div 
         className="block p-4 cursor-pointer"
-        onClick={() => window.location.href = `/products/${account.id}/overview`}
+        onClick={() => {
+          // Use navigate with state to pass previous page info
+          window.location.href = `/products/${account.id}/overview?from=${encodeURIComponent('client-details')}&clientId=${client?.id}&clientName=${encodeURIComponent(client?.name || 'Client Details')}`;
+        }}
       >
         <div className="flex items-center justify-between" style={styles.headerStyle}>
           {/* Left side - Product Info */}
@@ -351,7 +356,7 @@ const ProductCard: React.FC<{
                 }}
               >
                 {account.template_generation_id 
-                  ? (account.template_info?.name || `Template #${account.template_generation_id}`)
+                  ? (account.template_info?.generation_name || account.template_info?.name || `Template #${account.template_generation_id}`)
                   : 'Bespoke'}
               </span>
             </div>
@@ -455,7 +460,7 @@ const ProductCard: React.FC<{
           </div>
           <div className="flex items-center">
             <Link
-              to={`/products/${account.id}/irr-calculation`}
+              to={`/products/${account.id}/irr-calculation?from=${encodeURIComponent('client-details')}&clientId=${client?.id}&clientName=${encodeURIComponent(client?.name || 'Client Details')}`}
               onClick={(e) => e.stopPropagation()}
               className="inline-flex items-center mr-3 px-2 py-0.5 text-xs font-medium text-white bg-primary-700 rounded-lg shadow-sm hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-700 transition-all duration-200"
               style={{ backgroundColor: themeColor }}
@@ -696,6 +701,8 @@ const ClientDetails: React.FC = () => {
         irr: product.irr,
         active_fund_count: product.active_fund_count,
         inactive_fund_count: product.inactive_fund_count,
+        template_generation_id: product.template_generation_id,
+        template_info: product.template_info,
         product_owners: [] // TODO: Add product owners if needed
       }));
       
@@ -1117,6 +1124,7 @@ const ClientDetails: React.FC = () => {
                     onToggleExpand={() => toggleProductExpand(account.id)}
                     funds={expandedProductFunds[account.id] || []}
                     isLoadingFunds={isLoadingFunds[account.id] || false}
+                    client={client}
                   />
                 ))}
               </div>

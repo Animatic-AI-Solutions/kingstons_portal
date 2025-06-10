@@ -154,7 +154,19 @@ const GlobalSearch: React.FC = () => {
 
     const route = routes[result.entity_type as keyof typeof routes];
     if (route) {
-      navigate(route);
+      // For products, pass state information about coming from global search
+      if (result.entity_type === 'product') {
+        navigate(route, {
+          state: {
+            from: {
+              pathname: window.location.pathname,
+              label: 'Search Results'
+            }
+          }
+        });
+      } else {
+        navigate(route);
+      }
       setIsOpen(false);
       setQuery('');
       inputRef.current?.blur();

@@ -29,6 +29,7 @@ interface Product {
     generation_name: string;
     name?: string;
   };
+  portfolio_type_display?: string;
   target_risk?: number;
   portfolio_id?: number;
   notes?: string;
@@ -40,7 +41,7 @@ interface Product {
   };
 }
 
-type SortField = 'product_name' | 'client_name' | 'total_value' | 'irr';
+type SortField = 'product_name' | 'client_name' | 'total_value' | 'irr' | 'portfolio_type_display';
 type SortOrder = 'asc' | 'desc';
 
 const Products: React.FC = () => {
@@ -54,36 +55,72 @@ const Products: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [groupByClient, setGroupByClient] = useState(false);
 
+  // State for portfolio type filtering
+  const [portfolioTypes, setPortfolioTypes] = useState<{value: string, label: string}[]>([]);
+  const [selectedPortfolioTypes, setSelectedPortfolioTypes] = useState<string[]>([]);
+
   // State for active template portfolio generations
   const [activeTemplateGenerations, setActiveTemplateGenerations] = useState<{generation_name: string}[]>([]);
+
+  const fetchPortfolioTypes = async () => {
+    try {
+      console.log("Fetching portfolio types for filtering...");
+      const response = await api.get('/portfolio_types');
+      console.log("Portfolio types response:", response.data);
+      
+      const portfolioTypeOptions = response.data.map((type: string) => ({
+        value: type,
+        label: type
+      }));
+      
+      setPortfolioTypes(portfolioTypeOptions);
+    } catch (err: any) {
+      console.error('Error fetching portfolio types:', err);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
       setIsLoading(true);
       console.log("Fetching products data with optimized endpoint...");
       
-      // Use the new optimized endpoint that returns products with owners
-      // This eliminates the N+1 query problem
+      // Use the enhanced endpoint with portfolio type filtering
+      let url = '/client_products_with_owners';
+      const params = new URLSearchParams();
+      
+      // Add portfolio type filter if selected
+      if (selectedPortfolioTypes.length > 0) {
+        // For now, we'll fetch all and filter client-side since backend expects single portfolio_type
+        // In future, we could enhance backend to support multiple portfolio types
+      }
+      
       const [
         productsWithOwnersRes,
         providersRes
       ] = await Promise.all([
-        api.get('/client_products_with_owners'),
+        api.get(url),
         api.get('/available_providers')
       ]);
       
       // Set products directly from the optimized endpoint response
-      // The backend now handles all the data joining
-      const productsData = productsWithOwnersRes.data || [];
+      let productsData = productsWithOwnersRes.data || [];
+      
+      // Client-side filtering by portfolio types if selected
+      if (selectedPortfolioTypes.length > 0) {
+        productsData = productsData.filter((product: Product) => 
+          selectedPortfolioTypes.includes(product.portfolio_type_display || '')
+        );
+      }
       
       // Log summary for debugging
-      console.log(`Received ${productsData.length} products with their owners already populated`);
+      console.log(`Received ${productsData.length} products with portfolio type information`);
       if (productsData.length > 0) {
         const sampleProduct = productsData[0];
         console.log('Sample product:', {
           id: sampleProduct.id,
           name: sampleProduct.product_name,
           client: sampleProduct.client_name,
+          portfolioType: sampleProduct.portfolio_type_display,
           ownerCount: sampleProduct.product_owners?.length || 0
         });
       }
@@ -110,9 +147,13 @@ const Products: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchProducts();
+    fetchPortfolioTypes();
     fetchActiveTemplateGenerations();
   }, [api]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [api, selectedPortfolioTypes]);
 
   const handleSortFieldChange = (field: SortField) => {
     if (field === sortField) {
@@ -124,7 +165,18 @@ const Products: React.FC = () => {
   };
 
   const handleProductClick = (productId: number) => {
-    navigate(`/products/${productId}`);
+    navigate(`/products/${productId}`, {
+      state: {
+        from: {
+          pathname: '/products',
+          label: 'Products'
+        }
+      }
+    });
+  };
+
+  const handlePortfolioTypeFilterChange = (values: (string | number)[]) => {
+    setSelectedPortfolioTypes(values as string[]);
   };
 
   // Format currency with commas and 2 decimal places
@@ -158,7 +210,8 @@ const Products: React.FC = () => {
       (product.product_name && product.product_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (product.client_name && product.client_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (product.provider_name && product.provider_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (product.status && product.status.toLowerCase().includes(searchQuery.toLowerCase()))
+      (product.status && product.status.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (product.portfolio_type_display && product.portfolio_type_display.toLowerCase().includes(searchQuery.toLowerCase()))
     )
     .sort((a, b) => {
       let aValue: any = a[sortField];
@@ -219,7 +272,7 @@ const Products: React.FC = () => {
       </div>
 
       <div className="bg-white shadow rounded-lg p-4 overflow-visible">
-        {/* Search and Sort Controls */}
+        {/* Search and Filter Controls */}
         <div className="flex flex-col sm:flex-row gap-3 mb-3">
           {/* Search Bar */}
           <div className="flex-1">
@@ -266,7 +319,7 @@ const Products: React.FC = () => {
                       <table className="min-w-full table-fixed divide-y divide-gray-200">
                         <thead className="bg-gray-100">
                           <tr>
-                            <th className="w-[50%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                            <th className="w-[35%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
                               <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('product_name')} title="Click to sort by Product">
                               Product
                                 <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
@@ -288,8 +341,40 @@ const Products: React.FC = () => {
                                 </span>
                               </div>
                             </th>
-                            <th className="w-[25%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">Value</th>
-                            <th className="w-[25%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                            <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                              <div className="flex flex-col items-start">
+                                <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('portfolio_type_display')}>
+                                  Portfolio
+                                  <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                                    {sortField === 'portfolio_type_display' ? (
+                                      sortOrder === 'asc' ? (
+                                        <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                        </svg>
+                                      ) : (
+                                        <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                      )
+                                    ) : (
+                                      <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                                      </svg>
+                                    )}
+                                  </span>
+                                </span>
+                                <FilterDropdown
+                                  id="portfolio-type-filter-grouped"
+                                  options={portfolioTypes}
+                                  value={selectedPortfolioTypes}
+                                  onChange={handlePortfolioTypeFilterChange}
+                                  placeholder="All Types"
+                                  className="min-w-[140px] mt-1"
+                                />
+                              </div>
+                            </th>
+                            <th className="w-[22.5%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">Value</th>
+                            <th className="w-[22.5%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
                               <div className="flex flex-col items-start">
                                 <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('irr')}>
                                   IRR
@@ -324,6 +409,11 @@ const Products: React.FC = () => {
                             >
                               <td className="px-6 py-3 whitespace-nowrap">
                                 <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{product.product_name}</div>
+                              </td>
+                              <td className="px-6 py-3 whitespace-nowrap">
+                                <div className="text-sm text-gray-600 font-sans">
+                                  {product.portfolio_type_display || 'Bespoke'}
+                                </div>
                               </td>
                               <td className="px-6 py-3 whitespace-nowrap">
                                 {product.total_value !== undefined ? (
@@ -365,7 +455,7 @@ const Products: React.FC = () => {
               <table className="min-w-full table-fixed divide-y divide-gray-200">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="w-[50%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                    <th className="w-[35%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
                       <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('product_name')} title="Click to sort by Product">
                       Product
                         <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
@@ -387,8 +477,40 @@ const Products: React.FC = () => {
                         </span>
                       </div>
                     </th>
-                    <th className="w-[25%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">Value</th>
-                    <th className="w-[25%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                    <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
+                      <div className="flex flex-col items-start">
+                        <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('portfolio_type_display')}>
+                          Portfolio
+                          <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
+                            {sortField === 'portfolio_type_display' ? (
+                              sortOrder === 'asc' ? (
+                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              ) : (
+                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              )
+                            ) : (
+                              <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
+                              </svg>
+                            )}
+                          </span>
+                        </span>
+                        <FilterDropdown
+                          id="portfolio-type-filter-regular"
+                          options={portfolioTypes}
+                          value={selectedPortfolioTypes}
+                          onChange={handlePortfolioTypeFilterChange}
+                          placeholder="All Types"
+                          className="min-w-[140px] mt-1"
+                        />
+                      </div>
+                    </th>
+                    <th className="w-[22.5%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">Value</th>
+                    <th className="w-[22.5%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
                       <div className="flex flex-col items-start">
                         <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('irr')}>
                           IRR
@@ -417,7 +539,7 @@ const Products: React.FC = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredAndSortedProducts.length === 0 ? (
                     <tr>
-                      <td colSpan={3} className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 border-b border-gray-200">
+                      <td colSpan={4} className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 border-b border-gray-200">
                         No products found
                       </td>
                     </tr>
@@ -430,6 +552,11 @@ const Products: React.FC = () => {
                     >
                         <td className="px-6 py-3 whitespace-nowrap">
                           <div className="text-sm text-gray-600 font-sans">{product.product_name}</div>
+                        </td>
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <div className="text-sm text-gray-600 font-sans">
+                            {product.portfolio_type_display || 'Bespoke'}
+                          </div>
                         </td>
                         <td className="px-6 py-3 whitespace-nowrap">
                           {product.total_value !== undefined ? (
