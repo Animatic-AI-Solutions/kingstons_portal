@@ -83,6 +83,12 @@ export const getFundRiskLevel = (fund: Fund): string => {
 };
 
 export const calculateAverageRisk = (portfolio: Portfolio): number => {
+  // If weighted_risk is provided directly from the API, use it
+  if (portfolio.weighted_risk !== null && portfolio.weighted_risk !== undefined) {
+    return portfolio.weighted_risk;
+  }
+  
+  // Fallback to client-side calculation if funds data is available
   if (!portfolio.funds || portfolio.funds.length === 0) return 0;
   
   let totalWeightedRisk = 0;

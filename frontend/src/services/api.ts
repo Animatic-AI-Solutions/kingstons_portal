@@ -403,16 +403,7 @@ export const initializeProviderThemeColors = () => {
  * @returns {Promise} - API response with available colors
  */
 export const getAvailableColors = () => {
-  // Use axios directly without any interceptors
-  return axios({
-    method: 'get',
-    url: 'http://localhost:8000/api/available_providers/available-colors',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    },
-    withCredentials: true // Include credentials if your API requires authentication
-  });
+  return api.get('available_providers/available-colors');
 };
 
 /**

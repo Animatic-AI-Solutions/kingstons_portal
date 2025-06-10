@@ -49,7 +49,7 @@ interface ProductItem {
   product_type: string;
   product_name: string;
   status: string;
-  start_date?: dayjs.Dayjs; // Use dayjs type
+  start_date: dayjs.Dayjs; // Required field - each product has its own start date
   plan_number?: string; // Add plan number field
   product_owner_ids: number[]; // Changed from product_owner_id to product_owner_ids array
   portfolio: {
@@ -146,9 +146,6 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   // Fund search state
   const [fundSearchTerm, setFundSearchTerm] = useState<string>('');
   
-  // Start date state
-  const [startDate, setStartDate] = useState<dayjs.Dayjs>(dayjs());
-  
   // Add a state for tracking template loading per product
   const [templateLoading, setTemplateLoading] = useState<Record<string, boolean>>({});
   const [generationLoading, setGenerationLoading] = useState<Record<string, boolean>>({});
@@ -174,6 +171,60 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   const [validationErrors, setValidationErrors] = useState<Record<string, Record<string, string>>>({});
   const [weightingErrors, setWeightingErrors] = useState<Record<string, Record<string, string>>>({});
   
+  // Computed state to check if form is valid for submit button
+  const isFormValid = React.useMemo(() => {
+    if (!selectedClientId || products.length === 0) return false;
+    
+    // Check if any product lacks required fields
+    return products.every(product => {
+      // Check required fields
+      const hasProvider = !!product.provider_id;
+      const hasProductType = !!product.product_type;
+      const hasStartDate = !!product.start_date;
+      const hasProductOwners = product.product_owner_ids && product.product_owner_ids.length > 0;
+      
+      // Portfolio validation
+      let hasValidPortfolio = false;
+      if (product.portfolio.type === 'template') {
+        hasValidPortfolio = !!product.portfolio.templateId && !!product.portfolio.generationId;
+      } else {
+        hasValidPortfolio = product.portfolio.selectedFunds.length > 0;
+      }
+      
+      return hasProvider && hasProductType && hasStartDate && hasProductOwners && hasValidPortfolio;
+    });
+  }, [selectedClientId, products]);
+  
+  // Helper function to get missing required fields for validation message
+  const getMissingFields = React.useMemo(() => {
+    if (!selectedClientId || products.length === 0) return [];
+    
+    const missing: string[] = [];
+    products.forEach((product, index) => {
+      // Simple product naming without dependency on generateProductName function
+      const productName = product.product_name.trim() || `Product ${index + 1}`;
+      const issues = [];
+      
+      if (!product.provider_id) issues.push('Provider');
+      if (!product.product_type) issues.push('Product Type');
+      if (!product.start_date) issues.push('Start Date');
+      if (!product.product_owner_ids || product.product_owner_ids.length === 0) issues.push('Product Owner');
+      
+      if (product.portfolio.type === 'template') {
+        if (!product.portfolio.templateId) issues.push('Portfolio Template');
+        if (!product.portfolio.generationId) issues.push('Portfolio Generation');
+      } else {
+        if (product.portfolio.selectedFunds.length === 0) issues.push('Portfolio Funds');
+      }
+      
+      if (issues.length > 0) {
+        missing.push(`${productName}: ${issues.join(', ')}`);
+      }
+    });
+    
+    return missing;
+  }, [selectedClientId, products]);
+  
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -183,7 +234,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       }
       
       // Ctrl+Enter or Cmd+Enter - Save products
-      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && !isSaving && products.length > 0) {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && !isSaving && products.length > 0 && isFormValid) {
         event.preventDefault();
         const form = document.querySelector('form') as HTMLFormElement;
         if (form) {
@@ -199,6 +250,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           ...lastProduct,
           id: `temp-${Date.now()}`,
           product_name: '',
+          start_date: dayjs(), // Reset to current date for new product
           portfolio: {
             ...lastProduct.portfolio,
             name: '', // Will be auto-generated based on product details
@@ -421,6 +473,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       product_type: '',
       product_name: '',
       status: 'active',
+      start_date: dayjs(), // Default to current date
       product_owner_ids: [],
       portfolio: {
         name: '', // Will be generated when product details are filled
@@ -924,6 +977,12 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         hasErrors = true;
       }
 
+      // Start date validation
+      if (!product.start_date) {
+        productErrors.start_date = 'Start date is required';
+        hasErrors = true;
+      }
+
       // Product owner validation - at least one must be assigned
       if (!product.product_owner_ids || product.product_owner_ids.length === 0) {
         productErrors.productOwners = 'Please assign at least one product owner';
@@ -1040,14 +1099,13 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     setError('');
     
     try {
-      // Format the selected start date with dayjs
-      const formattedStartDate = startDate.format('YYYY-MM-DD');
-      
       // Find the Cash fund ID (if it exists in our funds list)
       // This might not be strictly necessary if backend handles it, but good for consistency
       const cashFund = findCashFund(funds);
       
       for (const product of products) {
+        // Format the product-specific start date with dayjs
+        const formattedStartDate = product.start_date.format('YYYY-MM-DD');
         let portfolioId: number | undefined;
 
         // Generate product name if it's empty
@@ -1163,7 +1221,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               status: 'active',
               start_date: formattedStartDate,
               plan_number: product.plan_number || null,
-              target_risk: targetRisk
+              target_risk: targetRisk,
+              template_generation_id: product.portfolio.type === 'template' ? product.portfolio.generationId : null
             });
             
             const createdProductId = clientProductResponse.data.id;
@@ -1833,19 +1892,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                   )}
                 </div>
 
-                {/* Start Date Selection */}
-                  <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Start Date <span className="text-red-500">*</span>
-                  </label>
-                  <DatePicker
-                    value={startDate}
-                    onChange={(date) => setStartDate(date as Dayjs)}
-                      className="w-full"
-                      size="middle"
-                      format="DD/MM/YYYY"
-                  />
-                  </div>
+
                 </div>
               </div>
 
@@ -1866,6 +1913,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                 ...lastProduct,
                                 id: `temp-${Date.now()}`,
                                 product_name: '',
+                                start_date: dayjs(), // Reset to current date for new product
                                 portfolio: {
                                   ...lastProduct.portfolio,
                                   name: '', // Will be auto-generated based on product details
@@ -2043,7 +2091,42 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                           </div>
                         </div>
 
-                                  {/* Row 2: Product Owners */}
+                                  {/* Row 2: Start Date and Plan Number */}
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                                        Start Date <span className="text-red-500">*</span>
+                                      </label>
+                                      <DatePicker
+                                        value={product.start_date}
+                                        onChange={(date) => handleProductChange(product.id, 'start_date', date)}
+                                        className={`w-full ${validationErrors[product.id]?.start_date ? 'border-red-500' : ''}`}
+                                        size="small"
+                                        format="DD/MM/YYYY"
+                                        placeholder="Select start date"
+                                      />
+                                      {validationErrors[product.id]?.start_date && (
+                                        <div className="text-xs text-red-600 mt-1">
+                                          {validationErrors[product.id].start_date}
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                                        Plan Number <span className="text-gray-400">(optional)</span>
+                                      </label>
+                                      <input
+                                        type="text"
+                                        value={product.plan_number || ''}
+                                        onChange={(e) => handleProductChange(product.id, 'plan_number', e.target.value)}
+                                        className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm border-gray-300 rounded-md h-8"
+                                        placeholder="Enter plan number"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  {/* Row 3: Product Owners */}
                                   <div>
                                     <label className="block text-xs font-medium text-gray-700 mb-1">
                                       Product Owners <span className="text-red-500">*</span>
@@ -2154,8 +2237,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                   </button>
                 <button
                   type="submit"
-                  disabled={isSaving}
+                  disabled={isSaving || !isFormValid}
                     className="bg-primary-700 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={!isFormValid ? 'Please complete all required fields for all products' : ''}
                 >
                     {isSaving ? (
                       <div className="flex items-center">
@@ -2166,6 +2250,20 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                       `Create ${products.length} Product${products.length !== 1 ? 's' : ''} for ${clients.find(c => c.id === selectedClientId)?.name || 'Client'}`
                     )}
                 </button>
+                {!isFormValid && products.length > 0 && (
+                  <div className="text-xs text-red-600 mt-2 max-h-24 overflow-y-auto">
+                    <div className="font-medium mb-1">Missing required fields:</div>
+                    {getMissingFields.length > 0 ? (
+                      <ul className="space-y-1">
+                        {getMissingFields.map((field, index) => (
+                          <li key={index} className="text-xs">• {field}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="text-xs">Please ensure all products have: Provider, Product Type, at least one Product Owner, and Portfolio configuration</div>
+                    )}
+                  </div>
+                )}
               </div>
               )}
             </form>

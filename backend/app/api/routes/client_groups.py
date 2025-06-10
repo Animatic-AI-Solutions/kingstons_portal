@@ -818,6 +818,14 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                 "irr": None,  # Will be calculated using standardized method below
                 "active_fund_count": product["active_fund_count"],
                 "inactive_fund_count": product["inactive_fund_count"],
+                "template_generation_id": product.get("template_generation_id"),
+                "template_info": {
+                    "id": product.get("template_generation_id"),
+                    "generation_name": product.get("template_generation_name"),
+                    "name": product.get("template_name"),
+                    "version_number": product.get("template_version_number"),
+                    "description": product.get("template_description")
+                } if product.get("template_generation_id") else None,
                 "funds": processed_funds
             }
             

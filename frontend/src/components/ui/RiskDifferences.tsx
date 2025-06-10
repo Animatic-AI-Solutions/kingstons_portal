@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getRiskDifferences } from '../../services/api';
 import { 
   ExclamationTriangleIcon,
@@ -19,6 +20,7 @@ interface RiskDifference {
 }
 
 const RiskDifferences: React.FC = () => {
+  const navigate = useNavigate();
   const [riskDifferences, setRiskDifferences] = useState<RiskDifference[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -113,7 +115,14 @@ const RiskDifferences: React.FC = () => {
             <div
               key={item.product_id}
               className="flex items-center space-x-2 p-1.5 rounded hover:bg-gray-50 transition-colors duration-150 cursor-pointer group border border-transparent hover:border-gray-200"
-              onClick={() => window.location.href = `/products/${item.product_id}`}
+              onClick={() => navigate(`/products/${item.product_id}`, {
+                state: {
+                  from: {
+                    pathname: '/',
+                    label: 'Dashboard'
+                  }
+                }
+              })}
             >
               {/* Risk Icon */}
               <div className="flex-shrink-0">
@@ -157,7 +166,7 @@ const RiskDifferences: React.FC = () => {
           {/* View All Link */}
           <div className="pt-1.5 border-t border-gray-100">
             <button
-              onClick={() => window.location.href = '/analytics'}
+              onClick={() => navigate('/analytics')}
               className="w-full text-center text-xs text-blue-600 hover:text-blue-800 font-medium py-1 hover:bg-blue-50 rounded transition-colors duration-150"
             >
               View All Risk Analysis

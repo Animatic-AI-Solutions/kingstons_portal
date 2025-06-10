@@ -10,6 +10,7 @@ interface PortfolioTemplate {
   generation_id?: number;
   generation_version?: number;
   generation_name?: string;
+  weighted_risk?: number | null;
 }
 
 interface PortfolioTemplateFund {
@@ -138,12 +139,17 @@ const PortfolioTemplateDetails: React.FC = () => {
   const fetchFundsForGeneration = async (generationId: number) => {
     try {
       // This will update the template state with the funds for the selected generation
+      console.log(`Fetching funds for generation ${generationId}`);
       const response = await api.get(`/available_portfolios/${portfolioId}`, {
         params: { generation_id: generationId }
       });
       
+      console.log('Response from fetchFundsForGeneration:', response.data);
+      console.log('Weighted risk in generation response:', response.data?.weighted_risk);
+      
       if (response.data) {
         setTemplate(response.data);
+        console.log('Template updated with generation data');
       }
     } catch (err: any) {
       console.error('Error fetching funds for generation:', err);
@@ -151,7 +157,7 @@ const PortfolioTemplateDetails: React.FC = () => {
   };
 
   const handleBack = () => {
-    navigate('/definitions?tab=portfolios');
+    navigate('/definitions/portfolio-templates');
   };
 
   const handleDeleteClick = () => {
@@ -170,7 +176,7 @@ const PortfolioTemplateDetails: React.FC = () => {
     try {
       setIsDeleting(true);
       await api.delete(`/available_portfolios/${portfolioId}`);
-      navigate('/definitions?tab=portfolios');
+      navigate('/definitions/portfolio-templates');
     } catch (err: any) {
       console.error('Error deleting portfolio template:', err);
       if (err.response?.data?.detail) {
@@ -239,19 +245,54 @@ const PortfolioTemplateDetails: React.FC = () => {
   };
 
   const calculateWeightedRisk = () => {
-    if (!template?.funds || template.funds.length === 0) return 0;
+    // Debug logging
+    console.log('calculateWeightedRisk called with:', {
+      template: template,
+      weighted_risk: template?.weighted_risk,
+      typeof_weighted_risk: typeof template?.weighted_risk
+    });
     
-    let totalWeightedRisk = 0;
-    let totalWeight = 0;
-    
-    for (const fund of template.funds) {
-      if (fund.available_funds?.risk_factor && fund.target_weighting) {
-        totalWeightedRisk += fund.available_funds.risk_factor * fund.target_weighting;
-        totalWeight += fund.target_weighting;
-      }
+    // Use the weighted risk from the API response if available
+    if (template?.weighted_risk !== null && template?.weighted_risk !== undefined) {
+      console.log('Returning weighted risk:', template.weighted_risk);
+      return template.weighted_risk;
     }
     
-    return totalWeight > 0 ? Math.round((totalWeightedRisk / totalWeight) * 10) / 10 : 0;
+    console.log('Weighted risk is null/undefined, returning null');
+    // Return null to show N/A if no weighted risk is available
+    return null;
+  };
+
+  // Function to get color based on risk value (1-7 scale) - green to red gradient
+  const getRiskColor = (riskValue: number): { textClass: string; bgClass: string } => {
+    if (riskValue <= 0) return { textClass: 'text-gray-500', bgClass: 'bg-gray-300' }; // N/A case
+    
+    // Clamp the value between 1 and 7
+    const clampedRisk = Math.max(1, Math.min(7, riskValue));
+    
+    // Calculate color intensity based on position between 1 and 7
+    // 1 = green, 7 = red, smooth gradient in between
+    const normalizedRisk = (clampedRisk - 1) / 6; // 0 to 1 scale
+    
+    if (normalizedRisk <= 0.16) {
+      // Risk 1.0-2.0: Green
+      return { textClass: 'text-green-600', bgClass: 'bg-green-500' };
+    } else if (normalizedRisk <= 0.33) {
+      // Risk 2.0-3.0: Yellow-green
+      return { textClass: 'text-lime-600', bgClass: 'bg-lime-500' };
+    } else if (normalizedRisk <= 0.5) {
+      // Risk 3.0-4.0: Yellow
+      return { textClass: 'text-yellow-600', bgClass: 'bg-yellow-500' };
+    } else if (normalizedRisk <= 0.66) {
+      // Risk 4.0-5.0: Orange
+      return { textClass: 'text-orange-600', bgClass: 'bg-orange-500' };
+    } else if (normalizedRisk <= 0.83) {
+      // Risk 5.0-6.0: Red-orange
+      return { textClass: 'text-red-500', bgClass: 'bg-red-400' };
+    } else {
+      // Risk 6.0-7.0: Red
+      return { textClass: 'text-red-600', bgClass: 'bg-red-500' };
+    }
   };
 
   // Function to check if any products are using any generation of this template
@@ -466,19 +507,6 @@ const PortfolioTemplateDetails: React.FC = () => {
                 <h1 className="text-2xl font-semibold text-gray-900">
                   {template?.name || 'Unnamed Template'}
                 </h1>
-                <div className="flex flex-wrap items-center gap-2 mt-2">
-                  <span className="inline-flex items-center text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                    {generations?.length || 0} Generation{generations?.length !== 1 ? 's' : ''}
-                  </span>
-                  <span className="inline-flex items-center text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                    Risk: {weightedRisk}/7
-                  </span>
-                  {template?.funds && template.funds.length > 0 && (
-                    <span className="inline-flex items-center text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                      {template.funds.length} Fund{template.funds.length !== 1 ? 's' : ''}
-                    </span>
-                  )}
-                </div>
               </div>
             </div>
             
@@ -644,16 +672,17 @@ const PortfolioTemplateDetails: React.FC = () => {
                     <div className="bg-white p-3 rounded-md shadow-sm">
                       <p className="text-xs font-semibold text-gray-500 uppercase">Risk Level</p>
                       <div className="flex items-center mt-1">
-                        <span className="text-sm font-medium mr-2">{weightedRisk}/7</span>
+                        <span className={`text-sm font-medium mr-2 transition-colors duration-200 ${
+                          weightedRisk !== null ? getRiskColor(weightedRisk).textClass : 'text-gray-500'
+                        }`}>
+                          {weightedRisk !== null ? `${weightedRisk}/7` : 'N/A'}
+                        </span>
                         <div className="w-full bg-gray-200 rounded-full h-2.5">
                           <div 
-                            className={`h-2.5 rounded-full ${
-                              weightedRisk < 3 ? 'bg-green-500' : 
-                              weightedRisk < 5 ? 'bg-blue-500' : 
-                              weightedRisk < 7 ? 'bg-yellow-500' : 
-                              'bg-red-500'
+                            className={`h-2.5 rounded-full transition-colors duration-200 ${
+                              weightedRisk !== null ? getRiskColor(weightedRisk).bgClass : 'bg-gray-300'
                             }`}
-                            style={{ width: `${(weightedRisk / 7) * 100}%` }}
+                            style={{ width: `${weightedRisk !== null ? (weightedRisk / 7) * 100 : 0}%` }}
                           ></div>
                         </div>
                       </div>
