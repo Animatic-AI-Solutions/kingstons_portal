@@ -762,10 +762,12 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                     "risk_factor": fund["risk_factor"],
                     "amount_invested": fund["amount_invested"] or 0,
                     "market_value": fund["market_value"] or 0,
-                    "investments": fund["total_investments"] or 0,
-                    "withdrawals": fund["total_withdrawals"] or 0,
-                    "switch_in": fund["total_switch_in"] or 0,
-                    "switch_out": fund["total_switch_out"] or 0,
+                                    "investments": fund["total_investments"] or 0,
+                "withdrawals": fund["total_withdrawals"] or 0,
+                "switch_in": fund["total_switch_in"] or 0,
+                "switch_out": fund["total_switch_out"] or 0,
+                "product_switch_in": fund["total_product_switch_in"] or 0,
+                "product_switch_out": fund["total_product_switch_out"] or 0,
                     "irr": fund["irr"],
                     "valuation_date": fund["valuation_date"],
                     "status": "active"
@@ -778,6 +780,8 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                 total_withdrawals = sum(f["total_withdrawals"] or 0 for f in inactive_funds)
                 total_switch_in = sum(f["total_switch_in"] or 0 for f in inactive_funds)
                 total_switch_out = sum(f["total_switch_out"] or 0 for f in inactive_funds)
+                total_product_switch_in = sum(f["total_product_switch_in"] or 0 for f in inactive_funds)
+                total_product_switch_out = sum(f["total_product_switch_out"] or 0 for f in inactive_funds)
                 total_market_value = sum(f["market_value"] or 0 for f in inactive_funds)
                 
                 previous_funds_entry = {
@@ -791,15 +795,18 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                     "withdrawals": total_withdrawals,
                     "switch_in": total_switch_in,
                     "switch_out": total_switch_out,
+                    "product_switch_in": total_product_switch_in,
+                    "product_switch_out": total_product_switch_out,
                     "irr": None,
                     "valuation_date": None,
                     "is_virtual_entry": True,
                     "inactive_fund_count": len(inactive_funds),
+                    "inactive_fund_ids": [fund["portfolio_fund_id"] for fund in inactive_funds],  # Add inactive fund IDs for IRR calculation
                     "status": "inactive"
                 }
                 processed_funds.append(previous_funds_entry)
                 
-                logger.info(f"Created Previous Funds entry for {len(inactive_funds)} inactive funds in product {product['product_id']}")
+                logger.info(f"Created Previous Funds entry for {len(inactive_funds)} inactive funds in product {product['product_id']} with IDs: {[fund['portfolio_fund_id'] for fund in inactive_funds]}")
             
             # Build complete product object
             processed_product = {
@@ -829,36 +836,24 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                 "funds": processed_funds
             }
             
-            # Calculate product IRR using standardized multiple IRR endpoint
+            # Get latest portfolio IRR from stored values
             if portfolio_id:
                 try:
-                    # Get ALL portfolio fund IDs for this product (both active and inactive)
-                    # This is important because the standardized IRR calculation needs all historical funds
-                    portfolio_funds_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
+                    # Get latest portfolio IRR value directly from the view
+                    portfolio_irr_result = db.table("latest_portfolio_irr_values").select("irr_result,irr_date").eq("portfolio_id", portfolio_id).execute()
                     
-                    if portfolio_funds_result.data:
-                        portfolio_fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
-                        
-                        # Import and use the standardized multiple IRR calculation
-                        from app.api.routes.portfolio_funds import calculate_multiple_portfolio_funds_irr
-                        
-                        irr_result = await calculate_multiple_portfolio_funds_irr(
-                            portfolio_fund_ids=portfolio_fund_ids,
-                            irr_date=None,  # Use latest valuation date
-                            db=db
-                        )
-                        
-                        irr_value = irr_result.get("irr_percentage", 0)
+                    if portfolio_irr_result.data and portfolio_irr_result.data[0].get("irr_result") is not None:
+                        irr_value = portfolio_irr_result.data[0].get("irr_result")
                         # Display '-' if IRR is exactly 0%
                         processed_product["irr"] = "-" if irr_value == 0 else irr_value
                         
-                        logger.info(f"Calculated standardized IRR for product {product['product_id']} using {len(portfolio_fund_ids)} funds (active + inactive): {processed_product['irr']}%")
+                        logger.info(f"Retrieved latest portfolio IRR for product {product['product_id']} (portfolio {portfolio_id}): {processed_product['irr']}%")
                     else:
                         processed_product["irr"] = "-"
-                        logger.info(f"No portfolio funds found for product {product['product_id']}, setting IRR to '-'")
+                        logger.info(f"No portfolio IRR found for product {product['product_id']} (portfolio {portfolio_id}), setting IRR to '-'")
                         
                 except Exception as e:
-                    logger.warning(f"Error calculating standardized IRR for product {product['product_id']}: {str(e)}")
+                    logger.warning(f"Error retrieving portfolio IRR for product {product['product_id']}: {str(e)}")
                     processed_product["irr"] = "-"
             else:
                 processed_product["irr"] = "-"
@@ -891,107 +886,97 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
 @router.get("/client_groups/{client_group_id}/irr", response_model=dict)
 async def get_client_group_irr(client_group_id: int, db = Depends(get_db)):
     """
-    What it does: Calculates the true aggregated IRR for a client group using the standardized multiple funds IRR endpoint.
-    Why it's needed: Provides an accurate IRR calculation based on actual cash flows across all client's portfolio funds.
+    What it does: Gets the latest portfolio IRR for each active product in a client group and calculates weighted average.
+    Why it's needed: Provides an accurate IRR calculation based on stored portfolio-level IRR values.
     How it works:
         1. Finds all active products for the client group
-        2. Collects all portfolio fund IDs from these products
-        3. Uses the standardized multiple funds IRR calculation to get the true aggregated IRR
+        2. Gets the latest portfolio IRR for each product's portfolio
+        3. Calculates a weighted average IRR based on portfolio values
         4. Returns the calculated IRR along with supporting data
-    Expected output: A JSON object with the calculated IRR value using standardized methodology
+    Expected output: A JSON object with the calculated IRR value using latest portfolio IRR values
     """
     try:
-        logger.info(f"Calculating standardized aggregated IRR for client group {client_group_id}")
+        logger.info(f"Calculating client group IRR using latest portfolio IRR values for client group {client_group_id}")
         
         # Step 1: Check if client group exists
         client_check = db.table("client_groups").select("id").eq("id", client_group_id).execute()
         if not client_check.data or len(client_check.data) == 0:
             raise HTTPException(status_code=404, detail=f"Client group with ID {client_group_id} not found")
         
-        # Step 2: Find all active products for this client group
+        # Step 2: Find all active products for this client group with their portfolios
         products_result = db.table("client_products").select("id,portfolio_id,product_name").eq("client_id", client_group_id).eq("status", "active").execute()
         
         if not products_result.data or len(products_result.data) == 0:
             logger.info(f"No active products found for client group {client_group_id}")
-            return {"client_group_id": client_group_id, "irr": 0, "irr_decimal": 0, "portfolio_fund_count": 0}
+            return {"client_group_id": client_group_id, "irr": 0, "irr_decimal": 0, "portfolio_count": 0}
         
-        # Step 3: Collect all portfolio fund IDs from all products
-        all_portfolio_fund_ids = []
+        # Step 3: Get latest portfolio IRR values and portfolio valuations for weighting
+        portfolio_ids = [product.get("portfolio_id") for product in products_result.data if product.get("portfolio_id")]
+        
+        if not portfolio_ids:
+            logger.info(f"No portfolios found for client group {client_group_id}")
+            return {"client_group_id": client_group_id, "irr": 0, "irr_decimal": 0, "portfolio_count": 0}
+        
+        # Get latest portfolio IRR values
+        portfolio_irr_result = db.table("latest_portfolio_irr_values").select("portfolio_id,irr_result,irr_date").in_("portfolio_id", portfolio_ids).execute()
+        portfolio_irr_map = {item.get("portfolio_id"): {"irr": item.get("irr_result"), "date": item.get("irr_date")} for item in portfolio_irr_result.data if item.get("irr_result") is not None}
+        
+        # Get latest portfolio valuations for weighting
+        portfolio_valuations_result = db.table("latest_portfolio_valuations").select("portfolio_id,valuation").in_("portfolio_id", portfolio_ids).execute()
+        portfolio_valuations_map = {item.get("portfolio_id"): item.get("valuation", 0) for item in portfolio_valuations_result.data}
+        
+        # Step 4: Calculate weighted average IRR
+        total_weighted_irr = 0
+        total_value = 0
+        portfolio_count_with_irr = 0
         product_info = []
         
         for product in products_result.data:
             portfolio_id = product.get("portfolio_id")
             if not portfolio_id:
-                logger.info(f"Product {product.get('id')} has no portfolio attached")
                 continue
                 
-            # Find ALL portfolio funds for this product (including inactive)
-            funds_result = db.table("portfolio_funds").select("id,available_funds_id,status").eq("portfolio_id", portfolio_id).execute()
+            portfolio_value = portfolio_valuations_map.get(portfolio_id, 0)
+            portfolio_irr_data = portfolio_irr_map.get(portfolio_id)
             
-            if funds_result.data and len(funds_result.data) > 0:
-                product_fund_ids = [fund.get("id") for fund in funds_result.data]
-                all_portfolio_fund_ids.extend(product_fund_ids)
+            product_info.append({
+                "product_id": product.get("id"),
+                "product_name": product.get("product_name"),
+                "portfolio_id": portfolio_id,
+                "portfolio_value": portfolio_value,
+                "portfolio_irr": portfolio_irr_data.get("irr") if portfolio_irr_data else None,
+                "portfolio_irr_date": portfolio_irr_data.get("date") if portfolio_irr_data else None
+            })
+            
+            if portfolio_irr_data and portfolio_value > 0:
+                # Weight the IRR by the portfolio value
+                weighted_irr = portfolio_irr_data["irr"] * portfolio_value
+                total_weighted_irr += weighted_irr
+                total_value += portfolio_value
+                portfolio_count_with_irr += 1
                 
-                product_info.append({
-                    "product_id": product.get("id"),
-                    "product_name": product.get("product_name"),
-                    "portfolio_id": portfolio_id,
-                    "fund_count": len(product_fund_ids),
-                    "fund_ids": product_fund_ids
-                })
-                
-                logger.info(f"Product {product.get('id')} ({product.get('product_name')}) has {len(product_fund_ids)} funds (active and inactive)")
+                logger.info(f"Product {product.get('id')} ({product.get('product_name')}): Portfolio IRR = {portfolio_irr_data['irr']}%, Value = {portfolio_value}, Weighted IRR = {weighted_irr}")
         
-        if not all_portfolio_fund_ids:
-            logger.info(f"No portfolio funds found for client group {client_group_id}")
-            return {"client_group_id": client_group_id, "irr": 0, "irr_decimal": 0, "portfolio_fund_count": 0}
-        
-        logger.info(f"Found {len(all_portfolio_fund_ids)} total portfolio funds across {len(product_info)} products")
-        
-        # Step 4: Use the standardized multiple funds IRR calculation
-        # Import the function from portfolio_funds module
-        from app.api.routes.portfolio_funds import calculate_multiple_portfolio_funds_irr
-        from fastapi import Body
-        
-        try:
-            # Call the standardized multiple funds IRR endpoint function directly
-            # This uses the same logic as the POST /portfolio_funds/multiple/irr endpoint
-            irr_result = await calculate_multiple_portfolio_funds_irr(
-                portfolio_fund_ids=all_portfolio_fund_ids,
-                irr_date=None,  # Use latest valuation date
-                db=db
-            )
+        # Calculate final weighted average IRR
+        if total_value > 0 and portfolio_count_with_irr > 0:
+            weighted_average_irr = total_weighted_irr / total_value
+            irr_decimal = weighted_average_irr / 100
+        else:
+            weighted_average_irr = 0
+            irr_decimal = 0
             
-            logger.info(f"Standardized IRR calculation successful: {irr_result}")
-            
-            return {
-                "client_group_id": client_group_id,
-                "irr": irr_result.get("irr_percentage", 0),
-                "irr_decimal": irr_result.get("irr_decimal", 0),
-                "portfolio_fund_count": len(all_portfolio_fund_ids),
-                "product_count": len(product_info),
-                "total_valuation": irr_result.get("total_valuation", 0),
-                "calculation_date": irr_result.get("calculation_date"),
-                "cash_flows_count": irr_result.get("cash_flows_count", 0),
-                "period_start": irr_result.get("period_start"),
-                "period_end": irr_result.get("period_end"),
-                "days_in_period": irr_result.get("days_in_period", 0),
-                "products": product_info,
-                "calculation_method": "standardized_multiple_funds_irr"
-            }
-            
-        except Exception as irr_error:
-            logger.error(f"Error in standardized IRR calculation: {str(irr_error)}")
-            # Fallback to 0 IRR if calculation fails
-            return {
-                "client_group_id": client_group_id,
-                "irr": 0,
-                "irr_decimal": 0,
-                "portfolio_fund_count": len(all_portfolio_fund_ids),
-                "product_count": len(product_info),
-                "error": f"IRR calculation failed: {str(irr_error)}",
-                "calculation_method": "standardized_multiple_funds_irr"
-            }
+        logger.info(f"Client group {client_group_id} weighted average IRR: {weighted_average_irr}% (from {portfolio_count_with_irr} portfolios with total value {total_value})")
+        
+        return {
+            "client_group_id": client_group_id,
+            "irr": weighted_average_irr,
+            "irr_decimal": irr_decimal,
+            "portfolio_count": len(portfolio_ids),
+            "portfolios_with_irr": portfolio_count_with_irr,
+            "total_portfolio_value": total_value,
+            "products": product_info,
+            "calculation_method": "weighted_average_portfolio_irr"
+        }
         
     except HTTPException:
         raise

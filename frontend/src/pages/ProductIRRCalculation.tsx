@@ -132,28 +132,36 @@ const calculateSwitchOuts = (activities: ActivityLog[], fundId: number): number 
   return calculateActivityTotalByType(activities, 'FundSwitchOut', fundId);
 };
 
+const calculateProductSwitchIns = (activities: ActivityLog[], fundId: number): number => {
+  return calculateActivityTotalByType(activities, 'Product Switch In', fundId);
+};
+
+const calculateProductSwitchOuts = (activities: ActivityLog[], fundId: number): number => {
+  return calculateActivityTotalByType(activities, 'Product Switch Out', fundId);
+};
+
 const calculateWithdrawals = (activities: ActivityLog[], fundId: number): number => {
   return calculateActivityTotalByType(activities, 'Withdrawal', fundId);
 };
 
-const calculateRegularWithdrawals = (activities: ActivityLog[], fundId: number): number => {
-  return calculateActivityTotalByType(activities, 'RegularWithdrawal', fundId);
-};
+
 
 const calculateInvestmentsPlusSwitchIns = (activities: ActivityLog[], fundId: number): number => {
   const investments = calculateInvestments(activities, fundId);
   const regularInvestments = calculateRegularInvestments(activities, fundId);
   const governmentUplifts = calculateGovernmentUplifts(activities, fundId);
   const switchIns = calculateSwitchIns(activities, fundId);
+  const productSwitchIns = calculateProductSwitchIns(activities, fundId);
   
-  return investments + regularInvestments + governmentUplifts + switchIns;
+  return investments + regularInvestments + governmentUplifts + switchIns + productSwitchIns;
 };
 
 const calculateValueMinusWithdrawals = (marketValue: number, activities: ActivityLog[], fundId: number): number => {
   const withdrawals = calculateWithdrawals(activities, fundId);
   const switchOuts = calculateSwitchOuts(activities, fundId);
+  const productSwitchOuts = calculateProductSwitchOuts(activities, fundId);
   
-  return marketValue + withdrawals + switchOuts;
+  return marketValue + withdrawals + switchOuts + productSwitchOuts;
 };
 
 // Helper functions to calculate totals for the Period Overview table
@@ -314,11 +322,19 @@ const calculatePreviousFundsSwitchOuts = (activities: ActivityLog[], inactiveHol
   }, 0);
 };
 
-const calculatePreviousFundsRegularWithdrawals = (activities: ActivityLog[], inactiveHoldings: Holding[]): number => {
+const calculatePreviousFundsProductSwitchIns = (activities: ActivityLog[], inactiveHoldings: Holding[]): number => {
   return inactiveHoldings.reduce((total, holding) => {
-    return total + calculateRegularWithdrawals(activities, holding.id);
+    return total + calculateProductSwitchIns(activities, holding.id);
   }, 0);
 };
+
+const calculatePreviousFundsProductSwitchOuts = (activities: ActivityLog[], inactiveHoldings: Holding[]): number => {
+  return inactiveHoldings.reduce((total, holding) => {
+    return total + calculateProductSwitchOuts(activities, holding.id);
+  }, 0);
+};
+
+
 
 const calculatePreviousFundsWithdrawals = (activities: ActivityLog[], inactiveHoldings: Holding[]): number => {
   return inactiveHoldings.reduce((total, holding) => {
@@ -387,6 +403,36 @@ const calculateTotalSwitchOuts = (activities: ActivityLog[], holdings: Holding[]
   return total;
 };
 
+const calculateTotalProductSwitchIns = (activities: ActivityLog[], holdings: Holding[]): number => {
+  console.log('Calculating total product switch ins...');
+  
+  // Include ALL real holdings (active and inactive) but exclude virtual entries
+  const allRealHoldings = holdings.filter(h => !h.isVirtual);
+  const total = allRealHoldings.reduce((total, holding) => {
+    const amount = calculateProductSwitchIns(activities, holding.id);
+    console.log(`Product switch ins for holding ${holding.id} (${holding.fund_name}): ${amount}`);
+    return total + amount;
+  }, 0);
+  
+  console.log(`Total product switch ins: ${total}`);
+  return total;
+};
+
+const calculateTotalProductSwitchOuts = (activities: ActivityLog[], holdings: Holding[]): number => {
+  console.log('Calculating total product switch outs...');
+  
+  // Include ALL real holdings (active and inactive) but exclude virtual entries
+  const allRealHoldings = holdings.filter(h => !h.isVirtual);
+  const total = allRealHoldings.reduce((total, holding) => {
+    const amount = calculateProductSwitchOuts(activities, holding.id);
+    console.log(`Product switch outs for holding ${holding.id} (${holding.fund_name}): ${amount}`);
+    return total + amount;
+  }, 0);
+  
+  console.log(`Total product switch outs: ${total}`);
+  return total;
+};
+
 const calculateTotalWithdrawals = (activities: ActivityLog[], holdings: Holding[]): number => {
   console.log('Calculating total withdrawals...');
   
@@ -402,20 +448,7 @@ const calculateTotalWithdrawals = (activities: ActivityLog[], holdings: Holding[
   return total;
 };
 
-const calculateTotalRegularWithdrawals = (activities: ActivityLog[], holdings: Holding[]): number => {
-  console.log('Calculating total regular withdrawals...');
-  
-  // Include ALL real holdings (active and inactive) but exclude virtual entries
-  const allRealHoldings = holdings.filter(h => !h.isVirtual);
-  const total = allRealHoldings.reduce((total, holding) => {
-    const amount = calculateRegularWithdrawals(activities, holding.id);
-    console.log(`Regular withdrawals for holding ${holding.id} (${holding.fund_name}): ${amount}`);
-    return total + amount;
-  }, 0);
-  
-  console.log(`Total regular withdrawals: ${total}`);
-  return total;
-};
+
 
 const calculateTotalValue = (holdings: Holding[]): number => {
   return holdings.reduce((total, holding) => {
@@ -1354,9 +1387,10 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                         <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Total Investments">INV.</th>
                         <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Regular Investments">REG. INV.</th>
                         <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Government Uplifts">GOV. UPLIFTS</th>
-                        <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Fund Switch Ins">SWITCH IN</th>
-                        <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Fund Switch Outs">SWITCH OUT</th>
-                        <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Regular Withdrawals">REG. WITH.</th>
+                        <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Fund Switch Ins">FUND SWITCH IN</th>
+                        <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Fund Switch Outs">FUND SWITCH OUT</th>
+                        <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Product Switch Ins">PROD SWITCH IN</th>
+                        <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Product Switch Outs">PROD SWITCH OUT</th>
                         <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Withdrawals">WITH.</th>
                         <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-20" title="Most Recent Valuation">Valuation</th>
                         <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Most Recent IRR">IRR</th>
@@ -1464,8 +1498,15 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                 <td className="px-1 py-1 whitespace-nowrap">
                                   <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
-                                      ? formatCurrency(calculatePreviousFundsRegularWithdrawals(allTimeActivities, inactiveHoldings))
-                                      : formatCurrency(calculateRegularWithdrawals(allTimeActivities, holding.id))}
+                                      ? formatCurrency(calculatePreviousFundsProductSwitchIns(allTimeActivities, inactiveHoldings))
+                                      : formatCurrency(calculateProductSwitchIns(allTimeActivities, holding.id))}
+                                  </div>
+                                </td>
+                                <td className="px-1 py-1 whitespace-nowrap">
+                                  <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                    {holding.isVirtual
+                                      ? formatCurrency(calculatePreviousFundsProductSwitchOuts(allTimeActivities, inactiveHoldings))
+                                      : formatCurrency(calculateProductSwitchOuts(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
@@ -1569,7 +1610,12 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                   </td>
                                   <td className="px-1 py-1 whitespace-nowrap">
                                     <div className="text-sm text-gray-700">
-                                      {formatCurrency(calculateRegularWithdrawals(allTimeActivities, inactiveHolding.id))}
+                                      {formatCurrency(calculateProductSwitchIns(allTimeActivities, inactiveHolding.id))}
+                                    </div>
+                                  </td>
+                                  <td className="px-1 py-1 whitespace-nowrap">
+                                    <div className="text-sm text-gray-700">
+                                      {formatCurrency(calculateProductSwitchOuts(allTimeActivities, inactiveHolding.id))}
                                     </div>
                                   </td>
                                   <td className="px-1 py-1 whitespace-nowrap">
@@ -1629,7 +1675,12 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
                           <div className="text-sm font-bold text-red-600">
-                            {formatCurrency(calculateTotalRegularWithdrawals(allTimeActivities, holdings))}
+                            {formatCurrency(calculateTotalProductSwitchIns(allTimeActivities, holdings))}
+                          </div>
+                        </td>
+                        <td className="px-1 py-1 whitespace-nowrap">
+                          <div className="text-sm font-bold text-red-600">
+                            {formatCurrency(calculateTotalProductSwitchOuts(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">

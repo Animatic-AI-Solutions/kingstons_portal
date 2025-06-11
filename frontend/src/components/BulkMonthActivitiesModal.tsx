@@ -11,8 +11,6 @@ interface Fund {
   isActive?: boolean;
   inactiveHoldingIds?: any[];
   isInactiveBreakdown?: boolean;
-  category: string;
-  institution: string;
   current_value?: number;
 }
 
@@ -138,10 +136,11 @@ const ACTIVITY_TYPES = [
   'Investment',
   'RegularInvestment',
   'GovernmentUplift',
+  'Product Switch In',
+  'Product Switch Out',
   'Fund Switch In',
   'Fund Switch Out',
   'Withdrawal',
-  'RegularWithdrawal',
   'Current Value'
 ];
 
@@ -167,6 +166,8 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
   // Convert UI-friendly activity types to backend format (same as main table)
   const convertActivityTypeForBackend = (uiActivityType: string): string => {
     switch (uiActivityType) {
+      case 'Product Switch In': return 'ProductSwitchIn';
+      case 'Product Switch Out': return 'ProductSwitchOut';
       case 'Fund Switch In': return 'FundSwitchIn';
       case 'Fund Switch Out': return 'FundSwitchOut';
       case 'Current Value': return 'Valuation';
@@ -583,7 +584,7 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
       
       if (!isNaN(numValue)) {
         // Withdrawals should be subtracted from totals
-        if (activityType === 'Withdrawal' || activityType === 'RegularWithdrawal') {
+        if (activityType === 'Withdrawal') {
           return total - numValue;
         } 
         // Switch activities are shown as total amounts (neutral for net calculations)
@@ -602,23 +603,29 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
 
   // Check if switch activities are balanced
   const getSwitchBalanceWarning = (): { hasWarning: boolean; message: string } => {
-    // Only check balance if both switch activities are selected
-    const hasSwithIn = selectedActivities.has('Fund Switch In');
-    const hasSwitchOut = selectedActivities.has('Fund Switch Out');
+    const warnings: string[] = [];
     
-    if (!hasSwithIn || !hasSwitchOut) {
-      return { hasWarning: false, message: '' };
+    // Check Fund Switch balance
+    const hasFundSwitchIn = selectedActivities.has('Fund Switch In');
+    const hasFundSwitchOut = selectedActivities.has('Fund Switch Out');
+    
+    if (hasFundSwitchIn && hasFundSwitchOut) {
+      const fundSwitchOutTotal = calculateActivityTotal('Fund Switch Out');
+      const fundSwitchInTotal = calculateActivityTotal('Fund Switch In');
+      
+      // Only show warning if both have values and they don't match
+      if ((fundSwitchOutTotal > 0 || fundSwitchInTotal > 0) && fundSwitchOutTotal !== fundSwitchInTotal) {
+        const difference = Math.abs(fundSwitchOutTotal - fundSwitchInTotal);
+        warnings.push(`Fund Switch activities are unbalanced. Fund Switch Out: ${formatCurrency(fundSwitchOutTotal)}, Fund Switch In: ${formatCurrency(fundSwitchInTotal)}. Difference: ${formatCurrency(difference)}`);
+      }
     }
-
-    const switchOutTotal = calculateActivityTotal('Fund Switch Out');
-    const switchInTotal = calculateActivityTotal('Fund Switch In');
     
-    // Only show warning if both have values and they don't match
-    if ((switchOutTotal > 0 || switchInTotal > 0) && switchOutTotal !== switchInTotal) {
-      const difference = Math.abs(switchOutTotal - switchInTotal);
+    // Product Switch balance validation removed - no longer required to match
+    
+    if (warnings.length > 0) {
       return {
         hasWarning: true,
-        message: `Switch activities are unbalanced. Fund Switch Out: ${formatCurrency(switchOutTotal)}, Fund Switch In: ${formatCurrency(switchInTotal)}. Difference: ${formatCurrency(difference)}`
+        message: warnings.join(' | ')
       };
     }
     
@@ -811,9 +818,9 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
                               {getDisplayedActivities().map(activityType => {
                                 const total = calculateActivityTotal(activityType);
                                 const isCurrentValue = activityType === 'Current Value';
-                                const isSwitchActivity = activityType === 'Fund Switch In' || activityType === 'Fund Switch Out';
-                              const isWithdrawal = activityType === 'Withdrawal' || activityType === 'RegularWithdrawal';
-                              const isInvestment = activityType === 'Investment' || activityType === 'RegularInvestment' || activityType === 'GovernmentUplift';
+                                const isSwitchActivity = activityType === 'Fund Switch In' || activityType === 'Fund Switch Out' || activityType === 'Product Switch In' || activityType === 'Product Switch Out';
+                              const isWithdrawal = activityType === 'Withdrawal' || activityType === 'Product Switch Out';
+                              const isInvestment = activityType === 'Investment' || activityType === 'RegularInvestment' || activityType === 'GovernmentUplift' || activityType === 'Product Switch In';
                                 
                                 return (
                                   <td
@@ -871,12 +878,13 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
                           </div>
                         );
                       } else if (hasWarning) {
+                        const { message } = getSwitchBalanceWarning();
                         return (
                           <div className="flex items-center text-yellow-600">
-                            <svg className="h-3 w-3 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                            <svg className="h-3 w-3 mr-1.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                               <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                             </svg>
-                            <span className="font-medium">Switch In and Switch Out do not match</span>
+                            <span className="font-medium text-xs leading-tight">{message}</span>
                           </div>
                         );
                       } else if (hasChanges) {
