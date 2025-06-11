@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { MultiSelectSearchableDropdown } from '../components/ui/SearchableDropdown';
+import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import { calculateStandardizedMultipleFundsIRR, getLatestFundIRRs } from '../services/api';
 import { createIRRDataService } from '../services/irrDataService';
 import { createValuationDataService } from '../services/valuationDataService';
 import { createPortfolioFundsService } from '../services/portfolioFundsService';
 import { formatDateFallback, formatCurrencyFallback, formatPercentageFallback } from '../components/reports/shared/ReportFormatters';
+import historicalIRRService from '../services/historicalIRRService';
 
 // Interfaces for data types
 interface ClientGroup {
@@ -75,6 +77,7 @@ interface ProductPeriodSummary {
   provider_name?: string;
   provider_theme_color?: string;
   funds?: FundSummary[]; // Add funds array to store individual fund data
+  weighted_risk?: number; // Weighted risk based on fund valuations and risk factors
 }
 
 // New interface for fund-level summary data
@@ -95,6 +98,8 @@ interface FundSummary {
   inactiveFundCount?: number;
   risk_factor?: number; // Add risk factor field
   inactiveFunds?: FundSummary[]; // Array of individual inactive funds for breakdown
+  historical_irr?: number[]; // Array of historical IRR values (most recent first)
+  historical_dates?: string[]; // Array of corresponding dates for historical IRRs
 }
 
 // Main component
@@ -172,6 +177,20 @@ const ReportGenerator: React.FC = () => {
     
     return formatPercentageFallback(irr);
   };
+
+  // Custom withdrawal formatter that respects negative formatting setting
+  const formatWithdrawalAmount = (amount: number | null | undefined): string => {
+    if (amount === null || amount === undefined) return '-';
+    // Don't add minus sign for zero amounts
+    if (amount === 0) return formatCurrencyWithTruncation(amount);
+    const displayAmount = formatWithdrawalsAsNegative ? -Math.abs(amount) : amount;
+    return formatCurrencyWithTruncation(displayAmount);
+  };
+
+  // Calculate net fund switches (switch in - switch out)
+  const calculateNetFundSwitches = (switchIn: number, switchOut: number): number => {
+    return (switchIn || 0) - (switchOut || 0);
+  };
   
   // Loading and error states
   const [isLoading, setIsLoading] = useState(false);
@@ -182,9 +201,13 @@ const ReportGenerator: React.FC = () => {
   // Report formatting options
   const [truncateAmounts, setTruncateAmounts] = useState(false);
   const [roundIrrToOne, setRoundIrrToOne] = useState(false);
+  const [formatWithdrawalsAsNegative, setFormatWithdrawalsAsNegative] = useState(false);
+  const [combineFundSwitches, setCombineFundSwitches] = useState(false);
   
   // State for Previous Funds expansion (per product)
   const [expandedPreviousFunds, setExpandedPreviousFunds] = useState<Set<number>>(new Set());
+  
+
   
   // Fetch initial data
   useEffect(() => {
@@ -711,9 +734,209 @@ const ReportGenerator: React.FC = () => {
     fetchAvailableValuationDates();
   }, [relatedProducts, excludedProductIds, cascadeExcludedProductIds, api, selectedValuationDate]);
 
+  // State to store historical IRR month labels
+  const [historicalIRRMonths, setHistoricalIRRMonths] = useState<string[]>([]);
+  
+  // State for historical IRR years setting
+  const [historicalIRRYears, setHistoricalIRRYears] = useState<number>(2);
+
+  // Computed value: Check if any products are effectively selected (after exclusions)
+  const hasEffectiveProductSelection = useMemo(() => {
+    // Get all excluded product IDs (direct and cascade)
+    const allExcludedProductIds = new Set<number>([...excludedProductIds]);
+    
+    // Add cascade-excluded products
+    Array.from(cascadeExcludedProductIds.values()).forEach(productIds => {
+      productIds.forEach(id => allExcludedProductIds.add(id));
+    });
+
+    // Count effective products from each selection method
+    let effectiveProductCount = 0;
+
+    // 1. Directly selected products (not excluded)
+    effectiveProductCount += selectedProductIds.filter(p => !allExcludedProductIds.has(Number(p))).length;
+
+    // 2. Products from selected client groups (not excluded)
+    if (selectedClientGroupIds.length > 0) {
+      const clientGroupIds = selectedClientGroupIds.map(cg => Number(cg));
+      const clientGroupProducts = products.filter(p => 
+        p.client_id && 
+        clientGroupIds.includes(p.client_id) && 
+        !allExcludedProductIds.has(p.id)
+      );
+      effectiveProductCount += clientGroupProducts.length;
+    }
+
+    // 3. Products from selected product owners (not excluded)
+    // Note: This is an approximation since we don't have the full product owner product list in state
+    // But we can use relatedProducts as a proxy since it should contain all relevant products
+    if (selectedProductOwnerIds.length > 0) {
+      const nonExcludedOwners = selectedProductOwnerIds.filter(ownerId => !excludedProductOwnerIds.has(Number(ownerId)));
+      if (nonExcludedOwners.length > 0) {
+        // If we have non-excluded product owners, assume they contribute products
+        // This is imperfect but will be validated in the actual generateReport function
+        const ownerProducts = relatedProducts.filter(p => !allExcludedProductIds.has(p.id));
+        effectiveProductCount += ownerProducts.length;
+      }
+    }
+
+    return effectiveProductCount > 0;
+  }, [selectedProductIds, selectedClientGroupIds, selectedProductOwnerIds, excludedProductIds, cascadeExcludedProductIds, excludedProductOwnerIds, products, relatedProducts]);
+
+  // Function to fetch historical IRR data for all funds in products
+  // Only includes months where ALL portfolio funds have IRR data
+  const fetchAllHistoricalIRRData = async (productIds: number[]): Promise<Map<number, number[]>> => {
+    const fundHistoricalIRRMap = new Map<number, number[]>();
+    let globalSelectedMonths: string[] = [];
+    
+    try {
+      console.log(`📊 Fetching historical IRR data: ${historicalIRRYears} years (${historicalIRRYears * 12} months) for ${productIds.length} products`);
+      
+      // Process each product separately to ensure completeness within each portfolio
+      for (const productId of productIds) {
+        const monthsToRetrieve = historicalIRRYears * 12; // Convert years to months
+        const response = await historicalIRRService.getCombinedHistoricalIRR(productId, monthsToRetrieve);
+        
+        if (!response.funds_historical_irr || response.funds_historical_irr.length === 0) {
+          continue;
+        }
+
+        // Group historical IRR data by month for each fund
+        const fundsByMonth = new Map<string, Map<number, number>>();
+        const allFundIds = new Set<number>();
+        const latestIRRMonths = new Map<number, string>(); // Track latest IRR month for each fund
+
+        // First pass: identify the latest IRR month for each fund
+        response.funds_historical_irr.forEach((fund: any) => {
+          if (fund.historical_irr && fund.historical_irr.length > 0) {
+            allFundIds.add(fund.portfolio_fund_id);
+            
+            let latestMonth = '';
+            fund.historical_irr.forEach((record: any) => {
+              if (record.irr_result !== null && record.irr_date) {
+                const dateObj = new Date(record.irr_date);
+                const yearMonth = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
+                
+                // Track the latest month for this fund
+                if (yearMonth > latestMonth) {
+                  latestMonth = yearMonth;
+                }
+              }
+            });
+            
+            if (latestMonth) {
+              latestIRRMonths.set(fund.portfolio_fund_id, latestMonth);
+            }
+          }
+        });
+
+        // Second pass: group historical IRR data by month, excluding latest month for each fund
+        response.funds_historical_irr.forEach((fund: any) => {
+          if (fund.historical_irr && fund.historical_irr.length > 0) {
+            const fundLatestMonth = latestIRRMonths.get(fund.portfolio_fund_id);
+            
+            fund.historical_irr.forEach((record: any) => {
+              if (record.irr_result !== null && record.irr_date) {
+                const dateObj = new Date(record.irr_date);
+                const yearMonth = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
+                
+                // Skip this IRR if it's the latest month for this fund
+                if (yearMonth === fundLatestMonth) {
+                  console.log(`Excluding latest IRR for fund ${fund.portfolio_fund_id}: ${yearMonth} (${record.irr_result}%)`);
+                  return;
+                }
+                
+                if (!fundsByMonth.has(yearMonth)) {
+                  fundsByMonth.set(yearMonth, new Map());
+                }
+                
+                fundsByMonth.get(yearMonth)!.set(fund.portfolio_fund_id, record.irr_result);
+              }
+            });
+          }
+        });
+
+        // Find months where majority of funds have IRR data (at least 75% coverage)
+        const completeMonths: string[] = [];
+        const totalFundsInPortfolio = allFundIds.size;
+        const requiredCoverage = Math.max(1, Math.ceil(totalFundsInPortfolio * 0.75)); // At least 75% of funds must have data
+        
+        for (const [yearMonth, fundsData] of fundsByMonth.entries()) {
+          if (fundsData.size >= requiredCoverage) {
+            completeMonths.push(yearMonth);
+          }
+        }
+        
+        console.log(`Product ${productId} coverage: ${totalFundsInPortfolio} total funds, requiring ${requiredCoverage} for inclusion`);
+
+        // Sort months by date (most recent first)
+        completeMonths.sort((a, b) => b.localeCompare(a));
+
+        // Take only the first 3 complete months and populate the fund map
+        const selectedMonths = completeMonths.slice(0, 3);
+        
+        // Use the first product's complete months as the global reference
+        if (globalSelectedMonths.length === 0 && selectedMonths.length > 0) {
+          globalSelectedMonths = selectedMonths;
+        }
+        
+        for (const fundId of allFundIds) {
+          const historicalValues: number[] = [];
+          
+          for (const yearMonth of selectedMonths) {
+            const irrValue = fundsByMonth.get(yearMonth)?.get(fundId);
+            if (irrValue !== undefined) {
+              historicalValues.push(irrValue);
+            }
+          }
+          
+          if (historicalValues.length > 0) {
+            fundHistoricalIRRMap.set(fundId, historicalValues);
+          }
+        }
+
+        console.log(`Product ${productId}: Found ${completeMonths.length} complete months, using ${selectedMonths.length} most recent: ${selectedMonths.join(', ')}`);
+        
+        // Additional debugging for this product
+        console.log(`Product ${productId} debug:`, {
+          totalFundsInPortfolio: allFundIds.size,
+          totalMonthsWithData: fundsByMonth.size,
+          fundsWithHistoricalData: response.funds_historical_irr?.length || 0,
+          completeMonths: completeMonths,
+          selectedMonths: selectedMonths
+        });
+      }
+      
+      // Format the month labels for display and store them in state
+      if (globalSelectedMonths.length > 0) {
+        const monthLabels = globalSelectedMonths.map(yearMonth => {
+          const [year, month] = yearMonth.split('-');
+          const date = new Date(parseInt(year), parseInt(month) - 1);
+          return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        });
+        
+        setHistoricalIRRMonths(monthLabels);
+        console.log('Setting historical IRR month labels:', monthLabels);
+      } else {
+        // No historical data found - clear historical IRR columns completely
+        setHistoricalIRRMonths([]);
+        console.log('No historical IRR data found - hiding historical IRR columns');
+      }
+      
+      console.log('Global selected months:', globalSelectedMonths);
+      console.log('Total historical IRR map entries:', fundHistoricalIRRMap.size);
+      
+    } catch (error) {
+      console.error('Error fetching historical IRR data:', error);
+    }
+
+    return fundHistoricalIRRMap;
+  };
+
   const generateReport = async () => {
-    if (selectedClientGroupIds.length === 0 && selectedProductOwnerIds.length === 0 && selectedProductIds.length === 0) {
-      setDataError('Please select at least one client group, product owner, or product to generate a report.');
+    // Check if any products are effectively selected (accounting for exclusions)
+    if (!hasEffectiveProductSelection) {
+      setDataError('Please select at least one product to generate a report. Products may be excluded if their client group or product owner is excluded.');
       return;
     }
     
@@ -816,6 +1039,11 @@ const ReportGenerator: React.FC = () => {
         return;
       }
       console.log("Unique Product IDs for report:", uniqueProductIds);
+
+      // Fetch historical IRR data for all products
+      console.log("Fetching historical IRR data for products:", uniqueProductIds);
+      const historicalIRRMap = await fetchAllHistoricalIRRData(uniqueProductIds);
+      console.log("Historical IRR data fetched:", historicalIRRMap.size, "funds with historical data");
 
       // --- Step 2: Get Portfolio IDs for all selected products ---
       // Combine main products list with any additionally fetched products for a full lookup
@@ -1208,6 +1436,9 @@ const ReportGenerator: React.FC = () => {
           // Get fund IRR from the fetched values
           const fundIRR = fundIRRMap.get(portfolioFund.id) || null;
           
+          // Get historical IRR data for this fund
+          const historicalIRRValues = historicalIRRMap.get(portfolioFund.id) || [];
+
           // Add to fund summaries
           fundSummaries.push({
             id: portfolioFund.id,
@@ -1222,7 +1453,8 @@ const ReportGenerator: React.FC = () => {
             irr: fundIRR,
             isin_number: isinNumber,
             status: portfolioFund.status || 'active',
-            risk_factor: riskFactor // Use the risk factor from the available fund
+            risk_factor: riskFactor, // Use the risk factor from the available fund
+            historical_irr: historicalIRRValues // Add historical IRR data
           });
         }
 
@@ -1355,6 +1587,10 @@ const ReportGenerator: React.FC = () => {
                     fund.irr = null;
                     console.log(`⚠️ No IRR found for ${fund.fund_name} (ID: ${fund.id})`);
                   }
+                  
+                  // Add historical IRR data for inactive funds
+                  const historicalIRRValues = historicalIRRMap.get(fund.id) || [];
+                  fund.historical_irr = historicalIRRValues;
                 }
               }
             }
@@ -1367,29 +1603,35 @@ const ReportGenerator: React.FC = () => {
           }
           
           // Calculate weighted risk factor for Previous Funds
+          // Use equal weighting for now since inactive funds have zero total_investment
+          // TODO: Fetch target_weighting from portfolio_funds for more accurate weighting
           let weightedRisk: number | undefined = undefined;
-          const fundsWithRiskAndValue = inactiveFunds.filter(
-            fund => fund.risk_factor !== undefined && fund.current_valuation > 0
+          const fundsWithRisk = inactiveFunds.filter(
+            fund => fund.risk_factor !== undefined && fund.risk_factor !== null
           );
           
-          if (fundsWithRiskAndValue.length > 0 && totalValuation > 0) {
-            const totalValueWithRisk = fundsWithRiskAndValue.reduce(
-              (sum, fund) => sum + fund.current_valuation, 0
-            );
-            
-            if (totalValueWithRisk > 0) {
-              weightedRisk = fundsWithRiskAndValue.reduce(
-                (sum, fund) => sum + (fund.risk_factor! * (fund.current_valuation / totalValueWithRisk)), 
-                0
-              );
-            }
+          if (fundsWithRisk.length > 0) {
+            // Use equal weighting (simple average) for now
+            weightedRisk = fundsWithRisk.reduce(
+              (sum, fund) => sum + fund.risk_factor!, 0
+            ) / fundsWithRisk.length;
           }
 
           console.log('🎯 Previous Funds weighted risk calculation:', {
             totalInactiveFunds: inactiveFunds.length,
-            fundsWithRiskAndValue: fundsWithRiskAndValue.length,
-            totalValuation,
-            weightedRisk: weightedRisk ? weightedRisk.toFixed(1) : 'undefined'
+            fundsWithRisk: fundsWithRisk.length,
+            totalInvestment,
+            weightedRisk: weightedRisk ? weightedRisk.toFixed(1) : 'undefined',
+            inactiveFundsData: inactiveFunds.map(f => ({ 
+              id: f.id, 
+              name: f.fund_name, 
+              risk: f.risk_factor, 
+              totalInvestment: f.total_investment,
+              totalWithdrawal: f.total_withdrawal,
+              totalSwitchIn: f.total_switch_in,
+              totalSwitchOut: f.total_switch_out,
+              netFlow: f.net_flow
+            }))
           });
           
           // Create a virtual entry with aggregated values
@@ -1412,6 +1654,7 @@ const ReportGenerator: React.FC = () => {
           };
           
           console.log('🎯 Created Previous Funds entry with IRR:', previousFundsEntry.irr);
+          console.log('🎯 Created Previous Funds entry with Risk:', previousFundsEntry.risk_factor);
           console.log('🎯 Full Previous Funds entry:', previousFundsEntry);
           
           return previousFundsEntry;
@@ -1436,6 +1679,37 @@ const ReportGenerator: React.FC = () => {
           finalFundList.push(previousFundsEntry);
         }
         
+        // Calculate weighted risk for the product using active funds' current valuations as weights
+        let productWeightedRisk: number | undefined = undefined;
+        const activeFundsWithRiskAndValuation = activeFunds.filter(
+          fund => fund.risk_factor !== undefined && fund.risk_factor !== null && fund.current_valuation > 0
+        );
+        
+        if (activeFundsWithRiskAndValuation.length > 0) {
+          const totalActiveValuation = activeFundsWithRiskAndValuation.reduce(
+            (sum, fund) => sum + fund.current_valuation, 0
+          );
+          
+          if (totalActiveValuation > 0) {
+            productWeightedRisk = activeFundsWithRiskAndValuation.reduce(
+              (sum, fund) => sum + (fund.risk_factor! * (fund.current_valuation / totalActiveValuation)), 
+              0
+            );
+            
+            console.log(`🎯 Product ${productDetails.product_name} weighted risk calculation:`, {
+              activeFundsWithRisk: activeFundsWithRiskAndValuation.length,
+              totalActiveValuation,
+              weightedRisk: productWeightedRisk.toFixed(1),
+              fundBreakdown: activeFundsWithRiskAndValuation.map(f => ({
+                name: f.fund_name,
+                risk: f.risk_factor,
+                valuation: f.current_valuation,
+                weight: (f.current_valuation / totalActiveValuation * 100).toFixed(1) + '%'
+              }))
+            });
+          }
+        }
+        
         // Add to summary results with fund data
         productSummaryResults.push({
           id: productId,
@@ -1450,7 +1724,8 @@ const ReportGenerator: React.FC = () => {
           irr: productIRR,
           provider_name: productDetails.provider_name,
           provider_theme_color: productDetails.provider_theme_color,
-          funds: finalFundList
+          funds: finalFundList,
+          weighted_risk: productWeightedRisk
         });
         
         // Add to overall valuation
@@ -1638,6 +1913,8 @@ Please select a different valuation date or ensure all active funds have valuati
     });
   };
 
+
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
       <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide mb-6">
@@ -1764,6 +2041,50 @@ Please select a different valuation date or ensure all active funds have valuati
                     Round IRR values to 1 decimal place (default is 2)
                   </span>
                 </label>
+                <label className="inline-flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={formatWithdrawalsAsNegative}
+                    onChange={(e) => setFormatWithdrawalsAsNegative(e.target.checked)}
+                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  />
+                  <span className="ml-2 text-sm text-gray-600">
+                    Format withdrawal amounts as negative values
+                  </span>
+                </label>
+                <label className="inline-flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={combineFundSwitches}
+                    onChange={(e) => setCombineFundSwitches(e.target.checked)}
+                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  />
+                  <span className="ml-2 text-sm text-gray-600">
+                    Combine fund switch columns into net amount
+                  </span>
+                </label>
+                
+                {/* Historical IRR Years Setting */}
+                <div className="flex items-center space-x-3">
+                  <label htmlFor="historical-irr-years" className="text-sm text-gray-600">
+                    Historical IRR years back:
+                  </label>
+                  <select
+                    id="historical-irr-years"
+                    value={historicalIRRYears}
+                    onChange={(e) => setHistoricalIRRYears(Number(e.target.value))}
+                    className="block w-20 px-2 py-1 text-sm border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                  >
+                    <option value={1}>1</option>
+                    <option value={2}>2</option>
+                    <option value={3}>3</option>
+                    <option value={4}>4</option>
+                    <option value={5}>5</option>
+                  </select>
+                  <span className="text-xs text-gray-500">
+                    years (up to {historicalIRRYears * 12} months)
+                  </span>
+                </div>
               </div>
               
               {/* Previous Funds Breakdown Controls */}
@@ -1810,7 +2131,7 @@ Please select a different valuation date or ensure all active funds have valuati
             <div className="mt-6">
               <button
                 onClick={generateReport}
-                disabled={isCalculating || isLoading}
+                disabled={isCalculating || isLoading || !hasEffectiveProductSelection}
                 className="w-full flex justify-center items-center px-6 py-3 text-base font-medium text-white bg-primary-700 hover:bg-primary-800 rounded-md shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isCalculating ? (
@@ -1830,6 +2151,12 @@ Please select a different valuation date or ensure all active funds have valuati
                   </>
                 )}
               </button>
+              
+              {!hasEffectiveProductSelection && !isCalculating && !isLoading && (
+                <p className="mt-2 text-sm text-gray-500 text-center">
+                  Select at least one product to generate a report
+                </p>
+              )}
             </div>
             
             {dataError && (
@@ -2173,12 +2500,20 @@ Please select a different valuation date or ensure all active funds have valuati
                     <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
                       Withdrawal
                     </th>
-                    <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                      Fund Switch In
-                    </th>
-                    <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                      Fund Switch Out
-                    </th>
+                    {combineFundSwitches ? (
+                      <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                        Fund Switches
+                      </th>
+                    ) : (
+                      <>
+                        <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                          Fund Switch In
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                          Fund Switch Out
+                        </th>
+                      </>
+                    )}
                     <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
                       Valuation
                     </th>
@@ -2243,14 +2578,22 @@ Please select a different valuation date or ensure all active funds have valuati
                         {formatCurrencyWithTruncation(product.total_investment)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                        {formatCurrencyWithTruncation(product.total_withdrawal)}
+                        {formatWithdrawalAmount(product.total_withdrawal)}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                        {formatCurrencyWithTruncation(product.total_switch_in)}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                        {formatCurrencyWithTruncation(product.total_switch_out)}
-                      </td>
+                      {combineFundSwitches ? (
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                          {formatCurrencyWithTruncation(calculateNetFundSwitches(product.total_switch_in, product.total_switch_out))}
+                        </td>
+                      ) : (
+                        <>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                            {formatCurrencyWithTruncation(product.total_switch_in)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                            {formatCurrencyWithTruncation(product.total_switch_out)}
+                          </td>
+                        </>
+                      )}
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-primary-700 text-right">
                         {formatCurrencyWithTruncation(product.current_valuation)}
                       </td>
@@ -2308,14 +2651,22 @@ Please select a different valuation date or ensure all active funds have valuati
                       {formatCurrencyWithTruncation(productSummaries.reduce((sum, product) => sum + product.total_investment, 0))}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                      {formatCurrencyWithTruncation(productSummaries.reduce((sum, product) => sum + product.total_withdrawal, 0))}
+                      {formatWithdrawalAmount(productSummaries.reduce((sum, product) => sum + product.total_withdrawal, 0))}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                      {formatCurrencyWithTruncation(productSummaries.reduce((sum, product) => sum + product.total_switch_in, 0))}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                      {formatCurrencyWithTruncation(productSummaries.reduce((sum, product) => sum + product.total_switch_out, 0))}
-                    </td>
+                    {combineFundSwitches ? (
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                        {formatCurrencyWithTruncation(productSummaries.reduce((sum, product) => sum + calculateNetFundSwitches(product.total_switch_in, product.total_switch_out), 0))}
+                      </td>
+                    ) : (
+                      <>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                          {formatCurrencyWithTruncation(productSummaries.reduce((sum, product) => sum + product.total_switch_in, 0))}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                          {formatCurrencyWithTruncation(productSummaries.reduce((sum, product) => sum + product.total_switch_out, 0))}
+                        </td>
+                      </>
+                    )}
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-primary-700 text-right">
                       {formatCurrencyWithTruncation(productSummaries.reduce((sum, product) => sum + product.current_valuation, 0))}
                     </td>
@@ -2393,7 +2744,7 @@ Please select a different valuation date or ensure all active funds have valuati
                 </div>
               </div>
               
-          <div className="overflow-x-auto">
+                        <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-300">
               <thead className="bg-gray-100">
                 <tr>
@@ -2409,18 +2760,36 @@ Please select a different valuation date or ensure all active funds have valuati
                       <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
                         Withdrawal
                       </th>
-                      <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                        Fund Switch In
-                      </th>
-                      <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                        Fund Switch Out
-                      </th>
+                      {combineFundSwitches ? (
+                        <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                          Fund Switches
+                        </th>
+                      ) : (
+                        <>
+                          <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                            Fund Switch In
+                          </th>
+                          <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                            Fund Switch Out
+                          </th>
+                        </>
+                      )}
                       <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
                         Valuation
                       </th>
                       <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
                         Annualised Rate of Return per annum
-                  </th>
+                      </th>
+                      {historicalIRRMonths.map((monthLabel, index) => (
+                        <th 
+                          key={index}
+                          scope="col" 
+                          className="px-3 py-3 text-right text-xs font-semibold text-blue-700 uppercase tracking-wider bg-blue-50" 
+                          title={`Historical IRR for ${monthLabel}`}
+                        >
+                          IRR {monthLabel}
+                        </th>
+                      ))}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -2441,7 +2810,7 @@ Please select a different valuation date or ensure all active funds have valuati
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
                             {fund.isVirtual && fund.fund_name !== 'Previous Funds' ? (
                               <span className="text-gray-500">-</span>
-                            ) : fund.risk_factor !== undefined ? (
+                            ) : fund.risk_factor !== undefined && fund.risk_factor !== null ? (
                               <span className={`px-2 py-1 text-xs font-medium rounded ${fund.fund_name === 'Previous Funds' ? 'bg-gray-200' : 'bg-gray-100'}`}>
                                 {fund.fund_name === 'Previous Funds' ? fund.risk_factor.toFixed(1) : formatRiskFallback(fund.risk_factor)}
                               </span>
@@ -2453,14 +2822,22 @@ Please select a different valuation date or ensure all active funds have valuati
                             {formatCurrencyWithTruncation(fund.total_investment)}
                         </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                            {formatCurrencyWithTruncation(fund.total_withdrawal)}
+                            {formatWithdrawalAmount(fund.total_withdrawal)}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                            {formatCurrencyWithTruncation(fund.total_switch_in)}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                            {formatCurrencyWithTruncation(fund.total_switch_out)}
-                          </td>
+                          {combineFundSwitches ? (
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                              {formatCurrencyWithTruncation(calculateNetFundSwitches(fund.total_switch_in, fund.total_switch_out))}
+                            </td>
+                          ) : (
+                            <>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                                {formatCurrencyWithTruncation(fund.total_switch_in)}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                                {formatCurrencyWithTruncation(fund.total_switch_out)}
+                              </td>
+                            </>
+                          )}
                           <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-primary-700 text-right">
                             {formatCurrencyWithTruncation(fund.current_valuation)}
                           </td>
@@ -2474,12 +2851,24 @@ Please select a different valuation date or ensure all active funds have valuati
                             ) : (
                               <span className="text-gray-400">-</span>
                             )}
-                      </td>
+                          </td>
+                          {/* Historical IRR columns - only show if historical data exists */}
+                          {historicalIRRMonths.map((_, index) => (
+                            <td key={`hist-${index}`} className="px-3 py-3 whitespace-nowrap text-xs text-right bg-blue-50">
+                              {fund.historical_irr && fund.historical_irr[index] !== undefined ? (
+                                <span className={fund.historical_irr[index] >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                  {formatIrrWithPrecision(fund.historical_irr[index])}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </td>
+                          ))}
                     </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={8} className="px-4 py-4 text-center text-sm text-gray-500">
+                        <td colSpan={(combineFundSwitches ? 8 : 9) + historicalIRRMonths.length} className="px-4 py-4 text-center text-sm text-gray-500">
                           No fund data available
                         </td>
                       </tr>
@@ -2513,14 +2902,22 @@ Please select a different valuation date or ensure all active funds have valuati
                                 {formatCurrencyWithTruncation(inactiveFund.total_investment)}
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-700">
-                                {formatCurrencyWithTruncation(inactiveFund.total_withdrawal)}
+                                {formatWithdrawalAmount(inactiveFund.total_withdrawal)}
                               </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-700">
-                                {formatCurrencyWithTruncation(inactiveFund.total_switch_in)}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-700">
-                                {formatCurrencyWithTruncation(inactiveFund.total_switch_out)}
-                              </td>
+                              {combineFundSwitches ? (
+                                <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-700">
+                                  {formatCurrencyWithTruncation(calculateNetFundSwitches(inactiveFund.total_switch_in, inactiveFund.total_switch_out))}
+                                </td>
+                              ) : (
+                                <>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-700">
+                                    {formatCurrencyWithTruncation(inactiveFund.total_switch_in)}
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-700">
+                                    {formatCurrencyWithTruncation(inactiveFund.total_switch_out)}
+                                  </td>
+                                </>
+                              )}
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-700">
                                 {formatCurrencyWithTruncation(0)} {/* Inactive funds have £0 current valuation */}
                               </td>
@@ -2533,6 +2930,18 @@ Please select a different valuation date or ensure all active funds have valuati
                                   <span className="text-gray-500">-</span>
                                 )}
                               </td>
+                              {/* Historical IRR columns for inactive funds - only show if historical data exists */}
+                              {historicalIRRMonths.map((_, index) => (
+                                <td key={`inactive-hist-${index}`} className="px-3 py-3 whitespace-nowrap text-xs text-right bg-blue-50">
+                                  {inactiveFund.historical_irr && inactiveFund.historical_irr[index] !== undefined ? (
+                                    <span className={inactiveFund.historical_irr[index] >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                      {formatIrrWithPrecision(inactiveFund.historical_irr[index])}
+                                    </span>
+                                  ) : (
+                                    <span className="text-gray-400">-</span>
+                                  )}
+                                </td>
+                              ))}
                             </tr>
                           ))
                         )
@@ -2544,20 +2953,34 @@ Please select a different valuation date or ensure all active funds have valuati
                         PRODUCT TOTAL
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
-                        {/* Risk not applicable for totals */}
+                        {product.weighted_risk !== undefined ? (
+                          <span className="px-2 py-1 text-xs font-medium rounded bg-gray-200">
+                            {product.weighted_risk.toFixed(1)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-500">-</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
                         {formatCurrencyWithTruncation(product.total_investment)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                        {formatCurrencyWithTruncation(product.total_withdrawal)}
+                        {formatWithdrawalAmount(product.total_withdrawal)}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                        {formatCurrencyWithTruncation(product.total_switch_in)}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                        {formatCurrencyWithTruncation(product.total_switch_out)}
-                      </td>
+                      {combineFundSwitches ? (
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                          {formatCurrencyWithTruncation(calculateNetFundSwitches(product.total_switch_in, product.total_switch_out))}
+                        </td>
+                      ) : (
+                        <>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                            {formatCurrencyWithTruncation(product.total_switch_in)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                            {formatCurrencyWithTruncation(product.total_switch_out)}
+                          </td>
+                        </>
+                      )}
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-primary-700 text-right">
                         {formatCurrencyWithTruncation(product.current_valuation)}
                       </td>
@@ -2570,10 +2993,25 @@ Please select a different valuation date or ensure all active funds have valuati
                           <span className="text-gray-400">-</span>
                         )}
                       </td>
+                      {/* Historical IRR columns for product total - not applicable */}
+                      {historicalIRRMonths.map((_, index) => (
+                        <td key={`total-hist-${index}`} className="px-3 py-3 whitespace-nowrap text-xs text-right bg-blue-50">
+                          <span className="text-gray-500">-</span>
+                        </td>
+                      ))}
                     </tr>
               </tbody>
             </table>
           </div>
+          
+                      {/* Historical IRR Explanation - only show if historical data exists */}
+            {historicalIRRMonths.length > 0 && (
+              <div className="mt-2 text-xs text-blue-600 bg-blue-50 p-2 rounded">
+                <strong>Historical IRR:</strong> Shows IRR values from the most recent months where sufficient portfolio fund data is available (minimum 75% coverage). Column headers display the actual month and year. 
+                Searched {historicalIRRYears} year{historicalIRRYears !== 1 ? 's' : ''} back ({historicalIRRYears * 12} months) - showing data for: {historicalIRRMonths.join(', ')}. Latest IRR values are excluded from historical columns.
+              </div>
+            )}
+
             </div>
           ))}
         </div>
