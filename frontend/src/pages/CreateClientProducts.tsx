@@ -1307,202 +1307,18 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     return filtered.sort((a: Fund, b: Fund) => a.fund_name.localeCompare(b.fund_name));
   };
 
-  const renderPortfolioSection = (product: ProductItem): JSX.Element => {
-    const isLoadingTemplate = templateLoading[product.id] === true;
-    const isLoadingGeneration = generationLoading[product.id] === true;
-    const isEitherLoading = isLoadingTemplate || isLoadingGeneration;
-    const templateId = product.portfolio.templateId;
-    const generations = templateId ? templateGenerations[templateId.toString()] || [] : [];
-    
+  // Add function to render fund selection component with aligned headers
+  const renderFundSelectionComponent = (product: ProductItem, isEitherLoading: boolean): JSX.Element => {
     return (
-      <div className="portfolio-section space-y-3">
-        {/* Show loading overlay when template or generation is loading */}
-        {isEitherLoading && (
-          <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-10 rounded">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
-          </div>
-        )}
-        
-        {/* Portfolio Configuration Row */}
-        <div className="grid grid-cols-2 gap-3">
-          {/* Portfolio Name - Auto-generated */}
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-            Portfolio Name <span className="text-red-500">*</span>
-              <span className="text-gray-400">(auto-generated)</span>
-          </label>
-          <input
-            type="text"
-              value={(() => {
-                // Auto-generate portfolio name based on product name
-                const productName = product.product_name.trim() || generateProductName(product);
-                return product.portfolio.name.trim() || `Portfolio for ${productName || 'Product'}`;
-              })()}
-              onChange={(e) => {
-                // Allow manual override of portfolio name
-                const value = e.target.value;
-                handlePortfolioNameChange(product.id, value);
-              }}
-              className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm border-gray-300 rounded-md h-8"
-              placeholder="Auto-generated"
-          />
-          {validationErrors[product.id]?.portfolioName && (
-            <div className="text-xs text-red-600 mt-1">
-              {validationErrors[product.id].portfolioName}
-            </div>
-          )}
-        </div>
-        
-        {/* Portfolio Type Selection */}
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-            Portfolio Type <span className="text-red-500">*</span>
-          </label>
-          <Radio.Group
-            value={product.portfolio.type}
-            onChange={(e) => handlePortfolioTypeChange(product.id, e.target.value as 'template' | 'bespoke')}
-            disabled={isEitherLoading}
-              size="middle"
-              className="flex space-x-4"
-          >
-              <Radio value="bespoke" className="text-sm">Bespoke</Radio>
-              <Radio value="template" className="text-sm">Template</Radio>
-          </Radio.Group>
-          </div>
-        </div>
-
-        {/* Template Selection Row - Only show if template type is selected */}
-        {product.portfolio.type === 'template' && (
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-              Select Template <span className="text-red-500">*</span>
-            </label>
-            <SearchableDropdown
-              id={`template-select-${product.id}`}
-              options={availableTemplates.map(t => ({ value: t.id.toString(), label: t.name || `Template ${t.id}` }))}
-              value={product.portfolio.templateId?.toString() ?? ''}
-              onChange={val => handleTemplateSelection(product.id, String(val))}
-              placeholder="Select template"
-              className={`w-full text-sm ${validationErrors[product.id]?.template ? 'border-red-500' : ''}`}
-              required
-              disabled={isEitherLoading}
-              loading={isLoadingTemplate || availableTemplates.length === 0}
-            />
-            {validationErrors[product.id]?.template && (
-              <div className="text-xs text-red-600 mt-1">
-                {validationErrors[product.id].template}
-              </div>
-            )}
-          </div>
-
-        {/* Generation Selection - Show after template is selected */}
-            {product.portfolio.templateId && generations.length > 0 && (
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-              Select Generation <span className="text-red-500">*</span>
-            </label>
-            <SearchableDropdown
-              id={`generation-select-${product.id}`}
-              options={generations.map(g => ({ 
-                value: g.id.toString(), 
-                label: g.generation_name || `Version ${g.version_number}` 
-              }))}
-              value={product.portfolio.generationId?.toString() ?? ''}
-              onChange={val => handleGenerationSelection(product.id, String(val))}
-              placeholder="Select generation"
-              className={`w-full text-sm ${validationErrors[product.id]?.generation ? 'border-red-500' : ''}`}
-              required
-              disabled={isEitherLoading}
-              loading={isLoadingGeneration || (!!product.portfolio.templateId && generations.length === 0)}
-            />
-            {validationErrors[product.id]?.generation && (
-              <div className="text-xs text-red-600 mt-1">
-                {validationErrors[product.id].generation}
-              </div>
-            )}
-            </div>
-            )}
-          </div>
-        )}
-
-        {/* Side-by-side Fund Selection Layout */}
-        <div className="grid grid-cols-2 gap-4">
-          {/* Left Column - Available Funds */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <h4 className={`text-xs font-medium ${
-                validationErrors[product.id]?.funds ? 'text-red-600' : 'text-gray-700'
-              }`}>
-                Available Funds
-                {product.portfolio.type === 'bespoke' && <span className="text-red-500 ml-1">*</span>}
-              </h4>
-            <button
-              type="button"
-              onClick={() => {
-                setAddFundForProductId(product.id);
-                setIsAddFundModalOpen(true);
-              }}
-                className="bg-primary-600 text-white px-2 py-1 rounded text-xs hover:bg-primary-700 transition-colors duration-150 inline-flex items-center gap-1"
-              title="Add new fund"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-                Add
-            </button>
-          </div>
+      <div className="space-y-2">
+        {/* Side-by-side Layout with Headers, Search, and Lists */}
+        <div className="grid grid-cols-2 gap-2 sm:gap-4">
+          {/* Selected Funds Section - Left Side */}
+          <div className="space-y-1">
+            {/* Empty space to push Selected Funds section down */}
+            <div className="h-6"></div>
             
-            {/* Fund Search */}
-            <Input
-              placeholder="Search funds..."
-              value={fundSearchTerm}
-              onChange={(e) => handleFundSearch(e.target.value)}
-              disabled={isEitherLoading}
-              size="middle"
-              className="w-full"
-            />
-            
-            {/* Available Fund List */}
-            <div className={`h-48 overflow-y-auto border rounded p-2 bg-gray-50 ${
-              validationErrors[product.id]?.funds ? 'border-red-500 bg-red-50' : 'border-gray-200'
-          }`}>
-              {getFilteredFunds().length === 0 ? (
-                <div className="text-xs text-gray-500 text-center py-4">
-                  No funds found. Try adjusting your search.
-                </div>
-              ) : (
-                <div className="space-y-1">
-            {getFilteredFunds().map(fund => (
-                    <div 
-                      key={fund.id} 
-                      className="flex items-center space-x-2 p-2 hover:bg-white rounded text-xs cursor-pointer transition-colors"
-                      onClick={() => handleFundSelection(product.id, fund.id)}
-                    >
-                <Checkbox
-                  checked={product.portfolio.selectedFunds.includes(fund.id)}
-                  onChange={() => handleFundSelection(product.id, fund.id)}
-                  disabled={isEitherLoading}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-gray-900 truncate" title={fund.fund_name}>
-                          {fund.fund_name}
-                        </div>
-                        {fund.isin_number && (
-                          <div className="text-gray-500 truncate" title={fund.isin_number}>
-                            {fund.isin_number}
-                          </div>
-                        )}
-                      </div>
-              </div>
-            ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right Column - Selected Funds */}
-          <div className="space-y-2">
+            {/* Selected Funds Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <h4 className="text-xs font-medium text-gray-700">Selected Funds</h4>
@@ -1545,13 +1361,13 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             </div>
 
             {/* Selected Funds Display */}
-            <div className="h-48 overflow-y-auto border rounded bg-white">
+            <div className="h-80 sm:h-96 lg:h-[450px] overflow-y-auto border rounded bg-white">
               {product.portfolio.selectedFunds.length === 0 ? (
                 <div className="h-full flex items-center justify-center text-xs text-gray-500">
                   No funds selected
                 </div>
               ) : (
-                <div className="p-2 space-y-2">
+                <div className="p-0.5 sm:p-1 space-y-0.5 sm:space-y-1">
                   {/* Cash fund for bespoke portfolios */}
                   {product.portfolio.type === 'bespoke' && (() => {
                     const cashFund = findCashFund(funds);
@@ -1650,23 +1466,224 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                 </div>
               )}
             </div>
+          </div>
 
-            {/* Portfolio Risk Summary */}
-            {product.portfolio.selectedFunds.length > 0 && (
-              <div className="bg-gray-50 rounded border border-gray-200 p-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-600">Portfolio Risk:</span>
-                  <span className="font-medium text-gray-900">
-                    {(() => {
-                      const risk = calculateTargetRiskFromFunds(product);
-                      return risk ? risk.toFixed(1) : 'N/A';
-                    })()}
-                  </span>
+          {/* Available Funds Section - Right Side */}
+          <div className="space-y-1">
+            {/* Empty space to push Available Funds title down */}
+            <div className="h-6"></div>
+            
+            {/* Available Funds Header */}
+            <div className="flex items-center justify-between">
+              <h4 className={`text-xs font-medium ${
+                validationErrors[product.id]?.funds ? 'text-red-600' : 'text-gray-700'
+              }`}>
+                Available Funds
+                {product.portfolio.type === 'bespoke' && <span className="text-red-500 ml-1">*</span>}
+              </h4>
+              <button
+                type="button"
+                onClick={() => {
+                  setAddFundForProductId(product.id);
+                  setIsAddFundModalOpen(true);
+                }}
+                className="bg-primary-600 text-white px-2 py-1 rounded text-xs hover:bg-primary-700 transition-colors duration-150 inline-flex items-center gap-1"
+                title="Add new fund"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Add
+              </button>
+            </div>
+            
+            {/* Fund Search */}
+            <Input
+              placeholder="Search funds..."
+              value={fundSearchTerm}
+              onChange={(e) => handleFundSearch(e.target.value)}
+              disabled={isEitherLoading}
+              size="middle"
+              className="w-full"
+            />
+            
+            {/* Available Fund List */}
+            <div className={`h-80 sm:h-96 lg:h-[450px] overflow-y-auto border rounded p-2 bg-gray-50 ${
+              validationErrors[product.id]?.funds ? 'border-red-500 bg-red-50' : 'border-gray-200'
+            }`}>
+              {getFilteredFunds().length === 0 ? (
+                <div className="text-xs text-gray-500 text-center py-4">
+                  No funds found. Try adjusting your search.
                 </div>
+              ) : (
+                <div className="space-y-0.5">
+                  {getFilteredFunds().map(fund => (
+                    <div 
+                      key={fund.id} 
+                      className="flex items-center space-x-2 p-2 hover:bg-white rounded text-xs cursor-pointer transition-colors"
+                      onClick={() => handleFundSelection(product.id, fund.id)}
+                    >
+                      <Checkbox
+                        checked={product.portfolio.selectedFunds.includes(fund.id)}
+                        onChange={() => handleFundSelection(product.id, fund.id)}
+                        disabled={isEitherLoading}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-gray-900 truncate" title={fund.fund_name}>
+                          {fund.fund_name}
+                        </div>
+                        {fund.isin_number && (
+                          <div className="text-gray-500 truncate" title={fund.isin_number}>
+                            {fund.isin_number}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Portfolio Risk Summary */}
+        {product.portfolio.selectedFunds.length > 0 && (
+          <div className="bg-gray-50 rounded border border-gray-200 p-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-600">Portfolio Risk:</span>
+              <span className="font-medium text-gray-900">
+                {(() => {
+                  const risk = calculateTargetRiskFromFunds(product);
+                  return risk ? risk.toFixed(1) : 'N/A';
+                })()}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderPortfolioSection = (product: ProductItem): JSX.Element => {
+    const isLoadingTemplate = templateLoading[product.id] === true;
+    const isLoadingGeneration = generationLoading[product.id] === true;
+    const isEitherLoading = isLoadingTemplate || isLoadingGeneration;
+    const templateId = product.portfolio.templateId;
+    const generations = templateId ? templateGenerations[templateId.toString()] || [] : [];
+    
+    return (
+      <div className="portfolio-section space-y-0.5 sm:space-y-1">
+        {/* Show loading overlay when template or generation is loading */}
+        {isEitherLoading && (
+          <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-10 rounded">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+          </div>
+        )}
+        
+        {/* Portfolio Configuration Row */}
+        <div className="grid grid-cols-2 gap-1 sm:gap-2">
+          {/* Portfolio Name - Auto-generated */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+            Portfolio Name <span className="text-red-500">*</span>
+              <span className="text-gray-400">(auto-generated)</span>
+          </label>
+          <input
+            type="text"
+              value={(() => {
+                // Auto-generate portfolio name based on product name
+                const productName = product.product_name.trim() || generateProductName(product);
+                return product.portfolio.name.trim() || `Portfolio for ${productName || 'Product'}`;
+              })()}
+              onChange={(e) => {
+                // Allow manual override of portfolio name
+                const value = e.target.value;
+                handlePortfolioNameChange(product.id, value);
+              }}
+              className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm border-gray-300 rounded-md h-8"
+              placeholder="Auto-generated"
+          />
+          {validationErrors[product.id]?.portfolioName && (
+            <div className="text-xs text-red-600 mt-1">
+              {validationErrors[product.id].portfolioName}
+            </div>
+          )}
+        </div>
+        
+        {/* Portfolio Type Selection */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+            Portfolio Type <span className="text-red-500">*</span>
+          </label>
+          <Radio.Group
+            value={product.portfolio.type}
+            onChange={(e) => handlePortfolioTypeChange(product.id, e.target.value as 'template' | 'bespoke')}
+            disabled={isEitherLoading}
+              size="middle"
+              className="flex space-x-4"
+          >
+              <Radio value="bespoke" className="text-sm">Bespoke</Radio>
+              <Radio value="template" className="text-sm">Template</Radio>
+          </Radio.Group>
+          </div>
+        </div>
+
+        {/* Template Selection Row - Only show if template type is selected */}
+        {product.portfolio.type === 'template' && (
+          <div className="grid grid-cols-2 gap-1 sm:gap-2">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+              Select Template <span className="text-red-500">*</span>
+            </label>
+            <SearchableDropdown
+              id={`template-select-${product.id}`}
+              options={availableTemplates.map(t => ({ value: t.id.toString(), label: t.name || `Template ${t.id}` }))}
+              value={product.portfolio.templateId?.toString() ?? ''}
+              onChange={val => handleTemplateSelection(product.id, String(val))}
+              placeholder="Select template"
+              className={`w-full text-sm ${validationErrors[product.id]?.template ? 'border-red-500' : ''}`}
+              required
+              disabled={isEitherLoading}
+              loading={isLoadingTemplate || availableTemplates.length === 0}
+            />
+            {validationErrors[product.id]?.template && (
+              <div className="text-xs text-red-600 mt-1">
+                {validationErrors[product.id].template}
               </div>
             )}
           </div>
-        </div>
+
+        {/* Generation Selection - Show after template is selected */}
+            {product.portfolio.templateId && generations.length > 0 && (
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+              Select Generation <span className="text-red-500">*</span>
+            </label>
+            <SearchableDropdown
+              id={`generation-select-${product.id}`}
+              options={generations.map(g => ({ 
+                value: g.id.toString(), 
+                label: g.generation_name || `Version ${g.version_number}` 
+              }))}
+              value={product.portfolio.generationId?.toString() ?? ''}
+              onChange={val => handleGenerationSelection(product.id, String(val))}
+              placeholder="Select generation"
+              className={`w-full text-sm ${validationErrors[product.id]?.generation ? 'border-red-500' : ''}`}
+              required
+              disabled={isEitherLoading}
+              loading={isLoadingGeneration || (!!product.portfolio.templateId && generations.length === 0)}
+            />
+            {validationErrors[product.id]?.generation && (
+              <div className="text-xs text-red-600 mt-1">
+                {validationErrors[product.id].generation}
+              </div>
+            )}
+            </div>
+            )}
+          </div>
+        )}
+
+        {renderFundSelectionComponent(product, isEitherLoading)}
       </div>
     );
   };
@@ -1754,7 +1771,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-3 py-1">
+    <div className="max-w-6xl mx-auto px-0.5 py-0.5 sm:px-1 sm:py-1">
       {/* Toast notification */}
       {showToast && (
         <div className="fixed top-4 right-4 z-50 bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-3 rounded shadow-md">
@@ -1781,9 +1798,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       )}
 
       {/* Compact Header */}
-      <div className="flex justify-between items-center mb-2">
+      <div className="flex justify-between items-center mb-0.5 sm:mb-1">
         <div className="flex items-center">
-          <div className="bg-primary-100 p-2 rounded-lg mr-3 flex items-center justify-center">
+          <div className="bg-primary-100 p-1 sm:p-2 rounded-lg mr-2 sm:mr-3 flex items-center justify-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
@@ -1843,22 +1860,22 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         )}
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-1">
         {isLoading ? (
-          <div className="flex justify-center py-8">
+          <div className="flex justify-center py-4">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-700"></div>
           </div>
         ) : error ? (
-          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 mb-4 rounded">
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-1 mb-1 rounded">
             <p className="text-sm">{error}</p>
           </div>
         ) : (
           <div className="bg-white shadow-sm rounded-lg border border-gray-200">
-            <form onSubmit={handleSubmit} className="p-4">
+            <form onSubmit={handleSubmit} className="p-1 sm:p-2">
               {/* Step 1: Client Selection and Start Date - Compact Layout */}
-              <div className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
-                <h2 className="text-lg font-medium mb-3 text-gray-900">Client & Start Date</h2>
-                <div className="grid grid-cols-2 gap-4">
+              <div className="bg-gray-50 rounded-lg p-1 sm:p-2 mb-1 sm:mb-2 border border-gray-200">
+                <h2 className="text-lg font-medium mb-0.5 sm:mb-1 text-gray-900">Client & Start Date</h2>
+                <div className="grid grid-cols-2 gap-2 sm:gap-4">
                 {/* Client Selection */}
                   <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1898,7 +1915,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
 
               {/* Step 2: Products Section - Only show after client selected */}
               {selectedClientId && (
-                <div className="space-y-3">
+                <div className="space-y-1">
                   <div className="flex justify-between items-center">
                     <h2 className="text-lg font-medium text-gray-900">Products</h2>
                     <div className="flex items-center space-x-2">
@@ -1956,7 +1973,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                       <p className="text-xs">Click "Add Product" above to create your first product</p>
                   </div>
                 ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-1">
                       {products.map((product, index) => {
                         const provider = providers.find(p => p.id === product.provider_id);
                         const themeColor = getProviderColor(product.provider_id, provider?.name, provider?.theme_color);
@@ -1974,9 +1991,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                         id={`product-${product.id}`}
                       >
                             {/* Compact Product Header */}
-                            <div className="p-3">
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center space-x-3">
+                            <div className="p-0.5 sm:p-1">
+                                                                                              <div className="flex items-center justify-between mb-0.5 sm:mb-1">
+                                                                  <div className="flex items-center space-x-2 sm:space-x-3">
                                   <div 
                                     className="w-3 h-3 rounded-full"
                                     style={{ backgroundColor: themeColor }}
@@ -2024,9 +2041,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
 
                               {/* Compact configuration form - always visible for incomplete products */}
                               {isExpanded && (
-                                <div className="space-y-3 pt-3 border-t border-gray-100">
-                                  {/* Row 1: Provider, Product Type, Product Name */}
-                                  <div className="grid grid-cols-3 gap-3">
+                                <div className="space-y-0.5 sm:space-y-1 pt-0.5 sm:pt-1 border-t border-gray-100">
+                                                                      {/* Row 1: Provider, Product Type, Product Name */}
+                                    <div className="grid grid-cols-3 gap-1 sm:gap-2">
                                     <div>
                                       <label className="block text-xs font-medium text-gray-700 mb-1">
                               Provider <span className="text-red-500">*</span>
@@ -2092,7 +2109,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                         </div>
 
                                   {/* Row 2: Start Date and Plan Number */}
-                                  <div className="grid grid-cols-2 gap-3">
+                                  <div className="grid grid-cols-2 gap-1 sm:gap-2">
                                     <div>
                                       <label className="block text-xs font-medium text-gray-700 mb-1">
                                         Start Date <span className="text-red-500">*</span>
@@ -2210,8 +2227,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                   </div>
 
                                   {/* Portfolio Configuration */}
-                                  <div className="border-t pt-3">
-                                    <h4 className="text-sm font-medium text-gray-900 mb-2">Portfolio Configuration</h4>
+                                  <div className="border-t pt-0.5 sm:pt-1">
+                                    <h4 className="text-sm font-medium text-gray-900 mb-0.5 sm:mb-1">Portfolio Configuration</h4>
                           {renderPortfolioSection(product)}
                         </div>
                       </div>
@@ -2227,7 +2244,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
 
               {/* Submit Button - Context-aware */}
               {selectedClientId && products.length > 0 && (
-                <div className="mt-6 flex justify-end space-x-3">
+                <div className="mt-1 sm:mt-2 flex justify-end space-x-1 sm:space-x-2">
                   <button
                     type="button"
                     onClick={() => navigate(returnPath)}
