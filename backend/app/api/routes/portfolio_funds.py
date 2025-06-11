@@ -2036,37 +2036,37 @@ async def calculate_multiple_portfolio_funds_irr(
             amount = float(activity["amount"])
             activity_type = activity["activity_type"]
             
-            # MULTIPLE ENDPOINT: Fund switches are IGNORED, others use substring matching
-            if activity_type.lower() in ["fundswitchin", "fundswitchout"]:
-                # Fund switches are IGNORED for multiple endpoint aggregation
-                logger.info(f"Ignoring fund switch activity: {activity_type} for multiple fund IRR calculation")
-                continue
+            # DEBUG: Log all activities with their complete details
+            logger.info(f"Processing activity: type='{activity_type}', amount={amount}, date={activity_date}, fund_id={activity.get('portfolio_fund_id', 'N/A')}")
+            logger.info(f"  Full activity data: {activity}")
+            
+            if any(keyword in activity_type.lower() for keyword in ["investment"]):
+                cash_flows[month_key] -= amount  # Negative for investments
+                logger.info(f"  → Applied as INVESTMENT (negative): -{amount}")
+            elif activity_type.lower() in ["productswitchin"]:
+                cash_flows[month_key] -= amount  # Product switch in = negative (money out)
+                logger.info(f"  → Applied as PRODUCT SWITCH IN (negative): -{amount}")
+            elif activity_type.lower() in ["fundswitchin"]:
+                cash_flows[month_key] -= amount  # Fund switch in = negative (money coming into fund)
+                logger.info(f"  → Applied as FUND SWITCH IN (negative): -{amount}")
+            elif any(keyword in activity_type.lower() for keyword in ["withdrawal"]):
+                cash_flows[month_key] += amount  # Positive for withdrawals
+                logger.info(f"  → Applied as WITHDRAWAL (positive): +{amount}")
+            elif activity_type.lower() in ["productswitchout"]:
+                cash_flows[month_key] += amount  # Product switch out = positive (money in)
+                logger.info(f"  → Applied as PRODUCT SWITCH OUT (positive): +{amount}")
+            elif activity_type.lower() in ["fundswitchout"]:
+                cash_flows[month_key] += amount  # Fund switch out = positive (money leaving fund)
+                logger.info(f"  → Applied as FUND SWITCH OUT (positive): +{amount}")
+            elif any(keyword in activity_type.lower() for keyword in ["fee", "charge", "expense"]):
+                cash_flows[month_key] += amount  # Positive for fees (money out)
+                logger.info(f"  → Applied as FEE (positive): +{amount}")
+            elif any(keyword in activity_type.lower() for keyword in ["dividend", "interest", "capital gain"]):
+                cash_flows[month_key] -= amount  # Negative for reinvested gains
+                logger.info(f"  → Applied as DIVIDEND/GAIN (negative): -{amount}")
             else:
-                # DEBUG: Log all non-fund-switch activities with their complete details
-                logger.info(f"Processing activity: type='{activity_type}', amount={amount}, date={activity_date}, fund_id={activity.get('portfolio_fund_id', 'N/A')}")
-                logger.info(f"  Full activity data: {activity}")
-                
-                if any(keyword in activity_type.lower() for keyword in ["investment"]):
-                    cash_flows[month_key] -= amount  # Negative for investments
-                    logger.info(f"  → Applied as INVESTMENT (negative): -{amount}")
-                elif activity_type.lower() in ["productswitchin"]:
-                    cash_flows[month_key] -= amount  # Product switch in = negative (money out)
-                    logger.info(f"  → Applied as PRODUCT SWITCH IN (negative): -{amount}")
-                elif any(keyword in activity_type.lower() for keyword in ["withdrawal"]):
-                    cash_flows[month_key] += amount  # Positive for withdrawals
-                    logger.info(f"  → Applied as WITHDRAWAL (positive): +{amount}")
-                elif activity_type.lower() in ["productswitchout"]:
-                    cash_flows[month_key] += amount  # Product switch out = positive (money in)
-                    logger.info(f"  → Applied as PRODUCT SWITCH OUT (positive): +{amount}")
-                elif any(keyword in activity_type.lower() for keyword in ["fee", "charge", "expense"]):
-                    cash_flows[month_key] += amount  # Positive for fees (money out)
-                    logger.info(f"  → Applied as FEE (positive): +{amount}")
-                elif any(keyword in activity_type.lower() for keyword in ["dividend", "interest", "capital gain"]):
-                    cash_flows[month_key] -= amount  # Negative for reinvested gains
-                    logger.info(f"  → Applied as DIVIDEND/GAIN (negative): -{amount}")
-                else:
-                    logger.warning(f"  → Unknown activity type: {activity['activity_type']}, treating as neutral (amount={amount})")
-                    logger.warning(f"  → Full unknown activity: {activity}")
+                logger.warning(f"  → Unknown activity type: {activity['activity_type']}, treating as neutral (amount={amount})")
+                logger.warning(f"  → Full unknown activity: {activity}")
         
         # Add final valuations to the VALUATION MONTH (representing end-of-month value)
         # Valuations are assumed to represent the value at the end of the valuation month
@@ -2234,19 +2234,33 @@ async def calculate_single_portfolio_fund_irr(
             amount = float(activity["amount"])
             activity_type = activity["activity_type"].lower()  # Convert to lowercase for comparison
             
-            # Use substring matching to handle variations like "RegularInvestment", "Investment", etc.
+            # Use explicit matching for fund switches and substring matching for other activities
             if any(keyword in activity_type for keyword in ["investment"]):
                 cash_flows[month_key] -= amount  # Negative for investments
+                logger.info(f"Applied as INVESTMENT (negative): -{amount}")
+            elif activity_type in ["productswitchin"]:
+                cash_flows[month_key] -= amount  # Product switch in = negative (money out)
+                logger.info(f"Applied as PRODUCT SWITCH IN (negative): -{amount}")
+            elif activity_type in ["fundswitchin"]:
+                cash_flows[month_key] -= amount  # Fund switch in = negative (money coming into fund)
+                logger.info(f"Applied as FUND SWITCH IN (negative): -{amount}")
             elif any(keyword in activity_type for keyword in ["withdrawal"]):
                 cash_flows[month_key] += amount  # Positive for withdrawals
+                logger.info(f"Applied as WITHDRAWAL (positive): +{amount}")
+            elif activity_type in ["productswitchout"]:
+                cash_flows[month_key] += amount  # Product switch out = positive (money in)
+                logger.info(f"Applied as PRODUCT SWITCH OUT (positive): +{amount}")
+            elif activity_type in ["fundswitchout"]:
+                cash_flows[month_key] += amount  # Fund switch out = positive (money leaving fund)
+                logger.info(f"Applied as FUND SWITCH OUT (positive): +{amount}")
             elif any(keyword in activity_type for keyword in ["fee", "charge", "expense"]):
                 cash_flows[month_key] += amount  # Positive for fees (money out)
-            elif any(keyword in activity_type for keyword in ["dividend", "interest", "capital gain", "switchin"]):
+                logger.info(f"Applied as FEE (positive): +{amount}")
+            elif any(keyword in activity_type for keyword in ["dividend", "interest", "capital gain"]):
                 cash_flows[month_key] -= amount  # Negative for reinvested gains
-            elif any(keyword in activity_type for keyword in ["switchout"]):
-                cash_flows[month_key] += amount  # Positive for money coming out
+                logger.info(f"Applied as DIVIDEND/GAIN (negative): -{amount}")
             else:
-                logger.warning(f"Unknown activity type: {activity['activity_type']}, treating as neutral")
+                logger.warning(f"Unknown activity type: {activity['activity_type']}, treating as neutral (amount={amount})")
         
         # Add final valuation at the END of the IRR month (not the beginning)
         # This ensures that activities and valuations in the same calendar month

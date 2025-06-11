@@ -187,8 +187,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     };
 
     fetchFundValuations();
-    // Add onActivitiesUpdated to dependency array to refresh when data changes
-  }, [onActivitiesUpdated]);
+    // Only fetch once on component mount to avoid duplicate API calls
+  }, []); // Empty dependency array to only run once
 
   // Add keyboard shortcut for saving changes
   useEffect(() => {

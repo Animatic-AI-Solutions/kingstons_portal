@@ -240,12 +240,12 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
   // Format currency for display with comma separators and no abbreviations
   const formatCurrency = (value: number): string => {
     // Use toLocaleString with UK formatting for comma separators
-    // Set minimumFractionDigits to 0 and maximumFractionDigits to preserve exact decimals
+    // Round to 2 decimal places for consistent display
     const formatted = value.toLocaleString('en-GB', {
       style: 'currency',
       currency: 'GBP',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 20 // High number to preserve all decimal places
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2 // Round all values to 2 decimal places
     });
     
     return formatted;
@@ -591,9 +591,8 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
         else if (activityType === 'Fund Switch In' || activityType === 'Fund Switch Out') {
           return total + numValue;
         } 
-        // Other activities (Investment, RegularInvestment, GovernmentUplift) are added
-        // Current Value is not included in totals calculations typically
-        else if (activityType !== 'Current Value') {
+        // All other activities including Current Value/Valuations are added to totals
+        else {
           return total + numValue;
         }
       }

@@ -538,6 +538,9 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
   const [deactivationError, setDeactivationError] = useState<string | null>(null);
   const [showDeactivationConfirm, setShowDeactivationConfirm] = useState<boolean>(false);
   const [fundToDeactivate, setFundToDeactivate] = useState<{id: number, name: string, market_value: number} | null>(null);
+  const [selectedFundsForDeactivation, setSelectedFundsForDeactivation] = useState<Set<number>>(new Set());
+  const [isBulkDeactivationMode, setIsBulkDeactivationMode] = useState<boolean>(false);
+  const [fundsToDeactivate, setFundsToDeactivate] = useState<Array<{id: number, name: string, market_value: number}>>([]);
   const [latestValuationDate, setLatestValuationDate] = useState<string | null>(null);
   const [isProviderSwitchModalOpen, setIsProviderSwitchModalOpen] = useState<boolean>(false);
   const [availableProviders, setAvailableProviders] = useState<Array<{id: number, name: string}>>([]);
@@ -638,52 +641,39 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
     };
 
     fetchTotalPortfolioIRR();
-  }, [account?.portfolio_id, api, holdings, activityLogs]); // Added holdings and activityLogs as dependencies
+  }, [account?.portfolio_id, api]); // Removed holdings and activityLogs to prevent duplicate fetching
 
-  // Effect to fetch single fund IRRs from view when holdings change
+  // Effect to map IRR data from holdings to singleFundIRRs state (no additional API calls)
   useEffect(() => {
-    const fetchSingleFundIRRsFromView = async () => {
-      if (holdings.length === 0) return;
+    if (holdings.length === 0) {
+      setSingleFundIRRs({});
+      setIsLoadingSingleFundIRRs(false);
+      return;
+    }
+    
+    console.log(`Mapping IRR values from holdings data for ${holdings.length} funds`);
+    
+    // Map IRR values from holdings data (already fetched in fetchData)
+    const mappedIRRs: {[fundId: number]: {irr: number, date: string} | null} = {};
+    
+    holdings.forEach(holding => {
+      if (holding.isVirtual) return; // Skip virtual entries
       
-      try {
-        setIsLoadingSingleFundIRRs(true);
-        console.log(`Fetching stored IRR values for ${holdings.length} funds from view`);
-        
-        // Fetch from latest_portfolio_fund_irr_values view
-        if (accountId) {
-          const response = await api.get(`/api/client_products/${accountId}/complete`);
-          const viewIRRs = response.data?.irr_values || {};
-          
-          // Map the view IRR values to our state format
-          const mappedIRRs: {[fundId: number]: {irr: number, date: string} | null} = {};
-          
-          holdings.forEach(holding => {
-            if (holding.isVirtual) return; // Skip virtual entries
-            
-            const viewIRR = viewIRRs[holding.id];
-            if (viewIRR && viewIRR.irr_result !== null) {
-              mappedIRRs[holding.id] = {
-                irr: viewIRR.irr_result,
-                date: viewIRR.irr_date
-              };
-              console.log(`View IRR for fund ${holding.id} (${holding.fund_name}):`, mappedIRRs[holding.id]);
-        } else {
-              mappedIRRs[holding.id] = null;
-              console.log(`No view IRR found for fund ${holding.id} (${holding.fund_name})`);
-            }
-          });
-          
-          setSingleFundIRRs(mappedIRRs);
-        }
-      } catch (error) {
-        console.error('Error fetching single fund IRR values from view:', error);
-      } finally {
-        setIsLoadingSingleFundIRRs(false);
+      if (holding.irr !== undefined && holding.irr !== null && holding.irr_calculation_date) {
+        mappedIRRs[holding.id] = {
+          irr: holding.irr,
+          date: holding.irr_calculation_date
+        };
+        console.log(`Mapped IRR for fund ${holding.id} (${holding.fund_name}):`, mappedIRRs[holding.id]);
+      } else {
+        mappedIRRs[holding.id] = null;
+        console.log(`No IRR data for fund ${holding.id} (${holding.fund_name})`);
       }
-    };
-
-    fetchSingleFundIRRsFromView();
-  }, [holdings, accountId, api]); // Trigger when holdings change
+    });
+    
+    setSingleFundIRRs(mappedIRRs);
+    setIsLoadingSingleFundIRRs(false);
+  }, [holdings]); // Only depends on holdings, no API calls needed
 
 
   const fetchData = async (accountId: string) => {
@@ -1055,6 +1045,87 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
     }
   };
 
+  // Bulk deactivation function
+  const deactivateMultiplePortfolioFunds = async (fundIds: number[]) => {
+    try {
+      setDeactivating(true);
+      setDeactivationError(null);
+      
+      // Check if any selected funds have non-zero valuations
+      const fundsWithValue = fundIds
+        .map(id => holdings.find(holding => holding.id === id))
+        .filter(fund => fund && fund.market_value > 0);
+      
+      if (fundsWithValue.length > 0) {
+        const fundNames = fundsWithValue.map(fund => fund!.fund_name).join(', ');
+        throw new Error(`Cannot deactivate funds with non-zero valuations: ${fundNames}. Please set their latest valuations to zero first.`);
+      }
+      
+      // Deactivate all selected funds in parallel
+      const deactivationPromises = fundIds.map(fundId =>
+        api.patch(`/portfolio_funds/${fundId}`, { status: 'inactive' })
+      );
+      
+      await Promise.all(deactivationPromises);
+      
+      // Refresh the data to show the updated status
+      fetchData(accountId as string);
+      
+      // Close the confirmation modal and reset selection
+      setShowDeactivationConfirm(false);
+      setFundsToDeactivate([]);
+      setSelectedFundsForDeactivation(new Set());
+      setIsBulkDeactivationMode(false);
+      
+    } catch (err: any) {
+      console.error('Error deactivating portfolio funds:', err);
+      setDeactivationError(err.message || 'Failed to deactivate funds');
+    } finally {
+      setDeactivating(false);
+    }
+  };
+
+  // Toggle fund selection for bulk deactivation
+  const toggleFundSelection = (fundId: number) => {
+    const newSelection = new Set(selectedFundsForDeactivation);
+    if (newSelection.has(fundId)) {
+      newSelection.delete(fundId);
+    } else {
+      newSelection.add(fundId);
+    }
+    setSelectedFundsForDeactivation(newSelection);
+  };
+
+  // Select all active funds for deactivation
+  const selectAllActiveFunds = () => {
+    const activeFunds = holdings.filter(holding => 
+      !holding.isVirtual && holding.status !== 'inactive'
+    );
+    setSelectedFundsForDeactivation(new Set(activeFunds.map(fund => fund.id)));
+  };
+
+  // Clear all selections
+  const clearFundSelections = () => {
+    setSelectedFundsForDeactivation(new Set());
+  };
+
+  // Start bulk deactivation flow
+  const startBulkDeactivation = () => {
+    if (selectedFundsForDeactivation.size === 0) return;
+    
+    const selectedFunds = Array.from(selectedFundsForDeactivation)
+      .map(id => holdings.find(holding => holding.id === id))
+      .filter(fund => fund)
+      .map(fund => ({
+        id: fund!.id,
+        name: fund!.fund_name || 'Unknown Fund',
+        market_value: fund!.market_value || 0
+      }));
+    
+    setFundsToDeactivate(selectedFunds);
+    setShowDeactivationConfirm(true);
+  };
+
   // Add this after the fetchData function
   const fetchAvailableProviders = async () => {
     try {
@@ -1223,7 +1294,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
   // Component to display live Previous Funds IRR (calculates every render)
   const PreviousFundsIRRDisplay: React.FC<{ inactiveHoldings: Holding[] }> = ({ inactiveHoldings }) => {
     const [livePreviousFundsIRR, setLivePreviousFundsIRR] = useState<{irr: number, date: string} | null>(null);
-    const [isLoadingLivePreviousFundsIRR, setIsLoadingLivePreviousFundsIRR] = useState<boolean>(false);
+    const [isLoadingLivePreviousFundsIRR, setIsLoadingLivePreviousFundsIRR] = useState<boolean>(true); // Start with loading state
     const [livePreviousFundsIRRError, setLivePreviousFundsIRRError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -1374,6 +1445,50 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
               <div className="flex items-center">
                 <h2 className="text-xl font-semibold text-gray-900">Period Overview (All Time)</h2>
               </div>
+              <div className="flex items-center space-x-3">
+                {!isBulkDeactivationMode ? (
+                  <button
+                    onClick={() => setIsBulkDeactivationMode(true)}
+                    className="px-3 py-2 text-sm font-medium rounded text-red-600 border border-red-200 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                  >
+                    Bulk Deactivate
+                  </button>
+                ) : (
+                  <>
+                    <span className="text-sm text-gray-600">
+                      {selectedFundsForDeactivation.size} fund{selectedFundsForDeactivation.size !== 1 ? 's' : ''} selected
+                    </span>
+                    <button
+                      onClick={selectAllActiveFunds}
+                      className="px-2 py-1 text-xs font-medium rounded text-blue-600 border border-blue-200 hover:bg-blue-50"
+                    >
+                      Select All
+                    </button>
+                    <button
+                      onClick={clearFundSelections}
+                      className="px-2 py-1 text-xs font-medium rounded text-gray-600 border border-gray-200 hover:bg-gray-50"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      onClick={startBulkDeactivation}
+                      disabled={selectedFundsForDeactivation.size === 0}
+                      className="px-3 py-2 text-sm font-medium rounded text-white bg-red-600 hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed"
+                    >
+                      Deactivate Selected ({selectedFundsForDeactivation.size})
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsBulkDeactivationMode(false);
+                        setSelectedFundsForDeactivation(new Set());
+                      }}
+                      className="px-3 py-2 text-sm font-medium rounded text-gray-600 border border-gray-200 hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
             
             {(() => {
@@ -1383,6 +1498,22 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
+                        {isBulkDeactivationMode && (
+                          <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-8">
+                            <input
+                              type="checkbox"
+                              className="rounded border-gray-300 text-red-600 shadow-sm focus:border-red-300 focus:ring focus:ring-red-200 focus:ring-opacity-50"
+                              checked={selectedFundsForDeactivation.size > 0 && selectedFundsForDeactivation.size === holdings.filter(h => !h.isVirtual && h.status !== 'inactive').length}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  selectAllActiveFunds();
+                                } else {
+                                  clearFundSelections();
+                                }
+                              }}
+                            />
+                          </th>
+                        )}
                         <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-24" title="Fund Name">Name</th>
                         <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Total Investments">INV.</th>
                         <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Regular Investments">REG. INV.</th>
@@ -1394,7 +1525,6 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                         <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Withdrawals">WITH.</th>
                         <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-20" title="Most Recent Valuation">Valuation</th>
                         <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Most Recent IRR">IRR</th>
-                        <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -1431,6 +1561,20 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                 className={holding.isVirtual ? "bg-gray-100 border-t border-gray-300 cursor-pointer hover:bg-gray-200" : ""}
                                 onClick={holding.isVirtual ? togglePreviousFundsExpansion : undefined}
                               >
+                                {isBulkDeactivationMode && (
+                                  <td className="px-1 py-1 whitespace-nowrap text-center">
+                                    {!holding.isVirtual && holding.status !== 'inactive' ? (
+                                      <input
+                                        type="checkbox"
+                                        className="rounded border-gray-300 text-red-600 shadow-sm focus:border-red-300 focus:ring focus:ring-red-200 focus:ring-opacity-50"
+                                        checked={selectedFundsForDeactivation.has(holding.id)}
+                                        onChange={() => toggleFundSelection(holding.id)}
+                                      />
+                                    ) : (
+                                      <span className="text-gray-400">—</span>
+                                    )}
+                                  </td>
+                                )}
                                 <td className="px-1 py-1 whitespace-nowrap">
                                   <div className="flex items-center">
                                     {holding.isVirtual && (
@@ -1545,24 +1689,6 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                     )}
                                   </div>
                                 </td>
-                                <td className="px-1 py-1 whitespace-nowrap">
-                                  {!holding.isVirtual && holding.status !== 'inactive' && (
-                                    <button
-                                      onClick={() => {
-                                        setFundToDeactivate({
-                                          id: holding.id,
-                                          name: holding.fund_name || 'Unknown Fund',
-                                          market_value: holding.market_value || 0
-                                        });
-                                        setShowDeactivationConfirm(true);
-                                      }}
-                                      className="px-2 py-1 text-xs font-medium rounded text-red-600 border border-red-200 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-                                      title="Deactivate Fund"
-                                    >
-                                      Deactivate
-                                    </button>
-                                  )}
-                                </td>
                               </tr>
                             ))}
                             
@@ -1570,6 +1696,11 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                             {isPreviousFundsExpanded && inactiveHoldings.length > 0 && (
                               inactiveHoldings.map((inactiveHolding) => (
                                 <tr key={`inactive-${inactiveHolding.id}`} className="bg-blue-50 border-l-4 border-blue-300">
+                                  {isBulkDeactivationMode && (
+                                    <td className="px-1 py-1 whitespace-nowrap text-center">
+                                      <span className="text-gray-400">—</span>
+                                    </td>
+                                  )}
                                   <td className="px-1 py-1 whitespace-nowrap">
                                     <div className="flex items-center">
                                       <div className="ml-8 text-sm text-gray-700">
@@ -1633,9 +1764,6 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                       {getSingleFundIRRDisplay(inactiveHolding)}
                                     </div>
                                   </td>
-                                  <td className="px-1 py-1 whitespace-nowrap">
-                                    {/* No actions for inactive funds */}
-                                  </td>
                                 </tr>
                               ))
                             )}
@@ -1645,6 +1773,11 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                       
                       {/* Total Row - Updated to use state for total portfolio IRR */}
                       <tr className="bg-gray-50 font-medium">
+                        {isBulkDeactivationMode && (
+                          <td className="px-1 py-1 whitespace-nowrap">
+                            {/* Empty cell for checkbox column in total row */}
+                          </td>
+                        )}
                         <td className="px-1 py-1 whitespace-nowrap">
                           <div className="ml-4 text-base font-bold text-red-600">TOTAL</div>
                         </td>
@@ -1718,7 +1851,6 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                             <span className="text-sm text-gray-500">N/A</span>
                           )}
                         </td>
-                        <td className="px-1 py-1 whitespace-nowrap"></td>
                       </tr>
                     </tbody>
                   </table>
@@ -1918,19 +2050,45 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                     as="h3"
                     className="text-lg font-medium leading-6 text-gray-900"
                   >
-                    Deactivate Fund
+                    {fundsToDeactivate.length > 0 ? `Deactivate ${fundsToDeactivate.length} Fund${fundsToDeactivate.length !== 1 ? 's' : ''}` : 'Deactivate Fund'}
                   </Dialog.Title>
                   
                   <div className="mt-2">
-                    <p className="text-sm text-gray-500">
-                      Are you sure you want to deactivate <span className="font-semibold">{fundToDeactivate?.name}</span>?
-                    </p>
-                    
-                    {fundToDeactivate && fundToDeactivate.market_value > 0 && (
-                      <div className="mt-2 p-2 bg-red-50 text-red-700 rounded border border-red-200 text-sm">
-                        Warning: This fund has a valuation of {formatCurrency(fundToDeactivate.market_value)}. 
-                        Deactivating a fund with a non-zero valuation is not recommended.
-                      </div>
+                    {fundsToDeactivate.length > 0 ? (
+                      <>
+                        <p className="text-sm text-gray-500 mb-3">
+                          Are you sure you want to deactivate the following {fundsToDeactivate.length} fund{fundsToDeactivate.length !== 1 ? 's' : ''}?
+                        </p>
+                        <div className="max-h-60 overflow-y-auto">
+                          <ul className="space-y-2">
+                            {fundsToDeactivate.map((fund) => (
+                              <li key={fund.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                                <span className="font-medium text-sm">{fund.name}</span>
+                                <span className="text-xs text-gray-500">{formatCurrency(fund.market_value)}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        {fundsToDeactivate.some(fund => fund.market_value > 0) && (
+                          <div className="mt-3 p-2 bg-red-50 text-red-700 rounded border border-red-200 text-sm">
+                            Warning: Some funds have non-zero valuations. 
+                            Deactivating funds with non-zero valuations is not recommended.
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm text-gray-500">
+                          Are you sure you want to deactivate <span className="font-semibold">{fundToDeactivate?.name}</span>?
+                        </p>
+                        
+                        {fundToDeactivate && fundToDeactivate.market_value > 0 && (
+                          <div className="mt-2 p-2 bg-red-50 text-red-700 rounded border border-red-200 text-sm">
+                            Warning: This fund has a valuation of {formatCurrency(fundToDeactivate.market_value)}. 
+                            Deactivating a fund with a non-zero valuation is not recommended.
+                          </div>
+                        )}
+                      </>
                     )}
                     
                     {deactivationError && (
@@ -1952,7 +2110,13 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                     <button
                       type="button"
                       className="inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:bg-red-300 disabled:cursor-not-allowed"
-                      onClick={() => fundToDeactivate && deactivatePortfolioFund(fundToDeactivate.id)}
+                      onClick={() => {
+                        if (fundsToDeactivate.length > 0) {
+                          deactivateMultiplePortfolioFunds(fundsToDeactivate.map(f => f.id));
+                        } else if (fundToDeactivate) {
+                          deactivatePortfolioFund(fundToDeactivate.id);
+                        }
+                      }}
                       disabled={deactivating}
                     >
                       {deactivating ? (
@@ -1964,7 +2128,9 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                           Deactivating...
                         </>
                       ) : (
-                        'Deactivate Fund'
+                        fundsToDeactivate.length > 0 
+                          ? `Deactivate ${fundsToDeactivate.length} Fund${fundsToDeactivate.length !== 1 ? 's' : ''}` 
+                          : 'Deactivate Fund'
                       )}
                     </button>
                   </div>
