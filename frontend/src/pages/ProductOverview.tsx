@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getProductFUM, calculateStandardizedMultipleFundsIRR } from '../services/api';
+import { getProductFUM, calculateStandardizedMultipleFundsIRR, lapseProduct, reactivateProduct } from '../services/api';
 import { MultiSelectSearchableDropdown } from '../components/ui/SearchableDropdown';
 import { isCashFund } from '../utils/fundUtils';
 
@@ -121,6 +121,16 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  
+  // Lapse state
+  const [isLapseModalOpen, setIsLapseModalOpen] = useState(false);
+  const [isLapsing, setIsLapsing] = useState(false);
+  const [lapseError, setLapseError] = useState<string | null>(null);
+
+  // Reactivate state
+  const [isReactivateModalOpen, setIsReactivateModalOpen] = useState(false);
+  const [isReactivating, setIsReactivating] = useState(false);
+  const [reactivateError, setReactivateError] = useState<string | null>(null);
   const [fundsData, setFundsData] = useState<Map<number, any>>(new Map());
   const [lastValuationDate, setLastValuationDate] = useState<string | null>(null);
   const [targetRisk, setTargetRisk] = useState<number | null>(null);
@@ -1084,17 +1094,31 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       await api.delete(`/api/client_products/${accountId}`);
       console.log('Product deleted successfully');
       
-      // Navigate back to products list
-      navigate('/products', { 
-        state: { 
-          notification: {
-            type: 'success',
-            message: account?.portfolio_id 
-              ? `Product and associated portfolio #${account.portfolio_id} deleted successfully` 
-              : 'Product deleted successfully'
+      // Navigate back to client details (breadcrumb parent) with success message
+      if (account?.client_id) {
+        navigate(`/client_groups/${account.client_id}`, { 
+          state: { 
+            notification: {
+              type: 'success',
+              message: account?.portfolio_id 
+                ? `Product and associated portfolio #${account.portfolio_id} deleted successfully` 
+                : 'Product deleted successfully'
+            }
           }
-        }
-      });
+        });
+      } else {
+        // Fallback to products list if client_id is not available
+        navigate('/products', { 
+          state: { 
+            notification: {
+              type: 'success',
+              message: account?.portfolio_id 
+                ? `Product and associated portfolio #${account.portfolio_id} deleted successfully` 
+                : 'Product deleted successfully'
+            }
+          }
+        });
+      }
     } catch (err: any) {
       console.error('Error deleting product:', err);
       
@@ -1115,6 +1139,96 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       }
       
       setIsDeleting(false);
+    }
+  };
+
+  // Add function to handle product lapse
+  const handleLapseProduct = async () => {
+    if (!accountId) return;
+    
+    setIsLapsing(true);
+    setLapseError(null);
+    
+    try {
+      const response = await lapseProduct(parseInt(accountId));
+      console.log('Product lapsed successfully');
+      
+      // Navigate back to client details (breadcrumb parent) with success message
+      if (account?.client_id) {
+        navigate(`/client_groups/${account.client_id}`, { 
+          state: { 
+            notification: {
+              type: 'success',
+              message: 'Product successfully lapsed'
+            }
+          }
+        });
+      } else {
+        // Fallback to products list if client_id is not available
+        navigate('/products', { 
+          state: { 
+            notification: {
+              type: 'success',
+              message: 'Product successfully lapsed'
+            }
+          }
+        });
+      }
+    } catch (err: any) {
+      console.error('Error lapsing product:', err);
+      
+      if (err.response?.data?.detail) {
+        setLapseError(err.response.data.detail);
+      } else {
+        setLapseError('Failed to lapse product. Please try again later.');
+      }
+      
+      setIsLapsing(false);
+    }
+  };
+
+  // Add function to handle product reactivation
+  const handleReactivateProduct = async () => {
+    if (!accountId) return;
+    
+    setIsReactivating(true);
+    setReactivateError(null);
+    
+    try {
+      const response = await reactivateProduct(parseInt(accountId));
+      console.log('Product reactivated successfully');
+      
+      // Navigate back to client details (breadcrumb parent) with success message
+      if (account?.client_id) {
+        navigate(`/client_groups/${account.client_id}`, { 
+          state: { 
+            notification: {
+              type: 'success',
+              message: 'Product successfully reactivated'
+            }
+          }
+        });
+      } else {
+        // Fallback to products list if client_id is not available
+        navigate('/products', { 
+          state: { 
+            notification: {
+              type: 'success',
+              message: 'Product successfully reactivated'
+            }
+          }
+        });
+      }
+    } catch (err: any) {
+      console.error('Error reactivating product:', err);
+      
+      if (err.response?.data?.detail) {
+        setReactivateError(err.response.data.detail);
+      } else {
+        setReactivateError('Failed to reactivate product. Please try again later.');
+      }
+      
+      setIsReactivating(false);
     }
   };
 
@@ -1168,6 +1282,116 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
               }`}
             >
               {isDeleting ? 'Deleting...' : 'Delete Product and Portfolio'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Add lapse confirmation modal component
+  const LapseConfirmationModal = () => {
+    if (!isLapseModalOpen) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-md w-full p-6">
+          <div className="flex items-start">
+            <div className="flex-shrink-0 text-yellow-600">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-lg font-medium text-gray-900">Lapse Product</h3>
+              <div className="mt-2">
+                <p className="text-sm text-gray-500">
+                  Are you sure you want to lapse this product? This will change its status to inactive and set the end date to today.
+                </p>
+                <p className="mt-2 text-sm text-yellow-600 font-medium">
+                  Note: This action can only be performed on products with zero total value and cannot be undone.
+                </p>
+                {lapseError && (
+                  <p className="mt-2 text-sm text-red-600">
+                    Error: {lapseError}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="mt-6 flex space-x-3 justify-end">
+            <button
+              type="button"
+              disabled={isLapsing}
+              onClick={() => setIsLapseModalOpen(false)}
+              className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={isLapsing}
+              onClick={handleLapseProduct}
+              className={`inline-flex justify-center px-4 py-2 text-sm font-medium text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 ${
+                isLapsing ? 'bg-yellow-400 cursor-not-allowed' : 'bg-yellow-600 hover:bg-yellow-700'
+              }`}
+            >
+              {isLapsing ? 'Lapsing...' : 'Lapse Product'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Add reactivate confirmation modal component
+  const ReactivateConfirmationModal = () => {
+    if (!isReactivateModalOpen) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-md w-full p-6">
+          <div className="flex items-start">
+            <div className="flex-shrink-0 text-green-600">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-lg font-medium text-gray-900">Reactivate Product</h3>
+              <div className="mt-2">
+                <p className="text-sm text-gray-500">
+                  Are you sure you want to reactivate this product? This will change its status to active and clear the end date.
+                </p>
+                <p className="mt-2 text-sm text-green-600 font-medium">
+                  Note: The product will become active again and available for normal operations.
+                </p>
+                {reactivateError && (
+                  <p className="mt-2 text-sm text-red-600">
+                    Error: {reactivateError}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="mt-6 flex space-x-3 justify-end">
+            <button
+              type="button"
+              disabled={isReactivating}
+              onClick={() => setIsReactivateModalOpen(false)}
+              className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={isReactivating}
+              onClick={handleReactivateProduct}
+              className={`inline-flex justify-center px-4 py-2 text-sm font-medium text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${
+                isReactivating ? 'bg-green-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
+              }`}
+            >
+              {isReactivating ? 'Reactivating...' : 'Reactivate Product'}
             </button>
           </div>
         </div>
@@ -1361,6 +1585,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     return (
     <>
       <DeleteConfirmationModal />
+      <LapseConfirmationModal />
+      <ReactivateConfirmationModal />
       <div className="flex flex-col space-y-6 -mx-6 sm:-mx-8 lg:-mx-12">
         {/* Edit Form (conditionally displayed) */}
         {isEditMode && (
@@ -1500,6 +1726,30 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           </svg>
                           Edit
                         </button>
+                        {/* Show Lapse button only when total value is zero */}
+                        {account.status === 'active' && portfolioTotalValue !== null && portfolioTotalValue <= 0.01 && (
+                          <button
+                            onClick={() => setIsLapseModalOpen(true)}
+                            className="inline-flex items-center px-2 py-1 border border-yellow-300 shadow-sm text-xs leading-4 font-medium rounded text-yellow-700 bg-white hover:bg-yellow-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                          >
+                            <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Lapse
+                          </button>
+                        )}
+                        {/* Show Reactivate button only when product is inactive */}
+                        {account.status === 'inactive' && (
+                          <button
+                            onClick={() => setIsReactivateModalOpen(true)}
+                            className="inline-flex items-center px-2 py-1 border border-green-300 shadow-sm text-xs leading-4 font-medium rounded text-green-700 bg-white hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                          >
+                            <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Reactivate
+                          </button>
+                        )}
                         <button
                           onClick={() => setIsDeleteModalOpen(true)}
                           className="inline-flex items-center px-2 py-1 border border-red-300 shadow-sm text-xs leading-4 font-medium rounded text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
@@ -1969,13 +2219,26 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                         Risk Factor
                       </th>
                       <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Last Valuation
+                        <div>Valuation</div>
+                        {findCommonValuationDate(holdings.filter(h => !h.isVirtual && h.status === 'active')) && (
+                          <div className="text-xs text-gray-400 font-normal normal-case mt-1">
+                            {formatDate(findCommonValuationDate(holdings.filter(h => !h.isVirtual && h.status === 'active'))!)}
+                          </div>
+                        )}
                       </th>
                       <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actual Weighting %
                       </th>
                       <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Target Weighting %
+                      </th>
+                      <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <div>IRR</div>
+                        {findCommonValuationDate(holdings.filter(h => !h.isVirtual && h.status === 'active')) && (
+                          <div className="text-xs text-gray-400 font-normal normal-case mt-1">
+                            {formatDate(findCommonValuationDate(holdings.filter(h => !h.isVirtual && h.status === 'active'))!)}
+                          </div>
+                        )}
                       </th>
                       {isEditingFunds && account && !account.template_generation_id && (
                         <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -2000,14 +2263,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                         </td>
                         <td className="px-6 py-2 whitespace-nowrap text-sm">
                           {holding.market_value !== undefined && holding.market_value !== null ? (
-                            <div>
-                              <div className="font-medium">{formatCurrency(holding.market_value)}</div>
-                              {holding.valuation_date && (
-                                <div className="text-xs text-gray-500">
-                                  {formatDate(holding.valuation_date)}
-                                </div>
-                              )}
-                            </div>
+                            <div className="font-medium">{formatCurrency(holding.market_value)}</div>
                           ) : (
                             <span className="text-gray-500">N/A</span>
                           )}
@@ -2018,16 +2274,19 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                               <span className="font-medium">
                                 {liveWeightings.get(holding.id)?.toFixed(1)}%
                               </span>
-                              {holding.target_weighting && (
+                              {(() => {
+                                const targetWeight = holding.target_weighting ? parseFloat(holding.target_weighting) : 0;
+                                return targetWeight > 0;
+                              })() && (
                                 <span className={`ml-2 text-xs px-1 py-0.5 rounded-full ${
-                                  Math.abs((liveWeightings.get(holding.id) || 0) - parseFloat(holding.target_weighting)) < 1
+                                  Math.abs((liveWeightings.get(holding.id) || 0) - parseFloat(holding.target_weighting || '0')) < 1
                                     ? 'bg-green-100 text-green-800'
-                                    : Math.abs((liveWeightings.get(holding.id) || 0) - parseFloat(holding.target_weighting)) < 3
+                                    : Math.abs((liveWeightings.get(holding.id) || 0) - parseFloat(holding.target_weighting || '0')) < 3
                                     ? 'bg-yellow-100 text-yellow-800'
                                     : 'bg-red-100 text-red-800'
                                 }`}>
-                                  {(liveWeightings.get(holding.id) || 0) > parseFloat(holding.target_weighting) ? '+' : ''}
-                                  {((liveWeightings.get(holding.id) || 0) - parseFloat(holding.target_weighting)).toFixed(1)}
+                                  {(liveWeightings.get(holding.id) || 0) > parseFloat(holding.target_weighting || '0') ? '+' : ''}
+                                  {((liveWeightings.get(holding.id) || 0) - parseFloat(holding.target_weighting || '0')).toFixed(1)}
                                 </span>
                               )}
                             </div>
@@ -2062,6 +2321,17 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             <span className="text-sm font-medium text-gray-900">
                               {holding.target_weighting ? parseFloat(holding.target_weighting).toFixed(2) : '0.00'}%
                             </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-2 whitespace-nowrap text-sm">
+                          {holding.irr !== undefined && holding.irr !== null ? (
+                            <span className={`font-medium ${
+                              holding.irr >= 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {formatPercentage(holding.irr)}
+                            </span>
+                          ) : (
+                            <span className="text-gray-500">-</span>
                           )}
                         </td>
                         {isEditingFunds && account && !account.template_generation_id && (

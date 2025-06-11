@@ -500,6 +500,24 @@ export const getProductIRR = (productId: number) => {
 };
 
 /**
+ * Lapses a product by changing its status to inactive when total value is zero
+ * @param {number} productId - Product ID to lapse
+ * @returns {Promise} - API response with updated product
+ */
+export const lapseProduct = (productId: number) => {
+  return api.patch(`client_products/${productId}/lapse`);
+};
+
+/**
+ * Reactivates a lapsed product by changing its status from inactive to active
+ * @param {number} productId - Product ID to reactivate
+ * @returns {Promise} - API response with updated product
+ */
+export const reactivateProduct = (productId: number) => {
+  return api.patch(`client_products/${productId}/reactivate`);
+};
+
+/**
  * Calculates standardized IRR for multiple portfolio funds using the new standardized endpoint
  * @param {Object} params - IRR calculation parameters
  * @param {number[]} params.portfolioFundIds - Array of portfolio fund IDs

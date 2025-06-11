@@ -78,6 +78,7 @@ interface ProductPeriodSummary {
   provider_theme_color?: string;
   funds?: FundSummary[]; // Add funds array to store individual fund data
   weighted_risk?: number; // Weighted risk based on fund valuations and risk factors
+  status?: string; // Product status to determine if it should be greyed out
 }
 
 // New interface for fund-level summary data
@@ -206,6 +207,9 @@ const ReportGenerator: React.FC = () => {
   
   // State for Previous Funds expansion (per product)
   const [expandedPreviousFunds, setExpandedPreviousFunds] = useState<Set<number>>(new Set());
+  
+  // State for inactive product detailed view control
+  const [showInactiveProductDetails, setShowInactiveProductDetails] = useState<Set<number>>(new Set());
   
 
   
@@ -650,7 +654,40 @@ const ReportGenerator: React.FC = () => {
           .filter(fund => fund.status === 'active' || !fund.status)
           .map(fund => fund.id);
         
-        if (activeFundIds.length === 0) {
+        // Also collect inactive products (products where all funds are inactive)
+        const portfolioFundsByProduct = new Map<number, any[]>();
+        includedProducts.forEach(product => {
+          if (product.portfolio_id) {
+            const productFunds = allPortfolioFunds.filter(fund => {
+              const portfolioFundsInProduct = Array.from(batchPortfolioFundsResult.get(product.portfolio_id!) || []);
+              return portfolioFundsInProduct.some(pf => pf.id === fund.id);
+            });
+            portfolioFundsByProduct.set(product.id, productFunds);
+          }
+        });
+        
+        // Identify inactive products (products where ALL funds are inactive)
+        const inactiveProducts = includedProducts.filter(product => {
+          if (product.status === 'inactive') return true;
+          const productFunds = portfolioFundsByProduct.get(product.id) || [];
+          return productFunds.length > 0 && productFunds.every(fund => fund.status && fund.status !== 'active');
+        });
+        
+        // Get all fund IDs for inactive products
+        const inactiveProductFundIds = inactiveProducts.flatMap(product => {
+          const productFunds = portfolioFundsByProduct.get(product.id) || [];
+          return productFunds.map(fund => fund.id);
+        });
+        
+        // If we only have inactive products, still allow them to proceed (they can select any valuation date)
+        if (activeFundIds.length === 0 && inactiveProductFundIds.length > 0) {
+          // For inactive products, we don't need common valuation dates - they can use any available date
+          // Set a default set of available dates (could be empty, letting user select manually)
+          setAvailableValuationDates([]);
+          setSelectedValuationDate(null);
+          setIsLoadingValuationDates(false);
+          return;
+        } else if (activeFundIds.length === 0) {
           setAvailableValuationDates([]);
           setSelectedValuationDate(null);
           setIsLoadingValuationDates(false);
@@ -1085,10 +1122,15 @@ const ReportGenerator: React.FC = () => {
           }
         });
         
-        // Skip product if it has no active funds
-        if (activeFundIds.size === 0) {
-          console.log(`Skipping product ${productDetails.product_name} as it has no active funds`);
+        // Skip product if it has no active funds AND is not an inactive product
+        if (activeFundIds.size === 0 && (productDetails.status !== 'inactive' && inactiveFundIds.size === 0)) {
+          console.log(`Skipping product ${productDetails.product_name} as it has no active funds and is not inactive`);
           continue;
+        }
+        
+        // Log if we're processing an inactive product
+        if (activeFundIds.size === 0 && (productDetails.status === 'inactive' || inactiveFundIds.size > 0)) {
+          console.log(`Processing inactive product ${productDetails.product_name} with ${inactiveFundIds.size} inactive funds`);
         }
         
         // Get activity logs for all fund IDs
@@ -1236,10 +1278,10 @@ const ReportGenerator: React.FC = () => {
           }
         
         switch(log.activity_type) {
-            case 'Investment': case 'RegularInvestment': case 'GovernmentUplift': 
+            case 'Investment': case 'RegularInvestment': case 'GovernmentUplift': case 'ProductSwitchIn':
               totalInvestment += parsedAmount; 
               break;
-            case 'Withdrawal': case 'RegularWithdrawal':
+            case 'Withdrawal': case 'ProductSwitchOut':
               totalWithdrawal += parsedAmount; 
               break;
             case 'SwitchIn': case 'FundSwitchIn': 
@@ -1259,10 +1301,13 @@ const ReportGenerator: React.FC = () => {
           productStartDate
         });
         
-        // Calculate current valuation (only from active funds)
+        // Calculate current valuation (from active funds, or all funds for inactive products)
         let mostRecentValuationDate: string | null = null;
         productPortfolioFunds.forEach(pf => {
-          if (!inactiveFundIds.has(pf.id)) {
+          // Include active funds always, and inactive funds for inactive products
+          const shouldInclude = !inactiveFundIds.has(pf.id) || (productDetails.status === 'inactive' || activeFundIds.size === 0);
+          
+          if (shouldInclude) {
             const latestVal = latestValuationFromViewMap.get(pf.id);
             if (latestVal) {
               productValuation += latestVal.value;
@@ -1275,8 +1320,8 @@ const ReportGenerator: React.FC = () => {
           }
         });
         
-        // Check if this product has zero valuation but has active funds
-        if (productValuation === 0 && activeFundIds.size > 0) {
+        // Check if this product has zero valuation but has active funds (skip inactive products)
+        if (productValuation === 0 && activeFundIds.size > 0 && productDetails.status !== 'inactive') {
           // Add zero-valuation product to missing valuations list
           activeFundIds.forEach(fundId => {
             const fundInfo = productPortfolioFunds.find(pf => pf.id === fundId);
@@ -1290,6 +1335,11 @@ const ReportGenerator: React.FC = () => {
           
           console.log(`Product ${productDetails.product_name} has zero valuation for selected date`);
           continue; // Skip this product
+        }
+        
+        // Allow inactive products to proceed even with zero valuation
+        if (productDetails.status === 'inactive' || (activeFundIds.size === 0 && inactiveFundIds.size > 0)) {
+          console.log(`Allowing inactive product ${productDetails.product_name} to proceed with valuation: ${productValuation}`);
         }
         
         // Update overall valuation date (take the latest across all products)
@@ -1401,10 +1451,10 @@ const ReportGenerator: React.FC = () => {
             }
             
             switch(log.activity_type) {
-              case 'Investment': case 'RegularInvestment': case 'GovernmentUplift': 
+              case 'Investment': case 'RegularInvestment': case 'GovernmentUplift': case 'ProductSwitchIn':
                 fundInvestment += amount; 
                 break;
-              case 'Withdrawal': case 'RegularWithdrawal':
+              case 'Withdrawal': case 'ProductSwitchOut':
                 fundWithdrawal += amount; 
                 break;
               case 'SwitchIn': case 'FundSwitchIn': 
@@ -1424,17 +1474,19 @@ const ReportGenerator: React.FC = () => {
             netFlow: fundInvestment - fundWithdrawal + fundSwitchIn - fundSwitchOut
           });
           
-          // Get current valuation
+          // Get current valuation (include inactive funds for inactive products)
           let fundValuation = 0;
-          if (!inactiveFundIds.has(portfolioFund.id)) {
-            const latestVal = latestValuationFromViewMap.get(portfolioFund.id);
-              if (latestVal) {
-              fundValuation = latestVal.value;
-            }
+          const latestVal = latestValuationFromViewMap.get(portfolioFund.id);
+          if (latestVal) {
+            fundValuation = latestVal.value;
+          } else if (inactiveFundIds.has(portfolioFund.id)) {
+            // For inactive funds, try to get the latest valuation even if it doesn't match the selected date
+            fundValuation = 0; // Default to 0 for inactive funds without valuations
+            console.log(`Using zero valuation for inactive fund ${fundName} (ID: ${portfolioFund.id})`);
           }
           
-          // Get fund IRR from the fetched values
-          const fundIRR = fundIRRMap.get(portfolioFund.id) || null;
+          // Get fund IRR from the fetched values (preserve zero values)
+          const fundIRR = fundIRRMap.has(portfolioFund.id) ? (fundIRRMap.get(portfolioFund.id) ?? null) : null;
           
           // Get historical IRR data for this fund
           const historicalIRRValues = historicalIRRMap.get(portfolioFund.id) || [];
@@ -1463,7 +1515,10 @@ const ReportGenerator: React.FC = () => {
 
         let productIRR: number | null = null;
         
-        if (fundSummaries.length > 0 && productValuation > 0) {
+        // For inactive products, try to get the latest portfolio IRR even if valuation is zero
+        const isInactiveProduct = productDetails.status === 'inactive' || (activeFundIds.size === 0 && inactiveFundIds.size > 0);
+        
+        if (fundSummaries.length > 0 && (productValuation > 0 || isInactiveProduct)) {
           try {
             // Get portfolio fund IDs for this product (excluding only virtual funds)
             const productPortfolioFundIds = fundSummaries
@@ -1482,16 +1537,40 @@ const ReportGenerator: React.FC = () => {
                 formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
               }
               
-              // Use optimized IRR service instead of duplicate calculations
-              const optimizedIRRData = await irrDataService.getOptimizedIRRData({
-                portfolioId: productDetails.portfolio_id,
-                portfolioFundIds: productPortfolioFundIds,
-                endDate: formattedDate,
-                includeHistorical: false
-              });
-              
-              productIRR = optimizedIRRData.portfolioIRR;
-              console.log(`Optimized IRR for product ${productId}: ${productIRR}% (source: ${optimizedIRRData.irrDate})`);
+              // Use optimized IRR service for active products, latest portfolio IRR for inactive products
+              if (isInactiveProduct) {
+                // For inactive products, get the latest portfolio-level IRR
+                try {
+                  const portfolioIRRResponse = await api.get(`/portfolios/${productDetails.portfolio_id}/latest-irr`);
+                  if (portfolioIRRResponse.data && typeof portfolioIRRResponse.data.irr_result === 'number') {
+                    productIRR = portfolioIRRResponse.data.irr_result;
+                    console.log(`Latest portfolio IRR for inactive product ${productId}: ${productIRR}% (date: ${portfolioIRRResponse.data.irr_date})`);
+                  } else {
+                    console.warn(`No portfolio IRR found for inactive product ${productId}`);
+                  }
+                } catch (portfolioIRRErr) {
+                  console.error(`Error fetching portfolio IRR for inactive product ${productId}:`, portfolioIRRErr);
+                  // Fall back to fund-level calculation
+                  const optimizedIRRData = await irrDataService.getOptimizedIRRData({
+                    portfolioId: productDetails.portfolio_id,
+                    portfolioFundIds: productPortfolioFundIds,
+                    endDate: formattedDate,
+                    includeHistorical: false
+                  });
+                  productIRR = optimizedIRRData.portfolioIRR;
+                }
+              } else {
+                // For active products, use optimized IRR service
+                const optimizedIRRData = await irrDataService.getOptimizedIRRData({
+                  portfolioId: productDetails.portfolio_id,
+                  portfolioFundIds: productPortfolioFundIds,
+                  endDate: formattedDate,
+                  includeHistorical: false
+                });
+                
+                productIRR = optimizedIRRData.portfolioIRR;
+                console.log(`Optimized IRR for active product ${productId}: ${productIRR}% (source: ${optimizedIRRData.irrDate})`);
+              }
           } else {
               console.warn(`No valid portfolio fund IDs found for product ${productId} IRR calculation`);
             }
@@ -1603,18 +1682,66 @@ const ReportGenerator: React.FC = () => {
           }
           
           // Calculate weighted risk factor for Previous Funds
-          // Use equal weighting for now since inactive funds have zero total_investment
-          // TODO: Fetch target_weighting from portfolio_funds for more accurate weighting
+          // Use net flows, target weightings, or valuations as weights for proper risk calculation
           let weightedRisk: number | undefined = undefined;
           const fundsWithRisk = inactiveFunds.filter(
             fund => fund.risk_factor !== undefined && fund.risk_factor !== null
           );
           
           if (fundsWithRisk.length > 0) {
-            // Use equal weighting (simple average) for now
-            weightedRisk = fundsWithRisk.reduce(
-              (sum, fund) => sum + fund.risk_factor!, 0
-            ) / fundsWithRisk.length;
+            // Try different weighting approaches in order of preference
+            let totalWeight = 0;
+            let weightedRiskSum = 0;
+            
+            // Approach 1: Use absolute net flow as weights (most meaningful for inactive funds)
+            const netFlowWeights = fundsWithRisk.map(fund => Math.abs(fund.net_flow || 0));
+            const totalNetFlow = netFlowWeights.reduce((sum, weight) => sum + weight, 0);
+            
+            if (totalNetFlow > 0) {
+              // Use net flow weighting
+              fundsWithRisk.forEach((fund, index) => {
+                const weight = netFlowWeights[index] / totalNetFlow;
+                weightedRiskSum += fund.risk_factor! * weight;
+              });
+              weightedRisk = weightedRiskSum;
+              totalWeight = totalNetFlow;
+              console.log('🎯 Using net flow weighting for Previous Funds risk');
+            } else {
+              // Approach 2: Use total investment as weights
+              const investmentWeights = fundsWithRisk.map(fund => Math.abs(fund.total_investment || 0));
+              const totalInvestmentWeight = investmentWeights.reduce((sum, weight) => sum + weight, 0);
+              
+              if (totalInvestmentWeight > 0) {
+                fundsWithRisk.forEach((fund, index) => {
+                  const weight = investmentWeights[index] / totalInvestmentWeight;
+                  weightedRiskSum += fund.risk_factor! * weight;
+                });
+                weightedRisk = weightedRiskSum;
+                totalWeight = totalInvestmentWeight;
+                console.log('🎯 Using investment amount weighting for Previous Funds risk');
+              } else {
+                // Approach 3: Use current valuation as weights (fallback)
+                const valuationWeights = fundsWithRisk.map(fund => Math.abs(fund.current_valuation || 0));
+                const totalValuationWeight = valuationWeights.reduce((sum, weight) => sum + weight, 0);
+                
+                if (totalValuationWeight > 0) {
+                  fundsWithRisk.forEach((fund, index) => {
+                    const weight = valuationWeights[index] / totalValuationWeight;
+                    weightedRiskSum += fund.risk_factor! * weight;
+                  });
+                  weightedRisk = weightedRiskSum;
+                  totalWeight = totalValuationWeight;
+                  console.log('🎯 Using valuation weighting for Previous Funds risk');
+                } else {
+                  // Approach 4: Equal weighting as final fallback
+                  weightedRisk = fundsWithRisk.reduce(
+                    (sum, fund) => sum + fund.risk_factor!, 0
+                  ) / fundsWithRisk.length;
+                  totalWeight = fundsWithRisk.length;
+                  console.log('🎯 Using equal weighting for Previous Funds risk (fallback)');
+                }
+              }
+            }
           }
 
           console.log('🎯 Previous Funds weighted risk calculation:', {
@@ -1725,7 +1852,8 @@ const ReportGenerator: React.FC = () => {
           provider_name: productDetails.provider_name,
           provider_theme_color: productDetails.provider_theme_color,
           funds: finalFundList,
-          weighted_risk: productWeightedRisk
+          weighted_risk: productWeightedRisk,
+          status: productDetails.status // Add product status for greying out inactive products
         });
         
         // Add to overall valuation
@@ -1903,6 +2031,18 @@ Please select a different valuation date or ensure all active funds have valuati
   // Toggle function for Previous Funds expansion
   const togglePreviousFundsExpansion = (productId: number) => {
     setExpandedPreviousFunds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(productId)) {
+        newSet.delete(productId);
+      } else {
+        newSet.add(productId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleInactiveProductDetails = (productId: number) => {
+    setShowInactiveProductDetails(prev => {
       const newSet = new Set(prev);
       if (newSet.has(productId)) {
         newSet.delete(productId);
@@ -2122,6 +2262,35 @@ Please select a different valuation date or ensure all active funds have valuati
                           </label>
                         );
                       })
+                    }
+                  </div>
+                </div>
+              )}
+              
+              {/* Inactive Product Detail Controls */}
+              {productSummaries.some(product => product.status === 'inactive') && (
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <h5 className="text-sm font-medium text-gray-700 mb-2">Inactive Product Details</h5>
+                  <p className="text-xs text-gray-500 mb-2">
+                    Choose which inactive products to show detailed cards for (unchecked = summary table only)
+                  </p>
+                  <div className="space-y-1">
+                    {productSummaries
+                      .filter(product => product.status === 'inactive')
+                      .map(product => (
+                        <label key={product.id} className="inline-flex items-center w-full">
+                          <input
+                            type="checkbox"
+                            checked={showInactiveProductDetails.has(product.id)}
+                            onChange={() => toggleInactiveProductDetails(product.id)}
+                            className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                          />
+                          <span className="ml-2 text-sm text-gray-600">
+                            {product.product_name}
+                            <span className="ml-1 text-xs text-red-600">(Inactive)</span>
+                          </span>
+                        </label>
+                      ))
                     }
                   </div>
                 </div>
@@ -2553,8 +2722,8 @@ Please select a different valuation date or ensure all active funds have valuati
                     }
                     
                     return (
-                    <tr key={product.id} className="hover:bg-blue-50">
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">
+                    <tr key={product.id} className={`hover:bg-blue-50 ${product.status === 'inactive' ? 'opacity-50 bg-gray-50' : ''}`}>
+                    <td className={`px-4 py-3 whitespace-nowrap text-sm ${product.status === 'inactive' ? 'text-gray-500' : 'text-gray-800'}`}>
                         <div className="flex items-center gap-2">
                           {product.provider_theme_color && (
                             <div 
@@ -2563,6 +2732,9 @@ Please select a different valuation date or ensure all active funds have valuati
                             />
                           )}
                           {product.product_name}
+                          {product.status === 'inactive' && (
+                            <span className="ml-2 text-xs text-red-600 font-medium">(Inactive)</span>
+                          )}
                         </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
@@ -2685,8 +2857,17 @@ Please select a different valuation date or ensure all active funds have valuati
             </div>
           </div>
           
-          {productSummaries.map(product => (
-            <div key={product.id} className="mb-8 bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+          {productSummaries
+            .filter(product => {
+              // For inactive products, only show if checkbox is checked
+              if (product.status === 'inactive') {
+                return showInactiveProductDetails.has(product.id);
+              }
+              // For active products, always show
+              return true;
+            })
+            .map(product => (
+            <div key={product.id} className={`mb-8 bg-white shadow-sm rounded-lg border border-gray-200 p-6 ${product.status === 'inactive' ? 'opacity-60 bg-gray-50' : ''}`}>
               <div className="flex items-center gap-3 mb-4">
                 {product.provider_theme_color && (
                   <div 
@@ -2694,8 +2875,11 @@ Please select a different valuation date or ensure all active funds have valuati
                     style={{ backgroundColor: product.provider_theme_color }}
                   />
                 )}
-                <h3 className="text-xl font-semibold text-gray-800">
+                <h3 className={`text-xl font-semibold ${product.status === 'inactive' ? 'text-gray-600' : 'text-gray-800'}`}>
                   {product.product_name}
+                  {product.status === 'inactive' && (
+                    <span className="ml-2 text-sm text-red-600 font-medium">(Inactive)</span>
+                  )}
                   {product.provider_name && (
                     <span className="text-sm font-normal text-gray-500 ml-2">
                       ({product.provider_name})

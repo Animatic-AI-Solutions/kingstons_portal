@@ -677,7 +677,9 @@ SELECT
     SUM(CASE WHEN activity_type IN ('Investment', 'RegularInvestment', 'GovernmentUplift') THEN amount ELSE 0 END) as total_investments,
     SUM(CASE WHEN activity_type IN ('Withdrawal', 'RegularWithdrawal') THEN amount ELSE 0 END) as total_withdrawals,
     SUM(CASE WHEN activity_type = 'SwitchIn' THEN amount ELSE 0 END) as total_switch_in,
-    SUM(CASE WHEN activity_type = 'SwitchOut' THEN amount ELSE 0 END) as total_switch_out
+    SUM(CASE WHEN activity_type = 'SwitchOut' THEN amount ELSE 0 END) as total_switch_out,
+    SUM(CASE WHEN activity_type IN ('Product Switch In', 'ProductSwitchIn') THEN amount ELSE 0 END) as total_product_switch_in,
+    SUM(CASE WHEN activity_type IN ('Product Switch Out', 'ProductSwitchOut') THEN amount ELSE 0 END) as total_product_switch_out
 FROM holding_activity_log
 GROUP BY portfolio_fund_id;
 
@@ -703,7 +705,9 @@ SELECT
     fas.total_investments,
     fas.total_withdrawals,
     fas.total_switch_in,
-    fas.total_switch_out
+    fas.total_switch_out,
+    fas.total_product_switch_in,
+    fas.total_product_switch_out
 FROM portfolio_funds pf
 LEFT JOIN available_funds af ON af.id = pf.available_funds_id
 LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id

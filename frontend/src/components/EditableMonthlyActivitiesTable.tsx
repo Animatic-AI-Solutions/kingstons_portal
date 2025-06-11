@@ -23,6 +23,7 @@ interface Fund {
   isActive?: boolean;
   inactiveHoldingIds?: any[];
   isInactiveBreakdown?: boolean;
+  current_value?: number;
 }
 
 interface CellEdit {
@@ -75,10 +76,11 @@ const ACTIVITY_TYPES = [
   'Investment',
   'RegularInvestment',
   'GovernmentUplift',
+  'Product Switch In',
+  'Product Switch Out',
   'Fund Switch In',
   'Fund Switch Out',
   'Withdrawal',
-  'RegularWithdrawal',
   'Current Value'
 ];
 
@@ -374,6 +376,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   const convertActivityTypeForBackend = (uiActivityType: string): string => {
     // Convert UI-friendly activity types to backend format
     switch (uiActivityType) {
+      case 'Product Switch In': return 'ProductSwitchIn';
+      case 'Product Switch Out': return 'ProductSwitchOut';
       case 'Fund Switch In': return 'FundSwitchIn';
       case 'Fund Switch Out': return 'FundSwitchOut';
       case 'Current Value': return 'Valuation';
@@ -1127,16 +1131,15 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         if (cellValue && !isNaN(parseFloat(cellValue))) {
           // For investments, add positive values
           // For withdrawals and switch outs, subtract (they reduce the total)
-          if (activityType === 'Investment' || 
-              activityType === 'RegularInvestment' || 
-              activityType === 'GovernmentUplift' || 
-              activityType === 'Fund Switch In') {
-            return total + parseFloat(cellValue);
-          } else if (activityType === 'Withdrawal' || 
-                     activityType === 'RegularWithdrawal' || 
-                     activityType === 'Fund Switch Out') {
-            return total - parseFloat(cellValue);
-          }
+                        if (activityType === 'Investment' || 
+                  activityType === 'RegularInvestment' || 
+                  activityType === 'GovernmentUplift' || 
+                  activityType === 'Fund Switch In') {
+                return total + parseFloat(cellValue);
+              } else if (activityType === 'Withdrawal' || 
+                         activityType === 'Fund Switch Out') {
+                return total - parseFloat(cellValue);
+              }
         }
         return total;
       }, 0);
@@ -1152,14 +1155,13 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       if (value) {
         const numericValue = parseFloat(value.replace(/,/g, ''));
         if (!isNaN(numericValue)) {
-          // Apply correct sign based on activity type
-          if (activityType === 'Fund Switch Out' || 
-              activityType === 'Withdrawal' || 
-              activityType === 'RegularWithdrawal') {
-            total -= numericValue; // Subtract for outflows
-          } else {
-            total += numericValue; // Add for inflows
-          }
+                        // Apply correct sign based on activity type
+              if (activityType === 'Fund Switch Out' || 
+                  activityType === 'Withdrawal') {
+                total -= numericValue; // Subtract for outflows
+              } else {
+                total += numericValue; // Add for inflows
+              }
         }
       }
     });
@@ -1187,8 +1189,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
             console.log(`Adding ${numericValue} from inactive fund ${inactiveFund.fund_name} to ${activityType} total for ${month}`);
             // Apply correct sign based on activity type
             if (activityType === 'Fund Switch Out' || 
-                activityType === 'Withdrawal' || 
-                activityType === 'RegularWithdrawal') {
+                activityType === 'Withdrawal') {
               total -= numericValue; // Subtract for outflows
             } else {
               total += numericValue; // Add for inflows
@@ -1389,13 +1390,13 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       const numericValue = parseFloat(cellValue) || 0;
       
       if (numericValue !== 0) {
-        if (activityType === 'Withdrawal' || activityType === 'RegularWithdrawal') {
-          total -= numericValue;
-        } else if (activityType === 'Fund Switch Out') {
-          total -= numericValue;
-        } else if (activityType !== 'Current Value') {
-          total += numericValue;
-        }
+                    if (activityType === 'Withdrawal') {
+              total -= numericValue;
+            } else if (activityType === 'Fund Switch Out') {
+              total -= numericValue;
+            } else if (activityType !== 'Current Value') {
+              total += numericValue;
+            }
       }
     });
     

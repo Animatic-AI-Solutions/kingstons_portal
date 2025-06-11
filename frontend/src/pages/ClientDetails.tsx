@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getProviderColor } from '../services/providerColors';
+import { calculateStandardizedMultipleFundsIRR } from '../services/api';
 
 // Enhanced TypeScript interfaces
 interface Client {
@@ -69,11 +70,109 @@ interface ProductFund {
   withdrawals?: number;
   switch_in?: number;
   switch_out?: number;
+  product_switch_in?: number;
+  product_switch_out?: number;
   irr?: number | string;
   status?: string;
   is_virtual_entry?: boolean;
   inactive_fund_count?: number;
+  inactive_fund_ids?: number[]; // For Previous Funds entry
 }
+
+// Component for calculating Previous Funds IRR
+const PreviousFundsIRRDisplay: React.FC<{ inactiveFundIds: number[] }> = ({ inactiveFundIds }) => {
+  const [livePreviousFundsIRR, setLivePreviousFundsIRR] = useState<{irr: number, date: string} | null>(null);
+  const [isLoadingLivePreviousFundsIRR, setIsLoadingLivePreviousFundsIRR] = useState<boolean>(false);
+  const [livePreviousFundsIRRError, setLivePreviousFundsIRRError] = useState<string | null>(null);
+
+  const formatPercentage = (value: number): string => {
+    return `${(value).toFixed(2)}%`;
+  };
+
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  useEffect(() => {
+    const calculateLivePreviousFundsIRR = async () => {
+      console.log('PreviousFundsIRRDisplay received inactiveFundIds:', inactiveFundIds);
+      
+      // Only calculate if there are inactive fund IDs
+      if (inactiveFundIds.length === 0) {
+        console.log('No inactive fund IDs provided, skipping IRR calculation');
+        setLivePreviousFundsIRR(null);
+        setLivePreviousFundsIRRError(null);
+        setIsLoadingLivePreviousFundsIRR(false);
+        return;
+      }
+
+      setIsLoadingLivePreviousFundsIRR(true);
+      setLivePreviousFundsIRRError(null);
+
+      try {
+        console.log(`Calculating live Previous Funds IRR for ${inactiveFundIds.length} inactive funds`);
+        console.log('Inactive fund IDs for live calculation:', inactiveFundIds);
+        
+        // Use the standardized multiple IRR endpoint with £0 valuation handling
+        const response = await calculateStandardizedMultipleFundsIRR({
+          portfolioFundIds: inactiveFundIds
+        });
+        
+        console.log('Live Previous Funds IRR response:', response.data);
+        
+        if (response.data && response.data.success && response.data.irr_percentage !== null) {
+          setLivePreviousFundsIRR({
+            irr: response.data.irr_percentage,
+            date: response.data.calculation_date
+          });
+        } else {
+          setLivePreviousFundsIRR(null);
+          setLivePreviousFundsIRRError('No IRR data available');
+          console.warn('No live Previous Funds IRR data found');
+        }
+        
+      } catch (err: any) {
+        console.error('Error calculating live Previous Funds IRR:', err);
+        setLivePreviousFundsIRR(null);
+        
+        if (err.response?.status === 404) {
+          setLivePreviousFundsIRRError('No IRR data available');
+        } else {
+          setLivePreviousFundsIRRError(err.response?.data?.detail || err.message || 'Error calculating IRR');
+        }
+      } finally {
+        setIsLoadingLivePreviousFundsIRR(false);
+      }
+    };
+
+    calculateLivePreviousFundsIRR();
+  }, [inactiveFundIds]); // Recalculate when inactiveFundIds changes
+
+  if (isLoadingLivePreviousFundsIRR) {
+    return <span className="text-xs text-gray-500">Loading...</span>;
+  }
+
+  if (livePreviousFundsIRRError) {
+    return <span className="text-xs text-red-500" title={livePreviousFundsIRRError}>Error</span>;
+  }
+
+  if (livePreviousFundsIRR !== null) {
+    return (
+      <span className={`font-medium ${
+        livePreviousFundsIRR.irr >= 0 ? 'text-green-600' : 'text-red-600'
+      }`}>
+        {formatPercentage(livePreviousFundsIRR.irr)}
+      </span>
+    );
+  }
+
+  return <span className="text-gray-500">-</span>;
+};
 
 // Extracted component for client header
 const ClientHeader = ({ 
@@ -508,7 +607,8 @@ const ProductCard: React.FC<{
                     <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Withdrawals</th>
                     <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Fund Switch In</th>
                     <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Fund Switch Out</th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Product Switch</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Product Switch In</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Product Switch Out</th>
                     <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Current Valuation</th>
                     <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Most Recent IRR</th>
                   </tr>
@@ -535,23 +635,31 @@ const ProductCard: React.FC<{
                       <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(fund.withdrawals || 0)}</td>
                       <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(fund.switch_in || 0)}</td>
                       <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(fund.switch_out || 0)}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">-</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(fund.product_switch_in || 0)}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(fund.product_switch_out || 0)}</td>
                       <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(fund.market_value || 0)}</td>
                       <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
-                        {fund.irr !== undefined && fund.irr !== null ? (
-                          typeof fund.irr === 'number' ? (
-                            <span className={`font-medium ${
-                              fund.irr >= 0 ? 'text-green-600' : 'text-red-600'
-                            }`}>
-                              {formatPercentage(fund.irr)}
-                            </span>
-                          ) : fund.irr === "-" ? (
-                            <span className="text-gray-500 font-medium">-</span>
-                          ) : (
-                            <span className="text-gray-500 font-medium">{fund.irr}</span>
-                          )
+                        {fund.is_virtual_entry ? (
+                          (() => {
+                            console.log('Previous Funds virtual entry:', fund);
+                            return <PreviousFundsIRRDisplay inactiveFundIds={fund.inactive_fund_ids || []} />;
+                          })()
                         ) : (
-                          <span className="text-gray-500">-</span>
+                          fund.irr !== undefined && fund.irr !== null ? (
+                            typeof fund.irr === 'number' ? (
+                              <span className={`font-medium ${
+                                fund.irr >= 0 ? 'text-green-600' : 'text-red-600'
+                              }`}>
+                                {formatPercentage(fund.irr)}
+                              </span>
+                            ) : fund.irr === "-" ? (
+                              <span className="text-gray-500 font-medium">-</span>
+                            ) : (
+                              <span className="text-gray-500 font-medium">{fund.irr}</span>
+                            )
+                          ) : (
+                            <span className="text-gray-500">-</span>
+                          )
                         )}
                       </td>
                     </tr>
@@ -572,7 +680,12 @@ const ProductCard: React.FC<{
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
                       {formatCurrency(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.switch_out || 0), 0))}
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">-</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
+                      {formatCurrency(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.product_switch_in || 0), 0))}
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
+                      {formatCurrency(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.product_switch_out || 0), 0))}
+                    </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
                       {formatCurrency(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.market_value || 0), 0))}
                     </td>
@@ -723,10 +836,13 @@ const ClientDetails: React.FC = () => {
             withdrawals: fund.withdrawals,
             switch_in: fund.switch_in,
             switch_out: fund.switch_out,
+            product_switch_in: fund.product_switch_in,
+            product_switch_out: fund.product_switch_out,
             irr: fund.irr,
             status: fund.status,
             is_virtual_entry: fund.is_virtual_entry,
-            inactive_fund_count: fund.inactive_fund_count
+            inactive_fund_count: fund.inactive_fund_count,
+            inactive_fund_ids: fund.inactive_fund_ids // Add the missing field for Previous Funds IRR calculation
           }));
         }
       });
@@ -918,6 +1034,23 @@ const ClientDetails: React.FC = () => {
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to delete client');
       console.error('Error deleting client:', err);
+    }
+  };
+
+  const handleReactivateProduct = async (productId: number, productName: string) => {
+    try {
+      if (window.confirm(`Are you sure you want to reactivate the product "${productName}"? This will change its status back to active.`)) {
+        const response = await api.patch(`client_products/${productId}/reactivate`);
+        if (response.data) {
+          // Refresh client data to show the reactivated product
+          await fetchClientData();
+          // Show success notification (you may want to add a toast notification system)
+          console.log('Product reactivated successfully');
+        }
+      }
+    } catch (err: any) {
+      console.error('Error reactivating product:', err);
+      alert(err.response?.data?.detail || 'Failed to reactivate product. Please try again.');
     }
   };
 
@@ -1115,18 +1248,64 @@ const ClientDetails: React.FC = () => {
           
           {!isLoading ? (
             clientAccounts.length > 0 ? (
-              <div className="grid grid-cols-1 gap-4">
-                {clientAccounts.map(account => (
-                  <ProductCard 
-                    key={account.id} 
-                    account={account} 
-                    isExpanded={expandedProducts.includes(account.id)}
-                    onToggleExpand={() => toggleProductExpand(account.id)}
-                    funds={expandedProductFunds[account.id] || []}
-                    isLoadingFunds={isLoadingFunds[account.id] || false}
-                    client={client}
-                  />
-                ))}
+              <div className="space-y-6">
+                {/* Active Products */}
+                {clientAccounts.filter(account => account.status === 'active').length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Active Products</h3>
+                    <div className="grid grid-cols-1 gap-4">
+                      {clientAccounts
+                        .filter(account => account.status === 'active')
+                        .map(account => (
+                          <ProductCard 
+                            key={account.id} 
+                            account={account} 
+                            isExpanded={expandedProducts.includes(account.id)}
+                            onToggleExpand={() => toggleProductExpand(account.id)}
+                            funds={expandedProductFunds[account.id] || []}
+                            isLoadingFunds={isLoadingFunds[account.id] || false}
+                            client={client}
+                          />
+                        ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Lapsed Products */}
+                {clientAccounts.filter(account => account.status === 'inactive').length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-500 mb-4">Lapsed Products</h3>
+                    <div className="grid grid-cols-1 gap-4 opacity-60">
+                      {clientAccounts
+                        .filter(account => account.status === 'inactive')
+                        .map(account => (
+                          <div key={account.id} className="filter grayscale relative">
+                            <ProductCard 
+                              account={account} 
+                              isExpanded={expandedProducts.includes(account.id)}
+                              onToggleExpand={() => toggleProductExpand(account.id)}
+                              funds={expandedProductFunds[account.id] || []}
+                              isLoadingFunds={isLoadingFunds[account.id] || false}
+                              client={client}
+                            />
+                            {/* Reactivate Button Overlay */}
+                            <div className="absolute top-4 right-4 z-10">
+                              <button
+                                onClick={() => handleReactivateProduct(account.id, account.product_name)}
+                                className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 shadow-sm flex items-center space-x-1 opacity-100"
+                                title="Reactivate this product"
+                              >
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                <span>Reactivate</span>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="bg-gray-50 p-6 rounded-lg text-center border border-gray-200">
