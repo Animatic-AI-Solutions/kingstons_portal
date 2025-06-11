@@ -47,7 +47,8 @@ from app.api.routes import (
     available_portfolios, fund_valuations,
     client_products, holding_activity_logs, product_holdings,
     product_owners, client_group_product_owners,
-    provider_switch_log, search, portfolio_valuations, portfolio_irr_values
+    provider_switch_log, search, portfolio_valuations, portfolio_irr_values,
+    historical_irr
 )
 
 # Load environment variables from .env file
@@ -140,6 +141,7 @@ app.include_router(provider_switch_log.router, prefix="/api", tags=["Provider Sw
 app.include_router(search.router, prefix="/api", tags=["Search"])
 app.include_router(portfolio_valuations.router, prefix="/api", tags=["Portfolio Valuations"])
 app.include_router(portfolio_irr_values.router, prefix="/api", tags=["Portfolio IRR Values"])
+app.include_router(historical_irr.router, prefix="/api/historical-irr", tags=["Historical IRR"])
 
 @app.get("/api")
 async def api_root():
