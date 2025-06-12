@@ -1340,29 +1340,37 @@ async def get_latest_portfolio_irr(portfolio_id: int, db = Depends(get_db)):
     This eliminates the need to recalculate IRR when the stored value is sufficient.
     """
     try:
+        logger.info(f"🔍 [IRR DEBUG] Fetching latest portfolio IRR for portfolio {portfolio_id}")
+        
         # Query the latest_portfolio_irr_values view - using correct column names from database.sql
         result = db.table("latest_portfolio_irr_values") \
                    .select("portfolio_id, irr_result, irr_date") \
                    .eq("portfolio_id", portfolio_id) \
                    .execute()
         
+        logger.info(f"🔍 [IRR DEBUG] Database query result for portfolio {portfolio_id}: {result.data}")
+        
         if result.data and len(result.data) > 0:
             irr_data = result.data[0]
-            return {
+            response_data = {
                 "portfolio_id": portfolio_id,
                 "irr_result": irr_data["irr_result"],  # Use irr_result not irr_value
                 "irr_date": irr_data["irr_date"],
                 "source": "stored"
             }
+            logger.info(f"✅ [IRR DEBUG] Found stored portfolio IRR for portfolio {portfolio_id}: {response_data}")
+            return response_data
         else:
-            return {
+            response_data = {
                 "portfolio_id": portfolio_id,
                 "irr_result": None,
                 "irr_date": None,
                 "source": "not_found"
             }
+            logger.warning(f"⚠️ [IRR DEBUG] No stored portfolio IRR found for portfolio {portfolio_id}")
+            return response_data
     except Exception as e:
-        logger.error(f"Error fetching stored IRR for portfolio {portfolio_id}: {str(e)}")
+        logger.error(f"❌ [IRR DEBUG] Error fetching stored IRR for portfolio {portfolio_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.get("/portfolios/{portfolio_id}/irr-history", response_model=dict)
