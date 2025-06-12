@@ -1403,6 +1403,34 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     return total;
   };
 
+  // Calculate row total for a specific fund and activity across all displayed months
+  const calculateRowTotal = (fundId: number, activityType: string): number => {
+    let total = 0;
+
+    months.forEach(month => {
+      const cellValue = getCellValue(fundId, month, activityType);
+      const numericValue = parseFloat(cellValue) || 0;
+      
+      if (numericValue !== 0) {
+        total += numericValue;
+      }
+    });
+
+    return total;
+  };
+
+  // Calculate row total for fund across all activities and months (for compact view)
+  const calculateFundRowTotal = (fundId: number): number => {
+    let total = 0;
+
+    months.forEach(month => {
+      const monthTotal = calculateFundTotal(fundId, month);
+      total += monthTotal;
+    });
+
+    return total;
+  };
+
   // Navigation functions for month pages
   const goToPreviousMonths = () => {
     setCurrentMonthPage(prev => Math.max(0, prev - 1));
@@ -1532,8 +1560,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                 <col className="w-[15%] sticky left-0 z-10" />
                 <col className="w-[15%] sticky left-0 z-10" />
                 {months.map((month, index) => (
-                  <col key={`col-${month}`} className={`w-[${70 / months.length}%]`} />
+                  <col key={`col-${month}`} className={`w-[${60 / months.length}%]`} />
                 ))}
+                <col className="w-[10%]" />
               </colgroup>
               <thead 
                 className="bg-blue-50 shadow-lg"
@@ -1641,6 +1670,11 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       </th>
                     );
                   })}
+                  <th 
+                    className="px-1 py-0 text-center font-medium text-gray-800 whitespace-nowrap bg-blue-50 border-b border-gray-300 sticky top-0 z-20"
+                  >
+                    <span className="text-sm">Row Total</span>
+                  </th>
                 </tr>
               </thead>
               {/* Spacer to prevent content jump when header becomes fixed */}
@@ -1671,6 +1705,12 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                         ></th>
                       );
                     })}
+                    <th 
+                      className="px-1 py-0"
+                      style={{
+                        width: '10%'
+                      }}
+                    ></th>
                   </tr>
                 </thead>
               )}
@@ -1786,6 +1826,26 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                             </td>
                           );
                         })}
+                        
+                        {/* Row Total column for compact view */}
+                        <td className={`px-1 py-0 text-center text-sm font-bold border-l border-gray-300 ${
+                          fund.isActive === false 
+                            ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
+                            : 'bg-white'
+                        }`}>
+                          {(() => {
+                            const rowTotal = calculateFundRowTotal(fund.id);
+                            return (
+                              <span className={
+                                rowTotal > 0 ? 'text-green-700' : 
+                                rowTotal < 0 ? 'text-red-700' : 
+                                'text-gray-500'
+                              }>
+                                {rowTotal !== 0 ? formatCurrency(rowTotal) : ''}
+                              </span>
+                            );
+                          })()}
+                        </td>
                     </tr>
                     ));
                   })()
@@ -1968,6 +2028,26 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                             </td>
                           );
                         })}
+                        
+                        {/* Row Total column for detailed view */}
+                        <td className={`px-1 py-0 text-center text-sm font-bold border-l border-gray-300 ${
+                          fund.isActive === false 
+                            ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
+                            : 'bg-white'
+                        }`}>
+                          {(() => {
+                            const rowTotal = calculateRowTotal(fund.id, activityType);
+                            return (
+                              <span className={
+                                rowTotal > 0 ? 'text-green-700' : 
+                                rowTotal < 0 ? 'text-red-700' : 
+                                'text-gray-500'
+                              }>
+                                {rowTotal !== 0 ? formatCurrency(rowTotal) : ''}
+                              </span>
+                            );
+                          })()}
+                        </td>
                       </tr>
                         );
                       });
@@ -1995,6 +2075,14 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                           </td>
                         );
                       })}
+                      
+                      {/* Row Total column for fund total row */}
+                      <td className="px-1 py-0 text-center font-semibold text-red-600 border-l border-gray-300 bg-gray-100">
+                        {(() => {
+                          const rowTotal = calculateFundRowTotal(fund.id);
+                          return formatTotal(rowTotal);
+                        })()}
+                      </td>
                     </tr>
                         );
                       }
@@ -2015,6 +2103,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                   {months.map(month => (
                     <td key={`totals-header-${month}`} className="px-1 py-0 text-center"></td>
                   ))}
+                  <td className="px-1 py-0 text-center border-l border-gray-300 bg-gray-50"></td>
                 </tr>
 
                 {/* Activity type total rows */}
@@ -2051,6 +2140,18 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                           </td>
                         );
                       })}
+                      
+                      {/* Row Total column for activity type totals */}
+                      <td className="px-1 py-0 text-center font-medium text-gray-500 border-l border-gray-300 bg-white">
+                        {(() => {
+                          let activityRowTotal = 0;
+                          months.forEach(month => {
+                            const monthTotal = calculateActivityTypeTotal(activityType, month);
+                            activityRowTotal += monthTotal;
+                          });
+                          return formatTotal(activityRowTotal);
+                        })()}
+                      </td>
                     </tr>
                   ))}
 
@@ -2085,6 +2186,18 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       </td>
                     );
                   })}
+                  
+                  {/* Row Total column for valuation total */}
+                  <td className="px-1 py-0 text-center font-medium text-blue-700 border-l border-gray-300 bg-blue-50">
+                    {(() => {
+                      let valuationRowTotal = 0;
+                      months.forEach(month => {
+                        const monthTotal = calculateActivityTypeTotal('Current Value', month);
+                        valuationRowTotal += monthTotal;
+                      });
+                      return formatTotal(valuationRowTotal);
+                    })()}
+                  </td>
                 </tr>
 
                 {/* Grand total row */}
@@ -2118,6 +2231,18 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       </td>
                     );
                   })}
+                  
+                  {/* Row Total column for grand total */}
+                  <td className="px-1 py-0 text-center font-semibold text-red-600 border-l border-gray-300 bg-gray-100">
+                    {(() => {
+                      let grandRowTotal = 0;
+                      months.forEach(month => {
+                        const monthTotal = calculateMonthTotal(month);
+                        grandRowTotal += monthTotal;
+                      });
+                      return formatTotal(grandRowTotal);
+                    })()}
+                  </td>
                 </tr>
               </tbody>
             </table>

@@ -4,6 +4,9 @@ import { useAuth } from '../context/AuthContext';
 import { getProductFUM, calculateStandardizedMultipleFundsIRR, lapseProduct, reactivateProduct } from '../services/api';
 import { MultiSelectSearchableDropdown } from '../components/ui/SearchableDropdown';
 import { isCashFund } from '../utils/fundUtils';
+import { DatePicker } from 'antd';
+import dayjs from 'dayjs';
+import type { Dayjs } from 'dayjs';
 
 // Basic interfaces for type safety
 interface Account {
@@ -153,7 +156,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     product_name: '',
     provider_id: '',
     product_type: '',
-    target_risk: ''
+    target_risk: '',
+    start_date: null as Dayjs | null
   });
   const [editOwnersFormData, setEditOwnersFormData] = useState({
     portfolio_id: '',
@@ -1407,7 +1411,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         product_name: account.product_name || '',
         provider_id: account.provider_id?.toString() || '',
         product_type: account.product_type || '',
-        target_risk: account.target_risk?.toString() || ''
+        target_risk: account.target_risk?.toString() || '',
+        start_date: account.start_date ? dayjs(account.start_date) : null
       });
     } else {
       // Exiting edit mode - clear any errors
@@ -1440,6 +1445,14 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     }));
   };
 
+  // Handle date changes separately
+  const handleDateChange = (date: Dayjs | null) => {
+    setEditFormData(prev => ({
+      ...prev,
+      start_date: date
+    }));
+  };
+
   // Handle form input changes for product owners
   const handleOwnersInputChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -1450,8 +1463,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   };
 
   // Handle product details form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!accountId) return;
 
     setIsSubmitting(true);
@@ -1471,6 +1484,11 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       // Only include target_risk if a value is provided
       if (editFormData.target_risk) {
         updateData.target_risk = parseFloat(editFormData.target_risk);
+      }
+
+      // Include start_date if provided
+      if (editFormData.start_date) {
+        updateData.start_date = editFormData.start_date.format('YYYY-MM-DD');
       }
 
       await api.patch(`/api/client_products/${accountId}`, updateData);
@@ -1588,111 +1606,6 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       <LapseConfirmationModal />
       <ReactivateConfirmationModal />
       <div className="flex flex-col space-y-6 -mx-6 sm:-mx-8 lg:-mx-12">
-        {/* Edit Form (conditionally displayed) */}
-        {isEditMode && (
-          <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-4 mb-4 mx-6 sm:mx-8 lg:mx-12">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-md font-semibold text-gray-900 flex items-center">
-                <svg className="h-4 w-4 text-indigo-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                Edit Product Details
-              </h3>
-            </div>
-        
-            {formError && (
-              <div className="mb-3 p-2 text-xs text-red-700 bg-red-50 rounded border border-red-200">
-                {formError}
-              </div>
-            )}
-        
-            <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-                <div>
-                  <label htmlFor="product_name" className="block text-xs font-medium text-gray-700 mb-1">
-                    Product Name
-                  </label>
-                  <input
-                    type="text"
-                    id="product_name"
-                    name="product_name"
-                    value={editFormData.product_name}
-                    onChange={handleInputChange}
-                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-xs border-gray-300 rounded-md py-1.5 px-2"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="provider_id" className="block text-xs font-medium text-gray-700 mb-1">
-                    Provider
-                  </label>
-                  <select
-                    id="provider_id"
-                    name="provider_id"
-                    value={editFormData.provider_id}
-                    onChange={handleInputChange}
-                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-xs border-gray-300 rounded-md py-1.5 px-2"
-                  >
-                    <option value="">Select Provider</option>
-                    {providers.map(provider => (
-                      <option key={provider.id} value={provider.id}>
-                        {provider.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label htmlFor="product_type" className="block text-xs font-medium text-gray-700 mb-1">
-                    Product Type
-                  </label>
-                  <input
-                    type="text"
-                    id="product_type"
-                    name="product_type"
-                    value={editFormData.product_type}
-                    onChange={handleInputChange}
-                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-xs border-gray-300 rounded-md py-1.5 px-2"
-                  />
-                </div>
-              </div>
-              
-              <div className="flex justify-end space-x-2">
-                <button
-                  type="button"
-                  onClick={toggleEditMode}
-                  className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Save Changes
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
         {/* Modern Compact Product Overview Card */}
         <div className="bg-white shadow-lg rounded-xl border border-gray-200 overflow-hidden mx-6 sm:mx-8 lg:mx-12">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
@@ -1709,12 +1622,36 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                   </h3>
                   <div className="flex space-x-2">
                     {isEditMode ? (
-                      <button
-                        onClick={toggleEditMode}
-                        className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs leading-4 font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                      >
-                        Cancel
-                      </button>
+                      <>
+                        <button
+                          onClick={toggleEditMode}
+                          className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs leading-4 font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleSubmit}
+                          disabled={isSubmitting}
+                          className="inline-flex items-center px-2 py-1 border border-transparent text-xs leading-4 font-medium rounded shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              Save Changes
+                            </>
+                          )}
+                        </button>
+                      </>
                     ) : (
                       <>
                         <button
@@ -1763,30 +1700,101 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                     )}
                   </div>
                 </div>
+
+                {/* Form Error Display */}
+                {formError && (
+                  <div className="mb-4 p-3 text-sm text-red-700 bg-red-50 rounded-lg border border-red-200">
+                    {formError}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Product Name - Inline Editable */}
+                  <div className="sm:col-span-2">
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Product Name</div>
+                    {isEditMode ? (
+                      <input
+                        type="text"
+                        name="product_name"
+                        value={editFormData.product_name}
+                        onChange={handleInputChange}
+                        className="mt-1 shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm font-medium text-gray-900 border-gray-300 rounded-md py-2 px-3"
+                        required
+                      />
+                    ) : (
+                      <div className="text-sm font-medium text-gray-900 mt-1">{account.product_name || 'N/A'}</div>
+                    )}
+                  </div>
+
+                  {/* Client Name - Read Only */}
                   <div>
                     <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Client Name</div>
                     <div className="text-sm font-medium text-gray-900 mt-1">{account.client_name || 'N/A'}</div>
                   </div>
+
+                  {/* Provider - Inline Editable */}
                   <div>
                     <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Provider</div>
-                    <div className="text-sm font-medium text-gray-900 mt-1">{account.provider_name || 'N/A'}</div>
+                    {isEditMode ? (
+                      <select
+                        name="provider_id"
+                        value={editFormData.provider_id}
+                        onChange={handleInputChange}
+                        className="mt-1 shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm font-medium text-gray-900 border-gray-300 rounded-md py-2 px-3"
+                      >
+                        <option value="">Select Provider</option>
+                        {providers.map(provider => (
+                          <option key={provider.id} value={provider.id}>
+                            {provider.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="text-sm font-medium text-gray-900 mt-1">{account.provider_name || 'N/A'}</div>
+                    )}
                   </div>
+
+                  {/* Product Type - Inline Editable */}
                   <div>
                     <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Product Type</div>
-                    <div className="text-sm font-medium text-gray-900 mt-1">{account.product_type || 'N/A'}</div>
+                    {isEditMode ? (
+                      <input
+                        type="text"
+                        name="product_type"
+                        value={editFormData.product_type}
+                        onChange={handleInputChange}
+                        className="mt-1 shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm font-medium text-gray-900 border-gray-300 rounded-md py-2 px-3"
+                      />
+                    ) : (
+                      <div className="text-sm font-medium text-gray-900 mt-1">{account.product_type || 'N/A'}</div>
+                    )}
                   </div>
+
+                  {/* Portfolio Template - Read Only */}
                   <div>
                     <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Portfolio Template</div>
                     <div className="text-sm font-medium text-gray-900 mt-1">
                       {account.template_info?.generation_name || account.template_info?.name || (account.template_generation_id ? 'Template' : 'Bespoke')}
                     </div>
                   </div>
+
+                  {/* Start Date - Inline Editable */}
                   <div className="sm:col-span-2">
                     <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Start Date</div>
-                    <div className="text-sm font-medium text-gray-900 mt-1">
-                      {account.start_date ? formatDate(account.start_date) : 'N/A'}
-                    </div>
+                    {isEditMode ? (
+                      <DatePicker
+                        value={editFormData.start_date}
+                        onChange={handleDateChange}
+                        className="mt-1 w-full"
+                        size="middle"
+                        format="DD/MM/YYYY"
+                        placeholder="Select start date"
+                      />
+                    ) : (
+                      <div className="text-sm font-medium text-gray-900 mt-1">
+                        {account.start_date ? formatDate(account.start_date) : 'N/A'}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
