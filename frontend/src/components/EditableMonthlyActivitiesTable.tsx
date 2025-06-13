@@ -1250,6 +1250,27 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     return formatted;
   };
 
+  // Format row totals without rounding - preserves exact decimal values
+  const formatRowTotal = (total: number): string => {
+    // Convert to string to preserve exact decimal representation
+    // Remove any trailing zeros after decimal point for cleaner display
+    const totalStr = total.toString();
+    
+    // If it's a whole number, return as is
+    if (total % 1 === 0) {
+      return totalStr;
+    }
+    
+    // For decimals, remove trailing zeros but keep at least one decimal place if needed
+    const parts = totalStr.split('.');
+    if (parts.length === 2) {
+      const decimalPart = parts[1].replace(/0+$/, ''); // Remove trailing zeros
+      return decimalPart.length > 0 ? `${parts[0]}.${decimalPart}` : parts[0];
+    }
+    
+    return totalStr;
+  };
+
   
 
   // Get class for activity label cell in first column
@@ -1881,7 +1902,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                 rowTotal < 0 ? 'text-red-700' : 
                                 'text-gray-500'
                               }>
-                                {rowTotal !== 0 ? formatCurrency(rowTotal) : ''}
+                                {rowTotal !== 0 ? formatRowTotal(rowTotal) : ''}
                               </span>
                             );
                           })()}
@@ -2083,7 +2104,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                 rowTotal < 0 ? 'text-red-700' : 
                                 'text-gray-500'
                               }>
-                                {rowTotal !== 0 ? formatCurrency(rowTotal) : ''}
+                                {rowTotal !== 0 ? formatRowTotal(rowTotal) : ''}
                               </span>
                             );
                           })()}
@@ -2120,7 +2141,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       <td className="px-1 py-0 text-center font-semibold text-red-600 border-l border-gray-300 bg-gray-100">
                         {(() => {
                           const rowTotal = calculateFundRowTotal(fund.id);
-                          return formatTotal(rowTotal);
+                          return formatRowTotal(rowTotal);
                         })()}
                       </td>
                     </tr>
@@ -2189,7 +2210,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                             const monthTotal = calculateActivityTypeTotal(activityType, month);
                             activityRowTotal += monthTotal;
                           });
-                          return formatTotal(activityRowTotal);
+                          return formatRowTotal(activityRowTotal);
                         })()}
                       </td>
                     </tr>
@@ -2235,7 +2256,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                         const monthTotal = calculateActivityTypeTotal('Current Value', month);
                         valuationRowTotal += monthTotal;
                       });
-                      return formatTotal(valuationRowTotal);
+                      return formatRowTotal(valuationRowTotal);
                     })()}
                   </td>
                 </tr>
@@ -2280,7 +2301,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                         const monthTotal = calculateMonthTotal(month);
                         grandRowTotal += monthTotal;
                       });
-                      return formatTotal(grandRowTotal);
+                      return formatRowTotal(grandRowTotal);
                     })()}
                   </td>
                 </tr>
