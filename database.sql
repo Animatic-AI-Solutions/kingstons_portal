@@ -554,10 +554,9 @@ SELECT
     cg.name AS client_group_name
 FROM portfolio_irr_values piv
 LEFT JOIN portfolios p ON p.id = piv.portfolio_id
-LEFT JOIN client_products cp ON cp.portfolio_id = piv.portfolio_id
+LEFT JOIN client_products cp ON cp.portfolio_id = piv.portfolio_id AND cp.status = 'active'
 LEFT JOIN available_providers ap ON ap.id = cp.provider_id
 LEFT JOIN client_groups cg ON cg.id = cp.client_id
-WHERE cp.status = 'active'
 ORDER BY piv.portfolio_id, piv.date DESC;
 
 -- View for fund-level historical IRRs with fund and product details
@@ -598,10 +597,9 @@ FROM portfolio_fund_irr_values pfiv
 LEFT JOIN portfolio_funds pf ON pf.id = pfiv.fund_id
 LEFT JOIN available_funds af ON af.id = pf.available_funds_id
 LEFT JOIN portfolios p ON p.id = pf.portfolio_id
-LEFT JOIN client_products cp ON cp.portfolio_id = pf.portfolio_id
+LEFT JOIN client_products cp ON cp.portfolio_id = pf.portfolio_id AND cp.status = 'active'
 LEFT JOIN available_providers ap ON ap.id = cp.provider_id
 LEFT JOIN client_groups cg ON cg.id = cp.client_id
-WHERE cp.status = 'active'
 ORDER BY pfiv.fund_id, pfiv.date DESC;
 
 -- =========================================================

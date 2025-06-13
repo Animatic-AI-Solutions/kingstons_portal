@@ -1320,21 +1320,14 @@ const ReportGenerator: React.FC = () => {
           }
         });
         
-        // Check if this product has zero valuation but has active funds (skip inactive products)
+        // REMOVED: Don't treat zero valuation as missing valuation data
+        // Zero is a valid valuation - funds can legitimately have zero value
+        // The missing valuation check is already handled above in the fund-by-fund validation
+        // Only skip products that have NO valuation data at all (already handled above)
+        
+        // Log zero valuation for debugging but allow the product to proceed
         if (productValuation === 0 && activeFundIds.size > 0 && productDetails.status !== 'inactive') {
-          // Add zero-valuation product to missing valuations list
-          activeFundIds.forEach(fundId => {
-            const fundInfo = productPortfolioFunds.find(pf => pf.id === fundId);
-            const fundName = fundInfo?.fund_name || `Fund ID: ${fundId}`;
-            
-            allMissingValuations.push({
-              productName: productDetails.product_name,
-              fundName: fundName
-            });
-          });
-          
-          console.log(`Product ${productDetails.product_name} has zero valuation for selected date`);
-          continue; // Skip this product
+          console.log(`Product ${productDetails.product_name} has zero valuation for selected date - this is valid and will be included in the report`);
         }
         
         // Allow inactive products to proceed even with zero valuation
@@ -1518,7 +1511,19 @@ const ReportGenerator: React.FC = () => {
         // For inactive products, try to get the latest portfolio IRR even if valuation is zero
         const isInactiveProduct = productDetails.status === 'inactive' || (activeFundIds.size === 0 && inactiveFundIds.size > 0);
         
-        if (fundSummaries.length > 0 && (productValuation > 0 || isInactiveProduct)) {
+        console.log(`🎯 [PRODUCT IRR DEBUG] Product ${productDetails.product_name} (ID: ${productId}) IRR calculation conditions:`, {
+          fundSummariesLength: fundSummaries.length,
+          productValuation,
+          productStatus: productDetails.status,
+          activeFundIds: activeFundIds.size,
+          inactiveFundIds: inactiveFundIds.size,
+          isInactiveProduct,
+          shouldCalculateIRR: fundSummaries.length > 0 && (productValuation > 0 || isInactiveProduct)
+        });
+        
+        // Allow IRR calculation for products with funds, regardless of valuation
+        // Zero valuation is legitimate and should not prevent IRR calculation
+        if (fundSummaries.length > 0) {
           try {
             // Get portfolio fund IDs for this product (excluding only virtual funds)
             const productPortfolioFundIds = fundSummaries
@@ -1538,10 +1543,13 @@ const ReportGenerator: React.FC = () => {
               }
               
               // Use optimized IRR service for active products, latest portfolio IRR for inactive products
+              console.log(`🎯 [PRODUCT IRR DEBUG] Product ${productDetails.product_name} is ${isInactiveProduct ? 'INACTIVE' : 'ACTIVE'} - using ${isInactiveProduct ? 'portfolio IRR endpoint' : 'optimized IRR service'}`);
+              
               if (isInactiveProduct) {
                 // For inactive products, get the latest portfolio-level IRR
+                console.log(`🎯 [PRODUCT IRR DEBUG] Fetching portfolio IRR for INACTIVE product: ${productDetails.product_name} (ID: ${productId})`);
                 try {
-                  const portfolioIRRResponse = await api.get(`/portfolios/${productDetails.portfolio_id}/latest-irr`);
+                  const portfolioIRRResponse = await api.get(`/api/portfolios/${productDetails.portfolio_id}/latest-irr`);
                   if (portfolioIRRResponse.data && typeof portfolioIRRResponse.data.irr_result === 'number') {
                     productIRR = portfolioIRRResponse.data.irr_result;
                     console.log(`Latest portfolio IRR for inactive product ${productId}: ${productIRR}% (date: ${portfolioIRRResponse.data.irr_date})`);
@@ -1561,6 +1569,14 @@ const ReportGenerator: React.FC = () => {
                 }
               } else {
                 // For active products, use optimized IRR service
+                console.log(`🎯 [REPORT DEBUG] Fetching IRR for active product: ${productDetails.product_name} (ID: ${productId})`);
+                console.log(`🎯 [REPORT DEBUG] IRR service params:`, {
+                  portfolioId: productDetails.portfolio_id,
+                  portfolioFundIds: productPortfolioFundIds,
+                  endDate: formattedDate,
+                  includeHistorical: false
+                });
+                
                 const optimizedIRRData = await irrDataService.getOptimizedIRRData({
                   portfolioId: productDetails.portfolio_id,
                   portfolioFundIds: productPortfolioFundIds,
@@ -1568,7 +1584,10 @@ const ReportGenerator: React.FC = () => {
                   includeHistorical: false
                 });
                 
+                console.log(`🎯 [REPORT DEBUG] IRR service response for ${productDetails.product_name}:`, optimizedIRRData);
+                
                 productIRR = optimizedIRRData.portfolioIRR;
+                console.log(`🎯 [REPORT DEBUG] Extracted portfolio IRR: ${productIRR} for ${productDetails.product_name}`);
                 console.log(`Optimized IRR for active product ${productId}: ${productIRR}% (source: ${optimizedIRRData.irrDate})`);
               }
           } else {
@@ -1885,11 +1904,13 @@ Please select a different valuation date or ensure all active funds have valuati
         return;
       }
       
-      // Check if total valuation is zero
+      // REMOVED: Don't prevent report generation for zero-value portfolios
+      // Zero portfolio value is legitimate and reports should still be generated
+      // to show transaction history and how the portfolio reached zero value
+      
+      // Log zero valuation for debugging but allow the report to proceed
       if (overallValuation === 0) {
-        setDataError(`Total portfolio value is zero for ${formatDateFallback(selectedValuationDate || '')}. Cannot calculate returns on a zero-value portfolio.`);
-        setIsCalculating(false);
-        return;
+        console.log(`Portfolio has zero total value for ${formatDateFallback(selectedValuationDate || '')} - this is valid and the report will be generated`);
       }
       
       // Set state with summary data
