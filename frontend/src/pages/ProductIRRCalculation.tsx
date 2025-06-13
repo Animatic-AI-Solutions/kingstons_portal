@@ -811,15 +811,80 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
         console.log('DEBUG - Executing fetchData after delay');
         try {
           await fetchData(accountId);
-            console.log('DEBUG - Data refresh completed successfully');
-        } catch (err) {
+          
+          // After the main data fetch, explicitly refresh IRR values from views
+          // to ensure the Period Overview table shows the latest calculated IRRs
+          console.log('DEBUG - Refreshing IRR values from latest views for Period Overview table');
+          
+          // Fetch latest portfolio IRR for totals row
+          if (account?.portfolio_id) {
+            console.log('DEBUG - Fetching latest portfolio IRR from views');
+            try {
+              const response = await getLatestPortfolioIRR(account.portfolio_id);
+              if (response.data && response.data.irr_result !== null && response.data.irr_result !== undefined) {
+                setTotalPortfolioIRR(response.data.irr_result);
+                setTotalPortfolioIRRDate(response.data.irr_date);
+                console.log('DEBUG - Portfolio IRR updated:', response.data.irr_result);
+              }
+            } catch (irrError) {
+              console.error('DEBUG - Error fetching latest portfolio IRR:', irrError);
+            }
+          }
+          
+          // Force a second fetch with a longer delay to ensure all IRR calculations
+          // have been completed and stored in the database views
+          setTimeout(async () => {
+            console.log('DEBUG - Second data refresh to ensure all IRRs are updated');
+            try {
+              // Re-fetch the complete portfolio data to get updated IRR values
+              if (account?.portfolio_id) {
+                const completePortfolioResponse = await api.get(`/portfolios/${account.portfolio_id}/complete`);
+                const completeData = completePortfolioResponse.data;
+                
+                // Update holdings with latest IRR values
+                if (completeData.portfolio_funds && completeData.portfolio_funds.length > 0) {
+                  const updatedHoldings: Holding[] = [];
+                  
+                  completeData.portfolio_funds.forEach((portfolioFund: any) => {
+                    const holding: Holding = {
+                      id: portfolioFund.id,
+                      fund_id: portfolioFund.available_funds_id,
+                      fund_name: portfolioFund.fund_name,
+                      isin_number: portfolioFund.isin_number,
+                      amount_invested: portfolioFund.amount_invested || 0,
+                      market_value: portfolioFund.market_value || 0,
+                      irr: portfolioFund.irr_result, // This should now have the latest IRR value
+                      irr_calculation_date: portfolioFund.irr_date,
+                      account_holding_id: portfolioFund.id,
+                      product_id: account?.id,
+                      status: portfolioFund.status || 'active',
+                      valuation_date: portfolioFund.valuation_date,
+                      target_weighting: portfolioFund.target_weighting?.toString()
+                    };
+                    
+                    console.log(`DEBUG - Updated IRR for ${portfolioFund.fund_name}: ${portfolioFund.irr_result}%`);
+                    updatedHoldings.push(holding);
+                  });
+                  
+                  setHoldings(updatedHoldings);
+                  console.log('DEBUG - Holdings updated with latest IRR values for Period Overview table');
+                }
+              }
+              
+            } catch (refreshError) {
+              console.error('DEBUG - Error during second IRR refresh:', refreshError);
+            }
+          }, 1000); // Additional 1 second delay for IRR view updates
+          
+          console.log('DEBUG - Data refresh completed successfully');
+        } catch (err: any) {
           console.error('DEBUG - Error during data refresh:', err);
         }
       }, 500);
     } else {
       console.warn('DEBUG - Cannot refresh data: accountId is missing');
     }
-  }, [accountId]);
+  }, [accountId, account?.portfolio_id, api]);
 
   // Function to trigger single fund IRR recalculation when activities change
   const triggerSingleFundIRRRecalculation = useCallback(async (portfolioFundIds: number[]) => {
