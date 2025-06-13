@@ -8,6 +8,7 @@ import { Radio, Select, Input, Checkbox, DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import SearchableDropdown from '../components/ui/SearchableDropdown';
+import { BaseInput, NumberInput, AutocompleteSearch, AutocompleteOption } from '../components/ui';
 import { getProviderColor } from '../services/providerColors';
 import { findCashFund, isCashFund } from '../utils/fundUtils';
 
@@ -456,6 +457,22 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         return;
       }
     }
+  };
+
+
+
+  // Create client options for AutocompleteSearch
+  const clientOptions: AutocompleteOption[] = React.useMemo(() => {
+    return clients.map(client => ({
+      value: client.id.toString(),
+      label: client.name || 'Unnamed Client'
+    }));
+  }, [clients]);
+
+  // Handle client selection from AutocompleteSearch
+  const handleClientSelect = (option: AutocompleteOption) => {
+    const clientId = parseInt(option.value);
+    handleClientChange(clientId);
   };
 
   const handleAddProduct = () => {
@@ -1878,30 +1895,21 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                 <div className="grid grid-cols-2 gap-2 sm:gap-4">
                 {/* Client Selection */}
                   <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Client Name <span className="text-red-500">*</span>
-                  </label>
                   {clients.length > 0 ? (
-                    <Select
-                      showSearch
-                      value={selectedClientId || undefined}
-                      onChange={(value) => handleClientChange(value)}
-                      placeholder="Search for a client"
-                      optionFilterProp="children"
-                      filterOption={(input, option) =>
-                        (option?.children as unknown as string)
-                          .toLowerCase()
-                          .includes(input.toLowerCase())
-                      }
-                      className="w-full"
-                        size="middle"
-                    >
-                      {clients.map(client => (
-                        <Select.Option key={client.id} value={client.id}>
-                          {client.name}
-                        </Select.Option>
-                      ))}
-                    </Select>
+                    <AutocompleteSearch
+                      label="Client Name"
+                      placeholder="Type to search clients..."
+                      options={clientOptions}
+                      onSelect={handleClientSelect}
+                      value={selectedClientId ? clients.find(c => c.id === selectedClientId)?.name || '' : ''}
+                      minSearchLength={0}
+                      maxResults={10}
+                      allowCustomValue={false}
+                      required
+                      size="md"
+                      fullWidth={true}
+                      helperText={`${clients.length} clients available`}
+                    />
                   ) : (
                       <div className="text-gray-500 text-sm bg-gray-100 p-2 rounded">
                         No clients available. Please add a client first.
@@ -2130,15 +2138,18 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                     </div>
 
                                     <div>
-                                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                                        Plan Number <span className="text-gray-400">(optional)</span>
-                                      </label>
-                                      <input
-                                        type="text"
+                                      <BaseInput
+                                        label="Plan Number"
+                                        placeholder="Enter plan number (e.g., PLAN001, P-123)"
                                         value={product.plan_number || ''}
                                         onChange={(e) => handleProductChange(product.id, 'plan_number', e.target.value)}
-                                        className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm border-gray-300 rounded-md h-8"
-                                        placeholder="Enter plan number"
+                                        size="sm"
+                                        autoComplete="off"
+                                        leftIcon={
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                                          </svg>
+                                        }
                                       />
                                     </div>
                                   </div>

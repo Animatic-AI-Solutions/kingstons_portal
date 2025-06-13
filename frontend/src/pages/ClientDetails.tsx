@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getProviderColor } from '../services/providerColors';
+import { BaseInput, BaseDropdown } from '../components/ui';
 
 // Enhanced TypeScript interfaces
 interface Client {
@@ -1024,59 +1025,69 @@ const ClientDetails: React.FC = () => {
             <div className="p-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-0.5">Name</label>
-                  <input
-                    type="text"
+                  <BaseInput
+                    label="Name"
                     name="name"
+                    type="text"
                     value={formData.name || ''}
                     onChange={handleChange}
-                    className="block w-full h-10 px-3 py-2 text-base rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-200"
+                    placeholder="Enter client name"
+                    required
+                    size="md"
+                    fullWidth
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-0.5">Type</label>
-                  <select
-                    name="type"
+                  <BaseDropdown
+                    label="Type"
+                    options={[
+                      { value: 'Family', label: 'Family' },
+                      { value: 'Business', label: 'Business' },
+                      { value: 'Trust', label: 'Trust' }
+                    ]}
                     value={formData.type || 'Family'}
-                    onChange={handleChange}
-                    className="block w-full h-10 px-3 py-2 text-base rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-200"
-                  >
-                    <option value="Family">Family</option>
-                    <option value="Business">Business</option>
-                    <option value="Trust">Trust</option>
-                  </select>
+                    onChange={(value) => setFormData(prev => ({ ...prev, type: value as string }))}
+                    placeholder="Select client type"
+                    required
+                    size="md"
+                    fullWidth
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-0.5">Status</label>
-                  <select
-                    name="status"
+                  <BaseDropdown
+                    label="Status"
+                    options={[
+                      { value: 'active', label: 'Active' },
+                      { value: 'dormant', label: 'Dormant' }
+                    ]}
                     value={formData.status}
-                    onChange={handleChange}
-                    className="block w-full h-10 px-3 py-2 text-base rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-200"
-                  >
-                    <option value="active">Active</option>
-                    <option value="dormant">Dormant</option>
-                  </select>
+                    onChange={(value) => setFormData(prev => ({ ...prev, status: value as string }))}
+                    placeholder="Select client status"
+                    required
+                    size="md"
+                    fullWidth
+                  />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-0.5">Advisor</label>
-                  <input
-                    type="text"
+                  <BaseInput
+                    label="Advisor"
                     name="advisor"
+                    type="text"
                     value={formData.advisor || ''}
                     onChange={handleChange}
-                    className="block w-full h-10 px-3 py-2 text-base rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-200"
+                    placeholder="Enter advisor name"
+                    size="md"
+                    fullWidth
                   />
                 </div>
               </div>
               
               {/* Additional Actions */}
               <div className="px-4 py-3 border-t border-gray-100">
-                <div className="flex justify-between items-center">
-                  <div className="text-sm text-gray-500">Additional Actions</div>
+                <div className="flex justify-end items-center">
                   <div className="flex space-x-2">
                     <button
                       onClick={handleMakeDormant}

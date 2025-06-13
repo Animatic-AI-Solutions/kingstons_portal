@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { 
+  BaseInput, 
+  InputLabel, 
+  InputError,
+  Button
+} from '../components/ui';
 import SearchableDropdown, { MultiSelectSearchableDropdown } from '../components/ui/SearchableDropdown';
 
 interface ClientFormData {
@@ -181,70 +187,75 @@ const AddClient: React.FC = () => {
       <div className="bg-white shadow-lg rounded-lg p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
-              {error}
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <InputError showIcon>
+                {error}
+              </InputError>
             </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                Client Group Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                placeholder="Enter client group name"
-              />
-            </div>
+            <BaseInput
+              id="name"
+              name="name"
+              type="text"
+              label="Client Group Name"
+              placeholder="Enter client group name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              autoComplete="off"
+              error={error && !formData.name ? 'Client name is required' : undefined}
+              helperText="This will be the primary identifier for the client group"
+              leftIcon={
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              }
+            />
 
             <div>
-              <label htmlFor="advisor" className="block text-sm font-medium text-gray-700 mb-1">
+              <InputLabel htmlFor="advisor">
                 Advisor
-              </label>
+              </InputLabel>
               <SearchableDropdown
                 id="advisor"
                 options={advisorOptions}
                 value={formData.advisor || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, advisor: value as string || null }))}
                 placeholder="Select or type advisor name"
-                className="mt-1"
               />
+              <p className="mt-1 text-xs text-gray-500">Optional: Assign a specific advisor to this client group</p>
             </div>
 
             <div>
-              <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
-                Client Group Type <span className="text-red-500">*</span>
-              </label>
+              <InputLabel htmlFor="type" required>
+                Client Group Type
+              </InputLabel>
               <SearchableDropdown
                 id="type"
                 options={typeOptions}
                 value={formData.type}
                 onChange={(value) => setFormData(prev => ({ ...prev, type: value as string }))}
                 placeholder="Select client group type"
-                className="mt-1"
                 required
               />
+              <p className="mt-1 text-xs text-gray-500">Choose the type that best describes this client group</p>
             </div>
 
             <div>
-              <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                Status <span className="text-red-500">*</span>
-              </label>
+              <InputLabel htmlFor="status" required>
+                Status
+              </InputLabel>
               <SearchableDropdown
                 id="status"
                 options={statusOptions}
                 value={formData.status}
                 onChange={(value) => setFormData(prev => ({ ...prev, status: value as string }))}
                 placeholder="Select status"
-                className="mt-1"
                 required
               />
+              <p className="mt-1 text-xs text-gray-500">Set the current operational status of the client group</p>
             </div>
           </div>
 
@@ -269,7 +280,10 @@ const AddClient: React.FC = () => {
                 id="product-owners"
                 options={productOwnerOptions}
                 values={selectedProductOwners}
-                onChange={setSelectedProductOwners}
+                onChange={(values) => {
+                  const numberValues = values.map(v => typeof v === 'number' ? v : parseInt(v.toString()));
+                  setSelectedProductOwners(numberValues);
+                }}
                 placeholder="Search and select product owners"
                 className="w-full"
               />
@@ -299,14 +313,21 @@ const AddClient: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex justify-end pt-4">
-            <button
+          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => navigate('/client_groups')}
+            >
+              Cancel
+            </Button>
+            <Button
               type="submit"
               disabled={isSubmitting}
-              className="bg-primary-700 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-700 disabled:opacity-50 disabled:cursor-not-allowed font-sans tracking-wide shadow-sm"
+              className="min-w-[140px]"
             >
               {isSubmitting ? 'Creating...' : 'Create Client Group'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
@@ -333,15 +354,11 @@ const AddClient: React.FC = () => {
             </div>
 
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Product Owner Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
+              <BaseInput
+                label="Product Owner Name"
+                placeholder="Enter product owner name"
                 value={newProductOwnerName}
                 onChange={(e) => setNewProductOwnerName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                placeholder="Enter product owner name"
                 required
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
@@ -350,6 +367,11 @@ const AddClient: React.FC = () => {
                   }
                 }}
                 autoFocus
+                leftIcon={
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                }
               />
             </div>
 

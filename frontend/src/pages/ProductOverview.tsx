@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getProductFUM, calculateStandardizedMultipleFundsIRR } from '../services/api';
-import { MultiSelectSearchableDropdown } from '../components/ui/SearchableDropdown';
+import { MultiSelectSearchableDropdown, AutocompleteSearch, AutocompleteOption } from '../components/ui';
 import { isCashFund } from '../utils/fundUtils';
 
 // Basic interfaces for type safety
@@ -1013,8 +1013,28 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   // Get funds that are not already in the portfolio (both active and inactive)
   const fundsNotInPortfolio = useMemo(() => {
     const currentFundIds = holdings.map(h => h.fund_id);
-    return filteredAvailableFunds.filter(fund => !currentFundIds.includes(fund.id));
-  }, [filteredAvailableFunds, holdings]);
+    return availableFunds.filter(fund => !currentFundIds.includes(fund.id));
+  }, [availableFunds, holdings]);
+
+  // Convert funds to AutocompleteSearch options
+  const fundOptions: AutocompleteOption[] = useMemo(() => {
+    return fundsNotInPortfolio.map(fund => ({
+      value: fund.id.toString(),
+      label: fund.fund_name,
+      description: `${fund.isin_number}${fund.risk_factor ? ` • Risk: ${fund.risk_factor}` : ''}`,
+      icon: (
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+      )
+    }));
+  }, [fundsNotInPortfolio]);
+
+  // Handle fund selection from AutocompleteSearch
+  const handleFundSelection = (option: AutocompleteOption) => {
+    const fundId = parseInt(option.value);
+    handleAddFund(fundId, 0); // Add with 0% weighting initially
+  };
 
   // Calculate total weighting for validation - only count active funds
   const getTotalWeighting = () => {
@@ -1943,6 +1963,46 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             </div>
           )}
 
+          {/* Fund Management Tools - Only for bespoke portfolios when editing */}
+          {isEditingFunds && account && !account.template_generation_id && (
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-md font-semibold text-gray-900">Add Funds to Product</h4>
+                <span className="text-sm text-gray-500">{fundsNotInPortfolio.length} available funds</span>
+              </div>
+              
+              {/* Fund Search & Selection */}
+              <div className="mb-3">
+                <AutocompleteSearch
+                  label="Search and Add Funds"
+                  placeholder="Search funds by name or ISIN..."
+                  options={fundOptions}
+                  onSelect={handleFundSelection}
+                  minSearchLength={1}
+                  maxResults={10}
+                  allowCustomValue={false}
+                  size="md"
+                  fullWidth={true}
+                  helperText={`${fundsNotInPortfolio.length} available funds to add`}
+                  className="focus:!border-indigo-500 focus:!ring-indigo-500/10 hover:!border-indigo-400"
+                />
+              </div>
+
+              {/* Available Funds Summary */}
+              {fundsNotInPortfolio.length === 0 && (
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-center">
+                  <svg className="mx-auto h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">All Funds Added</h3>
+                  <p className="mt-1 text-xs text-gray-500">
+                    All available funds are already in this product.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Current Portfolio Funds */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
@@ -2197,88 +2257,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             </div>
           )}
 
-          {/* Fund Management Tools - Only for bespoke portfolios when editing */}
-          {isEditingFunds && account && !account.template_generation_id && (
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-md font-semibold text-gray-900">Add Funds to Product</h4>
-                <span className="text-sm text-gray-500">{fundsNotInPortfolio.length} available funds</span>
-              </div>
-              
-              {/* Search Input */}
-              <div className="mb-3">
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Search funds by name or ISIN..."
-                    value={fundSearchTerm}
-                    onChange={(e) => setFundSearchTerm(e.target.value)}
-                    className="block w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-              </div>
 
-              {/* Available Funds List */}
-              <div className="max-h-60 overflow-y-auto border border-gray-200 rounded-lg">
-                {fundsNotInPortfolio.length > 0 ? (
-                  fundsNotInPortfolio.map((fund, index) => (
-                    <div
-                      key={fund.id}
-                      className={`p-3 border-b border-gray-100 last:border-b-0 ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                      } hover:bg-indigo-50 transition-colors duration-150`}
-                    >
-                      <div className="flex justify-between items-center">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center space-x-2">
-                                <p className="text-sm font-medium text-gray-900 truncate">{fund.fund_name}</p>
-                                <span className="text-xs text-gray-500 flex-shrink-0">({fund.isin_number})</span>
-                              </div>
-                            </div>
-                            {fund.risk_factor && (
-                              <div className="flex-shrink-0 ml-3">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                  Risk: {fund.risk_factor}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="ml-3 flex-shrink-0">
-                          <button
-                            onClick={() => handleAddFund(fund.id, 0)}
-                            className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                          >
-                            <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                            </svg>
-                            Add
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-6 text-center">
-                    <svg className="mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">No funds found</h3>
-                    <p className="mt-1 text-xs text-gray-500">
-                      {fundSearchTerm ? 'Try adjusting your search terms.' : 'All available funds are already in the product.'}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </>

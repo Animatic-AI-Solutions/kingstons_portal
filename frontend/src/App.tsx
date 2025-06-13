@@ -45,6 +45,9 @@ import CreateClientProducts from './pages/CreateClientProducts';
 // Reporting Pages - Analytics and performance reporting
 import Reporting from './pages/Reporting';
 
+// Component Testing Page - UI/UX design finalization
+import Components from './pages/Components';
+
 // Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -122,6 +125,9 @@ const AppContent: React.FC = () => {
           {/* Reporting Section - Financial performance analytics and reporting */}
           <Route path="/analytics" element={<AppLayout><Reporting /></AppLayout>} />
           <Route path="/report-generator" element={<AppLayout><ReportGenerator /></AppLayout>} />
+          
+          {/* Component Testing - UI/UX design finalization */}
+          <Route path="/components" element={<AppLayout><Components /></AppLayout>} />
         </Route>
         
         {/* Default route - redirect to login */}

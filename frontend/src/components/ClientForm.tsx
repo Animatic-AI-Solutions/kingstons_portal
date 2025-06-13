@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
-import { SearchableDropdown } from './ui';
+import { 
+  BaseInput, 
+  InputLabel,
+  SearchableDropdown,
+  Button
+} from './ui';
 
 /**
  * Interface for client form data
@@ -66,47 +71,56 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSubmit, initialData }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {/* Client Name Field */}
-      <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-          Client Group Name
-        </label>
-        <input
+      <BaseInput
+        id="name"
+        name="name"
           type="text"
-          name="name"
-          id="name"
+        label="Client Group Name"
+        placeholder="Enter client group name"
           value={formData.name}
           onChange={handleChange}
           required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-        />
-      </div>
+        autoComplete="off"
+        helperText="This will be the primary identifier for the client group"
+        leftIcon={
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+        }
+      />
 
       {/* Type Field - Type of client group */}
       <div>
-        <label htmlFor="type" className="block text-sm font-medium text-gray-700">
+        <InputLabel htmlFor="type" required>
           Client Group Type
-        </label>
-        <select
-          name="type"
+        </InputLabel>
+        <SearchableDropdown
           id="type"
           value={formData.type}
-          onChange={handleChange}
+          onChange={(value) => {
+            setFormData((prev) => ({
+              ...prev,
+              type: value as string
+            }));
+          }}
+          options={[
+            { value: 'Family', label: 'Family' },
+            { value: 'Business', label: 'Business' },
+            { value: 'Trust', label: 'Trust' }
+          ]}
+          placeholder="Select client group type"
           required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-        >
-          <option value="Family">Family</option>
-          <option value="Business">Business</option>
-          <option value="Trust">Trust</option>
-        </select>
+        />
+        <p className="mt-1 text-xs text-gray-500">Choose the type that best describes this client group</p>
       </div>
 
       {/* Status Dropdown - Active or Inactive */}
       <div>
-        <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+        <InputLabel htmlFor="status" required>
           Status
-        </label>
+        </InputLabel>
         <SearchableDropdown
           id="status"
           value={formData.status}
@@ -121,34 +135,36 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSubmit, initialData }) => {
             { value: 'inactive', label: 'Inactive' }
           ]}
           placeholder="Select status"
-          className="mt-1"
           required
         />
+        <p className="mt-1 text-xs text-gray-500">Set the current operational status of the client group</p>
       </div>
 
       {/* Advisor Field - Optional field for assigned advisor */}
-      <div>
-        <label htmlFor="advisor" className="block text-sm font-medium text-gray-700">
-          Advisor
-        </label>
-        <input
-          type="text"
+      <BaseInput
+        id="advisor"
           name="advisor"
-          id="advisor"
+        label="Advisor"
+        placeholder="Enter advisor name"
           value={formData.advisor || ''}
           onChange={handleChange}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-        />
-      </div>
+        helperText="Optional: Assign a specific advisor to this client group"
+        leftIcon={
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+        }
+      />
 
       {/* Submit Button */}
-      <div>
-        <button
+      <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+        <Button
           type="submit"
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          size="md"
+          className="min-w-[120px]"
         >
-          Submit
-        </button>
+          Create Client Group
+        </Button>
       </div>
     </form>
   );

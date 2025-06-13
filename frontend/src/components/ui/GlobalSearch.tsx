@@ -25,6 +25,7 @@ interface SearchResult {
  * 
  * A search bar that allows users to search across all entities in the system
  * including client groups, products, funds, providers, and portfolios.
+ * Follows Group 1 design system standards.
  */
 const GlobalSearch: React.FC = () => {
   const [query, setQuery] = useState('');
@@ -173,6 +174,14 @@ const GlobalSearch: React.FC = () => {
     }
   };
 
+  const handleClear = () => {
+    setQuery('');
+    setResults([]);
+    setIsOpen(false);
+    setSelectedIndex(-1);
+    inputRef.current?.focus();
+  };
+
   const highlightMatch = (text: string, searchQuery: string) => {
     if (!searchQuery.trim()) return text;
     
@@ -188,13 +197,26 @@ const GlobalSearch: React.FC = () => {
     );
   };
 
+  // Loading icon
+  const loadingIcon = (
+    <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+  );
+
   return (
     <div ref={searchRef} className="relative w-full max-w-md">
-      {/* Search Input */}
+      {/* Search Input - Following Group 1 Design System */}
       <div className="relative">
+        {/* Search Icon */}
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <MagnifyingGlassIcon className="h-4 w-4 text-gray-400" />
+          <div className="h-4 w-4 text-gray-400">
+            {isLoading ? loadingIcon : <MagnifyingGlassIcon className="h-4 w-4" />}
+          </div>
         </div>
+        
+        {/* Input Field - Group 1 styling */}
         <input
           ref={inputRef}
           type="text"
@@ -203,110 +225,94 @@ const GlobalSearch: React.FC = () => {
           onKeyDown={handleKeyDown}
           onFocus={() => query.trim().length >= 2 && results.length > 0 && setIsOpen(true)}
           placeholder="Search clients, products, funds..."
-          className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg 
-                   bg-white/80 backdrop-blur-sm
-                   focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400
-                   transition-all duration-200 ease-in-out
-                   placeholder:text-gray-400"
+          className="block w-full h-10 px-3 py-2 pl-10 pr-10 text-sm border border-gray-300 rounded-md shadow-sm bg-white 
+                     transition-all duration-150 ease-in-out 
+                     focus:outline-none focus:ring-3 focus:ring-offset-2 focus:border-primary-700 focus:ring-primary-700/10
+                     hover:border-gray-400"
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
+          aria-autocomplete="list"
+          role="searchbox"
         />
-        {isLoading && (
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-            <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
-          </div>
+        
+        {/* Clear Button */}
+        {query && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-150"
+            aria-label="Clear search"
+          >
+            <div className="h-4 w-4">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+          </button>
         )}
       </div>
 
-      {/* Search Results Dropdown */}
+      {/* Dropdown Results */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50 backdrop-blur-sm">
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-96 overflow-y-auto">
           {results.length > 0 ? (
-            <>
-              {/* Results Header */}
-              <div className="px-4 py-3 bg-gray-50/80 border-b border-gray-100">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-                    Search Results
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    {results.length} found
-                  </span>
-                </div>
-              </div>
-
-              {/* Results List */}
-              <div className="max-h-80 overflow-y-auto">
-                {results.map((result, index) => (
-                  <div
-                    key={`${result.entity_type}-${result.entity_id}`}
+            <ul role="listbox" className="py-1">
+              {results.map((result, index) => (
+                <li key={`${result.entity_type}-${result.entity_id}`} role="option" aria-selected={selectedIndex === index}>
+                  <button
+                    type="button"
                     onClick={() => handleResultClick(result)}
-                    className={`px-4 py-3 cursor-pointer transition-all duration-150 ease-in-out border-b border-gray-50 last:border-b-0
-                              ${selectedIndex === index 
-                                ? 'bg-blue-50 border-blue-100' 
-                                : 'hover:bg-gray-50'
-                              }`}
+                    className={`w-full text-left px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none transition-colors duration-150 ${
+                      selectedIndex === index ? 'bg-gray-50' : ''
+                    }`}
                   >
-                    <div className="flex items-start gap-3">
-                      {/* Entity Icon */}
-                      <div className="mt-0.5">
-                        {getEntityIcon(result.entity_type)}
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          {/* Entity Name */}
-                          <h4 className="text-sm font-medium text-gray-900 truncate">
-                            {highlightMatch(result.name, query)}
-                          </h4>
-                          
-                          {/* Entity Type Badge */}
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getEntityTypeColor(result.entity_type)}`}>
-                            {getEntityTypeLabel(result.entity_type)}
-                          </span>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start space-x-3 min-w-0 flex-1">
+                        {/* Entity Icon */}
+                        <div className="flex-shrink-0 mt-0.5">
+                          {getEntityIcon(result.entity_type)}
                         </div>
-
-                        {/* Description */}
-                        {result.description && (
-                          <p className="text-xs text-gray-600 mb-1 line-clamp-1">
-                            {result.description}
-                          </p>
-                        )}
-
-                        {/* Additional Info */}
-                        {result.additional_info && (
-                          <p className="text-xs text-gray-500 line-clamp-1">
-                            {result.additional_info}
-                          </p>
-                        )}
+                        
+                        {/* Content */}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <span className="font-medium text-gray-900 truncate">
+                              {highlightMatch(result.name, query)}
+                            </span>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${getEntityTypeColor(result.entity_type)}`}>
+                              {getEntityTypeLabel(result.entity_type)}
+                            </span>
+                          </div>
+                          
+                          {result.description && (
+                            <p className="text-sm text-gray-600 truncate">
+                              {highlightMatch(result.description, query)}
+                            </p>
+                          )}
+                          
+                          {result.additional_info && (
+                            <p className="text-xs text-gray-500 mt-1 truncate">
+                              {highlightMatch(result.additional_info, query)}
+                            </p>
+                          )}
+                        </div>
                       </div>
-
+                      
                       {/* Arrow Icon */}
-                      <div className="mt-0.5">
+                      <div className="flex-shrink-0 ml-2">
                         <ChevronRightIcon className="h-4 w-4 text-gray-400" />
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Footer */}
-              <div className="px-4 py-2 bg-gray-50/80 border-t border-gray-100">
-                <div className="flex items-center justify-between text-xs text-gray-500">
-                  <div className="flex items-center gap-1">
-                    <ClockIcon className="h-3 w-3" />
-                    <span>Use ↑↓ to navigate, Enter to select</span>
-                  </div>
-                  <span>ESC to close</span>
-                </div>
-              </div>
-            </>
+                  </button>
+                </li>
+              ))}
+            </ul>
           ) : query.trim().length >= 2 && !isLoading ? (
-            <div className="px-4 py-8 text-center">
-              <MagnifyingGlassIcon className="h-8 w-8 text-gray-300 mx-auto mb-3" />
-              <p className="text-sm text-gray-500 mb-1">No results found</p>
-              <p className="text-xs text-gray-400">
-                Try searching for clients, products, or funds
-              </p>
+            <div className="px-4 py-3 text-sm text-gray-500 text-center">
+              <div className="flex items-center justify-center space-x-2">
+                <MagnifyingGlassIcon className="h-4 w-4" />
+                <span>No results found for "{query}"</span>
+              </div>
             </div>
           ) : null}
         </div>
