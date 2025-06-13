@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { MultiSelectSearchableDropdown } from '../components/ui/SearchableDropdown';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
@@ -111,6 +112,7 @@ interface FundSummary {
 // Main component
 const ReportGenerator: React.FC = () => {
   const { api } = useAuth();
+  const navigate = useNavigate();
   
   // Initialize optimized services
   const irrDataService = useMemo(() => createIRRDataService(api), [api]);
@@ -209,6 +211,8 @@ const ReportGenerator: React.FC = () => {
   const [roundIrrToOne, setRoundIrrToOne] = useState(false);
   const [formatWithdrawalsAsNegative, setFormatWithdrawalsAsNegative] = useState(false);
   const [combineFundSwitches, setCombineFundSwitches] = useState(false);
+  const [showInactiveProducts, setShowInactiveProducts] = useState(false);
+  const [showPreviousFunds, setShowPreviousFunds] = useState(true);
   
   // State for Previous Funds expansion (per product)
   const [expandedPreviousFunds, setExpandedPreviousFunds] = useState<Set<number>>(new Set());
@@ -1098,6 +1102,9 @@ const ReportGenerator: React.FC = () => {
 
       // Track all missing valuations across products
       const allMissingValuations: {productName: string, fundName: string}[] = [];
+      
+      // Collect all portfolio fund IDs for total IRR calculation
+      const allPortfolioFundIds: number[] = [];
 
       // Process each product individually
       for (const productId of uniqueProductIds) {
@@ -1113,6 +1120,13 @@ const ReportGenerator: React.FC = () => {
         console.log(`Product ${productDetails.product_name} has ${productPortfolioFunds.length} portfolio funds:`, productPortfolioFunds.map(pf => ({ id: pf.id, fund_name: pf.fund_name, status: pf.status })));
         
         if (productPortfolioFunds.length === 0) continue;
+        
+        // Collect all portfolio fund IDs for total IRR calculation
+        productPortfolioFunds.forEach(pf => {
+          if (pf.id && pf.id > 0) {
+            allPortfolioFundIds.push(pf.id);
+          }
+        });
         
         // Identify active funds
       const inactiveFundIds = new Set<number>();
@@ -1947,34 +1961,20 @@ Please select a different valuation date or ensure all active funds have valuati
       setEarliestTransactionDate(earliestDate);
       
       // Calculate overall IRR using the standardized multiple funds IRR endpoint
-      if (productSummaryResults.length > 0 && overallValuation > 0) {
+      // IRR can be calculated even with zero current valuation since it's based on cash flows over time
+      let calculatedTotalIRR = null;
+      if (productSummaryResults.length > 0) {
         try {
-          // Collect all portfolio fund IDs from all products
-          // We need to collect from the original fundSummaries arrays, not the finalFundList
-          // which excludes inactive funds. We'll need to reconstruct this from the product processing.
-          const allPortfolioFundIds: number[] = [];
+          // Deduplicate portfolio fund IDs in case any products share funds
+          const uniquePortfolioFundIds = Array.from(new Set(allPortfolioFundIds));
+          console.log('Total portfolio fund IDs collected for IRR calculation:', {
+            total: allPortfolioFundIds.length,
+            unique: uniquePortfolioFundIds.length,
+            duplicatesRemoved: allPortfolioFundIds.length - uniquePortfolioFundIds.length
+          });
           
-          // Re-process each product to get ALL fund IDs (active and inactive)
-          for (const productId of uniqueProductIds) {
-            const productDetails = comprehensiveProductList.find(p => p.id === productId);
-            if (!productDetails) continue;
-            
-            const portfolioId = productDetails.portfolio_id;
-            if (!portfolioId) continue;
-            
-            // Get portfolio funds for this product using batch service
-            const productPortfolioFunds = await portfolioFundsService.getPortfolioFunds(portfolioId);
-            
-            // Add ALL portfolio fund IDs (active and inactive)
-            productPortfolioFunds.forEach(pf => {
-              if (pf.id && pf.id > 0) {
-                allPortfolioFundIds.push(pf.id);
-              }
-            });
-          }
-          
-          if (allPortfolioFundIds.length > 0) {
-            console.log('Calculating standardized IRR for portfolio fund IDs:', allPortfolioFundIds);
+          if (uniquePortfolioFundIds.length > 0) {
+            console.log('Calculating standardized IRR for portfolio fund IDs:', uniquePortfolioFundIds);
             
             // Format the selected valuation date for the API call
             let formattedDate: string | undefined = undefined;
@@ -1986,24 +1986,65 @@ Please select a different valuation date or ensure all active funds have valuati
             }
             
             console.log('Using optimized batch IRR service for total IRR:', {
-              portfolioFundIds: allPortfolioFundIds,
+              portfolioFundIds: uniquePortfolioFundIds,
               irrDate: formattedDate
             });
             
-            // Use optimized IRR service for total IRR calculation (eliminates second duplicate)
+            // Calculate portfolio total average return using IRR of all selected products
+            // This uses the multiple portfolio fund IRR endpoint with all fund IDs from all products
             const totalIRRData = await irrDataService.getOptimizedIRRData({
-              portfolioFundIds: allPortfolioFundIds,
+              portfolioFundIds: uniquePortfolioFundIds,
               endDate: formattedDate,
               includeHistorical: false
             });
             
-            console.log('Optimized total IRR response:', totalIRRData);
+            console.log('🎯 [TOTAL IRR DEBUG] Optimized total IRR response:', totalIRRData);
+            console.log('🎯 [TOTAL IRR DEBUG] portfolioIRR field:', totalIRRData.portfolioIRR);
+            console.log('🎯 [TOTAL IRR DEBUG] portfolioIRR type:', typeof totalIRRData.portfolioIRR);
             
             setTotalIRR(totalIRRData.portfolioIRR);
-            console.log('✅ Optimized total IRR calculation complete:', totalIRRData.portfolioIRR);
+            calculatedTotalIRR = totalIRRData.portfolioIRR;
+            console.log('✅ [TOTAL IRR DEBUG] Optimized total IRR calculation complete:', totalIRRData.portfolioIRR);
+            
         } else {
             console.warn('No valid portfolio fund IDs found for IRR calculation');
-          setTotalIRR(null);
+            setTotalIRR(null);
+            
+            // Navigate to report display page even without total IRR
+            const reportDataWithoutIRR = {
+              productSummaries: productSummaryResults,
+              totalIRR: null,
+              totalValuation: overallValuation,
+              earliestTransactionDate: earliestDate,
+              selectedValuationDate: selectedValuationDate,
+              productOwnerNames: Array.from(
+                new Set(
+                  productSummaryResults
+                    .map(product => product.product_owner_name)
+                    .filter(name => name && name.trim() !== '')
+                )
+              ).sort(),
+              timePeriod: (() => {
+                if (earliestDate && selectedValuationDate) {
+                  const startDate = formatDateFallback(earliestDate);
+                  const endDate = formatDateFallback(selectedValuationDate);
+                  return `${startDate} to ${endDate}`;
+                } else if (selectedValuationDate) {
+                  return `Period ending ${formatDateFallback(selectedValuationDate)}`;
+                } else {
+                  return 'Current Period';
+                }
+              })(),
+              // Report settings
+              truncateAmounts,
+              roundIrrToOne,
+              formatWithdrawalsAsNegative,
+              showInactiveProducts,
+              showPreviousFunds
+            };
+
+            // Navigate to the report display page
+            navigate('/report-display', { state: { reportData: reportDataWithoutIRR } });
           }
         } catch (irrErr) {
           console.error('Error calculating standardized IRR:', irrErr);
@@ -2012,6 +2053,42 @@ Please select a different valuation date or ensure all active funds have valuati
       } else {
         setTotalIRR(null);
       }
+
+      // Always navigate to report display page after processing
+      const finalReportData = {
+        productSummaries: productSummaryResults,
+        totalIRR: calculatedTotalIRR,
+        totalValuation: overallValuation,
+        earliestTransactionDate: earliestDate,
+        selectedValuationDate: selectedValuationDate,
+        productOwnerNames: Array.from(
+          new Set(
+            productSummaryResults
+              .map(product => product.product_owner_name)
+              .filter(name => name && name.trim() !== '')
+          )
+        ).sort(),
+        timePeriod: (() => {
+          if (earliestDate && selectedValuationDate) {
+            const startDate = formatDateFallback(earliestDate);
+            const endDate = formatDateFallback(selectedValuationDate);
+            return `${startDate} to ${endDate}`;
+          } else if (selectedValuationDate) {
+            return `Period ending ${formatDateFallback(selectedValuationDate)}`;
+          } else {
+            return 'Current Period';
+          }
+        })(),
+        // Report settings
+        truncateAmounts,
+        roundIrrToOne,
+        formatWithdrawalsAsNegative,
+        showInactiveProducts,
+        showPreviousFunds
+      };
+
+      // Navigate to the report display page
+      navigate('/report-display', { state: { reportData: finalReportData } });
       
     } catch (err: any) {
       console.error('Error generating report:', err);
@@ -2092,6 +2169,36 @@ Please select a different valuation date or ensure all active funds have valuati
       }
       return newSet;
     });
+  };
+
+  // Helper function to generate report title information
+  const getReportTitleInfo = () => {
+    // Get time period
+    const timePeriod = (() => {
+      if (earliestTransactionDate && selectedValuationDate) {
+        const startDate = formatDateFallback(earliestTransactionDate);
+        const endDate = formatDateFallback(selectedValuationDate);
+        return `${startDate} to ${endDate}`;
+      } else if (selectedValuationDate) {
+        return `Period ending ${formatDateFallback(selectedValuationDate)}`;
+      } else {
+        return 'Current Period';
+      }
+    })();
+
+    // Get unique product owner names from the generated report
+    const productOwnerNames = Array.from(
+      new Set(
+        productSummaries
+          .map(product => product.product_owner_name)
+          .filter(name => name && name.trim() !== '')
+      )
+    ).sort();
+
+    return {
+      timePeriod,
+      productOwnerNames
+    };
   };
 
 
@@ -2650,42 +2757,28 @@ Please select a different valuation date or ensure all active funds have valuati
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div className="bg-gray-50 rounded-lg p-4 border">
-                <h3 className="text-sm font-medium text-gray-700 mb-1">Valuation Period</h3>
-                {totalValuation !== null ? (
-                  <div>
-                    <div className="text-2xl font-semibold text-primary-700">{formatCurrencyWithTruncation(totalValuation)}</div>
-                    {earliestTransactionDate && valuationDate ? (
-                      <div className="text-xs text-gray-500 mt-1">
-                        {formatDateFallback(earliestTransactionDate)} - {formatDateFallback(valuationDate)}
-                      </div>
-                    ) : valuationDate ? (
-                      <div className="text-xs text-gray-500 mt-1">as of {formatDateFallback(valuationDate)}</div>
-                    ) : null}
-                  </div>
-                ) : (
-                <div className="text-sm text-gray-500">{isCalculating ? 'Calculating...' : 'No valuation data'}</div>
-                )}
-              </div>
-              
-              <div className="bg-gray-50 rounded-lg p-4 border">
-                <h3 className="text-sm font-medium text-gray-700 mb-1">Annualised Rate of Return per annum</h3>
-                {totalIRR !== null ? (
-                  <div className={`text-2xl font-semibold ${totalIRR >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {formatIrrWithPrecision(totalIRR)}
-                  </div>
-                ) : (
-                <div className="text-sm text-gray-500">{isCalculating ? 'Calculating...' : 'No IRR data'}</div>
-                )}
-              </div>
-            </div>
+
           </div>
         </div>
       
       {/* Product Period Summary Tables */}
       {productSummaries.length > 0 && (
         <div className="mt-8 w-full">
+          {/* Report Title */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Report Summary
+            </h1>
+            <div className="text-lg text-gray-700 mb-1">
+              {getReportTitleInfo().timePeriod}
+            </div>
+            {getReportTitleInfo().productOwnerNames.length > 0 && (
+              <div className="text-md text-gray-600">
+                {getReportTitleInfo().productOwnerNames.join(', ')}
+              </div>
+            )}
+          </div>
+          
           <h2 className="text-2xl font-normal text-gray-900 font-sans tracking-wide mb-4">
             Product Period Overview
           </h2>

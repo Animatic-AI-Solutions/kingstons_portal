@@ -2157,7 +2157,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                         value={product.product_name}
                                         onChange={(e) => handleProductChange(product.id, 'product_name', e.target.value)}
                                         className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm border-gray-300 rounded-md h-8"
-                                        placeholder="Auto-generated"
+                                        placeholder="e.g. Smoothed Savings Pension Fund"
                                       />
                           </div>
                         </div>
