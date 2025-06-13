@@ -2,7 +2,14 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getProviderColor } from '../services/providerColors';
-import { calculateStandardizedMultipleFundsIRR } from '../services/api';
+import { 
+  calculateStandardizedMultipleFundsIRR, 
+  getClientGroupProductOwners, 
+  getProductOwners, 
+  addClientGroupProductOwner, 
+  removeClientGroupProductOwner 
+} from '../services/api';
+import api from '../services/api';
 
 // Enhanced TypeScript interfaces
 interface Client {
@@ -15,6 +22,15 @@ interface Client {
   updated_at: string;
   age?: number;
   gender?: string;
+  product_owners?: ClientProductOwner[];
+}
+
+interface ClientProductOwner {
+  id: number;
+  name: string;
+  status: string;
+  created_at: string;
+  association_id?: number; // ID of the client_group_product_owners record
 }
 
 interface ClientFormData {
@@ -174,17 +190,35 @@ const PreviousFundsIRRDisplay: React.FC<{ inactiveFundIds: number[] }> = ({ inac
   return <span className="text-gray-500">-</span>;
 };
 
-// Extracted component for client header
+// Enhanced ClientHeader component with inline editing
 const ClientHeader = ({ 
   client, 
   totalValue, 
   totalIRR, 
-  onEditClick
+  onEditClick,
+  isEditing,
+  editData,
+  onSave,
+  onCancel,
+  onFieldChange,
+  isSaving,
+  availableProductOwners,
+  onAddProductOwner,
+  onRemoveProductOwner
 }: { 
   client: Client; 
   totalValue: number;
   totalIRR: number | string;
   onEditClick: () => void;
+  isEditing: boolean;
+  editData: ClientFormData;
+  onSave: () => void;
+  onCancel: () => void;
+  onFieldChange: (field: keyof ClientFormData, value: string | null) => void;
+  isSaving?: boolean;
+  availableProductOwners: ClientProductOwner[];
+  onAddProductOwner: (productOwnerId: number) => void;
+  onRemoveProductOwner: (associationId: number) => void;
 }) => {
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-GB', {
@@ -214,6 +248,103 @@ const ClientHeader = ({
     });
   };
 
+  // Input component for inline editing
+  const EditableField = ({ 
+    label, 
+    value, 
+    field, 
+    type = 'text', 
+    options 
+  }: { 
+    label: string; 
+    value: string | null; 
+    field: keyof ClientFormData; 
+    type?: 'text' | 'select'; 
+    options?: { value: string; label: string }[] 
+  }) => {
+    if (!isEditing) {
+      return (
+        <div className="flex items-center">
+          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2">{label}:</span>
+          <span className="text-sm font-semibold text-gray-900">
+            {value || (field === 'advisor' ? 'Unassigned' : type === 'select' && field === 'type' ? 'Family' : 'N/A')}
+          </span>
+        </div>
+      );
+    }
+
+    if (type === 'select' && options) {
+      return (
+        <div className="flex items-center">
+          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2 min-w-fit">{label}:</span>
+          <select
+            value={value || ''}
+            onChange={(e) => onFieldChange(field, e.target.value)}
+            className="text-sm font-semibold text-gray-900 bg-white border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 min-w-0"
+          >
+            {options.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex items-center">
+        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2 min-w-fit">{label}:</span>
+        <input
+          type="text"
+          value={value || ''}
+          onChange={(e) => onFieldChange(field, e.target.value)}
+          className="text-sm font-semibold text-gray-900 bg-white border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 min-w-0"
+          placeholder={field === 'advisor' ? 'Enter advisor name' : `Enter ${label.toLowerCase()}`}
+        />
+      </div>
+    );
+  };
+
+  // Status badge component
+  const StatusBadge = () => {
+    if (!isEditing) {
+      return (
+        <div className="flex items-center">
+          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2">Status:</span>
+          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+            client.status === 'active' 
+              ? 'bg-green-100 text-green-800 border border-green-200' 
+              : 'bg-gray-100 text-gray-800 border border-gray-200'
+          }`}>
+            <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
+              client.status === 'active' ? 'bg-green-500' : 'bg-gray-500'
+            }`} />
+            {client.status}
+          </span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex items-center">
+        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2 min-w-fit">Status:</span>
+        <select
+          value={editData.status}
+          onChange={(e) => onFieldChange('status', e.target.value)}
+          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+            editData.status === 'active' 
+              ? 'bg-green-100 text-green-800 border-green-200' 
+              : 'bg-gray-100 text-gray-800 border-gray-200'
+          }`}
+        >
+          <option value="active">Active</option>
+          <option value="dormant">Dormant</option>
+        </select>
+      </div>
+    );
+  };
+
   return (
     <div className="mb-6 bg-white shadow-sm rounded-xl border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-md">
       {/* Main Header Section */}
@@ -224,10 +355,30 @@ const ClientHeader = ({
             {/* Client Name Row */}
             <div className="mb-5">
               <div className="min-w-0 flex-1">
-                {/* Client Name */}
-                <h1 className="text-5xl font-normal text-primary-700 tracking-tight leading-tight">
-                  {client.name}
-                </h1>
+                {/* Client Name - Editable */}
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editData.name || ''}
+                    onChange={(e) => onFieldChange('name', e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        onSave();
+                      } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        onCancel();
+                      }
+                    }}
+                    className="text-5xl font-normal text-primary-700 tracking-tight leading-tight bg-transparent border-b-2 border-primary-300 focus:outline-none focus:border-primary-500 w-full max-w-2xl"
+                    placeholder="Enter client name"
+                    autoFocus
+                  />
+                ) : (
+                  <h1 className="text-5xl font-normal text-primary-700 tracking-tight leading-tight">
+                    {client.name}
+                  </h1>
+                )}
               </div>
             </div>
 
@@ -236,33 +387,75 @@ const ClientHeader = ({
               <div className="bg-gray-50 rounded-lg px-5 py-3 border border-gray-200">
                 <div className="flex flex-wrap items-center justify-between gap-6">
                   <div className="flex flex-wrap items-center gap-6">
-                    <div className="flex items-center">
-                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2">Type:</span>
-                      <span className="text-sm font-semibold text-gray-900">
-                        {client.type || 'Family'}
-                      </span>
-                    </div>
+                    <EditableField 
+                      label="Type" 
+                      value={isEditing ? editData.type : client.type} 
+                      field="type" 
+                      type="select"
+                      options={[
+                        { value: 'Family', label: 'Family' },
+                        { value: 'Business', label: 'Business' },
+                        { value: 'Trust', label: 'Trust' }
+                      ]}
+                    />
                     
-                    <div className="flex items-center">
-                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2">Advisor:</span>
-                      <span className="text-sm font-semibold text-gray-900">
-                        {client.advisor || 'Unassigned'}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center">
-                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2">Status:</span>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        client.status === 'active' 
-                          ? 'bg-green-100 text-green-800 border border-green-200' 
-                          : 'bg-gray-100 text-gray-800 border border-gray-200'
-                      }`}>
-                        <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
-                          client.status === 'active' ? 'bg-green-500' : 'bg-gray-500'
-                        }`} />
-                        {client.status}
-                      </span>
-                    </div>
+                                         <EditableField 
+                       label="Advisor" 
+                       value={isEditing ? editData.advisor : client.advisor} 
+                       field="advisor" 
+                     />
+                     
+                     <StatusBadge />
+                     
+                     {/* Product Owners Section */}
+                     <div className="flex items-center">
+                       <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2">Product Owners:</span>
+                       <div className="flex items-center space-x-2">
+                         {client.product_owners && client.product_owners.length > 0 ? (
+                           <div className="flex flex-wrap gap-1">
+                             {client.product_owners.map((owner) => (
+                               <span 
+                                 key={owner.id}
+                                 className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
+                               >
+                                 {owner.name}
+                                                                   {isEditing && owner.association_id && (
+                                    <button
+                                      onClick={() => onRemoveProductOwner(owner.association_id!)}
+                                      className="ml-1 text-blue-600 hover:text-blue-800"
+                                    >
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                      </svg>
+                                    </button>
+                                  )}
+                               </span>
+                             ))}
+                           </div>
+                         ) : (
+                           <span className="text-sm text-gray-500">None assigned</span>
+                         )}
+                         
+                         {isEditing && availableProductOwners.length > 0 && (
+                           <select
+                             onChange={(e) => {
+                               if (e.target.value) {
+                                 onAddProductOwner(parseInt(e.target.value));
+                                 e.target.value = ''; // Reset selection
+                               }
+                             }}
+                             className="text-xs bg-white border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                           >
+                             <option value="">+ Add Owner</option>
+                             {availableProductOwners.map((owner) => (
+                               <option key={owner.id} value={owner.id}>
+                                 {owner.name}
+                               </option>
+                             ))}
+                           </select>
+                         )}
+                       </div>
+                     </div>
                     
                     <div className="flex items-center">
                       <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2">Member Since:</span>
@@ -275,16 +468,56 @@ const ClientHeader = ({
                     </div>
                   </div>
 
-                  {/* Edit Button - Integrated into Banner */}
-                  <button
-                    onClick={onEditClick}
-                    className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-primary-700 bg-white border border-primary-200 rounded-md hover:bg-primary-50 hover:border-primary-300 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 shadow-sm flex-shrink-0"
-                  >
-                    <svg className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Edit
-                  </button>
+                  {/* Action Buttons */}
+                  {isEditing ? (
+                    <div className="flex items-center space-x-2 flex-shrink-0">
+                      <button
+                        onClick={onCancel}
+                        className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1 shadow-sm"
+                      >
+                        <svg className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Cancel
+                      </button>
+                      <button
+                        onClick={onSave}
+                        disabled={isSaving}
+                        className={`inline-flex items-center px-3 py-1.5 text-xs font-medium text-white border rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 shadow-sm ${
+                          isSaving 
+                            ? 'bg-primary-400 border-primary-400 cursor-not-allowed' 
+                            : 'bg-primary-600 border-primary-600 hover:bg-primary-700'
+                        }`}
+                      >
+                        {isSaving ? (
+                          <>
+                            <svg className="animate-spin -ml-1 mr-1.5 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            Save
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={onEditClick}
+                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-primary-700 bg-white border border-primary-200 rounded-md hover:bg-primary-50 hover:border-primary-300 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 shadow-sm flex-shrink-0"
+                    >
+                      <svg className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Edit
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -725,8 +958,11 @@ const ClientDetails: React.FC = () => {
   const [client, setClient] = useState<Client | null>(null);
   const [clientAccounts, setClientAccounts] = useState<ClientAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isCorrecting, setIsCorrecting] = useState(false);
+  const [availableProductOwners, setAvailableProductOwners] = useState<ClientProductOwner[]>([]);
+  const [isEditingProductOwners, setIsEditingProductOwners] = useState(false);
   const [versions, setVersions] = useState<any[]>([]);
   const [showVersionModal, setShowVersionModal] = useState(false);
   const [formData, setFormData] = useState<ClientFormData>({
@@ -770,6 +1006,62 @@ const ClientDetails: React.FC = () => {
     // If for some reason the data wasn't loaded, log a warning
     if (!expandedProductFunds[accountId]) {
       console.warn(`Fund data not found for product ${accountId} - may need to refresh`);
+    }
+  };
+
+  // Function to fetch product owners for the client group
+  const fetchProductOwners = async () => {
+    try {
+      if (!clientId) return;
+
+      // Fetch client group's product owners
+      const clientProductOwnersResponse = await getClientGroupProductOwners(parseInt(clientId));
+      console.log('Client product owners response:', clientProductOwnersResponse.data);
+      
+      // Fetch all available product owners for the dropdown
+      const allProductOwnersResponse = await getProductOwners();
+      console.log('All product owners response:', allProductOwnersResponse.data);
+      
+      // Process client's current product owners
+      const currentProductOwners: ClientProductOwner[] = [];
+      if (clientProductOwnersResponse.data && Array.isArray(clientProductOwnersResponse.data)) {
+        for (const association of clientProductOwnersResponse.data) {
+          if (association.product_owner_id) {
+            // Find the product owner details
+            const productOwner = allProductOwnersResponse.data.find(
+              (owner: any) => owner.id === association.product_owner_id
+            );
+            if (productOwner) {
+              currentProductOwners.push({
+                id: productOwner.id,
+                name: productOwner.name,
+                status: productOwner.status,
+                created_at: productOwner.created_at,
+                association_id: association.id // Store the association ID for deletion
+              });
+            }
+          }
+        }
+      }
+
+      // Update client with product owners
+      setClient(prev => prev ? { ...prev, product_owners: currentProductOwners } : null);
+      
+      // Set available product owners (excluding already assigned ones)
+      const availableOwners = allProductOwnersResponse.data
+        .filter((owner: any) => owner.status === 'active')
+        .filter((owner: any) => !currentProductOwners.find(current => current.id === owner.id))
+        .map((owner: any) => ({
+          id: owner.id,
+          name: owner.name,
+          status: owner.status,
+          created_at: owner.created_at
+        }));
+      
+      setAvailableProductOwners(availableOwners);
+      
+    } catch (err: any) {
+      console.error('Error fetching product owners:', err);
     }
   };
 
@@ -877,6 +1169,9 @@ const ClientDetails: React.FC = () => {
       console.log(`Optimized loading complete: ${processedProducts.length} products, ${Object.keys(fundDataMap).length} products with fund data`);
       console.log(`Total Value: ${totalValue}, Standardized Total IRR: ${totalIRR}%`);
       
+      // Fetch product owners after setting the client
+      await fetchProductOwners();
+      
       setError(null);
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || 'Failed to fetch client data';
@@ -971,36 +1266,55 @@ const ClientDetails: React.FC = () => {
   };
 
   const handleCorrect = async () => {
-    if (!client) return;
+    if (!client || isSaving) return;
 
     try {
+      // Validate required fields
+      if (!formData.name?.trim()) {
+        setError('Client name is required');
+        return;
+      }
+
+      // Set saving state
+      setIsSaving(true);
+      setError(null);
+
       // Only send fields that have actually changed
       const changedFields: Partial<ClientFormData> = {};
       
-      if (formData.name !== client.name) changedFields.name = formData.name;
-      if (formData.status !== client.status) changedFields.status = formData.status;
+      if (formData.name?.trim() !== client.name) {
+        changedFields.name = formData.name?.trim();
+      }
+      if (formData.status !== client.status) {
+        changedFields.status = formData.status;
+      }
       
       // Special handling for advisor which could be null
       if (
         (formData.advisor === '' && client.advisor !== null) || 
         (formData.advisor !== client.advisor && formData.advisor !== '')
       ) {
-        changedFields.advisor = formData.advisor === '' ? null : formData.advisor;
+        changedFields.advisor = formData.advisor === '' ? null : formData.advisor?.trim();
       }
 
       // Handle type field change
-      if (formData.type !== client.type) changedFields.type = formData.type;
+      if (formData.type !== client.type) {
+        changedFields.type = formData.type;
+      }
       
       // Only perform API call if there are changes
       if (Object.keys(changedFields).length > 0) {
         await api.patch(`/client_groups/${clientId}`, changedFields);
-        await fetchClientData();
+        await fetchClientData(); // Refresh client data to reflect changes
+        console.log('Client updated successfully');
       }
       
       setIsCorrecting(false);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to correct client');
-      console.error('Error correcting client:', err);
+      setError(err.response?.data?.detail || 'Failed to update client details');
+      console.error('Error updating client:', err);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -1010,6 +1324,13 @@ const ClientDetails: React.FC = () => {
     setFormData(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  const handleFieldChange = (field: keyof ClientFormData, value: string | null) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
     }));
   };
 
@@ -1051,6 +1372,31 @@ const ClientDetails: React.FC = () => {
     } catch (err: any) {
       console.error('Error reactivating product:', err);
       alert(err.response?.data?.detail || 'Failed to reactivate product. Please try again.');
+    }
+  };
+
+  // Product owner management functions
+  const handleAddProductOwner = async (productOwnerId: number) => {
+    try {
+      if (!clientId) return;
+      
+      await addClientGroupProductOwner(parseInt(clientId), productOwnerId);
+      await fetchProductOwners(); // Refresh product owners
+      console.log('Product owner added successfully');
+    } catch (err: any) {
+      console.error('Error adding product owner:', err);
+      setError(err.response?.data?.detail || 'Failed to add product owner');
+    }
+  };
+
+  const handleRemoveProductOwner = async (associationId: number) => {
+    try {
+      await removeClientGroupProductOwner(associationId);
+      await fetchProductOwners(); // Refresh product owners
+      console.log('Product owner removed successfully');
+    } catch (err: any) {
+      console.error('Error removing product owner:', err);
+      setError(err.response?.data?.detail || 'Failed to remove product owner');
     }
   };
 
@@ -1131,104 +1477,18 @@ const ClientDetails: React.FC = () => {
           totalValue={totalFundsUnderManagement}
           totalIRR={totalIRR}
           onEditClick={startCorrection}
+          isEditing={isCorrecting}
+          editData={formData}
+          onSave={handleCorrect}
+          onCancel={() => setIsCorrecting(false)}
+          onFieldChange={handleFieldChange}
+          isSaving={isSaving}
+          availableProductOwners={availableProductOwners}
+          onAddProductOwner={handleAddProductOwner}
+          onRemoveProductOwner={handleRemoveProductOwner}
         />
 
-        {/* Client Edit Form (when in correction mode) */}
-        {isCorrecting && (
-          <div className="bg-white shadow-sm rounded-lg border border-gray-100 mb-4">
-            <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
-              <h2 className="text-base font-medium text-gray-900">Edit Client Details</h2>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setIsCorrecting(false)}
-                  className="px-2.5 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCorrect}
-                  className="px-2.5 py-1 text-sm font-medium text-white bg-primary-700 rounded-lg shadow-sm hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-700 transition-all duration-200"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </div>
-            
-            <div className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-0.5">Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name || ''}
-                    onChange={handleChange}
-                    className="block w-full h-10 px-3 py-2 text-base rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-200"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-0.5">Type</label>
-                  <select
-                    name="type"
-                    value={formData.type || 'Family'}
-                    onChange={handleChange}
-                    className="block w-full h-10 px-3 py-2 text-base rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-200"
-                  >
-                    <option value="Family">Family</option>
-                    <option value="Business">Business</option>
-                    <option value="Trust">Trust</option>
-                  </select>
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-0.5">Status</label>
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleChange}
-                    className="block w-full h-10 px-3 py-2 text-base rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-200"
-                  >
-                    <option value="active">Active</option>
-                    <option value="dormant">Dormant</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-0.5">Advisor</label>
-                  <input
-                    type="text"
-                    name="advisor"
-                    value={formData.advisor || ''}
-                    onChange={handleChange}
-                    className="block w-full h-10 px-3 py-2 text-base rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-200"
-                  />
-                </div>
-              </div>
-              
-              {/* Additional Actions */}
-              <div className="px-4 py-3 border-t border-gray-100">
-                <div className="flex justify-between items-center">
-                  <div className="text-sm text-gray-500">Additional Actions</div>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={handleMakeDormant}
-                      className="px-3 py-1.5 text-sm font-medium text-white bg-orange-600 rounded-lg shadow-sm hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-200"
-                    >
-                      Make Dormant
-                    </button>
-                    <button
-                      onClick={handleDelete}
-                      className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-lg shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
-                    >
-                      Delete Client
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Client Products Section */}
         <div className="mb-6">

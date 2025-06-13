@@ -699,4 +699,24 @@ export const createActivity = async (activityData: {
   return response.data;
 };
 
+// Product Owners API endpoints
+export const getProductOwners = async () => {
+  return api.get('product_owners');
+};
+
+export const getClientGroupProductOwners = async (clientGroupId: number) => {
+  return api.get(`client_group_product_owners?client_group_id=${clientGroupId}`);
+};
+
+export const addClientGroupProductOwner = async (clientGroupId: number, productOwnerId: number) => {
+  return api.post('client_group_product_owners', {
+    client_group_id: clientGroupId,
+    product_owner_id: productOwnerId
+  });
+};
+
+export const removeClientGroupProductOwner = async (associationId: number) => {
+  return api.delete(`client_group_product_owners/${associationId}`);
+};
+
 export default api; 

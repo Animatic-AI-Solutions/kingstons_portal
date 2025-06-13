@@ -219,7 +219,7 @@ async def get_product_owner_products(
     db = Depends(get_db)
 ):
     """
-    Get all products associated with a product owner.
+    Get all products associated with a product owner, including product owner information.
     """
     try:
         logger.info(f"Retrieving products for product owner {product_owner_id}")
@@ -239,10 +239,56 @@ async def get_product_owner_products(
         # Get the product IDs
         product_ids = [assoc["product_id"] for assoc in associations_result.data]
         
-        # Get the product details
-        products_result = db.table("client_products").select("*").in_("id", product_ids).execute()
+        # Get the product details with provider information
+        products_result = db.table("client_products") \
+            .select("*, available_providers(name, theme_color)") \
+            .in_("id", product_ids) \
+            .execute()
         
-        return products_result.data or []
+        if not products_result.data:
+            return []
+        
+        # For each product, get all associated product owners
+        enriched_products = []
+        for product in products_result.data:
+            # Get all product owners for this product
+            product_owner_associations = db.table("product_owner_products") \
+                .select("product_owner_id, product_owners(id, name)") \
+                .eq("product_id", product["id"]) \
+                .execute()
+            
+            # Extract product owner information
+            product_owners = []
+            if product_owner_associations.data:
+                for assoc in product_owner_associations.data:
+                    if assoc.get("product_owners"):
+                        product_owners.append({
+                            "id": assoc["product_owners"]["id"],
+                            "name": assoc["product_owners"]["name"]
+                        })
+            
+            # Add provider information if available
+            provider_name = None
+            provider_theme_color = None
+            if product.get("available_providers"):
+                provider_name = product["available_providers"]["name"]
+                provider_theme_color = product["available_providers"]["theme_color"]
+            
+            # Create enriched product object
+            enriched_product = {
+                **product,
+                "product_owners": product_owners,
+                "provider_name": provider_name,
+                "provider_theme_color": provider_theme_color
+            }
+            
+            # Remove the nested provider object to avoid confusion
+            if "available_providers" in enriched_product:
+                del enriched_product["available_providers"]
+            
+            enriched_products.append(enriched_product)
+        
+        return enriched_products
     
     except HTTPException:
         raise

@@ -229,7 +229,7 @@ const ReportGenerator: React.FC = () => {
           actualProductOwnersRes
         ] = await Promise.all([
           api.get('/client_groups'),
-          api.get('/client_products'),
+          api.get('/client_products_with_owners'),
           api.get('/product_owners')
         ]);
         
