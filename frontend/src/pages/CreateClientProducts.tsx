@@ -2126,12 +2126,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                               id={`product-type-select-${product.id}`}
                               options={[
                                 { value: 'ISA', label: 'ISA' },
-                                { value: 'JISA', label: 'Junior ISA' },
-                                { value: 'SIPP', label: 'SIPP' },
                                 { value: 'GIA', label: 'GIA' },
-                                { value: 'Offshore Bond', label: 'Offshore Bond' },
                                 { value: 'Onshore Bond', label: 'Onshore Bond' },
-                                { value: 'Trust', label: 'Trust' },
+                                { value: 'Offshore Bond', label: 'Offshore Bond' },
                                 { value: 'Pension', label: 'Pension' },
                                 { value: 'Other', label: 'Other' },
                               ]}

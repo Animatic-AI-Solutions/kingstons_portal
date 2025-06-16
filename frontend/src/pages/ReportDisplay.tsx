@@ -337,15 +337,50 @@ const ReportDisplay: React.FC = () => {
           )}
 
           <div className="mb-8">
-            {reportData.productSummaries
-              .filter(product => {
+            {(() => {
+              // Define the product type order
+              const productTypeOrder = ['ISA', 'GIA', 'Onshore Bonds', 'Offshore Bonds', 'Pension', 'Other'];
+              
+              // Filter products first
+              const filteredProducts = reportData.productSummaries.filter(product => {
                 // For inactive products, only show if they should be shown
                 if (product.status === 'inactive') {
                   return reportData.showInactiveProducts || showInactiveProductDetails.has(product.id);
                 }
                 return true;
-              })
-              .map(product => (
+              });
+              
+              // Group products by type
+              const groupedProducts = filteredProducts.reduce((groups, product) => {
+                const productType = product.product_type || 'Other';
+                if (!groups[productType]) {
+                  groups[productType] = [];
+                }
+                groups[productType].push(product);
+                return groups;
+              }, {} as Record<string, typeof filteredProducts>);
+              
+              // Render products in the specified order
+              const productGroups = productTypeOrder.map(productType => {
+                const productsInGroup = groupedProducts[productType];
+                if (!productsInGroup || productsInGroup.length === 0) {
+                  return null;
+                }
+                
+                // Sort products within this group alphabetically by provider name
+                const sortedProducts = [...productsInGroup].sort((a, b) => {
+                  const providerA = a.provider_name || '';
+                  const providerB = b.provider_name || '';
+                  return providerA.localeCompare(providerB);
+                });
+                
+                return (
+                  <div key={productType} className="mb-10">
+                    <h2 className="text-2xl font-semibold text-gray-900 mb-6 border-b-2 border-primary-200 pb-2">
+                      {productType}
+                    </h2>
+                    <div className="space-y-6">
+                      {sortedProducts.map(product => (
                 <div key={product.id} className={`mb-8 bg-white shadow-sm rounded-lg border border-gray-200 p-6 w-full product-card print-clean ${product.status === 'inactive' ? 'opacity-60 bg-gray-50' : ''}`}>
                   <div className="flex items-center gap-3 mb-4">
                     {product.provider_theme_color && (
@@ -575,7 +610,14 @@ const ReportDisplay: React.FC = () => {
                     </table>
                   </div>
                 </div>
-              ))}
+                        ))}
+                    </div>
+                  </div>
+                );
+              }).filter(Boolean);
+              
+              return productGroups;
+            })()}
           </div>
 
           {/* Summary Table */}
