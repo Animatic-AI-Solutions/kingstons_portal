@@ -219,11 +219,7 @@ const ReportDisplay: React.FC = () => {
           </div>
         )}
 
-        {/* Product Period Overview */}
         <div className="mb-8">
-          <h2 className="text-2xl font-normal text-gray-900 font-sans tracking-wide mb-4">
-            Product Period Overview
-          </h2>
           
           {reportData.productSummaries
             .filter(product => {
@@ -254,116 +250,209 @@ const ReportDisplay: React.FC = () => {
                 <table className="w-full table-auto divide-y divide-gray-300">
                   <thead className="bg-gray-100">
                     <tr>
-                      <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      <th scope="col" className="px-2 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
                         Fund Name
                       </th>
-                      <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      <th scope="col" className="px-2 py-2 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide">
                         Investment
                       </th>
-                      <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                        Government Uplift
+                      <th scope="col" className="px-2 py-2 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                        Gov. Uplift
                       </th>
-                      <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                        Product Switch In
+                      <th scope="col" className="px-2 py-2 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                        Prod. Switch In
                       </th>
-                      <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                        All Fund Switches
+                      <th scope="col" className="px-2 py-2 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                        Fund Switches
                       </th>
-                      <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                        Product Switch Out
+                      <th scope="col" className="px-2 py-2 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                        Prod. Switch Out
                       </th>
-                      <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      <th scope="col" className="px-2 py-2 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide">
                         Withdrawal
                       </th>
-                      <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider bg-green-100">
+                      <th scope="col" className="px-2 py-2 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide bg-green-100">
                         Valuation
                       </th>
-                      <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider bg-blue-100">
+                      <th scope="col" className="px-2 py-2 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide bg-blue-100">
                         Profit Made
                       </th>
-                      <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider bg-purple-100">
-                        Average Return p.a.
+                      <th scope="col" className="px-2 py-2 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide bg-purple-100">
+                        Return p.a.
                       </th>
-                      <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      <th scope="col" className="px-2 py-2 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide">
                         Risk
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {product.funds && product.funds.length > 0 ? (
-                      product.funds.map(fund => (
-                        <React.Fragment key={fund.id}>
-                          <tr 
-                            className={`hover:bg-blue-50 ${fund.isVirtual ? 'bg-gray-100 font-medium' : ''}`}
-                          >
-                            <td className="px-4 py-3 text-sm font-medium text-gray-800 text-left">
-                              {fund.fund_name}
-                              {fund.isVirtual && fund.inactiveFundCount && (
-                                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-800">
-                                  {fund.inactiveFundCount} {fund.inactiveFundCount === 1 ? 'fund' : 'funds'}
-                                </span>
-                              )}
-
-                            </td>
-                            <td className="px-4 py-3 text-sm text-center">
-                              {formatCurrencyWithTruncation(fund.total_investment)}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-center">
-                              {formatCurrencyWithTruncation(0)}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-center">
-                              {formatCurrencyWithTruncation(0)}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-center">
-                              {formatCurrencyWithTruncation(fund.total_switch_out - fund.total_switch_in)}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-center">
-                              {formatCurrencyWithTruncation(0)}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-center">
-                              {formatWithdrawalAmount(fund.total_withdrawal)}
-                            </td>
-                            <td className="px-4 py-3 text-sm font-semibold text-primary-700 text-center bg-green-50">
-                              {formatCurrencyWithTruncation(fund.current_valuation)}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-center bg-blue-50">
-                              {(() => {
-                                const gains = fund.current_valuation + fund.total_withdrawal + 0 + fund.total_switch_out;
-                                const costs = fund.total_investment + fund.total_switch_in + 0 + 0;
-                                const profit = gains - costs;
-                                return (
-                                  <span className={profit >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
-                                    {formatCurrencyWithTruncation(profit)}
+                      <>
+                        {product.funds.map(fund => (
+                          <React.Fragment key={fund.id}>
+                            <tr 
+                              className={`hover:bg-blue-50 ${fund.isVirtual ? 'bg-gray-100 font-medium' : ''}`}
+                            >
+                              <td className="px-2 py-2 text-xs font-medium text-gray-800 text-left">
+                                {fund.fund_name}
+                                {fund.isVirtual && fund.inactiveFundCount && fund.fund_name !== 'Previous Funds' && (
+                                  <span className="ml-2 inline-flex items-center px-1 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-800">
+                                    {fund.inactiveFundCount} {fund.inactiveFundCount === 1 ? 'fund' : 'funds'}
                                   </span>
+                                )}
+
+                              </td>
+                              <td className="px-2 py-2 text-xs text-center">
+                                {formatCurrencyWithTruncation(fund.total_investment)}
+                              </td>
+                              <td className="px-2 py-2 text-xs text-center">
+                                {formatCurrencyWithTruncation(0)}
+                              </td>
+                              <td className="px-2 py-2 text-xs text-center">
+                                {formatCurrencyWithTruncation(0)}
+                              </td>
+                              <td className="px-2 py-2 text-xs text-center">
+                                {formatCurrencyWithTruncation(fund.total_switch_out - fund.total_switch_in)}
+                              </td>
+                              <td className="px-2 py-2 text-xs text-center">
+                                {formatCurrencyWithTruncation(0)}
+                              </td>
+                              <td className="px-2 py-2 text-xs text-center">
+                                {formatWithdrawalAmount(fund.total_withdrawal)}
+                              </td>
+                              <td className="px-2 py-2 text-xs font-semibold text-primary-700 text-center bg-green-50">
+                                {formatCurrencyWithTruncation(fund.current_valuation)}
+                              </td>
+                              <td className="px-2 py-2 text-xs text-center bg-blue-50">
+                                {(() => {
+                                  const gains = fund.current_valuation + fund.total_withdrawal + 0 + fund.total_switch_out;
+                                  const costs = fund.total_investment + fund.total_switch_in + 0 + 0;
+                                  const profit = gains - costs;
+                                  return (
+                                    <span className={profit >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                                      {formatCurrencyWithTruncation(profit)}
+                                    </span>
+                                  );
+                                })()}
+                              </td>
+                              <td className="px-2 py-2 text-xs text-center bg-purple-50">
+                                {fund.isVirtual && fund.fund_name !== 'Previous Funds' ? (
+                                  <span className="text-gray-500">-</span>
+                                ) : fund.irr !== null ? (
+                                  <span className={fund.irr >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                    {formatIrrWithPrecision(fund.irr)}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </td>
+                                                             <td className="px-2 py-2 text-xs text-center">
+                                 {fund.fund_name === 'Previous Funds' ? (
+                                   <span className="text-gray-500">N/A</span>
+                                 ) : fund.isVirtual ? (
+                                   <span className="text-gray-500">-</span>
+                                 ) : fund.risk_factor !== undefined && fund.risk_factor !== null ? (
+                                   <span className="px-1 py-0.5 text-xs font-medium rounded bg-gray-100">
+                                     {formatRiskFallback(fund.risk_factor)}
+                                   </span>
+                                 ) : (
+                                   <span className="text-gray-500">-</span>
+                                 )}
+                               </td>
+                            </tr>
+
+                          </React.Fragment>
+                        ))}
+                        
+                        {/* Product Total Row */}
+                        <tr className="bg-gray-100 font-semibold border-t-2 border-gray-300">
+                          <td className="px-2 py-2 text-xs text-gray-800 text-left">
+                            Total
+                          </td>
+                          <td className="px-2 py-2 text-xs text-center">
+                            {formatCurrencyWithTruncation(product.funds.reduce((sum, fund) => sum + fund.total_investment, 0))}
+                          </td>
+                          <td className="px-2 py-2 text-xs text-center">
+                            {formatCurrencyWithTruncation(0)}
+                          </td>
+                          <td className="px-2 py-2 text-xs text-center">
+                            {formatCurrencyWithTruncation(0)}
+                          </td>
+                          <td className="px-2 py-2 text-xs text-center">
+                            {formatCurrencyWithTruncation(product.funds.reduce((sum, fund) => sum + (fund.total_switch_out - fund.total_switch_in), 0))}
+                          </td>
+                          <td className="px-2 py-2 text-xs text-center">
+                            {formatCurrencyWithTruncation(0)}
+                          </td>
+                          <td className="px-2 py-2 text-xs text-center">
+                            {formatWithdrawalAmount(product.funds.reduce((sum, fund) => sum + fund.total_withdrawal, 0))}
+                          </td>
+                          <td className="px-2 py-2 text-xs font-semibold text-primary-700 text-center bg-green-50">
+                            {formatCurrencyWithTruncation(product.funds.reduce((sum, fund) => sum + fund.current_valuation, 0))}
+                          </td>
+                          <td className="px-2 py-2 text-xs text-center bg-blue-50">
+                            {(() => {
+                              const totalGains = product.funds.reduce((sum, fund) => sum + fund.current_valuation + fund.total_withdrawal + 0 + fund.total_switch_out, 0);
+                              const totalCosts = product.funds.reduce((sum, fund) => sum + fund.total_investment + fund.total_switch_in + 0 + 0, 0);
+                              const totalProfit = totalGains - totalCosts;
+                              return (
+                                <span className={totalProfit >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                                  {formatCurrencyWithTruncation(totalProfit)}
+                                </span>
+                              );
+                            })()}
+                          </td>
+                          <td className="px-2 py-2 text-xs text-center bg-purple-50">
+                            {product.irr !== null ? (
+                              <span className={product.irr >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                {formatIrrWithPrecision(product.irr)}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </td>
+                          <td className="px-2 py-2 text-xs text-center">
+                            {(() => {
+                              // Calculate weighted risk for this product's funds
+                              let weightedRisk = 0;
+                              let totalWeightedValue = 0;
+                              
+                              const fundsWithRisk = product.funds.filter(
+                                fund => fund.risk_factor !== undefined && 
+                                       fund.risk_factor !== null && 
+                                       fund.current_valuation >= 0 &&
+                                       !fund.isVirtual
+                              );
+                              
+                              if (fundsWithRisk.length > 0) {
+                                const totalValueWithRisk = fundsWithRisk.reduce(
+                                  (sum, fund) => sum + fund.current_valuation, 0
                                 );
-                              })()}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-center bg-purple-50">
-                              {fund.isVirtual && fund.fund_name !== 'Previous Funds' ? (
-                                <span className="text-gray-500">-</span>
-                              ) : fund.irr !== null ? (
-                                <span className={fund.irr >= 0 ? 'text-green-600' : 'text-red-600'}>
-                                  {formatIrrWithPrecision(fund.irr)}
+                                
+                                if (totalValueWithRisk > 0) {
+                                  const riskSum = fundsWithRisk.reduce(
+                                    (sum, fund) => sum + ((fund.risk_factor || 0) * fund.current_valuation), 
+                                    0
+                                  );
+                                  weightedRisk = riskSum / totalValueWithRisk;
+                                  totalWeightedValue = totalValueWithRisk;
+                                } else {
+                                  weightedRisk = 0;
+                                  totalWeightedValue = 1;
+                                }
+                              }
+                              
+                              return totalWeightedValue > 0 ? (
+                                <span className="px-1 py-0.5 text-xs font-medium rounded bg-gray-200">
+                                  {Number.isInteger(weightedRisk) ? weightedRisk.toString() : weightedRisk.toFixed(1)}
                                 </span>
                               ) : (
                                 <span className="text-gray-400">-</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-center">
-                              {fund.isVirtual && fund.fund_name !== 'Previous Funds' ? (
-                                <span className="text-gray-500">-</span>
-                              ) : fund.risk_factor !== undefined && fund.risk_factor !== null ? (
-                                <span className="px-2 py-1 text-xs font-medium rounded bg-gray-100">
-                                  {formatRiskFallback(fund.risk_factor)}
-                                </span>
-                              ) : (
-                                <span className="text-gray-500">-</span>
-                              )}
-                            </td>
-                          </tr>
-
-                        </React.Fragment>
-                      ))
+                              );
+                            })()}
+                          </td>
+                        </tr>
+                      </>
                     ) : (
                       <tr>
                         <td colSpan={11} className="px-4 py-4 text-center text-sm text-gray-500">
@@ -386,37 +475,37 @@ const ReportDisplay: React.FC = () => {
               <table className="w-full table-auto divide-y divide-gray-300">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                    <th scope="col" className="px-2 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
                       Product
                     </th>
-                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                    <th scope="col" className="px-2 py-2 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide">
                       Investment
                     </th>
-                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                      Government Uplift
+                    <th scope="col" className="px-2 py-2 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                      Gov. Uplift
                     </th>
-                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                      Product Switch In
+                    <th scope="col" className="px-2 py-2 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                      Prod. Switch In
                     </th>
-                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                      All Fund Switches
+                    <th scope="col" className="px-2 py-2 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                      Fund Switches
                     </th>
-                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                      Product Switch Out
+                    <th scope="col" className="px-2 py-2 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                      Prod. Switch Out
                     </th>
-                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                    <th scope="col" className="px-2 py-2 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide">
                       Withdrawal
                     </th>
-                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider bg-green-100">
+                    <th scope="col" className="px-2 py-2 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide bg-green-100">
                       Valuation
                     </th>
-                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider bg-blue-100">
+                    <th scope="col" className="px-2 py-2 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide bg-blue-100">
                       Profit Made
                     </th>
-                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider bg-purple-100">
-                      Average Return p.a.
+                    <th scope="col" className="px-2 py-2 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide bg-purple-100">
+                      Return p.a.
                     </th>
-                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                    <th scope="col" className="px-2 py-2 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide">
                       Risk
                     </th>
                   </tr>
@@ -468,7 +557,7 @@ const ReportDisplay: React.FC = () => {
                       
                       return (
                         <tr key={product.id} className={`hover:bg-blue-50 ${product.status === 'inactive' ? 'opacity-50 bg-gray-50' : ''}`}>
-                          <td className={`px-4 py-3 whitespace-nowrap text-sm text-left ${product.status === 'inactive' ? 'text-gray-500' : 'text-gray-800'}`}>
+                          <td className={`px-2 py-2 whitespace-nowrap text-xs text-left ${product.status === 'inactive' ? 'text-gray-500' : 'text-gray-800'}`}>
                             <div className="flex items-center gap-2">
                               {product.provider_theme_color && (
                                 <div 
@@ -482,28 +571,28 @@ const ReportDisplay: React.FC = () => {
                               )}
                             </div>
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                          <td className="px-2 py-2 whitespace-nowrap text-xs text-center">
                             {formatCurrencyWithTruncation(product.total_investment)}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                          <td className="px-2 py-2 whitespace-nowrap text-xs text-center">
                             {formatCurrencyWithTruncation(0)}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                          <td className="px-2 py-2 whitespace-nowrap text-xs text-center">
                             {formatCurrencyWithTruncation(0)}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                          <td className="px-2 py-2 whitespace-nowrap text-xs text-center">
                             {formatCurrencyWithTruncation(product.total_switch_out - product.total_switch_in)}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                          <td className="px-2 py-2 whitespace-nowrap text-xs text-center">
                             {formatCurrencyWithTruncation(0)}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                          <td className="px-2 py-2 whitespace-nowrap text-xs text-center">
                             {formatWithdrawalAmount(product.total_withdrawal)}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-primary-700 text-center bg-green-50">
+                          <td className="px-2 py-2 whitespace-nowrap text-xs font-semibold text-primary-700 text-center bg-green-50">
                             {formatCurrencyWithTruncation(product.current_valuation)}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-center bg-blue-50">
+                          <td className="px-2 py-2 whitespace-nowrap text-xs text-center bg-blue-50">
                             {(() => {
                               const gains = product.current_valuation + product.total_withdrawal + 0 + product.total_switch_out;
                               const costs = product.total_investment + product.total_switch_in + 0 + 0;
@@ -515,7 +604,7 @@ const ReportDisplay: React.FC = () => {
                               );
                             })()}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-center bg-purple-50">
+                          <td className="px-2 py-2 whitespace-nowrap text-xs text-center bg-purple-50">
                             {product.irr !== null ? (
                               <span className={product.irr >= 0 ? 'text-green-600' : 'text-red-600'}>
                                 {formatIrrWithPrecision(product.irr)}
@@ -524,9 +613,9 @@ const ReportDisplay: React.FC = () => {
                               <span className="text-gray-400">-</span>
                             )}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                          <td className="px-2 py-2 whitespace-nowrap text-xs text-center">
                             {totalWeightedValue > 0 ? (
-                              <span className="px-2 py-1 text-xs font-medium rounded bg-gray-100">
+                              <span className="px-1 py-0.5 text-xs font-medium rounded bg-gray-100">
                                 {Number.isInteger(weightedRisk) ? weightedRisk.toString() : weightedRisk.toFixed(1)}
                               </span>
                             ) : (
@@ -539,31 +628,31 @@ const ReportDisplay: React.FC = () => {
                   
                   {/* Grand total row */}
                   <tr className="bg-gray-100 font-semibold border-t-2 border-gray-400">
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800 text-left">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-800 text-left">
                       PORTFOLIO TOTAL ({reportData.productSummaries.length} {reportData.productSummaries.length === 1 ? 'Product' : 'Products'})
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-center">
                       {formatCurrencyWithTruncation(reportData.productSummaries.reduce((sum, product) => sum + product.total_investment, 0))}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-center">
                       {formatCurrencyWithTruncation(0)}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-center">
                       {formatCurrencyWithTruncation(0)}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-center">
                       {formatCurrencyWithTruncation(reportData.productSummaries.reduce((sum, product) => sum + (product.total_switch_out - product.total_switch_in), 0))}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-center">
                       {formatCurrencyWithTruncation(0)}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-center">
                       {formatWithdrawalAmount(reportData.productSummaries.reduce((sum, product) => sum + product.total_withdrawal, 0))}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-primary-700 text-center bg-green-50">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs font-semibold text-primary-700 text-center bg-green-50">
                       {formatCurrencyWithTruncation(reportData.productSummaries.reduce((sum, product) => sum + product.current_valuation, 0))}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center bg-blue-50">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-center bg-blue-50">
                       {(() => {
                         const totalGains = reportData.productSummaries.reduce((sum, product) => sum + product.current_valuation + product.total_withdrawal + 0 + product.total_switch_out, 0);
                         const totalCosts = reportData.productSummaries.reduce((sum, product) => sum + product.total_investment + product.total_switch_in + 0 + 0, 0);
@@ -575,7 +664,7 @@ const ReportDisplay: React.FC = () => {
                         );
                       })()}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center bg-purple-50">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-center bg-purple-50">
                       {reportData.totalIRR !== null ? (
                         <span className={reportData.totalIRR >= 0 ? 'text-green-600' : 'text-red-600'}>
                           {formatIrrWithPrecision(reportData.totalIRR)}
@@ -584,7 +673,7 @@ const ReportDisplay: React.FC = () => {
                         <span className="text-gray-400">-</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-center">
                       {(() => {
                         // Calculate portfolio-wide weighted risk factor
                         let portfolioWeightedRisk = 0;
@@ -612,7 +701,7 @@ const ReportDisplay: React.FC = () => {
                         if (portfolioTotalValueWithRisk > 0) {
                           const finalWeightedRisk = portfolioWeightedRisk / portfolioTotalValueWithRisk;
                           return (
-                            <span className="px-2 py-1 text-xs font-medium rounded bg-gray-200">
+                            <span className="px-1 py-0.5 text-xs font-medium rounded bg-gray-200">
                               {Number.isInteger(finalWeightedRisk) ? finalWeightedRisk.toString() : finalWeightedRisk.toFixed(1)}
                             </span>
                           );
@@ -636,7 +725,7 @@ const ReportDisplay: React.FC = () => {
                           if (totalFundsWithRisk > 0) {
                             // If we have funds with risk factors but all have zero valuation, show 0
                             return (
-                              <span className="px-2 py-1 text-xs font-medium rounded bg-gray-200">
+                              <span className="px-1 py-0.5 text-xs font-medium rounded bg-gray-200">
                                 0
                               </span>
                             );
