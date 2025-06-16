@@ -1,8 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Path, status, Response
 from typing import List, Dict, Any
+from pydantic import BaseModel
 import logging
 
 from ...db.database import get_db
+
+class ClientGroupProductOwnerCreate(BaseModel):
+    client_group_id: int
+    product_owner_id: int
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -40,14 +45,15 @@ async def get_client_group_product_owners(
 
 @router.post("/client_group_product_owners", status_code=status.HTTP_201_CREATED, response_model=Dict[str, Any])
 async def create_client_group_product_owner(
-    client_group_id: int,
-    product_owner_id: int,
+    association_data: ClientGroupProductOwnerCreate,
     db = Depends(get_db)
 ):
     """
     Create a new association between a client group and a product owner.
     """
     try:
+        client_group_id = association_data.client_group_id
+        product_owner_id = association_data.product_owner_id
         logger.info(f"Creating association between client group {client_group_id} and product owner {product_owner_id}")
         
         # Check if client group exists

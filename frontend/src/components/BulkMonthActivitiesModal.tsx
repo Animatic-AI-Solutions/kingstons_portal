@@ -70,8 +70,35 @@ const modalStyles = `
     transition: background-color 0.15s ease-in-out !important;
   }
   
-  .bulk-activity-modal .bulk-activity-modal-row:hover {
-    background-color: rgb(237 233 254) !important; /* Medium purple hover */
+  .bulk-activity-modal .bulk-activity-modal-row:hover,
+  .bulk-activity-modal .bulk-activity-modal-row:focus-within,
+  .bulk-activity-modal .bulk-activity-modal-row.focused-row,
+  .bulk-activity-modal tbody .bulk-activity-modal-row:focus-within,
+  .bulk-activity-modal tbody .bulk-activity-modal-row.focused-row {
+    background-color: rgb(237 233 254) !important; /* Medium purple hover, focus, and keyboard navigation */
+  }
+
+  /* Additional debug styles to ensure visibility */
+  .bulk-activity-modal .bulk-activity-modal-row:has(input:focus) {
+    background-color: rgb(237 233 254) !important;
+    border: 2px solid rgb(139 92 246) !important;
+  }
+
+  /* Data attribute based styling for more reliability */
+  .bulk-activity-modal .bulk-activity-modal-row[data-focused-row="true"] {
+    background-color: rgb(237 233 254) !important;
+  }
+
+  /* Force override any other background colors */
+  .bulk-activity-modal tbody tr.bulk-activity-modal-row.focused-row,
+  .bulk-activity-modal tbody tr.bulk-activity-modal-row[data-focused-row="true"] {
+    background-color: rgb(237 233 254) !important;
+  }
+
+  /* Ultra high specificity rule */
+  .bulk-activity-modal table tbody tr.bulk-activity-modal-row[data-focused-row="true"] {
+    background-color: rgb(237 233 254) !important;
+    background: rgb(237 233 254) !important;
   }
   
   .bulk-activity-modal .bulk-activity-modal-td {
@@ -772,7 +799,10 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
                             {activeFunds.map((fund, index) => (
                             <tr 
                               key={fund.id} 
-                              className={`bulk-activity-modal-row transition-colors duration-150 hover:bg-purple-100 border-b border-gray-300 bg-white ${index === 0 ? 'border-t-2 border-gray-300' : ''}`}
+                              data-focused-row={focusedCell?.fundIndex === index ? 'true' : 'false'}
+                              className={`bulk-activity-modal-row transition-colors duration-150 border-b border-gray-300 ${
+                                focusedCell?.fundIndex === index ? 'focused-row' : ''
+                              } ${index === 0 ? 'border-t-2 border-gray-300' : ''}`}
                             >
                               <td className="bulk-activity-modal-td px-4 py-1.5 text-xs font-medium text-gray-900 truncate border-b border-gray-300" title={fund.fund_name}>
                                   {fund.fund_name}
@@ -791,7 +821,10 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
                                     }`}
                                     value={bulkData[fund.id]?.[activityType] || ''}
                                     onChange={(e) => handleValueChange(fund.id, activityType, e.target.value)}
-                                    onFocus={() => setFocusedCell({ fundIndex: index, activityIndex: getDisplayedActivities().indexOf(activityType) })}
+                                    onFocus={() => {
+                                      console.log('Focus set for row:', index, 'column:', getDisplayedActivities().indexOf(activityType));
+                                      setFocusedCell({ fundIndex: index, activityIndex: getDisplayedActivities().indexOf(activityType) });
+                                    }}
                                     onKeyDown={(e) => handleKeyDown(e, index, getDisplayedActivities().indexOf(activityType))}
                                     onBlur={(e) => handleInputBlur(fund.id, activityType)}
                                     placeholder="0"

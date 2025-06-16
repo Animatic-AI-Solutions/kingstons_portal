@@ -10,6 +10,7 @@ import Terms from './pages/Terms';
 import Cookies from './pages/Cookies';
 import Profile from './pages/Profile';
 import ReportGenerator from './pages/ReportGenerator';
+import ReportDisplay from './pages/ReportDisplay';
 
 // Auth Components - User authentication related components
 import LoginForm from './components/auth/LoginForm';
@@ -122,6 +123,7 @@ const AppContent: React.FC = () => {
           {/* Reporting Section - Financial performance analytics and reporting */}
           <Route path="/analytics" element={<AppLayout><Reporting /></AppLayout>} />
           <Route path="/report-generator" element={<AppLayout><ReportGenerator /></AppLayout>} />
+          <Route path="/report-display" element={<AppLayout><ReportDisplay /></AppLayout>} />
         </Route>
         
         {/* Default route - redirect to login */}

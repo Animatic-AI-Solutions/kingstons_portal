@@ -91,7 +91,7 @@ export class IRRDataService {
    */
   async calculateHistoricalIRR(params: IRRCalculationParams): Promise<number | null> {
     try {
-      console.log('Calculating IRR using standardized endpoint:', params);
+      console.log('🔄 [IRR DEBUG] Calculating IRR using standardized endpoint:', params);
       
       // Import the existing API function
       const { calculateStandardizedMultipleFundsIRR } = await import('./api');
@@ -101,9 +101,16 @@ export class IRRDataService {
         irrDate: params.endDate
       });
       
-      return response.data.irr_percentage;
+      console.log('🔄 [IRR DEBUG] Raw API response from calculateStandardizedMultipleFundsIRR:', response.data);
+      
+      // The API response structure might be different, let's check both possible fields
+      const irrResult = response.data.irr_percentage || response.data.irr_result || response.data.irr || null;
+      
+      console.log('🔄 [IRR DEBUG] Extracted IRR result:', irrResult);
+      
+      return irrResult;
     } catch (error) {
-      console.error('Error calculating historical IRR:', error);
+      console.error('❌ [IRR DEBUG] Error calculating historical IRR:', error);
       return null;
     }
   }

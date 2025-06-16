@@ -1250,6 +1250,27 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     return formatted;
   };
 
+  // Format row totals without rounding - preserves exact decimal values
+  const formatRowTotal = (total: number): string => {
+    // Convert to string to preserve exact decimal representation
+    // Remove any trailing zeros after decimal point for cleaner display
+    const totalStr = total.toString();
+    
+    // If it's a whole number, return as is
+    if (total % 1 === 0) {
+      return totalStr;
+    }
+    
+    // For decimals, remove trailing zeros but keep at least one decimal place if needed
+    const parts = totalStr.split('.');
+    if (parts.length === 2) {
+      const decimalPart = parts[1].replace(/0+$/, ''); // Remove trailing zeros
+      return decimalPart.length > 0 ? `${parts[0]}.${decimalPart}` : parts[0];
+    }
+    
+    return totalStr;
+  };
+
   
 
   // Get class for activity label cell in first column
@@ -1475,15 +1496,55 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
               </button>
             </div>
             
-              {pendingEdits.length > 0 && (
-                <button
-                  onClick={saveChanges}
-                  disabled={isSubmitting}
-                  className="px-4 py-2 bg-green-600 text-white font-medium rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Saving...' : `Confirm Changes (${pendingEdits.length})`}
-                </button>
-              )}
+              <button
+                onClick={saveChanges}
+                disabled={isSubmitting || pendingEdits.length === 0}
+                className={`
+                  relative px-4 py-2 font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out
+                  ${pendingEdits.length > 0 
+                    ? 'bg-orange-500 text-white hover:bg-orange-600 focus:ring-orange-500 transform hover:scale-105 animate-pulse shadow-lg border-2 border-orange-400' 
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }
+                  ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}
+                `}
+                title={pendingEdits.length > 0 ? `Save ${pendingEdits.length} pending changes` : 'No changes to save'}
+              >
+                <div className="flex items-center space-x-2">
+                  {/* Save icon */}
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  
+                  <span>
+                    {isSubmitting 
+                      ? 'Saving...' 
+                      : pendingEdits.length > 0 
+                        ? `Save Changes` 
+                        : 'Save Changes'
+                    }
+                  </span>
+                  
+                  {/* Change count badge */}
+                  {pendingEdits.length > 0 && !isSubmitting && (
+                    <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-orange-100 bg-orange-700 rounded-full animate-bounce">
+                      {pendingEdits.length}
+                    </span>
+                  )}
+                  
+                  {/* Loading spinner */}
+                  {isSubmitting && (
+                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  )}
+                </div>
+                
+                {/* Glowing effect when changes are pending */}
+                {pendingEdits.length > 0 && !isSubmitting && (
+                  <div className="absolute inset-0 rounded-md bg-orange-400 opacity-20 animate-ping"></div>
+                )}
+              </button>
             </div>
             
             {/* Month Navigation */}
@@ -1841,7 +1902,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                 rowTotal < 0 ? 'text-red-700' : 
                                 'text-gray-500'
                               }>
-                                {rowTotal !== 0 ? formatCurrency(rowTotal) : ''}
+                                {rowTotal !== 0 ? formatRowTotal(rowTotal) : ''}
                               </span>
                             );
                           })()}
@@ -2043,7 +2104,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                 rowTotal < 0 ? 'text-red-700' : 
                                 'text-gray-500'
                               }>
-                                {rowTotal !== 0 ? formatCurrency(rowTotal) : ''}
+                                {rowTotal !== 0 ? formatRowTotal(rowTotal) : ''}
                               </span>
                             );
                           })()}
@@ -2080,7 +2141,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       <td className="px-1 py-0 text-center font-semibold text-red-600 border-l border-gray-300 bg-gray-100">
                         {(() => {
                           const rowTotal = calculateFundRowTotal(fund.id);
-                          return formatTotal(rowTotal);
+                          return formatRowTotal(rowTotal);
                         })()}
                       </td>
                     </tr>
@@ -2149,7 +2210,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                             const monthTotal = calculateActivityTypeTotal(activityType, month);
                             activityRowTotal += monthTotal;
                           });
-                          return formatTotal(activityRowTotal);
+                          return formatRowTotal(activityRowTotal);
                         })()}
                       </td>
                     </tr>
@@ -2195,7 +2256,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                         const monthTotal = calculateActivityTypeTotal('Current Value', month);
                         valuationRowTotal += monthTotal;
                       });
-                      return formatTotal(valuationRowTotal);
+                      return formatRowTotal(valuationRowTotal);
                     })()}
                   </td>
                 </tr>
@@ -2240,7 +2301,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                         const monthTotal = calculateMonthTotal(month);
                         grandRowTotal += monthTotal;
                       });
-                      return formatTotal(grandRowTotal);
+                      return formatRowTotal(grandRowTotal);
                     })()}
                   </td>
                 </tr>
@@ -2248,6 +2309,59 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
             </table>
           </div>
         </div>
+        
+        {/* Bottom Pagination Controls */}
+        {allAvailableMonths.length > monthsPerPage && (
+          <div className="flex justify-center mt-4">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-600">
+                Page {currentPage} of {totalPages} ({allAvailableMonths.length} months total)
+              </span>
+              <div className="flex items-center space-x-1">
+                <button
+                  onClick={goToFirstMonths}
+                  disabled={!canGoToPrevious}
+                  className="p-1.5 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed"
+                  title="Go to first months"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M21 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={goToPreviousMonths}
+                  disabled={!canGoToPrevious}
+                  className="p-1.5 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed"
+                  title="Previous months"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={goToNextMonths}
+                  disabled={!canGoToNext}
+                  className="p-1.5 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed"
+                  title="Next months"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={goToLatestMonths}
+                  disabled={!canGoToNext}
+                  className="p-1.5 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed"
+                  title="Go to latest months"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M3 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       
       
