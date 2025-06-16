@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDownIcon, ChevronUpIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChevronUpIcon, MagnifyingGlassIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { DropdownOption } from './BaseDropdown';
 
 export interface MultiSelectDropdownProps {
@@ -95,10 +95,30 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
     }
   }, [focusedIndex]);
   
-  const handleToggle = () => {
+  const handleInputClick = () => {
+    if (!disabled && !isOpen) {
+      setIsOpen(true);
+      setSearchTerm('');
+      setFocusedIndex(-1);
+      // Focus search input when opening
+      setTimeout(() => {
+        if (searchable && searchInputRef.current) {
+          searchInputRef.current.focus();
+        }
+      }, 0);
+    }
+  };
+
+  const handleArrowClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (!disabled) {
-      setIsOpen(!isOpen);
-      if (!isOpen) {
+      if (isOpen) {
+        setIsOpen(false);
+        setSearchTerm('');
+        setFocusedIndex(-1);
+      } else {
+        setIsOpen(true);
         setSearchTerm('');
         setFocusedIndex(-1);
         // Focus search input when opening
@@ -231,76 +251,71 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
-      
-      {/* Dropdown Container */}
-      <div
-        ref={ref}
-        id={dropdownId}
-        onClick={handleToggle}
-        onKeyDown={handleKeyDown}
-        tabIndex={disabled ? -1 : 0}
-        role="combobox"
-        aria-expanded={isOpen}
-        aria-haspopup="listbox"
-        aria-invalid={error ? 'true' : 'false'}
-        aria-describedby={
-          error ? `${dropdownId}-error` : 
-          helperText ? `${dropdownId}-helper` : undefined
-        }
-        className={containerClasses}
-        {...props}
-      >
-        {/* Selected Items / Placeholder */}
-        <div className="flex-1 flex items-center flex-wrap gap-1 min-w-0">
-          {selectedOptions.length > 0 ? (
-            <>
-              {displayedOptions.map((option) => (
-                <div
-                  key={option.value}
-                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-700 text-white"
-                >
-                  <span className="truncate max-w-24">{option.label}</span>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemove(option.value);
-                    }}
-                    className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full hover:bg-primary-600 focus:outline-none"
-                    aria-label={`Remove ${option.label}`}
-                  >
-                    <XMarkIcon className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-              {remainingCount > 0 && (
-                <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
-                  +{remainingCount} more
-                </div>
-              )}
-            </>
-          ) : (
-            <span className="text-gray-500 truncate">{placeholder}</span>
-          )}
-        </div>
-        
-        {/* Clear Button & Dropdown Icon */}
-        <div className="flex items-center gap-2 ml-2">
-          {selectedOptions.length > 0 && !disabled && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleClear();
-              }}
-              className="inline-flex items-center justify-center w-4 h-4 rounded-full hover:bg-gray-200 focus:outline-none text-gray-400 hover:text-gray-600"
-              aria-label="Clear all selections"
+
+      {/* Selected Options Tags */}
+      {selectedOptions.length > 0 && (
+        <div className="inline-flex flex-wrap gap-1.5 mb-2">
+          {selectedOptions.map((option) => (
+            <div
+              key={option.value}
+              className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800 border border-primary-300 shadow-sm"
             >
-              <XMarkIcon className="h-3 w-3" />
-            </button>
-          )}
-          
-          <div className="h-4 w-4 text-gray-400 flex-shrink-0">
+              <span>{option.label}</span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  handleRemove(option.value);
+                }}
+                className="ml-1.5 text-xs text-primary-600 hover:text-red-600 focus:outline-none focus:text-red-600 transition-colors duration-150 cursor-pointer"
+                aria-label={`Remove ${option.label}`}
+                title={`Remove ${option.label}`}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {/* Input Container */}
+      <div className="relative">
+        {/* Search Icon */}
+        {searchable && (
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <MagnifyingGlassIcon className="h-4 w-4 text-gray-400" />
+          </div>
+        )}
+        
+        {/* Input Field */}
+        <input
+          ref={searchInputRef}
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onClick={handleInputClick}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          disabled={disabled}
+          className={`
+            ${baseClasses}
+            ${sizeClasses[size]}
+            ${variantClasses[currentVariant]}
+            ${disabledClasses}
+            ${widthClasses}
+            ${searchable ? 'pl-10' : ''}
+            ${className}
+            text-left
+          `.trim().replace(/\s+/g, ' ')}
+        />
+        
+        {/* Dropdown Icon */}
+        <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+          <div
+            onClick={handleArrowClick}
+            className="h-4 w-4 text-gray-400 cursor-pointer"
+          >
             {loading ? loadingIcon : (
               isOpen ? <ChevronUpIcon className="h-4 w-4" /> : <ChevronDownIcon className="h-4 w-4" />
             )}
@@ -311,25 +326,6 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
       {/* Dropdown Menu */}
       {isOpen && (
         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
-          {/* Search Input */}
-          {searchable && (
-            <div className="p-2 border-b border-gray-200">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <MagnifyingGlassIcon className="h-4 w-4 text-gray-400" />
-                </div>
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search options..."
-                  className="block w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-700 focus:border-primary-700"
-                />
-              </div>
-            </div>
-          )}
-          
           {/* Options List */}
           <ul ref={listRef} role="listbox" className="py-1" aria-multiselectable="true">
             {filteredOptions.length > 0 ? (
@@ -344,24 +340,25 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
                     <button
                       type="button"
                       onClick={() => handleSelect(option.value)}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 focus:bg-gray-50 focus:outline-none transition-colors duration-150 flex items-center gap-3 ${
-                        focusedIndex === index ? 'bg-gray-50' : ''
-                      }`}
+                      className={`
+                        w-full text-left px-4 py-2 text-sm font-normal
+                        transition-colors duration-150
+                        flex items-center justify-between
+                        ${isSelected 
+                          ? 'bg-primary-50 text-primary-900 border-l-2 border-primary-500' 
+                          : 'hover:bg-gray-50 text-gray-900'
+                        }
+                        ${focusedIndex === index && !isSelected 
+                          ? 'bg-gray-50' 
+                          : ''
+                        }
+                        focus:outline-none focus:bg-gray-50
+                      `.trim().replace(/\s+/g, ' ')}
                     >
-                      {/* Checkbox */}
-                      <div className={`w-4 h-4 border-2 rounded flex items-center justify-center flex-shrink-0 ${
-                        isSelected 
-                          ? 'bg-primary-700 border-primary-700' 
-                          : 'border-gray-300'
-                      }`}>
-                        {isSelected && (
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </div>
-                      
                       <span className="truncate">{option.label}</span>
+                      {isSelected && (
+                        <CheckIcon className="h-4 w-4 text-primary-600 flex-shrink-0" />
+                      )}
                     </button>
                   </li>
                 );

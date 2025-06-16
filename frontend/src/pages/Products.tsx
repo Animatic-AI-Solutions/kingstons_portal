@@ -5,6 +5,7 @@ import api, { getActiveTemplatePortfolioGenerations } from '../services/api';
 import { getProviderColor } from '../services/providerColors';
 import FilterDropdown from '../components/ui/FilterDropdown';
 import { FilterSearch } from '../components/ui';
+import ActionButton from '../components/ui/ActionButton';
 
 interface Product {
   id: number;
@@ -260,15 +261,13 @@ const Products: React.FC = () => {
             />
             <span>Group by Client Group</span>
           </label>
-          <button
+          <ActionButton
+            variant="add"
+            size="md"
+            context="Client Group Products"
+            design="descriptive"
             onClick={handleCreateClientGroupProducts}
-            className="bg-primary-700 text-white px-4 py-1.5 rounded-xl font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 shadow-sm flex items-center gap-1"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            Add Client Group Products
-          </button>
+          />
         </div>
       </div>
 

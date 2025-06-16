@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getProviderColor } from '../services/providerColors';
-import { BaseInput, BaseDropdown } from '../components/ui';
+import { BaseInput, BaseDropdown, EditButton, ActionButton, LapseButton, DeleteButton, AddButton } from '../components/ui';
 
 // Enhanced TypeScript interfaces
 interface Client {
@@ -178,15 +178,12 @@ const ClientHeader = ({
                   </div>
 
                   {/* Edit Button - Integrated into Banner */}
-                  <button
+                  <EditButton
+                    context="Client"
+                    design="balanced"
+                    size="xs"
                     onClick={onEditClick}
-                    className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-primary-700 bg-white border border-primary-200 rounded-md hover:bg-primary-50 hover:border-primary-300 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 shadow-sm flex-shrink-0"
-                  >
-                    <svg className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Edit
-                  </button>
+                  />
                 </div>
               </div>
             </div>
@@ -974,12 +971,15 @@ const ClientDetails: React.FC = () => {
               <p className="text-red-700 text-base">
                 {error || 'Failed to load client details. Please try again later.'}
               </p>
-          <button
-            onClick={handleBack}
-                className="mt-2 text-red-700 underline"
-          >
-                Return to Clients
-          </button>
+              <div className="mt-2">
+                <ActionButton
+                  variant="cancel"
+                  size="sm"
+                  onClick={handleBack}
+                >
+                  Return to Clients
+                </ActionButton>
+              </div>
             </div>
           </div>
         </div>
@@ -1007,18 +1007,20 @@ const ClientDetails: React.FC = () => {
             <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
               <h2 className="text-base font-medium text-gray-900">Edit Client Details</h2>
               <div className="flex space-x-2">
-                <button
+                <ActionButton
+                  variant="cancel"
+                  size="sm"
                   onClick={() => setIsCorrecting(false)}
-                  className="px-2.5 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200"
                 >
                   Cancel
-                </button>
-                <button
+                </ActionButton>
+                <ActionButton
+                  variant="save"
+                  size="sm"
                   onClick={handleCorrect}
-                  className="px-2.5 py-1 text-sm font-medium text-white bg-primary-700 rounded-lg shadow-sm hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-700 transition-all duration-200"
                 >
                   Save Changes
-                </button>
+                </ActionButton>
               </div>
             </div>
             
@@ -1089,18 +1091,20 @@ const ClientDetails: React.FC = () => {
               <div className="px-4 py-3 border-t border-gray-100">
                 <div className="flex justify-end items-center">
                   <div className="flex space-x-2">
-                    <button
+                    <LapseButton
+                      context="Client"
+                      design="balanced"
+                      size="sm"
                       onClick={handleMakeDormant}
-                      className="px-3 py-1.5 text-sm font-medium text-white bg-orange-600 rounded-lg shadow-sm hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-200"
                     >
                       Make Dormant
-                    </button>
-                    <button
+                    </LapseButton>
+                    <DeleteButton
+                      context="Client"
+                      design="balanced"
+                      size="sm"
                       onClick={handleDelete}
-                      className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-lg shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
-                    >
-                      Delete Client
-                    </button>
+                    />
                   </div>
                 </div>
               </div>
@@ -1115,12 +1119,12 @@ const ClientDetails: React.FC = () => {
             
             <Link
               to={`/create-client-group-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.name}`)}&returnTo=${encodeURIComponent(`/client_groups/${clientId}`)}`}
-              className="inline-flex items-center px-4 py-1.5 text-sm font-medium text-white bg-primary-700 rounded-xl shadow-sm hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-700 transition-all duration-200"
             >
-              <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Add New Product
+              <AddButton
+                context="Product"
+                design="balanced"
+                size="md"
+              />
             </Link>
           </div>
           
@@ -1145,12 +1149,14 @@ const ClientDetails: React.FC = () => {
                 <div className="flex justify-center">
                   <Link 
                     to={`/create-client-group-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.name}`)}&returnTo=${encodeURIComponent(`/client_groups/${clientId}`)}`}
-                    className="inline-flex items-center px-4 py-1.5 text-sm font-medium text-white bg-primary-700 rounded-xl shadow-sm hover:bg-primary-800 transition-colors duration-200"
                   >
-                    <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Add First Product
+                    <AddButton
+                      context="Product"
+                      design="descriptive"
+                      size="md"
+                    >
+                      Add First Product
+                    </AddButton>
                   </Link>
                 </div>
               </div>

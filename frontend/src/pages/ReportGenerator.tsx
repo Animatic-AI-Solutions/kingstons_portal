@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { MultiSelectSearchableDropdown } from '../components/ui/SearchableDropdown';
+import MultiSelectDropdown from '../components/ui/MultiSelectDropdown';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import { calculateStandardizedMultipleFundsIRR, getLatestFundIRRs } from '../services/api';
 import { createIRRDataService } from '../services/irrDataService';
@@ -214,27 +214,35 @@ const ReportGenerator: React.FC = () => {
     const fetchInitialData = async () => {
       setIsLoading(true);
       try {
+        // Fetch all basic data
         const [
           clientGroupsRes,
-          allProductsRes,
-          actualProductOwnersRes
+          allProductOwnersRes,
+          allProductsRes
         ] = await Promise.all([
           api.get('/client_groups'),
-          api.get('/client_products'),
-          api.get('/product_owners')
+          api.get('/product_owners'),
+          api.get('/client_products')
         ]);
         
         setClientGroups(clientGroupsRes.data || []);
-        setProducts(allProductsRes.data || []);
         
-        if (actualProductOwnersRes && actualProductOwnersRes.data) {
-          setProductOwners(actualProductOwnersRes.data.map((owner: any) => ({
+        // Set ALL product owners for the dropdown
+        if (allProductOwnersRes && allProductOwnersRes.data) {
+          setProductOwners(allProductOwnersRes.data.map((owner: any) => ({
             id: owner.id,
             name: owner.name,
+            type: owner.type
           })) || []);
         } else {
           setProductOwners([]);
         }
+        
+        // Set ALL products for the dropdown
+        setProducts(allProductsRes.data || []);
+        
+        console.log('Fetched all product owners:', allProductOwnersRes.data?.length || 0, allProductOwnersRes.data);
+        console.log('Fetched all products:', allProductsRes.data?.length || 0, allProductsRes.data);
         
         setError(null);
       } catch (err: any) {
@@ -1934,44 +1942,41 @@ Please select a different valuation date or ensure all active funds have valuati
             <h2 className="text-lg font-normal text-gray-900 mb-4">Select Items for Report</h2>
             
             <div className="space-y-4">
-              <div className="dropdown-container">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Client Groups</label>
-                <MultiSelectSearchableDropdown
-                  id="client-groups-dropdown"
-                  options={clientGroups.map(cg => ({ value: cg.id, label: cg.name }))}
-                  values={selectedClientGroupIds}
-                  onChange={setSelectedClientGroupIds}
-                  placeholder="Search client groups..."
-                  loading={isLoading}
-                  className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                />
-              </div>
+              <MultiSelectDropdown
+                label="Client Groups"
+                options={clientGroups.map(group => ({
+                  value: group.id,
+                  label: group.name
+                }))}
+                values={selectedClientGroupIds}
+                onChange={setSelectedClientGroupIds}
+                placeholder="Search client groups..."
+                searchable
+              />
               
-              <div className="dropdown-container">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Product Owners</label>
-                <MultiSelectSearchableDropdown
-                  id="product-owners-dropdown"
-                  options={productOwners.map(po => ({ value: po.id, label: po.name }))}
-                  values={selectedProductOwnerIds}
-                  onChange={setSelectedProductOwnerIds}
-                  placeholder="Search product owners..."
-                  loading={isLoading}
-                  className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                />
-              </div>
+              <MultiSelectDropdown
+                label="Product Owners"
+                options={productOwners.map(owner => ({
+                  value: owner.id,
+                  label: owner.name
+                }))}
+                values={selectedProductOwnerIds}
+                onChange={setSelectedProductOwnerIds}
+                placeholder="Search product owners..."
+                searchable
+              />
               
-              <div className="dropdown-container">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Products</label>
-                <MultiSelectSearchableDropdown
-                  id="products-dropdown"
-                  options={products.map(p => ({ value: p.id, label: p.product_name }))}
-                  values={selectedProductIds}
-                  onChange={setSelectedProductIds}
-                  placeholder="Search products..."
-                  loading={isLoading}
-                  className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                />
-              </div>
+              <MultiSelectDropdown
+                label="Products"
+                options={products.map(product => ({
+                  value: product.id,
+                  label: product.product_name
+                }))}
+                values={selectedProductIds}
+                onChange={setSelectedProductIds}
+                placeholder="Search products..."
+                searchable
+              />
               
               {/* Add valuation date dropdown */}
               {availableValuationDates.length > 0 && (

@@ -3,7 +3,7 @@ import {
   BaseInput, 
   InputLabel,
   SearchableDropdown,
-  Button
+  ActionButton
 } from './ui';
 
 /**
@@ -158,13 +158,16 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSubmit, initialData }) => {
 
       {/* Submit Button */}
       <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-        <Button
+        <ActionButton
+          variant="save"
+          design="descriptive"
+          context="Client Group"
           type="submit"
           size="md"
           className="min-w-[120px]"
         >
           Create Client Group
-        </Button>
+        </ActionButton>
       </div>
     </form>
   );

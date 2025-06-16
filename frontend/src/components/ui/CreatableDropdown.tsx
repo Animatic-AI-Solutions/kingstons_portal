@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDownIcon, ChevronUpIcon, MagnifyingGlassIcon, CheckIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChevronUpIcon, MagnifyingGlassIcon, CheckIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { DropdownOption } from './BaseDropdown';
 
 export interface CreatableDropdownProps {
@@ -255,110 +255,138 @@ const CreatableDropdown = React.forwardRef<HTMLButtonElement, CreatableDropdownP
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
-      
-      {/* Dropdown Button */}
-      <button
-        ref={ref}
-        id={dropdownId}
-        type="button"
-        disabled={disabled}
-        onClick={handleToggle}
-        onKeyDown={handleKeyDown}
-        aria-expanded={isOpen}
-        aria-haspopup="listbox"
-        aria-invalid={error ? 'true' : 'false'}
-        aria-describedby={
-          error ? `${dropdownId}-error` : 
-          helperText ? `${dropdownId}-helper` : undefined
-        }
-        className={buttonClasses}
-        {...props}
-      >
-        <span className={`block truncate ${!selectedOption ? 'text-gray-500' : 'text-gray-900'}`}>
-          {displayValue}
-        </span>
-        
-        <div className="h-4 w-4 text-gray-400">
-          {loading || isCreating ? loadingIcon : (
-            isOpen ? <ChevronUpIcon className="h-4 w-4" /> : <ChevronDownIcon className="h-4 w-4" />
-          )}
+
+      {/* Selected Option Tag */}
+      {selectedOption && (
+        <div className="inline-flex flex-wrap gap-1.5 mb-2">
+          <div className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-primary-50 text-primary-700 border border-primary-200">
+            <span className="truncate">{selectedOption.label}</span>
+            <button
+              type="button"
+              onClick={() => onChange && onChange('')}
+              className="ml-1.5 inline-flex items-center justify-center w-3.5 h-3.5 rounded hover:bg-primary-100 focus:outline-none focus:ring-1 focus:ring-primary-300"
+              aria-label={`Remove ${selectedOption.label}`}
+            >
+              <XMarkIcon className="h-2.5 w-2.5" />
+            </button>
+          </div>
         </div>
-      </button>
+      )}
+      
+      {/* Input Container */}
+      <div className="relative">
+        {/* Search Icon */}
+        {searchable && (
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <MagnifyingGlassIcon className="h-4 w-4 text-gray-400" />
+          </div>
+        )}
+        
+        {/* Input Field */}
+        <input
+          ref={searchInputRef}
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onFocus={() => setIsOpen(true)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          disabled={disabled}
+          className={`
+            ${baseClasses}
+            ${sizeClasses[size]}
+            ${variantClasses[currentVariant]}
+            ${disabledClasses}
+            ${widthClasses}
+            ${searchable ? 'pl-10' : ''}
+            ${className}
+            text-left
+          `.trim().replace(/\s+/g, ' ')}
+        />
+        
+        {/* Dropdown Icon */}
+        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+          <div className="h-4 w-4 text-gray-400">
+            {loading ? loadingIcon : (
+              isOpen ? <ChevronUpIcon className="h-4 w-4" /> : <ChevronDownIcon className="h-4 w-4" />
+            )}
+          </div>
+        </div>
+      </div>
       
       {/* Dropdown Menu */}
       {isOpen && (
         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
-          {/* Search Input */}
-          {searchable && (
-            <div className="p-2 border-b border-gray-200">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <MagnifyingGlassIcon className="h-4 w-4 text-gray-400" />
-                </div>
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search or type to create..."
-                  className="block w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-700 focus:border-primary-700"
-                />
-              </div>
-            </div>
-          )}
-          
           {/* Options List */}
           <ul ref={listRef} role="listbox" className="py-1">
-            {/* Existing Options */}
-            {filteredOptions.length > 0 && filteredOptions.map((option, index) => (
-              <li
-                key={option.value}
-                role="option"
-                aria-selected={option.value === value}
-              >
-                <button
-                  type="button"
-                  onClick={() => handleSelect(option.value)}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 focus:bg-gray-50 focus:outline-none transition-colors duration-150 flex items-center justify-between ${
-                    focusedIndex === index ? 'bg-gray-50' : ''
-                  }`}
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((option, index) => (
+                <li
+                  key={option.value}
+                  role="option"
+                  aria-selected={option.value === value}
                 >
-                  <span className="truncate">{option.label}</span>
-                  {option.value === value && (
-                    <CheckIcon className="h-4 w-4 text-primary-700 flex-shrink-0" />
-                  )}
-                </button>
-              </li>
-            ))}
-            
-            {/* Create New Option */}
-            {showCreateOption && onCreateOption && (
-              <>
-                {filteredOptions.length > 0 && (
-                  <li className="border-t border-gray-200 my-1"></li>
-                )}
-                <li role="option">
                   <button
                     type="button"
-                    onClick={handleCreate}
-                    disabled={isCreating}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-primary-50 focus:bg-primary-50 focus:outline-none transition-colors duration-150 flex items-center gap-2 text-primary-700 ${
-                      focusedIndex === filteredOptions.length ? 'bg-primary-50' : ''
-                    } ${isCreating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    onClick={() => handleSelect(option.value)}
+                    className={`
+                      w-full text-left px-4 py-2 text-sm font-normal
+                      transition-colors duration-150
+                      flex items-center justify-between
+                      ${option.value === value 
+                        ? 'bg-primary-50 text-primary-900 border-l-2 border-primary-500' 
+                        : 'hover:bg-gray-50 text-gray-900'
+                      }
+                      ${focusedIndex === index && option.value !== value 
+                        ? 'bg-gray-50' 
+                        : ''
+                      }
+                      focus:outline-none focus:bg-gray-50
+                    `.trim().replace(/\s+/g, ' ')}
                   >
-                    <PlusIcon className="h-4 w-4 flex-shrink-0" />
-                    <span className="truncate">
-                      {isCreating ? 'Creating...' : `${createLabel} "${searchTerm}"`}
-                    </span>
+                    <span className="truncate">{option.label}</span>
+                    {option.value === value && (
+                      <CheckIcon className="h-4 w-4 text-primary-600 flex-shrink-0" />
+                    )}
                   </button>
                 </li>
-              </>
-            )}
-            
-            {/* No Options Message */}
-            {filteredOptions.length === 0 && !showCreateOption && (
+              ))
+            ) : (
               <li className="px-4 py-2 text-sm text-gray-500 text-center">
                 {searchTerm ? 'No options found' : 'No options available'}
+              </li>
+            )}
+
+            {/* Create Option */}
+            {showCreateOption && (
+              <li>
+                <button
+                  type="button"
+                  onClick={handleCreate}
+                  disabled={isCreating}
+                  className={`
+                    w-full text-left px-4 py-2 text-sm font-normal
+                    transition-colors duration-150
+                    flex items-center gap-2
+                    ${focusedIndex === filteredOptions.length 
+                      ? 'bg-gray-50' 
+                      : 'hover:bg-gray-50'
+                    }
+                    focus:outline-none focus:bg-gray-50
+                    text-primary-700
+                  `.trim().replace(/\s+/g, ' ')}
+                >
+                  <PlusIcon className="h-4 w-4 flex-shrink-0" />
+                  <span>{createLabel} "{searchTerm}"</span>
+                  {isCreating && (
+                    <div className="ml-auto">
+                      <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </div>
+                  )}
+                </button>
               </li>
             )}
           </ul>

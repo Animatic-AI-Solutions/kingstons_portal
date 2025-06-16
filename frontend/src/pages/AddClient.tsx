@@ -5,9 +5,11 @@ import {
   BaseInput, 
   InputLabel, 
   InputError,
-  Button
+  ActionButton,
+  AddButton
 } from '../components/ui';
-import SearchableDropdown, { MultiSelectSearchableDropdown } from '../components/ui/SearchableDropdown';
+import SearchableDropdown from '../components/ui/SearchableDropdown';
+import { MultiSelectDropdown, CreatableDropdown, BaseDropdown } from '../components/ui';
 
 interface ClientFormData {
   name: string;
@@ -71,6 +73,37 @@ const AddClient: React.FC = () => {
       ...prev,
       [name]: value === '' ? null : value
     }));
+  };
+
+  const handleCreateAdvisor = async (advisorName: string) => {
+    try {
+      // For now, we'll add the advisor to the local list since there's no specific advisor API endpoint
+      // In a real implementation, you might want to create an advisor record in the database
+      const newAdvisor = advisorName.trim();
+      
+      if (!newAdvisor) {
+        throw new Error('Advisor name cannot be empty');
+      }
+
+      // Add to the local advisors list if it doesn't exist
+      if (!advisors.includes(newAdvisor)) {
+        setAdvisors(prevAdvisors => [...prevAdvisors, newAdvisor]);
+      }
+
+      // Return the option object for the CreatableDropdown
+      return {
+        value: newAdvisor,
+        label: newAdvisor
+      };
+    } catch (err) {
+      console.error('Error creating advisor:', err);
+      setError('Failed to create advisor. Please try again.');
+      // Return a fallback option instead of null
+      return {
+        value: advisorName.trim(),
+        label: advisorName.trim()
+      };
+    }
   };
 
   const handleCreateProductOwner = async () => {
@@ -176,12 +209,10 @@ const AddClient: React.FC = () => {
     <div className="container mx-auto px-4 py-3">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Add New Client Group</h1>
-        <button
+        <ActionButton
+          variant="cancel"
           onClick={() => navigate('/client_groups')}
-          className="bg-gray-200 text-gray-700 px-5 py-2 rounded-xl font-medium hover:bg-gray-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 font-sans tracking-wide shadow-sm"
-        >
-          Cancel
-        </button>
+        />
       </div>
 
       <div className="bg-white shadow-lg rounded-lg p-6">
@@ -215,47 +246,40 @@ const AddClient: React.FC = () => {
             />
 
             <div>
-              <InputLabel htmlFor="advisor">
-                Advisor
-              </InputLabel>
-              <SearchableDropdown
-                id="advisor"
+              <CreatableDropdown
+                label="Advisor"
                 options={advisorOptions}
                 value={formData.advisor || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, advisor: value as string || null }))}
-                placeholder="Select or type advisor name"
+                onCreateOption={handleCreateAdvisor}
+                placeholder="Select or create advisor"
+                createLabel="Create advisor"
+                helperText="Optional: Assign a specific advisor to this client group"
               />
-              <p className="mt-1 text-xs text-gray-500">Optional: Assign a specific advisor to this client group</p>
             </div>
 
             <div>
-              <InputLabel htmlFor="type" required>
-                Client Group Type
-              </InputLabel>
-              <SearchableDropdown
-                id="type"
+              <BaseDropdown
+                label="Client Group Type"
                 options={typeOptions}
                 value={formData.type}
                 onChange={(value) => setFormData(prev => ({ ...prev, type: value as string }))}
                 placeholder="Select client group type"
                 required
+                helperText="Choose the type that best describes this client group"
               />
-              <p className="mt-1 text-xs text-gray-500">Choose the type that best describes this client group</p>
             </div>
 
             <div>
-              <InputLabel htmlFor="status" required>
-                Status
-              </InputLabel>
-              <SearchableDropdown
-                id="status"
+              <BaseDropdown
+                label="Status"
                 options={statusOptions}
                 value={formData.status}
                 onChange={(value) => setFormData(prev => ({ ...prev, status: value as string }))}
                 placeholder="Select status"
                 required
+                helperText="Set the current operational status of the client group"
               />
-              <p className="mt-1 text-xs text-gray-500">Set the current operational status of the client group</p>
             </div>
           </div>
 
@@ -263,71 +287,50 @@ const AddClient: React.FC = () => {
           <div className="border-t border-gray-200 pt-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium text-gray-900">Product Owners</h3>
-              <button
-                type="button"
-                onClick={() => setShowCreateProductOwnerModal(true)}
-                className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-primary-700 bg-primary-50 rounded-md hover:bg-primary-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors duration-200"
-              >
-                <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Create New
-              </button>
+              <AddButton
+                context="Product Owner"
+                design="balanced"
+                size="md"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowCreateProductOwnerModal(true);
+                }}
+              />
             </div>
             
             <div className="space-y-3">
-              <MultiSelectSearchableDropdown
-                id="product-owners"
+              <MultiSelectDropdown
+                label=""
                 options={productOwnerOptions}
                 values={selectedProductOwners}
-                onChange={(values) => {
-                  const numberValues = values.map(v => typeof v === 'number' ? v : parseInt(v.toString()));
+                onChange={(values: (string | number)[]) => {
+                  const numberValues = values.map((v: string | number) => typeof v === 'number' ? v : parseInt(v.toString()));
                   setSelectedProductOwners(numberValues);
                 }}
                 placeholder="Search and select product owners"
-                className="w-full"
+                searchable={true}
+                fullWidth={true}
               />
-              
-              {/* Selected Product Owners Tags */}
-              {selectedProductOwners.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {selectedProductOwners.map(id => {
-                    const owner = productOwners.find(po => po.id === id);
-                    return owner ? (
-                      <div key={id} className="inline-flex items-center bg-primary-50 text-primary-700 rounded-full px-3 py-1 text-sm font-medium">
-                        {owner.name}
-                        <button
-                          type="button"
-                          onClick={() => setSelectedProductOwners(prev => prev.filter(poId => poId !== id))}
-                          className="ml-2 text-primary-500 hover:text-primary-700 focus:outline-none"
-                        >
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    ) : null;
-                  })}
-                </div>
-              )}
             </div>
           </div>
 
           <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
-            <Button
-              type="button"
-              variant="secondary"
+            <ActionButton
+              variant="cancel"
               onClick={() => navigate('/client_groups')}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
+              className="min-w-[140px]"
+            />
+            <ActionButton
+              variant="save"
+              onClick={(e) => {
+                e.preventDefault();
+                handleSubmit(e);
+              }}
+              loading={isSubmitting}
               disabled={isSubmitting}
               className="min-w-[140px]"
-            >
-              {isSubmitting ? 'Creating...' : 'Create Client Group'}
-            </Button>
+            />
           </div>
         </form>
       </div>
@@ -338,19 +341,16 @@ const AddClient: React.FC = () => {
           <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium text-gray-900">Create New Product Owner</h3>
-              <button
-                type="button"
+              <ActionButton
+                variant="cancel"
+                size="icon"
+                iconOnly
                 onClick={() => {
                   setShowCreateProductOwnerModal(false);
                   setNewProductOwnerName('');
                   setError(null);
                 }}
-                className="text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 rounded-md"
-              >
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              />
             </div>
 
             <div className="mb-6">
@@ -376,25 +376,22 @@ const AddClient: React.FC = () => {
             </div>
 
             <div className="flex justify-end space-x-3">
-              <button
-                type="button"
+              <ActionButton
+                variant="cancel"
                 onClick={() => {
                   setShowCreateProductOwnerModal(false);
                   setNewProductOwnerName('');
                   setError(null);
                 }}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
+              />
+              <AddButton
+                context="Product Owner"
+                design="balanced"
+                size="md"
                 onClick={handleCreateProductOwner}
+                loading={isCreatingProductOwner}
                 disabled={isCreatingProductOwner || !newProductOwnerName.trim()}
-                className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-md hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-              >
-                {isCreatingProductOwner ? 'Creating...' : 'Create Product Owner'}
-              </button>
+              />
             </div>
           </div>
         </div>

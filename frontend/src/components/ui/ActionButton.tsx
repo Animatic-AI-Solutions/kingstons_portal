@@ -18,6 +18,7 @@ export interface ActionButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonE
   context?: string;
   loading?: boolean;
   fullWidth?: boolean;
+  type?: 'button' | 'submit' | 'reset';
 }
 
 const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(({
@@ -30,6 +31,7 @@ const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(({
   context,
   loading = false,
   fullWidth = false,
+  type = 'button',
   className = '',
   disabled = false,
   children,
@@ -111,20 +113,20 @@ const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(({
   // Base classes with sleek modern styling
   const baseClasses = 'inline-flex items-center justify-center font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-1 transition-all duration-150 ease-out active:scale-[0.98] relative';
 
-  // Size classes - keeping them sleek and compact
+  // Size classes - even more compact with modern radius
   const sizeClasses = {
-    mini: iconOnly ? 'h-5 w-5 p-1' : 'h-5 px-2 py-1 text-xs',
-    xs: iconOnly ? 'h-6 w-6 p-1.5' : 'h-6 px-2.5 py-1 text-xs',
-    icon: 'h-7 w-7 p-1.5', // Always icon-only
-    sm: iconOnly ? 'h-8 w-8 p-2' : 'h-8 px-3 py-1.5 text-sm',
-    md: iconOnly ? 'h-10 w-10 p-2.5' : 'h-10 px-4 py-2 text-sm',
-    lg: iconOnly ? 'h-12 w-12 p-3' : 'h-12 px-6 py-3 text-base'
+    mini: 'h-5 px-1.5 text-xs rounded-md',
+    xs: 'h-6 px-2 text-xs rounded-md',
+    sm: 'h-7 px-2.5 text-sm rounded-lg',
+    md: 'h-8 px-3 text-sm rounded-lg',
+    lg: 'h-9 px-3.5 text-base rounded-lg',
+    icon: 'h-6 w-6 p-1.5 rounded-md'
   };
 
   // Sleek, professional color classes - no gradients, soft red/orange
   const colorClasses = {
     primary: 'bg-primary-600 hover:bg-primary-700 text-white focus:ring-primary-500/30 border border-primary-600/20 shadow-sm hover:shadow-md',
-    success: 'bg-green-600 hover:bg-green-700 text-white focus:ring-green-500/30 border border-green-600/20 shadow-sm hover:shadow-md',
+    success: 'bg-primary-700 hover:bg-primary-800 text-white focus:ring-primary-500/30 border border-primary-700/20 shadow-sm hover:shadow-md',
     danger: 'bg-rose-500 hover:bg-rose-600 text-white focus:ring-rose-400/30 border border-rose-500/20 shadow-sm hover:shadow-md',
     warning: 'bg-orange-500 hover:bg-orange-600 text-white focus:ring-orange-400/30 border border-orange-500/20 shadow-sm hover:shadow-md',
     secondary: 'bg-white hover:bg-gray-50 text-gray-700 hover:text-gray-900 focus:ring-gray-400/30 border border-gray-300 shadow-sm hover:shadow-md'
@@ -148,14 +150,14 @@ const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(({
     return colorClasses[color];
   };
 
-  // Icon size based on button size
+  // Icon size classes - slightly smaller to match new button sizes
   const iconSizeClasses = {
     mini: 'h-3 w-3',
     xs: 'h-3.5 w-3.5',
-    icon: 'h-4 w-4',
     sm: 'h-4 w-4',
     md: 'h-4 w-4',
-    lg: 'h-5 w-5'
+    lg: 'h-5 w-5',
+    icon: 'h-4 w-4'
   };
 
   // Disabled classes - clean and simple
@@ -181,6 +183,7 @@ const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(({
   return (
     <button
       ref={ref}
+      type={type}
       disabled={disabled || loading}
       className={buttonClasses}
       {...props}

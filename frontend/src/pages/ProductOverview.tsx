@@ -2,8 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getProductFUM, calculateStandardizedMultipleFundsIRR } from '../services/api';
-import { MultiSelectSearchableDropdown, AutocompleteSearch, AutocompleteOption } from '../components/ui';
+import { MultiSelectDropdown, AutocompleteSearch, AutocompleteOption } from '../components/ui';
 import { isCashFund } from '../utils/fundUtils';
+import ActionButton from '../components/ui/ActionButton';
 
 // Basic interfaces for type safety
 interface Account {
@@ -1171,24 +1172,21 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             </div>
           </div>
           <div className="mt-6 flex space-x-3 justify-end">
-            <button
-              type="button"
+            <ActionButton
+              variant="cancel"
+              size="md"
               disabled={isDeleting}
               onClick={() => setIsDeleteModalOpen(false)}
-              className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
+            />
+            <ActionButton
+              variant="delete"
+              size="md"
+              context="Product and Portfolio"
+              design="descriptive"
               disabled={isDeleting}
               onClick={handleDeleteProduct}
-              className={`inline-flex justify-center px-4 py-2 text-sm font-medium text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 ${
-                isDeleting ? 'bg-red-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'
-              }`}
-            >
-              {isDeleting ? 'Deleting...' : 'Delete Product and Portfolio'}
-            </button>
+              loading={isDeleting}
+            />
           </div>
         </div>
       </div>
@@ -1453,35 +1451,20 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
               </div>
               
               <div className="flex justify-end space-x-2">
-                <button
-                  type="button"
+                <ActionButton
+                  variant="cancel"
+                  size="sm"
                   onClick={toggleEditMode}
-                  className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                >
-                  Cancel
-                </button>
-                <button
+                />
+                <ActionButton
+                  variant="save"
+                  size="sm"
+                  context="Changes"
+                  design="descriptive"
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Save Changes
-                    </>
-                  )}
-                </button>
+                  loading={isSubmitting}
+                />
               </div>
             </form>
           </div>
@@ -1503,32 +1486,23 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                   </h3>
                   <div className="flex space-x-2">
                     {isEditMode ? (
-                      <button
+                      <ActionButton
+                        variant="cancel"
+                        size="xs"
                         onClick={toggleEditMode}
-                        className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs leading-4 font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                      >
-                        Cancel
-                      </button>
+                      />
                     ) : (
                       <>
-                        <button
+                        <ActionButton
+                          variant="edit"
+                          size="xs"
                           onClick={toggleEditMode}
-                          className="inline-flex items-center px-2 py-1 border border-transparent shadow-sm text-xs leading-4 font-medium rounded text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                        >
-                          <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                          Edit
-                        </button>
-                        <button
+                        />
+                        <ActionButton
+                          variant="delete"
+                          size="xs"
                           onClick={() => setIsDeleteModalOpen(true)}
-                          className="inline-flex items-center px-2 py-1 border border-red-300 shadow-sm text-xs leading-4 font-medium rounded text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                        >
-                          <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                          Delete
-                        </button>
+                        />
                       </>
                     )}
                   </div>
@@ -1572,22 +1546,17 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                   </h3>
                   <div className="flex space-x-2">
                     {isEditOwnersMode ? (
-                      <button
+                      <ActionButton
+                        variant="cancel"
+                        size="xs"
                         onClick={toggleEditOwnersMode}
-                        className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs leading-4 font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                      >
-                        Cancel
-                      </button>
+                      />
                     ) : (
-                      <button
+                      <ActionButton
+                        variant="edit"
+                        size="xs"
                         onClick={toggleEditOwnersMode}
-                        className="inline-flex items-center px-2 py-1 border border-transparent shadow-sm text-xs leading-4 font-medium rounded text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                      >
-                        <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                        Edit
-                      </button>
+                      />
                     )}
                   </div>
                 </div>
@@ -1627,8 +1596,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           <label htmlFor="product-owners-select" className="block text-xs font-medium text-gray-700 mb-1">
                             Product Owners
                           </label>
-                          <MultiSelectSearchableDropdown
-                            id="product-owners-select"
+                          <MultiSelectDropdown
+                            label=""
                             options={allProductOwners.map(owner => ({
                               value: owner.id,
                               label: owner.name
@@ -1639,26 +1608,25 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                               selected_owner_ids: values as number[]
                             }))}
                             placeholder="Search and select product owners"
-                            className="text-xs"
+                            size="sm"
+                            searchable={true}
                           />
                         </div>
                       </div>
 
                       <div className="flex justify-end space-x-2 pt-2">
-                        <button
-                          type="button"
+                        <ActionButton
+                          variant="cancel"
+                          size="xs"
                           onClick={toggleEditOwnersMode}
-                          className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
-                        >
-                          Cancel
-                        </button>
-                        <button
+                        />
+                        <ActionButton
+                          variant="save"
+                          size="xs"
                           type="submit"
                           disabled={isSubmittingOwners}
-                          className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50"
-                        >
-                          {isSubmittingOwners ? 'Saving...' : 'Save'}
-                        </button>
+                          loading={isSubmittingOwners}
+                        />
                       </div>
                     </form>
                   </div>
@@ -1866,49 +1834,30 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
               <div className="flex space-x-3">
                 {isEditingFunds ? (
                   <>
-                    <button
+                    <ActionButton
+                      variant="cancel"
+                      size="md"
                       onClick={() => setIsEditingFunds(false)}
                       disabled={isSavingFunds}
-                      className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-                    >
-                      <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                      Cancel
-                    </button>
-                    <button
+                    />
+                    <ActionButton
+                      variant="save"
+                      size="md"
+                      context="Changes"
+                      design="descriptive"
                       onClick={handleSaveFunds}
                       disabled={isSavingFunds || Math.abs(getTotalWeighting() - 100) > 0.01}
-                      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isSavingFunds ? (
-                        <>
-                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          Save Changes
-                        </>
-                      )}
-                    </button>
+                      loading={isSavingFunds}
+                    />
                   </>
                 ) : (
-                  <button
+                  <ActionButton
+                    variant="edit"
+                    size="md"
+                    context="Product Funds"
+                    design="descriptive"
                     onClick={() => setIsEditingFunds(true)}
-                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                  >
-                    <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Edit Product Funds
-                  </button>
+                  />
                 )}
               </div>
             )}
@@ -2126,15 +2075,12 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                         </td>
                         {isEditingFunds && account && !account.template_generation_id && (
                           <td className="px-6 py-2 whitespace-nowrap">
-                            <button
+                            <ActionButton
+                              variant="delete"
+                              size="icon"
                               onClick={() => handleRemoveFund(holding.fund_id || 0)}
-                              className="inline-flex items-center p-1.5 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                               title="Remove fund"
-                            >
-                              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
+                            />
                           </td>
                         )}
                       </tr>
@@ -2156,15 +2102,13 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                 </p>
                 {!isEditingFunds && account && !account.template_generation_id && (
                   <div className="mt-6">
-                    <button
+                    <ActionButton
+                      variant="add"
+                      size="md"
+                      context="Funds"
+                      design="descriptive"
                       onClick={() => setIsEditingFunds(true)}
-                      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                      <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                      Add Funds
-                    </button>
+                    />
                   </div>
                 )}
               </div>
@@ -2238,15 +2182,13 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                         </td>
                         {isEditingFunds && account && !account.template_generation_id && (
                           <td className="px-6 py-2 whitespace-nowrap">
-                            <button
+                            <ActionButton
+                              variant="add"
+                              size="xs"
+                              context="Reactivate"
+                              design="descriptive"
                               onClick={() => handleReactivateFund(holding.fund_id || 0)}
-                              className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                            >
-                              <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                              </svg>
-                              Reactivate
-                            </button>
+                            />
                           </td>
                         )}
                       </tr>
