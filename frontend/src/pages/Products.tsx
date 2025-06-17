@@ -55,6 +55,7 @@ const Products: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [groupByClient, setGroupByClient] = useState(false);
 
 
   // State for portfolio type filtering
