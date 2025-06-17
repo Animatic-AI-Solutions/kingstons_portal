@@ -234,7 +234,7 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(({
     ${widthClasses}
     ${paddingClasses}
     ${className}
-    text-right
+    text-left
   `.trim().replace(/\s+/g, ' ');
 
   return (

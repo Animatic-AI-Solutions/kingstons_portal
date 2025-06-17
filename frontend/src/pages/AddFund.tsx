@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { BaseInput, NumberInput, BaseDropdown, ActionButton } from '../components/ui';
 
 interface FundFormData {
   fund_name: string;
@@ -45,6 +46,46 @@ const AddFund: React.FC = () => {
         [name]: value
       }));
     }
+  };
+
+  // New handlers for BaseInput components
+  const handleFundNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      fund_name: e.target.value
+    }));
+  };
+
+  const handleIsinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      isin_number: e.target.value.toUpperCase() // Auto-capitalize ISIN
+    }));
+  };
+
+  // New handlers for NumberInput components
+  const handleRiskFactorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.target.value);
+    setFormData(prev => ({
+      ...prev,
+      risk_factor: isNaN(value) ? null : value
+    }));
+  };
+
+  const handleFundCostChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.target.value);
+    setFormData(prev => ({
+      ...prev,
+      fund_cost: isNaN(value) ? null : value
+    }));
+  };
+
+  // New handler for BaseDropdown
+  const handleStatusChange = (value: string | number) => {
+    setFormData(prev => ({
+      ...prev,
+      status: String(value)
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -166,126 +207,78 @@ const AddFund: React.FC = () => {
 
           <div className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <label htmlFor="fund_name" className="block text-sm font-medium text-gray-700 mb-1">
-                Fund Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                id="fund_name"
-                name="fund_name"
-                value={formData.fund_name}
-                onChange={handleChange}
-                required
-                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-              />
-            </div>
+            <BaseInput
+              label="Fund Name"
+              placeholder="Enter fund name"
+              value={formData.fund_name}
+              onChange={handleFundNameChange}
+              required
+              helperText="Unique identifier for this investment fund"
+            />
 
-            <div>
-                <label htmlFor="isin_number" className="block text-sm font-medium text-gray-700 mb-1">
-                ISIN Number <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                id="isin_number"
-                name="isin_number"
-                value={formData.isin_number}
-                onChange={handleChange}
-                required
-                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-              />
-                <p className="mt-1 text-xs text-gray-500">
-                  International Securities Identification Number - a unique 12-character alphanumeric code
-                </p>
-            </div>
+            <BaseInput
+              label="ISIN Number"
+              placeholder="e.g., GB00B3X7QG63"
+              value={formData.isin_number}
+              onChange={handleIsinChange}
+              required
+              maxLength={12}
+              helperText="12-character alphanumeric code (auto-capitalized)"
+            />
 
-            <div>
-                <label htmlFor="risk_factor" className="block text-sm font-medium text-gray-700 mb-1">
-                Risk Factor (1-7)
-              </label>
-              <input
-                type="number"
-                id="risk_factor"
-                name="risk_factor"
-                min="1"
-                max="7"
-                  step="1"
-                value={formData.risk_factor === null ? '' : formData.risk_factor}
-                onChange={handleChange}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-              />
-                <p className="mt-1 text-xs text-gray-500">
-                  Enter a value between 1 (Conservative) and 7 (Aggressive)
-                </p>
-            </div>
+            <NumberInput
+              label="Risk Factor"
+              format="decimal"
+              value={formData.risk_factor || 0}
+              onChange={handleRiskFactorChange}
+              min={1}
+              max={7}
+              step={1}
+              showSteppers={true}
+              helperText="1 = Conservative, 7 = Aggressive"
+            />
 
-            <div>
-                <label htmlFor="fund_cost" className="block text-sm font-medium text-gray-700 mb-1">
-                Fund Cost (%)
-              </label>
-                <div className="relative">
-              <input
-                type="number"
-                id="fund_cost"
-                name="fund_cost"
-                step="0.0001"
-                min="0"
-                value={formData.fund_cost === null ? '' : formData.fund_cost}
-                onChange={handleChange}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 pl-3 pr-8 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                  />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <span className="text-gray-500">%</span>
-                  </div>
-                </div>
-                <p className="mt-1 text-xs text-gray-500">Enter as a percentage, e.g., 0.75 for 0.75%</p>
-            </div>
+            <NumberInput
+              label="Fund Cost"
+              format="percentage"
+              value={formData.fund_cost || 0}
+              onChange={handleFundCostChange}
+              min={0}
+              step={0.01}
+              decimalPlaces={2}
+              helperText="Enter as percentage, e.g., 0.75"
+            />
 
-            <div>
-                <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                id="status"
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-              </div>
+            <BaseDropdown
+              label="Status"
+              options={[
+                { value: 'active', label: 'Active' },
+                { value: 'inactive', label: 'Inactive' }
+              ]}
+              value={formData.status}
+              onChange={handleStatusChange}
+              placeholder="Select status"
+            />
             </div>
           </div>
 
           {/* Footer Actions */}
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
-            <Link
-              to="/definitions?tab=funds"
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-            >
-              Cancel
+            <Link to="/definitions?tab=funds">
+              <ActionButton
+                variant="cancel"
+                size="md"
+              />
             </Link>
-            <button
+            <ActionButton
+              variant="save"
+              size="md"
+              context="Fund"
+              design="descriptive"
               type="submit"
               disabled={isSubmitting}
-              className={`bg-primary-700 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 shadow-sm transition-colors duration-200 ${
-                isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
-              }`}
-            >
-              {isSubmitting ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Saving...
-                </span>
-              ) : (
-                'Save Fund'
-              )}
-            </button>
+              loading={isSubmitting}
+            />
           </div>
         </form>
       </div>
