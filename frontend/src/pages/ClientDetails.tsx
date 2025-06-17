@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getProviderColor } from '../services/providerColors';
 import { BaseInput, BaseDropdown, EditButton, ActionButton, LapseButton, DeleteButton, AddButton } from '../components/ui';
+import api, { getClientGroupProductOwners, calculateStandardizedMultipleFundsIRR, getProductOwners, addClientGroupProductOwner, removeClientGroupProductOwner } from '../services/api';
 
 // Enhanced TypeScript interfaces
 interface Client {
