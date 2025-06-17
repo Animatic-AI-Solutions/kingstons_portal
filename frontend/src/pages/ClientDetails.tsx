@@ -2,14 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getProviderColor } from '../services/providerColors';
-import { 
-  calculateStandardizedMultipleFundsIRR, 
-  getClientGroupProductOwners, 
-  getProductOwners, 
-  addClientGroupProductOwner, 
-  removeClientGroupProductOwner 
-} from '../services/api';
-import api from '../services/api';
+import { BaseInput, BaseDropdown, EditButton, ActionButton, LapseButton, DeleteButton, AddButton } from '../components/ui';
 
 // Enhanced TypeScript interfaces
 interface Client {
@@ -467,6 +460,7 @@ const ClientHeader = ({
                       </div>
                     </div>
                   </div>
+
 
                   {/* Action Buttons */}
                   {isEditing ? (
@@ -1452,12 +1446,15 @@ const ClientDetails: React.FC = () => {
               <p className="text-red-700 text-base">
                 {error || 'Failed to load client details. Please try again later.'}
               </p>
-          <button
-            onClick={handleBack}
-                className="mt-2 text-red-700 underline"
-          >
-                Return to Clients
-          </button>
+              <div className="mt-2">
+                <ActionButton
+                  variant="cancel"
+                  size="sm"
+                  onClick={handleBack}
+                >
+                  Return to Clients
+                </ActionButton>
+              </div>
             </div>
           </div>
         </div>
@@ -1488,6 +1485,116 @@ const ClientDetails: React.FC = () => {
           onRemoveProductOwner={handleRemoveProductOwner}
         />
 
+        {/* Client Edit Form (when in correction mode) */}
+        {isCorrecting && (
+          <div className="bg-white shadow-sm rounded-lg border border-gray-100 mb-4">
+            <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
+              <h2 className="text-base font-medium text-gray-900">Edit Client Details</h2>
+              <div className="flex space-x-2">
+                <ActionButton
+                  variant="cancel"
+                  size="sm"
+                  onClick={() => setIsCorrecting(false)}
+                >
+                  Cancel
+                </ActionButton>
+                <ActionButton
+                  variant="save"
+                  size="sm"
+                  onClick={handleCorrect}
+                >
+                  Save Changes
+                </ActionButton>
+              </div>
+            </div>
+            
+            <div className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <BaseInput
+                    label="Name"
+                    name="name"
+                    type="text"
+                    value={formData.name || ''}
+                    onChange={handleChange}
+                    placeholder="Enter client name"
+                    required
+                    size="md"
+                    fullWidth
+                  />
+                </div>
+                
+                <div>
+                  <BaseDropdown
+                    label="Type"
+                    options={[
+                      { value: 'Family', label: 'Family' },
+                      { value: 'Business', label: 'Business' },
+                      { value: 'Trust', label: 'Trust' }
+                    ]}
+                    value={formData.type || 'Family'}
+                    onChange={(value) => setFormData(prev => ({ ...prev, type: value as string }))}
+                    placeholder="Select client type"
+                    required
+                    size="md"
+                    fullWidth
+                  />
+                </div>
+
+                <div>
+                  <BaseDropdown
+                    label="Status"
+                    options={[
+                      { value: 'active', label: 'Active' },
+                      { value: 'dormant', label: 'Dormant' }
+                    ]}
+                    value={formData.status}
+                    onChange={(value) => setFormData(prev => ({ ...prev, status: value as string }))}
+                    placeholder="Select client status"
+                    required
+                    size="md"
+                    fullWidth
+                  />
+                </div>
+                
+                <div>
+                  <BaseInput
+                    label="Advisor"
+                    name="advisor"
+                    type="text"
+                    value={formData.advisor || ''}
+                    onChange={handleChange}
+                    placeholder="Enter advisor name"
+                    size="md"
+                    fullWidth
+                  />
+                </div>
+              </div>
+              
+              {/* Additional Actions */}
+              <div className="px-4 py-3 border-t border-gray-100">
+                <div className="flex justify-end items-center">
+                  <div className="flex space-x-2">
+                    <LapseButton
+                      context="Client"
+                      design="balanced"
+                      size="sm"
+                      onClick={handleMakeDormant}
+                    >
+                      Make Dormant
+                    </LapseButton>
+                    <DeleteButton
+                      context="Client"
+                      design="balanced"
+                      size="sm"
+                      onClick={handleDelete}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
 
         {/* Client Products Section */}
@@ -1497,12 +1604,12 @@ const ClientDetails: React.FC = () => {
             
             <Link
               to={`/create-client-group-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.name}`)}&returnTo=${encodeURIComponent(`/client_groups/${clientId}`)}`}
-              className="inline-flex items-center px-4 py-1.5 text-sm font-medium text-white bg-primary-700 rounded-xl shadow-sm hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-700 transition-all duration-200"
             >
-              <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Add New Product
+              <AddButton
+                context="Product"
+                design="balanced"
+                size="md"
+              />
             </Link>
           </div>
           
@@ -1573,12 +1680,14 @@ const ClientDetails: React.FC = () => {
                 <div className="flex justify-center">
                   <Link 
                     to={`/create-client-group-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.name}`)}&returnTo=${encodeURIComponent(`/client_groups/${clientId}`)}`}
-                    className="inline-flex items-center px-4 py-1.5 text-sm font-medium text-white bg-primary-700 rounded-xl shadow-sm hover:bg-primary-800 transition-colors duration-200"
                   >
-                    <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Add First Product
+                    <AddButton
+                      context="Product"
+                      design="descriptive"
+                      size="md"
+                    >
+                      Add First Product
+                    </AddButton>
                   </Link>
                 </div>
               </div>

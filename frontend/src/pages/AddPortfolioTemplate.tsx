@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { BaseInput, BaseDropdown, TextArea, ActionButton } from '../components/ui';
 
 interface Fund {
   id: number;
@@ -70,6 +71,37 @@ const AddPortfolioTemplate: React.FC = () => {
     setFormData(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  // New handlers for BaseInput components
+  const handleTemplateNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      name: e.target.value
+    }));
+  };
+
+  const handleGenerationNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      generation_name: e.target.value
+    }));
+  };
+
+  // New handler for TextArea component
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      description: e.target.value
+    }));
+  };
+
+  // New handler for BaseDropdown component
+  const handleStatusChange = (value: string | number) => {
+    setFormData(prev => ({
+      ...prev,
+      status: String(value)
     }));
   };
 
@@ -270,14 +302,14 @@ const AddPortfolioTemplate: React.FC = () => {
           </div>
           <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Create Portfolio Template</h1>
         </div>
-        <Link
-          to="/definitions?tab=portfolios"
-          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-        >
-          <svg className="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-          </svg>
-          Back
+        <Link to="/definitions?tab=portfolios">
+          <ActionButton
+            variant="cancel"
+            size="md"
+            design="minimal"
+          >
+            Back
+          </ActionButton>
         </Link>
       </div>
 
@@ -301,70 +333,48 @@ const AddPortfolioTemplate: React.FC = () => {
         <form onSubmit={handleSubmit}>
           <div className="p-4 border-b border-gray-200 bg-gray-50">
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col md:flex-row gap-4 md:items-end">
-                <div className="flex-1">
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Template Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="md:col-span-3">
+                  <BaseInput
+                    label="Template Name"
                     placeholder="e.g., Conservative ISA Template"
+                    value={formData.name}
+                    onChange={handleTemplateNameChange}
+                    required
+                    helperText="Enter a descriptive name for this portfolio template"
                   />
                 </div>
-                <div className="w-full md:w-1/4">
-                  <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                    Status
-                  </label>
-                  <select
-                    id="status"
-                    name="status"
+                <div className="md:col-span-1">
+                  <BaseDropdown
+                    label="Status"
+                    options={[
+                      { value: 'active', label: 'Active' },
+                      { value: 'inactive', label: 'Inactive' }
+                    ]}
                     value={formData.status}
-                    onChange={handleChange}
-                    required
-                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
+                    onChange={handleStatusChange}
+                    placeholder="Select status"
+                  />
                 </div>
               </div>
               
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="w-full md:w-1/2">
-                  <label htmlFor="generation_name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Generation Name
-                  </label>
-                  <input
-                    type="text"
-                    id="generation_name"
-                    name="generation_name"
-                    value={formData.generation_name}
-                    onChange={handleChange}
+                  <BaseInput
+                    label="Generation Name"
                     placeholder="e.g., Initial Version 2024"
-                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                    value={formData.generation_name}
+                    onChange={handleGenerationNameChange}
+                    helperText="A name for this specific version of the template"
                   />
-                  <p className="mt-1 text-xs text-gray-500">
-                    A name for this specific version of the template
-                  </p>
                 </div>
                 <div className="w-full md:w-1/2">
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
-                  </label>
-                  <textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    rows={2}
+                  <TextArea
+                    label="Description"
                     placeholder="Enter a detailed description of this portfolio template generation"
-                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                    value={formData.description}
+                    onChange={handleDescriptionChange}
+                    rows={2}
                   />
                 </div>
               </div>
@@ -420,24 +430,19 @@ const AddPortfolioTemplate: React.FC = () => {
                   <div className="space-y-4">
                     {/* Search Bar */}
                     <div className="mb-2">
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          placeholder="Search funds by name or ISIN..."
-                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-700 focus:border-primary-700 transition-colors duration-200"
-                          aria-label="Search funds"
-                        />
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <BaseInput
+                        placeholder="Search funds by name or ISIN..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        leftIcon={
                           <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                           </svg>
-                        </div>
-                        {searchQuery && (
+                        }
+                        rightIcon={searchQuery && (
                           <button
                             type="button"
-                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                            className="text-gray-400 hover:text-gray-600 focus:outline-none"
                             onClick={() => setSearchQuery('')}
                           >
                             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -445,7 +450,7 @@ const AddPortfolioTemplate: React.FC = () => {
                             </svg>
                           </button>
                         )}
-                      </div>
+                      />
                     </div>
 
                 <div className="overflow-x-auto">
@@ -567,31 +572,21 @@ const AddPortfolioTemplate: React.FC = () => {
 
           {/* Footer Actions */}
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
-            <Link
-              to="/definitions?tab=portfolios"
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-            >
-              Cancel
+            <Link to="/definitions?tab=portfolios">
+              <ActionButton
+                variant="cancel"
+                size="md"
+              />
             </Link>
-            <button
+            <ActionButton
+              variant="save"
+              size="md"
+              context="Template"
+              design="descriptive"
               type="submit"
               disabled={isSubmitting}
-              className={`bg-primary-700 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 shadow-sm transition-colors duration-200 ${
-                isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
-              }`}
-            >
-              {isSubmitting ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Saving...
-                </span>
-              ) : (
-                'Save Template'
-              )}
-            </button>
+              loading={isSubmitting}
+            />
           </div>
         </form>
       </div>

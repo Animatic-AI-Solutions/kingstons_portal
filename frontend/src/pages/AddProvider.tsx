@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getAvailableColors } from '../services/api';
+import { BaseInput, BaseDropdown, ActionButton } from '../components/ui';
 
 interface ProviderFormData {
   name: string;
@@ -27,70 +28,52 @@ const AddProvider: React.FC = () => {
     theme_color: '' // Will be set when colors are loaded
   });
 
-  // Fetch available colors on component mount
+  // Use our predefined 20 color palette instead of fetching from API
   useEffect(() => {
-    const fetchColors = async () => {
-      try {
-        setIsLoadingColors(true);
-        const response = await getAvailableColors();
-        const colors = response.data;
-        
-        setAvailableColors(colors);
-        
-        // Set default color to the first available color
-        if (colors.length > 0 && !formData.theme_color) {
-          setFormData(prev => ({
-            ...prev,
-            theme_color: colors[0].value
-          }));
-        }
-        
-        setError(null);
-      } catch (err: any) {
-        console.error('Error fetching available colors:', err);
-        
-        // Use a diverse set of fallback colors if API request fails
-        const fallbackColors = [
-          // Vibrant / Pure Colors
-          {name: 'Blue', value: '#2563EB'},         // Bright Blue
-          {name: 'Red', value: '#DC2626'},          // Pure Red
-          {name: 'Green', value: '#16A34A'},        // Bright Green
-          {name: 'Purple', value: '#8B5CF6'},       // Vibrant Purple
-          {name: 'Orange', value: '#F97316'},       // Bright Orange
-          
-          // Light / Soft Colors
-          {name: 'Sky Blue', value: '#38BDF8'},     // Light Blue
-          {name: 'Mint', value: '#4ADE80'},         // Light Green
-          {name: 'Lavender', value: '#C4B5FD'},     // Soft Purple
-          {name: 'Peach', value: '#FDBA74'},        // Soft Orange
-          {name: 'Rose', value: '#FDA4AF'},         // Soft Pink
-          
-          // Deep / Dark Colors
-          {name: 'Navy', value: '#1E40AF'},         // Deep Blue
-          {name: 'Forest', value: '#15803D'},       // Forest Green
-          {name: 'Maroon', value: '#9F1239'},       // Deep Red
-          {name: 'Indigo', value: '#4338CA'},       // Deep Purple
-          {name: 'Slate', value: '#334155'},        // Dark Slate
-        ];
-        
-        setAvailableColors(fallbackColors);
-        
-        // Set a default color
-        if (!formData.theme_color) {
-          setFormData(prev => ({
-            ...prev,
-            theme_color: fallbackColors[0].value
-          }));
-        }
-        
-        // Don't show a warning - silently use the fallback colors
-        setError(null);
-      } finally {
-        setIsLoadingColors(false);
-      }
-    };
+    setIsLoadingColors(true);
     
-    fetchColors();
+    // Define our comprehensive 20-color palette
+    const colorPalette = [
+      // Primary Colors (Vibrant)
+      {name: 'Royal Blue', value: '#2563EB'},      // Bright Blue
+      {name: 'Crimson Red', value: '#DC2626'},     // Pure Red
+      {name: 'Emerald Green', value: '#16A34A'},   // Bright Green
+      {name: 'Violet Purple', value: '#8B5CF6'},   // Vibrant Purple
+      {name: 'Tangerine Orange', value: '#F97316'}, // Bright Orange
+      
+      // Secondary Colors (Rich)
+      {name: 'Turquoise', value: '#06B6D4'},       // Cyan
+      {name: 'Magenta', value: '#D946EF'},         // Hot Pink
+      {name: 'Lime Green', value: '#65A30D'},      // Yellow-Green
+      {name: 'Coral', value: '#F59E0B'},           // Orange-Yellow
+      {name: 'Amethyst', value: '#7C3AED'},        // Deep Purple
+      
+      // Sophisticated Colors (Professional)
+      {name: 'Navy Blue', value: '#1E40AF'},       // Deep Blue
+      {name: 'Forest Green', value: '#15803D'},    // Dark Green
+      {name: 'Burgundy', value: '#9F1239'},        // Wine Red
+      {name: 'Midnight', value: '#1F2937'},        // Dark Gray
+      {name: 'Teal', value: '#0F766E'},            // Blue-Green
+      
+      // Modern Colors (Contemporary)
+      {name: 'Sky Blue', value: '#38BDF8'},        // Light Blue
+      {name: 'Mint', value: '#4ADE80'},            // Fresh Green
+      {name: 'Lavender', value: '#A78BFA'},        // Soft Purple
+      {name: 'Peach', value: '#FB923C'},           // Warm Orange
+      {name: 'Rose Gold', value: '#F472B6'},       // Pink
+    ];
+    
+    setAvailableColors(colorPalette);
+    
+    // Set default color to the first color
+    if (!formData.theme_color) {
+      setFormData(prev => ({
+        ...prev,
+        theme_color: colorPalette[0].value
+      }));
+    }
+    
+    setIsLoadingColors(false);
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -98,6 +81,22 @@ const AddProvider: React.FC = () => {
     setFormData(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  // New handler for BaseInput components
+  const handleProviderNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      name: e.target.value
+    }));
+  };
+
+  // New handler for BaseDropdown components
+  const handleStatusChange = (value: string | number) => {
+    setFormData(prev => ({
+      ...prev,
+      status: String(value)
     }));
   };
 
@@ -179,14 +178,14 @@ const AddProvider: React.FC = () => {
           </div>
           <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Add Provider</h1>
         </div>
-        <Link
-          to="/definitions?tab=providers"
-          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-        >
-          <svg className="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-          </svg>
-          Back
+        <Link to="/definitions?tab=providers">
+          <ActionButton
+            variant="cancel"
+            size="md"
+            design="minimal"
+          >
+            Back
+          </ActionButton>
         </Link>
       </div>
 
@@ -249,12 +248,12 @@ const AddProvider: React.FC = () => {
                               </span>
                             </div>
 
-                            <div className="grid grid-cols-5 gap-3">
+                            <div className="grid grid-cols-4 gap-3">
                               {availableColors.map((color) => (
                                 <button
                                   key={color.value}
                                   type="button"
-                                  className={`aspect-square w-9 rounded-full hover:ring-2 hover:ring-offset-2 hover:ring-primary-500 focus:outline-none transition-all duration-200 shadow-sm ${
+                                  className={`aspect-square w-10 rounded-full hover:ring-2 hover:ring-offset-2 hover:ring-primary-500 focus:outline-none transition-all duration-200 shadow-sm ${
                                     formData.theme_color === color.value 
                                       ? 'ring-2 ring-offset-2 ring-gray-400 scale-110'
                                       : ''
@@ -284,36 +283,28 @@ const AddProvider: React.FC = () => {
                   </div>
                   <div className="p-4">
                     <div className="mb-4">
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                        Provider Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        id="name"
-                        name="name"
+                      <BaseInput
+                        label="Provider Name"
+                        placeholder="Enter provider name"
                         value={formData.name}
-                        onChange={handleChange}
-                        className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                        onChange={handleProviderNameChange}
                         required
+                        helperText="Enter the name of the financial provider"
                       />
-                      <p className="mt-1 text-xs text-gray-500">Enter the name of the financial provider</p>
                     </div>
 
                     <div>
-                      <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                        Status
-                      </label>
-                      <select
-                        id="status"
-                        name="status"
+                      <BaseDropdown
+                        label="Status"
+                        options={[
+                          { value: 'active', label: 'Active' },
+                          { value: 'inactive', label: 'Inactive' }
+                        ]}
                         value={formData.status}
-                        onChange={handleChange}
-                        className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                      >
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                      </select>
-                      <p className="mt-1 text-xs text-gray-500">Choose whether this provider is active or inactive</p>
+                        onChange={handleStatusChange}
+                        placeholder="Select status"
+                        helperText="Choose whether this provider is active or inactive"
+                      />
                     </div>
                   </div>
                 </div>
@@ -323,31 +314,21 @@ const AddProvider: React.FC = () => {
 
           {/* Footer Actions */}
           <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
-            <Link
-              to="/definitions?tab=providers"
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-            >
-              Cancel
+            <Link to="/definitions?tab=providers">
+              <ActionButton
+                variant="cancel"
+                size="md"
+              />
             </Link>
-            <button
+            <ActionButton
+              variant="add"
+              size="md"
+              context="Provider"
+              design="descriptive"
               type="submit"
               disabled={isSubmitting || isLoadingColors || availableColors.length === 0}
-              className={`px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${
-                (isSubmitting || isLoadingColors || availableColors.length === 0) 
-                  ? 'opacity-50 cursor-not-allowed' 
-                  : 'hover:bg-primary-800'
-              }`}
-            >
-              {isSubmitting ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Creating...
-                </span>
-              ) : 'Create Provider'}
-            </button>
+              loading={isSubmitting}
+            />
           </div>
         </form>
       </div>

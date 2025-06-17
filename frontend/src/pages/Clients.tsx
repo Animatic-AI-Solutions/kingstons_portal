@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { SearchableDropdown } from '../components/ui';
+import { SearchableDropdown, FilterSearch } from '../components/ui';
 import FilterDropdown from '../components/ui/FilterDropdown';
 import { useClientData } from '../hooks/useClientData';
 
@@ -216,28 +216,25 @@ const Clients: React.FC = () => {
 
       <div className="bg-white shadow rounded-lg p-4 overflow-visible">
         {/* Search and Sort Controls */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-3">
+        <div className="flex flex-col sm:flex-row gap-3 mb-1">
           {/* Search Bar */}
           <div className="flex-1">
-            <div className="relative">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search client groups..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200"
-              />
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-            </div>
+            <FilterSearch
+              placeholder="Filter client groups by name or type..."
+              onFilter={setSearchQuery}
+              showResultCount={true}
+              resultCount={filteredAndSortedClients.length}
+              filterLabel="Client Group"
+              size="md"
+              fullWidth={true}
+              debounceMs={150}
+              className="!border-gray-300 focus:!border-indigo-500 focus:!ring-indigo-500/10 hover:!border-indigo-400"
+            />
           </div>
         </div>
 
         {/* Client Groups List */}
-        <div className="mt-6">
+        <div className="mt-3">
           {isLoading ? (
             <div className="flex justify-center items-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>

@@ -8,6 +8,7 @@ import { Radio, Select, Input, Checkbox, DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import SearchableDropdown from '../components/ui/SearchableDropdown';
+import { BaseInput, NumberInput, DateInput, BaseDropdown, MultiSelectDropdown, AutocompleteSearch, AutocompleteOption, ActionButton, AddButton, DeleteButton } from '../components/ui';
 import { getProviderColor } from '../services/providerColors';
 import { findCashFund, isCashFund } from '../utils/fundUtils';
 
@@ -201,6 +202,18 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     
     const missing: string[] = [];
     products.forEach((product, index) => {
+      // Only show validation errors for products that have been partially filled out
+      // This prevents showing errors immediately when a new empty product is added
+      const hasAnyData = product.provider_id > 0 || 
+                        product.product_type.trim() || 
+                        product.product_name.trim() || 
+                        product.product_owner_ids.length > 0 ||
+                        product.portfolio.selectedFunds.length > 0 ||
+                        product.portfolio.templateId;
+      
+      // Skip validation display for completely empty products
+      if (!hasAnyData) return;
+      
       // Simple product naming without dependency on generateProductName function
       const productName = product.product_name.trim() || `Product ${index + 1}`;
       const issues = [];
@@ -331,7 +344,13 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                            currentName.startsWith('Portfolio for Product') || 
                            currentName === generatePortfolioName(product);
         
-        if (shouldUpdate) {
+        // Don't generate a name if the product is completely empty (no meaningful details)
+        const hasProductDetails = product.provider_id > 0 || 
+                                 product.product_type.trim() || 
+                                 product.product_name.trim() || 
+                                 product.product_owner_ids.length > 0;
+        
+        if (shouldUpdate && hasProductDetails) {
           const newName = generatePortfolioName(product);
           return {
             ...product,
@@ -458,6 +477,22 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     }
   };
 
+
+
+  // Create client options for AutocompleteSearch
+  const clientOptions: AutocompleteOption[] = React.useMemo(() => {
+    return clients.map(client => ({
+      value: client.id.toString(),
+      label: client.name || 'Unnamed Client'
+    }));
+  }, [clients]);
+
+  // Handle client selection from AutocompleteSearch
+  const handleClientSelect = (option: AutocompleteOption) => {
+    const clientId = parseInt(option.value);
+    handleClientChange(clientId);
+  };
+
   const handleAddProduct = () => {
     if (!selectedClientId) {
       setError('Please select a client first');
@@ -474,6 +509,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       product_name: '',
       status: 'active',
       start_date: dayjs(), // Default to current date
+      plan_number: '', // Initialize as empty string
       product_owner_ids: [],
       portfolio: {
         name: '', // Will be generated when product details are filled
@@ -736,8 +772,15 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     return totalWeight > 0 ? totalWeightedRisk / totalWeight : null;
   };
 
-  // Function to generate product name based on owners, provider, and product type
+  // Function to generate product name based on provider, product type, and owners
   const generateProductName = (product: ProductItem): string => {
+    // Get provider name
+    const provider = providers.find(p => p.id === product.provider_id);
+    const providerName = provider ? provider.name : '';
+
+    // Get product type
+    const productType = product.product_type;
+
     // Get product owner names
     const ownerNames = product.product_owner_ids
       .map(ownerId => {
@@ -746,24 +789,17 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       })
       .filter(name => name.length > 0);
 
-    // Get provider name
-    const provider = providers.find(p => p.id === product.provider_id);
-    const providerName = provider ? provider.name : '';
-
-    // Get product type
-    const productType = product.product_type;
-
-    // Generate name based on number of owners
+    // Generate name in order: Provider → Product Type → Product Owner Names
     if (ownerNames.length === 0) {
       // No owners - just use provider and product type
       return `${providerName} ${productType}`.trim();
     } else if (ownerNames.length === 1) {
-      // Single owner - format: "Owner Provider ProductType"
-      return `${ownerNames[0]} ${providerName} ${productType}`.trim();
+      // Single owner - format: "Provider ProductType Owner"
+      return `${providerName} ${productType} ${ownerNames[0]}`.trim();
     } else {
-      // Multiple owners - format: "Joint (Owner1, Owner2, Owner3) Provider ProductType"
+      // Multiple owners - format: "Provider ProductType Joint (Owner1, Owner2, Owner3)"
       const ownersList = ownerNames.join(', ');
-      return `Joint (${ownersList}) ${providerName} ${productType}`.trim();
+      return `${providerName} ${productType} Joint (${ownersList})`.trim();
     }
   };
 
@@ -1498,13 +1534,18 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             </div>
             
             {/* Fund Search */}
-            <Input
+            <BaseInput
               placeholder="Search funds..."
               value={fundSearchTerm}
               onChange={(e) => handleFundSearch(e.target.value)}
               disabled={isEitherLoading}
-              size="middle"
-              className="w-full"
+              size="sm"
+              fullWidth
+              leftIcon={
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              }
             />
             
             {/* Available Fund List */}
@@ -1584,30 +1625,18 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         <div className="grid grid-cols-2 gap-1 sm:gap-2">
           {/* Portfolio Name - Auto-generated */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-            Portfolio Name <span className="text-red-500">*</span>
-              <span className="text-gray-400">(auto-generated)</span>
-          </label>
-          <input
-            type="text"
-              value={(() => {
-                // Auto-generate portfolio name based on product name
-                const productName = product.product_name.trim() || generateProductName(product);
-                return product.portfolio.name.trim() || `Portfolio for ${productName || 'Product'}`;
-              })()}
+            <BaseInput
+              label="Portfolio Name"
+              value={product.portfolio.name}
               onChange={(e) => {
                 // Allow manual override of portfolio name
-                const value = e.target.value;
-                handlePortfolioNameChange(product.id, value);
+                handlePortfolioNameChange(product.id, e.target.value);
               }}
-              className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm border-gray-300 rounded-md h-8"
               placeholder="Auto-generated"
-          />
-          {validationErrors[product.id]?.portfolioName && (
-            <div className="text-xs text-red-600 mt-1">
-              {validationErrors[product.id].portfolioName}
-            </div>
-          )}
+              size="sm"
+              fullWidth
+              error={validationErrors[product.id]?.portfolioName}
+            />
         </div>
         
         {/* Portfolio Type Selection */}
@@ -1635,14 +1664,16 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               <label className="block text-xs font-medium text-gray-700 mb-1">
               Select Template <span className="text-red-500">*</span>
             </label>
-            <SearchableDropdown
-              id={`template-select-${product.id}`}
+            <BaseDropdown
+              label="Select Template"
               options={availableTemplates.map(t => ({ value: t.id.toString(), label: t.name || `Template ${t.id}` }))}
               value={product.portfolio.templateId?.toString() ?? ''}
-              onChange={val => handleTemplateSelection(product.id, String(val))}
+              onChange={(value) => handleTemplateSelection(product.id, value)}
               placeholder="Select template"
-              className={`w-full text-sm ${validationErrors[product.id]?.template ? 'border-red-500' : ''}`}
+              error={validationErrors[product.id]?.template}
               required
+              size="sm"
+              fullWidth
               disabled={isEitherLoading}
               loading={isLoadingTemplate || availableTemplates.length === 0}
             />
@@ -1659,17 +1690,19 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                 <label className="block text-xs font-medium text-gray-700 mb-1">
               Select Generation <span className="text-red-500">*</span>
             </label>
-            <SearchableDropdown
-              id={`generation-select-${product.id}`}
+            <BaseDropdown
+              label="Select Generation"
               options={generations.map(g => ({ 
                 value: g.id.toString(), 
                 label: g.generation_name || `Version ${g.version_number}` 
               }))}
               value={product.portfolio.generationId?.toString() ?? ''}
-              onChange={val => handleGenerationSelection(product.id, String(val))}
+              onChange={(value) => handleGenerationSelection(product.id, value)}
               placeholder="Select generation"
-              className={`w-full text-sm ${validationErrors[product.id]?.generation ? 'border-red-500' : ''}`}
+              error={validationErrors[product.id]?.generation}
               required
+              size="sm"
+              fullWidth
               disabled={isEitherLoading}
               loading={isLoadingGeneration || (!!product.portfolio.templateId && generations.length === 0)}
             />
@@ -1827,14 +1860,12 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               <p className="font-medium text-sm">Notification</p>
               <p className="text-xs">{toastMessage}</p>
             </div>
-            <button 
-              onClick={() => setShowToast(false)} 
-              className="ml-auto text-blue-500 hover:text-blue-700"
-            >
-              <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            <ActionButton
+              variant="cancel"
+              size="icon"
+              iconOnly
+              onClick={() => setShowToast(false)}
+            />
           </div>
         </div>
       )}
@@ -1851,15 +1882,12 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           
           {/* Keyboard shortcuts help */}
           <div className="ml-4 relative group">
-            <button
-              type="button"
-              className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"
+            <ActionButton
+              variant="edit"
+              size="icon"
+              iconOnly
               title="Keyboard shortcuts"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
-              </svg>
-            </button>
+            />
             <div className="invisible group-hover:visible absolute left-0 top-8 z-50 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-lg w-64">
               <div className="font-medium mb-2">Keyboard Shortcuts:</div>
               <div className="space-y-1">
@@ -1920,34 +1948,22 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                 <div className="grid grid-cols-2 gap-4">
                 {/* Client Selection */}
                   <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Client Name <span className="text-red-500">*</span>
-                    {urlClientId && clientName && (
-                      <span className="text-xs text-gray-500 font-normal ml-2">(Auto-selected from client page)</span>
-                    )}
-                  </label>
                   {clients.length > 0 ? (
-                    <Select
-                      showSearch
-                      value={selectedClientId || undefined}
-                      onChange={(value) => handleClientChange(value)}
-                      placeholder="Search for a client"
-                      optionFilterProp="children"
-                      filterOption={(input, option) =>
-                        (option?.children as unknown as string)
-                          .toLowerCase()
-                          .includes(input.toLowerCase())
-                      }
-                      className="w-full"
-                      size="middle"
-                      disabled={!!urlClientId} // Disable if coming from client page
-                    >
-                      {clients.map(client => (
-                        <Select.Option key={client.id} value={client.id}>
-                          {client.name}
-                        </Select.Option>
-                      ))}
-                    </Select>
+                    <AutocompleteSearch
+                      label="Client Name"
+                      placeholder="Type to search clients..."
+                      options={clientOptions}
+                      onSelect={handleClientSelect}
+                      value={selectedClientId ? clients.find(c => c.id === selectedClientId)?.name || '' : ''}
+                      minSearchLength={0}
+                      maxResults={10}
+                      allowCustomValue={false}
+                      required
+                      size="md"
+                      fullWidth={true}
+                      helperText={`${clients.length} clients available`}
+                    />
+
                   ) : (
                       <div className="text-gray-500 text-sm bg-gray-100 p-2 rounded">
                         No clients available. Please add a client first.
@@ -2003,16 +2019,12 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                           Duplicate Last
                         </button>
                       )}
-                  <button
-                    type="button"
+                  <AddButton
+                    context="Product"
+                    design="balanced"
+                    size="md"
                     onClick={handleAddProduct}
-                        className="bg-primary-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 shadow-sm flex items-center gap-1"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                        Add Product
-                  </button>
+                  />
                     </div>
                 </div>
 
@@ -2081,49 +2093,37 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                   ) : (
                                     <div className="w-2 h-2 bg-yellow-500 rounded-full" title="Incomplete" />
                                   )}
-                            <button
-                              type="button"
-                                    onClick={() => handleRemoveProduct(product.id)}
-                                    className="text-gray-400 hover:text-red-500 transition-colors duration-200 p-1"
-                            >
-                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
+                            <DeleteButton
+                              context="Product"
+                              design="balanced"
+                              size="sm"
+                              onClick={() => handleRemoveProduct(product.id)}
+                            />
                           </div>
                         </div>
 
                               {/* Compact configuration form - always visible for incomplete products */}
                               {isExpanded && (
-                                <div className="space-y-0.5 sm:space-y-1 pt-0.5 sm:pt-1 border-t border-gray-100">
+                                <div className="space-y-2 pt-0.5 sm:pt-1 border-t border-gray-100">
                                                                       {/* Row 1: Provider, Product Type, Product Name */}
                                     <div className="grid grid-cols-3 gap-1 sm:gap-2">
                                     <div>
-                                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                              Provider <span className="text-red-500">*</span>
-                            </label>
-                            <SearchableDropdown
-                              id={`provider-select-${product.id}`}
-                              options={providers.map(p => ({ value: p.id, label: p.name }))}
-                              value={product.provider_id}
-                              onChange={val => handleProductChange(product.id, 'provider_id', Number(val))}
-                                        placeholder="Select provider"
-                                        className={`w-full text-sm ${validationErrors[product.id]?.provider ? 'border-red-500' : ''}`}
+                            <BaseDropdown
+                              label="Provider"
+                              options={providers.map(p => ({ value: p.id.toString(), label: p.name }))}
+                              value={product.provider_id ? product.provider_id.toString() : ''}
+                              onChange={(value) => handleProductChange(product.id, 'provider_id', Number(value))}
+                              placeholder="Select provider"
+                              error={validationErrors[product.id]?.provider}
                               required
+                              size="sm"
+                              fullWidth
                             />
-                            {validationErrors[product.id]?.provider && (
-                              <div className="text-xs text-red-600 mt-1">
-                                {validationErrors[product.id].provider}
-                              </div>
-                            )}
                           </div>
 
                                     <div>
-                                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                              Product Type <span className="text-red-500">*</span>
-                            </label>
-                            <SearchableDropdown
-                              id={`product-type-select-${product.id}`}
+                            <BaseDropdown
+                              label="Product Type"
                               options={[
                                 { value: 'ISA', label: 'ISA' },
                                 { value: 'JISA', label: 'Junior ISA' },
@@ -2136,25 +2136,21 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                 { value: 'Other', label: 'Other' },
                               ]}
                               value={product.product_type}
-                              onChange={val => handleProductTypeChange(product.id, String(val))}
-                                        placeholder="Select type"
-                                        className={`w-full text-sm ${validationErrors[product.id]?.productType ? 'border-red-500' : ''}`}
+                              onChange={(value) => handleProductTypeChange(product.id, value)}
+                              placeholder="Select type"
+                              error={validationErrors[product.id]?.productType}
                               required
+                              size="sm"
+                              fullWidth
                             />
-                            {validationErrors[product.id]?.productType && (
-                              <div className="text-xs text-red-600 mt-1">
-                                {validationErrors[product.id].productType}
-                              </div>
-                            )}
                           </div>
 
                                     <div>
-                                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                                        Product Name <span className="text-gray-400">(optional)</span>
-                                      </label>
-                                      <input
-                                        type="text"
+                                      <BaseInput
+                                        label="Product Name"
+                                        helperText="(optional)"
                                         value={product.product_name}
+
                                         onChange={(e) => handleProductChange(product.id, 'product_name', e.target.value)}
                                         className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm border-gray-300 rounded-md h-8"
                                         placeholder="e.g. Smoothed Savings Pension Fund"
@@ -2165,53 +2161,58 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                   {/* Row 2: Start Date and Plan Number */}
                                   <div className="grid grid-cols-2 gap-1 sm:gap-2">
                                     <div>
-                                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                                        Start Date <span className="text-red-500">*</span>
-                                      </label>
-                                      <DatePicker
-                                        value={product.start_date}
-                                        onChange={(date) => handleProductChange(product.id, 'start_date', date)}
-                                        className={`w-full ${validationErrors[product.id]?.start_date ? 'border-red-500' : ''}`}
-                                        size="small"
-                                        format="DD/MM/YYYY"
-                                        placeholder="Select start date"
+                                      <DateInput
+                                        label="Start Date"
+                                        value={product.start_date ? product.start_date.toDate() : undefined}
+                                        onChange={(date: Date | null) => {
+                                          // Convert Date back to dayjs for consistency with existing code
+                                          const dayjsDate = date ? dayjs(date) : dayjs();
+                                          handleProductChange(product.id, 'start_date', dayjsDate);
+                                        }}
+                                        error={validationErrors[product.id]?.start_date}
+                                        required
+                                        size="sm"
+                                        fullWidth
+                                        placeholder="dd/mm/yyyy"
                                       />
-                                      {validationErrors[product.id]?.start_date && (
-                                        <div className="text-xs text-red-600 mt-1">
-                                          {validationErrors[product.id].start_date}
-                                        </div>
-                                      )}
                                     </div>
 
                                     <div>
-                                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                                        Plan Number <span className="text-gray-400">(optional)</span>
-                                      </label>
-                                      <input
-                                        type="text"
-                                        value={product.plan_number || ''}
-                                        onChange={(e) => handleProductChange(product.id, 'plan_number', e.target.value)}
-                                        className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm border-gray-300 rounded-md h-8"
-                                        placeholder="Enter plan number"
+                                      <BaseInput
+                                        label="Plan Number"
+                                        placeholder="Enter plan number (e.g., PLAN001, P-123)"
+                                        value={typeof product.plan_number === 'string' ? product.plan_number : ''}
+                                        onChange={(e) => {
+                                          // Get the string value from the event
+                                          handleProductChange(product.id, 'plan_number', e.target.value);
+                                        }}
+                                        size="sm"
+                                        autoComplete="off"
+                                        leftIcon={
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                                          </svg>
+                                        }
                                       />
                                     </div>
                                   </div>
 
                                   {/* Row 3: Product Owners */}
                                   <div>
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                                      Product Owners <span className="text-red-500">*</span>
-                                    </label>
-                                    <div className="flex space-x-2">
+                                    <div className="flex items-end space-x-2">
                                       <div className="flex-grow">
-                                        <Select
-                                          mode="multiple"
-                                          showSearch
-                                          value={product.product_owner_ids}
-                                          onChange={(values: number[]) => {
-                                            handleProductChange(product.id, 'product_owner_ids', values);
+                                        <MultiSelectDropdown
+                                          label="Product Owners"
+                                          options={productOwners.map(owner => ({ 
+                                            value: owner.id.toString(), 
+                                            label: owner.name 
+                                          }))}
+                                          values={product.product_owner_ids.map(id => id.toString())}
+                                          onChange={(values) => {
+                                            const numericValues = values.map(v => parseInt(v));
+                                            handleProductChange(product.id, 'product_owner_ids', numericValues);
                                             // Clear validation error when user selects product owners
-                                            if (values.length > 0 && validationErrors[product.id]?.productOwners) {
+                                            if (numericValues.length > 0 && validationErrors[product.id]?.productOwners) {
                                               const newErrors = { ...validationErrors };
                                               if (newErrors[product.id]) {
                                                 delete newErrors[product.id].productOwners;
@@ -2223,66 +2224,25 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                             }
                                           }}
                                           placeholder="Search and select product owners (required)"
-                                          className={`w-full ${validationErrors[product.id]?.productOwners ? 'product-owners-error' : ''}`}
-                                          size="middle"
-                                          allowClear
-                                          maxTagCount="responsive"
-                                          optionFilterProp="children"
-                                          placement="bottomLeft"
-                                          listHeight={200}
-                                          filterOption={(input, option) =>
-                                            (option?.children as unknown as string)
-                                              .toLowerCase()
-                                              .includes(input.toLowerCase())
-                                          }
-                                          dropdownRender={(menu) => (
-                                            <div className="max-h-48">
-                                              <div className="max-h-40 overflow-y-auto">
-                                                {menu}
-                                              </div>
-                                              <div className="border-t border-gray-200 p-1">
-                                                <button
-                                                  type="button"
-                                                  onClick={() => openCreateProductOwnerModal(product.id)}
-                                                  className="w-full text-left px-2 py-1 text-xs text-primary-600 hover:bg-primary-50 rounded flex items-center space-x-1"
-                                                >
-                                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                                  </svg>
-                                                  <span>Create new product owner</span>
-                                                </button>
-                                              </div>
-                                            </div>
-                                          )}
-                                        >
-                                          {productOwners.map(owner => (
-                                            <Select.Option key={owner.id} value={owner.id}>
-                                              {owner.name}
-                                            </Select.Option>
-                                          ))}
-                                        </Select>
+                                          error={validationErrors[product.id]?.productOwners}
+                                          required
+                                          size="sm"
+                                          fullWidth
+                                        />
                                       </div>
-                                      <button
-                                        type="button"
+                                      <AddButton
+                                        context="Product Owner"
+                                        size="sm"
+                                        iconOnly
                                         onClick={() => openCreateProductOwnerModal(product.id)}
-                                        className="bg-primary-600 text-white p-1.5 rounded hover:bg-primary-700 transition-colors duration-150 inline-flex items-center justify-center"
                                         title="Create new product owner"
-                                      >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                        </svg>
-                                      </button>
+                                      />
                                     </div>
-                                    {validationErrors[product.id]?.productOwners && (
-                                      <div className="text-xs text-red-600 mt-1">
-                                        {validationErrors[product.id].productOwners}
-                                      </div>
-                                    )}
                                   </div>
 
                                   {/* Portfolio Configuration */}
-                                  <div className="border-t pt-0.5 sm:pt-1">
-                                    <h4 className="text-sm font-medium text-gray-900 mb-0.5 sm:mb-1">Portfolio Configuration</h4>
+                                  <div className="border-t border-gray-200">
+                                    <h4 className="text-sm font-medium text-gray-900 mb-2 mt-2">Portfolio Configuration</h4>
                           {renderPortfolioSection(product)}
                         </div>
                       </div>
@@ -2299,28 +2259,23 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               {/* Submit Button - Context-aware */}
               {selectedClientId && products.length > 0 && (
                 <div className="mt-1 sm:mt-2 flex justify-end space-x-1 sm:space-x-2">
-                  <button
-                    type="button"
+                  <ActionButton
+                    variant="cancel"
+                    size="md"
                     onClick={() => navigate(returnPath)}
-                    className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2"
                   >
                     Cancel
-                  </button>
-                <button
-                  type="submit"
-                  disabled={isSaving || !isFormValid}
-                    className="bg-primary-700 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-primary-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  </ActionButton>
+                  <ActionButton
+                    variant="save"
+                    size="md"
+                    type="submit"
+                    disabled={isSaving || !isFormValid}
+                    loading={isSaving}
                     title={!isFormValid ? 'Please complete all required fields for all products' : ''}
-                >
-                    {isSaving ? (
-                      <div className="flex items-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Saving...
-                      </div>
-                    ) : (
-                      `Create ${products.length} Product${products.length !== 1 ? 's' : ''} for ${clients.find(c => c.id === selectedClientId)?.name || 'Client'}`
-                    )}
-                </button>
+                  >
+                    {!isSaving && `Create ${products.length} Product${products.length !== 1 ? 's' : ''} for ${clients.find(c => c.id === selectedClientId)?.name || 'Client'}`}
+                  </ActionButton>
                 {!isFormValid && products.length > 0 && (
                   <div className="text-xs text-red-600 mt-2 max-h-24 overflow-y-auto">
                     <div className="font-medium mb-1">Missing required fields:</div>
@@ -2356,16 +2311,14 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           className="product-owner-modal"
         >
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Product Owner Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
+            <BaseInput
+              label="Product Owner Name"
               value={newProductOwnerName}
               onChange={(e) => setNewProductOwnerName(e.target.value)}
-              className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm border-gray-300 rounded-md h-8"
               placeholder="Enter product owner name"
               required
+              size="sm"
+              fullWidth
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
