@@ -511,49 +511,91 @@ async def calculate_portfolio_irr(
         portfolio_funds = portfolio_funds_result.data
         logger.info(f"Found {len(portfolio_funds)} funds in portfolio {portfolio_id}")
         
-        # Get the most recent valuation date that exists for all portfolio funds
+        # Debug: Log fund statuses to understand the filtering issue
+        active_funds = [f for f in portfolio_funds if f.get("status", "active") == "active"]
+        inactive_funds = [f for f in portfolio_funds if f.get("status", "active") != "active"]
+        logger.info(f"Fund breakdown: {len(active_funds)} active, {len(inactive_funds)} inactive")
+        for fund in portfolio_funds:
+            logger.info(f"  Fund {fund['id']}: status = {fund.get('status', 'active')}")
+        
+        # Get the most recent valuation date that exists for ACTIVE portfolio funds
+        # Include ALL funds (active and inactive) but assume inactive funds have zero valuation
+        all_fund_data = []
+        active_funds_with_valuations = []
+        
+        for fund in portfolio_funds:
+            fund_id = fund["id"]
+            fund_status = fund.get("status", "active")
+            logger.info(f"Processing fund {fund_id} (status: {fund_status})")
+            
+            if fund_status == "active":
+                # Get the most recent valuation for active funds
+                latest_valuation = db.table("portfolio_fund_valuations")\
+                    .select("*")\
+                    .eq("portfolio_fund_id", fund_id)\
+                    .order("valuation_date", desc=True)\
+                    .limit(1)\
+                    .execute()
+                    
+                if not latest_valuation.data or len(latest_valuation.data) == 0:
+                    logger.error(f"Active fund {fund_id} has no valuations - this is required for portfolio valuation")
+                    raise HTTPException(
+                        status_code=400, 
+                        detail=f"Active portfolio fund ID {fund_id} has no valuations. Active funds must have valuations to calculate portfolio value."
+                    )
+                else:
+                    # Add active fund with actual valuation
+                    valuation_date = datetime.fromisoformat(latest_valuation.data[0]["valuation_date"])
+                    active_funds_with_valuations.append({
+                        "portfolio_fund_id": fund_id,
+                        "date": valuation_date,
+                        "valuation": latest_valuation.data[0]["valuation"],
+                        "valuation_id": latest_valuation.data[0]["id"],
+                        "status": fund_status
+                    })
+                    logger.info(f"Active fund {fund_id} has valuation {latest_valuation.data[0]['valuation']} on {valuation_date.isoformat()}")
+            else:
+                # Inactive fund - assume zero valuation but still include for IRR calculation
+                logger.info(f"Inactive fund {fund_id} - assuming zero valuation but including for IRR calculation")
+        
+        # Determine common date from active funds only
+        if not active_funds_with_valuations:
+            raise HTTPException(status_code=400, detail="No active funds with valuations found")
+            
+        # Sort by date in ascending order and take the earliest (so all active funds have a valuation on or after this date)
+        active_funds_with_valuations.sort(key=lambda x: x["date"])
+        common_date = active_funds_with_valuations[0]["date"]
+        common_date_iso = common_date.isoformat()
+        logger.info(f"Using common date for calculations: {common_date_iso}")
+        
+        # Now create the complete fund data list including inactive funds with zero valuations
         most_recent_valuation_dates = []
         
         for fund in portfolio_funds:
             fund_id = fund["id"]
-            logger.info(f"Checking valuations for fund {fund_id}")
+            fund_status = fund.get("status", "active")
             
-            # Get the most recent valuation for this fund
-            latest_valuation = db.table("portfolio_fund_valuations")\
-                .select("*")\
-                .eq("portfolio_fund_id", fund_id)\
-                .order("valuation_date", desc=True)\
-                .limit(1)\
-                .execute()
-                
-            if not latest_valuation.data or len(latest_valuation.data) == 0:
-                # If any fund doesn't have a valuation, we can't calculate IRR
-                logger.error(f"No valuation found for portfolio fund ID {fund_id}")
-                raise HTTPException(
-                    status_code=400, 
-                    detail=f"Portfolio fund ID {fund_id} has no valuations. All funds must have valuations to calculate IRR."
-                )
-                
-            # Add the date to our list
-            valuation_date = datetime.fromisoformat(latest_valuation.data[0]["valuation_date"])
-            most_recent_valuation_dates.append({
-                "portfolio_fund_id": fund_id,
-                "date": valuation_date,
-                "valuation": latest_valuation.data[0]["valuation"],
-                "valuation_id": latest_valuation.data[0]["id"]  # Include the valuation ID to ensure we're using the right record
-            })
-            logger.info(f"Fund {fund_id} has most recent valuation date: {valuation_date.isoformat()}")
+            if fund_status == "active":
+                # Find the active fund data we already processed
+                fund_data = next((f for f in active_funds_with_valuations if f["portfolio_fund_id"] == fund_id), None)
+                if fund_data:
+                    most_recent_valuation_dates.append(fund_data)
+            else:
+                # Add inactive fund with zero valuation on the common date
+                most_recent_valuation_dates.append({
+                    "portfolio_fund_id": fund_id,
+                    "date": common_date,
+                    "valuation": 0.0,  # Assume zero valuation for inactive funds
+                    "valuation_id": None,  # No actual valuation record
+                    "status": fund_status
+                })
+                logger.info(f"Including inactive fund {fund_id} with zero valuation for IRR calculation")
         
-        # Get the earliest date from the most recent valuations
-        # (This ensures all funds have a valuation on or after this date)
-        if not most_recent_valuation_dates:
-            raise HTTPException(status_code=400, detail="No valuations found for any portfolio funds")
-            
-        # Sort by date in ascending order and take the earliest (so all funds have valuations on or after this date)
-        most_recent_valuation_dates.sort(key=lambda x: x["date"])
-        common_date = most_recent_valuation_dates[0]["date"]
-        common_date_iso = common_date.isoformat()
-        logger.info(f"Using common date for calculations: {common_date_iso}")
+        # Log summary
+        active_funds = [f for f in most_recent_valuation_dates if f["status"] == "active"]
+        inactive_funds = [f for f in most_recent_valuation_dates if f["status"] != "active"]
+        logger.info(f"Fund summary: {len(active_funds)} active funds with actual valuations, {len(inactive_funds)} inactive funds with zero valuations")
+        logger.info(f"Total funds for IRR calculation: {len(most_recent_valuation_dates)}")
         
         # Format as year and month for IRR calculation
         year = common_date.year
@@ -709,17 +751,26 @@ async def calculate_portfolio_irr(
             # Step 1: Calculate portfolio valuation by summing all fund valuations
             logger.info("Calculating portfolio-level valuation and IRR...")
             
-            # Get all active portfolio fund IDs
+            # Get ALL portfolio fund IDs (both active and inactive) for accurate IRR calculation
+            # Portfolio IRR should include historical activities from inactive funds
+            all_fund_ids = [pf["id"] for pf in portfolio_funds]
             active_fund_ids = [pf["id"] for pf in portfolio_funds if pf.get("status", "active") == "active"]
             
-            if active_fund_ids:
-                # Calculate total portfolio value
+            # Also get fund IDs that have valuations (for portfolio valuation calculation)
+            funds_with_valuations = [fd["portfolio_fund_id"] for fd in most_recent_valuation_dates]
+            
+            logger.info(f"Portfolio {portfolio_id}: {len(all_fund_ids)} total funds ({len(active_fund_ids)} active, {len(all_fund_ids) - len(active_fund_ids)} inactive)")
+            logger.info(f"Funds with valuations: {len(funds_with_valuations)}, Funds without valuations: {len(all_fund_ids) - len(funds_with_valuations)}")
+            logger.info(f"Using ALL {len(all_fund_ids)} funds for IRR calculation: {all_fund_ids}")
+            
+            if all_fund_ids:
+                # Calculate total portfolio value using ONLY ACTIVE funds (for current valuation)
                 total_portfolio_value = 0.0
                 for fund_data in most_recent_valuation_dates:
                     if fund_data["portfolio_fund_id"] in active_fund_ids:
                         total_portfolio_value += fund_data["valuation"]
                 
-                logger.info(f"Total portfolio value: {total_portfolio_value}")
+                logger.info(f"Total portfolio value (active funds only): {total_portfolio_value}")
                 
                 # Step 2: Store portfolio valuation
                 portfolio_valuation_data = {
@@ -751,11 +802,11 @@ async def calculate_portfolio_irr(
                     portfolio_valuation_id = portfolio_valuation_result.data[0]["id"] if portfolio_valuation_result.data else None
                     logger.info(f"Created new portfolio valuation for {portfolio_id}")
                 
-                # Step 3: Calculate portfolio-level IRR using the standardized multiple funds endpoint
-                logger.info(f"Calculating portfolio IRR using standardized multiple funds endpoint with {len(active_fund_ids)} funds")
+                # Step 3: Calculate portfolio-level IRR using ALL funds (active + inactive) for accurate historical IRR
+                logger.info(f"Calculating portfolio IRR using standardized multiple funds endpoint with {len(all_fund_ids)} funds (including inactive funds for historical accuracy)")
                 
                 portfolio_irr_response = await calculate_multiple_portfolio_funds_irr(
-                    portfolio_fund_ids=active_fund_ids,
+                    portfolio_fund_ids=all_fund_ids,  # Use ALL funds, not just active ones
                     irr_date=common_date_iso.split('T')[0],  # Convert to YYYY-MM-DD format
                     db=db
                 )
@@ -798,7 +849,7 @@ async def calculate_portfolio_irr(
                 else:
                     logger.warning(f"Portfolio IRR calculation failed: {portfolio_irr_response}")
             else:
-                logger.warning("No active funds found for portfolio-level calculations")
+                logger.warning("No funds found for portfolio-level calculations")
         
         except Exception as e:
             logger.error(f"Error calculating portfolio-level valuation and IRR: {str(e)}")
@@ -819,7 +870,7 @@ async def calculate_portfolio_irr(
             # NEW: Include portfolio-level results
             "portfolio_valuation": {
                 "calculated": portfolio_valuation_result is not None,
-                "total_value": sum(fund_data["valuation"] for fund_data in most_recent_valuation_dates if fund_data["portfolio_fund_id"] in [pf["id"] for pf in portfolio_funds if pf.get("status", "active") == "active"]) if portfolio_funds else 0.0
+                "total_value": sum(fund_data["valuation"] for fund_data in most_recent_valuation_dates if fund_data["portfolio_fund_id"] in active_fund_ids) if portfolio_funds else 0.0
             },
             "portfolio_irr": {
                 "calculated": portfolio_irr_result is not None,
@@ -1289,29 +1340,37 @@ async def get_latest_portfolio_irr(portfolio_id: int, db = Depends(get_db)):
     This eliminates the need to recalculate IRR when the stored value is sufficient.
     """
     try:
+        logger.info(f"🔍 [IRR DEBUG] Fetching latest portfolio IRR for portfolio {portfolio_id}")
+        
         # Query the latest_portfolio_irr_values view - using correct column names from database.sql
         result = db.table("latest_portfolio_irr_values") \
                    .select("portfolio_id, irr_result, irr_date") \
                    .eq("portfolio_id", portfolio_id) \
                    .execute()
         
+        logger.info(f"🔍 [IRR DEBUG] Database query result for portfolio {portfolio_id}: {result.data}")
+        
         if result.data and len(result.data) > 0:
             irr_data = result.data[0]
-            return {
+            response_data = {
                 "portfolio_id": portfolio_id,
                 "irr_result": irr_data["irr_result"],  # Use irr_result not irr_value
                 "irr_date": irr_data["irr_date"],
                 "source": "stored"
             }
+            logger.info(f"✅ [IRR DEBUG] Found stored portfolio IRR for portfolio {portfolio_id}: {response_data}")
+            return response_data
         else:
-            return {
+            response_data = {
                 "portfolio_id": portfolio_id,
                 "irr_result": None,
                 "irr_date": None,
                 "source": "not_found"
             }
+            logger.warning(f"⚠️ [IRR DEBUG] No stored portfolio IRR found for portfolio {portfolio_id}")
+            return response_data
     except Exception as e:
-        logger.error(f"Error fetching stored IRR for portfolio {portfolio_id}: {str(e)}")
+        logger.error(f"❌ [IRR DEBUG] Error fetching stored IRR for portfolio {portfolio_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.get("/portfolios/{portfolio_id}/irr-history", response_model=dict)

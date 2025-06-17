@@ -23,6 +23,7 @@ interface Fund {
   isActive?: boolean;
   inactiveHoldingIds?: any[];
   isInactiveBreakdown?: boolean;
+  current_value?: number;
 }
 
 interface CellEdit {
@@ -75,10 +76,11 @@ const ACTIVITY_TYPES = [
   'Investment',
   'RegularInvestment',
   'GovernmentUplift',
+  'Product Switch In',
+  'Product Switch Out',
   'Fund Switch In',
   'Fund Switch Out',
   'Withdrawal',
-  'RegularWithdrawal',
   'Current Value'
 ];
 
@@ -185,8 +187,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     };
 
     fetchFundValuations();
-    // Add onActivitiesUpdated to dependency array to refresh when data changes
-  }, [onActivitiesUpdated]);
+    // Only fetch once on component mount to avoid duplicate API calls
+  }, []); // Empty dependency array to only run once
 
   // Add keyboard shortcut for saving changes
   useEffect(() => {
@@ -374,6 +376,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   const convertActivityTypeForBackend = (uiActivityType: string): string => {
     // Convert UI-friendly activity types to backend format
     switch (uiActivityType) {
+      case 'Product Switch In': return 'ProductSwitchIn';
+      case 'Product Switch Out': return 'ProductSwitchOut';
       case 'Fund Switch In': return 'FundSwitchIn';
       case 'Fund Switch Out': return 'FundSwitchOut';
       case 'Current Value': return 'Valuation';
@@ -1127,16 +1131,15 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         if (cellValue && !isNaN(parseFloat(cellValue))) {
           // For investments, add positive values
           // For withdrawals and switch outs, subtract (they reduce the total)
-          if (activityType === 'Investment' || 
-              activityType === 'RegularInvestment' || 
-              activityType === 'GovernmentUplift' || 
-              activityType === 'Fund Switch In') {
-            return total + parseFloat(cellValue);
-          } else if (activityType === 'Withdrawal' || 
-                     activityType === 'RegularWithdrawal' || 
-                     activityType === 'Fund Switch Out') {
-            return total - parseFloat(cellValue);
-          }
+                        if (activityType === 'Investment' || 
+                  activityType === 'RegularInvestment' || 
+                  activityType === 'GovernmentUplift' || 
+                  activityType === 'Fund Switch In') {
+                return total + parseFloat(cellValue);
+              } else if (activityType === 'Withdrawal' || 
+                         activityType === 'Fund Switch Out') {
+                return total - parseFloat(cellValue);
+              }
         }
         return total;
       }, 0);
@@ -1152,14 +1155,13 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       if (value) {
         const numericValue = parseFloat(value.replace(/,/g, ''));
         if (!isNaN(numericValue)) {
-          // Apply correct sign based on activity type
-          if (activityType === 'Fund Switch Out' || 
-              activityType === 'Withdrawal' || 
-              activityType === 'RegularWithdrawal') {
-            total -= numericValue; // Subtract for outflows
-          } else {
-            total += numericValue; // Add for inflows
-          }
+                        // Apply correct sign based on activity type
+              if (activityType === 'Fund Switch Out' || 
+                  activityType === 'Withdrawal') {
+                total -= numericValue; // Subtract for outflows
+              } else {
+                total += numericValue; // Add for inflows
+              }
         }
       }
     });
@@ -1187,8 +1189,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
             console.log(`Adding ${numericValue} from inactive fund ${inactiveFund.fund_name} to ${activityType} total for ${month}`);
             // Apply correct sign based on activity type
             if (activityType === 'Fund Switch Out' || 
-                activityType === 'Withdrawal' || 
-                activityType === 'RegularWithdrawal') {
+                activityType === 'Withdrawal') {
               total -= numericValue; // Subtract for outflows
             } else {
               total += numericValue; // Add for inflows
@@ -1247,6 +1248,27 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     
     // Return without currency symbol
     return formatted;
+  };
+
+  // Format row totals without rounding - preserves exact decimal values
+  const formatRowTotal = (total: number): string => {
+    // Convert to string to preserve exact decimal representation
+    // Remove any trailing zeros after decimal point for cleaner display
+    const totalStr = total.toString();
+    
+    // If it's a whole number, return as is
+    if (total % 1 === 0) {
+      return totalStr;
+    }
+    
+    // For decimals, remove trailing zeros but keep at least one decimal place if needed
+    const parts = totalStr.split('.');
+    if (parts.length === 2) {
+      const decimalPart = parts[1].replace(/0+$/, ''); // Remove trailing zeros
+      return decimalPart.length > 0 ? `${parts[0]}.${decimalPart}` : parts[0];
+    }
+    
+    return totalStr;
   };
 
   
@@ -1389,16 +1411,44 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       const numericValue = parseFloat(cellValue) || 0;
       
       if (numericValue !== 0) {
-        if (activityType === 'Withdrawal' || activityType === 'RegularWithdrawal') {
-          total -= numericValue;
-        } else if (activityType === 'Fund Switch Out') {
-          total -= numericValue;
-        } else if (activityType !== 'Current Value') {
-          total += numericValue;
-        }
+                    if (activityType === 'Withdrawal') {
+              total -= numericValue;
+            } else if (activityType === 'Fund Switch Out') {
+              total -= numericValue;
+            } else if (activityType !== 'Current Value') {
+              total += numericValue;
+            }
       }
     });
     
+    return total;
+  };
+
+  // Calculate row total for a specific fund and activity across all displayed months
+  const calculateRowTotal = (fundId: number, activityType: string): number => {
+    let total = 0;
+
+    months.forEach(month => {
+      const cellValue = getCellValue(fundId, month, activityType);
+      const numericValue = parseFloat(cellValue) || 0;
+      
+      if (numericValue !== 0) {
+        total += numericValue;
+      }
+    });
+
+    return total;
+  };
+
+  // Calculate row total for fund across all activities and months (for compact view)
+  const calculateFundRowTotal = (fundId: number): number => {
+    let total = 0;
+
+    months.forEach(month => {
+      const monthTotal = calculateFundTotal(fundId, month);
+      total += monthTotal;
+    });
+
     return total;
   };
 
@@ -1446,15 +1496,55 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
               </button>
             </div>
             
-              {pendingEdits.length > 0 && (
-                <button
-                  onClick={saveChanges}
-                  disabled={isSubmitting}
-                  className="px-4 py-2 bg-green-600 text-white font-medium rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Saving...' : `Confirm Changes (${pendingEdits.length})`}
-                </button>
-              )}
+              <button
+                onClick={saveChanges}
+                disabled={isSubmitting || pendingEdits.length === 0}
+                className={`
+                  relative px-4 py-2 font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out
+                  ${pendingEdits.length > 0 
+                    ? 'bg-orange-500 text-white hover:bg-orange-600 focus:ring-orange-500 transform hover:scale-105 animate-pulse shadow-lg border-2 border-orange-400' 
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }
+                  ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}
+                `}
+                title={pendingEdits.length > 0 ? `Save ${pendingEdits.length} pending changes` : 'No changes to save'}
+              >
+                <div className="flex items-center space-x-2">
+                  {/* Save icon */}
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  
+                  <span>
+                    {isSubmitting 
+                      ? 'Saving...' 
+                      : pendingEdits.length > 0 
+                        ? `Save Changes` 
+                        : 'Save Changes'
+                    }
+                  </span>
+                  
+                  {/* Change count badge */}
+                  {pendingEdits.length > 0 && !isSubmitting && (
+                    <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-orange-100 bg-orange-700 rounded-full animate-bounce">
+                      {pendingEdits.length}
+                    </span>
+                  )}
+                  
+                  {/* Loading spinner */}
+                  {isSubmitting && (
+                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  )}
+                </div>
+                
+                {/* Glowing effect when changes are pending */}
+                {pendingEdits.length > 0 && !isSubmitting && (
+                  <div className="absolute inset-0 rounded-md bg-orange-400 opacity-20 animate-ping"></div>
+                )}
+              </button>
             </div>
             
             {/* Month Navigation */}
@@ -1531,8 +1621,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                 <col className="w-[15%] sticky left-0 z-10" />
                 <col className="w-[15%] sticky left-0 z-10" />
                 {months.map((month, index) => (
-                  <col key={`col-${month}`} className={`w-[${70 / months.length}%]`} />
+                  <col key={`col-${month}`} className={`w-[${60 / months.length}%]`} />
                 ))}
+                <col className="w-[10%]" />
               </colgroup>
               <thead 
                 className="bg-blue-50 shadow-lg"
@@ -1640,6 +1731,11 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       </th>
                     );
                   })}
+                  <th 
+                    className="px-1 py-0 text-center font-medium text-gray-800 whitespace-nowrap bg-blue-50 border-b border-gray-300 sticky top-0 z-20"
+                  >
+                    <span className="text-sm">Row Total</span>
+                  </th>
                 </tr>
               </thead>
               {/* Spacer to prevent content jump when header becomes fixed */}
@@ -1670,6 +1766,12 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                         ></th>
                       );
                     })}
+                    <th 
+                      className="px-1 py-0"
+                      style={{
+                        width: '10%'
+                      }}
+                    ></th>
                   </tr>
                 </thead>
               )}
@@ -1785,6 +1887,26 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                             </td>
                           );
                         })}
+                        
+                        {/* Row Total column for compact view */}
+                        <td className={`px-1 py-0 text-center text-sm font-bold border-l border-gray-300 ${
+                          fund.isActive === false 
+                            ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
+                            : 'bg-white'
+                        }`}>
+                          {(() => {
+                            const rowTotal = calculateFundRowTotal(fund.id);
+                            return (
+                              <span className={
+                                rowTotal > 0 ? 'text-green-700' : 
+                                rowTotal < 0 ? 'text-red-700' : 
+                                'text-gray-500'
+                              }>
+                                {rowTotal !== 0 ? formatRowTotal(rowTotal) : ''}
+                              </span>
+                            );
+                          })()}
+                        </td>
                     </tr>
                     ));
                   })()
@@ -1967,6 +2089,26 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                             </td>
                           );
                         })}
+                        
+                        {/* Row Total column for detailed view */}
+                        <td className={`px-1 py-0 text-center text-sm font-bold border-l border-gray-300 ${
+                          fund.isActive === false 
+                            ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
+                            : 'bg-white'
+                        }`}>
+                          {(() => {
+                            const rowTotal = calculateRowTotal(fund.id, activityType);
+                            return (
+                              <span className={
+                                rowTotal > 0 ? 'text-green-700' : 
+                                rowTotal < 0 ? 'text-red-700' : 
+                                'text-gray-500'
+                              }>
+                                {rowTotal !== 0 ? formatRowTotal(rowTotal) : ''}
+                              </span>
+                            );
+                          })()}
+                        </td>
                       </tr>
                         );
                       });
@@ -1994,6 +2136,14 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                           </td>
                         );
                       })}
+                      
+                      {/* Row Total column for fund total row */}
+                      <td className="px-1 py-0 text-center font-semibold text-red-600 border-l border-gray-300 bg-gray-100">
+                        {(() => {
+                          const rowTotal = calculateFundRowTotal(fund.id);
+                          return formatRowTotal(rowTotal);
+                        })()}
+                      </td>
                     </tr>
                         );
                       }
@@ -2014,6 +2164,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                   {months.map(month => (
                     <td key={`totals-header-${month}`} className="px-1 py-0 text-center"></td>
                   ))}
+                  <td className="px-1 py-0 text-center border-l border-gray-300 bg-gray-50"></td>
                 </tr>
 
                 {/* Activity type total rows */}
@@ -2050,6 +2201,18 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                           </td>
                         );
                       })}
+                      
+                      {/* Row Total column for activity type totals */}
+                      <td className="px-1 py-0 text-center font-medium text-gray-500 border-l border-gray-300 bg-white">
+                        {(() => {
+                          let activityRowTotal = 0;
+                          months.forEach(month => {
+                            const monthTotal = calculateActivityTypeTotal(activityType, month);
+                            activityRowTotal += monthTotal;
+                          });
+                          return formatRowTotal(activityRowTotal);
+                        })()}
+                      </td>
                     </tr>
                   ))}
 
@@ -2084,6 +2247,18 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       </td>
                     );
                   })}
+                  
+                  {/* Row Total column for valuation total */}
+                  <td className="px-1 py-0 text-center font-medium text-blue-700 border-l border-gray-300 bg-blue-50">
+                    {(() => {
+                      let valuationRowTotal = 0;
+                      months.forEach(month => {
+                        const monthTotal = calculateActivityTypeTotal('Current Value', month);
+                        valuationRowTotal += monthTotal;
+                      });
+                      return formatRowTotal(valuationRowTotal);
+                    })()}
+                  </td>
                 </tr>
 
                 {/* Grand total row */}
@@ -2117,11 +2292,76 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       </td>
                     );
                   })}
+                  
+                  {/* Row Total column for grand total */}
+                  <td className="px-1 py-0 text-center font-semibold text-red-600 border-l border-gray-300 bg-gray-100">
+                    {(() => {
+                      let grandRowTotal = 0;
+                      months.forEach(month => {
+                        const monthTotal = calculateMonthTotal(month);
+                        grandRowTotal += monthTotal;
+                      });
+                      return formatRowTotal(grandRowTotal);
+                    })()}
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
+        
+        {/* Bottom Pagination Controls */}
+        {allAvailableMonths.length > monthsPerPage && (
+          <div className="flex justify-center mt-4">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-600">
+                Page {currentPage} of {totalPages} ({allAvailableMonths.length} months total)
+              </span>
+              <div className="flex items-center space-x-1">
+                <button
+                  onClick={goToFirstMonths}
+                  disabled={!canGoToPrevious}
+                  className="p-1.5 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed"
+                  title="Go to first months"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M21 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={goToPreviousMonths}
+                  disabled={!canGoToPrevious}
+                  className="p-1.5 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed"
+                  title="Previous months"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={goToNextMonths}
+                  disabled={!canGoToNext}
+                  className="p-1.5 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed"
+                  title="Next months"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={goToLatestMonths}
+                  disabled={!canGoToNext}
+                  className="p-1.5 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed"
+                  title="Go to latest months"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M3 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       
       

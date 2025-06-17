@@ -11,8 +11,6 @@ interface Fund {
   isActive?: boolean;
   inactiveHoldingIds?: any[];
   isInactiveBreakdown?: boolean;
-  category: string;
-  institution: string;
   current_value?: number;
 }
 
@@ -72,8 +70,35 @@ const modalStyles = `
     transition: background-color 0.15s ease-in-out !important;
   }
   
-  .bulk-activity-modal .bulk-activity-modal-row:hover {
-    background-color: rgb(237 233 254) !important; /* Medium purple hover */
+  .bulk-activity-modal .bulk-activity-modal-row:hover,
+  .bulk-activity-modal .bulk-activity-modal-row:focus-within,
+  .bulk-activity-modal .bulk-activity-modal-row.focused-row,
+  .bulk-activity-modal tbody .bulk-activity-modal-row:focus-within,
+  .bulk-activity-modal tbody .bulk-activity-modal-row.focused-row {
+    background-color: rgb(237 233 254) !important; /* Medium purple hover, focus, and keyboard navigation */
+  }
+
+  /* Additional debug styles to ensure visibility */
+  .bulk-activity-modal .bulk-activity-modal-row:has(input:focus) {
+    background-color: rgb(237 233 254) !important;
+    border: 2px solid rgb(139 92 246) !important;
+  }
+
+  /* Data attribute based styling for more reliability */
+  .bulk-activity-modal .bulk-activity-modal-row[data-focused-row="true"] {
+    background-color: rgb(237 233 254) !important;
+  }
+
+  /* Force override any other background colors */
+  .bulk-activity-modal tbody tr.bulk-activity-modal-row.focused-row,
+  .bulk-activity-modal tbody tr.bulk-activity-modal-row[data-focused-row="true"] {
+    background-color: rgb(237 233 254) !important;
+  }
+
+  /* Ultra high specificity rule */
+  .bulk-activity-modal table tbody tr.bulk-activity-modal-row[data-focused-row="true"] {
+    background-color: rgb(237 233 254) !important;
+    background: rgb(237 233 254) !important;
   }
   
   .bulk-activity-modal .bulk-activity-modal-td {
@@ -138,10 +163,11 @@ const ACTIVITY_TYPES = [
   'Investment',
   'RegularInvestment',
   'GovernmentUplift',
+  'Product Switch In',
+  'Product Switch Out',
   'Fund Switch In',
   'Fund Switch Out',
   'Withdrawal',
-  'RegularWithdrawal',
   'Current Value'
 ];
 
@@ -167,6 +193,8 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
   // Convert UI-friendly activity types to backend format (same as main table)
   const convertActivityTypeForBackend = (uiActivityType: string): string => {
     switch (uiActivityType) {
+      case 'Product Switch In': return 'ProductSwitchIn';
+      case 'Product Switch Out': return 'ProductSwitchOut';
       case 'Fund Switch In': return 'FundSwitchIn';
       case 'Fund Switch Out': return 'FundSwitchOut';
       case 'Current Value': return 'Valuation';
@@ -239,12 +267,12 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
   // Format currency for display with comma separators and no abbreviations
   const formatCurrency = (value: number): string => {
     // Use toLocaleString with UK formatting for comma separators
-    // Set minimumFractionDigits to 0 and maximumFractionDigits to preserve exact decimals
+    // Round to 2 decimal places for consistent display
     const formatted = value.toLocaleString('en-GB', {
       style: 'currency',
       currency: 'GBP',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 20 // High number to preserve all decimal places
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2 // Round all values to 2 decimal places
     });
     
     return formatted;
@@ -583,16 +611,15 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
       
       if (!isNaN(numValue)) {
         // Withdrawals should be subtracted from totals
-        if (activityType === 'Withdrawal' || activityType === 'RegularWithdrawal') {
+        if (activityType === 'Withdrawal') {
           return total - numValue;
         } 
         // Switch activities are shown as total amounts (neutral for net calculations)
         else if (activityType === 'Fund Switch In' || activityType === 'Fund Switch Out') {
           return total + numValue;
         } 
-        // Other activities (Investment, RegularInvestment, GovernmentUplift) are added
-        // Current Value is not included in totals calculations typically
-        else if (activityType !== 'Current Value') {
+        // All other activities including Current Value/Valuations are added to totals
+        else {
           return total + numValue;
         }
       }
@@ -602,23 +629,29 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
 
   // Check if switch activities are balanced
   const getSwitchBalanceWarning = (): { hasWarning: boolean; message: string } => {
-    // Only check balance if both switch activities are selected
-    const hasSwithIn = selectedActivities.has('Fund Switch In');
-    const hasSwitchOut = selectedActivities.has('Fund Switch Out');
+    const warnings: string[] = [];
     
-    if (!hasSwithIn || !hasSwitchOut) {
-      return { hasWarning: false, message: '' };
+    // Check Fund Switch balance
+    const hasFundSwitchIn = selectedActivities.has('Fund Switch In');
+    const hasFundSwitchOut = selectedActivities.has('Fund Switch Out');
+    
+    if (hasFundSwitchIn && hasFundSwitchOut) {
+      const fundSwitchOutTotal = calculateActivityTotal('Fund Switch Out');
+      const fundSwitchInTotal = calculateActivityTotal('Fund Switch In');
+      
+      // Only show warning if both have values and they don't match
+      if ((fundSwitchOutTotal > 0 || fundSwitchInTotal > 0) && fundSwitchOutTotal !== fundSwitchInTotal) {
+        const difference = Math.abs(fundSwitchOutTotal - fundSwitchInTotal);
+        warnings.push(`Fund Switch activities are unbalanced. Fund Switch Out: ${formatCurrency(fundSwitchOutTotal)}, Fund Switch In: ${formatCurrency(fundSwitchInTotal)}. Difference: ${formatCurrency(difference)}`);
+      }
     }
-
-    const switchOutTotal = calculateActivityTotal('Fund Switch Out');
-    const switchInTotal = calculateActivityTotal('Fund Switch In');
     
-    // Only show warning if both have values and they don't match
-    if ((switchOutTotal > 0 || switchInTotal > 0) && switchOutTotal !== switchInTotal) {
-      const difference = Math.abs(switchOutTotal - switchInTotal);
+    // Product Switch balance validation removed - no longer required to match
+    
+    if (warnings.length > 0) {
       return {
         hasWarning: true,
-        message: `Switch activities are unbalanced. Fund Switch Out: ${formatCurrency(switchOutTotal)}, Fund Switch In: ${formatCurrency(switchInTotal)}. Difference: ${formatCurrency(difference)}`
+        message: warnings.join(' | ')
       };
     }
     
@@ -766,7 +799,10 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
                             {activeFunds.map((fund, index) => (
                             <tr 
                               key={fund.id} 
-                              className={`bulk-activity-modal-row transition-colors duration-150 hover:bg-purple-100 border-b border-gray-300 bg-white ${index === 0 ? 'border-t-2 border-gray-300' : ''}`}
+                              data-focused-row={focusedCell?.fundIndex === index ? 'true' : 'false'}
+                              className={`bulk-activity-modal-row transition-colors duration-150 border-b border-gray-300 ${
+                                focusedCell?.fundIndex === index ? 'focused-row' : ''
+                              } ${index === 0 ? 'border-t-2 border-gray-300' : ''}`}
                             >
                               <td className="bulk-activity-modal-td px-4 py-1.5 text-xs font-medium text-gray-900 truncate border-b border-gray-300" title={fund.fund_name}>
                                   {fund.fund_name}
@@ -785,7 +821,10 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
                                     }`}
                                     value={bulkData[fund.id]?.[activityType] || ''}
                                     onChange={(e) => handleValueChange(fund.id, activityType, e.target.value)}
-                                    onFocus={() => setFocusedCell({ fundIndex: index, activityIndex: getDisplayedActivities().indexOf(activityType) })}
+                                    onFocus={() => {
+                                      console.log('Focus set for row:', index, 'column:', getDisplayedActivities().indexOf(activityType));
+                                      setFocusedCell({ fundIndex: index, activityIndex: getDisplayedActivities().indexOf(activityType) });
+                                    }}
                                     onKeyDown={(e) => handleKeyDown(e, index, getDisplayedActivities().indexOf(activityType))}
                                     onBlur={(e) => handleInputBlur(fund.id, activityType)}
                                     placeholder="0"
@@ -811,9 +850,9 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
                               {getDisplayedActivities().map(activityType => {
                                 const total = calculateActivityTotal(activityType);
                                 const isCurrentValue = activityType === 'Current Value';
-                                const isSwitchActivity = activityType === 'Fund Switch In' || activityType === 'Fund Switch Out';
-                              const isWithdrawal = activityType === 'Withdrawal' || activityType === 'RegularWithdrawal';
-                              const isInvestment = activityType === 'Investment' || activityType === 'RegularInvestment' || activityType === 'GovernmentUplift';
+                                const isSwitchActivity = activityType === 'Fund Switch In' || activityType === 'Fund Switch Out' || activityType === 'Product Switch In' || activityType === 'Product Switch Out';
+                              const isWithdrawal = activityType === 'Withdrawal' || activityType === 'Product Switch Out';
+                              const isInvestment = activityType === 'Investment' || activityType === 'RegularInvestment' || activityType === 'GovernmentUplift' || activityType === 'Product Switch In';
                                 
                                 return (
                                   <td
@@ -871,12 +910,13 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
                           </div>
                         );
                       } else if (hasWarning) {
+                        const { message } = getSwitchBalanceWarning();
                         return (
                           <div className="flex items-center text-yellow-600">
-                            <svg className="h-3 w-3 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                            <svg className="h-3 w-3 mr-1.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                               <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                             </svg>
-                            <span className="font-medium">Switch In and Switch Out do not match</span>
+                            <span className="font-medium text-xs leading-tight">{message}</span>
                           </div>
                         );
                       } else if (hasChanges) {

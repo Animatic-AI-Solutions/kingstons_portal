@@ -2020,7 +2020,6 @@ async def calculate_multiple_portfolio_funds_irr(
         activities_response = db.table("holding_activity_log").select("*").in_("portfolio_fund_id", portfolio_fund_ids).lte("activity_timestamp", irr_date_obj.isoformat()).order("activity_timestamp").execute()
         
         activities = activities_response.data
-        logger.info(f"Found {len(activities)} activities up to {irr_date_obj}")
         
         # Aggregate cash flows by month
         cash_flows = {}
@@ -2034,21 +2033,26 @@ async def calculate_multiple_portfolio_funds_irr(
             
             # Apply sign conventions based on activity type
             amount = float(activity["amount"])
-            activity_type = activity["activity_type"].lower()  # Convert to lowercase for comparison
+            activity_type = activity["activity_type"]
             
-            # Use substring matching to handle variations like "RegularInvestment", "Investment", etc.
-            if any(keyword in activity_type for keyword in ["investment", "deposit", "contribution", "transfer in"]):
+            if any(keyword in activity_type.lower() for keyword in ["investment"]):
                 cash_flows[month_key] -= amount  # Negative for investments
-            elif any(keyword in activity_type for keyword in ["withdrawal", "redemption", "distribution", "transfer out"]):
+            elif activity_type.lower() in ["productswitchin"]:
+                cash_flows[month_key] -= amount  # Product switch in = negative (money out)
+            elif activity_type.lower() in ["fundswitchin"]:
+                cash_flows[month_key] -= amount  # Fund switch in = negative (money coming into fund)
+            elif any(keyword in activity_type.lower() for keyword in ["withdrawal"]):
                 cash_flows[month_key] += amount  # Positive for withdrawals
-            elif any(keyword in activity_type for keyword in ["fee", "charge", "expense"]):
+            elif activity_type.lower() in ["productswitchout"]:
+                cash_flows[month_key] += amount  # Product switch out = positive (money in)
+            elif activity_type.lower() in ["fundswitchout"]:
+                cash_flows[month_key] += amount  # Fund switch out = positive (money leaving fund)
+            elif any(keyword in activity_type.lower() for keyword in ["fee", "charge", "expense"]):
                 cash_flows[month_key] += amount  # Positive for fees (money out)
-            elif any(keyword in activity_type for keyword in ["dividend", "interest", "capital gain", "switchin"]):
+            elif any(keyword in activity_type.lower() for keyword in ["dividend", "interest", "capital gain"]):
                 cash_flows[month_key] -= amount  # Negative for reinvested gains
-            elif any(keyword in activity_type for keyword in ["switchout"]):
-                cash_flows[month_key] += amount  # Positive for money coming out
             else:
-                logger.warning(f"Unknown activity type: {activity['activity_type']}, treating as neutral")
+                logger.warning(f"Unknown activity type: {activity['activity_type']}, treating as neutral (amount={amount})")
         
         # Add final valuations to the VALUATION MONTH (representing end-of-month value)
         # Valuations are assumed to represent the value at the end of the valuation month
@@ -2060,7 +2064,7 @@ async def calculate_multiple_portfolio_funds_irr(
         # EDGE CASE HANDLING: For zero total valuation, omit final valuations completely
         # This allows IRR calculation to proceed using only activities for fully exited funds
         if total_valuation == 0:
-            logger.info(f"Total valuation is zero - omitting final valuations from IRR calculation for fully exited funds")
+            pass  # Omit final valuations for fully exited funds
         else:
             # Add final valuations to the valuation month itself, not an artificial later period
             # This ensures correct timing: activities at month start + valuation at month end = combined month cash flow
@@ -2069,15 +2073,9 @@ async def calculate_multiple_portfolio_funds_irr(
             if valuation_month_key not in cash_flows:
                 cash_flows[valuation_month_key] = 0.0
             cash_flows[valuation_month_key] += total_valuation  # Include final value in the same month
-            
-            logger.info(f"Added final valuation of {total_valuation} to {valuation_month_key} (combined with any activities in same month)")
-        
-        logger.info(f"Aggregated cash flows: {len(cash_flows)} flows from {min(cash_flows.keys()) if cash_flows else 'N/A'} to {max(cash_flows.keys()) if cash_flows else 'N/A'}")
-        logger.info(f"Total valuation: {total_valuation}")
         
         # Check if we have no activities (only valuations)
         if len(activities) == 0:
-            logger.info(f"No activities found for any funds, returning 0% IRR")
             return {
                 "success": True,
                 "irr_percentage": 0.0,
@@ -2097,9 +2095,6 @@ async def calculate_multiple_portfolio_funds_irr(
         sorted_months = sorted(cash_flows.keys())
         amounts = [cash_flows[month] for month in sorted_months]
         dates = [month.strftime("%Y-%m-%dT00:00:00") for month in sorted_months]
-        
-        logger.info(f"IRR calculation input - dates: {dates}")
-        logger.info(f"IRR calculation input - amounts: {amounts}")
         
         # Calculate IRR using Excel-style method
         irr_result = calculate_excel_style_irr(dates, amounts)
@@ -2200,7 +2195,6 @@ async def calculate_single_portfolio_fund_irr(
         activities_response = db.table("holding_activity_log").select("*").eq("portfolio_fund_id", portfolio_fund_id).lte("activity_timestamp", irr_date_obj.isoformat()).order("activity_timestamp").execute()
         
         activities = activities_response.data
-        logger.info(f"Found {len(activities)} activities up to {irr_date_obj}")
         
         # Aggregate cash flows by month
         cash_flows = {}
@@ -2216,19 +2210,33 @@ async def calculate_single_portfolio_fund_irr(
             amount = float(activity["amount"])
             activity_type = activity["activity_type"].lower()  # Convert to lowercase for comparison
             
-            # Use substring matching to handle variations like "RegularInvestment", "Investment", etc.
-            if any(keyword in activity_type for keyword in ["investment", "deposit", "contribution", "transfer in"]):
+            # Use explicit matching for fund switches and substring matching for other activities
+            if any(keyword in activity_type for keyword in ["investment"]):
                 cash_flows[month_key] -= amount  # Negative for investments
-            elif any(keyword in activity_type for keyword in ["withdrawal", "redemption", "distribution", "transfer out"]):
+                logger.info(f"Applied as INVESTMENT (negative): -{amount}")
+            elif activity_type in ["productswitchin"]:
+                cash_flows[month_key] -= amount  # Product switch in = negative (money out)
+                logger.info(f"Applied as PRODUCT SWITCH IN (negative): -{amount}")
+            elif activity_type in ["fundswitchin"]:
+                cash_flows[month_key] -= amount  # Fund switch in = negative (money coming into fund)
+                logger.info(f"Applied as FUND SWITCH IN (negative): -{amount}")
+            elif any(keyword in activity_type for keyword in ["withdrawal"]):
                 cash_flows[month_key] += amount  # Positive for withdrawals
+                logger.info(f"Applied as WITHDRAWAL (positive): +{amount}")
+            elif activity_type in ["productswitchout"]:
+                cash_flows[month_key] += amount  # Product switch out = positive (money in)
+                logger.info(f"Applied as PRODUCT SWITCH OUT (positive): +{amount}")
+            elif activity_type in ["fundswitchout"]:
+                cash_flows[month_key] += amount  # Fund switch out = positive (money leaving fund)
+                logger.info(f"Applied as FUND SWITCH OUT (positive): +{amount}")
             elif any(keyword in activity_type for keyword in ["fee", "charge", "expense"]):
                 cash_flows[month_key] += amount  # Positive for fees (money out)
-            elif any(keyword in activity_type for keyword in ["dividend", "interest", "capital gain", "switchin"]):
+                logger.info(f"Applied as FEE (positive): +{amount}")
+            elif any(keyword in activity_type for keyword in ["dividend", "interest", "capital gain"]):
                 cash_flows[month_key] -= amount  # Negative for reinvested gains
-            elif any(keyword in activity_type for keyword in ["switchout"]):
-                cash_flows[month_key] += amount  # Positive for money coming out
+                logger.info(f"Applied as DIVIDEND/GAIN (negative): -{amount}")
             else:
-                logger.warning(f"Unknown activity type: {activity['activity_type']}, treating as neutral")
+                logger.warning(f"Unknown activity type: {activity['activity_type']}, treating as neutral (amount={amount})")
         
         # Add final valuation at the END of the IRR month (not the beginning)
         # This ensures that activities and valuations in the same calendar month

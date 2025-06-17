@@ -45,12 +45,13 @@ interface SimplifiedActivitiesTableProps {
 
 const ACTIVITY_TYPES = [
   'Investment',
-  'RegularInvestment',
+  'RegularInvestment', 
   'GovernmentUplift',
+  'Product Switch In',
+  'Product Switch Out',
   'Fund Switch In',
   'Fund Switch Out',
   'Withdrawal',
-  'RegularWithdrawal',
   'Current Value'
 ];
 
@@ -95,7 +96,7 @@ const SimplifiedActivitiesTable: React.FC<SimplifiedActivitiesTableProps> = ({
       // Process deletions
       const deletions = editsToProcess.filter(edit => edit.toDelete && edit.originalActivityId);
       for (const edit of deletions) {
-        await api.delete(`/activities/${edit.originalActivityId}`);
+        await api.delete(`holding_activity_logs/${edit.originalActivityId}`);
       }
 
       // Process creations and updates
@@ -112,9 +113,9 @@ const SimplifiedActivitiesTable: React.FC<SimplifiedActivitiesTableProps> = ({
         };
 
         if (edit.isNew) {
-          await api.post('/activities', activityData);
+          await api.post('holding_activity_logs', activityData);
         } else if (edit.originalActivityId) {
-          await api.put(`/activities/${edit.originalActivityId}`, activityData);
+          await api.patch(`holding_activity_logs/${edit.originalActivityId}`, activityData);
         }
       }
 
@@ -206,10 +207,12 @@ const SimplifiedActivitiesTable: React.FC<SimplifiedActivitiesTableProps> = ({
       'Investment': 'Investment',
       'RegularInvestment': 'Regular Investment',
       'GovernmentUplift': 'Government Uplift',
+      'Product Switch In': 'Product Switch In',
+      'Product Switch Out': 'Product Switch Out',
       'Fund Switch In': 'Switch In',
       'Fund Switch Out': 'Switch Out',
       'Withdrawal': 'Withdrawal',
-      'RegularWithdrawal': 'Regular Withdrawal',
+    
       'Current Value': 'Current Value'
     };
     return typeMap[activityType] || activityType;

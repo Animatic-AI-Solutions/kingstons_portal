@@ -10,6 +10,7 @@ import Terms from './pages/Terms';
 import Cookies from './pages/Cookies';
 import Profile from './pages/Profile';
 import ReportGenerator from './pages/ReportGenerator';
+import ReportDisplay from './pages/ReportDisplay';
 
 // Auth Components - User authentication related components
 import LoginForm from './components/auth/LoginForm';

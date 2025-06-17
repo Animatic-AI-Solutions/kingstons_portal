@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import MultiSelectDropdown from '../components/ui/MultiSelectDropdown';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
@@ -26,6 +27,9 @@ interface ProductOwner {
 interface Product {
   id: number;
   product_name: string;
+  product_type?: string;
+  product_owner_name?: string;
+  product_owners?: Array<{ id: number; name: string; }>;
   client_id: number;
   provider_id?: number;
   provider_name?: string;
@@ -66,6 +70,8 @@ interface MonthlyTransaction {
 interface ProductPeriodSummary {
   id: number;
   product_name: string;
+  product_type?: string;
+  product_owner_name?: string;
   start_date: string | null;
   total_investment: number;
   total_withdrawal: number;
@@ -78,6 +84,7 @@ interface ProductPeriodSummary {
   provider_theme_color?: string;
   funds?: FundSummary[]; // Add funds array to store individual fund data
   weighted_risk?: number; // Weighted risk based on fund valuations and risk factors
+  status?: string; // Product status to determine if it should be greyed out
 }
 
 // New interface for fund-level summary data
@@ -105,6 +112,7 @@ interface FundSummary {
 // Main component
 const ReportGenerator: React.FC = () => {
   const { api } = useAuth();
+  const navigate = useNavigate();
   
   // Initialize optimized services
   const irrDataService = useMemo(() => createIRRDataService(api), [api]);
@@ -203,9 +211,14 @@ const ReportGenerator: React.FC = () => {
   const [roundIrrToOne, setRoundIrrToOne] = useState(false);
   const [formatWithdrawalsAsNegative, setFormatWithdrawalsAsNegative] = useState(false);
   const [combineFundSwitches, setCombineFundSwitches] = useState(false);
+  const [showInactiveProducts, setShowInactiveProducts] = useState(false);
+  const [showPreviousFunds, setShowPreviousFunds] = useState(true);
   
   // State for Previous Funds expansion (per product)
   const [expandedPreviousFunds, setExpandedPreviousFunds] = useState<Set<number>>(new Set());
+  
+  // State for inactive product detailed view control
+  const [showInactiveProductDetails, setShowInactiveProductDetails] = useState<Set<number>>(new Set());
   
 
   
@@ -221,8 +234,9 @@ const ReportGenerator: React.FC = () => {
           allProductsRes
         ] = await Promise.all([
           api.get('/client_groups'),
-          api.get('/product_owners'),
-          api.get('/client_products')
+
+          api.get('/client_products_with_owners'),
+          api.get('/product_owners')
         ]);
         
         setClientGroups(clientGroupsRes.data || []);
@@ -658,7 +672,40 @@ const ReportGenerator: React.FC = () => {
           .filter(fund => fund.status === 'active' || !fund.status)
           .map(fund => fund.id);
         
-        if (activeFundIds.length === 0) {
+        // Also collect inactive products (products where all funds are inactive)
+        const portfolioFundsByProduct = new Map<number, any[]>();
+        includedProducts.forEach(product => {
+          if (product.portfolio_id) {
+            const productFunds = allPortfolioFunds.filter(fund => {
+              const portfolioFundsInProduct = Array.from(batchPortfolioFundsResult.get(product.portfolio_id!) || []);
+              return portfolioFundsInProduct.some(pf => pf.id === fund.id);
+            });
+            portfolioFundsByProduct.set(product.id, productFunds);
+          }
+        });
+        
+        // Identify inactive products (products where ALL funds are inactive)
+        const inactiveProducts = includedProducts.filter(product => {
+          if (product.status === 'inactive') return true;
+          const productFunds = portfolioFundsByProduct.get(product.id) || [];
+          return productFunds.length > 0 && productFunds.every(fund => fund.status && fund.status !== 'active');
+        });
+        
+        // Get all fund IDs for inactive products
+        const inactiveProductFundIds = inactiveProducts.flatMap(product => {
+          const productFunds = portfolioFundsByProduct.get(product.id) || [];
+          return productFunds.map(fund => fund.id);
+        });
+        
+        // If we only have inactive products, still allow them to proceed (they can select any valuation date)
+        if (activeFundIds.length === 0 && inactiveProductFundIds.length > 0) {
+          // For inactive products, we don't need common valuation dates - they can use any available date
+          // Set a default set of available dates (could be empty, letting user select manually)
+          setAvailableValuationDates([]);
+          setSelectedValuationDate(null);
+          setIsLoadingValuationDates(false);
+          return;
+        } else if (activeFundIds.length === 0) {
           setAvailableValuationDates([]);
           setSelectedValuationDate(null);
           setIsLoadingValuationDates(false);
@@ -1064,6 +1111,9 @@ const ReportGenerator: React.FC = () => {
 
       // Track all missing valuations across products
       const allMissingValuations: {productName: string, fundName: string}[] = [];
+      
+      // Collect all portfolio fund IDs for total IRR calculation
+      const allPortfolioFundIds: number[] = [];
 
       // Process each product individually
       for (const productId of uniqueProductIds) {
@@ -1080,6 +1130,13 @@ const ReportGenerator: React.FC = () => {
         
         if (productPortfolioFunds.length === 0) continue;
         
+        // Collect all portfolio fund IDs for total IRR calculation
+        productPortfolioFunds.forEach(pf => {
+          if (pf.id && pf.id > 0) {
+            allPortfolioFundIds.push(pf.id);
+          }
+        });
+        
         // Identify active funds
       const inactiveFundIds = new Set<number>();
         const activeFundIds = new Set<number>();
@@ -1093,10 +1150,15 @@ const ReportGenerator: React.FC = () => {
           }
         });
         
-        // Skip product if it has no active funds
-        if (activeFundIds.size === 0) {
-          console.log(`Skipping product ${productDetails.product_name} as it has no active funds`);
+        // Skip product if it has no active funds AND is not an inactive product
+        if (activeFundIds.size === 0 && (productDetails.status !== 'inactive' && inactiveFundIds.size === 0)) {
+          console.log(`Skipping product ${productDetails.product_name} as it has no active funds and is not inactive`);
           continue;
+        }
+        
+        // Log if we're processing an inactive product
+        if (activeFundIds.size === 0 && (productDetails.status === 'inactive' || inactiveFundIds.size > 0)) {
+          console.log(`Processing inactive product ${productDetails.product_name} with ${inactiveFundIds.size} inactive funds`);
         }
         
         // Get activity logs for all fund IDs
@@ -1244,10 +1306,10 @@ const ReportGenerator: React.FC = () => {
           }
         
         switch(log.activity_type) {
-            case 'Investment': case 'RegularInvestment': case 'GovernmentUplift': 
+            case 'Investment': case 'RegularInvestment': case 'GovernmentUplift': case 'ProductSwitchIn':
               totalInvestment += parsedAmount; 
               break;
-            case 'Withdrawal': case 'RegularWithdrawal':
+            case 'Withdrawal': case 'ProductSwitchOut':
               totalWithdrawal += parsedAmount; 
               break;
             case 'SwitchIn': case 'FundSwitchIn': 
@@ -1267,10 +1329,13 @@ const ReportGenerator: React.FC = () => {
           productStartDate
         });
         
-        // Calculate current valuation (only from active funds)
+        // Calculate current valuation (from active funds, or all funds for inactive products)
         let mostRecentValuationDate: string | null = null;
         productPortfolioFunds.forEach(pf => {
-          if (!inactiveFundIds.has(pf.id)) {
+          // Include active funds always, and inactive funds for inactive products
+          const shouldInclude = !inactiveFundIds.has(pf.id) || (productDetails.status === 'inactive' || activeFundIds.size === 0);
+          
+          if (shouldInclude) {
             const latestVal = latestValuationFromViewMap.get(pf.id);
             if (latestVal) {
               productValuation += latestVal.value;
@@ -1283,21 +1348,19 @@ const ReportGenerator: React.FC = () => {
           }
         });
         
-        // Check if this product has zero valuation but has active funds
-        if (productValuation === 0 && activeFundIds.size > 0) {
-          // Add zero-valuation product to missing valuations list
-          activeFundIds.forEach(fundId => {
-            const fundInfo = productPortfolioFunds.find(pf => pf.id === fundId);
-            const fundName = fundInfo?.fund_name || `Fund ID: ${fundId}`;
-            
-            allMissingValuations.push({
-              productName: productDetails.product_name,
-              fundName: fundName
-            });
-          });
-          
-          console.log(`Product ${productDetails.product_name} has zero valuation for selected date`);
-          continue; // Skip this product
+        // REMOVED: Don't treat zero valuation as missing valuation data
+        // Zero is a valid valuation - funds can legitimately have zero value
+        // The missing valuation check is already handled above in the fund-by-fund validation
+        // Only skip products that have NO valuation data at all (already handled above)
+        
+        // Log zero valuation for debugging but allow the product to proceed
+        if (productValuation === 0 && activeFundIds.size > 0 && productDetails.status !== 'inactive') {
+          console.log(`Product ${productDetails.product_name} has zero valuation for selected date - this is valid and will be included in the report`);
+        }
+        
+        // Allow inactive products to proceed even with zero valuation
+        if (productDetails.status === 'inactive' || (activeFundIds.size === 0 && inactiveFundIds.size > 0)) {
+          console.log(`Allowing inactive product ${productDetails.product_name} to proceed with valuation: ${productValuation}`);
         }
         
         // Update overall valuation date (take the latest across all products)
@@ -1409,10 +1472,10 @@ const ReportGenerator: React.FC = () => {
             }
             
             switch(log.activity_type) {
-              case 'Investment': case 'RegularInvestment': case 'GovernmentUplift': 
+              case 'Investment': case 'RegularInvestment': case 'GovernmentUplift': case 'ProductSwitchIn':
                 fundInvestment += amount; 
                 break;
-              case 'Withdrawal': case 'RegularWithdrawal':
+              case 'Withdrawal': case 'ProductSwitchOut':
                 fundWithdrawal += amount; 
                 break;
               case 'SwitchIn': case 'FundSwitchIn': 
@@ -1432,17 +1495,19 @@ const ReportGenerator: React.FC = () => {
             netFlow: fundInvestment - fundWithdrawal + fundSwitchIn - fundSwitchOut
           });
           
-          // Get current valuation
+          // Get current valuation (include inactive funds for inactive products)
           let fundValuation = 0;
-          if (!inactiveFundIds.has(portfolioFund.id)) {
-            const latestVal = latestValuationFromViewMap.get(portfolioFund.id);
-              if (latestVal) {
-              fundValuation = latestVal.value;
-            }
+          const latestVal = latestValuationFromViewMap.get(portfolioFund.id);
+          if (latestVal) {
+            fundValuation = latestVal.value;
+          } else if (inactiveFundIds.has(portfolioFund.id)) {
+            // For inactive funds, try to get the latest valuation even if it doesn't match the selected date
+            fundValuation = 0; // Default to 0 for inactive funds without valuations
+            console.log(`Using zero valuation for inactive fund ${fundName} (ID: ${portfolioFund.id})`);
           }
           
-          // Get fund IRR from the fetched values
-          const fundIRR = fundIRRMap.get(portfolioFund.id) || null;
+          // Get fund IRR from the fetched values (preserve zero values)
+          const fundIRR = fundIRRMap.has(portfolioFund.id) ? (fundIRRMap.get(portfolioFund.id) ?? null) : null;
           
           // Get historical IRR data for this fund
           const historicalIRRValues = historicalIRRMap.get(portfolioFund.id) || [];
@@ -1471,7 +1536,22 @@ const ReportGenerator: React.FC = () => {
 
         let productIRR: number | null = null;
         
-        if (fundSummaries.length > 0 && productValuation > 0) {
+        // For inactive products, try to get the latest portfolio IRR even if valuation is zero
+        const isInactiveProduct = productDetails.status === 'inactive' || (activeFundIds.size === 0 && inactiveFundIds.size > 0);
+        
+        console.log(`🎯 [PRODUCT IRR DEBUG] Product ${productDetails.product_name} (ID: ${productId}) IRR calculation conditions:`, {
+          fundSummariesLength: fundSummaries.length,
+          productValuation,
+          productStatus: productDetails.status,
+          activeFundIds: activeFundIds.size,
+          inactiveFundIds: inactiveFundIds.size,
+          isInactiveProduct,
+          shouldCalculateIRR: fundSummaries.length > 0 && (productValuation > 0 || isInactiveProduct)
+        });
+        
+        // Allow IRR calculation for products with funds, regardless of valuation
+        // Zero valuation is legitimate and should not prevent IRR calculation
+        if (fundSummaries.length > 0) {
           try {
             // Get portfolio fund IDs for this product (excluding only virtual funds)
             const productPortfolioFundIds = fundSummaries
@@ -1490,16 +1570,54 @@ const ReportGenerator: React.FC = () => {
                 formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
               }
               
-              // Use optimized IRR service instead of duplicate calculations
-              const optimizedIRRData = await irrDataService.getOptimizedIRRData({
-                portfolioId: productDetails.portfolio_id,
-                portfolioFundIds: productPortfolioFundIds,
-                endDate: formattedDate,
-                includeHistorical: false
-              });
+              // Use optimized IRR service for active products, latest portfolio IRR for inactive products
+              console.log(`🎯 [PRODUCT IRR DEBUG] Product ${productDetails.product_name} is ${isInactiveProduct ? 'INACTIVE' : 'ACTIVE'} - using ${isInactiveProduct ? 'portfolio IRR endpoint' : 'optimized IRR service'}`);
               
-              productIRR = optimizedIRRData.portfolioIRR;
-              console.log(`Optimized IRR for product ${productId}: ${productIRR}% (source: ${optimizedIRRData.irrDate})`);
+              if (isInactiveProduct) {
+                // For inactive products, get the latest portfolio-level IRR
+                console.log(`🎯 [PRODUCT IRR DEBUG] Fetching portfolio IRR for INACTIVE product: ${productDetails.product_name} (ID: ${productId})`);
+                try {
+                  const portfolioIRRResponse = await api.get(`/api/portfolios/${productDetails.portfolio_id}/latest-irr`);
+                  if (portfolioIRRResponse.data && typeof portfolioIRRResponse.data.irr_result === 'number') {
+                    productIRR = portfolioIRRResponse.data.irr_result;
+                    console.log(`Latest portfolio IRR for inactive product ${productId}: ${productIRR}% (date: ${portfolioIRRResponse.data.irr_date})`);
+                  } else {
+                    console.warn(`No portfolio IRR found for inactive product ${productId}`);
+                  }
+                } catch (portfolioIRRErr) {
+                  console.error(`Error fetching portfolio IRR for inactive product ${productId}:`, portfolioIRRErr);
+                  // Fall back to fund-level calculation
+                  const optimizedIRRData = await irrDataService.getOptimizedIRRData({
+                    portfolioId: productDetails.portfolio_id,
+                    portfolioFundIds: productPortfolioFundIds,
+                    endDate: formattedDate,
+                    includeHistorical: false
+                  });
+                  productIRR = optimizedIRRData.portfolioIRR;
+                }
+              } else {
+                // For active products, use optimized IRR service
+                console.log(`🎯 [REPORT DEBUG] Fetching IRR for active product: ${productDetails.product_name} (ID: ${productId})`);
+                console.log(`🎯 [REPORT DEBUG] IRR service params:`, {
+                  portfolioId: productDetails.portfolio_id,
+                  portfolioFundIds: productPortfolioFundIds,
+                  endDate: formattedDate,
+                  includeHistorical: false
+                });
+                
+                const optimizedIRRData = await irrDataService.getOptimizedIRRData({
+                  portfolioId: productDetails.portfolio_id,
+                  portfolioFundIds: productPortfolioFundIds,
+                  endDate: formattedDate,
+                  includeHistorical: false
+                });
+                
+                console.log(`🎯 [REPORT DEBUG] IRR service response for ${productDetails.product_name}:`, optimizedIRRData);
+                
+                productIRR = optimizedIRRData.portfolioIRR;
+                console.log(`🎯 [REPORT DEBUG] Extracted portfolio IRR: ${productIRR} for ${productDetails.product_name}`);
+                console.log(`Optimized IRR for active product ${productId}: ${productIRR}% (source: ${optimizedIRRData.irrDate})`);
+              }
           } else {
               console.warn(`No valid portfolio fund IDs found for product ${productId} IRR calculation`);
             }
@@ -1611,18 +1729,66 @@ const ReportGenerator: React.FC = () => {
           }
           
           // Calculate weighted risk factor for Previous Funds
-          // Use equal weighting for now since inactive funds have zero total_investment
-          // TODO: Fetch target_weighting from portfolio_funds for more accurate weighting
+          // Use net flows, target weightings, or valuations as weights for proper risk calculation
           let weightedRisk: number | undefined = undefined;
           const fundsWithRisk = inactiveFunds.filter(
             fund => fund.risk_factor !== undefined && fund.risk_factor !== null
           );
           
           if (fundsWithRisk.length > 0) {
-            // Use equal weighting (simple average) for now
-            weightedRisk = fundsWithRisk.reduce(
-              (sum, fund) => sum + fund.risk_factor!, 0
-            ) / fundsWithRisk.length;
+            // Try different weighting approaches in order of preference
+            let totalWeight = 0;
+            let weightedRiskSum = 0;
+            
+            // Approach 1: Use absolute net flow as weights (most meaningful for inactive funds)
+            const netFlowWeights = fundsWithRisk.map(fund => Math.abs(fund.net_flow || 0));
+            const totalNetFlow = netFlowWeights.reduce((sum, weight) => sum + weight, 0);
+            
+            if (totalNetFlow > 0) {
+              // Use net flow weighting
+              fundsWithRisk.forEach((fund, index) => {
+                const weight = netFlowWeights[index] / totalNetFlow;
+                weightedRiskSum += fund.risk_factor! * weight;
+              });
+              weightedRisk = weightedRiskSum;
+              totalWeight = totalNetFlow;
+              console.log('🎯 Using net flow weighting for Previous Funds risk');
+            } else {
+              // Approach 2: Use total investment as weights
+              const investmentWeights = fundsWithRisk.map(fund => Math.abs(fund.total_investment || 0));
+              const totalInvestmentWeight = investmentWeights.reduce((sum, weight) => sum + weight, 0);
+              
+              if (totalInvestmentWeight > 0) {
+                fundsWithRisk.forEach((fund, index) => {
+                  const weight = investmentWeights[index] / totalInvestmentWeight;
+                  weightedRiskSum += fund.risk_factor! * weight;
+                });
+                weightedRisk = weightedRiskSum;
+                totalWeight = totalInvestmentWeight;
+                console.log('🎯 Using investment amount weighting for Previous Funds risk');
+              } else {
+                // Approach 3: Use current valuation as weights (fallback)
+                const valuationWeights = fundsWithRisk.map(fund => Math.abs(fund.current_valuation || 0));
+                const totalValuationWeight = valuationWeights.reduce((sum, weight) => sum + weight, 0);
+                
+                if (totalValuationWeight > 0) {
+                  fundsWithRisk.forEach((fund, index) => {
+                    const weight = valuationWeights[index] / totalValuationWeight;
+                    weightedRiskSum += fund.risk_factor! * weight;
+                  });
+                  weightedRisk = weightedRiskSum;
+                  totalWeight = totalValuationWeight;
+                  console.log('🎯 Using valuation weighting for Previous Funds risk');
+                } else {
+                  // Approach 4: Equal weighting as final fallback
+                  weightedRisk = fundsWithRisk.reduce(
+                    (sum, fund) => sum + fund.risk_factor!, 0
+                  ) / fundsWithRisk.length;
+                  totalWeight = fundsWithRisk.length;
+                  console.log('🎯 Using equal weighting for Previous Funds risk (fallback)');
+                }
+              }
+            }
           }
 
           console.log('🎯 Previous Funds weighted risk calculation:', {
@@ -1718,10 +1884,24 @@ const ReportGenerator: React.FC = () => {
           }
         }
         
+        // Extract product owner name from product_owners array
+        let productOwnerName: string | undefined = undefined;
+        if (productDetails.product_owners && Array.isArray(productDetails.product_owners) && productDetails.product_owners.length > 0) {
+          if (productDetails.product_owners.length === 1) {
+            // Single owner
+            productOwnerName = productDetails.product_owners[0].name;
+          } else {
+            // Multiple owners - join with commas
+            productOwnerName = productDetails.product_owners.map((owner: any) => owner.name).join(', ');
+          }
+        }
+
         // Add to summary results with fund data
         productSummaryResults.push({
           id: productId,
           product_name: productDetails.product_name,
+          product_type: productDetails.product_type,
+          product_owner_name: productOwnerName,
           start_date: productStartDate,
           total_investment: totalInvestment,
           total_withdrawal: totalWithdrawal,
@@ -1733,7 +1913,8 @@ const ReportGenerator: React.FC = () => {
           provider_name: productDetails.provider_name,
           provider_theme_color: productDetails.provider_theme_color,
           funds: finalFundList,
-          weighted_risk: productWeightedRisk
+          weighted_risk: productWeightedRisk,
+          status: productDetails.status // Add product status for greying out inactive products
         });
         
         // Add to overall valuation
@@ -1765,11 +1946,13 @@ Please select a different valuation date or ensure all active funds have valuati
         return;
       }
       
-      // Check if total valuation is zero
+      // REMOVED: Don't prevent report generation for zero-value portfolios
+      // Zero portfolio value is legitimate and reports should still be generated
+      // to show transaction history and how the portfolio reached zero value
+      
+      // Log zero valuation for debugging but allow the report to proceed
       if (overallValuation === 0) {
-        setDataError(`Total portfolio value is zero for ${formatDateFallback(selectedValuationDate || '')}. Cannot calculate returns on a zero-value portfolio.`);
-        setIsCalculating(false);
-        return;
+        console.log(`Portfolio has zero total value for ${formatDateFallback(selectedValuationDate || '')} - this is valid and the report will be generated`);
       }
       
       // Set state with summary data
@@ -1787,34 +1970,20 @@ Please select a different valuation date or ensure all active funds have valuati
       setEarliestTransactionDate(earliestDate);
       
       // Calculate overall IRR using the standardized multiple funds IRR endpoint
-      if (productSummaryResults.length > 0 && overallValuation > 0) {
+      // IRR can be calculated even with zero current valuation since it's based on cash flows over time
+      let calculatedTotalIRR = null;
+      if (productSummaryResults.length > 0) {
         try {
-          // Collect all portfolio fund IDs from all products
-          // We need to collect from the original fundSummaries arrays, not the finalFundList
-          // which excludes inactive funds. We'll need to reconstruct this from the product processing.
-          const allPortfolioFundIds: number[] = [];
+          // Deduplicate portfolio fund IDs in case any products share funds
+          const uniquePortfolioFundIds = Array.from(new Set(allPortfolioFundIds));
+          console.log('Total portfolio fund IDs collected for IRR calculation:', {
+            total: allPortfolioFundIds.length,
+            unique: uniquePortfolioFundIds.length,
+            duplicatesRemoved: allPortfolioFundIds.length - uniquePortfolioFundIds.length
+          });
           
-          // Re-process each product to get ALL fund IDs (active and inactive)
-          for (const productId of uniqueProductIds) {
-            const productDetails = comprehensiveProductList.find(p => p.id === productId);
-            if (!productDetails) continue;
-            
-            const portfolioId = productDetails.portfolio_id;
-            if (!portfolioId) continue;
-            
-            // Get portfolio funds for this product using batch service
-            const productPortfolioFunds = await portfolioFundsService.getPortfolioFunds(portfolioId);
-            
-            // Add ALL portfolio fund IDs (active and inactive)
-            productPortfolioFunds.forEach(pf => {
-              if (pf.id && pf.id > 0) {
-                allPortfolioFundIds.push(pf.id);
-              }
-            });
-          }
-          
-          if (allPortfolioFundIds.length > 0) {
-            console.log('Calculating standardized IRR for portfolio fund IDs:', allPortfolioFundIds);
+          if (uniquePortfolioFundIds.length > 0) {
+            console.log('Calculating standardized IRR for portfolio fund IDs:', uniquePortfolioFundIds);
             
             // Format the selected valuation date for the API call
             let formattedDate: string | undefined = undefined;
@@ -1826,24 +1995,65 @@ Please select a different valuation date or ensure all active funds have valuati
             }
             
             console.log('Using optimized batch IRR service for total IRR:', {
-              portfolioFundIds: allPortfolioFundIds,
+              portfolioFundIds: uniquePortfolioFundIds,
               irrDate: formattedDate
             });
             
-            // Use optimized IRR service for total IRR calculation (eliminates second duplicate)
+            // Calculate portfolio total average return using IRR of all selected products
+            // This uses the multiple portfolio fund IRR endpoint with all fund IDs from all products
             const totalIRRData = await irrDataService.getOptimizedIRRData({
-              portfolioFundIds: allPortfolioFundIds,
+              portfolioFundIds: uniquePortfolioFundIds,
               endDate: formattedDate,
               includeHistorical: false
             });
             
-            console.log('Optimized total IRR response:', totalIRRData);
+            console.log('🎯 [TOTAL IRR DEBUG] Optimized total IRR response:', totalIRRData);
+            console.log('🎯 [TOTAL IRR DEBUG] portfolioIRR field:', totalIRRData.portfolioIRR);
+            console.log('🎯 [TOTAL IRR DEBUG] portfolioIRR type:', typeof totalIRRData.portfolioIRR);
             
             setTotalIRR(totalIRRData.portfolioIRR);
-            console.log('✅ Optimized total IRR calculation complete:', totalIRRData.portfolioIRR);
+            calculatedTotalIRR = totalIRRData.portfolioIRR;
+            console.log('✅ [TOTAL IRR DEBUG] Optimized total IRR calculation complete:', totalIRRData.portfolioIRR);
+            
         } else {
             console.warn('No valid portfolio fund IDs found for IRR calculation');
-          setTotalIRR(null);
+            setTotalIRR(null);
+            
+            // Navigate to report display page even without total IRR
+            const reportDataWithoutIRR = {
+              productSummaries: productSummaryResults,
+              totalIRR: null,
+              totalValuation: overallValuation,
+              earliestTransactionDate: earliestDate,
+              selectedValuationDate: selectedValuationDate,
+              productOwnerNames: Array.from(
+                new Set(
+                  productSummaryResults
+                    .map(product => product.product_owner_name)
+                    .filter(name => name && name.trim() !== '')
+                )
+              ).sort(),
+              timePeriod: (() => {
+                if (earliestDate && selectedValuationDate) {
+                  const startDate = formatDateFallback(earliestDate);
+                  const endDate = formatDateFallback(selectedValuationDate);
+                  return `${startDate} to ${endDate}`;
+                } else if (selectedValuationDate) {
+                  return `Period ending ${formatDateFallback(selectedValuationDate)}`;
+                } else {
+                  return 'Current Period';
+                }
+              })(),
+              // Report settings
+              truncateAmounts,
+              roundIrrToOne,
+              formatWithdrawalsAsNegative,
+              showInactiveProducts,
+              showPreviousFunds
+            };
+
+            // Navigate to the report display page
+            navigate('/report-display', { state: { reportData: reportDataWithoutIRR } });
           }
         } catch (irrErr) {
           console.error('Error calculating standardized IRR:', irrErr);
@@ -1852,6 +2062,42 @@ Please select a different valuation date or ensure all active funds have valuati
       } else {
         setTotalIRR(null);
       }
+
+      // Always navigate to report display page after processing
+      const finalReportData = {
+        productSummaries: productSummaryResults,
+        totalIRR: calculatedTotalIRR,
+        totalValuation: overallValuation,
+        earliestTransactionDate: earliestDate,
+        selectedValuationDate: selectedValuationDate,
+        productOwnerNames: Array.from(
+          new Set(
+            productSummaryResults
+              .map(product => product.product_owner_name)
+              .filter(name => name && name.trim() !== '')
+          )
+        ).sort(),
+        timePeriod: (() => {
+          if (earliestDate && selectedValuationDate) {
+            const startDate = formatDateFallback(earliestDate);
+            const endDate = formatDateFallback(selectedValuationDate);
+            return `${startDate} to ${endDate}`;
+          } else if (selectedValuationDate) {
+            return `Period ending ${formatDateFallback(selectedValuationDate)}`;
+          } else {
+            return 'Current Period';
+          }
+        })(),
+        // Report settings
+        truncateAmounts,
+        roundIrrToOne,
+        formatWithdrawalsAsNegative,
+        showInactiveProducts,
+        showPreviousFunds
+      };
+
+      // Navigate to the report display page
+      navigate('/report-display', { state: { reportData: finalReportData } });
       
     } catch (err: any) {
       console.error('Error generating report:', err);
@@ -1904,8 +2150,9 @@ Please select a different valuation date or ensure all active funds have valuati
   // Add format function for risk display
   const formatRiskFallback = (risk: number | undefined): string => {
     if (risk === undefined || risk === null) return '-';
-    // Assuming risk is on a 1-10 scale
-    return risk.toString();
+    // Round to 1 decimal place if not a whole number
+    const rounded = Math.round(risk * 10) / 10;
+    return rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1);
   };
 
   // Toggle function for Previous Funds expansion
@@ -1921,22 +2168,64 @@ Please select a different valuation date or ensure all active funds have valuati
     });
   };
 
+  const toggleInactiveProductDetails = (productId: number) => {
+    setShowInactiveProductDetails(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(productId)) {
+        newSet.delete(productId);
+      } else {
+        newSet.add(productId);
+      }
+      return newSet;
+    });
+  };
+
+  // Helper function to generate report title information
+  const getReportTitleInfo = () => {
+    // Get time period
+    const timePeriod = (() => {
+      if (earliestTransactionDate && selectedValuationDate) {
+        const startDate = formatDateFallback(earliestTransactionDate);
+        const endDate = formatDateFallback(selectedValuationDate);
+        return `${startDate} to ${endDate}`;
+      } else if (selectedValuationDate) {
+        return `Period ending ${formatDateFallback(selectedValuationDate)}`;
+      } else {
+        return 'Current Period';
+      }
+    })();
+
+    // Get unique product owner names from the generated report
+    const productOwnerNames = Array.from(
+      new Set(
+        productSummaries
+          .map(product => product.product_owner_name)
+          .filter(name => name && name.trim() !== '')
+      )
+    ).sort();
+
+    return {
+      timePeriod,
+      productOwnerNames
+    };
+  };
+
 
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+    <div className="mx-auto px-4 sm:px-6 lg:px-8 py-3">
       <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide mb-6">
         Report Generator
       </h1>
       
       {/* Error display for initial load errors */}
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 max-w-7xl mx-auto">
               <p className="text-red-700">{error}</p>
             </div>
       )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-7xl mx-auto">
           {/* Left Side - Selection Panels */}
           <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
             <h2 className="text-lg font-normal text-gray-900 mb-4">Select Items for Report</h2>
@@ -2127,6 +2416,35 @@ Please select a different valuation date or ensure all active funds have valuati
                           </label>
                         );
                       })
+                    }
+                  </div>
+                </div>
+              )}
+              
+              {/* Inactive Product Detail Controls */}
+              {productSummaries.some(product => product.status === 'inactive') && (
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <h5 className="text-sm font-medium text-gray-700 mb-2">Inactive Product Details</h5>
+                  <p className="text-xs text-gray-500 mb-2">
+                    Choose which inactive products to show detailed cards for (unchecked = summary table only)
+                  </p>
+                  <div className="space-y-1">
+                    {productSummaries
+                      .filter(product => product.status === 'inactive')
+                      .map(product => (
+                        <label key={product.id} className="inline-flex items-center w-full">
+                          <input
+                            type="checkbox"
+                            checked={showInactiveProductDetails.has(product.id)}
+                            onChange={() => toggleInactiveProductDetails(product.id)}
+                            className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                          />
+                          <span className="ml-2 text-sm text-gray-600">
+                            {product.product_name}
+                            <span className="ml-1 text-xs text-red-600">(Inactive)</span>
+                          </span>
+                        </label>
+                      ))
                     }
                   </div>
                 </div>
@@ -2445,48 +2763,319 @@ Please select a different valuation date or ensure all active funds have valuati
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div className="bg-gray-50 rounded-lg p-4 border">
-                <h3 className="text-sm font-medium text-gray-700 mb-1">Valuation Period</h3>
-                {totalValuation !== null ? (
-                  <div>
-                    <div className="text-2xl font-semibold text-primary-700">{formatCurrencyWithTruncation(totalValuation)}</div>
-                    {earliestTransactionDate && valuationDate ? (
-                      <div className="text-xs text-gray-500 mt-1">
-                        {formatDateFallback(earliestTransactionDate)} - {formatDateFallback(valuationDate)}
-                      </div>
-                    ) : valuationDate ? (
-                      <div className="text-xs text-gray-500 mt-1">as of {formatDateFallback(valuationDate)}</div>
-                    ) : null}
-                  </div>
-                ) : (
-                <div className="text-sm text-gray-500">{isCalculating ? 'Calculating...' : 'No valuation data'}</div>
-                )}
-              </div>
-              
-              <div className="bg-gray-50 rounded-lg p-4 border">
-                <h3 className="text-sm font-medium text-gray-700 mb-1">Annualised Rate of Return per annum</h3>
-                {totalIRR !== null ? (
-                  <div className={`text-2xl font-semibold ${totalIRR >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {formatIrrWithPrecision(totalIRR)}
-                  </div>
-                ) : (
-                <div className="text-sm text-gray-500">{isCalculating ? 'Calculating...' : 'No IRR data'}</div>
-                )}
-              </div>
-            </div>
+
           </div>
         </div>
       
       {/* Product Period Summary Tables */}
       {productSummaries.length > 0 && (
-        <div className="mt-8">
+        <div className="mt-8 w-full">
+          {/* Report Title */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Report Summary
+            </h1>
+            <div className="text-lg text-gray-700 mb-1">
+              {getReportTitleInfo().timePeriod}
+            </div>
+            {getReportTitleInfo().productOwnerNames.length > 0 && (
+              <div className="text-md text-gray-600">
+                {getReportTitleInfo().productOwnerNames.join(', ')}
+              </div>
+            )}
+          </div>
+          
           <h2 className="text-2xl font-normal text-gray-900 font-sans tracking-wide mb-4">
             Product Period Overview
           </h2>
           
-          {/* New overall totals table */}
-          <div className="mb-8 bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+          {productSummaries
+            .filter(product => {
+              // For inactive products, only show if checkbox is checked
+              if (product.status === 'inactive') {
+                return showInactiveProductDetails.has(product.id);
+              }
+              // For active products, always show
+              return true;
+            })
+            .map(product => (
+            <div key={product.id} className={`mb-8 bg-white shadow-sm rounded-lg border border-gray-200 p-6 w-full min-w-0 ${product.status === 'inactive' ? 'opacity-60 bg-gray-50' : ''}`}>
+              <div className="flex items-center gap-3 mb-4">
+                {product.provider_theme_color && (
+                  <div 
+                    className="w-4 h-4 rounded-full" 
+                    style={{ backgroundColor: product.provider_theme_color }}
+                  />
+                )}
+                <h3 className={`text-xl font-semibold ${product.status === 'inactive' ? 'text-gray-600' : 'text-gray-800'}`}>
+                  {[product.product_type, product.provider_name, product.product_owner_name].filter(Boolean).join(' - ')}
+                  {product.status === 'inactive' && (
+                    <span className="ml-2 text-sm text-red-600 font-medium">(Inactive)</span>
+                  )}
+                </h3>
+              </div>
+              
+
+              
+                        <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-300">
+              <thead className="bg-gray-100">
+                <tr>
+                      <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                        Fund Name
+                  </th>
+                      <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                        Investment
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      Government Uplift
+                      </th>
+                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      Product Switch In
+                        </th>
+                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      All Fund Switches
+                          </th>
+                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      Product Switch Out
+                          </th>
+                      <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                        Withdrawal
+                      </th>
+                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider bg-green-100">
+                        Valuation
+                      </th>
+                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider bg-blue-100">
+                      Profit Made
+                      </th>
+                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider bg-purple-100">
+                      Average Return p.a.
+                      </th>
+                      <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                        Risk
+                        </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                    {product.funds && product.funds.length > 0 ? (
+                      product.funds.map(fund => (
+                        <tr 
+                          key={fund.id} 
+                          className={`hover:bg-blue-50 ${fund.isVirtual ? 'bg-gray-100 font-medium' : ''}`}
+                        >
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-800 text-left">
+                            {fund.fund_name}
+                            {fund.isVirtual && fund.inactiveFundCount && (
+                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-800">
+                                {fund.inactiveFundCount} {fund.inactiveFundCount === 1 ? 'fund' : 'funds'}
+                              </span>
+                            )}
+                      </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                            {formatCurrencyWithTruncation(fund.total_investment)}
+                        </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                            {formatCurrencyWithTruncation(0)} {/* Government uplift - placeholder for now */}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                            {formatCurrencyWithTruncation(0)} {/* Product switch in - placeholder for now */}
+                            </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                            {formatCurrencyWithTruncation(fund.total_switch_out - fund.total_switch_in)}
+                              </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                            {formatCurrencyWithTruncation(0)} {/* Product switch out - placeholder for now */}
+                              </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                            {formatWithdrawalAmount(fund.total_withdrawal)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-primary-700 text-center bg-green-50">
+                            {formatCurrencyWithTruncation(fund.current_valuation)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-center bg-blue-50">
+                            {(() => {
+                              // Calculate profit: (valuation + withdrawals + product switch outs + fund switch outs) - (investments + fund switch ins + government uplift + product switch ins)
+                              const gains = fund.current_valuation + fund.total_withdrawal + 0 + fund.total_switch_out; // product switch out is 0 for now
+                              const costs = fund.total_investment + fund.total_switch_in + 0 + 0; // government uplift and product switch in are 0 for now
+                              const profit = gains - costs;
+                              return (
+                                <span className={profit >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                                  {formatCurrencyWithTruncation(profit)}
+                                </span>
+                              );
+                            })()}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-center bg-purple-50">
+                            {fund.isVirtual && fund.fund_name !== 'Previous Funds' ? (
+                              <span className="text-gray-500">-</span>
+                            ) : fund.irr !== null ? (
+                              <span className={fund.irr >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                {formatIrrWithPrecision(fund.irr)}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                            {fund.isVirtual && fund.fund_name !== 'Previous Funds' ? (
+                              <span className="text-gray-500">-</span>
+                            ) : fund.risk_factor !== undefined && fund.risk_factor !== null ? (
+                              <span className="px-2 py-1 text-xs font-medium rounded bg-gray-100">
+                                {formatRiskFallback(fund.risk_factor)}
+                                </span>
+                              ) : (
+                              <span className="text-gray-500">-</span>
+                              )}
+                            </td>
+                    </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={11} className="px-4 py-4 text-center text-sm text-gray-500">
+                          No fund data available
+                        </td>
+                      </tr>
+                    )}
+                    
+                    {/* Expanded Individual Inactive Funds Breakdown */}
+                    {expandedPreviousFunds.has(product.id) && product.funds && (
+                      product.funds
+                        .filter(fund => fund.fund_name === 'Previous Funds' && fund.isVirtual && fund.inactiveFunds)
+                        .flatMap(previousFundsEntry => 
+                          previousFundsEntry.inactiveFunds!.map((inactiveFund) => (
+                            <tr key={`inactive-${inactiveFund.id}`} className="bg-blue-50 border-l-4 border-blue-300">
+                              <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-700 text-left">
+                                <div className="flex items-center">
+                                  <div className="ml-8 text-sm text-gray-700">
+                                    ↳ {inactiveFund.fund_name}
+                                    <span className="ml-2 text-xs text-red-600">(Inactive)</span>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-700">
+                                {formatCurrencyWithTruncation(inactiveFund.total_investment)}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-700">
+                                {formatCurrencyWithTruncation(0)} {/* Government uplift - placeholder for inactive funds */}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-700">
+                                {formatCurrencyWithTruncation(0)} {/* Product switch in - placeholder for inactive funds */}
+                                </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-700">
+                                {formatCurrencyWithTruncation(inactiveFund.total_switch_out - inactiveFund.total_switch_in)}
+                                  </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-700">
+                                {formatCurrencyWithTruncation(0)} {/* Product switch out - placeholder for inactive funds */}
+                                  </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-700">
+                                {formatWithdrawalAmount(inactiveFund.total_withdrawal)}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-700 bg-green-50">
+                                {formatCurrencyWithTruncation(0)} {/* Inactive funds have £0 current valuation */}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-700 bg-blue-50">
+                                {(() => {
+                                  // Calculate profit for inactive funds: (valuation + withdrawals + product switch outs + fund switch outs) - (investments + fund switch ins + government uplift + product switch ins)
+                                  const gains = 0 + inactiveFund.total_withdrawal + 0 + inactiveFund.total_switch_out; // valuation is 0 for inactive funds
+                                  const costs = inactiveFund.total_investment + inactiveFund.total_switch_in + 0 + 0; // government uplift and product switch in are 0 for now
+                                  const profit = gains - costs;
+                                  return (
+                                    <span className={profit >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                                      {formatCurrencyWithTruncation(profit)}
+                                    </span>
+                                  );
+                                })()}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-700 bg-purple-50">
+                                {inactiveFund.irr !== null ? (
+                                  <span className={inactiveFund.irr >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                    {formatIrrWithPrecision(inactiveFund.irr)}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-500">-</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                                {inactiveFund.risk_factor !== undefined && inactiveFund.risk_factor !== null ? (
+                                  <span className="px-2 py-1 text-xs font-medium rounded bg-gray-100">
+                                    {formatRiskFallback(inactiveFund.risk_factor)}
+                                    </span>
+                                  ) : (
+                                  <span className="text-gray-500">-</span>
+                                  )}
+                                </td>
+                            </tr>
+                          ))
+                        )
+                    )}
+                    
+                    {/* Product Total Row */}
+                    <tr className="bg-gray-100 font-semibold border-t-2 border-gray-400">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800 text-left">
+                        PRODUCT TOTAL
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                        {formatCurrencyWithTruncation(product.total_investment)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                        {formatCurrencyWithTruncation(0)} {/* Government uplift total - placeholder for now */}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                        {formatCurrencyWithTruncation(0)} {/* Product switch in total - placeholder for now */}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                        {formatCurrencyWithTruncation(product.total_switch_out - product.total_switch_in)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                        {formatCurrencyWithTruncation(0)} {/* Product switch out total - placeholder for now */}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                        {formatWithdrawalAmount(product.total_withdrawal)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-primary-700 text-center bg-green-50">
+                        {formatCurrencyWithTruncation(product.current_valuation)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-center bg-blue-50">
+                        {(() => {
+                          // Calculate profit for product total: (valuation + withdrawals + product switch outs + fund switch outs) - (investments + fund switch ins + government uplift + product switch ins)
+                          const gains = product.current_valuation + product.total_withdrawal + 0 + product.total_switch_out; // product switch out is 0 for now
+                          const costs = product.total_investment + product.total_switch_in + 0 + 0; // government uplift and product switch in are 0 for now
+                          const profit = gains - costs;
+                          return (
+                            <span className={profit >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                              {formatCurrencyWithTruncation(profit)}
+                            </span>
+                          );
+                        })()}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-center bg-purple-50">
+                        {product.irr !== null ? (
+                          <span className={product.irr >= 0 ? 'text-green-600' : 'text-red-600'}>
+                            {formatIrrWithPrecision(product.irr)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                        {product.weighted_risk !== undefined && product.weighted_risk !== null ? (
+                          <span className="px-2 py-1 text-xs font-medium rounded bg-gray-200">
+                            {product.weighted_risk.toFixed(1)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-500">-</span>
+                        )}
+                      </td>
+                    </tr>
+              </tbody>
+            </table>
+          </div>
+
+            </div>
+          ))}
+          
+          {/* Portfolio Total Summary - moved to bottom */}
+          <div className="mt-8 bg-white shadow-sm rounded-lg border border-gray-200 p-6 w-full min-w-0">
             <h3 className="text-xl font-semibold text-gray-800 mb-4">Portfolio Total Summary</h3>
             
             <div className="overflow-x-auto">
@@ -2497,33 +3086,34 @@ Please select a different valuation date or ensure all active funds have valuati
                       Product
                     </th>
                     <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                      Risk
-                    </th>
-                    <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
                       Investment
                     </th>
-                    <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      Government Uplift
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      Product Switch In
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      All Fund Switches
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      Product Switch Out
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
                       Withdrawal
                     </th>
-                    {combineFundSwitches ? (
-                      <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                        Fund Switches
-                      </th>
-                    ) : (
-                      <>
-                        <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                          Fund Switch In
-                        </th>
-                        <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                          Fund Switch Out
-                        </th>
-                      </>
-                    )}
-                    <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider bg-green-100">
                       Valuation
                     </th>
-                    <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                      Annualised Rate of Return per annum
+                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider bg-blue-100">
+                      Profit Made
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider bg-purple-100">
+                      Average Return p.a.
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      Risk
                     </th>
                   </tr>
                 </thead>
@@ -2558,8 +3148,8 @@ Please select a different valuation date or ensure all active funds have valuati
                     }
                     
                     return (
-                    <tr key={product.id} className="hover:bg-blue-50">
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">
+                    <tr key={product.id} className={`hover:bg-blue-50 ${product.status === 'inactive' ? 'opacity-50 bg-gray-50' : ''}`}>
+                    <td className={`px-4 py-3 whitespace-nowrap text-sm text-left ${product.status === 'inactive' ? 'text-gray-500' : 'text-gray-800'}`}>
                         <div className="flex items-center gap-2">
                           {product.provider_theme_color && (
                             <div 
@@ -2567,42 +3157,47 @@ Please select a different valuation date or ensure all active funds have valuati
                               style={{ backgroundColor: product.provider_theme_color }}
                             />
                           )}
-                          {product.product_name}
+                          {[product.product_type, product.provider_name, product.product_owner_name].filter(Boolean).join(' - ')}
+                          {product.status === 'inactive' && (
+                            <span className="ml-2 text-xs text-red-600 font-medium">(Inactive)</span>
+                          )}
                         </div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
-                        {totalWeightedValue > 0 ? (
-                          <span className="px-2 py-1 text-xs font-medium rounded bg-gray-100">
-                            {weightedRisk.toFixed(1)}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
                         {formatCurrencyWithTruncation(product.total_investment)}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                        {formatCurrencyWithTruncation(0)} {/* Government uplift - placeholder for now */}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                        {formatCurrencyWithTruncation(0)} {/* Product switch in - placeholder for now */}
+                        </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                        {formatCurrencyWithTruncation(product.total_switch_out - product.total_switch_in)}
+                          </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                        {formatCurrencyWithTruncation(0)} {/* Product switch out - placeholder for now */}
+                          </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
                         {formatWithdrawalAmount(product.total_withdrawal)}
                       </td>
-                      {combineFundSwitches ? (
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                          {formatCurrencyWithTruncation(calculateNetFundSwitches(product.total_switch_in, product.total_switch_out))}
-                        </td>
-                      ) : (
-                        <>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                            {formatCurrencyWithTruncation(product.total_switch_in)}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                            {formatCurrencyWithTruncation(product.total_switch_out)}
-                          </td>
-                        </>
-                      )}
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-primary-700 text-right">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-primary-700 text-center bg-green-50">
                         {formatCurrencyWithTruncation(product.current_valuation)}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-center bg-blue-50">
+                        {(() => {
+                          // Calculate profit for portfolio summary: (valuation + withdrawals + product switch outs + fund switch outs) - (investments + fund switch ins + government uplift + product switch ins)
+                          const gains = product.current_valuation + product.total_withdrawal + 0 + product.total_switch_out; // product switch out is 0 for now
+                          const costs = product.total_investment + product.total_switch_in + 0 + 0; // government uplift and product switch in are 0 for now
+                          const profit = gains - costs;
+                          return (
+                            <span className={profit >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                              {formatCurrencyWithTruncation(profit)}
+                            </span>
+                          );
+                        })()}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-center bg-purple-50">
                         {product.irr !== null ? (
                           <span className={product.irr >= 0 ? 'text-green-600' : 'text-red-600'}>
                             {formatIrrWithPrecision(product.irr)}
@@ -2611,14 +3206,66 @@ Please select a different valuation date or ensure all active funds have valuati
                           <span className="text-gray-400">-</span>
                         )}
                       </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                        {totalWeightedValue > 0 ? (
+                          <span className="px-2 py-1 text-xs font-medium rounded bg-gray-100">
+                            {weightedRisk.toFixed(1)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                        </td>
                     </tr>
                     );
                   })}
                   
-                  {/* Grand total row */}
+                                    {/* Grand total row */}
                   <tr className="bg-gray-100 font-semibold border-t-2 border-gray-400">
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800 text-left">
                       PORTFOLIO TOTAL ({productSummaries.length} {productSummaries.length === 1 ? 'Product' : 'Products'})
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                      {formatCurrencyWithTruncation(productSummaries.reduce((sum, product) => sum + product.total_investment, 0))}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                      {formatCurrencyWithTruncation(0)} {/* Government uplift total - placeholder for now */}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                      {formatCurrencyWithTruncation(0)} {/* Product switch in total - placeholder for now */}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                      {formatCurrencyWithTruncation(productSummaries.reduce((sum, product) => sum + (product.total_switch_out - product.total_switch_in), 0))}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                      {formatCurrencyWithTruncation(0)} {/* Product switch out total - placeholder for now */}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                      {formatWithdrawalAmount(productSummaries.reduce((sum, product) => sum + product.total_withdrawal, 0))}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-primary-700 text-center bg-green-50">
+                      {formatCurrencyWithTruncation(productSummaries.reduce((sum, product) => sum + product.current_valuation, 0))}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center bg-blue-50">
+                      {(() => {
+                        // Calculate total portfolio profit: (valuation + withdrawals + product switch outs + fund switch outs) - (investments + fund switch ins + government uplift + product switch ins)
+                        const totalGains = productSummaries.reduce((sum, product) => sum + product.current_valuation + product.total_withdrawal + 0 + product.total_switch_out, 0); // product switch out is 0 for now
+                        const totalCosts = productSummaries.reduce((sum, product) => sum + product.total_investment + product.total_switch_in + 0 + 0, 0); // government uplift and product switch in are 0 for now
+                        const totalProfit = totalGains - totalCosts;
+                        return (
+                          <span className={totalProfit >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                            {formatCurrencyWithTruncation(totalProfit)}
+                          </span>
+                        );
+                      })()}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center bg-purple-50">
+                      {totalIRR !== null ? (
+                        <span className={totalIRR >= 0 ? 'text-green-600' : 'text-red-600'}>
+                          {formatIrrWithPrecision(totalIRR)}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
                       {(() => {
@@ -2652,373 +3299,11 @@ Please select a different valuation date or ensure all active funds have valuati
                         return <span className="text-gray-400">-</span>;
                       })()}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                      {formatCurrencyWithTruncation(productSummaries.reduce((sum, product) => sum + product.total_investment, 0))}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                      {formatWithdrawalAmount(productSummaries.reduce((sum, product) => sum + product.total_withdrawal, 0))}
-                    </td>
-                    {combineFundSwitches ? (
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                        {formatCurrencyWithTruncation(productSummaries.reduce((sum, product) => sum + calculateNetFundSwitches(product.total_switch_in, product.total_switch_out), 0))}
-                      </td>
-                    ) : (
-                      <>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                          {formatCurrencyWithTruncation(productSummaries.reduce((sum, product) => sum + product.total_switch_in, 0))}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                          {formatCurrencyWithTruncation(productSummaries.reduce((sum, product) => sum + product.total_switch_out, 0))}
-                        </td>
-                      </>
-                    )}
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-primary-700 text-right">
-                      {formatCurrencyWithTruncation(productSummaries.reduce((sum, product) => sum + product.current_valuation, 0))}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                      {totalIRR !== null ? (
-                        <span className={totalIRR >= 0 ? 'text-green-600' : 'text-red-600'}>
-                          {formatIrrWithPrecision(totalIRR)}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
-          
-          {productSummaries.map(product => (
-            <div key={product.id} className="mb-8 bg-white shadow-sm rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                {product.provider_theme_color && (
-                  <div 
-                    className="w-4 h-4 rounded-full" 
-                    style={{ backgroundColor: product.provider_theme_color }}
-                  />
-                )}
-                <h3 className="text-xl font-semibold text-gray-800">
-                  {product.product_name}
-                  {product.provider_name && (
-                    <span className="text-sm font-normal text-gray-500 ml-2">
-                      ({product.provider_name})
-                    </span>
-                  )}
-                </h3>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <div className="bg-gray-50 rounded-lg p-3 border">
-                  <div className="text-xs font-medium text-gray-500 uppercase mb-1">Current Valuation</div>
-                  <div className="text-lg font-semibold text-primary-700">
-                    {formatCurrencyWithTruncation(product.current_valuation)}
-                  </div>
-                </div>
-                
-                <div className="bg-gray-50 rounded-lg p-3 border">
-                  <div className="text-xs font-medium text-gray-500 uppercase mb-1">Annualised Rate of Return per annum</div>
-                  {product.irr !== null ? (
-                    <div className={`text-lg font-semibold ${product.irr >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {formatIrrWithPrecision(product.irr)}
-                    </div>
-                  ) : (
-                    <div className="text-sm text-gray-500">Not available</div>
-                  )}
-                </div>
-                
-                <div className="bg-gray-50 rounded-lg p-3 border">
-                  <div className="text-xs font-medium text-gray-500 uppercase mb-1">Time Period</div>
-                  <div className="text-lg font-semibold text-gray-700">
-                    {product.start_date && valuationDate ? (
-                      <>{formatDateFallback(product.start_date)} - {formatDateFallback(valuationDate)}</>
-                    ) : product.start_date ? (
-                      <>{formatDateFallback(product.start_date)} - Current</>
-                    ) : (
-                      'N/A'
-                    )}
-                  </div>
-                </div>
-                
-                <div className="bg-gray-50 rounded-lg p-3 border">
-                  <div className="text-xs font-medium text-gray-500 uppercase mb-1">Net Investment</div>
-                  <div className="text-lg font-semibold text-gray-700">
-                    {formatCurrencyWithTruncation(product.net_flow)}
-                  </div>
-                </div>
-              </div>
-              
-                        <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-300">
-              <thead className="bg-gray-100">
-                <tr>
-                      <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                        Fund Name
-                  </th>
-                      <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                        Risk
-                      </th>
-                      <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                        Investment
-                    </th>
-                      <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                        Withdrawal
-                      </th>
-                      {combineFundSwitches ? (
-                        <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                          Fund Switches
-                        </th>
-                      ) : (
-                        <>
-                          <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                            Fund Switch In
-                          </th>
-                          <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                            Fund Switch Out
-                          </th>
-                        </>
-                      )}
-                      <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                        Valuation
-                      </th>
-                      <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                        Annualised Rate of Return per annum
-                      </th>
-                      {historicalIRRMonths.map((monthLabel, index) => (
-                        <th 
-                          key={index}
-                          scope="col" 
-                          className="px-3 py-3 text-right text-xs font-semibold text-blue-700 uppercase tracking-wider bg-blue-50" 
-                          title={`Historical IRR for ${monthLabel}`}
-                        >
-                          IRR {monthLabel}
-                        </th>
-                      ))}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                    {product.funds && product.funds.length > 0 ? (
-                      product.funds.map(fund => (
-                        <tr 
-                          key={fund.id} 
-                          className={`hover:bg-blue-50 ${fund.isVirtual ? 'bg-gray-100 font-medium' : ''}`}
-                        >
-                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-800">
-                            {fund.fund_name}
-                            {fund.isVirtual && fund.inactiveFundCount && (
-                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-800">
-                                {fund.inactiveFundCount} {fund.inactiveFundCount === 1 ? 'fund' : 'funds'}
-                              </span>
-                            )}
-                      </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
-                            {fund.isVirtual && fund.fund_name !== 'Previous Funds' ? (
-                              <span className="text-gray-500">-</span>
-                            ) : fund.risk_factor !== undefined && fund.risk_factor !== null ? (
-                              <span className={`px-2 py-1 text-xs font-medium rounded ${fund.fund_name === 'Previous Funds' ? 'bg-gray-200' : 'bg-gray-100'}`}>
-                                {fund.fund_name === 'Previous Funds' ? fund.risk_factor.toFixed(1) : formatRiskFallback(fund.risk_factor)}
-                              </span>
-                            ) : (
-                              <span className="text-gray-500">-</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                            {formatCurrencyWithTruncation(fund.total_investment)}
-                        </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                            {formatWithdrawalAmount(fund.total_withdrawal)}
-                          </td>
-                          {combineFundSwitches ? (
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                              {formatCurrencyWithTruncation(calculateNetFundSwitches(fund.total_switch_in, fund.total_switch_out))}
-                            </td>
-                          ) : (
-                            <>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                                {formatCurrencyWithTruncation(fund.total_switch_in)}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                                {formatCurrencyWithTruncation(fund.total_switch_out)}
-                              </td>
-                            </>
-                          )}
-                          <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-primary-700 text-right">
-                            {formatCurrencyWithTruncation(fund.current_valuation)}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                            {fund.isVirtual && fund.fund_name !== 'Previous Funds' ? (
-                              <span className="text-gray-500">-</span>
-                            ) : fund.irr !== null ? (
-                              <span className={fund.irr >= 0 ? 'text-green-600' : 'text-red-600'}>
-                                {formatIrrWithPrecision(fund.irr)}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400">-</span>
-                            )}
-                          </td>
-                          {/* Historical IRR columns - only show if historical data exists */}
-                          {historicalIRRMonths.map((_, index) => (
-                            <td key={`hist-${index}`} className="px-3 py-3 whitespace-nowrap text-xs text-right bg-blue-50">
-                              {fund.historical_irr && fund.historical_irr[index] !== undefined ? (
-                                <span className={fund.historical_irr[index] >= 0 ? 'text-green-600' : 'text-red-600'}>
-                                  {formatIrrWithPrecision(fund.historical_irr[index])}
-                                </span>
-                              ) : (
-                                <span className="text-gray-400">-</span>
-                              )}
-                            </td>
-                          ))}
-                    </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={(combineFundSwitches ? 8 : 9) + historicalIRRMonths.length} className="px-4 py-4 text-center text-sm text-gray-500">
-                          No fund data available
-                        </td>
-                      </tr>
-                    )}
-                    
-                    {/* Expanded Individual Inactive Funds Breakdown */}
-                    {expandedPreviousFunds.has(product.id) && product.funds && (
-                      product.funds
-                        .filter(fund => fund.fund_name === 'Previous Funds' && fund.isVirtual && fund.inactiveFunds)
-                        .flatMap(previousFundsEntry => 
-                          previousFundsEntry.inactiveFunds!.map((inactiveFund) => (
-                            <tr key={`inactive-${inactiveFund.id}`} className="bg-blue-50 border-l-4 border-blue-300">
-                              <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-700">
-                                <div className="flex items-center">
-                                  <div className="ml-8 text-sm text-gray-700">
-                                    ↳ {inactiveFund.fund_name}
-                                    <span className="ml-2 text-xs text-red-600">(Inactive)</span>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
-                                {inactiveFund.risk_factor !== undefined ? (
-                                  <span className="px-2 py-1 text-xs font-medium rounded bg-blue-100">
-                                    {formatRiskFallback(inactiveFund.risk_factor)}
-                                  </span>
-                                ) : (
-                                  <span className="text-gray-500">-</span>
-                                )}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-700">
-                                {formatCurrencyWithTruncation(inactiveFund.total_investment)}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-700">
-                                {formatWithdrawalAmount(inactiveFund.total_withdrawal)}
-                              </td>
-                              {combineFundSwitches ? (
-                                <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-700">
-                                  {formatCurrencyWithTruncation(calculateNetFundSwitches(inactiveFund.total_switch_in, inactiveFund.total_switch_out))}
-                                </td>
-                              ) : (
-                                <>
-                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-700">
-                                    {formatCurrencyWithTruncation(inactiveFund.total_switch_in)}
-                                  </td>
-                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-700">
-                                    {formatCurrencyWithTruncation(inactiveFund.total_switch_out)}
-                                  </td>
-                                </>
-                              )}
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-700">
-                                {formatCurrencyWithTruncation(0)} {/* Inactive funds have £0 current valuation */}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-700">
-                                {inactiveFund.irr !== null ? (
-                                  <span className={inactiveFund.irr >= 0 ? 'text-green-600' : 'text-red-600'}>
-                                    {formatIrrWithPrecision(inactiveFund.irr)}
-                                  </span>
-                                ) : (
-                                  <span className="text-gray-500">-</span>
-                                )}
-                              </td>
-                              {/* Historical IRR columns for inactive funds - only show if historical data exists */}
-                              {historicalIRRMonths.map((_, index) => (
-                                <td key={`inactive-hist-${index}`} className="px-3 py-3 whitespace-nowrap text-xs text-right bg-blue-50">
-                                  {inactiveFund.historical_irr && inactiveFund.historical_irr[index] !== undefined ? (
-                                    <span className={inactiveFund.historical_irr[index] >= 0 ? 'text-green-600' : 'text-red-600'}>
-                                      {formatIrrWithPrecision(inactiveFund.historical_irr[index])}
-                                    </span>
-                                  ) : (
-                                    <span className="text-gray-400">-</span>
-                                  )}
-                                </td>
-                              ))}
-                            </tr>
-                          ))
-                        )
-                    )}
-                    
-                    {/* Product Total Row */}
-                    <tr className="bg-gray-100 font-semibold border-t-2 border-gray-400">
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">
-                        PRODUCT TOTAL
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
-                        {product.weighted_risk !== undefined ? (
-                          <span className="px-2 py-1 text-xs font-medium rounded bg-gray-200">
-                            {product.weighted_risk.toFixed(1)}
-                          </span>
-                        ) : (
-                          <span className="text-gray-500">-</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                        {formatCurrencyWithTruncation(product.total_investment)}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                        {formatWithdrawalAmount(product.total_withdrawal)}
-                      </td>
-                      {combineFundSwitches ? (
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                          {formatCurrencyWithTruncation(calculateNetFundSwitches(product.total_switch_in, product.total_switch_out))}
-                        </td>
-                      ) : (
-                        <>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                            {formatCurrencyWithTruncation(product.total_switch_in)}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                            {formatCurrencyWithTruncation(product.total_switch_out)}
-                          </td>
-                        </>
-                      )}
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-primary-700 text-right">
-                        {formatCurrencyWithTruncation(product.current_valuation)}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                        {product.irr !== null ? (
-                          <span className={product.irr >= 0 ? 'text-green-600' : 'text-red-600'}>
-                            {formatIrrWithPrecision(product.irr)}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
-                      {/* Historical IRR columns for product total - not applicable */}
-                      {historicalIRRMonths.map((_, index) => (
-                        <td key={`total-hist-${index}`} className="px-3 py-3 whitespace-nowrap text-xs text-right bg-blue-50">
-                          <span className="text-gray-500">-</span>
-                        </td>
-                      ))}
-                    </tr>
-              </tbody>
-            </table>
-          </div>
-          
-                      {/* Historical IRR Explanation - only show if historical data exists */}
-            {historicalIRRMonths.length > 0 && (
-              <div className="mt-2 text-xs text-blue-600 bg-blue-50 p-2 rounded">
-                <strong>Historical IRR:</strong> Shows IRR values from the most recent months where sufficient portfolio fund data is available (minimum 75% coverage). Column headers display the actual month and year. 
-                Searched {historicalIRRYears} year{historicalIRRYears !== 1 ? 's' : ''} back ({historicalIRRYears * 12} months) - showing data for: {historicalIRRMonths.join(', ')}. Latest IRR values are excluded from historical columns.
-              </div>
-            )}
-
-            </div>
-          ))}
         </div>
       )}
       
@@ -3034,4 +3319,4 @@ Please select a different valuation date or ensure all active funds have valuati
   );
 };
 
-export default ReportGenerator; 
+export default ReportGenerator;

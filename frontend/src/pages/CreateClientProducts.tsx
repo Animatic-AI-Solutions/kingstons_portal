@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Modal } from 'antd';
 import AddFundModal from '../components/AddFundModal';
 
@@ -422,8 +422,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         setAvailableTemplates(portfoliosRes.data);
         setProductOwners(productOwnersRes.data);
         
-        // Set defaults
-        if (clientsRes.data.length > 0) {
+        // Set defaults only if no URL client parameter is provided
+        if (!urlClientId && clientsRes.data.length > 0) {
           setSelectedClientId(clientsRes.data[0].id);
         }
         
@@ -1803,8 +1803,50 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     );
   }
 
+  // Breadcrumb component
+  const Breadcrumbs = () => {
+    const selectedClient = clients.find(c => c.id === selectedClientId);
+    
+    return (
+      <nav className="mb-4 flex" aria-label="Breadcrumb">
+        <ol className="inline-flex items-center space-x-1 md:space-x-3">
+          <li className="inline-flex items-center">
+            <Link to="/client_groups" className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-primary-700">
+              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
+              </svg>
+              Clients
+            </Link>
+          </li>
+          {selectedClient && (
+            <li>
+              <div className="flex items-center">
+                <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
+                </svg>
+                <Link to={`/client_groups/${selectedClient.id}`} className="ml-1 text-sm font-medium text-gray-500 hover:text-primary-700 md:ml-2">
+                  {selectedClient.name}
+                </Link>
+              </div>
+            </li>
+          )}
+          <li aria-current="page">
+            <div className="flex items-center">
+              <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
+              </svg>
+              <span className="ml-1 text-sm font-medium text-primary-700 md:ml-2">Create Products</span>
+            </div>
+          </li>
+        </ol>
+      </nav>
+    );
+  };
+
   return (
-    <div className="max-w-6xl mx-auto px-0.5 py-0.5 sm:px-1 sm:py-1">
+    <div className="max-w-6xl mx-auto px-3 py-1">
+      {/* Breadcrumbs */}
+      <Breadcrumbs />
       {/* Toast notification */}
       {showToast && (
         <div className="fixed top-4 right-4 z-50 bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-3 rounded shadow-md">
@@ -1899,11 +1941,11 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           </div>
         ) : (
           <div className="bg-white shadow-sm rounded-lg border border-gray-200">
-            <form onSubmit={handleSubmit} className="p-1 sm:p-2">
-              {/* Step 1: Client Selection and Start Date - Compact Layout */}
-              <div className="bg-gray-50 rounded-lg p-1 sm:p-2 mb-1 sm:mb-2 border border-gray-200">
-                <h2 className="text-lg font-medium mb-0.5 sm:mb-1 text-gray-900">Client & Start Date</h2>
-                <div className="grid grid-cols-2 gap-2 sm:gap-4">
+            <form onSubmit={handleSubmit} className="p-4">
+              {/* Step 1: Client Selection - Compact Layout */}
+              <div className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
+                <h2 className="text-lg font-medium mb-3 text-gray-900">Client</h2>
+                <div className="grid grid-cols-2 gap-4">
                 {/* Client Selection */}
                   <div>
                   {clients.length > 0 ? (
@@ -1921,10 +1963,19 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                       fullWidth={true}
                       helperText={`${clients.length} clients available`}
                     />
+
                   ) : (
                       <div className="text-gray-500 text-sm bg-gray-100 p-2 rounded">
                         No clients available. Please add a client first.
                       </div>
+                  )}
+                  {urlClientId && clientName && (
+                    <div className="text-xs text-blue-600 mt-1 flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Client auto-selected: {clientName}
+                    </div>
                   )}
                 </div>
 
@@ -2099,13 +2150,10 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                         label="Product Name"
                                         helperText="(optional)"
                                         value={product.product_name}
-                                        onChange={(e) => {
-                                          // Get the string value from the event
-                                          handleProductChange(product.id, 'product_name', e.target.value);
-                                        }}
-                                        placeholder="Auto-generated"
-                                        size="sm"
-                                        fullWidth
+
+                                        onChange={(e) => handleProductChange(product.id, 'product_name', e.target.value)}
+                                        className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm border-gray-300 rounded-md h-8"
+                                        placeholder="e.g. Smoothed Savings Pension Fund"
                                       />
                           </div>
                         </div>

@@ -1360,37 +1360,149 @@ async def get_complete_product_details(client_product_id: int, db = Depends(get_
 @router.post("/client_products/{client_product_id}/notes")
 async def update_product_notes(client_product_id: int, request: Request, db = Depends(get_db)):
     """
-    What it does: Updates the notes field of a client product.
-    Why it's needed: Handles auto-saving of notes when the user navigates away from the page.
+    What it does: Updates notes for a specific client product.
+    Why it's needed: Allows users to add/edit notes for products from the frontend.
     How it works:
-        1. Receives a POST request with notes data from sendBeacon or onBlur
-        2. Parses the JSON body from the request
-        3. Updates only the notes field in the database
-        4. Returns a success response
-    Expected output: A success message if the update was successful
+        1. Parses the request body to get the notes
+        2. Updates the notes field in the client_products table
+        3. Returns success response
+    Expected output: Confirmation of notes update
     """
     try:
-        # Parse the request body as JSON
         body = await request.json()
-        notes = body.get("notes")
-
-        if notes is None:
-            raise HTTPException(status_code=400, detail="Notes field is required")
-
-        # Check if client product exists
-        check_result = db.table("client_products").select("id").eq("id", client_product_id).execute()
-        if not check_result.data or len(check_result.data) == 0:
-            raise HTTPException(status_code=404, detail=f"Client product with ID {client_product_id} not found")
-
-        # Update only the notes field
-        result = db.table("client_products").update({"notes": notes}).eq("id", client_product_id).execute()
-
-        if not result.data or len(result.data) == 0:
-            raise HTTPException(status_code=400, detail="Failed to update notes")
-
+        notes = body.get('notes', '')
+        
+        # Update the notes in the database
+        result = db.table("client_products").update({
+            "notes": notes
+        }).eq("id", client_product_id).execute()
+        
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Product not found")
+        
+        logger.info(f"Updated notes for product {client_product_id}")
         return {"message": "Notes updated successfully"}
+        
+    except Exception as e:
+        logger.error(f"Error updating product notes: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to update notes: {str(e)}")
+
+@router.patch("/client_products/{product_id}/lapse")
+async def lapse_product(product_id: int, db = Depends(get_db)):
+    """
+    What it does: Lapse a product by changing its status from 'active' to 'inactive' when total value is zero.
+    Why it's needed: Allows users to properly lapse products that have zero value instead of deleting them.
+    How it works:
+        1. Verify product exists and is currently active
+        2. Calculate total value from portfolio fund valuations
+        3. Check if total value is zero (within tolerance)
+        4. Update status to 'inactive' if validation passes
+        5. Return updated product data
+    Expected output: Updated product object with inactive status
+    """
+    try:
+        # Get the product and verify it exists and is active
+        product_result = db.table("client_products").select("*").eq("id", product_id).execute()
+        if not product_result.data:
+            raise HTTPException(status_code=404, detail="Product not found")
+        
+        product = product_result.data[0]
+        
+        if product.get("status") != "active":
+            raise HTTPException(status_code=400, detail="Product is not active and cannot be lapsed")
+        
+        # Calculate total value from portfolio fund valuations
+        portfolio_id = product.get("portfolio_id")
+        if not portfolio_id:
+            raise HTTPException(status_code=400, detail="Product has no associated portfolio")
+        
+        # Get all portfolio funds for this product
+        portfolio_funds_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).eq("status", "active").execute()
+        
+        if not portfolio_funds_result.data:
+            # No active funds means zero value, allow lapse
+            total_value = 0
+        else:
+            fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
+            
+            # Get latest valuations for all funds
+            valuations_result = db.table("latest_portfolio_fund_valuations").select("valuation").in_("portfolio_fund_id", fund_ids).execute()
+            
+            # Sum up all valuations
+            total_value = sum(v.get("valuation", 0) for v in valuations_result.data)
+        
+        # Check if total value is zero (with small tolerance for floating point precision)
+        tolerance = 0.01  # 1 penny tolerance
+        if total_value > tolerance:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Product cannot be lapsed as it has a total value of £{total_value:.2f}. Only products with zero value can be lapsed."
+            )
+        
+        # Update product status to inactive
+        update_result = db.table("client_products").update({
+            "status": "inactive",
+            "end_date": datetime.now().date().isoformat()  # Set end date to today
+        }).eq("id", product_id).execute()
+        
+        if not update_result.data:
+            raise HTTPException(status_code=500, detail="Failed to update product status")
+        
+        updated_product = update_result.data[0]
+        logger.info(f"Successfully lapsed product {product_id}")
+        
+        return {
+            "message": "Product successfully lapsed",
+            "product": updated_product
+        }
+        
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error updating product notes: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        logger.error(f"Error lapsing product {product_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to lapse product: {str(e)}")
+
+@router.patch("/client_products/{product_id}/reactivate")
+async def reactivate_product(product_id: int, db = Depends(get_db)):
+    """
+    What it does: Reactivate a lapsed product by changing its status from 'inactive' to 'active'.
+    Why it's needed: Allows users to restore previously lapsed products that need to be made active again.
+    How it works:
+        1. Verify product exists and is currently inactive (lapsed)
+        2. Update status to 'active' and clear the end_date
+        3. Return updated product data
+    Expected output: Updated product object with active status
+    """
+    try:
+        # Get the product and verify it exists and is inactive
+        product_result = db.table("client_products").select("*").eq("id", product_id).execute()
+        if not product_result.data:
+            raise HTTPException(status_code=404, detail="Product not found")
+        
+        product = product_result.data[0]
+        
+        if product.get("status") != "inactive":
+            raise HTTPException(status_code=400, detail="Product is not inactive and cannot be reactivated")
+        
+        # Update product status to active and clear end_date
+        update_result = db.table("client_products").update({
+            "status": "active",
+            "end_date": None  # Clear the end date
+        }).eq("id", product_id).execute()
+        
+        if not update_result.data:
+            raise HTTPException(status_code=500, detail="Failed to update product status")
+        
+        updated_product = update_result.data[0]
+        logger.info(f"Successfully reactivated product {product_id}")
+        
+        return {
+            "message": "Product successfully reactivated",
+            "product": updated_product
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error reactivating product {product_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to reactivate product: {str(e)}")

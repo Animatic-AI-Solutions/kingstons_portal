@@ -554,10 +554,9 @@ SELECT
     cg.name AS client_group_name
 FROM portfolio_irr_values piv
 LEFT JOIN portfolios p ON p.id = piv.portfolio_id
-LEFT JOIN client_products cp ON cp.portfolio_id = piv.portfolio_id
+LEFT JOIN client_products cp ON cp.portfolio_id = piv.portfolio_id AND cp.status = 'active'
 LEFT JOIN available_providers ap ON ap.id = cp.provider_id
 LEFT JOIN client_groups cg ON cg.id = cp.client_id
-WHERE cp.status = 'active'
 ORDER BY piv.portfolio_id, piv.date DESC;
 
 -- View for fund-level historical IRRs with fund and product details
@@ -598,10 +597,9 @@ FROM portfolio_fund_irr_values pfiv
 LEFT JOIN portfolio_funds pf ON pf.id = pfiv.fund_id
 LEFT JOIN available_funds af ON af.id = pf.available_funds_id
 LEFT JOIN portfolios p ON p.id = pf.portfolio_id
-LEFT JOIN client_products cp ON cp.portfolio_id = pf.portfolio_id
+LEFT JOIN client_products cp ON cp.portfolio_id = pf.portfolio_id AND cp.status = 'active'
 LEFT JOIN available_providers ap ON ap.id = cp.provider_id
 LEFT JOIN client_groups cg ON cg.id = cp.client_id
-WHERE cp.status = 'active'
 ORDER BY pfiv.fund_id, pfiv.date DESC;
 
 -- =========================================================
@@ -677,7 +675,9 @@ SELECT
     SUM(CASE WHEN activity_type IN ('Investment', 'RegularInvestment', 'GovernmentUplift') THEN amount ELSE 0 END) as total_investments,
     SUM(CASE WHEN activity_type IN ('Withdrawal', 'RegularWithdrawal') THEN amount ELSE 0 END) as total_withdrawals,
     SUM(CASE WHEN activity_type = 'SwitchIn' THEN amount ELSE 0 END) as total_switch_in,
-    SUM(CASE WHEN activity_type = 'SwitchOut' THEN amount ELSE 0 END) as total_switch_out
+    SUM(CASE WHEN activity_type = 'SwitchOut' THEN amount ELSE 0 END) as total_switch_out,
+    SUM(CASE WHEN activity_type IN ('Product Switch In', 'ProductSwitchIn') THEN amount ELSE 0 END) as total_product_switch_in,
+    SUM(CASE WHEN activity_type IN ('Product Switch Out', 'ProductSwitchOut') THEN amount ELSE 0 END) as total_product_switch_out
 FROM holding_activity_log
 GROUP BY portfolio_fund_id;
 
@@ -703,7 +703,9 @@ SELECT
     fas.total_investments,
     fas.total_withdrawals,
     fas.total_switch_in,
-    fas.total_switch_out
+    fas.total_switch_out,
+    fas.total_product_switch_in,
+    fas.total_product_switch_out
 FROM portfolio_funds pf
 LEFT JOIN available_funds af ON af.id = pf.available_funds_id
 LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id
