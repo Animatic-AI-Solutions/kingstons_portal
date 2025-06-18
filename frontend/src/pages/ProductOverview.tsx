@@ -2655,36 +2655,3 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
 };
 
 export default ProductOverview;
-                        </td>
-                        <td className="px-6 py-2 whitespace-nowrap">
-                          <span className="text-sm text-gray-500">
-                            {holding.target_weighting ? parseFloat(holding.target_weighting).toFixed(2) : '0.00'}%
-                          </span>
-                        </td>
-                        {isEditingFunds && account && !account.template_generation_id && (
-                          <td className="px-6 py-2 whitespace-nowrap">
-                            <ActionButton
-                              variant="add"
-                              size="xs"
-                              context="Reactivate"
-                              design="descriptive"
-                              onClick={() => handleReactivateFund(holding.fund_id || 0)}
-                            />
-                          </td>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-
-        </div>
-      </div>
-    </>
-  );
-};
-
-export default ProductOverview;
