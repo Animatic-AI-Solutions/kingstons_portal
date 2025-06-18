@@ -53,6 +53,8 @@ interface ProductItem {
   start_date: dayjs.Dayjs; // Required field - each product has its own start date
   plan_number?: string; // Add plan number field
   product_owner_ids: number[]; // Changed from product_owner_id to product_owner_ids array
+  fixed_cost?: number; // Fixed annual cost for revenue calculation
+  percentage_fee?: number; // Percentage fee for revenue calculation
   portfolio: {
     id?: number; // Portfolio ID when created or selected
     name: string;
@@ -1258,7 +1260,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               start_date: formattedStartDate,
               plan_number: product.plan_number || null,
               target_risk: targetRisk,
-              template_generation_id: product.portfolio.type === 'template' ? product.portfolio.generationId : null
+              template_generation_id: product.portfolio.type === 'template' ? product.portfolio.generationId : null,
+              fixed_cost: product.fixed_cost || null,
+              percentage_fee: product.percentage_fee || null
             });
             
             const createdProductId = clientProductResponse.data.id;
@@ -2197,7 +2201,63 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                     </div>
                                   </div>
 
-                                  {/* Row 3: Product Owners */}
+                                  {/* Row 3: Revenue Configuration */}
+                                  <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
+                                    <h5 className="text-xs font-medium text-gray-700 mb-2 flex items-center">
+                                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                                      </svg>
+                                      Revenue Configuration (Optional)
+                                    </h5>
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <div>
+                                        <NumberInput
+                                          label="Fixed Cost (£)"
+                                          placeholder="e.g. 500"
+                                          value={product.fixed_cost}
+                                          onChange={(e) => {
+                                            const value = e.target.value;
+                                            const numericValue = value === '' ? undefined : parseFloat(value);
+                                            handleProductChange(product.id, 'fixed_cost', numericValue);
+                                          }}
+                                          size="sm"
+                                          fullWidth
+                                          min={0}
+                                          leftIcon={
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                                            </svg>
+                                          }
+                                          helperText="Annual fixed fee"
+                                        />
+                                      </div>
+                                      <div>
+                                        <NumberInput
+                                          label="Percentage Fee (%)"
+                                          placeholder="e.g. 1.5"
+                                          value={product.percentage_fee}
+                                          onChange={(e) => {
+                                            const value = e.target.value;
+                                            const numericValue = value === '' ? undefined : parseFloat(value);
+                                            handleProductChange(product.id, 'percentage_fee', numericValue);
+                                          }}
+                                          size="sm"
+                                          fullWidth
+                                          min={0}
+                                          max={100}
+                                          step={0.1}
+                                          leftIcon={
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                            </svg>
+                                          }
+                                          helperText="% of portfolio value"
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Row 4: Product Owners */}
                                   <div>
                                     <div className="flex items-end space-x-2">
                                       <div className="flex-grow">
