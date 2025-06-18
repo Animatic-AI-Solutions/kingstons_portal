@@ -18,6 +18,8 @@ class ClientproductBase(BaseModel):
     template_generation_id: Optional[int] = None
     template_info: Optional[Dict[str, Any]] = None
     notes: Optional[str] = None
+    fixed_cost: Optional[float] = None  # Fixed annual cost
+    percentage_fee: Optional[float] = None  # Percentage fee (e.g., 1.5 for 1.5%)
 
     model_config = ConfigDict(
         from_attributes=True
@@ -38,6 +40,8 @@ class ClientproductUpdate(BaseModel):
     portfolio_id: Optional[int] = None
     notes: Optional[str] = None
     template_generation_id: Optional[int] = None
+    fixed_cost: Optional[float] = None
+    percentage_fee: Optional[float] = None
 
     model_config = ConfigDict(
         from_attributes=True
@@ -54,3 +58,22 @@ class Clientproduct(ClientproductBase):
         },
         from_attributes=True
     ) 
+
+class ProductRevenueCalculation(BaseModel):
+    """Response model for product revenue calculation"""
+    product_id: int
+    product_name: Optional[str] = None
+    fixed_cost: Optional[float] = None
+    percentage_fee: Optional[float] = None
+    latest_portfolio_valuation: Optional[float] = None
+    valuation_date: Optional[datetime] = None
+    calculated_percentage_fee: Optional[float] = None
+    total_estimated_annual_revenue: Optional[float] = None
+    has_revenue_data: bool = False
+    
+    model_config = ConfigDict(
+        json_encoders={
+            datetime: lambda dt: dt.isoformat() if dt else None
+        },
+        from_attributes=True
+    )

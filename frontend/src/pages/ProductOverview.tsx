@@ -5,6 +5,8 @@ import { getProductFUM, calculateStandardizedMultipleFundsIRR } from '../service
 import { MultiSelectDropdown, AutocompleteSearch, AutocompleteOption } from '../components/ui';
 import { isCashFund } from '../utils/fundUtils';
 import ActionButton from '../components/ui/ActionButton';
+import dayjs, { Dayjs } from 'dayjs';
+import { DatePicker } from 'antd';
 
 
 // Basic interfaces for type safety
@@ -43,6 +45,8 @@ interface Account {
     portfolio_name: string;
     start_date: string;
   };
+  fixed_cost?: number;
+  percentage_fee?: number;
 }
 
 interface Holding {
@@ -156,7 +160,9 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     provider_id: '',
     product_type: '',
     target_risk: '',
-    start_date: null as Dayjs | null
+    start_date: null as Dayjs | null,
+    fixed_cost: '',
+    percentage_fee: ''
   });
   const [editOwnersFormData, setEditOwnersFormData] = useState({
     portfolio_id: '',
@@ -531,8 +537,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     return new Intl.NumberFormat('en-GB', {
       style: 'currency',
       currency: 'GBP',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(amount);
   };
 
@@ -1428,7 +1434,9 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         provider_id: account.provider_id?.toString() || '',
         product_type: account.product_type || '',
         target_risk: account.target_risk?.toString() || '',
-        start_date: account.start_date ? dayjs(account.start_date) : null
+        start_date: account.start_date ? dayjs(account.start_date) : null,
+        fixed_cost: account.fixed_cost?.toString() || '',
+        percentage_fee: account.percentage_fee?.toString() || ''
       });
     } else {
       // Exiting edit mode - clear any errors
@@ -1505,6 +1513,15 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       // Include start_date if provided
       if (editFormData.start_date) {
         updateData.start_date = editFormData.start_date.format('YYYY-MM-DD');
+      }
+
+      // Include revenue fields if provided
+      if (editFormData.fixed_cost) {
+        updateData.fixed_cost = parseFloat(editFormData.fixed_cost);
+      }
+      
+      if (editFormData.percentage_fee) {
+        updateData.percentage_fee = parseFloat(editFormData.percentage_fee);
       }
 
       await api.patch(`/api/client_products/${accountId}`, updateData);
@@ -1792,7 +1809,9 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             Reactivate
                           </button>
                         )}
-                        <button
+                        <ActionButton
+                          variant="delete"
+                          size="xs"
                           onClick={() => setIsDeleteModalOpen(true)}
                         />
                       </>
@@ -1895,10 +1914,110 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                       </div>
                     )}
                   </div>
+
+                  {/* Revenue Configuration Section */}
+                  <div className="sm:col-span-2 pt-4 border-t border-gray-200">
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3 flex items-center">
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                      </svg>
+                      Revenue Configuration
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      {/* Fixed Cost */}
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Fixed Cost (£)</div>
+                        {isEditMode ? (
+                          <input
+                            type="number"
+                            name="fixed_cost"
+                            value={editFormData.fixed_cost}
+                            onChange={handleInputChange}
+                            placeholder="e.g. 500"
+                            min="0"
+                            step="0.01"
+                            className="mt-1 shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm font-medium text-gray-900 border-gray-300 rounded-md py-2 px-3"
+                          />
+                        ) : (
+                          <div className="text-sm font-medium text-gray-900 mt-1">
+                            {account.fixed_cost ? formatCurrency(account.fixed_cost) : 'Not set'}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Percentage Fee */}
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Percentage Fee (%)</div>
+                        {isEditMode ? (
+                          <input
+                            type="number"
+                            name="percentage_fee"
+                            value={editFormData.percentage_fee}
+                            onChange={handleInputChange}
+                            placeholder="e.g. 1.5"
+                            min="0"
+                            max="100"
+                            step="0.1"
+                            className="mt-1 shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm font-medium text-gray-900 border-gray-300 rounded-md py-2 px-3"
+                          />
+                        ) : (
+                          <div className="text-sm font-medium text-gray-900 mt-1">
+                            {account.percentage_fee ? `${account.percentage_fee}%` : 'Not set'}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Total Revenue Calculation */}
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Estimated Annual Revenue</div>
+                        <div className="text-sm font-semibold text-gray-900 mt-1">
+                          {(() => {
+                            const fixedCost = account.fixed_cost || 0;
+                            const percentageFee = account.percentage_fee || 0;
+                            const portfolioValue = portfolioTotalValue || 0;
+                            
+                            // If neither cost type is set
+                            if (!fixedCost && !percentageFee) {
+                              return 'Not configured';
+                            }
+                            
+                            // If only fixed cost is set
+                            if (fixedCost && !percentageFee) {
+                              return formatCurrency(fixedCost);
+                            }
+                            
+                            // If only percentage fee is set
+                            if (!fixedCost && percentageFee) {
+                              if (!portfolioValue || portfolioValue <= 0) {
+                                return 'No valuation available';
+                              }
+                              return formatCurrency((portfolioValue * percentageFee) / 100);
+                            }
+                            
+                            // If both are set
+                            if (fixedCost && percentageFee) {
+                              if (!portfolioValue || portfolioValue <= 0) {
+                                return 'No valuation available';
+                              }
+                              const totalRevenue = fixedCost + ((portfolioValue * percentageFee) / 100);
+                              return formatCurrency(totalRevenue);
+                            }
+                            
+                            return 'Not configured';
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Product Owners Section */}
+
+            </div>
+
+            {/* Right Side - Product Owners & Portfolio (Top) + Product Summary & Risk (Bottom) */}
+            <div className="p-6 space-y-8">
+              {/* Product Owners Section - Moved to Top Right */}
               <div>
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-md font-semibold text-gray-900 flex items-center">
@@ -2040,11 +2159,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                   </div>
                 )}
               </div>
-            </div>
 
-            {/* Right Side - Product Summary & Risk Profile */}
-            <div className="p-6">
-              {/* Product Summary Section (Compact) */}
+              {/* Product Summary Section - Moved to Bottom Right */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <svg className="h-5 w-5 text-indigo-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2060,10 +2176,16 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {/* Total Product Value */}
-                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                      <div className="flex items-center justify-between">
-                        <div>
+                    {/* Total Product Value and IRR Cards - Side by Side */}
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Total Product Value */}
+                      <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                        <div className="text-center">
+                          <div className="flex justify-center mb-2">
+                            <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                            </svg>
+                          </div>
                           <div className="text-xs font-medium text-blue-900 uppercase tracking-wide">
                             Total Product Value
                           </div>
@@ -2076,18 +2198,16 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             </div>
                           )}
                         </div>
-                        <div className="flex-shrink-0">
-                          <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                          </svg>
-                        </div>
                       </div>
-                    </div>
 
-                    {/* Total Product IRR */}
-                    <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                      <div className="flex items-center justify-between">
-                        <div>
+                      {/* Total Product IRR */}
+                      <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+                        <div className="text-center">
+                          <div className="flex justify-center mb-2">
+                            <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                            </svg>
+                          </div>
                           <div className="text-xs font-medium text-green-900 uppercase tracking-wide">
                             Total Product IRR
                           </div>
@@ -2100,11 +2220,6 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           }`}>
                             {portfolioIRR !== null ? formatPercentage(portfolioIRR) : 'N/A'}
                           </div>
-                        </div>
-                        <div className="flex-shrink-0">
-                          <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                          </svg>
                         </div>
                       </div>
                     </div>
@@ -2164,6 +2279,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                         </div>
                       )}
                     </div>
+
+
                   </div>
                 )}
               </div>

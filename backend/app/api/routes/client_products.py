@@ -3,7 +3,7 @@ from typing import List, Optional
 import logging
 from datetime import date, datetime
 
-from app.models.client_product import Clientproduct, ClientproductCreate, ClientproductUpdate
+from app.models.client_product import Clientproduct, ClientproductCreate, ClientproductUpdate, ProductRevenueCalculation
 from app.db.database import get_db
 from app.api.routes.portfolio_funds import calculate_excel_style_irr, calculate_multiple_portfolio_funds_irr
 
@@ -519,7 +519,9 @@ async def create_client_product(client_product: ClientproductCreate, db = Depend
             "plan_number": client_product.plan_number,
             "provider_id": client_product.provider_id,
             "product_type": client_product.product_type,
-            "template_generation_id": client_product.template_generation_id
+            "template_generation_id": client_product.template_generation_id,
+            "fixed_cost": client_product.fixed_cost,
+            "percentage_fee": client_product.percentage_fee
         }
         
         # Add portfolio_id if it exists
@@ -1506,3 +1508,129 @@ async def reactivate_product(product_id: int, db = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error reactivating product {product_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to reactivate product: {str(e)}")
+
+@router.get("/client_products/{product_id}/revenue", response_model=ProductRevenueCalculation)
+async def calculate_product_revenue(product_id: int, db = Depends(get_db)):
+    """
+    What it does: Calculates estimated annual revenue for a product based on fixed cost and percentage fee.
+    Why it's needed: Allows advisors to estimate how much revenue they're making from each product.
+    How it works:
+        1. Retrieves the product with its fixed_cost and percentage_fee
+        2. Gets the latest portfolio valuation for the product
+        3. Calculates: (latest_valuation × percentage_fee/100) + fixed_cost = total revenue
+        4. Returns detailed breakdown of the calculation
+    Expected output: JSON object with revenue calculation breakdown
+    """
+    try:
+        # Get the product details including revenue fields
+        product_result = db.table("client_products").select("*").eq("id", product_id).execute()
+        if not product_result.data:
+            raise HTTPException(status_code=404, detail="Product not found")
+        
+        product = product_result.data[0]
+        logger.info(f"Calculating revenue for product {product_id}: {product.get('product_name')}")
+        
+        # Initialize response data
+        response = ProductRevenueCalculation(
+            product_id=product_id,
+            product_name=product.get("product_name"),
+            fixed_cost=product.get("fixed_cost"),
+            percentage_fee=product.get("percentage_fee"),
+            latest_portfolio_valuation=None,
+            valuation_date=None,
+            calculated_percentage_fee=None,
+            total_estimated_annual_revenue=None,
+            has_revenue_data=False
+        )
+        
+        # Check if product has any revenue data
+        has_fixed_cost = product.get("fixed_cost") is not None
+        has_percentage_fee = product.get("percentage_fee") is not None
+        
+        if not has_fixed_cost and not has_percentage_fee:
+            logger.info(f"Product {product_id} has no revenue data configured")
+            return response
+        
+        response.has_revenue_data = True
+        
+        # Get portfolio valuation if percentage fee is configured
+        portfolio_id = product.get("portfolio_id")
+        latest_valuation = 0
+        valuation_date = None
+        
+        if has_percentage_fee and portfolio_id:
+            try:
+                # Get all active portfolio funds for this portfolio
+                portfolio_funds_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).eq("status", "active").execute()
+                
+                if portfolio_funds_result.data:
+                    fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
+                    
+                    # Get latest valuations for all active funds
+                    valuations_result = db.table("latest_portfolio_fund_valuations").select("valuation, valuation_date").in_("portfolio_fund_id", fund_ids).execute()
+                    
+                    if valuations_result.data:
+                        # Sum all fund valuations to get total portfolio value
+                        total_value = 0
+                        latest_date = None
+                        
+                        for valuation in valuations_result.data:
+                            value = valuation.get("valuation", 0)
+                            date_str = valuation.get("valuation_date")
+                            
+                            if value:
+                                total_value += float(value)
+                            
+                            # Track the most recent valuation date
+                            if date_str:
+                                try:
+                                    val_date = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+                                    if latest_date is None or val_date > latest_date:
+                                        latest_date = val_date
+                                except Exception as e:
+                                    logger.warning(f"Error parsing valuation date {date_str}: {str(e)}")
+                        
+                        latest_valuation = total_value
+                        valuation_date = latest_date
+                        
+                        logger.info(f"Portfolio {portfolio_id} latest valuation: £{latest_valuation:.2f}")
+                    else:
+                        logger.info(f"No valuations found for portfolio {portfolio_id}")
+                else:
+                    logger.info(f"No active portfolio funds found for portfolio {portfolio_id}")
+                    
+            except Exception as e:
+                logger.error(f"Error getting portfolio valuation: {str(e)}")
+        
+        # Calculate revenue components
+        fixed_cost_amount = float(product.get("fixed_cost", 0))
+        percentage_fee_rate = float(product.get("percentage_fee", 0))
+        
+        # Calculate percentage-based fee
+        calculated_percentage_fee = 0
+        if has_percentage_fee and latest_valuation > 0:
+            calculated_percentage_fee = latest_valuation * (percentage_fee_rate / 100.0)
+        
+        # Calculate total estimated annual revenue
+        total_revenue = fixed_cost_amount + calculated_percentage_fee
+        
+        # Update response with calculated values
+        response.latest_portfolio_valuation = latest_valuation if latest_valuation > 0 else None
+        response.valuation_date = valuation_date
+        response.calculated_percentage_fee = calculated_percentage_fee if calculated_percentage_fee > 0 else None
+        response.total_estimated_annual_revenue = total_revenue if total_revenue > 0 else None
+        
+        logger.info(f"Revenue calculation for product {product_id}:")
+        logger.info(f"  Fixed cost: £{fixed_cost_amount:.2f}")
+        logger.info(f"  Portfolio value: £{latest_valuation:.2f}")
+        logger.info(f"  Percentage fee rate: {percentage_fee_rate}%")
+        logger.info(f"  Calculated percentage fee: £{calculated_percentage_fee:.2f}")
+        logger.info(f"  Total estimated annual revenue: £{total_revenue:.2f}")
+        
+        return response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error calculating revenue for product {product_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to calculate revenue: {str(e)}")
