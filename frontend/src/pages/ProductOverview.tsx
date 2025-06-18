@@ -920,6 +920,17 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         status: 'active'
       });
       
+      // Trigger portfolio IRR recalculation after adding fund
+      if (account?.portfolio_id) {
+        try {
+          console.log('🔄 Triggering portfolio IRR recalculation after adding fund...');
+          await api.post(`/api/portfolios/${account.portfolio_id}/calculate-irr`);
+          console.log('✅ Portfolio IRR recalculation completed');
+        } catch (irrErr) {
+          console.warn('⚠️ IRR recalculation failed, but continuing with data refresh:', irrErr);
+        }
+      }
+      
       // Refresh the data
       if (accountId) await fetchData(accountId);
       setFundError(null);
@@ -945,6 +956,17 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       await api.patch(`/portfolio_funds/${portfolioFund.id}`, {
         weighting: newWeighting
       });
+      
+      // Trigger portfolio IRR recalculation after updating fund weighting
+      if (account?.portfolio_id) {
+        try {
+          console.log('🔄 Triggering portfolio IRR recalculation after updating fund weighting...');
+          await api.post(`/api/portfolios/${account.portfolio_id}/calculate-irr`);
+          console.log('✅ Portfolio IRR recalculation completed');
+        } catch (irrErr) {
+          console.warn('⚠️ IRR recalculation failed, but continuing with data refresh:', irrErr);
+        }
+      }
       
       // Refresh the data
       if (accountId) await fetchData(accountId);
@@ -973,6 +995,17 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         status: 'inactive',
         end_date: new Date().toISOString().split('T')[0] // Current date in YYYY-MM-DD format
       });
+      
+      // Trigger portfolio IRR recalculation after removing fund
+      if (account?.portfolio_id) {
+        try {
+          console.log('🔄 Triggering portfolio IRR recalculation after removing fund...');
+          await api.post(`/api/portfolios/${account.portfolio_id}/calculate-irr`);
+          console.log('✅ Portfolio IRR recalculation completed');
+        } catch (irrErr) {
+          console.warn('⚠️ IRR recalculation failed, but continuing with data refresh:', irrErr);
+        }
+      }
       
       // Refresh the data
       if (accountId) await fetchData(accountId);
@@ -1003,6 +1036,17 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         end_date: null,
         target_weighting: 0 // Start with 0% weighting, user can adjust
       });
+      
+      // Trigger portfolio IRR recalculation after reactivating fund
+      if (account?.portfolio_id) {
+        try {
+          console.log('🔄 Triggering portfolio IRR recalculation after reactivating fund...');
+          await api.post(`/api/portfolios/${account.portfolio_id}/calculate-irr`);
+          console.log('✅ Portfolio IRR recalculation completed');
+        } catch (irrErr) {
+          console.warn('⚠️ IRR recalculation failed, but continuing with data refresh:', irrErr);
+        }
+      }
       
       // Refresh the data
       if (accountId) await fetchData(accountId);
@@ -1091,8 +1135,23 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       
       await Promise.all(updatePromises);
       
-      // Refresh the data
-      if (accountId) await fetchData(accountId);
+      // Trigger portfolio IRR recalculation after updating fund weightings
+      if (account?.portfolio_id) {
+        try {
+          console.log('🔄 Triggering portfolio IRR recalculation after fund weightings update...');
+          await api.post(`/api/portfolios/${account.portfolio_id}/calculate-irr`);
+          console.log('✅ Portfolio IRR recalculation completed');
+        } catch (irrErr) {
+          console.warn('⚠️ IRR recalculation failed, but continuing with data refresh:', irrErr);
+        }
+      }
+      
+      // Refresh the data (with a small delay to ensure IRR calculation is complete)
+      if (accountId) {
+        setTimeout(async () => {
+          await fetchData(accountId);
+        }, 500); // 500ms delay to allow IRR calculation to complete
+      }
       setIsEditingFunds(false);
       setFundError(null);
     } catch (err: any) {
@@ -1837,7 +1896,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                       </svg>
                       Revenue Configuration
-                    </div>
+                </div>
                     <div className="grid grid-cols-3 gap-4">
                       {/* Fixed Cost */}
                       <div>
@@ -1858,7 +1917,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             {account.fixed_cost ? formatCurrency(account.fixed_cost) : 'Not set'}
                           </div>
                         )}
-                      </div>
+              </div>
 
                       {/* Percentage Fee */}
                       <div>
@@ -2073,7 +2132,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                     </div>
                   </div>
                 )}
-              </div>
+            </div>
 
               {/* Product Summary Section - Moved to Bottom Right */}
               <div>
@@ -2093,7 +2152,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                   <div className="space-y-4">
                     {/* Total Product Value and IRR Cards - Side by Side */}
                     <div className="grid grid-cols-2 gap-3">
-                      {/* Total Product Value */}
+                    {/* Total Product Value */}
                       <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
                         <div className="text-center">
                           <div className="flex justify-center mb-2">
@@ -2112,10 +2171,10 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                               as of {formatDate(lastValuationDate)}
                             </div>
                           )}
-                        </div>
                       </div>
+                    </div>
 
-                      {/* Total Product IRR */}
+                    {/* Total Product IRR */}
                       <div className="bg-green-50 rounded-lg p-3 border border-green-200">
                         <div className="text-center">
                           <div className="flex justify-center mb-2">

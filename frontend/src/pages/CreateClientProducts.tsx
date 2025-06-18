@@ -1914,26 +1914,26 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             <form onSubmit={handleSubmit} className="p-4">
               {/* Client Selection - Inline */}
               <div className="mb-4">
-                {clients.length > 0 ? (
-                  <AutocompleteSearch
-                    label="Client Name"
-                    placeholder="Type to search clients..."
-                    options={clientOptions}
-                    onSelect={handleClientSelect}
-                    value={selectedClientId ? clients.find(c => c.id === selectedClientId)?.name || '' : ''}
-                    minSearchLength={0}
-                    maxResults={10}
-                    allowCustomValue={false}
-                    required
-                    size="md"
-                    fullWidth={true}
-                    helperText={`${clients.length} clients available`}
-                  />
-                ) : (
-                  <div className="text-gray-500 text-sm bg-gray-100 p-2 rounded">
-                    No clients available. Please add a client first.
-                  </div>
-                )}
+                  {clients.length > 0 ? (
+                    <AutocompleteSearch
+                      label="Client Name"
+                      placeholder="Type to search clients..."
+                      options={clientOptions}
+                      onSelect={handleClientSelect}
+                      value={selectedClientId ? clients.find(c => c.id === selectedClientId)?.name || '' : ''}
+                      minSearchLength={0}
+                      maxResults={10}
+                      allowCustomValue={false}
+                      required
+                      size="md"
+                      fullWidth={true}
+                      helperText={`${clients.length} clients available`}
+                    />
+                  ) : (
+                      <div className="text-gray-500 text-sm bg-gray-100 p-2 rounded">
+                        No clients available. Please add a client first.
+                      </div>
+                  )}
               </div>
 
               {/* Step 2: Products Section - Only show after client selected */}

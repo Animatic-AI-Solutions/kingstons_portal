@@ -451,93 +451,125 @@ async def delete_client_group_products(
     current_user: dict = Depends(get_current_user)
 ):
     """
-    What it does: Deletes all products (and their associated data) for a specific client group.
-    Why it's needed: Allows bulk deletion of all products related to a client group.
+    What it does: Deletes all products associated with a specific client group.
+    Why it's needed: Provides a way to clean up all products when a client group is removed.
     How it works:
-        1. Finds all products for the client group
-        2. For each product, removes associated portfolio funds and activity logs
-        3. Deletes the portfolios and then the products
-        4. Returns counts of deleted items
-    Expected output: A JSON object with counts of deleted products, portfolios, and funds
+        1. Validates that the client group exists
+        2. Finds all products associated with this client group
+        3. Deletes each product and its associated data
+        4. Returns the count of deleted products
+    Expected output: A dict with the count of deleted products
     """
     try:
+        logger.info(f"Deleting all products for client group {client_group_id}")
+        
+        # First, check if the client group exists
+        client_group_result = db.table('client_groups').select('*').eq('id', client_group_id).execute()
+        
+        if not client_group_result.data:
+            raise HTTPException(status_code=404, detail="Client group not found")
+        
         # Get all products for this client group
-        products_result = db.table("client_products").select("id,portfolio_id").eq("client_id", client_group_id).execute()
+        products_result = db.table('client_products').select('id').eq('client_id', client_group_id).execute()
         
         if not products_result.data:
             logger.info(f"No products found for client group {client_group_id}")
-            return {
-                "message": "No products found for client group",
-                "deleted_products": 0,
-                "deleted_portfolios": 0,
-                "deleted_portfolio_funds": 0
-            }
-            
-        products = products_result.data
-        product_ids = [p["id"] for p in products]
-        portfolio_ids = [p["portfolio_id"] for p in products if p["portfolio_id"] is not None]
+            return {"deleted_count": 0, "message": "No products found for this client group"}
         
-        # Get all portfolio funds for these portfolios
-        portfolio_fund_ids = []
-        if portfolio_ids:
-            for portfolio_id in portfolio_ids:
-                funds_result = db.table("portfolio_funds").select("id,available_funds_id,status").eq("portfolio_id", portfolio_id).execute()
-                if funds_result.data:
-                    portfolio_fund_ids.extend([fund.get("id") for fund in funds_result.data])
-            
-        # Delete activity logs associated with portfolio funds
-        activity_logs_deleted = 0
-        if portfolio_fund_ids:
-            for pf_id in portfolio_fund_ids:
-                activity_logs = db.table("holding_activity_log").delete().eq("portfolio_fund_id", pf_id).execute()
-                activity_logs_deleted += len(activity_logs.data) if activity_logs.data else 0
-                
-        # Delete valuations and IRR values for portfolio funds
-        valuations_deleted = 0
-        irr_values_deleted = 0
-        if portfolio_fund_ids:
-            for pf_id in portfolio_fund_ids:
-                # Delete fund valuations
-                valuations = db.table("portfolio_fund_valuations").delete().eq("portfolio_fund_id", pf_id).execute()
-                valuations_deleted += len(valuations.data) if valuations.data else 0
-                
-                # Delete IRR values
-                irr_values = db.table("portfolio_fund_irr_values").delete().eq("fund_id", pf_id).execute()
-                irr_values_deleted += len(irr_values.data) if irr_values.data else 0
+        product_ids = [product['id'] for product in products_result.data]
+        logger.info(f"Found {len(product_ids)} products to delete for client group {client_group_id}")
         
-        # Delete portfolio funds
-        funds_deleted = 0
-        if portfolio_ids:
-            for portfolio_id in portfolio_ids:
-                funds = db.table("portfolio_funds").delete().eq("portfolio_id", portfolio_id).execute()
-                funds_deleted += len(funds.data) if funds.data else 0
+        # Delete all products for this client group
+        # The database CASCADE constraints should handle related data
+        delete_result = db.table('client_products').delete().eq('client_id', client_group_id).execute()
         
-        # Delete portfolios
-        portfolios_deleted = 0
-        if portfolio_ids:
-            for portfolio_id in portfolio_ids:
-                portfolio = db.table("portfolios").delete().eq("id", portfolio_id).execute()
-                portfolios_deleted += len(portfolio.data) if portfolio.data else 0
+        logger.info(f"Successfully deleted {len(product_ids)} products for client group {client_group_id}")
         
-        # Delete products
-        products_deleted = 0
-        if product_ids:
-            for product_id in product_ids:
-                product = db.table("client_products").delete().eq("id", product_id).execute()
-                products_deleted += len(product.data) if product.data else 0
-                
         return {
-            "message": f"Successfully deleted data for client group {client_group_id}",
-            "deleted_products": products_deleted,
-            "deleted_portfolios": portfolios_deleted,
-            "deleted_portfolio_funds": funds_deleted,
-            "deleted_valuations": valuations_deleted,
-            "deleted_irr_values": irr_values_deleted,
-            "deleted_activity_logs": activity_logs_deleted
+            "deleted_count": len(product_ids),
+            "message": f"Successfully deleted {len(product_ids)} products for client group {client_group_id}",
+            "deleted_product_ids": product_ids
         }
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error deleting client group products: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to delete client group products: {str(e)}")
+        logger.error(f"Error deleting products for client group {client_group_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@router.get("/client_groups/{client_group_id}/products", response_model=List[dict])
+async def get_client_group_products(
+    client_group_id: int,
+    skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
+    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
+    db = Depends(get_db)
+):
+    """
+    What it does: Retrieves all products associated with a specific client group.
+    Why it's needed: Provides a way to fetch products for a client group for the ReportGenerator.
+    How it works:
+        1. Validates that the client group exists
+        2. Queries the client_products table for products belonging to this client group
+        3. Returns the products with their related information
+    Expected output: A JSON array of product objects for the specified client group
+    """
+    try:
+        logger.info(f"Fetching products for client group {client_group_id}")
+        
+        # First, check if the client group exists
+        client_group_result = db.table('client_groups').select('*').eq('id', client_group_id).execute()
+        
+        if not client_group_result.data:
+            raise HTTPException(status_code=404, detail="Client group not found")
+        
+        # Get products for this client group using the optimized products_list_view
+        query = db.table("products_list_view").select("*").eq("client_id", client_group_id)
+        
+        # Apply pagination
+        result = query.range(skip, skip + limit - 1).execute()
+        
+        if not result.data:
+            logger.info(f"No products found for client group {client_group_id}")
+            return []
+        
+        # Transform the data to match the expected format
+        products = []
+        for product in result.data:
+            products.append({
+                "id": product.get("product_id"),
+                "product_name": product.get("product_name"),
+                "product_type": product.get("product_type"),
+                "client_id": product.get("client_id"),
+                "client_name": product.get("client_name"),
+                "status": product.get("status"),
+                "start_date": product.get("start_date"),
+                "end_date": product.get("end_date"),
+                "provider_id": product.get("provider_id"),
+                "provider_name": product.get("provider_name"),
+                "provider_theme_color": product.get("provider_theme_color"),
+                "portfolio_id": product.get("portfolio_id"),
+                "portfolio_name": product.get("portfolio_name"),
+                "total_value": product.get("total_value", 0),
+                "template_generation_id": product.get("effective_template_generation_id"),
+                "portfolio_type_display": product.get("portfolio_type_display"),
+                "plan_number": product.get("plan_number"),
+                "template_info": {
+                    "id": product.get("effective_template_generation_id"),
+                    "generation_name": product.get("generation_name"),
+                    "name": product.get("template_name"),
+                    "version_number": product.get("version_number"),
+                    "description": product.get("template_description")
+                } if product.get("effective_template_generation_id") else None
+            })
+        
+        logger.info(f"Found {len(products)} products for client group {client_group_id}")
+        return products
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching products for client group {client_group_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.get("/client_group_fum_summary", response_model=List[dict])
 async def get_client_group_fum_summary(db = Depends(get_db)):
@@ -600,12 +632,12 @@ async def get_client_group_fum_summary(db = Depends(get_db)):
                                 total_fum += float(valuation["valuation"] or 0)
             
             # Combine the data
-                combined_record = {
-                    "client_group_id": client_group_id,
+            combined_record = {
+                "client_group_id": client_group_id,
                 "fum": total_fum,
                 **client_group  # Add all client group fields
-                }
-                combined_data.append(combined_record)
+            }
+            combined_data.append(combined_record)
         
         logger.info(f"Calculated FUM for {len(combined_data)} client groups")
         return combined_data
@@ -628,10 +660,10 @@ async def get_client_group_fum_by_id(client_group_id: int, db = Depends(get_db))
     try:
         # Verify client group exists
         client_group = db.table("client_groups").select("id").eq("id", client_group_id).execute()
-            
+        
         if not client_group.data:
-                raise HTTPException(status_code=404, detail=f"Client group with ID {client_group_id} not found")
-            
+            raise HTTPException(status_code=404, detail=f"Client group with ID {client_group_id} not found")
+        
         # Calculate FUM for this client group
         # Get all active products for this client group
         products_result = db.table("client_products")\
@@ -762,12 +794,12 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                     "risk_factor": fund["risk_factor"],
                     "amount_invested": fund["amount_invested"] or 0,
                     "market_value": fund["market_value"] or 0,
-                                    "investments": fund["total_investments"] or 0,
-                "withdrawals": fund["total_withdrawals"] or 0,
-                "switch_in": fund["total_switch_in"] or 0,
-                "switch_out": fund["total_switch_out"] or 0,
-                "product_switch_in": fund["total_product_switch_in"] or 0,
-                "product_switch_out": fund["total_product_switch_out"] or 0,
+                    "investments": fund["total_investments"] or 0,
+                    "withdrawals": fund["total_withdrawals"] or 0,
+                    "switch_in": fund["total_switch_in"] or 0,
+                    "switch_out": fund["total_switch_out"] or 0,
+                    "product_switch_in": fund["total_product_switch_in"] or 0,
+                    "product_switch_out": fund["total_product_switch_out"] or 0,
                     "irr": fund["irr"],
                     "valuation_date": fund["valuation_date"],
                     "status": "active"
