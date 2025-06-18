@@ -164,35 +164,22 @@ const ReportGenerator: React.FC = () => {
 
 // Formatters now imported from shared components to eliminate duplication
 
-  // Custom formatter that respects truncation setting
+  // Custom formatter for currency amounts
   const formatCurrencyWithTruncation = (amount: number | null | undefined): string => {
     if (amount === null || amount === undefined) return '£0';
-    
-    if (truncateAmounts) {
-      return `£${Math.trunc(amount).toLocaleString()}`;
-    }
-    
     return formatCurrencyFallback(amount);
   };
 
-  // Custom IRR formatter that respects precision setting
+  // Custom IRR formatter
   const formatIrrWithPrecision = (irr: number | null | undefined): string => {
     if (irr === null || irr === undefined) return '-';
-    
-    if (roundIrrToOne) {
-      return `${irr.toFixed(1)}%`;
-    }
-    
     return formatPercentageFallback(irr);
   };
 
-  // Custom withdrawal formatter that respects negative formatting setting
+  // Custom withdrawal formatter
   const formatWithdrawalAmount = (amount: number | null | undefined): string => {
     if (amount === null || amount === undefined) return '-';
-    // Don't add minus sign for zero amounts
-    if (amount === 0) return formatCurrencyWithTruncation(amount);
-    const displayAmount = formatWithdrawalsAsNegative ? -Math.abs(amount) : amount;
-    return formatCurrencyWithTruncation(displayAmount);
+    return formatCurrencyWithTruncation(amount);
   };
 
   // Calculate net fund switches (switch in - switch out)
@@ -207,10 +194,7 @@ const ReportGenerator: React.FC = () => {
   const [dataError, setDataError] = useState<string | null>(null);
   
   // Report formatting options
-  const [truncateAmounts, setTruncateAmounts] = useState(false);
-  const [roundIrrToOne, setRoundIrrToOne] = useState(false);
-  const [formatWithdrawalsAsNegative, setFormatWithdrawalsAsNegative] = useState(false);
-  const [combineFundSwitches, setCombineFundSwitches] = useState(false);
+
   const [showInactiveProducts, setShowInactiveProducts] = useState(false);
   const [showPreviousFunds, setShowPreviousFunds] = useState(true);
   
@@ -2045,9 +2029,6 @@ Please select a different valuation date or ensure all active funds have valuati
                 }
               })(),
               // Report settings
-              truncateAmounts,
-              roundIrrToOne,
-              formatWithdrawalsAsNegative,
               showInactiveProducts,
               showPreviousFunds
             };
@@ -2089,9 +2070,6 @@ Please select a different valuation date or ensure all active funds have valuati
           }
         })(),
         // Report settings
-        truncateAmounts,
-        roundIrrToOne,
-        formatWithdrawalsAsNegative,
         showInactiveProducts,
         showPreviousFunds
       };
@@ -2313,50 +2291,7 @@ Please select a different valuation date or ensure all active funds have valuati
             <div className="mt-4 p-3 bg-gray-50 rounded-lg border">
               <h4 className="text-sm font-medium text-gray-700 mb-2">Report Formatting</h4>
               <div className="space-y-2">
-                <label className="inline-flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={truncateAmounts}
-                    onChange={(e) => setTruncateAmounts(e.target.checked)}
-                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                  />
-                  <span className="ml-2 text-sm text-gray-600">
-                    Truncate amounts to whole numbers (excludes IRRs)
-                  </span>
-                </label>
-                <label className="inline-flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={roundIrrToOne}
-                    onChange={(e) => setRoundIrrToOne(e.target.checked)}
-                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                  />
-                  <span className="ml-2 text-sm text-gray-600">
-                    Round IRR values to 1 decimal place (default is 2)
-                  </span>
-                </label>
-                <label className="inline-flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formatWithdrawalsAsNegative}
-                    onChange={(e) => setFormatWithdrawalsAsNegative(e.target.checked)}
-                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                  />
-                  <span className="ml-2 text-sm text-gray-600">
-                    Format withdrawal amounts as negative values
-                  </span>
-                </label>
-                <label className="inline-flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={combineFundSwitches}
-                    onChange={(e) => setCombineFundSwitches(e.target.checked)}
-                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                  />
-                  <span className="ml-2 text-sm text-gray-600">
-                    Combine fund switch columns into net amount
-                  </span>
-                </label>
+
                 
                 {/* Historical IRR Years Setting */}
                 <div className="flex items-center space-x-3">
@@ -2379,6 +2314,35 @@ Please select a different valuation date or ensure all active funds have valuati
                     years (up to {historicalIRRYears * 12} months)
                   </span>
                 </div>
+                
+                {/* Inactive Product Detail Controls */}
+                {relatedProducts.filter(product => !excludedProductIds.has(product.id) && product.status === 'inactive').length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <h5 className="text-sm font-medium text-gray-700 mb-2">Show Detailed Cards For</h5>
+                    <p className="text-xs text-gray-500 mb-2">
+                      Choose which inactive products to show detailed cards for (unchecked = summary table only)
+                    </p>
+                    <div className="space-y-1">
+                      {relatedProducts
+                        .filter(product => !excludedProductIds.has(product.id) && product.status === 'inactive')
+                        .map(product => (
+                          <label key={product.id} className="inline-flex items-center w-full">
+                            <input
+                              type="checkbox"
+                              checked={showInactiveProductDetails.has(product.id)}
+                              onChange={() => toggleInactiveProductDetails(product.id)}
+                              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                            />
+                            <span className="ml-2 text-sm text-gray-600">
+                              {product.product_name}
+                              <span className="ml-1 text-xs text-red-600">(Inactive)</span>
+                            </span>
+                          </label>
+                        ))
+                      }
+                    </div>
+                  </div>
+                )}
               </div>
               
               {/* Previous Funds Breakdown Controls */}
@@ -2421,34 +2385,7 @@ Please select a different valuation date or ensure all active funds have valuati
                 </div>
               )}
               
-              {/* Inactive Product Detail Controls */}
-              {productSummaries.some(product => product.status === 'inactive') && (
-                <div className="mt-3 pt-3 border-t border-gray-200">
-                  <h5 className="text-sm font-medium text-gray-700 mb-2">Inactive Product Details</h5>
-                  <p className="text-xs text-gray-500 mb-2">
-                    Choose which inactive products to show detailed cards for (unchecked = summary table only)
-                  </p>
-                  <div className="space-y-1">
-                    {productSummaries
-                      .filter(product => product.status === 'inactive')
-                      .map(product => (
-                        <label key={product.id} className="inline-flex items-center w-full">
-                          <input
-                            type="checkbox"
-                            checked={showInactiveProductDetails.has(product.id)}
-                            onChange={() => toggleInactiveProductDetails(product.id)}
-                            className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                          />
-                          <span className="ml-2 text-sm text-gray-600">
-                            {product.product_name}
-                            <span className="ml-1 text-xs text-red-600">(Inactive)</span>
-                          </span>
-                        </label>
-                      ))
-                    }
-                  </div>
-                </div>
-              )}
+
             </div>
             
             <div className="mt-6">

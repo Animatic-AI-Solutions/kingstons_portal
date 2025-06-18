@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { DatePicker } from 'antd';
+import dayjs, { Dayjs } from 'dayjs';
 import { useAuth } from '../context/AuthContext';
-import { getProductFUM, calculateStandardizedMultipleFundsIRR } from '../services/api';
+import { getProductFUM, calculateStandardizedMultipleFundsIRR, lapseProduct, reactivateProduct } from '../services/api';
 import { MultiSelectDropdown, AutocompleteSearch, AutocompleteOption } from '../components/ui';
 import { isCashFund } from '../utils/fundUtils';
 import ActionButton from '../components/ui/ActionButton';
@@ -1640,95 +1642,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       <ReactivateConfirmationModal />
       <div className="flex flex-col space-y-6 -mx-6 sm:-mx-8 lg:-mx-12">
 
-        {/* Edit Form (conditionally displayed) */}
-        {isEditMode && (
-          <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-4 mb-4 mx-6 sm:mx-8 lg:mx-12">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-md font-semibold text-gray-900 flex items-center">
-                <svg className="h-4 w-4 text-indigo-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                Edit Product Details
-              </h3>
-            </div>
-        
-            {formError && (
-              <div className="mb-3 p-2 text-xs text-red-700 bg-red-50 rounded border border-red-200">
-                {formError}
-              </div>
-            )}
-        
-            <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-                <div>
-                  <label htmlFor="product_name" className="block text-xs font-medium text-gray-700 mb-1">
-                    Product Name
-                  </label>
-                  <input
-                    type="text"
-                    id="product_name"
-                    name="product_name"
-                    value={editFormData.product_name}
-                    onChange={handleInputChange}
-                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-xs border-gray-300 rounded-md py-1.5 px-2"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="provider_id" className="block text-xs font-medium text-gray-700 mb-1">
-                    Provider
-                  </label>
-                  <select
-                    id="provider_id"
-                    name="provider_id"
-                    value={editFormData.provider_id}
-                    onChange={handleInputChange}
-                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-xs border-gray-300 rounded-md py-1.5 px-2"
-                  >
-                    <option value="">Select Provider</option>
-                    {providers.map(provider => (
-                      <option key={provider.id} value={provider.id}>
-                        {provider.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label htmlFor="product_type" className="block text-xs font-medium text-gray-700 mb-1">
-                    Product Type
-                  </label>
-                  <input
-                    type="text"
-                    id="product_type"
-                    name="product_type"
-                    value={editFormData.product_type}
-                    onChange={handleInputChange}
-                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-xs border-gray-300 rounded-md py-1.5 px-2"
-                  />
-                </div>
-              </div>
-              
-              <div className="flex justify-end space-x-2">
-                <ActionButton
-                  variant="cancel"
-                  size="sm"
-                  onClick={toggleEditMode}
-                />
-                <ActionButton
-                  variant="save"
-                  size="sm"
-                  context="Changes"
-                  design="descriptive"
-                  type="submit"
-                  disabled={isSubmitting}
-                  loading={isSubmitting}
-                />
-              </div>
-            </form>
-          </div>
-        )}
+
 
 
         {/* Modern Compact Product Overview Card */}
@@ -1813,6 +1727,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           variant="delete"
                           size="xs"
                           onClick={() => setIsDeleteModalOpen(true)}
+                          title="Delete Product"
                         />
                       </>
                     )}

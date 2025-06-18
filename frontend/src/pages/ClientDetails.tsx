@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getProviderColor } from '../services/providerColors';
-import { BaseInput, BaseDropdown, EditButton, ActionButton, LapseButton, DeleteButton, AddButton } from '../components/ui';
+import { EditButton, ActionButton, LapseButton, DeleteButton, AddButton } from '../components/ui';
 import api, { getClientGroupProductOwners, calculateStandardizedMultipleFundsIRR, getProductOwners, addClientGroupProductOwner, removeClientGroupProductOwner } from '../services/api';
 
 // Enhanced TypeScript interfaces
@@ -683,7 +683,7 @@ const ProductCard: React.FC<{
                 }}
               >
                 {account.template_generation_id 
-                  ? (account.template_info?.generation_name || account.template_info?.name || `Template #${account.template_generation_id}`)
+                  ? (account.template_info?.generation_name || `Generation #${account.template_generation_id}`)
                   : 'Bespoke'}
               </span>
             </div>
@@ -1313,14 +1313,7 @@ const ClientDetails: React.FC = () => {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+
 
   const handleFieldChange = (field: keyof ClientFormData, value: string | null) => {
     setFormData(prev => ({
@@ -1485,117 +1478,6 @@ const ClientDetails: React.FC = () => {
           onAddProductOwner={handleAddProductOwner}
           onRemoveProductOwner={handleRemoveProductOwner}
         />
-
-        {/* Client Edit Form (when in correction mode) */}
-        {isCorrecting && (
-          <div className="bg-white shadow-sm rounded-lg border border-gray-100 mb-4">
-            <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
-              <h2 className="text-base font-medium text-gray-900">Edit Client Details</h2>
-              <div className="flex space-x-2">
-                <ActionButton
-                  variant="cancel"
-                  size="sm"
-                  onClick={() => setIsCorrecting(false)}
-                >
-                  Cancel
-                </ActionButton>
-                <ActionButton
-                  variant="save"
-                  size="sm"
-                  onClick={handleCorrect}
-                >
-                  Save Changes
-                </ActionButton>
-              </div>
-            </div>
-            
-            <div className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <BaseInput
-                    label="Name"
-                    name="name"
-                    type="text"
-                    value={formData.name || ''}
-                    onChange={handleChange}
-                    placeholder="Enter client name"
-                    required
-                    size="md"
-                    fullWidth
-                  />
-                </div>
-                
-                <div>
-                  <BaseDropdown
-                    label="Type"
-                    options={[
-                      { value: 'Family', label: 'Family' },
-                      { value: 'Business', label: 'Business' },
-                      { value: 'Trust', label: 'Trust' }
-                    ]}
-                    value={formData.type || 'Family'}
-                    onChange={(value) => setFormData(prev => ({ ...prev, type: value as string }))}
-                    placeholder="Select client type"
-                    required
-                    size="md"
-                    fullWidth
-                  />
-                </div>
-
-                <div>
-                  <BaseDropdown
-                    label="Status"
-                    options={[
-                      { value: 'active', label: 'Active' },
-                      { value: 'dormant', label: 'Dormant' }
-                    ]}
-                    value={formData.status}
-                    onChange={(value) => setFormData(prev => ({ ...prev, status: value as string }))}
-                    placeholder="Select client status"
-                    required
-                    size="md"
-                    fullWidth
-                  />
-                </div>
-                
-                <div>
-                  <BaseInput
-                    label="Advisor"
-                    name="advisor"
-                    type="text"
-                    value={formData.advisor || ''}
-                    onChange={handleChange}
-                    placeholder="Enter advisor name"
-                    size="md"
-                    fullWidth
-                  />
-                </div>
-              </div>
-              
-              {/* Additional Actions */}
-              <div className="px-4 py-3 border-t border-gray-100">
-                <div className="flex justify-end items-center">
-                  <div className="flex space-x-2">
-                    <LapseButton
-                      context="Client"
-                      design="balanced"
-                      size="sm"
-                      onClick={handleMakeDormant}
-                    >
-                      Make Dormant
-                    </LapseButton>
-                    <DeleteButton
-                      context="Client"
-                      design="balanced"
-                      size="sm"
-                      onClick={handleDelete}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
 
         {/* Client Products Section */}

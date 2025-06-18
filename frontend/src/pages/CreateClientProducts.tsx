@@ -818,6 +818,40 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     return `Portfolio for ${productName}`;
   };
 
+  // Helper function to check if a product is completely filled out
+  const isProductComplete = (product: ProductItem): boolean => {
+    // Check basic required fields
+    if (!product.provider_id || !product.product_type || !product.start_date) {
+      return false;
+    }
+    
+    // Check product owners (at least one required)
+    if (!product.product_owner_ids || product.product_owner_ids.length === 0) {
+      return false;
+    }
+    
+    // Check portfolio configuration - must have a type selected
+    if (!product.portfolio.type) {
+      return false;
+    }
+    
+    // For template portfolios, need template and generation selected
+    if (product.portfolio.type === 'template') {
+      if (!product.portfolio.templateId || !product.portfolio.generationId) {
+        return false;
+      }
+    }
+    
+    // For bespoke portfolios, need at least one fund selected (but weightings are optional for completion)
+    if (product.portfolio.type === 'bespoke') {
+      if (!product.portfolio.selectedFunds || product.portfolio.selectedFunds.length === 0) {
+        return false;
+      }
+    }
+    
+    return true;
+  };
+
   // Portfolio configuration functions
   const handlePortfolioTypeChange = (productId: string, type: 'template' | 'bespoke'): void => {
     setProducts(prevProducts => prevProducts.map(product => {
@@ -1378,6 +1412,15 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                     {calculateTotalFundWeighting(product).toFixed(1)}%
                   </div>
                 )}
+                {/* Portfolio Risk - Inline */}
+                {product.portfolio.selectedFunds.length > 0 && (
+                  <div className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-medium">
+                    Risk: {(() => {
+                      const risk = calculateTargetRiskFromFunds(product);
+                      return risk ? risk.toFixed(1) : 'N/A';
+                    })()}
+                  </div>
+                )}
               </div>
               {product.portfolio.selectedFunds.length > 0 && (
                 <button
@@ -1591,20 +1634,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           </div>
         </div>
 
-        {/* Portfolio Risk Summary */}
-        {product.portfolio.selectedFunds.length > 0 && (
-          <div className="bg-gray-50 rounded border border-gray-200 p-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-600">Portfolio Risk:</span>
-              <span className="font-medium text-gray-900">
-                {(() => {
-                  const risk = calculateTargetRiskFromFunds(product);
-                  return risk ? risk.toFixed(1) : 'N/A';
-                })()}
-              </span>
-            </div>
-          </div>
-        )}
+
       </div>
     );
   };
@@ -1665,14 +1695,11 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         {product.portfolio.type === 'template' && (
           <div className="grid grid-cols-2 gap-1 sm:gap-2">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-              Select Template <span className="text-red-500">*</span>
-            </label>
             <BaseDropdown
               label="Select Template"
               options={availableTemplates.map(t => ({ value: t.id.toString(), label: t.name || `Template ${t.id}` }))}
               value={product.portfolio.templateId?.toString() ?? ''}
-              onChange={(value) => handleTemplateSelection(product.id, value)}
+              onChange={(value) => handleTemplateSelection(product.id, String(value))}
               placeholder="Select template"
               error={validationErrors[product.id]?.template}
               required
@@ -1691,9 +1718,6 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         {/* Generation Selection - Show after template is selected */}
             {product.portfolio.templateId && generations.length > 0 && (
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-              Select Generation <span className="text-red-500">*</span>
-            </label>
             <BaseDropdown
               label="Select Generation"
               options={generations.map(g => ({ 
@@ -1701,7 +1725,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                 label: g.generation_name || `Version ${g.version_number}` 
               }))}
               value={product.portfolio.generationId?.toString() ?? ''}
-              onChange={(value) => handleGenerationSelection(product.id, value)}
+              onChange={(value) => handleGenerationSelection(product.id, String(value))}
               placeholder="Select generation"
               error={validationErrors[product.id]?.generation}
               required
@@ -1874,65 +1898,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         </div>
       )}
 
-      {/* Compact Header */}
-      <div className="flex justify-between items-center mb-0.5 sm:mb-1">
-        <div className="flex items-center">
-          <div className="bg-primary-100 p-1 sm:p-2 rounded-lg mr-2 sm:mr-3 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-normal text-gray-900 font-sans tracking-wide">Create Client Products</h1>
-          
-          {/* Keyboard shortcuts help */}
-          <div className="ml-4 relative group">
-            <ActionButton
-              variant="edit"
-              size="icon"
-              iconOnly
-              title="Keyboard shortcuts"
-            />
-            <div className="invisible group-hover:visible absolute left-0 top-8 z-50 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-lg w-64">
-              <div className="font-medium mb-2">Keyboard Shortcuts:</div>
-              <div className="space-y-1">
-                <div className="flex justify-between">
-                  <span>Save products</span>
-                  <span className="text-gray-300">Ctrl+Enter</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Duplicate last product</span>
-                  <span className="text-gray-300">Ctrl+D</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Add new product</span>
-                  <span className="text-gray-300">Ctrl+Shift+A</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Close modals</span>
-                  <span className="text-gray-300">Escape</span>
-                </div>
-              </div>
-            </div>
-        </div>
-      </div>
 
-        {/* Floating Summary */}
-        {products.length > 0 && (
-          <div className="bg-white rounded-full shadow-lg px-4 py-2 border border-gray-200">
-            <div className="flex items-center space-x-2">
-              <div className="text-center">
-                <div className="text-lg font-bold text-primary-700">{products.length}</div>
-                <div className="text-xs text-gray-600">Product{products.length !== 1 ? 's' : ''}</div>
-              </div>
-              {selectedClientId && (
-                <div className="text-sm text-gray-500 ml-2">
-                  for {clients.find(c => c.id === selectedClientId)?.name}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
 
       <div className="space-y-1">
         {isLoading ? (
@@ -1946,45 +1912,28 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         ) : (
           <div className="bg-white shadow-sm rounded-lg border border-gray-200">
             <form onSubmit={handleSubmit} className="p-4">
-              {/* Step 1: Client Selection - Compact Layout */}
-              <div className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
-                <h2 className="text-lg font-medium mb-3 text-gray-900">Client</h2>
-                <div className="grid grid-cols-2 gap-4">
-                {/* Client Selection */}
-                  <div>
-                  {clients.length > 0 ? (
-                    <AutocompleteSearch
-                      label="Client Name"
-                      placeholder="Type to search clients..."
-                      options={clientOptions}
-                      onSelect={handleClientSelect}
-                      value={selectedClientId ? clients.find(c => c.id === selectedClientId)?.name || '' : ''}
-                      minSearchLength={0}
-                      maxResults={10}
-                      allowCustomValue={false}
-                      required
-                      size="md"
-                      fullWidth={true}
-                      helperText={`${clients.length} clients available`}
-                    />
-
-                  ) : (
-                      <div className="text-gray-500 text-sm bg-gray-100 p-2 rounded">
-                        No clients available. Please add a client first.
-                      </div>
-                  )}
-                  {urlClientId && clientName && (
-                    <div className="text-xs text-blue-600 mt-1 flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Client auto-selected: {clientName}
-                    </div>
-                  )}
-                </div>
-
-
-                </div>
+              {/* Client Selection - Inline */}
+              <div className="mb-4">
+                {clients.length > 0 ? (
+                  <AutocompleteSearch
+                    label="Client Name"
+                    placeholder="Type to search clients..."
+                    options={clientOptions}
+                    onSelect={handleClientSelect}
+                    value={selectedClientId ? clients.find(c => c.id === selectedClientId)?.name || '' : ''}
+                    minSearchLength={0}
+                    maxResults={10}
+                    allowCustomValue={false}
+                    required
+                    size="md"
+                    fullWidth={true}
+                    helperText={`${clients.length} clients available`}
+                  />
+                ) : (
+                  <div className="text-gray-500 text-sm bg-gray-100 p-2 rounded">
+                    No clients available. Please add a client first.
+                  </div>
+                )}
               </div>
 
               {/* Step 2: Products Section - Only show after client selected */}
@@ -2092,7 +2041,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                   {/* Validation status indicator */}
                                   {validationErrors[product.id] && Object.keys(validationErrors[product.id]).length > 0 ? (
                                     <div className="w-2 h-2 bg-red-500 rounded-full" title="Has validation errors" />
-                                  ) : product.provider_id && product.product_type ? (
+                                  ) : isProductComplete(product) ? (
                                     <div className="w-2 h-2 bg-green-500 rounded-full" title="Complete" />
                                   ) : (
                                     <div className="w-2 h-2 bg-yellow-500 rounded-full" title="Incomplete" />
@@ -2130,17 +2079,14 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                               label="Product Type"
                               options={[
                                 { value: 'ISA', label: 'ISA' },
-                                { value: 'JISA', label: 'Junior ISA' },
-                                { value: 'SIPP', label: 'SIPP' },
                                 { value: 'GIA', label: 'GIA' },
                                 { value: 'Offshore Bond', label: 'Offshore Bond' },
                                 { value: 'Onshore Bond', label: 'Onshore Bond' },
-                                { value: 'Trust', label: 'Trust' },
                                 { value: 'Pension', label: 'Pension' },
                                 { value: 'Other', label: 'Other' },
                               ]}
                               value={product.product_type}
-                              onChange={(value) => handleProductTypeChange(product.id, value)}
+                              onChange={(value) => handleProductTypeChange(product.id, String(value))}
                               placeholder="Select type"
                               error={validationErrors[product.id]?.productType}
                               required
@@ -2269,7 +2215,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                           }))}
                                           values={product.product_owner_ids.map(id => id.toString())}
                                           onChange={(values) => {
-                                            const numericValues = values.map(v => parseInt(v));
+                                            const numericValues = values.map(v => parseInt(String(v)));
                                             handleProductChange(product.id, 'product_owner_ids', numericValues);
                                             // Clear validation error when user selects product owners
                                             if (numericValues.length > 0 && validationErrors[product.id]?.productOwners) {
