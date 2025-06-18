@@ -7,8 +7,8 @@ import { getProductFUM, calculateStandardizedMultipleFundsIRR, lapseProduct, rea
 import { MultiSelectDropdown, AutocompleteSearch, AutocompleteOption } from '../components/ui';
 import { isCashFund } from '../utils/fundUtils';
 import ActionButton from '../components/ui/ActionButton';
-import dayjs, { Dayjs } from 'dayjs';
-import { DatePicker } from 'antd';
+
+
 
 
 // Basic interfaces for type safety
