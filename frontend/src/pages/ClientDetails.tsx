@@ -59,6 +59,8 @@ interface ClientAccount {
     name?: string;
   };
   product_owners?: ProductOwner[];
+  fixed_cost?: number;
+  percentage_fee?: number;
 }
 
 // Add ProductOwner interface
@@ -644,6 +646,35 @@ const ProductCard: React.FC<{
     return `${(value).toFixed(2)}%`;
   };
 
+  // Calculate estimated annual revenue with proper validation logic
+  const calculateRevenue = (fixedCost?: number, percentageFee?: number, portfolioValue?: number): string | number => {
+    const fixed = fixedCost || 0;
+    const percentage = percentageFee || 0;
+    const value = portfolioValue || 0;
+    
+    // If neither cost type is set, return 'None'
+    if (!fixed && !percentage) {
+      return 'None';
+    }
+    
+    // If only fixed cost is set (no percentage fee)
+    if (fixed && !percentage) {
+      return fixed;
+    }
+    
+    // If percentage fee is involved (with or without fixed cost)
+    if (percentage > 0) {
+      // If no valuation available, we need valuation
+      if (!value || value <= 0) {
+        return 'Latest valuation needed';
+      }
+      // If valuation exists, calculate properly
+      return fixed + ((value * percentage) / 100);
+    }
+    
+    return 'None';
+  };
+
   // Calculate total market value from funds if available
   const totalFundValue = useMemo(() => {
     if (funds && funds.length > 0) {
@@ -714,6 +745,24 @@ const ProductCard: React.FC<{
                 />
               </div>
             )}
+            {/* Revenue Display */}
+            <div className="mt-2 pt-2 border-t border-gray-200">
+              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                Annual Revenue
+              </div>
+              <div className="text-sm font-semibold mt-1">
+                {(() => {
+                  const revenue = calculateRevenue(account.fixed_cost, account.percentage_fee, displayValue);
+                  if (typeof revenue === 'number') {
+                    return <span className="text-green-600">{formatCurrency(revenue)}</span>;
+                  } else if (revenue === 'Latest valuation needed') {
+                    return <span className="text-orange-600">{revenue}</span>;
+                  } else {
+                    return <span className="text-gray-500">{revenue}</span>;
+                  }
+                })()}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -960,6 +1009,8 @@ const ClientDetails: React.FC = () => {
   const [isEditingProductOwners, setIsEditingProductOwners] = useState(false);
   const [versions, setVersions] = useState<any[]>([]);
   const [showVersionModal, setShowVersionModal] = useState(false);
+  const [showRevenueModal, setShowRevenueModal] = useState(false);
+  const [revenueFormData, setRevenueFormData] = useState<Record<number, { fixed_cost: string; percentage_fee: string }>>({});
   const [formData, setFormData] = useState<ClientFormData>({
     name: null,
     status: 'active',
@@ -1103,7 +1154,9 @@ const ClientDetails: React.FC = () => {
         inactive_fund_count: product.inactive_fund_count,
         template_generation_id: product.template_generation_id,
         template_info: product.template_info,
-        product_owners: [] // TODO: Add product owners if needed
+        product_owners: [], // TODO: Add product owners if needed
+        fixed_cost: product.fixed_cost,
+        percentage_fee: product.percentage_fee
       }));
       
       setClientAccounts(processedProducts);
@@ -1388,6 +1441,75 @@ const ClientDetails: React.FC = () => {
     }
   };
 
+  // Handle revenue assignment save
+  const handleRevenueAssignmentSave = async (updates: Record<number, { fixed_cost: number | null; percentage_fee: number | null }>) => {
+    try {
+      // Update each product with new revenue settings
+      const updatePromises = Object.entries(updates).map(async ([productId, data]) => {
+        console.log(`Processing product ${productId}:`, data);
+        
+        // Get current product data for comparison
+        const currentProduct = clientAccounts.find(p => p.id === parseInt(productId));
+        console.log(`Current product data for ${productId}:`, {
+          fixed_cost: currentProduct?.fixed_cost,
+          percentage_fee: currentProduct?.percentage_fee
+        });
+        
+        // Only send fields that have actual values or need to be cleared
+        const updateData: any = {};
+        
+        // Handle fixed_cost: send null to clear, number to set, skip if unchanged
+        if (data.fixed_cost !== null) {
+          updateData.fixed_cost = data.fixed_cost;
+        } else {
+          // Check if we need to explicitly clear it
+          if (currentProduct?.fixed_cost) {
+            updateData.fixed_cost = null;
+          }
+        }
+        
+        // Handle percentage_fee: send null to clear, number to set, skip if unchanged  
+        if (data.percentage_fee !== null) {
+          updateData.percentage_fee = data.percentage_fee;
+        } else {
+          // Check if we need to explicitly clear it
+          if (currentProduct?.percentage_fee) {
+            updateData.percentage_fee = null;
+          }
+        }
+        
+        // Only make API call if there's something to update
+        if (Object.keys(updateData).length > 0) {
+          console.log(`Updating product ${productId} with:`, updateData);
+          console.log(`API call: PATCH /client_products/${productId}`, JSON.stringify(updateData, null, 2));
+          try {
+            return await api.patch(`/client_products/${productId}`, updateData);
+          } catch (error: any) {
+            console.error(`Failed to update product ${productId}:`, error);
+            console.error(`Error response:`, error.response?.data);
+            console.error(`Error status:`, error.response?.status);
+            throw error;
+          }
+        } else {
+          console.log(`No changes for product ${productId}, skipping update`);
+          return Promise.resolve();
+        }
+      });
+
+      await Promise.all(updatePromises);
+      
+      // Refresh client data to show updated revenue calculations
+      await fetchClientData();
+      
+      console.log('Revenue assignments updated successfully');
+    } catch (err: any) {
+      console.error('Error updating revenue assignments:', err);
+      console.error('Error details:', err.response?.data);
+      setError(err.response?.data?.detail || 'Failed to update revenue assignments');
+      throw err; // Re-throw to let modal handle the error
+    }
+  };
+
   // Breadcrumb component
   const Breadcrumbs = () => {
     return (
@@ -1485,15 +1607,27 @@ const ClientDetails: React.FC = () => {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-normal text-gray-900 font-sans tracking-wide">Client Products</h2>
             
-            <Link
-              to={`/create-client-group-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.name}`)}&returnTo=${encodeURIComponent(`/client_groups/${clientId}`)}`}
-            >
-              <AddButton
-                context="Product"
-                design="balanced"
-                size="md"
-              />
-            </Link>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setShowRevenueModal(true)}
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-primary-700 bg-white border border-primary-300 rounded-lg hover:bg-primary-50 hover:border-primary-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 shadow-sm"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                </svg>
+                Assign Fees
+              </button>
+              
+              <Link
+                to={`/create-client-group-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.name}`)}&returnTo=${encodeURIComponent(`/client_groups/${clientId}`)}`}
+              >
+                <AddButton
+                  context="Product"
+                  design="balanced"
+                  size="md"
+                />
+              </Link>
+            </div>
           </div>
           
           {!isLoading ? (
@@ -1582,7 +1716,374 @@ const ClientDetails: React.FC = () => {
         
 
       </div>
+
+      {/* Revenue Assignment Modal */}
+      {showRevenueModal && (
+        <RevenueAssignmentModal
+          isOpen={showRevenueModal}
+          onClose={() => setShowRevenueModal(false)}
+          clientAccounts={clientAccounts}
+          onSave={handleRevenueAssignmentSave}
+        />
+      )}
     </>
+  );
+};
+
+// Revenue Assignment Modal Component
+const RevenueAssignmentModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  clientAccounts: ClientAccount[];
+  onSave: (updates: Record<number, { fixed_cost: number | null; percentage_fee: number | null }>) => void;
+}> = ({ isOpen, onClose, clientAccounts, onSave }) => {
+  const [formData, setFormData] = useState<Record<number, { fixed_cost: string; percentage_fee: string }>>({});
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Initialize form data when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const initialData: Record<number, { fixed_cost: string; percentage_fee: string }> = {};
+      clientAccounts.forEach(account => {
+        initialData[account.id] = {
+          fixed_cost: account.fixed_cost?.toString() || '',
+          percentage_fee: account.percentage_fee?.toString() || ''
+        };
+      });
+      setFormData(initialData);
+    }
+  }, [isOpen, clientAccounts]);
+
+  const formatCurrency = (amount: number): string => {
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: 'GBP',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  };
+
+  const handleInputChange = (productId: number, field: 'fixed_cost' | 'percentage_fee', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [productId]: {
+        ...prev[productId],
+        [field]: value
+      }
+    }));
+  };
+
+  const calculatePercentageRevenue = (percentageFee: string, totalValue: number): string | number => {
+    const fee = parseFloat(percentageFee);
+    if (!fee || fee <= 0) return 0;
+    if (!totalValue || totalValue <= 0) return 'Latest valuation needed';
+    return (totalValue * fee) / 100;
+  };
+
+  const calculateTotalRevenue = (fixedCost: string, percentageFee: string, totalValue: number): string | number => {
+    const fixed = parseFloat(fixedCost) || 0;
+    const percentage = parseFloat(percentageFee) || 0;
+    
+    // If neither cost type is set
+    if (!fixed && !percentage) {
+      return 'None';
+    }
+    
+    // If only fixed cost is set (no percentage fee)
+    if (fixed && !percentage) {
+      return fixed;
+    }
+    
+    // If percentage fee is involved (with or without fixed cost)
+    if (percentage > 0) {
+      // If no valuation available, we need valuation
+      if (!totalValue || totalValue <= 0) {
+        return 'Latest valuation needed';
+      }
+      // If valuation exists, calculate properly
+      return fixed + ((totalValue * percentage) / 100);
+    }
+    
+    return 'None';
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const updates: Record<number, { fixed_cost: number | null; percentage_fee: number | null }> = {};
+      
+      Object.entries(formData).forEach(([productId, data]) => {
+        const id = parseInt(productId);
+        
+        // Parse values, treating empty strings as null
+        let fixedCost: number | null = null;
+        let percentageFee: number | null = null;
+        
+        if (data.fixed_cost && data.fixed_cost.trim() !== '') {
+          const parsed = parseFloat(data.fixed_cost);
+          fixedCost = isNaN(parsed) ? null : parsed;
+        }
+        
+        if (data.percentage_fee && data.percentage_fee.trim() !== '') {
+          const parsed = parseFloat(data.percentage_fee);
+          percentageFee = isNaN(parsed) ? null : parsed;
+        }
+        
+        updates[id] = {
+          fixed_cost: fixedCost,
+          percentage_fee: percentageFee
+        };
+        
+        console.log(`Form data for product ${id}:`, {
+          original: data,
+          parsed: updates[id],
+          currentProduct: clientAccounts.find(p => p.id === id)
+        });
+      });
+      
+      console.log('All updates to be sent:', updates);
+      await onSave(updates);
+      onClose();
+    } catch (error) {
+      console.error('Error saving revenue assignments:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Calculate totals
+  const totals = clientAccounts.reduce((acc, account) => {
+    const productData = formData[account.id];
+    if (!productData) return acc;
+    
+    const fixedCost = parseFloat(productData.fixed_cost) || 0;
+    const percentageFee = parseFloat(productData.percentage_fee) || 0;
+    const totalValue = account.total_value || 0;
+    
+    acc.fixedCost += fixedCost;
+    acc.totalValue += totalValue;
+    
+    const percentageRevenue = calculatePercentageRevenue(productData.percentage_fee, totalValue);
+    if (typeof percentageRevenue === 'number') {
+      acc.percentageRevenue += percentageRevenue;
+    }
+    
+    const totalRevenue = calculateTotalRevenue(productData.fixed_cost, productData.percentage_fee, totalValue);
+    if (typeof totalRevenue === 'number') {
+      acc.totalRevenue += totalRevenue;
+    }
+    
+    return acc;
+  }, { fixedCost: 0, totalValue: 0, percentageRevenue: 0, totalRevenue: 0 });
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-7xl w-full max-h-[90vh] overflow-hidden">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900">Revenue Assignment Calculator</h3>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <p className="text-sm text-gray-600 mt-1">
+            Configure fixed costs and percentage fees for each product to calculate total client group revenue.
+          </p>
+          
+          {/* Revenue Summary */}
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-white rounded-lg p-4 border border-gray-200">
+              <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Revenue</div>
+              <div className="text-lg font-bold text-green-600 mt-1">
+                {formatCurrency(totals.totalRevenue)}
+              </div>
+            </div>
+            <div className="bg-white rounded-lg p-4 border border-gray-200">
+              <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Valuation</div>
+              <div className="text-lg font-bold text-gray-900 mt-1">
+                {formatCurrency(totals.totalValue)}
+              </div>
+            </div>
+            <div className="bg-white rounded-lg p-4 border border-gray-200">
+              <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Fixed Revenue</div>
+              <div className="text-lg font-bold text-blue-600 mt-1">
+                {formatCurrency(totals.fixedCost)}
+              </div>
+            </div>
+            <div className="bg-white rounded-lg p-4 border border-gray-200">
+              <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Effective Fee Rate</div>
+              <div className="text-lg font-bold text-primary-600 mt-1">
+                {totals.totalValue > 0 
+                  ? `${((totals.totalRevenue / totals.totalValue) * 100).toFixed(2)}%`
+                  : 'N/A'
+                }
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                {totals.totalValue > 0 
+                  ? 'of total valuation'
+                  : 'No valuation available'
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="overflow-x-auto max-h-[60vh]">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50 sticky top-0">
+              <tr>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Product Name
+                </th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Fixed Cost (£)
+                </th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Percentage Fee (%)
+                </th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Latest Valuation
+                </th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Percentage Revenue
+                </th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Total Revenue
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {clientAccounts.map((account) => {
+                const productData = formData[account.id] || { fixed_cost: '', percentage_fee: '' };
+                const totalValue = account.total_value || 0;
+                const percentageRevenue = calculatePercentageRevenue(productData.percentage_fee, totalValue);
+                const totalRevenue = calculateTotalRevenue(productData.fixed_cost, productData.percentage_fee, totalValue);
+                
+                                 return (
+                   <tr key={account.id} className="hover:bg-gray-50">
+                     <td className="px-4 py-2 whitespace-nowrap">
+                       <div className="flex items-center">
+                         <div 
+                           className="w-2 h-2 rounded-full mr-2"
+                           style={{ backgroundColor: account.provider_theme_color || '#6B7280' }}
+                         />
+                         <div>
+                           <div className="text-xs font-medium text-gray-900">{account.product_name}</div>
+                           <div className="text-xs text-gray-500">{account.provider_name}</div>
+                         </div>
+                       </div>
+                     </td>
+                     <td className="px-4 py-2 whitespace-nowrap text-right">
+                       <input
+                         type="number"
+                         value={productData.fixed_cost}
+                         onChange={(e) => handleInputChange(account.id, 'fixed_cost', e.target.value)}
+                         placeholder="0.00"
+                         min="0"
+                         step="0.01"
+                         className="w-20 text-xs text-right border border-gray-300 rounded px-1 py-1 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                       />
+                     </td>
+                     <td className="px-4 py-2 whitespace-nowrap text-right">
+                       <input
+                         type="number"
+                         value={productData.percentage_fee}
+                         onChange={(e) => handleInputChange(account.id, 'percentage_fee', e.target.value)}
+                         placeholder="0.00"
+                         min="0"
+                         step="0.01"
+                         className="w-20 text-xs text-right border border-gray-300 rounded px-1 py-1 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                       />
+                     </td>
+                     <td className="px-4 py-2 whitespace-nowrap text-right text-xs font-medium text-gray-900">
+                       {totalValue > 0 ? formatCurrency(totalValue) : 'No valuation'}
+                     </td>
+                     <td className="px-4 py-2 whitespace-nowrap text-right text-xs">
+                       {typeof percentageRevenue === 'number' ? (
+                         <span className="font-medium text-green-600">{formatCurrency(percentageRevenue)}</span>
+                       ) : (
+                         <span className="text-orange-600">{percentageRevenue}</span>
+                       )}
+                     </td>
+                     <td className="px-4 py-2 whitespace-nowrap text-right text-xs">
+                       {typeof totalRevenue === 'number' ? (
+                         <span className="font-semibold text-green-600">{formatCurrency(totalRevenue)}</span>
+                       ) : totalRevenue === 'Latest valuation needed' ? (
+                         <span className="text-orange-600">{totalRevenue}</span>
+                       ) : (
+                         <span className="text-gray-500">{totalRevenue}</span>
+                       )}
+                     </td>
+                   </tr>
+                 );
+              })}
+              
+                             {/* Totals Row */}
+               <tr className="bg-gray-100 font-semibold border-t-2 border-gray-300">
+                 <td className="px-4 py-2 whitespace-nowrap text-xs font-bold text-gray-900">
+                   TOTALS
+                 </td>
+                 <td className="px-4 py-2 whitespace-nowrap text-right text-xs font-bold text-gray-900">
+                   {formatCurrency(totals.fixedCost)}
+                 </td>
+                 <td className="px-4 py-2 whitespace-nowrap text-right text-xs text-gray-500">
+                   -
+                 </td>
+                 <td className="px-4 py-2 whitespace-nowrap text-right text-xs font-bold text-gray-900">
+                   {formatCurrency(totals.totalValue)}
+                 </td>
+                 <td className="px-4 py-2 whitespace-nowrap text-right text-xs font-bold text-green-600">
+                   {formatCurrency(totals.percentageRevenue)}
+                 </td>
+                 <td className="px-4 py-2 whitespace-nowrap text-right text-xs font-bold text-green-600">
+                   {formatCurrency(totals.totalRevenue)}
+                 </td>
+               </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end space-x-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className={`px-4 py-2 text-sm font-medium text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors ${
+              isSaving 
+                ? 'bg-primary-400 cursor-not-allowed' 
+                : 'bg-primary-600 hover:bg-primary-700'
+            }`}
+          >
+            {isSaving ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Saving...
+              </>
+            ) : (
+              'Save Changes'
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 

@@ -833,6 +833,8 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                     "version_number": product.get("template_version_number"),
                     "description": product.get("template_description")
                 } if product.get("template_generation_id") else None,
+                "fixed_cost": product.get("fixed_cost"),
+                "percentage_fee": product.get("percentage_fee"),
                 "funds": processed_funds
             }
             
@@ -983,5 +985,7 @@ async def get_client_group_irr(client_group_id: int, db = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error calculating IRR for client group {client_group_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+ 
 
  

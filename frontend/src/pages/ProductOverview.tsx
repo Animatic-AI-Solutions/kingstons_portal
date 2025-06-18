@@ -4,7 +4,14 @@ import { DatePicker } from 'antd';
 import dayjs, { Dayjs } from 'dayjs';
 import { useAuth } from '../context/AuthContext';
 import { getProductFUM, calculateStandardizedMultipleFundsIRR, lapseProduct, reactivateProduct } from '../services/api';
-import { MultiSelectDropdown, AutocompleteSearch, AutocompleteOption } from '../components/ui';
+import { 
+  MultiSelectDropdown, 
+  AutocompleteSearch, 
+  AutocompleteOption,
+  BaseInput,
+  BaseDropdown,
+  DateInput
+} from '../components/ui';
 import { isCashFund } from '../utils/fundUtils';
 import ActionButton from '../components/ui/ActionButton';
 
@@ -1471,7 +1478,31 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     }));
   };
 
-  // Handle date changes separately
+  // Handle BaseInput changes
+  const handleBaseInputChange = (name: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [name]: e.target.value
+    }));
+  };
+
+  // Handle BaseDropdown changes
+  const handleDropdownChange = (name: string) => (value: string | number) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [name]: value.toString()
+    }));
+  };
+
+  // Handle DateInput changes
+  const handleDateInputChange = (date: Date | null, formatted: string) => {
+    setEditFormData(prev => ({
+      ...prev,
+      start_date: date ? dayjs(date) : null
+    }));
+  };
+
+  // Handle date changes separately (keep for compatibility)
   const handleDateChange = (date: Dayjs | null) => {
     setEditFormData(prev => ({
       ...prev,
@@ -1741,107 +1772,115 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Product Name - Inline Editable */}
                   <div className="sm:col-span-2">
-                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Product Name</div>
                     {isEditMode ? (
-                      <input
-                        type="text"
+                      <BaseInput
+                        label="Product Name"
                         name="product_name"
                         value={editFormData.product_name}
-                        onChange={handleInputChange}
-                        className="mt-1 shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm font-medium text-gray-900 border-gray-300 rounded-md py-2 px-3"
+                        onChange={handleBaseInputChange('product_name')}
+                        placeholder="Enter product name"
+                        size="sm"
                         required
                       />
                     ) : (
-                      <div className="text-sm font-medium text-gray-900 mt-1">{account.product_name || 'N/A'}</div>
+                      <>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Product Name</div>
+                        <div className="text-sm font-medium text-gray-900">{account.product_name || 'N/A'}</div>
+                      </>
                     )}
                   </div>
 
                   {/* Client Name - Read Only */}
                   <div>
-                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Client Name</div>
-                    <div className="text-sm font-medium text-gray-900 mt-1">{account.client_name || 'N/A'}</div>
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Client Name</div>
+                    <div className="text-sm font-medium text-gray-900">{account.client_name || 'N/A'}</div>
                   </div>
 
                   {/* Provider - Inline Editable */}
                   <div>
-                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Provider</div>
                     {isEditMode ? (
-                      <select
-                        name="provider_id"
+                      <BaseDropdown
+                        label="Provider"
+                        options={providers.map(provider => ({ 
+                          value: provider.id.toString(), 
+                          label: provider.name 
+                        }))}
                         value={editFormData.provider_id}
-                        onChange={handleInputChange}
-                        className="mt-1 shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm font-medium text-gray-900 border-gray-300 rounded-md py-2 px-3"
-                      >
-                        <option value="">Select Provider</option>
-                        {providers.map(provider => (
-                          <option key={provider.id} value={provider.id}>
-                            {provider.name}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={handleDropdownChange('provider_id')}
+                        placeholder="Select Provider"
+                        size="sm"
+                      />
                     ) : (
-                      <div className="text-sm font-medium text-gray-900 mt-1">{account.provider_name || 'N/A'}</div>
+                      <>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Provider</div>
+                        <div className="text-sm font-medium text-gray-900">{account.provider_name || 'N/A'}</div>
+                      </>
                     )}
                   </div>
 
                   {/* Product Type - Inline Editable */}
                   <div>
-                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Product Type</div>
                     {isEditMode ? (
-                      <input
-                        type="text"
+                      <BaseInput
+                        label="Product Type"
                         name="product_type"
                         value={editFormData.product_type}
-                        onChange={handleInputChange}
-                        className="mt-1 shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm font-medium text-gray-900 border-gray-300 rounded-md py-2 px-3"
+                        onChange={handleBaseInputChange('product_type')}
+                        placeholder="Enter product type"
+                        size="sm"
                       />
                     ) : (
-                      <div className="text-sm font-medium text-gray-900 mt-1">{account.product_type || 'N/A'}</div>
+                      <>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Product Type</div>
+                        <div className="text-sm font-medium text-gray-900">{account.product_type || 'N/A'}</div>
+                      </>
                     )}
                   </div>
 
                   {/* Portfolio Template - Read Only */}
                   <div>
-                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Portfolio Template</div>
-                    <div className="text-sm font-medium text-gray-900 mt-1">
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Portfolio Template</div>
+                    <div className="text-sm font-medium text-gray-900">
                       {account.template_info?.generation_name || account.template_info?.name || (account.template_generation_id ? 'Template' : 'Bespoke')}
                     </div>
                   </div>
 
                   {/* Start Date - Inline Editable */}
                   <div className="sm:col-span-2">
-                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Start Date</div>
                     {isEditMode ? (
-                      <DatePicker
-                        value={editFormData.start_date}
-                        onChange={handleDateChange}
-                        className="mt-1 w-full"
-                        size="middle"
-                        format="DD/MM/YYYY"
-                        placeholder="Select start date"
+                      <DateInput
+                        label="Start Date"
+                        value={editFormData.start_date ? editFormData.start_date.toDate() : undefined}
+                        onChange={handleDateInputChange}
+                        placeholder="dd/mm/yyyy"
+                        showCalendarIcon={true}
+                        size="sm"
                       />
                     ) : (
-                      <div className="text-sm font-medium text-gray-900 mt-1">
+                      <>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Start Date</div>
+                        <div className="text-sm font-medium text-gray-900">
                         {account.start_date ? formatDate(account.start_date) : 'N/A'}
                       </div>
+                      </>
                     )}
                   </div>
 
                   {/* Revenue Configuration Section */}
-                  <div className="sm:col-span-2 pt-4 border-t border-gray-200">
-                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3 flex items-center">
-                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="sm:col-span-2 pt-3 border-t border-gray-200">
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 flex items-center">
+                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                       </svg>
                       Revenue Configuration
-                    </div>
-                    <div className="grid grid-cols-3 gap-4">
+                </div>
+                    <div className="grid grid-cols-3 gap-3">
                       {/* Fixed Cost */}
                       <div>
-                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Fixed Cost (£)</div>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Fixed Cost (£)</div>
                         {isEditMode ? (
                           <input
                             type="number"
@@ -1851,18 +1890,18 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             placeholder="e.g. 500"
                             min="0"
                             step="0.01"
-                            className="mt-1 shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm font-medium text-gray-900 border-gray-300 rounded-md py-2 px-3"
+                            className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm font-medium text-gray-900 border-gray-300 rounded-md py-1.5 px-2"
                           />
                         ) : (
-                          <div className="text-sm font-medium text-gray-900 mt-1">
+                          <div className="text-sm font-medium text-gray-900">
                             {account.fixed_cost ? formatCurrency(account.fixed_cost) : 'Not set'}
                           </div>
                         )}
-                      </div>
+              </div>
 
                       {/* Percentage Fee */}
                       <div>
-                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Percentage Fee (%)</div>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Percentage Fee (%)</div>
                         {isEditMode ? (
                           <input
                             type="number"
@@ -1873,10 +1912,10 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             min="0"
                             max="100"
                             step="0.1"
-                            className="mt-1 shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm font-medium text-gray-900 border-gray-300 rounded-md py-2 px-3"
+                            className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm font-medium text-gray-900 border-gray-300 rounded-md py-1.5 px-2"
                           />
                         ) : (
-                          <div className="text-sm font-medium text-gray-900 mt-1">
+                          <div className="text-sm font-medium text-gray-900">
                             {account.percentage_fee ? `${account.percentage_fee}%` : 'Not set'}
                           </div>
                         )}
@@ -1884,8 +1923,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
 
                       {/* Total Revenue Calculation */}
                       <div>
-                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Estimated Annual Revenue</div>
-                        <div className="text-sm font-semibold text-gray-900 mt-1">
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Estimated Annual Revenue</div>
+                        <div className="text-sm font-semibold">
                           {(() => {
                             const fixedCost = account.fixed_cost || 0;
                             const percentageFee = account.percentage_fee || 0;
@@ -1893,32 +1932,26 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             
                             // If neither cost type is set
                             if (!fixedCost && !percentageFee) {
-                              return 'Not configured';
+                              return <span className="text-gray-500">None</span>;
                             }
                             
-                            // If only fixed cost is set
+                            // If only fixed cost is set (no percentage fee)
                             if (fixedCost && !percentageFee) {
-                              return formatCurrency(fixedCost);
+                              return <span className="text-green-600">{formatCurrency(fixedCost)}</span>;
                             }
                             
-                            // If only percentage fee is set
-                            if (!fixedCost && percentageFee) {
+                            // If percentage fee is involved (with or without fixed cost)
+                            if (percentageFee > 0) {
+                              // If no valuation available, we need valuation
                               if (!portfolioValue || portfolioValue <= 0) {
-                                return 'No valuation available';
+                                return <span className="text-orange-600">Latest valuation needed</span>;
                               }
-                              return formatCurrency((portfolioValue * percentageFee) / 100);
-                            }
-                            
-                            // If both are set
-                            if (fixedCost && percentageFee) {
-                              if (!portfolioValue || portfolioValue <= 0) {
-                                return 'No valuation available';
-                              }
+                              // If valuation exists, calculate properly
                               const totalRevenue = fixedCost + ((portfolioValue * percentageFee) / 100);
-                              return formatCurrency(totalRevenue);
+                              return <span className="text-green-600">{formatCurrency(totalRevenue)}</span>;
                             }
                             
-                            return 'Not configured';
+                            return <span className="text-gray-500">None</span>;
                           })()}
                         </div>
                       </div>
@@ -2073,7 +2106,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                     </div>
                   </div>
                 )}
-              </div>
+            </div>
 
               {/* Product Summary Section - Moved to Bottom Right */}
               <div>
@@ -2093,7 +2126,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                   <div className="space-y-4">
                     {/* Total Product Value and IRR Cards - Side by Side */}
                     <div className="grid grid-cols-2 gap-3">
-                      {/* Total Product Value */}
+                    {/* Total Product Value */}
                       <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
                         <div className="text-center">
                           <div className="flex justify-center mb-2">
@@ -2112,10 +2145,10 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                               as of {formatDate(lastValuationDate)}
                             </div>
                           )}
-                        </div>
                       </div>
+                    </div>
 
-                      {/* Total Product IRR */}
+                    {/* Total Product IRR */}
                       <div className="bg-green-50 rounded-lg p-3 border border-green-200">
                         <div className="text-center">
                           <div className="flex justify-center mb-2">
@@ -2589,6 +2622,39 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           <div className="text-sm text-gray-500">
                             {holding.end_date ? formatDate(holding.end_date) : 'N/A'}
                           </div>
+                        </td>
+                        <td className="px-6 py-2 whitespace-nowrap">
+                          <span className="text-sm text-gray-500">
+                            {holding.target_weighting ? parseFloat(holding.target_weighting).toFixed(2) : '0.00'}%
+                          </span>
+                        </td>
+                        {isEditingFunds && account && !account.template_generation_id && (
+                          <td className="px-6 py-2 whitespace-nowrap">
+                            <ActionButton
+                              variant="add"
+                              size="xs"
+                              context="Reactivate"
+                              design="descriptive"
+                              onClick={() => handleReactivateFund(holding.fund_id || 0)}
+                            />
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default ProductOverview;
                         </td>
                         <td className="px-6 py-2 whitespace-nowrap">
                           <span className="text-sm text-gray-500">
