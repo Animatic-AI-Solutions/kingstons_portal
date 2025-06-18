@@ -663,7 +663,7 @@ async def get_client_group_fum_by_id(client_group_id: int, db = Depends(get_db))
         
         if not client_group.data:
             raise HTTPException(status_code=404, detail=f"Client group with ID {client_group_id} not found")
-        
+            
         # Calculate FUM for this client group
         # Get all active products for this client group
         products_result = db.table("client_products")\
@@ -794,12 +794,12 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                     "risk_factor": fund["risk_factor"],
                     "amount_invested": fund["amount_invested"] or 0,
                     "market_value": fund["market_value"] or 0,
-                    "investments": fund["total_investments"] or 0,
-                    "withdrawals": fund["total_withdrawals"] or 0,
-                    "switch_in": fund["total_switch_in"] or 0,
-                    "switch_out": fund["total_switch_out"] or 0,
-                    "product_switch_in": fund["total_product_switch_in"] or 0,
-                    "product_switch_out": fund["total_product_switch_out"] or 0,
+                                    "investments": fund["total_investments"] or 0,
+                "withdrawals": fund["total_withdrawals"] or 0,
+                "switch_in": fund["total_switch_in"] or 0,
+                "switch_out": fund["total_switch_out"] or 0,
+                "product_switch_in": fund["total_product_switch_in"] or 0,
+                "product_switch_out": fund["total_product_switch_out"] or 0,
                     "irr": fund["irr"],
                     "valuation_date": fund["valuation_date"],
                     "status": "active"

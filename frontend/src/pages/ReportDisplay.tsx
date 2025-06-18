@@ -197,20 +197,25 @@ const ReportDisplay: React.FC = () => {
         return;
       }
 
-      // Convert date format if needed (YYYY-MM to YYYY-MM-DD)
-      let endDate = reportData.selectedValuationDate;
-      if (endDate && endDate.match(/^\d{4}-\d{2}$/)) {
-        // Convert YYYY-MM to YYYY-MM-DD (last day of month)
-        const [year, month] = endDate.split('-');
-        const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
-        endDate = `${year}-${month}-${lastDay.toString().padStart(2, '0')}`;
-        console.log('🎯 [REAL-TIME TOTAL IRR] Converted date from', reportData.selectedValuationDate, 'to', endDate);
+      // Convert partial date (YYYY-MM) to full date (YYYY-MM-DD) by using last day of month
+      let endDate: string | undefined = undefined;
+      if (reportData.selectedValuationDate) {
+        if (reportData.selectedValuationDate.includes('-') && reportData.selectedValuationDate.split('-').length === 2) {
+          // Partial date format (YYYY-MM) - convert to last day of month
+          const [year, month] = reportData.selectedValuationDate.split('-');
+          const lastDayOfMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+          endDate = `${year}-${month.padStart(2, '0')}-${lastDayOfMonth.toString().padStart(2, '0')}`;
+          console.log(`🔄 [REAL-TIME TOTAL IRR] Converted partial date ${reportData.selectedValuationDate} to full date ${endDate}`);
+        } else {
+          // Already a full date
+          endDate = reportData.selectedValuationDate;
+        }
       }
 
       // Use the optimized IRR service to calculate total IRR
       const totalIRRData = await irrDataService.getOptimizedIRRData({
         portfolioFundIds: allPortfolioFundIds,
-        endDate: endDate || undefined,
+        endDate: endDate,
         includeHistorical: false
       });
 
