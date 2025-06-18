@@ -1419,17 +1419,36 @@ async def lapse_product(product_id: int, db = Depends(get_db)):
         # Get all portfolio funds for this product
         portfolio_funds_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).eq("status", "active").execute()
         
+        logger.info(f"Lapse check for product {product_id}: Found {len(portfolio_funds_result.data) if portfolio_funds_result.data else 0} active portfolio funds")
+        
         if not portfolio_funds_result.data:
             # No active funds means zero value, allow lapse
             total_value = 0
+            logger.info(f"Lapse check for product {product_id}: No active funds, total value = 0")
         else:
             fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
             
             # Get latest valuations for all funds
             valuations_result = db.table("latest_portfolio_fund_valuations").select("valuation").in_("portfolio_fund_id", fund_ids).execute()
             
-            # Sum up all valuations
-            total_value = sum(v.get("valuation", 0) for v in valuations_result.data)
+            logger.info(f"Lapse check for product {product_id}: Found {len(valuations_result.data) if valuations_result.data else 0} valuations for fund IDs: {fund_ids}")
+            
+            # Sum up all valuations, handling None values and type conversion safely
+            total_value = 0
+            if valuations_result.data:
+                for v in valuations_result.data:
+                    valuation = v.get("valuation")
+                    if valuation is not None:
+                        try:
+                            value = float(valuation)
+                            total_value += value
+                            logger.debug(f"Added valuation: {value}, running total: {total_value}")
+                        except (ValueError, TypeError):
+                            # Skip invalid valuation values
+                            logger.warning(f"Skipping invalid valuation value: {valuation}")
+                            continue
+            
+            logger.info(f"Lapse check for product {product_id}: Final calculated total value = {total_value}")
         
         # Check if total value is zero (with small tolerance for floating point precision)
         tolerance = 0.01  # 1 penny tolerance

@@ -733,6 +733,11 @@ SELECT
     p.portfolio_name,
     p.status as portfolio_status,
     p.template_generation_id,
+    -- Template generation info
+    tpg.generation_name as template_generation_name,
+    tpg.version_number as template_version_number,
+    tpg.description as template_description,
+    avp.name as template_name,
     -- Fund count for each product
     (SELECT COUNT(*) FROM portfolio_funds pf2 WHERE pf2.portfolio_id = cp.portfolio_id AND pf2.status = 'active') as active_fund_count,
     (SELECT COUNT(*) FROM portfolio_funds pf2 WHERE pf2.portfolio_id = cp.portfolio_id AND pf2.status != 'active') as inactive_fund_count,
@@ -746,7 +751,9 @@ FROM
     client_groups cg
     LEFT JOIN client_products cp ON cp.client_id = cg.id
     LEFT JOIN portfolios p ON p.id = cp.portfolio_id
-    LEFT JOIN available_providers ap ON ap.id = cp.provider_id;
+    LEFT JOIN available_providers ap ON ap.id = cp.provider_id
+    LEFT JOIN template_portfolio_generations tpg ON tpg.id = p.template_generation_id
+    LEFT JOIN available_portfolios avp ON avp.id = tpg.available_portfolio_id;
 
 -- View for portfolio template generation weighted risk calculation
 CREATE OR REPLACE VIEW public.template_generation_weighted_risk AS
