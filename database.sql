@@ -756,18 +756,38 @@ SELECT
     -- Revenue tracking columns
     cp.fixed_cost,
     cp.percentage_fee,
-    -- Calculated annual revenue for this product
+    -- Calculated annual revenue for this product with proper validation logic
     CASE 
         WHEN cp.status = 'active' THEN
-            COALESCE(cp.fixed_cost, 0) + 
-            COALESCE(
-                (SELECT SUM(lfv.valuation) * (cp.percentage_fee / 100.0)
-                 FROM portfolio_funds pf3 
-                 LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf3.id 
-                 WHERE pf3.portfolio_id = cp.portfolio_id 
-                 AND pf3.status = 'active'), 
-                0
-            )
+            CASE
+                -- If neither cost type is set
+                WHEN COALESCE(cp.fixed_cost, 0) = 0 AND COALESCE(cp.percentage_fee, 0) = 0 THEN
+                    NULL -- Will show as 'None' in frontend
+                -- If only fixed cost is set (no percentage fee)
+                WHEN COALESCE(cp.fixed_cost, 0) > 0 AND COALESCE(cp.percentage_fee, 0) = 0 THEN
+                    cp.fixed_cost
+                -- If percentage fee is involved (with or without fixed cost)
+                WHEN COALESCE(cp.percentage_fee, 0) > 0 THEN
+                    CASE
+                        -- Check if there's any valuation available
+                        WHEN (SELECT COALESCE(SUM(lfv.valuation), 0) 
+                              FROM portfolio_funds pf3 
+                              LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf3.id 
+                              WHERE pf3.portfolio_id = cp.portfolio_id 
+                              AND pf3.status = 'active') > 0 THEN
+                            -- Calculate with valuation
+                            COALESCE(cp.fixed_cost, 0) + 
+                            (SELECT SUM(lfv.valuation) * (cp.percentage_fee / 100.0)
+                             FROM portfolio_funds pf3 
+                             LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf3.id 
+                             WHERE pf3.portfolio_id = cp.portfolio_id 
+                             AND pf3.status = 'active')
+                        ELSE
+                            NULL -- Will show as 'Latest valuation needed' in frontend
+                    END
+                ELSE
+                    NULL -- Default case
+            END
         ELSE 0
     END as calculated_annual_revenue
 FROM 
@@ -855,18 +875,38 @@ SELECT
     -- Revenue tracking
     cp.fixed_cost,
     cp.percentage_fee,
-    -- Calculated annual revenue for this product
+    -- Calculated annual revenue for this product with proper validation logic
     CASE 
         WHEN cp.status = 'active' THEN
-            COALESCE(cp.fixed_cost, 0) + 
-            COALESCE(
-                (SELECT SUM(lfv.valuation) * (cp.percentage_fee / 100.0)
-                 FROM portfolio_funds pf 
-                 LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id 
-                 WHERE pf.portfolio_id = cp.portfolio_id 
-                 AND pf.status = 'active'), 
-                0
-            )
+            CASE
+                -- If neither cost type is set
+                WHEN COALESCE(cp.fixed_cost, 0) = 0 AND COALESCE(cp.percentage_fee, 0) = 0 THEN
+                    NULL -- Will show as 'None' in frontend
+                -- If only fixed cost is set (no percentage fee)
+                WHEN COALESCE(cp.fixed_cost, 0) > 0 AND COALESCE(cp.percentage_fee, 0) = 0 THEN
+                    cp.fixed_cost
+                -- If percentage fee is involved (with or without fixed cost)
+                WHEN COALESCE(cp.percentage_fee, 0) > 0 THEN
+                    CASE
+                        -- Check if there's any valuation available
+                        WHEN (SELECT COALESCE(SUM(lfv.valuation), 0) 
+                              FROM portfolio_funds pf 
+                              LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id 
+                              WHERE pf.portfolio_id = cp.portfolio_id 
+                              AND pf.status = 'active') > 0 THEN
+                            -- Calculate with valuation
+                            COALESCE(cp.fixed_cost, 0) + 
+                            (SELECT SUM(lfv.valuation) * (cp.percentage_fee / 100.0)
+                             FROM portfolio_funds pf 
+                             LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id 
+                             WHERE pf.portfolio_id = cp.portfolio_id 
+                             AND pf.status = 'active')
+                        ELSE
+                            NULL -- Will show as 'Latest valuation needed' in frontend
+                    END
+                ELSE
+                    NULL -- Default case
+            END
         ELSE 0
     END as calculated_annual_revenue
 FROM 
@@ -900,15 +940,32 @@ SELECT
     END) as total_percentage_revenue,
     SUM(CASE 
         WHEN cp.status = 'active' THEN
-            COALESCE(cp.fixed_cost, 0) + 
-            COALESCE(
-                (SELECT SUM(lfv.valuation) * (cp.percentage_fee / 100.0)
-                 FROM portfolio_funds pf 
-                 LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id 
-                 WHERE pf.portfolio_id = cp.portfolio_id 
-                 AND pf.status = 'active'), 
-                0
-            )
+            CASE
+                -- If only fixed cost is set (no percentage fee)
+                WHEN COALESCE(cp.fixed_cost, 0) > 0 AND COALESCE(cp.percentage_fee, 0) = 0 THEN
+                    cp.fixed_cost
+                -- If percentage fee is involved (with or without fixed cost)
+                WHEN COALESCE(cp.percentage_fee, 0) > 0 THEN
+                    CASE
+                        -- Check if there's any valuation available
+                        WHEN (SELECT COALESCE(SUM(lfv.valuation), 0) 
+                              FROM portfolio_funds pf 
+                              LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id 
+                              WHERE pf.portfolio_id = cp.portfolio_id 
+                              AND pf.status = 'active') > 0 THEN
+                            -- Calculate with valuation
+                            COALESCE(cp.fixed_cost, 0) + 
+                            (SELECT SUM(lfv.valuation) * (cp.percentage_fee / 100.0)
+                             FROM portfolio_funds pf 
+                             LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id 
+                             WHERE pf.portfolio_id = cp.portfolio_id 
+                             AND pf.status = 'active')
+                        ELSE
+                            0 -- Don't count revenue when valuation is needed
+                    END
+                ELSE
+                    0 -- Don't count when nothing is configured
+            END
         ELSE 0
     END) as total_annual_revenue,
     -- Breakdown by provider
@@ -918,15 +975,32 @@ SELECT
     -- Average revenue per product
     AVG(CASE 
         WHEN cp.status = 'active' AND (cp.fixed_cost IS NOT NULL OR cp.percentage_fee IS NOT NULL) THEN
-            COALESCE(cp.fixed_cost, 0) + 
-            COALESCE(
-                (SELECT SUM(lfv.valuation) * (cp.percentage_fee / 100.0)
-                 FROM portfolio_funds pf 
-                 LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id 
-                 WHERE pf.portfolio_id = cp.portfolio_id 
-                 AND pf.status = 'active'), 
-                0
-            )
+            CASE
+                -- If only fixed cost is set (no percentage fee)
+                WHEN COALESCE(cp.fixed_cost, 0) > 0 AND COALESCE(cp.percentage_fee, 0) = 0 THEN
+                    cp.fixed_cost
+                -- If percentage fee is involved (with or without fixed cost)
+                WHEN COALESCE(cp.percentage_fee, 0) > 0 THEN
+                    CASE
+                        -- Check if there's any valuation available
+                        WHEN (SELECT COALESCE(SUM(lfv.valuation), 0) 
+                              FROM portfolio_funds pf 
+                              LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id 
+                              WHERE pf.portfolio_id = cp.portfolio_id 
+                              AND pf.status = 'active') > 0 THEN
+                            -- Calculate with valuation
+                            COALESCE(cp.fixed_cost, 0) + 
+                            (SELECT SUM(lfv.valuation) * (cp.percentage_fee / 100.0)
+                             FROM portfolio_funds pf 
+                             LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id 
+                             WHERE pf.portfolio_id = cp.portfolio_id 
+                             AND pf.status = 'active')
+                        ELSE
+                            NULL -- Don't count revenue when valuation is needed
+                    END
+                ELSE
+                    NULL -- Don't count when nothing is configured
+            END
         ELSE NULL
     END) as avg_revenue_per_product
 FROM 
@@ -955,15 +1029,32 @@ SELECT
     END) as total_percentage_revenue,
     SUM(CASE 
         WHEN cp.status = 'active' THEN
-            COALESCE(cp.fixed_cost, 0) + 
-            COALESCE(
-                (SELECT SUM(lfv.valuation) * (cp.percentage_fee / 100.0)
-                 FROM portfolio_funds pf 
-                 LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id 
-                 WHERE pf.portfolio_id = cp.portfolio_id 
-                 AND pf.status = 'active'), 
-                0
-            )
+            CASE
+                -- If only fixed cost is set (no percentage fee)
+                WHEN COALESCE(cp.fixed_cost, 0) > 0 AND COALESCE(cp.percentage_fee, 0) = 0 THEN
+                    cp.fixed_cost
+                -- If percentage fee is involved (with or without fixed cost)
+                WHEN COALESCE(cp.percentage_fee, 0) > 0 THEN
+                    CASE
+                        -- Check if there's any valuation available
+                        WHEN (SELECT COALESCE(SUM(lfv.valuation), 0) 
+                              FROM portfolio_funds pf 
+                              LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id 
+                              WHERE pf.portfolio_id = cp.portfolio_id 
+                              AND pf.status = 'active') > 0 THEN
+                            -- Calculate with valuation
+                            COALESCE(cp.fixed_cost, 0) + 
+                            (SELECT SUM(lfv.valuation) * (cp.percentage_fee / 100.0)
+                             FROM portfolio_funds pf 
+                             LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id 
+                             WHERE pf.portfolio_id = cp.portfolio_id 
+                             AND pf.status = 'active')
+                        ELSE
+                            0 -- Don't count revenue when valuation is needed
+                    END
+                ELSE
+                    0 -- Don't count when nothing is configured
+            END
         ELSE 0
     END) as total_annual_revenue,
     -- Total FUM for this provider
@@ -1001,6 +1092,97 @@ RETURNS TABLE (
     name TEXT,
     description TEXT,
     additional_info TEXT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT * FROM (
+        -- Search Client Groups
+        SELECT 
+            'client_group'::TEXT as entity_type,
+            cg.id as entity_id,
+            cg.name as name,
+            COALESCE('Client Group - ' || cg.type, 'Client Group') as description,
+            COALESCE('Advisor: ' || cg.advisor, '') as additional_info
+        FROM client_groups cg
+        WHERE cg.status != 'inactive'
+        AND (
+            cg.name ILIKE '%' || search_query || '%' OR
+            cg.advisor ILIKE '%' || search_query || '%' OR
+            cg.type ILIKE '%' || search_query || '%'
+        )
+        
+        UNION ALL
+        
+        -- Search Products (Client Products)
+        SELECT 
+            'product'::TEXT as entity_type,
+            cp.id as entity_id,
+            cp.product_name as name,
+            COALESCE('Product - ' || cp.product_type, 'Product') as description,
+            COALESCE('Plan: ' || cp.plan_number, '') as additional_info
+        FROM client_products cp
+        WHERE cp.status != 'inactive'
+        AND (
+            cp.product_name ILIKE '%' || search_query || '%' OR
+            cp.product_type ILIKE '%' || search_query || '%' OR
+            cp.plan_number ILIKE '%' || search_query || '%'
+        )
+        
+        UNION ALL
+        
+        -- Search Available Funds
+        SELECT 
+            'fund'::TEXT as entity_type,
+            af.id as entity_id,
+            af.fund_name as name,
+            COALESCE('Fund - ISIN: ' || af.isin_number, 'Fund') as description,
+            COALESCE('Risk Factor: ' || af.risk_factor::TEXT || ', Cost: ' || af.fund_cost::TEXT, '') as additional_info
+        FROM available_funds af
+        WHERE af.status != 'inactive'
+        AND (
+            af.fund_name ILIKE '%' || search_query || '%' OR
+            af.isin_number ILIKE '%' || search_query || '%'
+        )
+        
+        UNION ALL
+        
+        -- Search Available Providers
+        SELECT 
+            'provider'::TEXT as entity_type,
+            ap.id as entity_id,
+            ap.name as name,
+            'Provider' as description,
+            COALESCE('Status: ' || ap.status, '') as additional_info
+        FROM available_providers ap
+        WHERE ap.status != 'inactive'
+        AND ap.name ILIKE '%' || search_query || '%'
+        
+        UNION ALL
+        
+        -- Search Available Portfolios (Templates)
+        SELECT 
+            'portfolio'::TEXT as entity_type,
+            ap.id as entity_id,
+            ap.name as name,
+            'Portfolio Template' as description,
+            '' as additional_info
+        FROM available_portfolios ap
+        WHERE ap.name ILIKE '%' || search_query || '%'
+    ) AS search_results
+    ORDER BY 
+        CASE 
+            WHEN search_results.name ILIKE search_query || '%' THEN 1  -- Exact prefix match gets highest priority
+            WHEN search_results.name ILIKE '%' || search_query || '%' THEN 2  -- Contains match gets lower priority
+            ELSE 3
+        END,
+        search_results.name
+    LIMIT result_limit;
+END;
+$$ LANGUAGE plpgsql;
+
+-- =========================================================
+-- End of Script
+-- =========================================================
 ) AS $$
 BEGIN
     RETURN QUERY
