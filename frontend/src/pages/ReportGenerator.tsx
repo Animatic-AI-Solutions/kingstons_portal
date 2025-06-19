@@ -121,12 +121,10 @@ const ReportGenerator: React.FC = () => {
   
   // State for data
   const [clientGroups, setClientGroups] = useState<ClientGroup[]>([]);
-  const [productOwners, setProductOwners] = useState<ProductOwner[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   
   // State for selections
   const [selectedClientGroupIds, setSelectedClientGroupIds] = useState<(string | number)[]>([]);
-  const [selectedProductOwnerIds, setSelectedProductOwnerIds] = useState<(string | number)[]>([]);
   const [selectedProductIds, setSelectedProductIds] = useState<(string | number)[]>([]);
   
   // New state for valuation date selection
@@ -136,7 +134,6 @@ const ReportGenerator: React.FC = () => {
   
   // State for results
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
-  const [displayedProductOwners, setDisplayedProductOwners] = useState<ProductOwner[]>([]);
   const [totalValuation, setTotalValuation] = useState<number | null>(null);
   const [totalIRR, setTotalIRR] = useState<number | null>(null);
   const [valuationDate, setValuationDate] = useState<string | null>(null);
@@ -146,21 +143,11 @@ const ReportGenerator: React.FC = () => {
   // New state for product-specific period summaries
   const [productSummaries, setProductSummaries] = useState<ProductPeriodSummary[]>([]);
 
-  // New state to track which product owners come from which client groups
-  const [productOwnerToClientGroup, setProductOwnerToClientGroup] = useState<Map<number, number[]>>(new Map());
-
-  // New state to track which products come from which sources (client groups or product owners)
-  const [productSources, setProductSources] = useState<Map<number, { clientGroups: number[], productOwners: number[] }>>(new Map());
+  // New state to track which products come from which sources (client groups)
+  const [productSources, setProductSources] = useState<Map<number, { clientGroups: number[] }>>(new Map());
 
   // States for excluded items (items that won't be included in the report)
   const [excludedProductIds, setExcludedProductIds] = useState<Set<number>>(new Set());
-  const [excludedProductOwnerIds, setExcludedProductOwnerIds] = useState<Set<number>>(new Set());
-
-  // State to track products excluded because their product owner is excluded
-  const [cascadeExcludedProductIds, setCascadeExcludedProductIds] = useState<Map<number, number[]>>(new Map());
-
-  // State to track product owner to products relationship
-  const [productOwnerToProducts, setProductOwnerToProducts] = useState<Map<number, number[]>>(new Map());
 
 // Formatters now imported from shared components to eliminate duplication
 
@@ -214,33 +201,21 @@ const ReportGenerator: React.FC = () => {
         // Fetch all basic data
         const [
           clientGroupsRes,
-          allProductOwnersRes,
           allProductsRes
         ] = await Promise.all([
           api.get('/client_groups'),
-
-          api.get('/client_products_with_owners'),
-          api.get('/product_owners')
+          api.get('/client_products_with_owners')
         ]);
         
         setClientGroups(clientGroupsRes.data || []);
         
-        // Set ALL product owners for the dropdown
-        if (allProductOwnersRes && allProductOwnersRes.data) {
-          setProductOwners(allProductOwnersRes.data.map((owner: any) => ({
-            id: owner.id,
-            name: owner.name,
-            type: owner.type
-          })) || []);
-        } else {
-          setProductOwners([]);
-        }
-        
         // Set ALL products for the dropdown
-        setProducts(allProductsRes.data || []);
+        const productsData = allProductsRes.data || [];
+        console.log('🔍 [PRODUCTS MAPPING DEBUG] Raw products before setting:', productsData.slice(0, 2));
+        setProducts(productsData);
         
-        console.log('Fetched all product owners:', allProductOwnersRes.data?.length || 0, allProductOwnersRes.data);
         console.log('Fetched all products:', allProductsRes.data?.length || 0, allProductsRes.data);
+        console.log('🔍 [PRODUCTS DEBUG] First product structure:', allProductsRes.data?.[0]);
         
         setError(null);
       } catch (err: any) {
@@ -254,164 +229,20 @@ const ReportGenerator: React.FC = () => {
     fetchInitialData();
   }, [api]);
   
-  // useEffect to update Product Owners displayed in "Related Items"
-  useEffect(() => {
-    const updateDisplayedOwners = async () => {
-      try {
-        let ownersToDisplay: ProductOwner[] = [];
-        const ownerIdSet = new Set<number>();
-        // Create a new map for tracking
-        const ownerToClientGroupMap = new Map<number, number[]>();
+  // Removed product owner functionality - no longer needed
 
-        // Add directly selected product owners
-        if (selectedProductOwnerIds.length > 0) {
-          selectedProductOwnerIds.forEach(spo => {
-            const fullOwner = productOwners.find(po => po.id === Number(spo));
-            if (fullOwner && !ownerIdSet.has(fullOwner.id)) {
-              ownersToDisplay.push(fullOwner);
-              ownerIdSet.add(fullOwner.id);
-              // These are directly selected, so no client group association
-              ownerToClientGroupMap.set(fullOwner.id, []);
-            }
-          });
-        }
-
-        // Add product owners related to selected client groups
-        if (selectedClientGroupIds.length > 0) {
-          for (const scg of selectedClientGroupIds) {
-            try {
-              // ISSUE FIX: Using the wrong endpoint - the /client_group_product_owners endpoint only returns the junction records
-              // The client_group_product_owners endpoint returns junction table records with product_owner_id, not the actual product owners
-              
-              // First, fetch all associated product owner IDs for this client group
-              const associationsResponse = await api.get(`/client_group_product_owners?client_group_id=${Number(scg)}`);
-              console.log(`Client Group ${scg} product owner associations:`, associationsResponse.data);
-              
-              // Check if there are any associations
-              if (associationsResponse.data && associationsResponse.data.length > 0) {
-                // Extract the product owner IDs from the associations
-                const ownerIds = associationsResponse.data.map((assoc: any) => assoc.product_owner_id);
-                console.log(`Client Group ${scg} associated product owner IDs:`, ownerIds);
-                
-                // Fetch details for each product owner
-                for (const ownerId of ownerIds) {
-                  if (!ownerIdSet.has(ownerId)) {
-                    // Look for the owner in existing productOwners array first (to avoid extra API calls)
-                    let owner = productOwners.find(po => po.id === ownerId);
-                    
-                    // If not found in our local cache, fetch the details from API
-                    if (!owner) {
-                      try {
-                        const ownerResponse = await api.get(`/product_owners/${ownerId}`);
-                        console.log(`Fetched product owner ${ownerId} details:`, ownerResponse.data);
-                        if (ownerResponse.data) {
-                          owner = ownerResponse.data;
-                        }
-                      } catch (err) {
-                        console.error(`Failed to fetch product owner ${ownerId} details:`, err);
-                        continue; // Skip this owner if we can't fetch details
-                      }
-                    }
-                    
-                    if (owner) {
-                      ownersToDisplay.push(owner);
-                      ownerIdSet.add(ownerId);
-                      // Associate this owner with this client group
-                      if (!ownerToClientGroupMap.has(ownerId)) {
-                        ownerToClientGroupMap.set(ownerId, [Number(scg)]);
-                      } else {
-                        ownerToClientGroupMap.get(ownerId)?.push(Number(scg));
-                      }
-                    }
-                  } else {
-                    // Owner already in set, just update its client group associations
-                    if (!ownerToClientGroupMap.has(ownerId)) {
-                      ownerToClientGroupMap.set(ownerId, [Number(scg)]);
-                    } else {
-                      ownerToClientGroupMap.get(ownerId)?.push(Number(scg));
-                    }
-                  }
-                }
-              } else {
-                console.log(`No product owners associated with client group ${scg}`);
-              }
-            } catch (err) {
-              console.error(`Failed to fetch product owners for client group ${Number(scg)}:`, err);
-            }
-          }
-        }
-
-        // Add product owners related to selected products
-        if (selectedProductIds.length > 0) {
-          for (const productId of selectedProductIds) {
-            try {
-              // Find the product's product owner if available
-              const product = products.find(p => p.id === Number(productId));
-              if (product && product.provider_id) {
-                const providerId = product.provider_id;
-
-                // Skip if this owner is already in our set
-                if (ownerIdSet.has(providerId)) continue;
-
-                // Look for the provider in existing productOwners array
-                let owner = productOwners.find(po => po.id === providerId);
-                
-                // If not found, fetch the full owner details
-                if (!owner) {
-                  try {
-                    const ownerResponse = await api.get(`/product_owners/${providerId}`);
-                    if (ownerResponse.data) {
-                      owner = ownerResponse.data;
-                    }
-                  } catch (err) {
-                    console.error(`Failed to fetch product owner ${providerId} details:`, err);
-                  }
-                }
-                
-                if (owner) {
-                  ownersToDisplay.push(owner);
-                  ownerIdSet.add(providerId);
-                  // This owner is associated with products, not client groups
-                  ownerToClientGroupMap.set(providerId, []);
-                }
-              }
-            } catch (err) {
-              console.error(`Failed to fetch product owner for product ${Number(productId)}:`, err);
-            }
-          }
-        }
-        
-        setDisplayedProductOwners(ownersToDisplay);
-        setProductOwnerToClientGroup(ownerToClientGroupMap);
-      } catch (err) {
-        console.error('Error updating displayed product owners:', err);
-      }
-    };
-
-    if (productOwners.length > 0 || selectedClientGroupIds.length > 0 || selectedProductIds.length > 0) { // Run if product owners are loaded or any selection exists
-      updateDisplayedOwners();
-    } else {
-      setDisplayedProductOwners([]); // Clear if no selections and no owners loaded
-      setProductOwnerToClientGroup(new Map()); // Clear the mapping
-    }
-  }, [selectedProductOwnerIds, selectedClientGroupIds, selectedProductIds, products, productOwners, api]);
-
-  // NEW useEffect for instant "Related Products" display (REQ 3)
+  // NEW useEffect for instant "Related Products" display - simplified to only handle client groups and products
   useEffect(() => {
     const updateRelatedProducts = async () => {
       try {
         let productsToDisplay: Product[] = [];
         const displayedProductIds = new Set<number>();
-        // Create a new map for tracking product sources
-        const productSourcesMap = new Map<number, { clientGroups: number[], productOwners: number[] }>();
-        // Create a map to track which products belong to which product owners
-        const ownerToProductsMap = new Map<number, number[]>();
+        // Create a new map for tracking product sources (only client groups now)
+        const productSourcesMap = new Map<number, { clientGroups: number[] }>();
         
         console.log("Updating related products with selections:", {
           selectedProductIds,
-          selectedClientGroupIds,
-          selectedProductOwnerIds,
-          displayedProductOwners: displayedProductOwners.map(po => po.id)
+          selectedClientGroupIds
         });
 
         // 1. Directly selected products
@@ -421,178 +252,73 @@ const ReportGenerator: React.FC = () => {
             productsToDisplay.push(product);
             displayedProductIds.add(product.id);
             // These are directly selected, initialize the sources
-            productSourcesMap.set(product.id, { clientGroups: [], productOwners: [] });
+            productSourcesMap.set(product.id, { clientGroups: [] });
           }
         }
 
         // 2. Products from selected client groups
         if (selectedClientGroupIds.length > 0) {
-          const clientGroupIds = selectedClientGroupIds.map(cg => Number(cg));
-          const clientGroupProds = products.filter(p => p.client_id && clientGroupIds.includes(p.client_id));
-          clientGroupProds.forEach(p => {
-            if (!displayedProductIds.has(p.id)) {
-              productsToDisplay.push(p);
-              displayedProductIds.add(p.id);
-              // Initialize with this client group as source
-              productSourcesMap.set(p.id, { 
-                clientGroups: [p.client_id], 
-                productOwners: [] 
-              });
-            } else {
-              // Product already added, but add this client group as a source
-              const currentSources = productSourcesMap.get(p.id) || { clientGroups: [], productOwners: [] };
-              if (!currentSources.clientGroups.includes(p.client_id)) {
-                currentSources.clientGroups.push(p.client_id);
-                productSourcesMap.set(p.id, currentSources);
-              }
-            }
-          });
-        }
-
-        // 3. Products from selected product owners
-        if (selectedProductOwnerIds.length > 0) {
-          for (const spo of selectedProductOwnerIds) {
+          for (const scg of selectedClientGroupIds) {
             try {
-              const response = await api.get(`/product_owners/${Number(spo)}/products`);
+              // Fetch products directly associated with this client group using the existing endpoint
+              const response = await api.get(`/client_products_with_owners?client_id=${Number(scg)}`);
+              console.log(`Client Group ${scg} products:`, response.data);
+              
               if (response.data && Array.isArray(response.data)) {
-                const ownerSpecificProducts = response.data as Product[];
+                const clientGroupProducts = response.data as Product[];
                 
-                // Track this product owner's products
-                const productIdsForOwner: number[] = [];
-                
-                ownerSpecificProducts.forEach(p => {
-                  productIdsForOwner.push(p.id);
-                  
+                clientGroupProducts.forEach(p => {
                   if (!displayedProductIds.has(p.id)) {
-                    productsToDisplay.push(p); // Add the full product object
+                    productsToDisplay.push(p);
                     displayedProductIds.add(p.id);
-                    // Initialize with this product owner as source
-                    productSourcesMap.set(p.id, { 
-                      clientGroups: [], 
-                      productOwners: [Number(spo)] 
-                    });
+                    // Set source as this client group
+                    productSourcesMap.set(p.id, { clientGroups: [Number(scg)] });
                   } else {
-                    // Product already added, but add this product owner as a source
-                    const currentSources = productSourcesMap.get(p.id) || { clientGroups: [], productOwners: [] };
-                    if (!currentSources.productOwners.includes(Number(spo))) {
-                      currentSources.productOwners.push(Number(spo));
+                    // Product already added, add this client group as a source
+                    const currentSources = productSourcesMap.get(p.id) || { clientGroups: [] };
+                    if (!currentSources.clientGroups.includes(Number(scg))) {
+                      currentSources.clientGroups.push(Number(scg));
                       productSourcesMap.set(p.id, currentSources);
                     }
                   }
                 });
-                
-                // Add to the owner->products mapping
-                ownerToProductsMap.set(Number(spo), productIdsForOwner);
+              } else {
+                console.log(`No products found for client group ${scg}`);
               }
             } catch (err) {
-              console.error(`Failed to fetch products for PO ${Number(spo)} (report gen):`, err);
-              // Optionally, show a partial error or decide if report can proceed
+              console.error(`Failed to fetch products for client group ${Number(scg)}:`, err);
             }
-          }
-        }
-        
-        // 4. Products from client group product owners (that aren't directly selected)
-        for (const owner of displayedProductOwners) {
-          // Skip owners that are directly selected (we already processed them)
-          if (selectedProductOwnerIds.includes(owner.id)) continue;
-          
-          try {
-            const response = await api.get(`/product_owners/${owner.id}/products`);
-            if (response.data && Array.isArray(response.data)) {
-              const ownerSpecificProducts = response.data as Product[];
-              
-              // Track this product owner's products
-              const productIdsForOwner: number[] = [];
-              
-              ownerSpecificProducts.forEach(p => {
-                productIdsForOwner.push(p.id);
-                
-                if (!displayedProductIds.has(p.id)) {
-                  productsToDisplay.push(p);
-                  displayedProductIds.add(p.id);
-                  // Set source as this product owner
-                  productSourcesMap.set(p.id, {
-                    clientGroups: [],
-                    productOwners: [owner.id]
-                  });
-                } else {
-                  // Product already added, add this product owner as a source
-                  const currentSources = productSourcesMap.get(p.id) || { clientGroups: [], productOwners: [] };
-                  if (!currentSources.productOwners.includes(owner.id)) {
-                    currentSources.productOwners.push(owner.id);
-                    productSourcesMap.set(p.id, currentSources);
-                  }
-                }
-              });
-              
-              // Add to the owner->products mapping
-              ownerToProductsMap.set(owner.id, productIdsForOwner);
-            }
-          } catch (err) {
-            console.error(`Failed to fetch products for client group's PO ${owner.id}:`, err);
           }
         }
         
         setRelatedProducts(productsToDisplay);
         setProductSources(productSourcesMap);
-        setProductOwnerToProducts(ownerToProductsMap);
       } catch (err) {
         console.error('Error updating related products:', err);
       }
     };
     
     // Run when selections change or the main product list is available
-    // products.length check ensures we don't run with an empty lookup list
-    if (products.length > 0 || selectedProductOwnerIds.length > 0 || displayedProductOwners.length > 0) {
+    if (products.length > 0 || selectedClientGroupIds.length > 0) {
         updateRelatedProducts();
     } else {
         setRelatedProducts([]); // Clear if no relevant selections
         setProductSources(new Map()); // Clear the sources map
-        setProductOwnerToProducts(new Map()); // Clear the product owner->products mapping
     }
-  }, [selectedProductIds, selectedClientGroupIds, selectedProductOwnerIds, products, displayedProductOwners, api]);
+  }, [selectedProductIds, selectedClientGroupIds, products, api]);
 
   // Reset exclusion lists when selections change
   useEffect(() => {
     setExcludedProductIds(new Set());
-    setExcludedProductOwnerIds(new Set());
-  }, [selectedProductIds, selectedClientGroupIds, selectedProductOwnerIds]);
-
-  // Add useEffect to handle cascading exclusion (after the other useEffects):
-  useEffect(() => {
-    // This effect handles cascading exclusion when product owners are excluded
-    console.log("=== EXCLUSION DEBUG ===");
-    console.log("Excluded product owner IDs:", Array.from(excludedProductOwnerIds));
-    console.log("Product owner -> products map:", Array.from(productOwnerToProducts.entries()));
-    console.log("Product owner -> client groups map:", Array.from(productOwnerToClientGroup.entries()));
-    
-    const newCascadeExcludedProducts = new Map<number, number[]>();
-    
-    // For each excluded product owner, find and exclude all their products
-    excludedProductOwnerIds.forEach(ownerId => {
-      const ownerProducts = productOwnerToProducts.get(ownerId) || [];
-      console.log(`Products for excluded owner ${ownerId}:`, ownerProducts);
-      
-      // Add excluded products from this owner
-      if (ownerProducts.length > 0) {
-        newCascadeExcludedProducts.set(ownerId, ownerProducts);
-      }
-    });
-    
-    console.log("Cascade excluded products:", Array.from(newCascadeExcludedProducts.entries()));
-    
-    setCascadeExcludedProductIds(newCascadeExcludedProducts);
-  }, [excludedProductOwnerIds, productOwnerToProducts, productOwnerToClientGroup]);
+  }, [selectedProductIds, selectedClientGroupIds]);
 
   // useEffect for tracking selection changes in the debug console
   useEffect(() => {
     console.log("=== SELECTION CHANGED ===");
     console.log("Selected client groups:", selectedClientGroupIds);
-    console.log("Selected product owners:", selectedProductOwnerIds);
     console.log("Selected products:", selectedProductIds);
-    console.log("Related product owners:", displayedProductOwners.map(po => ({ id: po.id, name: po.name })));
     console.log("Related products:", relatedProducts.map(p => ({ id: p.id, name: p.product_name })));
-  }, [selectedClientGroupIds, selectedProductOwnerIds, selectedProductIds, displayedProductOwners, relatedProducts]);
+  }, [selectedClientGroupIds, selectedProductIds, relatedProducts]);
   
   // New useEffect to fetch available valuation dates from fund valuations
   useEffect(() => {
@@ -607,13 +333,8 @@ const ReportGenerator: React.FC = () => {
       try {
         setIsLoadingValuationDates(true);
         
-        // Get all excluded product IDs (direct and cascade)
+        // Get all excluded product IDs (only direct exclusions now)
         const allExcludedProductIds = new Set<number>([...excludedProductIds]);
-        
-        // Add cascade-excluded products
-        Array.from(cascadeExcludedProductIds.values()).forEach((productIds: number[]) => {
-          productIds.forEach((id: number) => allExcludedProductIds.add(id));
-        });
         
         // Filter out excluded products
         const includedProducts = relatedProducts.filter((p: Product) => !allExcludedProductIds.has(p.id));
@@ -681,74 +402,165 @@ const ReportGenerator: React.FC = () => {
           return productFunds.map(fund => fund.id);
         });
         
-        // If we only have inactive products, still allow them to proceed (they can select any valuation date)
+        console.log('📊 [VALUATION DEBUG] Product analysis:', {
+          totalIncludedProducts: includedProducts.length,
+          activeFundIds: activeFundIds.length,
+          inactiveProducts: inactiveProducts.length,
+          inactiveProductFundIds: inactiveProductFundIds.length,
+          includedProductStatuses: includedProducts.map(p => ({ id: p.id, name: p.product_name, status: p.status }))
+        });
+        
+        // If we only have inactive products, still allow them to proceed
         if (activeFundIds.length === 0 && inactiveProductFundIds.length > 0) {
-          // For inactive products, we don't need common valuation dates - they can use any available date
-          // Set a default set of available dates (could be empty, letting user select manually)
-          setAvailableValuationDates([]);
+          // For inactive products, we assume zero valuations are valid
+          // Set a special flag to indicate inactive products are valid for reporting
+          console.log('📊 [VALUATION DEBUG] Inactive products detected - assuming zero valuations are valid');
+          setAvailableValuationDates(['inactive-products-valid']);
           setSelectedValuationDate(null);
           setIsLoadingValuationDates(false);
           return;
         } else if (activeFundIds.length === 0) {
+          console.log('📊 [VALUATION DEBUG] No active funds, no inactive products - clearing dates');
           setAvailableValuationDates([]);
           setSelectedValuationDate(null);
           setIsLoadingValuationDates(false);
           return;
         }
         
-        // Create a map to track which months each fund has valuations for
-        const fundValuationMonths: Map<number, Set<string>> = new Map();
-        
-        // Initialize the set for each fund
-        activeFundIds.forEach(fundId => {
-          fundValuationMonths.set(fundId, new Set<string>());
+        console.log('📊 [VALUATION DEBUG] Active funds detected, proceeding with common date logic', {
+          activeFundIds: activeFundIds.length,
+          inactiveProductFundIds: inactiveProductFundIds.length,
+          includedProducts: includedProducts.length,
+          inactiveProducts: inactiveProducts.length
         });
         
-        // Get all historical valuations for each fund using batch service
-        const batchValuationResult = await valuationService.getBatchHistoricalValuations(activeFundIds);
+        // NEW ELIGIBILITY LOGIC
+        // Step 1: Get all valuation dates for each product (active and inactive)
+        const productValuationDates = new Map<number, string[]>();
+        const productLatestDates = new Map<number, string>();
+        let globalLatestDate = '';
         
-        // Convert batch result to expected format for compatibility
-        const valuationResponses = activeFundIds.map(fundId => ({
-          data: batchValuationResult.get(fundId) || []
-        }));
+        // Get all historical valuations for ALL funds (active and inactive)
+        const allFundIds = [...activeFundIds, ...inactiveProductFundIds];
+        const batchValuationResult = await valuationService.getBatchHistoricalValuations(allFundIds);
         
-        // Process all valuations to track which months each fund has valuations for
-        valuationResponses.forEach((response, index) => {
-          const fundId = activeFundIds[index];
-          const fundValuations = response.data || [];
+        // Process valuations for each product
+        for (const product of includedProducts) {
+          const productFunds = portfolioFundsByProduct.get(product.id) || [];
+          const productDates = new Set<string>();
+          let productLatest = '';
+          
+          // Collect all valuation dates for this product's funds
+          for (const fund of productFunds) {
+            const fundValuations = batchValuationResult.get(fund.id) || [];
           
           fundValuations.forEach((val: any) => {
             if (val.valuation_date) {
-              // Extract YYYY-MM from the date
               const dateParts = val.valuation_date.split('-');
               if (dateParts.length >= 2) {
                 const yearMonth = `${dateParts[0]}-${dateParts[1]}`;
-                // Add this month to this fund's set of valuation months
-                fundValuationMonths.get(fundId)?.add(yearMonth);
+                  productDates.add(yearMonth);
+                  
+                  // Track latest date for this product
+                  if (yearMonth > productLatest) {
+                    productLatest = yearMonth;
+                  }
+                  
+                  // Track global latest date
+                  if (yearMonth > globalLatestDate) {
+                    globalLatestDate = yearMonth;
+                  }
               }
             }
           });
-        });
-        
-        // Find the intersection of all valuation months
-        // (months where ALL funds have valuations)
-        let commonValuationMonths: string[] = [];
-        
-        if (activeFundIds.length > 0) {
-          // Start with months from the first fund
-          commonValuationMonths = Array.from(fundValuationMonths.get(activeFundIds[0]) || []);
+          }
           
-          // For each remaining fund, filter to keep only months they also have
-          for (let i = 1; i < activeFundIds.length; i++) {
-            const fundMonths = fundValuationMonths.get(activeFundIds[i]) || new Set<string>();
-            commonValuationMonths = commonValuationMonths.filter(month => fundMonths.has(month));
+          productValuationDates.set(product.id, Array.from(productDates).sort());
+          if (productLatest) {
+            productLatestDates.set(product.id, productLatest);
           }
         }
         
-        // Sort chronologically (newest first)
-        const sortedDates = commonValuationMonths.sort((a: string, b: string) => b.localeCompare(a));
+        console.log('📊 [ELIGIBILITY DEBUG] Product valuation analysis:', {
+          globalLatestDate,
+          productLatestDates: Object.fromEntries(productLatestDates),
+          productValuationDates: Object.fromEntries(
+            Array.from(productValuationDates.entries()).map(([id, dates]) => [id, dates])
+          )
+        });
         
-        console.log("Common valuation months (all funds have data):", sortedDates);
+        // Step 2: Find eligible dates where all products have valuations (actual or assumed zero)
+        const eligibleDates = new Set<string>();
+        
+        // Generate all possible month candidates up to the global latest date
+        const candidateDates: string[] = [];
+        if (globalLatestDate) {
+          const [latestYear, latestMonth] = globalLatestDate.split('-').map(Number);
+          
+          // Find earliest date among all products
+          let earliestDate = globalLatestDate;
+          for (const dates of productValuationDates.values()) {
+            if (dates.length > 0 && dates[0] < earliestDate) {
+              earliestDate = dates[0];
+            }
+          }
+          
+          const [earliestYear, earliestMonth] = earliestDate.split('-').map(Number);
+          
+          // Generate all months from earliest to latest
+          let currentYear = earliestYear;
+          let currentMonth = earliestMonth;
+          
+          while (currentYear < latestYear || (currentYear === latestYear && currentMonth <= latestMonth)) {
+            const monthStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+            candidateDates.push(monthStr);
+            
+            currentMonth++;
+            if (currentMonth > 12) {
+              currentMonth = 1;
+              currentYear++;
+            }
+          }
+        }
+        
+        // Step 3: Check each candidate date for eligibility
+        for (const candidateDate of candidateDates) {
+          let allProductsHaveValuation = true;
+          
+          for (const product of includedProducts) {
+            const productDates = productValuationDates.get(product.id) || [];
+            const productLatest = productLatestDates.get(product.id) || '';
+            const isActiveProduct = product.status !== 'inactive';
+            
+            // Check if this product has valuation for this date
+            const hasActualValuation = productDates.includes(candidateDate);
+            const canAssumeZero = !isActiveProduct && candidateDate > productLatest;
+            
+            if (!hasActualValuation && !canAssumeZero) {
+              allProductsHaveValuation = false;
+              break;
+            }
+          }
+          
+          if (allProductsHaveValuation) {
+            eligibleDates.add(candidateDate);
+          }
+        }
+        
+        // Sort eligible dates chronologically (newest first)
+        const sortedDates = Array.from(eligibleDates).sort((a: string, b: string) => b.localeCompare(a));
+        
+        console.log('📊 [ELIGIBILITY DEBUG] Final eligible dates:', sortedDates);
+        
+        // Step 4: Set results based on eligibility
+        if (sortedDates.length === 0) {
+          console.log('📊 [ELIGIBILITY DEBUG] No eligible dates found - products do not meet report generation criteria');
+          setAvailableValuationDates([]);
+          setSelectedValuationDate(null);
+          setIsLoadingValuationDates(false);
+          return;
+        }
+        
         setAvailableValuationDates(sortedDates);
         
         // Set the most recent date as the default selection
@@ -758,9 +570,8 @@ const ReportGenerator: React.FC = () => {
           // If the currently selected date is no longer valid, select the most recent date
           setSelectedValuationDate(sortedDates[0]);
         } else if (sortedDates.length === 0) {
-          // If no common dates found, clear selection and show a message
+          // This case is already handled above, but keeping for completeness
           setSelectedValuationDate(null);
-          console.warn("No common valuation dates found for the selected funds");
         }
       } catch (err) {
         console.error("Error fetching available valuation dates:", err);
@@ -771,7 +582,7 @@ const ReportGenerator: React.FC = () => {
     };
     
     fetchAvailableValuationDates();
-  }, [relatedProducts, excludedProductIds, cascadeExcludedProductIds, api, selectedValuationDate]);
+  }, [relatedProducts, excludedProductIds, api, selectedValuationDate]);
 
   // State to store historical IRR month labels
   const [historicalIRRMonths, setHistoricalIRRMonths] = useState<string[]>([]);
@@ -779,48 +590,38 @@ const ReportGenerator: React.FC = () => {
   // State for historical IRR years setting
   const [historicalIRRYears, setHistoricalIRRYears] = useState<number>(2);
 
-  // Computed value: Check if any products are effectively selected (after exclusions)
+  // Calculate if we have any effective product selection (simplified for client groups and products only)
   const hasEffectiveProductSelection = useMemo(() => {
-    // Get all excluded product IDs (direct and cascade)
+    // Get all excluded product IDs (only direct exclusions now)
     const allExcludedProductIds = new Set<number>([...excludedProductIds]);
-    
-    // Add cascade-excluded products
-    Array.from(cascadeExcludedProductIds.values()).forEach(productIds => {
-      productIds.forEach(id => allExcludedProductIds.add(id));
-    });
 
     // Count effective products from each selection method
     let effectiveProductCount = 0;
 
     // 1. Directly selected products (not excluded)
-    effectiveProductCount += selectedProductIds.filter(p => !allExcludedProductIds.has(Number(p))).length;
+    const directlySelectedProducts = selectedProductIds.filter(p => !allExcludedProductIds.has(Number(p)));
+    effectiveProductCount += directlySelectedProducts.length;
 
     // 2. Products from selected client groups (not excluded)
     if (selectedClientGroupIds.length > 0) {
-      const clientGroupIds = selectedClientGroupIds.map(cg => Number(cg));
-      const clientGroupProducts = products.filter(p => 
-        p.client_id && 
-        clientGroupIds.includes(p.client_id) && 
-        !allExcludedProductIds.has(p.id)
-      );
-      effectiveProductCount += clientGroupProducts.length;
+      const effectiveProducts = relatedProducts.filter(p => !allExcludedProductIds.has(p.id));
+      effectiveProductCount += effectiveProducts.length;
     }
 
-    // 3. Products from selected product owners (not excluded)
-    // Note: This is an approximation since we don't have the full product owner product list in state
-    // But we can use relatedProducts as a proxy since it should contain all relevant products
-    if (selectedProductOwnerIds.length > 0) {
-      const nonExcludedOwners = selectedProductOwnerIds.filter(ownerId => !excludedProductOwnerIds.has(Number(ownerId)));
-      if (nonExcludedOwners.length > 0) {
-        // If we have non-excluded product owners, assume they contribute products
-        // This is imperfect but will be validated in the actual generateReport function
-        const ownerProducts = relatedProducts.filter(p => !allExcludedProductIds.has(p.id));
-        effectiveProductCount += ownerProducts.length;
-      }
-    }
+    // Debug logging for troubleshooting
+    console.log('🔍 [SELECTION DEBUG] hasEffectiveProductSelection calculation:', {
+      selectedProductIds,
+      selectedClientGroupIds,
+      excludedProductIds: Array.from(excludedProductIds),
+      allExcludedProductIds: Array.from(allExcludedProductIds),
+      directlySelectedProducts,
+      relatedProductsCount: relatedProducts.length,
+      effectiveProductCount,
+      hasSelection: effectiveProductCount > 0
+    });
 
     return effectiveProductCount > 0;
-  }, [selectedProductIds, selectedClientGroupIds, selectedProductOwnerIds, excludedProductIds, cascadeExcludedProductIds, excludedProductOwnerIds, products, relatedProducts]);
+  }, [selectedProductIds, selectedClientGroupIds, excludedProductIds, relatedProducts]);
 
   // Function to fetch historical IRR data for all funds in products
   // Only includes months where ALL portfolio funds have IRR data
@@ -869,19 +670,22 @@ const ReportGenerator: React.FC = () => {
           }
         });
 
-        // Second pass: group historical IRR data by month, excluding latest month for each fund
+        // Second pass: group historical IRR data by month
+        // Only exclude latest month if we have sufficient historical data (more than 2 months)
         response.funds_historical_irr.forEach((fund: any) => {
           if (fund.historical_irr && fund.historical_irr.length > 0) {
             const fundLatestMonth = latestIRRMonths.get(fund.portfolio_fund_id);
+            // Be more conservative about excluding latest month - only exclude if we have at least 3 months of data
+            const shouldExcludeLatest = fund.historical_irr.length > 2;
             
             fund.historical_irr.forEach((record: any) => {
               if (record.irr_result !== null && record.irr_date) {
                 const dateObj = new Date(record.irr_date);
                 const yearMonth = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
                 
-                // Skip this IRR if it's the latest month for this fund
-                if (yearMonth === fundLatestMonth) {
-                  console.log(`Excluding latest IRR for fund ${fund.portfolio_fund_id}: ${yearMonth} (${record.irr_result}%)`);
+                // Skip this IRR if it's the latest month AND we have enough data to exclude it
+                if (shouldExcludeLatest && yearMonth === fundLatestMonth) {
+                  console.log(`Excluding latest IRR for fund ${fund.portfolio_fund_id}: ${yearMonth} (${record.irr_result}%) - sufficient historical data available`);
                   return;
                 }
                 
@@ -895,18 +699,29 @@ const ReportGenerator: React.FC = () => {
           }
         });
 
-        // Find months where majority of funds have IRR data (at least 75% coverage)
+        // Find months where majority of funds have IRR data
+        // Use more lenient coverage requirements when we have limited data
         const completeMonths: string[] = [];
         const totalFundsInPortfolio = allFundIds.size;
-        const requiredCoverage = Math.max(1, Math.ceil(totalFundsInPortfolio * 0.75)); // At least 75% of funds must have data
+        const totalMonthsAvailable = fundsByMonth.size;
+        
+        // If we have very limited historical data (1-2 months), be more lenient with coverage requirements
+        let coverageThreshold: number;
+        if (totalMonthsAvailable <= 2) {
+          // For limited data, require at least 50% coverage
+          coverageThreshold = Math.max(1, Math.ceil(totalFundsInPortfolio * 0.5));
+        } else {
+          // For sufficient data, use 75% coverage
+          coverageThreshold = Math.max(1, Math.ceil(totalFundsInPortfolio * 0.75));
+        }
         
         for (const [yearMonth, fundsData] of fundsByMonth.entries()) {
-          if (fundsData.size >= requiredCoverage) {
+          if (fundsData.size >= coverageThreshold) {
             completeMonths.push(yearMonth);
           }
         }
         
-        console.log(`Product ${productId} coverage: ${totalFundsInPortfolio} total funds, requiring ${requiredCoverage} for inclusion`);
+        console.log(`Product ${productId} coverage: ${totalFundsInPortfolio} total funds, requiring ${coverageThreshold} for inclusion (${totalMonthsAvailable} months available)`);
 
         // Sort months by date (most recent first)
         completeMonths.sort((a, b) => b.localeCompare(a));
@@ -975,14 +790,13 @@ const ReportGenerator: React.FC = () => {
   const generateReport = async () => {
     // Check if any products are effectively selected (accounting for exclusions)
     if (!hasEffectiveProductSelection) {
-      setDataError('Please select at least one product to generate a report. Products may be excluded if their client group or product owner is excluded.');
+      setDataError('Please select at least one product to generate a report.');
       return;
     }
     
     // Additional validation to ensure user has made meaningful selections
     console.log('Report generation validation:');
     console.log(`Selected client groups: ${selectedClientGroupIds.length}`);
-    console.log(`Selected product owners: ${selectedProductOwnerIds.length}`);
     console.log(`Selected products: ${selectedProductIds.length}`);
     
     // Check for duplicate product selections
@@ -1008,18 +822,11 @@ const ReportGenerator: React.FC = () => {
     setProductSummaries([]);
     
     try {
-      // Get all excluded product IDs (direct and cascade)
+      // Get all excluded product IDs (only direct exclusions now)
       const allExcludedProductIds = new Set<number>([...excludedProductIds]);
-      
-      // Add cascade-excluded products
-      Array.from(cascadeExcludedProductIds.values()).forEach(productIds => {
-        productIds.forEach(id => allExcludedProductIds.add(id));
-      });
 
-      // --- Step 1: Consolidate all Product IDs for the Report (REQ 1) ---
+      // --- Step 1: Consolidate all Product IDs for the Report ---
       const productIdsForReport = new Set<number>();
-      // This will store full product objects fetched for product owners if they are not in the main 'products' list
-      const additionalProductsData: Product[] = []; 
 
       // 1a. Add directly selected products (that aren't excluded)
       if (selectedProductIds.length > 0) {
@@ -1030,45 +837,10 @@ const ReportGenerator: React.FC = () => {
       
       // 1b. Add products from selected client groups (that aren't excluded)
       if (selectedClientGroupIds.length > 0) {
-        const clientGroupIds = selectedClientGroupIds.map(cg => Number(cg));
-        const clientGroupAttachedProducts = products.filter(p => 
-          p.client_id && 
-          clientGroupIds.includes(p.client_id) && 
-          !allExcludedProductIds.has(p.id)
-        );
+        // Use relatedProducts which contains products from selected client groups
+        const clientGroupAttachedProducts = relatedProducts.filter(p => !allExcludedProductIds.has(p.id));
         clientGroupAttachedProducts.forEach(p => productIdsForReport.add(p.id));
       }
-      
-      // 1c. Add products from selected product owners (that aren't excluded)
-      if (selectedProductOwnerIds.length > 0) {
-        for (const spo of selectedProductOwnerIds) {
-          // Skip excluded product owners
-          if (excludedProductOwnerIds.has(Number(spo))) continue;
-          
-          try {
-            const response = await api.get(`/product_owners/${Number(spo)}/products`);
-            if (response.data && Array.isArray(response.data)) {
-              const ownerSpecificProducts = response.data as Product[];
-              ownerSpecificProducts
-                .filter(p => !allExcludedProductIds.has(p.id))
-                .forEach(p => {
-                  productIdsForReport.add(p.id);
-                  // If this product isn't in our main 'products' list, store its details
-                  if (!products.find(mainP => mainP.id === p.id)) {
-                      additionalProductsData.push(p);
-                  }
-                });
-            }
-          } catch (err) {
-            console.error(`Failed to fetch products for PO ${Number(spo)} (report gen):`, err);
-            // Optionally, show a partial error or decide if report can proceed
-          }
-        }
-      }
-      
-      // REMOVED: Auto-inclusion of products from client group product owners
-      // Now only explicitly selected items will be included in reports
-      // This ensures users have full control over what gets included
       
       const uniqueProductIds = Array.from(productIdsForReport);
       
@@ -1085,8 +857,8 @@ const ReportGenerator: React.FC = () => {
       console.log("Historical IRR data fetched:", historicalIRRMap.size, "funds with historical data");
 
       // --- Step 2: Get Portfolio IDs for all selected products ---
-      // Combine main products list with any additionally fetched products for a full lookup
-      const comprehensiveProductList = [...products, ...additionalProductsData.filter(ap => !products.find(mp => mp.id === ap.id))];
+      // Use main products list for lookup
+      const comprehensiveProductList = products;
 
       // Create array to store each product's summary data
       const productSummaryResults: ProductPeriodSummary[] = [];
@@ -1225,6 +997,14 @@ const ReportGenerator: React.FC = () => {
                       value: latestValue,
                       valuation_date: valuations[latestDate].valuation_date
                   });
+              } else if (inactiveFundIds.has(fundId)) {
+                  // For inactive funds with no valuation data, assign zero valuation
+                  const zeroValuation = {
+                      value: 0,
+                      valuation_date: new Date().toISOString().split('T')[0]
+                  };
+                  latestValuationFromViewMap.set(fundId, zeroValuation);
+                  console.log(`📊 [VALUATION DEBUG] Assigned zero valuation to inactive fund ${fundId} (no date selected)`);
               }
           } else {
               // Find the valuation closest to (but not exceeding) the selected date
@@ -1254,6 +1034,14 @@ const ReportGenerator: React.FC = () => {
                   const fundName = fundInfo?.fund_name || `Fund ID: ${fundId}`;
                   missingValuationFunds.push({ id: fundId, name: fundName });
                   console.log(`No valid valuation found for fund ${fundId} (${fundName}) on or before ${selectedValuationDate}`);
+              } else if (!selectedValuationFound && inactiveFundIds.has(fundId)) {
+                  // For inactive funds with no valuation data, assign zero valuation
+                  const zeroValuation = {
+                      value: 0,
+                      valuation_date: selectedValuationDate || new Date().toISOString().split('T')[0]
+                  };
+                  latestValuationFromViewMap.set(fundId, zeroValuation);
+                  console.log(`📊 [VALUATION DEBUG] Assigned zero valuation to inactive fund ${fundId} for ${selectedValuationDate}`);
               }
           }
       });
@@ -1370,16 +1158,20 @@ const ReportGenerator: React.FC = () => {
           }
         });
         
-        // Fetch fund IRR values for the selected date
+        // Fetch fund IRR values for the selected date or latest if no date selected
         let fundIRRMap = new Map<number, number | null>();
-        if (selectedValuationDate) {
+        
           try {
+          const allFundIdsList = Array.from(new Set([...activeFundIds, ...inactiveFundIds]));
+          console.log(`🔍 [FUND IRR DEBUG] Fetching IRR values for ${allFundIdsList.length} funds:`, allFundIdsList);
+          
+          if (selectedValuationDate) {
+            // Fetch IRR values for specific date
             const [year, month] = selectedValuationDate.split('-').map(part => parseInt(part));
-            const activeFundIdsList = Array.from(activeFundIds);
+            console.log(`🔍 [FUND IRR DEBUG] Fetching IRR values for specific date: ${year}-${month}`);
             
-            // Use the new API endpoint to fetch IRR values for the specific month/year
             const irrResponse = await api.post('/portfolio_funds/batch/irr-values-by-date', {
-              fund_ids: activeFundIdsList,
+              fund_ids: allFundIdsList,
               target_month: month,
               target_year: year
             });
@@ -1390,15 +1182,35 @@ const ReportGenerator: React.FC = () => {
                 const fundIdNum = parseInt(fundId);
                 if (irrInfo && typeof irrInfo.irr === 'number') {
                   fundIRRMap.set(fundIdNum, irrInfo.irr);
+                  console.log(`✅ [FUND IRR DEBUG] Set specific date IRR for fund ${fundIdNum}: ${irrInfo.irr}%`);
                 } else {
                   fundIRRMap.set(fundIdNum, null);
+                  console.log(`⚠️ [FUND IRR DEBUG] No IRR for fund ${fundIdNum} on specific date`);
                 }
               });
             }
+          } else {
+            // Fetch latest IRR values when no specific date is selected
+            console.log(`🔍 [FUND IRR DEBUG] No specific date selected, fetching latest IRR values`);
+            
+            const latestIRRResponse = await getLatestFundIRRs(allFundIdsList);
+            if (latestIRRResponse.data && latestIRRResponse.data.fund_irrs) {
+              console.log(`✅ [FUND IRR DEBUG] Latest IRR values fetched:`, latestIRRResponse.data.fund_irrs);
+              
+              latestIRRResponse.data.fund_irrs.forEach((irrRecord: any) => {
+                if (typeof irrRecord.irr_result === 'number') {
+                  fundIRRMap.set(irrRecord.fund_id, irrRecord.irr_result);
+                  console.log(`✅ [FUND IRR DEBUG] Set latest IRR for fund ${irrRecord.fund_id}: ${irrRecord.irr_result}%`);
+                } else {
+                  fundIRRMap.set(irrRecord.fund_id, null);
+                  console.log(`⚠️ [FUND IRR DEBUG] No latest IRR for fund ${irrRecord.fund_id}`);
+                }
+              });
+            }
+            }
           } catch (error) {
-            console.error('Error fetching fund IRR values:', error);
+          console.error('❌ [FUND IRR DEBUG] Error fetching fund IRR values:', error);
             // Continue without IRR values - they'll be set to null
-          }
         }
         
         // Collect activity data per fund
@@ -2222,18 +2034,6 @@ Please select a different valuation date or ensure all active funds have valuati
               />
               
               <MultiSelectDropdown
-                label="Product Owners"
-                options={productOwners.map(owner => ({
-                  value: owner.id,
-                  label: owner.name
-                }))}
-                values={selectedProductOwnerIds}
-                onChange={setSelectedProductOwnerIds}
-                placeholder="Search product owners..."
-                searchable
-              />
-              
-              <MultiSelectDropdown
                 label="Products"
                 options={products.map(product => ({
                   value: product.id,
@@ -2392,6 +2192,12 @@ Please select a different valuation date or ensure all active funds have valuati
               <button
                 onClick={generateReport}
                 disabled={isCalculating || isLoading || !hasEffectiveProductSelection}
+                title={
+                  isCalculating ? "Report is being calculated..." :
+                  isLoading ? "Data is loading..." :
+                  !hasEffectiveProductSelection ? "Select at least one product to generate a report" :
+                  "Generate Report"
+                }
                 className="w-full flex justify-center items-center px-6 py-3 text-base font-medium text-white bg-primary-700 hover:bg-primary-800 rounded-md shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isCalculating ? (
@@ -2433,210 +2239,89 @@ Please select a different valuation date or ensure all active funds have valuati
             <div className="mb-6">
               <h3 className="text-sm font-medium text-gray-700 mb-2">Related Items</h3>
               <p className="text-xs text-gray-500 mb-2">
-                This section shows all items included in your report. Click × to exclude an item or ✓ to include it.
-                Excluding a product owner will automatically exclude all its products.
+                This section shows all products included in your report. Click × to exclude a product or ✓ to include it.
               </p>
               <div className="border rounded-lg p-4 bg-gray-50 min-h-[100px]">
-                {(displayedProductOwners.length > 0 || relatedProducts.length > 0) ? (
+                {relatedProducts.length > 0 ? (
                   <div className="space-y-3">
-                    {displayedProductOwners.length > 0 && (
-                      <div>
-                        <h4 className="text-xs font-medium text-gray-500 uppercase mb-1">Product Owners</h4>
-                        {/* Debug info */}
-                        {process.env.NODE_ENV === 'development' && (
-                          <div className="text-xs text-gray-400 mb-2">
-                            Displayed owners: {displayedProductOwners.length}, 
-                            Direct selected: {selectedProductOwnerIds.length},
-                            Client groups: {selectedClientGroupIds.length}
-                          </div>
-                        )}
-                        <div className="flex flex-wrap gap-2">
-                          {displayedProductOwners.map(owner => {
-                            // Check the source of this product owner
-                            const isDirectlySelected = selectedProductOwnerIds.includes(owner.id);
-                            const associatedClientGroups = productOwnerToClientGroup.get(owner.id) || [];
-                            const hasClientGroupSource = associatedClientGroups.length > 0;
-                            const isExcluded = excludedProductOwnerIds.has(owner.id);
-                            
-                            console.log(`Product owner ${owner.name} (${owner.id}) status:`, {
-                              isDirectlySelected,
-                              hasClientGroupSource,
-                              associatedClientGroups,
-                              isExcluded
-                            });
-                            
-                            // Determine the style based on source
-                            let badgeStyle = '';
-                            if (isExcluded) {
-                              badgeStyle = 'bg-gray-100 text-gray-500';
-                            } else if (isDirectlySelected) {
-                              badgeStyle = 'bg-blue-100 text-blue-800';
-                            } else if (hasClientGroupSource) {
-                              // Use a distinct color for client group-sourced product owners
-                              badgeStyle = 'bg-purple-100 text-purple-800';
-                            } else {
-                              badgeStyle = 'bg-blue-100 text-blue-800';
-                            }
-                            
-                            // Determine button action text
-                            const buttonTitle = isExcluded 
-                              ? `Include ${owner.name}` 
-                              : `Exclude ${owner.name}`;
-                            
-                            return (
+                    <div>
+                      <h4 className="text-xs font-medium text-gray-500 uppercase mb-1">Products</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {relatedProducts.map(product => {
+                          // Check the sources of this product
+                          const isDirectlySelected = selectedProductIds.includes(product.id);
+                          const sources = productSources.get(product.id) || { clientGroups: [] };
+                          const hasClientGroupSource = sources.clientGroups.length > 0;
+                          
+                          // Check if this product is excluded
+                          const isExcluded = excludedProductIds.has(product.id);
+                          
+                          return (
+                            <span 
+                              key={product.id} 
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                isExcluded 
+                                  ? 'bg-gray-100 text-gray-500' 
+                                  : product.status === 'inactive' 
+                                    ? 'bg-orange-100 text-orange-800 border border-orange-200' 
+                                    : 'bg-green-100 text-green-800'
+                              } group cursor-pointer hover:opacity-80 transition-opacity`}
+                              title={`${product.status === 'inactive' ? 'Inactive Product - ' : ''}Click to toggle inclusion/exclusion`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const newExcludedProducts = new Set(excludedProductIds);
+                                if (isExcluded) {
+                                  newExcludedProducts.delete(product.id);
+                                } else {
+                                  newExcludedProducts.add(product.id);
+                                }
+                                setExcludedProductIds(newExcludedProducts);
+                              }}
+                            >
+                              {product.product_name}
+                              {product.status === 'inactive' && (
+                                <span className="ml-1 text-orange-600 font-bold" title="Inactive Product">⚠</span>
+                              )}
+                              {/* Show small indicators of source */}
+                              {isDirectlySelected && (
+                                <span className={`ml-1 ${isExcluded ? 'text-gray-400' : 'text-green-600'} text-xs`} title="Directly selected">•</span>
+                              )}
+                              {hasClientGroupSource && (
+                                <span className={`ml-1 ${isExcluded ? 'text-gray-400' : 'text-purple-600'} text-xs`} title="From client group">◆</span>
+                              )}
                               <span 
-                                key={owner.id} 
-                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeStyle} group cursor-pointer hover:opacity-80 transition-opacity`}
-                                title="Click to toggle inclusion/exclusion"
                                 onClick={(e) => {
-                                  // Handle click on the entire component
                                   e.stopPropagation();
-                                  const newExcludedOwners = new Set(excludedProductOwnerIds);
-                                  if (isExcluded) {
-                                    newExcludedOwners.delete(owner.id);
-                                  } else {
-                                    newExcludedOwners.add(owner.id);
-                                  }
-                                  setExcludedProductOwnerIds(newExcludedOwners);
                                 }}
+                                className={`ml-1.5 ${isExcluded ? 'text-gray-400 hover:text-gray-600' : 'text-green-400 hover:text-green-600'} focus:outline-none`}
+                                aria-label={isExcluded ? `Include ${product.product_name}` : `Exclude ${product.product_name}`}
+                                title={isExcluded ? "Include product" : "Exclude product"}
                               >
-                                {owner.name}
-                                {/* Show product count */}
-                                {productOwnerToProducts.has(owner.id) && (
-                                  <span className={`ml-1 ${isExcluded ? 'text-gray-400' : 'text-blue-600'} text-xs`}>
-                                    ({productOwnerToProducts.get(owner.id)?.length || 0})
-                                  </span>
+                                {isExcluded ? (
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                  </svg>
+                                ) : (
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                  </svg>
                                 )}
-                                {/* Show a small indicator of source */}
-                                {isDirectlySelected && (
-                                  <span className={`ml-1 ${isExcluded ? 'text-gray-400' : 'text-blue-600'} text-xs`} title="Directly selected">•</span>
-                                )}
-                                {hasClientGroupSource && (
-                                  <span className={`ml-1 ${isExcluded ? 'text-gray-400' : 'text-purple-600'} text-xs`} title="From client group">◆</span>
-                                )}
-                                <span 
-                                  onClick={(e) => {
-                                    // Prevent the parent click handler from firing when clicking the icon
-                                    e.stopPropagation();
-                                  }}
-                                  className={`ml-1.5 ${isExcluded ? 'text-gray-400 hover:text-gray-600' : 'text-blue-400 hover:text-blue-600'} focus:outline-none`}
-                                  aria-label={buttonTitle}
-                                  title={isExcluded ? "Include product owner" : "Exclude product owner"}
-                                >
-                                  {isExcluded ? (
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                    </svg>
-                                  ) : (
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                    </svg>
-                                  )}
-                                </span>
                               </span>
-                            );
-                          })}
-                        </div>
+                            </span>
+                          );
+                        })}
                       </div>
-                    )}
-                    {relatedProducts.length > 0 && (
-                      <div>
-                        <h4 className="text-xs font-medium text-gray-500 uppercase mb-1">Products</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {relatedProducts.map(product => {
-                            // Check the sources of this product
-                            const isDirectlySelected = selectedProductIds.includes(product.id);
-                            const sources = productSources.get(product.id) || { clientGroups: [], productOwners: [] };
-                            const hasClientGroupSource = sources.clientGroups.length > 0;
-                            const hasProductOwnerSource = sources.productOwners.length > 0;
-                            
-                            // Check if this product is excluded
-                            const isDirectlyExcluded = excludedProductIds.has(product.id);
-                            
-                            // Check if this product is cascade-excluded via its product owner
-                            const cascadeExcludedByOwners: number[] = [];
-                            Array.from(cascadeExcludedProductIds.entries()).forEach(([ownerId, productIds]) => {
-                              if (productIds.includes(product.id)) {
-                                cascadeExcludedByOwners.push(ownerId);
-                              }
-                            });
-                            const isCascadeExcluded = cascadeExcludedByOwners.length > 0;
-                            
-                            // Combined exclusion status
-                            const isExcluded = isDirectlyExcluded || isCascadeExcluded;
-                            
-                            return (
-                              <span 
-                                key={product.id} 
-                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isExcluded ? 'bg-gray-100 text-gray-500' : 'bg-green-100 text-green-800'} group cursor-pointer hover:opacity-80 transition-opacity`}
-                                title={isCascadeExcluded ? `Excluded via product owner(s): ${cascadeExcludedByOwners.map(ownerId => {
-                                  const owner = productOwners.find(po => po.id === ownerId);
-                                  return owner ? owner.name : `ID ${ownerId}`;
-                                }).join(', ')}` : 'Click to toggle inclusion/exclusion'}
-                                onClick={(e) => {
-                                  // Handle click on the entire component (but not if cascade-excluded)
-                                  if (!isCascadeExcluded) {
-                                    e.stopPropagation();
-                                    const newExcludedProducts = new Set(excludedProductIds);
-                                    if (isDirectlyExcluded) {
-                                      newExcludedProducts.delete(product.id);
-                                    } else {
-                                      newExcludedProducts.add(product.id);
-                                    }
-                                    setExcludedProductIds(newExcludedProducts);
-                                  }
-                                }}
-                              >
-                                {product.product_name}
-                                {/* Show small indicators of source */}
-                                {isDirectlySelected && (
-                                  <span className={`ml-1 ${isExcluded ? 'text-gray-400' : 'text-green-600'} text-xs`} title="Directly selected">•</span>
-                                )}
-                                {hasClientGroupSource && (
-                                  <span className={`ml-1 ${isExcluded ? 'text-gray-400' : 'text-purple-600'} text-xs`} title="From client group">◆</span>
-                                )}
-                                {hasProductOwnerSource && (
-                                  <span className={`ml-1 ${isExcluded ? 'text-gray-400' : 'text-blue-600'} text-xs`} title={`From product owner(s): ${sources.productOwners.map(ownerId => {
-                                    const owner = productOwners.find(po => po.id === ownerId);
-                                    return owner ? owner.name : `ID ${ownerId}`;
-                                  }).join(', ')}`}>■</span>
-                                )}
-                                {isCascadeExcluded && (
-                                  <span className="ml-1 text-gray-400 text-xs font-bold" title={`Excluded because product owner(s) excluded: ${cascadeExcludedByOwners.map(ownerId => {
-                                    const owner = productOwners.find(po => po.id === ownerId);
-                                    return owner ? owner.name : `ID ${ownerId}`;
-                                  }).join(', ')}`}>↑</span>
-                                )}
-                                <span 
-                                  onClick={(e) => {
-                                    // Prevent the parent click handler from firing when clicking the icon
-                                    e.stopPropagation();
-                                  }}
-                                  className={`ml-1.5 ${isCascadeExcluded ? 'text-gray-300 cursor-not-allowed' : isExcluded ? 'text-gray-400 hover:text-gray-600' : 'text-green-400 hover:text-green-600'} focus:outline-none`}
-                                  aria-label={isExcluded ? `Include ${product.product_name}` : `Exclude ${product.product_name}`}
-                                  title={isCascadeExcluded ? "Enable product owner to include this product" : (isExcluded ? "Include product" : "Exclude product")}
-                                >
-                                  {isExcluded ? (
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                    </svg>
-                                  ) : (
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                    </svg>
-                                  )}
-                                </span>
-                              </span>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500">Select items to see related entities.</p>
+                  <div className="text-center py-4">
+                    <p className="text-sm text-gray-500">
+                      Select client groups or products above to see them here.
+                    </p>
+                  </div>
                 )}
               </div>
+              
               <div className="mt-2 flex flex-wrap text-xs text-gray-500 gap-x-3">
                 <span className="flex items-center">
                   <span className="mr-1 text-green-600">•</span> Direct selection
@@ -2645,10 +2330,7 @@ Please select a different valuation date or ensure all active funds have valuati
                   <span className="mr-1 text-purple-600">◆</span> From client group
                 </span>
                 <span className="flex items-center">
-                  <span className="mr-1 text-blue-600">■</span> From product owner
-                </span>
-                <span className="flex items-center">
-                  <span className="mr-1 text-gray-400 font-bold">↑</span> Excluded via owner
+                  <span className="mr-1 text-orange-600 font-bold">⚠</span> Inactive product
                 </span>
                 <span className="ml-auto italic">Hover for details</span>
               </div>
@@ -2659,7 +2341,7 @@ Please select a different valuation date or ensure all active funds have valuati
               <h3 className="text-sm font-medium text-gray-700 mb-2">Valuation Data Status</h3>
               <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border">
                 <div className="flex items-center">
-                  {availableValuationDates.length > 0 ? (
+                  {availableValuationDates.length > 0 || availableValuationDates.includes('inactive-products-valid') ? (
                     <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
@@ -2671,8 +2353,15 @@ Please select a different valuation date or ensure all active funds have valuati
                 </div>
                 <div className="flex-1">
                   <div className="text-sm font-medium text-gray-900">
-                    {availableValuationDates.length > 0 ? (
+                    {availableValuationDates.length > 0 && !availableValuationDates.includes('inactive-products-valid') ? (
+                      // Check if we have inactive products mixed with active products
+                      relatedProducts.some(p => p.status === 'inactive') ? (
+                        <>Common valuation dates available (inactive products assume zero)</>
+                      ) : (
                       <>All portfolio funds have common valuation dates</>
+                      )
+                    ) : availableValuationDates.includes('inactive-products-valid') ? (
+                      <>Inactive products detected - zero valuations will be assumed</>
                     ) : relatedProducts.length > 0 ? (
                       <>Portfolio funds do not share common valuation dates</>
                     ) : (
@@ -2682,8 +2371,14 @@ Please select a different valuation date or ensure all active funds have valuati
                   <div className="text-xs text-gray-500 mt-1">
                     {isLoadingValuationDates ? (
                       <>Checking valuation data...</>
+                    ) : availableValuationDates.includes('inactive-products-valid') ? (
+                      <>Report generation is available for inactive products</>
                     ) : availableValuationDates.length > 0 ? (
+                      relatedProducts.some(p => p.status === 'inactive') ? (
+                        <>{availableValuationDates.length} common period{availableValuationDates.length !== 1 ? 's' : ''} - inactive products will use zero valuations</>
+                      ) : (
                       <>{availableValuationDates.length} common valuation period{availableValuationDates.length !== 1 ? 's' : ''} available</>
+                      )
                     ) : relatedProducts.length > 0 ? (
                       <>Date selection will use latest available valuations for each fund</>
                     ) : (

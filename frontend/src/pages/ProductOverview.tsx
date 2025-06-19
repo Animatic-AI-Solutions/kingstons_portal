@@ -927,6 +927,17 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         status: 'active'
       });
       
+      // Trigger portfolio IRR recalculation after adding fund
+      if (account?.portfolio_id) {
+        try {
+          console.log('🔄 Triggering portfolio IRR recalculation after adding fund...');
+          await api.post(`/api/portfolios/${account.portfolio_id}/calculate-irr`);
+          console.log('✅ Portfolio IRR recalculation completed');
+        } catch (irrErr) {
+          console.warn('⚠️ IRR recalculation failed, but continuing with data refresh:', irrErr);
+        }
+      }
+      
       // Refresh the data
       if (accountId) await fetchData(accountId);
       setFundError(null);
@@ -952,6 +963,17 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       await api.patch(`/portfolio_funds/${portfolioFund.id}`, {
         weighting: newWeighting
       });
+      
+      // Trigger portfolio IRR recalculation after updating fund weighting
+      if (account?.portfolio_id) {
+        try {
+          console.log('🔄 Triggering portfolio IRR recalculation after updating fund weighting...');
+          await api.post(`/api/portfolios/${account.portfolio_id}/calculate-irr`);
+          console.log('✅ Portfolio IRR recalculation completed');
+        } catch (irrErr) {
+          console.warn('⚠️ IRR recalculation failed, but continuing with data refresh:', irrErr);
+        }
+      }
       
       // Refresh the data
       if (accountId) await fetchData(accountId);
@@ -980,6 +1002,17 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         status: 'inactive',
         end_date: new Date().toISOString().split('T')[0] // Current date in YYYY-MM-DD format
       });
+      
+      // Trigger portfolio IRR recalculation after removing fund
+      if (account?.portfolio_id) {
+        try {
+          console.log('🔄 Triggering portfolio IRR recalculation after removing fund...');
+          await api.post(`/api/portfolios/${account.portfolio_id}/calculate-irr`);
+          console.log('✅ Portfolio IRR recalculation completed');
+        } catch (irrErr) {
+          console.warn('⚠️ IRR recalculation failed, but continuing with data refresh:', irrErr);
+        }
+      }
       
       // Refresh the data
       if (accountId) await fetchData(accountId);
@@ -1010,6 +1043,17 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         end_date: null,
         target_weighting: 0 // Start with 0% weighting, user can adjust
       });
+      
+      // Trigger portfolio IRR recalculation after reactivating fund
+      if (account?.portfolio_id) {
+        try {
+          console.log('🔄 Triggering portfolio IRR recalculation after reactivating fund...');
+          await api.post(`/api/portfolios/${account.portfolio_id}/calculate-irr`);
+          console.log('✅ Portfolio IRR recalculation completed');
+        } catch (irrErr) {
+          console.warn('⚠️ IRR recalculation failed, but continuing with data refresh:', irrErr);
+        }
+      }
       
       // Refresh the data
       if (accountId) await fetchData(accountId);
@@ -1098,8 +1142,23 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       
       await Promise.all(updatePromises);
       
-      // Refresh the data
-      if (accountId) await fetchData(accountId);
+      // Trigger portfolio IRR recalculation after updating fund weightings
+      if (account?.portfolio_id) {
+        try {
+          console.log('🔄 Triggering portfolio IRR recalculation after fund weightings update...');
+          await api.post(`/api/portfolios/${account.portfolio_id}/calculate-irr`);
+          console.log('✅ Portfolio IRR recalculation completed');
+        } catch (irrErr) {
+          console.warn('⚠️ IRR recalculation failed, but continuing with data refresh:', irrErr);
+        }
+      }
+      
+      // Refresh the data (with a small delay to ensure IRR calculation is complete)
+      if (accountId) {
+        setTimeout(async () => {
+          await fetchData(accountId);
+        }, 500); // 500ms delay to allow IRR calculation to complete
+      }
       setIsEditingFunds(false);
       setFundError(null);
     } catch (err: any) {
@@ -1877,7 +1936,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                       </svg>
                       Revenue Configuration
                 </div>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-3 gap-4">
                       {/* Fixed Cost */}
                       <div>
                         <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Fixed Cost (£)</div>

@@ -51,7 +51,7 @@ def apply_view_fixes():
             cg.name AS client_group_name
         FROM portfolio_irr_values piv
         LEFT JOIN portfolios p ON p.id = piv.portfolio_id
-        LEFT JOIN client_products cp ON cp.portfolio_id = piv.portfolio_id AND cp.status = 'active'
+        LEFT JOIN client_products cp ON cp.portfolio_id = piv.portfolio_id
         LEFT JOIN available_providers ap ON ap.id = cp.provider_id
         LEFT JOIN client_groups cg ON cg.id = cp.client_id
         ORDER BY piv.portfolio_id, piv.date DESC;
@@ -100,7 +100,7 @@ def apply_view_fixes():
         LEFT JOIN portfolio_funds pf ON pf.id = pfiv.fund_id
         LEFT JOIN available_funds af ON af.id = pf.available_funds_id
         LEFT JOIN portfolios p ON p.id = pf.portfolio_id
-        LEFT JOIN client_products cp ON cp.portfolio_id = pf.portfolio_id AND cp.status = 'active'
+        LEFT JOIN client_products cp ON cp.portfolio_id = pf.portfolio_id
         LEFT JOIN available_providers ap ON ap.id = cp.provider_id
         LEFT JOIN client_groups cg ON cg.id = cp.client_id
         ORDER BY pfiv.fund_id, pfiv.date DESC;

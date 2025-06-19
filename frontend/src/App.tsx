@@ -126,6 +126,7 @@ const AppContent: React.FC = () => {
           {/* Reporting Section - Financial performance analytics and reporting */}
           <Route path="/analytics" element={<AppLayout><Reporting /></AppLayout>} />
           <Route path="/report-generator" element={<AppLayout><ReportGenerator /></AppLayout>} />
+          <Route path="/report-display" element={<AppLayout><ReportDisplay /></AppLayout>} />
           
           {/* Component Testing - UI/UX design finalization */}
           <Route path="/components" element={<AppLayout><Components /></AppLayout>} />

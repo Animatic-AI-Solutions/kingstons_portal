@@ -45,11 +45,18 @@ export class PortfolioFundsService {
       if (uncachedIds.length === 1) {
         // Single request
         const portfolioId = uncachedIds[0];
-        const response = await this.api.get(`/portfolio_funds?portfolio_id=${portfolioId}`);
-        const portfolioFunds = response.data || [];
         
-        this.cache.set(portfolioId, portfolioFunds);
-        results.set(portfolioId, portfolioFunds);
+        // Validate portfolio_id to prevent null/undefined being passed to API
+        if (portfolioId === null || portfolioId === undefined || isNaN(portfolioId)) {
+          console.warn(`Invalid portfolio_id in batch: ${portfolioId}, skipping`);
+          results.set(portfolioId, []);
+        } else {
+          const response = await this.api.get(`/portfolio_funds?portfolio_id=${portfolioId}`);
+          const portfolioFunds = response.data || [];
+          
+          this.cache.set(portfolioId, portfolioFunds);
+          results.set(portfolioId, portfolioFunds);
+        }
       } else {
         // Multiple requests - batch them efficiently using Promise.all
         const requests = uncachedIds.map(async (portfolioId) => {
@@ -103,6 +110,12 @@ export class PortfolioFundsService {
    * Fetch single portfolio funds (internal method)
    */
   private async fetchSinglePortfolioFunds(portfolioId: number): Promise<PortfolioFund[]> {
+    // Validate portfolio_id to prevent null/undefined being passed to API
+    if (portfolioId === null || portfolioId === undefined || isNaN(portfolioId)) {
+      console.warn(`Invalid portfolio_id: ${portfolioId}, returning empty array`);
+      return [];
+    }
+    
     const response = await this.api.get(`/portfolio_funds?portfolio_id=${portfolioId}`);
     return response.data || [];
   }

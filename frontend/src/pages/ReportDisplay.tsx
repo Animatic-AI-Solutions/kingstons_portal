@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeftIcon, PrinterIcon } from '@heroicons/react/24/outline';
 import { useReactToPrint } from 'react-to-print';
 import { formatDateFallback, formatCurrencyFallback, formatPercentageFallback } from '../components/reports/shared/ReportFormatters';
+import { createIRRDataService } from '../services/irrDataService';
+import api from '../services/api';
 
 // Interfaces for data types (copied from ReportGenerator)
 interface ProductPeriodSummary {
@@ -66,11 +68,18 @@ const ReportDisplay: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [reportData, setReportData] = useState<ReportData | null>(null);
+  
+  // Create IRR data service instance
+  const irrDataService = useMemo(() => createIRRDataService(api), []);
   const [activeTab, setActiveTab] = useState<'summary' | 'irr-history'>('summary');
   const [irrHistoryData, setIrrHistoryData] = useState<any>(null);
   const [loadingIrrHistory, setLoadingIrrHistory] = useState(false);
 
   const [showInactiveProductDetails, setShowInactiveProductDetails] = useState<Set<number>>(new Set());
+  
+  // Real-time total IRR calculation
+  const [realTimeTotalIRR, setRealTimeTotalIRR] = useState<number | null>(null);
+  const [loadingTotalIRR, setLoadingTotalIRR] = useState(false);
 
   // Create ref for the printable content
   const printRef = useRef<HTMLDivElement>(null);
@@ -162,6 +171,71 @@ const ReportDisplay: React.FC = () => {
     }
   };
 
+  const calculateRealTimeTotalIRR = async () => {
+    if (!reportData || loadingTotalIRR) return;
+    
+    setLoadingTotalIRR(true);
+    try {
+      // Collect all portfolio fund IDs from all products
+      const allPortfolioFundIds: number[] = [];
+      
+      reportData.productSummaries.forEach(product => {
+        if (product.funds) {
+          product.funds.forEach(fund => {
+            if (!fund.isVirtual && fund.id) {
+              allPortfolioFundIds.push(fund.id);
+            }
+          });
+        }
+      });
+
+      console.log('🎯 [REAL-TIME TOTAL IRR] Calculating with portfolio fund IDs:', allPortfolioFundIds);
+      
+      if (allPortfolioFundIds.length === 0) {
+        console.warn('⚠️ [REAL-TIME TOTAL IRR] No portfolio fund IDs found');
+        setRealTimeTotalIRR(null);
+        return;
+      }
+
+      // Convert partial date (YYYY-MM) to full date (YYYY-MM-DD) by using last day of month
+      let endDate: string | undefined = undefined;
+      if (reportData.selectedValuationDate) {
+        if (reportData.selectedValuationDate.includes('-') && reportData.selectedValuationDate.split('-').length === 2) {
+          // Partial date format (YYYY-MM) - convert to last day of month
+          const [year, month] = reportData.selectedValuationDate.split('-');
+          const lastDayOfMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+          endDate = `${year}-${month.padStart(2, '0')}-${lastDayOfMonth.toString().padStart(2, '0')}`;
+          console.log(`🔄 [REAL-TIME TOTAL IRR] Converted partial date ${reportData.selectedValuationDate} to full date ${endDate}`);
+        } else {
+          // Already a full date
+          endDate = reportData.selectedValuationDate;
+        }
+      }
+
+      // Use the optimized IRR service to calculate total IRR
+      const totalIRRData = await irrDataService.getOptimizedIRRData({
+        portfolioFundIds: allPortfolioFundIds,
+        endDate: endDate,
+        includeHistorical: false
+      });
+
+      console.log('🎯 [REAL-TIME TOTAL IRR] Response:', totalIRRData);
+      
+      if (totalIRRData.portfolioIRR !== null && totalIRRData.portfolioIRR !== undefined) {
+        setRealTimeTotalIRR(totalIRRData.portfolioIRR);
+        console.log('✅ [REAL-TIME TOTAL IRR] Calculated:', totalIRRData.portfolioIRR);
+      } else {
+        setRealTimeTotalIRR(null);
+        console.warn('⚠️ [REAL-TIME TOTAL IRR] No IRR result returned');
+      }
+    } catch (error) {
+      console.error('❌ [REAL-TIME TOTAL IRR] Error calculating total IRR:', error);
+      setRealTimeTotalIRR(null);
+    } finally {
+      setLoadingTotalIRR(false);
+    }
+  };
+
   const handleTabChange = (tab: 'summary' | 'irr-history') => {
     setActiveTab(tab);
     if (tab === 'irr-history' && !irrHistoryData) {
@@ -172,12 +246,21 @@ const ReportDisplay: React.FC = () => {
   useEffect(() => {
     // Get report data from navigation state
     if (location.state && location.state.reportData) {
+      console.log('🔍 [REPORT DISPLAY DEBUG] Received report data with', location.state.reportData.productSummaries.length, 'products');
+      
       setReportData(location.state.reportData);
     } else {
       // If no report data, redirect back to report generator
       navigate('/report-generator');
     }
   }, [location.state, navigate]);
+
+  // Calculate real-time total IRR when report data is loaded
+  useEffect(() => {
+    if (reportData) {
+      calculateRealTimeTotalIRR();
+    }
+  }, [reportData]);
 
   if (!reportData) {
     return (
@@ -314,32 +397,39 @@ const ReportDisplay: React.FC = () => {
         {/* Report Summary Section - Always visible in print */}
         <div className={`${activeTab === 'summary' ? '' : 'hidden'} print:block`}>
           {/* Portfolio Total Average Return */}
-          {reportData.totalIRR !== null && (
-            <div className="mb-8 bg-white shadow-sm rounded-lg border border-gray-200 p-6 product-card print-clean">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Portfolio Performance</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-purple-50 rounded-lg p-4">
-                  <div className="text-sm font-medium text-purple-700 mb-1">Portfolio Total Average Return</div>
-                  <div className={`text-2xl font-bold ${reportData.totalIRR >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {formatIrrWithPrecision(reportData.totalIRR)}
+          <div className="mb-8 bg-white shadow-sm rounded-lg border border-gray-200 p-6 product-card print-clean">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Portfolio Performance</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-purple-50 rounded-lg p-4">
+                <div className="text-sm font-medium text-purple-700 mb-1">Portfolio Total Average Return (Real-time)</div>
+                {loadingTotalIRR ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
+                    <div className="text-sm text-purple-600">Calculating...</div>
                   </div>
-                </div>
-                {reportData.totalValuation !== null && (
-                  <div className="bg-green-50 rounded-lg p-4">
-                    <div className="text-sm font-medium text-green-700 mb-1">Total Portfolio Value</div>
-                    <div className="text-2xl font-bold text-green-600">
-                      {formatCurrencyWithTruncation(reportData.totalValuation)}
-                    </div>
+                ) : realTimeTotalIRR !== null ? (
+                  <div className={`text-2xl font-bold ${realTimeTotalIRR >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatIrrWithPrecision(realTimeTotalIRR)}
                   </div>
+                ) : (
+                  <div className="text-2xl font-bold text-gray-400">N/A</div>
                 )}
               </div>
+              {reportData.totalValuation !== null && (
+                <div className="bg-green-50 rounded-lg p-4">
+                  <div className="text-sm font-medium text-green-700 mb-1">Total Portfolio Value</div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {formatCurrencyWithTruncation(reportData.totalValuation)}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
           <div className="mb-8">
             {reportData.productSummaries
               .filter(product => {
-                // For inactive products, only show if they should be shown
+                // For inactive products, only show detailed cards if the checkbox was checked
                 if (product.status === 'inactive') {
                   return reportData.showInactiveProducts || showInactiveProductDetails.has(product.id);
                 }
@@ -513,18 +603,10 @@ const ReportDisplay: React.FC = () => {
                                 })()}
                               </td>
                               <td className="px-2 py-2 text-xs text-center bg-purple-50">
-                                {product.funds.length > 0 && product.funds.some(fund => fund.irr !== null && fund.irr !== undefined) ? (
-                                  (() => {
-                                    const validIrrs = product.funds.filter(fund => fund.irr !== null && fund.irr !== undefined);
-                                    if (validIrrs.length === 0) return <span className="text-gray-400">N/A</span>;
-                                    
-                                    const avgIrr = validIrrs.reduce((sum, fund) => sum + fund.irr!, 0) / validIrrs.length;
-                                    return (
-                                      <span className={avgIrr >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
-                                        {formatIrrWithPrecision(avgIrr)}
-                                      </span>
-                                    );
-                                  })()
+                                {product.irr !== null && product.irr !== undefined ? (
+                                  <span className={product.irr >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                                    {formatIrrWithPrecision(product.irr)}
+                                  </span>
                                 ) : (
                                   <span className="text-gray-400">N/A</span>
                                 )}
@@ -624,10 +706,8 @@ const ReportDisplay: React.FC = () => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {reportData.productSummaries
                       .filter(product => {
-                        // For inactive products, only show if they should be shown
-                        if (product.status === 'inactive') {
-                          return reportData.showInactiveProducts || showInactiveProductDetails.has(product.id);
-                        }
+                        // Show all products that are in the report data - if they were selected in the generator, they should appear
+                        // The filtering already happened in the ReportGenerator, so we show everything passed to us
                         return true;
                       })
                       .map(product => {
