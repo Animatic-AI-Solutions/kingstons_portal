@@ -64,9 +64,8 @@ async def create_fund_valuation(
                     # Get the valuation date for sophisticated recalculation
                     valuation_date = fund_valuation.valuation_date.isoformat().split('T')[0]
                     
-                    logger.info(f"Triggering sophisticated IRR recalculation after updating existing valuation for portfolio fund {fund_valuation.portfolio_fund_id} on date {valuation_date}")
+                    # Trigger IRR recalculation after valuation update
                     irr_recalc_result = await recalculate_irr_after_activity_change(fund_valuation.portfolio_fund_id, db, valuation_date)
-                    logger.info(f"Sophisticated IRR recalculation result: {irr_recalc_result}")
                 except Exception as e:
                     # Don't fail the valuation update if IRR recalculation fails
                     logger.error(f"IRR recalculation failed after valuation update: {str(e)}")
@@ -97,9 +96,8 @@ async def create_fund_valuation(
             # Get the valuation date for sophisticated recalculation
             valuation_date = fund_valuation.valuation_date.isoformat().split('T')[0]
             
-            logger.info(f"Triggering sophisticated IRR recalculation after creating valuation for portfolio fund {fund_valuation.portfolio_fund_id} on date {valuation_date}")
+            # Trigger IRR recalculation after valuation creation
             irr_recalc_result = await recalculate_irr_after_activity_change(fund_valuation.portfolio_fund_id, db, valuation_date)
-            logger.info(f"Sophisticated IRR recalculation result: {irr_recalc_result}")
         except Exception as e:
             # Don't fail the valuation creation if IRR recalculation fails
             logger.error(f"IRR recalculation failed after valuation creation: {str(e)}")
@@ -369,25 +367,49 @@ async def delete_fund_valuation(
     db = Depends(get_db)
 ):
     """
-    Delete a fund valuation.
-    If the valuation doesn't exist, we consider this a success since the end goal
-    (having no valuation with that ID) is already achieved.
+    Delete a fund valuation with cascade deletion logic.
+    
+    When a fund valuation is deleted:
+    1. Delete the fund-level IRR that was based on that valuation
+    2. Check if this deletion breaks common valuation dates across the portfolio
+    3. If so, delete the portfolio-level IRR and valuation for that date
     """
     try:
         logger.info(f"Attempting to delete fund valuation with ID: {valuation_id}")
         
-        # Check if fund valuation exists
+        # Check if fund valuation exists and get its details
         existing_result = db.table("portfolio_fund_valuations").select("*").eq("id", valuation_id).execute()
         
         if not existing_result.data or len(existing_result.data) == 0:
             logger.warning(f"Fund valuation with ID {valuation_id} not found, but treating as success")
             return {"message": f"Fund valuation with ID {valuation_id} doesn't exist", "status": "success"}
         
-        # Get portfolio_fund_id before deletion for IRR recalculation
-        portfolio_fund_id = existing_result.data[0]["portfolio_fund_id"]
+        # Get details of the valuation being deleted
+        valuation_to_delete = existing_result.data[0]
+        portfolio_fund_id = valuation_to_delete["portfolio_fund_id"]
+        valuation_date = valuation_to_delete["valuation_date"]
+        
+        # Extract just the date part (YYYY-MM-DD) for comparison
+        if isinstance(valuation_date, str):
+            valuation_date_only = valuation_date.split('T')[0]
+        else:
+            valuation_date_only = valuation_date.strftime('%Y-%m-%d')
+        
+        logger.info(f"Deleting fund valuation for portfolio fund {portfolio_fund_id} on date {valuation_date_only}")
+        
+        # Get the portfolio ID for this fund
+        portfolio_fund_result = db.table("portfolio_funds")\
+            .select("portfolio_id")\
+            .eq("id", portfolio_fund_id)\
+            .execute()
+        
+        if not portfolio_fund_result.data:
+            raise HTTPException(status_code=404, detail=f"Portfolio fund {portfolio_fund_id} not found")
+        
+        portfolio_id = portfolio_fund_result.data[0]["portfolio_id"]
         
         # ========================================================================
-        # NEW: Clean up related IRR records before deleting valuation
+        # Step 1: Clean up related fund-level IRR records before deleting valuation
         # ========================================================================
         try:
             # Delete any IRR records that reference this valuation
@@ -397,12 +419,84 @@ async def delete_fund_valuation(
                 .execute()
             
             if irr_cleanup_result.data:
-                logger.info(f"Cleaned up {len(irr_cleanup_result.data)} related IRR records before deleting valuation {valuation_id}")
+                logger.info(f"Cleaned up {len(irr_cleanup_result.data)} fund-level IRR records before deleting valuation {valuation_id}")
+                
+            # Also delete any fund-level IRRs for this fund on the same date (even if not linked by valuation_id)
+            # Use date range instead of LIKE for timestamp comparison
+            date_start = f"{valuation_date_only}T00:00:00"
+            date_end = f"{valuation_date_only}T23:59:59"
+            
+            fund_irr_cleanup_result = db.table("portfolio_fund_irr_values")\
+                .delete()\
+                .eq("fund_id", portfolio_fund_id)\
+                .gte("date", date_start)\
+                .lte("date", date_end)\
+                .execute()
+                
+            if fund_irr_cleanup_result.data:
+                logger.info(f"Cleaned up {len(fund_irr_cleanup_result.data)} additional fund-level IRR records for date {valuation_date_only}")
+                
         except Exception as e:
             logger.warning(f"Failed to clean up related IRR records for valuation {valuation_id}: {str(e)}")
+        
+        # ========================================================================
+        # Step 2: Check if deleting this valuation breaks common valuation dates
         # ========================================================================
         
-        # Delete the fund valuation
+        # Get all active portfolio funds in this portfolio
+        all_portfolio_funds_result = db.table("portfolio_funds")\
+            .select("id")\
+            .eq("portfolio_id", portfolio_id)\
+            .eq("status", "active")\
+            .execute()
+        
+        all_portfolio_fund_ids = [pf["id"] for pf in all_portfolio_funds_result.data] if all_portfolio_funds_result.data else []
+        
+        # Check if after deleting this valuation, ALL funds still have valuations on this date
+        # For a common date to exist, EVERY active fund must have a valuation on that date
+        common_date_still_exists = True
+        
+        if len(all_portfolio_fund_ids) > 0:
+            for fund_id in all_portfolio_fund_ids:
+                # Check if this fund has a valuation on the same date using date range
+                date_start = f"{valuation_date_only}T00:00:00"
+                date_end = f"{valuation_date_only}T23:59:59"
+                
+                fund_valuation_check = db.table("portfolio_fund_valuations")\
+                    .select("id")\
+                    .eq("portfolio_fund_id", fund_id)\
+                    .gte("valuation_date", date_start)\
+                    .lte("valuation_date", date_end)\
+                    .execute()
+                
+                # IMPORTANT: For the fund we're deleting from, we need to check if there are 
+                # OTHER valuations on this date (since we're about to delete one)
+                if fund_id == portfolio_fund_id:
+                    # For the fund we're deleting from, check if there are other valuations on this date
+                    # (excluding the one we're about to delete)
+                    remaining_valuations = [v for v in fund_valuation_check.data if v["id"] != valuation_id] if fund_valuation_check.data else []
+                    if not remaining_valuations:
+                        # This fund will have no valuations left on this date after deletion
+                        common_date_still_exists = False
+                        logger.info(f"Fund {fund_id} will have no valuations on {valuation_date_only} after deleting valuation {valuation_id}")
+                        break
+                else:
+                    # For other funds, just check if they have any valuation on this date
+                    if not fund_valuation_check.data:
+                        # This fund doesn't have a valuation on this date, so common date is already broken
+                        common_date_still_exists = False
+                        logger.info(f"Fund {fund_id} has no valuations on {valuation_date_only}")
+                        break
+            
+            logger.info(f"Common valuation date {valuation_date_only} still exists after deletion: {common_date_still_exists}")
+        else:
+            # If there are no active funds, then there's no common date
+            common_date_still_exists = False
+            logger.info(f"No active funds found, common date will be broken")
+        
+        # ========================================================================
+        # Step 3: Delete the fund valuation
+        # ========================================================================
         result = db.table("portfolio_fund_valuations").delete().eq("id", valuation_id).execute()
         
         if not result or not hasattr(result, 'data') or not result.data:
@@ -412,21 +506,77 @@ async def delete_fund_valuation(
         logger.info(f"Successfully deleted fund valuation with ID {valuation_id}")
         
         # ========================================================================
-        # NEW: Automatically recalculate IRR after deleting fund valuation
+        # Step 4: If common date is broken, delete portfolio-level IRR and valuation for that date
+        # ========================================================================
+        cascade_deletions = []
+        
+        if not common_date_still_exists:
+            logger.info(f"Common valuation date {valuation_date_only} is broken, performing cascade deletions")
+            
+            # Delete portfolio-level IRR values for this date using date range
+            try:
+                date_start = f"{valuation_date_only}T00:00:00"
+                date_end = f"{valuation_date_only}T23:59:59"
+                
+                portfolio_irr_delete_result = db.table("portfolio_irr_values")\
+                    .delete()\
+                    .eq("portfolio_id", portfolio_id)\
+                    .gte("date", date_start)\
+                    .lte("date", date_end)\
+                    .execute()
+                
+                if portfolio_irr_delete_result.data:
+                    logger.info(f"Deleted {len(portfolio_irr_delete_result.data)} portfolio IRR records for date {valuation_date_only}")
+                    cascade_deletions.append(f"Deleted {len(portfolio_irr_delete_result.data)} portfolio IRR records")
+                
+            except Exception as e:
+                logger.warning(f"Failed to delete portfolio IRR records for date {valuation_date_only}: {str(e)}")
+            
+            # Delete portfolio-level valuation for this date using date range
+            try:
+                date_start = f"{valuation_date_only}T00:00:00"
+                date_end = f"{valuation_date_only}T23:59:59"
+                
+                portfolio_valuation_delete_result = db.table("portfolio_valuations")\
+                    .delete()\
+                    .eq("portfolio_id", portfolio_id)\
+                    .gte("valuation_date", date_start)\
+                    .lte("valuation_date", date_end)\
+                    .execute()
+                
+                if portfolio_valuation_delete_result.data:
+                    logger.info(f"Deleted {len(portfolio_valuation_delete_result.data)} portfolio valuation records for date {valuation_date_only}")
+                    cascade_deletions.append(f"Deleted {len(portfolio_valuation_delete_result.data)} portfolio valuation records")
+                
+            except Exception as e:
+                logger.warning(f"Failed to delete portfolio valuation records for date {valuation_date_only}: {str(e)}")
+        
+        # ========================================================================
+        # Step 5: Trigger IRR recalculation for remaining data
         # ========================================================================
         try:
-            # Get the valuation date for sophisticated recalculation
-            valuation_date = existing_result.data[0].get("valuation_date", "").split('T')[0]
-            
-            logger.info(f"Triggering sophisticated IRR recalculation after deleting valuation for portfolio fund {portfolio_fund_id} on date {valuation_date}")
-            irr_recalc_result = await recalculate_irr_after_activity_change(portfolio_fund_id, db, valuation_date)
+            logger.info(f"Triggering sophisticated IRR recalculation after deleting valuation for portfolio fund {portfolio_fund_id}")
+            irr_recalc_result = await recalculate_irr_after_activity_change(portfolio_fund_id, db, valuation_date_only)
             logger.info(f"Sophisticated IRR recalculation result: {irr_recalc_result}")
         except Exception as e:
             # Don't fail the valuation deletion if IRR recalculation fails
             logger.error(f"IRR recalculation failed after valuation deletion: {str(e)}")
-        # ========================================================================
         
-        return {"message": f"Fund valuation with ID {valuation_id} deleted successfully", "status": "success"}
+        # ========================================================================
+        # Return success with cascade deletion details
+        # ========================================================================
+        response_message = f"Fund valuation with ID {valuation_id} deleted successfully"
+        if cascade_deletions:
+            response_message += f". Cascade deletions: {'; '.join(cascade_deletions)}"
+        
+        return {
+            "message": response_message,
+            "status": "success",
+            "cascade_deletions": cascade_deletions,
+            "common_date_broken": not common_date_still_exists,
+            "affected_date": valuation_date_only
+        }
+        
     except Exception as e:
         logger.error(f"Error deleting fund valuation: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

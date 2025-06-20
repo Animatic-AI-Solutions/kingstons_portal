@@ -29,7 +29,27 @@ async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, acti
         activity_date: The date of the activity that was changed (YYYY-MM-DD format)
     """
     try:
-        logger.info(f"Starting sophisticated IRR recalculation for portfolio fund {portfolio_fund_id}")
+        # Starting sophisticated IRR recalculation
+        
+        # DEBUG: Get fund details to identify which fund this is
+        fund_details = db.table("portfolio_funds")\
+            .select("portfolio_id, available_funds_id")\
+            .eq("id", portfolio_fund_id)\
+            .execute()
+        
+        if fund_details.data:
+            available_funds_id = fund_details.data[0]["available_funds_id"]
+            fund_name_result = db.table("available_funds")\
+                .select("fund_name, isin_number")\
+                .eq("id", available_funds_id)\
+                .execute()
+            
+            if fund_name_result.data:
+                fund_name = fund_name_result.data[0]["fund_name"]
+                isin = fund_name_result.data[0]["isin_number"]
+                logger.info(f"🔍 DEBUG: Fund details - ID: {portfolio_fund_id}, Name: {fund_name}, ISIN: {isin}")
+            else:
+                logger.info(f"🔍 DEBUG: Fund details - ID: {portfolio_fund_id}, Name: Unknown")
         
         # Step 1: Get the latest activity date if not provided
         if not activity_date:
@@ -42,11 +62,14 @@ async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, acti
             
             if latest_activity.data:
                 activity_date = latest_activity.data[0]["activity_timestamp"].split('T')[0]
+                logger.info(f"🔍 DEBUG: No activity_date provided, using latest activity date: {activity_date}")
             else:
-                logger.warning(f"No activities found for portfolio fund {portfolio_fund_id}")
+                logger.warning(f"🔍 DEBUG: No activities found for portfolio fund {portfolio_fund_id}")
                 return {"success": False, "error": "No activities found"}
+        else:
+            logger.info(f"🔍 DEBUG: Using provided activity_date: {activity_date}")
         
-        logger.info(f"Using activity cutoff date: {activity_date}")
+        logger.info(f"🔍 DEBUG: Using activity cutoff date: {activity_date}")
         
         # Step 2: Get portfolio_id
         portfolio_fund_result = db.table("portfolio_funds")\
@@ -55,11 +78,29 @@ async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, acti
             .execute()
         
         if not portfolio_fund_result.data:
-            logger.error(f"Portfolio fund {portfolio_fund_id} not found")
+            logger.error(f"🔍 DEBUG: Portfolio fund {portfolio_fund_id} not found")
             return {"success": False, "error": "Portfolio fund not found"}
         
         portfolio_id = portfolio_fund_result.data[0]["portfolio_id"]
-        logger.info(f"Found portfolio_id: {portfolio_id} for portfolio_fund_id: {portfolio_fund_id}")
+        logger.info(f"🔍 DEBUG: Found portfolio_id: {portfolio_id} for portfolio_fund_id: {portfolio_fund_id}")
+        
+        # DEBUG: Check current valuation for this fund
+        latest_valuation = db.table("portfolio_fund_valuations")\
+            .select("valuation, valuation_date")\
+            .eq("portfolio_fund_id", portfolio_fund_id)\
+            .order("valuation_date", desc=True)\
+            .limit(1)\
+            .execute()
+        
+        if latest_valuation.data:
+            current_valuation = latest_valuation.data[0]["valuation"]
+            valuation_date = latest_valuation.data[0]["valuation_date"]
+            logger.info(f"🔍 DEBUG: Current valuation for fund {portfolio_fund_id}: £{current_valuation} as of {valuation_date}")
+            
+            if current_valuation == 0:
+                logger.warning(f"🔍 DEBUG: ⚠️  ZERO VALUATION DETECTED! Fund {portfolio_fund_id} has £0 valuation - this may affect IRR calculation")
+        else:
+            logger.warning(f"🔍 DEBUG: No valuations found for fund {portfolio_fund_id}")
         
         # Step 3: Find all existing IRR values from the activity date onwards that need recalculation
         existing_irr_values = db.table("portfolio_fund_irr_values")\
@@ -69,12 +110,17 @@ async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, acti
             .order("date", desc=True)\
             .execute()
         
-        logger.info(f"Found {len(existing_irr_values.data)} existing IRR values to recalculate from {activity_date} onwards")
+        logger.info(f"🔍 DEBUG: Found {len(existing_irr_values.data)} existing IRR values to recalculate from {activity_date} onwards")
+        
+        if existing_irr_values.data:
+            for irr_record in existing_irr_values.data:
+                logger.info(f"🔍 DEBUG: Existing IRR record - Date: {irr_record['date']}, Current IRR: {irr_record['irr_result']}%")
         
         # Step 4: Recalculate each existing IRR value
         recalculated_count = 0
         for irr_record in existing_irr_values.data:
             irr_date = irr_record["date"].split('T')[0]  # Ensure YYYY-MM-DD format
+            logger.info(f"🔍 DEBUG: Attempting to recalculate IRR for date {irr_date}")
             
             # Recalculate IRR for this specific date
             fund_irr_result = await calculate_single_portfolio_fund_irr(
@@ -83,35 +129,45 @@ async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, acti
                 db=db
             )
             
+            logger.info(f"🔍 DEBUG: IRR recalculation result for {irr_date}: {fund_irr_result}")
+            
             if fund_irr_result.get("success"):
                 new_irr_percentage = fund_irr_result.get("irr_percentage", 0.0)
+                old_irr_percentage = irr_record["irr_result"]
                 
                 # Update the existing IRR record (replace irr_result)
-                db.table("portfolio_fund_irr_values")\
+                update_result = db.table("portfolio_fund_irr_values")\
                     .update({"irr_result": float(new_irr_percentage)})\
                     .eq("id", irr_record["id"])\
                     .execute()
                 
-                logger.info(f"Updated IRR for date {irr_date}: {new_irr_percentage}%")
+                logger.info(f"🔍 DEBUG: ✅ Updated IRR for date {irr_date}: {old_irr_percentage}% → {new_irr_percentage}%")
+                logger.info(f"🔍 DEBUG: Update result: {update_result}")
                 recalculated_count += 1
             else:
-                logger.warning(f"Failed to recalculate IRR for date {irr_date}")
+                error_msg = fund_irr_result.get("error", "Unknown error")
+                logger.warning(f"🔍 DEBUG: ❌ Failed to recalculate IRR for date {irr_date}: {error_msg}")
         
         # Step 5: Create individual fund IRR entries for any valuation dates where IRR doesn't exist
         # First, get all valuation dates for this specific portfolio fund from activity date onwards
         fund_valuations = db.table("portfolio_fund_valuations")\
-            .select("valuation_date")\
+            .select("valuation_date, valuation")\
             .eq("portfolio_fund_id", portfolio_fund_id)\
             .gte("valuation_date", activity_date)\
             .execute()
         
-        fund_valuation_dates = [val["valuation_date"].split('T')[0] for val in fund_valuations.data]
-        logger.info(f"Found {len(fund_valuation_dates)} valuation dates for portfolio fund {portfolio_fund_id} from {activity_date} onwards: {fund_valuation_dates}")
+        fund_valuation_dates = [(val["valuation_date"].split('T')[0], val["valuation"]) for val in fund_valuations.data]
+        logger.info(f"🔍 DEBUG: Found {len(fund_valuation_dates)} valuation dates for portfolio fund {portfolio_fund_id} from {activity_date} onwards:")
+        
+        for val_date, val_amount in fund_valuation_dates:
+            logger.info(f"🔍 DEBUG: - {val_date}: £{val_amount}")
         
         new_entries_created = 0
         
         # Create IRR entries for each valuation date where IRR doesn't exist
-        for valuation_date in fund_valuation_dates:
+        for valuation_date, valuation_amount in fund_valuation_dates:
+            logger.info(f"🔍 DEBUG: Checking if IRR exists for date {valuation_date} (valuation: £{valuation_amount})")
+            
             # Check if IRR already exists for this fund and date
             existing_check = db.table("portfolio_fund_irr_values")\
                 .select("id")\
@@ -120,12 +176,16 @@ async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, acti
                 .execute()
             
             if not existing_check.data:
+                logger.info(f"🔍 DEBUG: No existing IRR for {valuation_date}, creating new entry...")
+                
                 # Create new IRR entry for this specific fund
                 fund_irr_result = await calculate_single_portfolio_fund_irr(
                     portfolio_fund_id=portfolio_fund_id,
                     irr_date=valuation_date,
                     db=db
                 )
+                
+                logger.info(f"🔍 DEBUG: New IRR calculation result for {valuation_date}: {fund_irr_result}")
                 
                 if fund_irr_result.get("success"):
                     irr_percentage = fund_irr_result.get("irr_percentage", 0.0)
@@ -146,11 +206,15 @@ async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, acti
                         "fund_valuation_id": valuation_id
                     }
                     
-                    db.table("portfolio_fund_irr_values").insert(irr_value_data).execute()
-                    logger.info(f"Created new fund IRR entry for date {valuation_date}: {irr_percentage}%")
+                    insert_result = db.table("portfolio_fund_irr_values").insert(irr_value_data).execute()
+                    logger.info(f"🔍 DEBUG: ✅ Created new fund IRR entry for date {valuation_date}: {irr_percentage}%")
+                    logger.info(f"🔍 DEBUG: Insert result: {insert_result}")
                     new_entries_created += 1
                 else:
-                    logger.warning(f"Failed to calculate IRR for portfolio fund {portfolio_fund_id} on date {valuation_date}")
+                    error_msg = fund_irr_result.get("error", "Unknown error")
+                    logger.warning(f"🔍 DEBUG: ❌ Failed to calculate IRR for portfolio fund {portfolio_fund_id} on date {valuation_date}: {error_msg}")
+            else:
+                logger.info(f"🔍 DEBUG: IRR already exists for {valuation_date}, skipping creation")
         
         # Step 6: Check for portfolio-level IRR calculations based on common dates
         all_portfolio_funds = db.table("portfolio_funds")\
@@ -162,21 +226,22 @@ async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, acti
         common_dates = []
         if all_portfolio_funds.data and len(all_portfolio_funds.data) > 1:
             active_fund_ids = [pf["id"] for pf in all_portfolio_funds.data]
-            logger.info(f"Found {len(active_fund_ids)} active funds for portfolio-level common date analysis")
+            logger.info(f"🔍 DEBUG: Found {len(active_fund_ids)} active funds for portfolio-level common date analysis: {active_fund_ids}")
             
             # Find common valuation dates across all funds from the activity date onwards
             common_dates = await find_common_valuation_dates_from_date(active_fund_ids, activity_date, db)
-            logger.info(f"Found {len(common_dates)} common valuation dates from {activity_date} onwards for portfolio-level IRR: {common_dates}")
+            logger.info(f"🔍 DEBUG: Found {len(common_dates)} common valuation dates from {activity_date} onwards for portfolio-level IRR: {common_dates}")
         else:
-            logger.info(f"Only {len(all_portfolio_funds.data) if all_portfolio_funds.data else 0} active funds in portfolio, skipping portfolio-level IRR common date analysis")
+            logger.info(f"🔍 DEBUG: Only {len(all_portfolio_funds.data) if all_portfolio_funds.data else 0} active funds in portfolio, skipping portfolio-level IRR common date analysis")
         
         # Step 7: Recalculate portfolio-level IRR values from the activity date onwards
+        logger.info(f"🔍 DEBUG: Starting portfolio-level IRR recalculation from {activity_date}")
         portfolio_irr_recalculated = await recalculate_portfolio_irr_values_from_date(
             portfolio_id, activity_date, db
         )
+        logger.info(f"🔍 DEBUG: Portfolio-level IRR recalculation completed: {portfolio_irr_recalculated} entries processed")
         
-        logger.info(f"Sophisticated IRR recalculation completed for portfolio fund {portfolio_fund_id}")
-        return {
+        result = {
             "success": True,
             "portfolio_fund_id": portfolio_fund_id,
             "portfolio_id": portfolio_id,
@@ -187,8 +252,13 @@ async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, acti
             "common_dates_found": len(common_dates)
         }
         
+        # IRR recalculation completed successfully
+        return result
+        
     except Exception as e:
-        logger.error(f"Error in sophisticated IRR recalculation: {str(e)}")
+        logger.error(f"🔍 DEBUG: ❌ Error in sophisticated IRR recalculation: {str(e)}")
+        import traceback
+        logger.error(f"🔍 DEBUG: Traceback: {traceback.format_exc()}")
         return {"success": False, "error": str(e)}
 
 
@@ -499,12 +569,14 @@ async def create_holding_activity_log(
             # Extract the activity date for sophisticated recalculation
             activity_date = log_data.get("activity_timestamp", "").split('T')[0]
             
-            logger.info(f"Triggering sophisticated IRR recalculation after creating activity for portfolio fund {portfolio_fund_id} on date {activity_date}")
+            logger.info(f"🚀 DEBUG: Triggering sophisticated IRR recalculation after creating activity for portfolio fund {portfolio_fund_id} on date {activity_date}")
             irr_recalc_result = await recalculate_irr_after_activity_change(portfolio_fund_id, db, activity_date)
-            logger.info(f"Sophisticated IRR recalculation result: {irr_recalc_result}")
+            logger.info(f"🚀 DEBUG: Sophisticated IRR recalculation result: {irr_recalc_result}")
         except Exception as e:
             # Don't fail the activity creation if IRR recalculation fails
-            logger.error(f"IRR recalculation failed after activity creation: {str(e)}")
+            logger.error(f"🚀 DEBUG: ❌ IRR recalculation failed after activity creation: {str(e)}")
+            import traceback
+            logger.error(f"🚀 DEBUG: Traceback: {traceback.format_exc()}")
         # ========================================================================
         
         return created_activity
@@ -789,3 +861,94 @@ async def test_sophisticated_irr_recalculation(
     except Exception as e:
         logger.error(f"Error in sophisticated IRR recalculation test: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Test failed: {str(e)}")
+
+@router.post("/holding_activity_logs/recalculate_all_portfolio_irr")
+async def recalculate_all_portfolio_irr(
+    portfolio_id: int = Query(..., description="Portfolio ID to recalculate IRR for all funds"),
+    activity_date: Optional[str] = Query(None, description="Activity date to use for recalculation (YYYY-MM-DD format)"),
+    db = Depends(get_db)
+):
+    """
+    Manually trigger IRR recalculation for all funds in a portfolio.
+    This is useful when activities are added through other means and IRR recalculation wasn't triggered.
+    """
+    try:
+        logger.info(f"🔧 DEBUG: Manual IRR recalculation requested for portfolio {portfolio_id}")
+        
+        # Get all portfolio funds
+        portfolio_funds = db.table("portfolio_funds")\
+            .select("id, available_funds_id")\
+            .eq("portfolio_id", portfolio_id)\
+            .execute()
+        
+        if not portfolio_funds.data:
+            return {"success": False, "error": f"No portfolio funds found for portfolio {portfolio_id}"}
+        
+        logger.info(f"🔧 DEBUG: Found {len(portfolio_funds.data)} funds in portfolio {portfolio_id}")
+        
+        results = []
+        
+        for pf in portfolio_funds.data:
+            portfolio_fund_id = pf["id"]
+            available_funds_id = pf["available_funds_id"]
+            
+            # Get fund name for logging
+            fund_details = db.table("available_funds")\
+                .select("fund_name, isin_number")\
+                .eq("id", available_funds_id)\
+                .execute()
+            
+            fund_name = "Unknown"
+            if fund_details.data:
+                fund_name = fund_details.data[0]["fund_name"]
+            
+            logger.info(f"🔧 DEBUG: Recalculating IRR for fund {portfolio_fund_id} - {fund_name}")
+            
+            try:
+                # Trigger IRR recalculation for this fund
+                irr_result = await recalculate_irr_after_activity_change(
+                    portfolio_fund_id=portfolio_fund_id,
+                    db=db,
+                    activity_date=activity_date
+                )
+                
+                results.append({
+                    "portfolio_fund_id": portfolio_fund_id,
+                    "fund_name": fund_name,
+                    "success": irr_result.get("success", False),
+                    "result": irr_result
+                })
+                
+                logger.info(f"🔧 DEBUG: IRR recalculation result for fund {portfolio_fund_id}: {irr_result}")
+                
+            except Exception as e:
+                error_msg = str(e)
+                logger.error(f"🔧 DEBUG: ❌ Failed to recalculate IRR for fund {portfolio_fund_id}: {error_msg}")
+                
+                results.append({
+                    "portfolio_fund_id": portfolio_fund_id,
+                    "fund_name": fund_name,
+                    "success": False,
+                    "error": error_msg
+                })
+        
+        # Summary
+        successful_count = sum(1 for r in results if r["success"])
+        failed_count = len(results) - successful_count
+        
+        logger.info(f"🔧 DEBUG: ✅ Manual IRR recalculation completed - {successful_count} successful, {failed_count} failed")
+        
+        return {
+            "success": True,
+            "portfolio_id": portfolio_id,
+            "total_funds": len(results),
+            "successful_recalculations": successful_count,
+            "failed_recalculations": failed_count,
+            "results": results
+        }
+        
+    except Exception as e:
+        logger.error(f"🔧 DEBUG: ❌ Error in manual portfolio IRR recalculation: {str(e)}")
+        import traceback
+        logger.error(f"🔧 DEBUG: Traceback: {traceback.format_exc()}")
+        return {"success": False, "error": str(e)}

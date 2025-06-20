@@ -25,6 +25,8 @@ interface Holding {
   fund_name?: string;
   irr?: number;
   portfolio_fund_id: number;
+  status?: string;
+  end_date?: string;
 }
 
 interface ActivityLog {
@@ -70,6 +72,7 @@ interface IRRTableData {
     values: {
       [monthYear: string]: number;
     };
+    isPreviousFunds?: boolean;
   };
 }
 
@@ -122,6 +125,31 @@ const filterActivitiesByYear = (activities: ActivityLog[], year: number): Activi
   });
 };
 
+// Helper function to filter inactive holdings
+const filterInactiveHoldings = (holdings: Holding[]): Holding[] => {
+  return holdings.filter(holding => {
+    // Check if the holding has an end_date (explicitly ended)
+    if (holding.end_date) {
+      return true;
+    }
+    
+    // Check if the holding status is inactive
+    if (holding.status && holding.status !== 'active') {
+      return true;
+    }
+    
+    return false;
+  });
+};
+
+// Helper function to filter active holdings
+const filterActiveHoldings = (holdings: Holding[]): Holding[] => {
+  return holdings.filter(holding => {
+    // Check if the holding has no end_date and status is active
+    return !holding.end_date && (!holding.status || holding.status === 'active');
+  });
+};
+
 // Format date to display month and year
 const formatMonthYear = (dateString: string): string => {
   const date = new Date(dateString);
@@ -147,6 +175,8 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
   const [irrTableColumns, setIrrTableColumns] = useState<string[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [portfolioIRRData, setPortfolioIRRData] = useState<{[monthYear: string]: number}>({});
+  const [previousFundsIRRData, setPreviousFundsIRRData] = useState<{[monthYear: string]: number}>({});
+  const [isLoadingPreviousFunds, setIsLoadingPreviousFunds] = useState(false);
 
   useEffect(() => {
     if (accountId) {
@@ -200,6 +230,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
           setIrrHistoryData({});
           setIrrTableColumns([]);
           setPortfolioIRRData({});
+          setPreviousFundsIRRData({});
           setIsLoadingHistory(false);
           setIsLoading(false);
           return;
@@ -210,10 +241,18 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
           id: pf.id,
           fund_name: pf.fund_name || 'Unknown Fund',
           irr: undefined,
-          portfolio_fund_id: pf.id
+          portfolio_fund_id: pf.id,
+          status: pf.status,
+          end_date: pf.end_date
         }));
         
         setHoldings(processedHoldings);
+        
+        // Filter active and inactive holdings
+        const activeHoldings = filterActiveHoldings(processedHoldings);
+        const inactiveHoldings = filterInactiveHoldings(processedHoldings);
+        
+        console.log(`Found ${activeHoldings.length} active holdings and ${inactiveHoldings.length} inactive holdings`);
         
         // Get all unique valuation dates across all funds
         const allValuationDates = new Set<string>();
@@ -281,6 +320,38 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
         // Set the portfolio IRR data
         setPortfolioIRRData(portfolioIRRResults);
         
+        // Calculate Previous Funds IRR for each common date if there are inactive holdings
+        const previousFundsIRRResults: {[monthYear: string]: number} = {};
+        if (inactiveHoldings.length > 0) {
+          setIsLoadingPreviousFunds(true);
+          console.log(`Calculating Previous Funds IRR for ${inactiveHoldings.length} inactive funds`);
+          
+          const inactiveFundIds = inactiveHoldings.map(h => h.id);
+          
+          for (const date of recentDates) {
+            try {
+              console.log(`Calculating Previous Funds IRR for date: ${date}`);
+              
+              const irrResponse = await calculateStandardizedMultipleFundsIRR({
+                portfolioFundIds: inactiveFundIds,
+                irrDate: date
+              });
+              
+              const irrPercentage = irrResponse.data.irr_percentage;
+              const monthYear = formatMonthYear(date + 'T00:00:00Z');
+              previousFundsIRRResults[monthYear] = irrPercentage;
+              
+              console.log(`Previous Funds IRR for ${date}: ${irrPercentage}%`);
+            } catch (err) {
+              console.warn(`Failed to calculate Previous Funds IRR for date ${date}:`, err);
+            }
+          }
+          setIsLoadingPreviousFunds(false);
+        }
+        
+        // Set the previous funds IRR data
+        setPreviousFundsIRRData(previousFundsIRRResults);
+        
         // Create columns from the dates we calculated
         const columns = recentDates.map((date: string) => formatMonthYear(date + 'T00:00:00Z'));
         setIrrTableColumns(columns);
@@ -289,7 +360,8 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
         // This maintains compatibility with the existing IRR calculation and storage system
         const tableData: IRRTableData = {};
         
-        for (const fund of portfolioFunds) {
+        // Add active funds
+        for (const fund of activeHoldings) {
           try {
             // Get stored IRR values for this fund
             const irrResponse = await getFundIRRValues(fund.id);
@@ -308,11 +380,20 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
             };
           } catch (err) {
             console.warn(`Failed to get IRR values for fund ${fund.id}:`, err);
-          tableData[fund.id] = {
+            tableData[fund.id] = {
               fundName: fund.fund_name || 'Unknown Fund',
               values: {}
-          };
+            };
           }
+        }
+        
+        // Add Previous Funds entry if there are inactive holdings
+        if (inactiveHoldings.length > 0) {
+          tableData['previous_funds'] = {
+            fundName: 'Previous Funds',
+            values: previousFundsIRRResults,
+            isPreviousFunds: true
+          };
         }
         
         setIrrHistoryData(tableData);
@@ -321,6 +402,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
         console.error('Error fetching standardized IRR history:', err);
         setError(`Error loading IRR history: ${(err as any).message || 'Unknown error'}`);
         setIsLoadingHistory(false);
+        setIsLoadingPreviousFunds(false);
       }
       
       setIsLoading(false);
@@ -420,6 +502,17 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
       
       <div className="mb-6">
         <h3 className="text-lg font-medium text-gray-900">Monthly IRR Values</h3>
+        {isLoadingPreviousFunds && (
+          <div className="text-sm text-gray-600 mt-2">
+            <span className="inline-flex items-center">
+              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Calculating Previous Funds IRR...
+            </span>
+          </div>
+        )}
       </div>
       
       {irrCalculationResult && (
@@ -495,19 +588,31 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
                     const fundAName = fundA.fundName || '';
                     const fundBName = fundB.fundName || '';
 
+                    // Previous Funds should come after all other funds but before Cash
+                    const aIsPreviousFunds = fundA.isPreviousFunds;
+                    const bIsPreviousFunds = fundB.isPreviousFunds;
                     const aIsCash = fundAName === 'Cash';
                     const bIsCash = fundBName === 'Cash';
 
-                    if (aIsCash && !bIsCash) return 1; // A (Cash) comes after B
-                    if (!aIsCash && bIsCash) return -1; // B (Cash) comes after A
+                    if (aIsCash && !bIsCash) return 1; // A (Cash) comes last
+                    if (!aIsCash && bIsCash) return -1; // B (Cash) comes last
+                    if (aIsPreviousFunds && !bIsPreviousFunds && !bIsCash) return 1; // A (Previous Funds) comes after regular funds
+                    if (!aIsPreviousFunds && bIsPreviousFunds && !aIsCash) return -1; // B (Previous Funds) comes after regular funds
                     
-                    // If both are Cash or neither are Cash, sort alphabetically by name
+                    // If both are the same type or neither are special, sort alphabetically by name
                     return fundAName.localeCompare(fundBName);
                   })
                   .map(([fundId, fund]) => (
-                  <tr key={fundId}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 bg-white z-10">
+                  <tr key={fundId} className={fund.isPreviousFunds ? 'bg-blue-50' : ''}>
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium sticky left-0 z-10 ${
+                      fund.isPreviousFunds ? 'text-blue-800 bg-blue-50' : 'text-gray-900 bg-white'
+                    }`}>
                       {fund.fundName}
+                      {fund.isPreviousFunds && (
+                        <div className="text-xs text-blue-600 font-normal">
+                          Aggregated inactive funds
+                        </div>
+                      )}
                     </td>
                     {irrTableColumns.map(monthYear => {
                       const irrValue = fund.values[monthYear];

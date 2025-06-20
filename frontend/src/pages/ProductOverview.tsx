@@ -2458,13 +2458,13 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                       <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Fund Name
                       </th>
-                      <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         ISIN
                       </th>
-                      <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Risk Factor
                       </th>
-                      <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         <div>Valuation</div>
                         {findCommonValuationDate(holdings.filter(h => !h.isVirtual && h.status === 'active')) && (
                           <div className="text-xs text-gray-400 font-normal normal-case mt-1">
@@ -2472,13 +2472,13 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           </div>
                         )}
                       </th>
-                      <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actual Weighting %
                       </th>
-                      <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Target Weighting %
                       </th>
-                      <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         <div>IRR</div>
                         {findCommonValuationDate(holdings.filter(h => !h.isVirtual && h.status === 'active')) && (
                           <div className="text-xs text-gray-400 font-normal normal-case mt-1">
@@ -2487,7 +2487,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                         )}
                       </th>
                       {isEditingFunds && account && !account.template_generation_id && (
-                        <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" className="px-6 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Actions
                         </th>
                       )}
@@ -2499,24 +2499,24 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                         <td className="px-6 py-2 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900 truncate">{holding.fund_name}</div>
                         </td>
-                        <td className="px-6 py-2 whitespace-nowrap">
+                        <td className="px-6 py-2 whitespace-nowrap text-center">
                           <div className="text-sm text-gray-500">{holding.isin_number || 'N/A'}</div>
                         </td>
-                        <td className="px-6 py-2 whitespace-nowrap">
+                        <td className="px-6 py-2 whitespace-nowrap text-center">
                           <div className="text-sm text-gray-500">
                             {getFundRiskRating(holding.fund_id || 0, fundsData)}
                           </div>
                         </td>
-                        <td className="px-6 py-2 whitespace-nowrap text-sm">
+                        <td className="px-6 py-2 whitespace-nowrap text-sm text-center">
                           {holding.market_value !== undefined && holding.market_value !== null ? (
                             <div className="font-medium">{formatCurrency(holding.market_value)}</div>
                           ) : (
                             <span className="text-gray-500">N/A</span>
                           )}
                         </td>
-                        <td className="px-6 py-2 whitespace-nowrap text-sm">
+                        <td className="px-6 py-2 whitespace-nowrap text-sm text-center">
                           {liveWeightings.has(holding.id) ? (
-                            <div className="flex items-center">
+                            <div className="flex items-center justify-center">
                               <span className="font-medium">
                                 {liveWeightings.get(holding.id)?.toFixed(1)}%
                               </span>
@@ -2540,9 +2540,9 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             <span className="text-gray-500">N/A</span>
                           )}
                         </td>
-                        <td className="px-6 py-2 whitespace-nowrap">
+                        <td className="px-6 py-2 whitespace-nowrap text-center">
                           {isEditingFunds && account && !account.template_generation_id ? (
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center justify-center space-x-2">
                               <input
                                 type="number"
                                 value={holding.target_weighting || ''}
@@ -2569,7 +2569,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             </span>
                           )}
                         </td>
-                        <td className="px-6 py-2 whitespace-nowrap text-sm">
+                        <td className="px-6 py-2 whitespace-nowrap text-sm text-center">
                           {holding.irr !== undefined && holding.irr !== null ? (
                             <span className={`font-medium ${
                               holding.irr >= 0 ? 'text-green-600' : 'text-red-600'
@@ -2581,7 +2581,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           )}
                         </td>
                         {isEditingFunds && account && !account.template_generation_id && (
-                          <td className="px-6 py-2 whitespace-nowrap">
+                          <td className="px-6 py-2 whitespace-nowrap text-center">
                             <ActionButton
                               variant="delete"
                               size="icon"
@@ -2644,20 +2644,20 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                       <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Fund Name
                       </th>
-                      <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         ISIN
                       </th>
-                      <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Risk Factor
                       </th>
-                      <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         End Date
                       </th>
-                      <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Last Target %
                       </th>
                       {isEditingFunds && account && !account.template_generation_id && (
-                        <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" className="px-6 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Actions
                         </th>
                       )}
@@ -2669,26 +2669,26 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                         <td className="px-6 py-2 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-500 truncate">{holding.fund_name}</div>
                         </td>
-                        <td className="px-6 py-2 whitespace-nowrap">
+                        <td className="px-6 py-2 whitespace-nowrap text-center">
                           <div className="text-sm text-gray-500">{holding.isin_number || 'N/A'}</div>
                         </td>
-                        <td className="px-6 py-2 whitespace-nowrap">
+                        <td className="px-6 py-2 whitespace-nowrap text-center">
                           <div className="text-sm text-gray-500">
                             {getFundRiskRating(holding.fund_id || 0, fundsData)}
                           </div>
                         </td>
-                        <td className="px-6 py-2 whitespace-nowrap">
+                        <td className="px-6 py-2 whitespace-nowrap text-center">
                           <div className="text-sm text-gray-500">
                             {holding.end_date ? formatDate(holding.end_date) : 'N/A'}
                           </div>
                         </td>
-                        <td className="px-6 py-2 whitespace-nowrap">
+                        <td className="px-6 py-2 whitespace-nowrap text-center">
                           <span className="text-sm text-gray-500">
                             {holding.target_weighting ? parseFloat(holding.target_weighting).toFixed(2) : '0.00'}%
                           </span>
                         </td>
                         {isEditingFunds && account && !account.template_generation_id && (
-                          <td className="px-6 py-2 whitespace-nowrap">
+                          <td className="px-6 py-2 whitespace-nowrap text-center">
                             <ActionButton
                               variant="add"
                               size="xs"

@@ -552,6 +552,47 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
   const [initialNotes, setInitialNotes] = useState<string>('');
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [notesError, setNotesError] = useState<string | null>(null);
+  const [hasUnsavedNotes, setHasUnsavedNotes] = useState(false);
+  
+  // Utility functions for localStorage notes persistence
+  const getStorageKey = () => `irr_notes_${paramAccountId}`;
+  
+  const saveNotesToStorage = (notes: string) => {
+    try {
+      localStorage.setItem(getStorageKey(), notes);
+      localStorage.setItem(`${getStorageKey()}_timestamp`, Date.now().toString());
+    } catch (error) {
+      console.warn('Failed to save notes to localStorage:', error);
+    }
+  };
+  
+  const loadNotesFromStorage = () => {
+    try {
+      return localStorage.getItem(getStorageKey()) || '';
+    } catch (error) {
+      console.warn('Failed to load notes from localStorage:', error);
+      return '';
+    }
+  };
+  
+  const clearNotesFromStorage = () => {
+    try {
+      localStorage.removeItem(getStorageKey());
+      localStorage.removeItem(`${getStorageKey()}_timestamp`);
+    } catch (error) {
+      console.warn('Failed to clear notes from localStorage:', error);
+    }
+  };
+  
+  const getStorageTimestamp = () => {
+    try {
+      const timestamp = localStorage.getItem(`${getStorageKey()}_timestamp`);
+      return timestamp ? parseInt(timestamp, 10) : 0;
+    } catch (error) {
+      console.warn('Failed to get storage timestamp:', error);
+      return 0;
+    }
+  };
   
   // State for total portfolio IRR from backend
   const [totalPortfolioIRR, setTotalPortfolioIRR] = useState<number | null>(null);
@@ -675,6 +716,57 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
     setIsLoadingSingleFundIRRs(false);
   }, [holdings]); // Only depends on holdings, no API calls needed
 
+  // Load notes from localStorage when component mounts and account data is available
+  useEffect(() => {
+    if (paramAccountId && account) {
+      const storedNotes = loadNotesFromStorage();
+      const storageTimestamp = getStorageTimestamp();
+      
+      // If there are stored notes and they're newer than the account data
+      if (storedNotes && storageTimestamp > 0) {
+        const accountNotes = account.notes || '';
+        
+        // Use stored notes if they're different from backend notes
+        if (storedNotes !== accountNotes) {
+          console.log('Loading notes from localStorage (newer than backend)');
+          const updatedAccount = { ...account, notes: storedNotes };
+          setAccount(updatedAccount);
+          setHasUnsavedNotes(true);
+        }
+      }
+    }
+  }, [account?.id]); // Trigger when account is loaded
+
+  // Save notes to localStorage before page unload
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (account?.notes && hasUnsavedNotes) {
+        // Save to localStorage as backup
+        saveNotesToStorage(account.notes);
+        
+        // Show warning if there are unsaved changes
+        const message = 'You have unsaved notes. Are you sure you want to leave?';
+        event.returnValue = message;
+        return message;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden' && account?.notes) {
+        // Save to localStorage when tab becomes hidden
+        saveNotesToStorage(account.notes);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [account?.notes, hasUnsavedNotes]);
+
 
   const fetchData = async (accountId: string) => {
     try {
@@ -697,7 +789,13 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
         setIsLoading(false);
         // Set account even if there's an error so we can show product info
         setAccount(accountResponse.data);
-        // Initialize notes from account data
+        // Initialize notes from account data, checking localStorage first
+        const storedNotes = loadNotesFromStorage();
+        if (storedNotes && storedNotes !== accountResponse.data.notes) {
+          console.log('Using stored notes from localStorage');
+          accountResponse.data.notes = storedNotes;
+          setHasUnsavedNotes(true);
+        }
         setInitialNotes(accountResponse.data.notes || '');
         return;
       }
@@ -711,8 +809,15 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
         }
       }
       
-      // Set account data with portfolio information
+      // Set account data with portfolio information, checking localStorage first
+      const storedNotesMain = loadNotesFromStorage();
+      if (storedNotesMain && storedNotesMain !== accountResponse.data.notes) {
+        console.log('Using stored notes from localStorage (main flow)');
+        accountResponse.data.notes = storedNotesMain;
+        setHasUnsavedNotes(true);
+      }
       setAccount(accountResponse.data);
+      setInitialNotes(accountResponse.data.notes || '');
       
       // Use the new optimized endpoints to get all data at once
       console.log('ProductIRRCalculation: Fetching complete portfolio data with new optimized endpoint');
@@ -1267,6 +1372,12 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       const updatedAccount = { ...account, notes: e.target.value };
       setAccount(updatedAccount);
       
+      // Track unsaved changes
+      setHasUnsavedNotes(e.target.value !== initialNotes);
+      
+      // Save to localStorage on every change for persistence
+      saveNotesToStorage(e.target.value);
+      
       // Clear any previous error
       setNotesError(null);
     }
@@ -1280,6 +1391,11 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       setIsSavingNotes(true);
       await api.patch(`/api/client_products/${account.id}`, { notes: account.notes });
       setInitialNotes(account.notes || '');
+      setHasUnsavedNotes(false);
+      
+      // Clear localStorage since notes are now saved to backend
+      clearNotesFromStorage();
+      
       console.log('Notes saved successfully');
     } catch (err) {
       console.error('Error saving notes:', err);
@@ -1287,6 +1403,12 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
     } finally {
       setIsSavingNotes(false);
     }
+  };
+
+  // Manual save notes function
+  const handleManualSave = async () => {
+    if (!account || !hasUnsavedNotes) return;
+    await handleNotesBlur();
   };
 
   // Toggle Previous Funds expansion
@@ -1308,7 +1430,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
     if (viewIRR && viewIRR.irr !== null) {
       return (
         <>
-          <div className={`${
+          <div className={`text-center ${
             viewIRR.irr >= 0 ? 'text-green-700' : 'text-red-700'
           }`}>
             {Math.abs(viewIRR.irr) > 1 
@@ -1319,7 +1441,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
             </span>
           </div>
           {viewIRR.date && (
-            <div className="text-xs text-gray-500 mt-1">
+            <div className="text-xs text-gray-500 mt-1 text-center">
               as of {formatDate(viewIRR.date)}
             </div>
           )}
@@ -1331,7 +1453,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
     if (fund.irr !== undefined && fund.irr !== null) {
       return (
         <>
-          <div className={`${
+          <div className={`text-center ${
             fund.irr >= 0 ? 'text-green-700' : 'text-red-700'
           }`}>
             {Math.abs(fund.irr) > 1 
@@ -1342,7 +1464,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
             </span>
           </div>
           {fund.irr_calculation_date && (
-            <div className="text-xs text-gray-500 mt-1">
+            <div className="text-xs text-gray-500 mt-1 text-center">
               as of {formatDate(fund.irr_calculation_date)}
             </div>
           )}
@@ -1352,7 +1474,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
 
     // If no IRR available, show N/A
     return (
-      <span className="text-gray-500">N/A</span>
+      <span className="text-gray-500 text-center">N/A</span>
     );
   };
 
@@ -1417,17 +1539,17 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
     }, [inactiveHoldings]); // Recalculate every time inactiveHoldings changes
 
     if (isLoadingLivePreviousFundsIRR) {
-      return <span className="text-xs text-gray-500">Loading...</span>;
+      return <span className="text-xs text-gray-500 text-center">Loading...</span>;
     }
 
     if (livePreviousFundsIRRError) {
-      return <span className="text-xs text-red-500" title={livePreviousFundsIRRError}>Error</span>;
+      return <span className="text-xs text-red-500 text-center" title={livePreviousFundsIRRError}>Error</span>;
     }
 
     if (livePreviousFundsIRR !== null) {
       return (
         <>
-          <div className={`font-medium ${
+          <div className={`font-medium text-center ${
             livePreviousFundsIRR.irr >= 0 ? 'text-green-700' : 'text-red-700'
           }`}>
             {Math.abs(livePreviousFundsIRR.irr) > 1 
@@ -1438,7 +1560,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
             </span>
           </div>
           {livePreviousFundsIRR.date && (
-            <div className="text-xs text-gray-500 mt-1">
+            <div className="text-xs text-gray-500 mt-1 text-center">
               as of {formatDate(livePreviousFundsIRR.date)}
             </div>
           )}
@@ -1446,7 +1568,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       );
     }
 
-    return <span className="text-gray-500">N/A</span>;
+    return <span className="text-gray-500 text-center">N/A</span>;
   };
 
   if (isLoading) {
@@ -1486,9 +1608,24 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
           <div className="col-span-12 bg-white shadow-sm rounded-lg border border-gray-200 p-4 mb-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-800">Notes</h3>
-              {isSavingNotes && (
-                <span className="text-xs text-gray-500">Saving...</span>
-              )}
+              <div className="flex items-center space-x-2">
+                {hasUnsavedNotes && !isSavingNotes && (
+                  <>
+                    <span className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
+                      Unsaved changes
+                    </span>
+                    <button
+                      onClick={handleManualSave}
+                      className="text-xs px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      Save Now
+                    </button>
+                  </>
+                )}
+                {isSavingNotes && (
+                  <span className="text-xs text-gray-500">Saving...</span>
+                )}
+              </div>
             </div>
             <div className="relative">
               <textarea
@@ -1580,16 +1717,16 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                           </th>
                         )}
                         <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-24" title="Fund Name">Name</th>
-                        <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Total Investments">INV.</th>
-                        <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Regular Investments">REG. INV.</th>
-                        <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Government Uplifts">GOV. UPLIFTS</th>
-                        <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Fund Switch Ins">FUND SWITCH IN</th>
-                        <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Fund Switch Outs">FUND SWITCH OUT</th>
-                        <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Product Switch Ins">PROD SWITCH IN</th>
-                        <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Product Switch Outs">PROD SWITCH OUT</th>
-                        <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Withdrawals">WITH.</th>
-                        <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-20" title="Most Recent Valuation">Valuation</th>
-                        <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Most Recent IRR">IRR</th>
+                        <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Total Investments">INV.</th>
+                        <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Regular Investments">REG. INV.</th>
+                        <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Government Uplifts">GOV. UPLIFTS</th>
+                        <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Fund Switch Ins">FUND SWITCH IN</th>
+                        <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Fund Switch Outs">FUND SWITCH OUT</th>
+                        <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Product Switch Ins">PROD SWITCH IN</th>
+                        <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Product Switch Outs">PROD SWITCH OUT</th>
+                        <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Withdrawals">WITH.</th>
+                        <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-20" title="Most Recent Valuation">Valuation</th>
+                        <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Most Recent IRR">IRR</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -1670,63 +1807,63 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
-                                  <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                  <div className={`text-sm text-center ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual 
                                       ? formatCurrency(calculatePreviousFundsInvestments(allTimeActivities, inactiveHoldings))
                                       : formatCurrency(calculateInvestments(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
-                                  <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                  <div className={`text-sm text-center ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual 
                                       ? formatCurrency(calculatePreviousFundsRegularInvestments(allTimeActivities, inactiveHoldings))
                                       : formatCurrency(calculateRegularInvestments(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
-                                  <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                  <div className={`text-sm text-center ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
                                       ? formatCurrency(calculatePreviousFundsGovernmentUplifts(allTimeActivities, inactiveHoldings))
                                       : formatCurrency(calculateGovernmentUplifts(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
-                                  <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                  <div className={`text-sm text-center ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
                                       ? formatCurrency(calculatePreviousFundsSwitchIns(allTimeActivities, inactiveHoldings))
                                       : formatCurrency(calculateSwitchIns(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
-                                  <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                  <div className={`text-sm text-center ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
                                       ? formatCurrency(calculatePreviousFundsSwitchOuts(allTimeActivities, inactiveHoldings))
                                       : formatCurrency(calculateSwitchOuts(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
-                                  <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                  <div className={`text-sm text-center ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
                                       ? formatCurrency(calculatePreviousFundsProductSwitchIns(allTimeActivities, inactiveHoldings))
                                       : formatCurrency(calculateProductSwitchIns(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
-                                  <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                  <div className={`text-sm text-center ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
                                       ? formatCurrency(calculatePreviousFundsProductSwitchOuts(allTimeActivities, inactiveHoldings))
                                       : formatCurrency(calculateProductSwitchOuts(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
-                                  <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                  <div className={`text-sm text-center ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
                                       ? formatCurrency(calculatePreviousFundsWithdrawals(allTimeActivities, inactiveHoldings))
                                       : formatCurrency(calculateWithdrawals(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
-                                  <div className={`text-sm ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                  <div className={`text-sm text-center ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual ? (
                                       formatCurrency(0)
                                     ) : (
@@ -1780,47 +1917,47 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                     </div>
                                   </td>
                                   <td className="px-1 py-1 whitespace-nowrap">
-                                    <div className="text-sm text-gray-700">
+                                    <div className="text-sm text-center text-gray-700">
                                       {formatCurrency(calculateInvestments(allTimeActivities, inactiveHolding.id))}
                                     </div>
                                   </td>
                                   <td className="px-1 py-1 whitespace-nowrap">
-                                    <div className="text-sm text-gray-700">
+                                    <div className="text-sm text-center text-gray-700">
                                       {formatCurrency(calculateRegularInvestments(allTimeActivities, inactiveHolding.id))}
                                     </div>
                                   </td>
                                   <td className="px-1 py-1 whitespace-nowrap">
-                                    <div className="text-sm text-gray-700">
+                                    <div className="text-sm text-center text-gray-700">
                                       {formatCurrency(calculateGovernmentUplifts(allTimeActivities, inactiveHolding.id))}
                                     </div>
                                   </td>
                                   <td className="px-1 py-1 whitespace-nowrap">
-                                    <div className="text-sm text-gray-700">
+                                    <div className="text-sm text-center text-gray-700">
                                       {formatCurrency(calculateSwitchIns(allTimeActivities, inactiveHolding.id))}
                                     </div>
                                   </td>
                                   <td className="px-1 py-1 whitespace-nowrap">
-                                    <div className="text-sm text-gray-700">
+                                    <div className="text-sm text-center text-gray-700">
                                       {formatCurrency(calculateSwitchOuts(allTimeActivities, inactiveHolding.id))}
                                     </div>
                                   </td>
                                   <td className="px-1 py-1 whitespace-nowrap">
-                                    <div className="text-sm text-gray-700">
+                                    <div className="text-sm text-center text-gray-700">
                                       {formatCurrency(calculateProductSwitchIns(allTimeActivities, inactiveHolding.id))}
                                     </div>
                                   </td>
                                   <td className="px-1 py-1 whitespace-nowrap">
-                                    <div className="text-sm text-gray-700">
+                                    <div className="text-sm text-center text-gray-700">
                                       {formatCurrency(calculateProductSwitchOuts(allTimeActivities, inactiveHolding.id))}
                                     </div>
                                   </td>
                                   <td className="px-1 py-1 whitespace-nowrap">
-                                    <div className="text-sm text-gray-700">
+                                    <div className="text-sm text-center text-gray-700">
                                       {formatCurrency(calculateWithdrawals(allTimeActivities, inactiveHolding.id))}
                                     </div>
                                   </td>
                                   <td className="px-1 py-1 whitespace-nowrap">
-                                    <div className="text-sm text-gray-700">
+                                    <div className="text-sm text-center text-gray-700">
                                       {formatCurrency(0)}
                                     </div>
                                   </td>
@@ -1847,57 +1984,57 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                           <div className="ml-4 text-base font-bold text-red-600">TOTAL</div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-                          <div className="text-sm font-bold text-red-600">
+                          <div className="text-sm text-center font-bold text-red-600">
                             {formatCurrency(calculateTotalInvestments(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-                          <div className="text-sm font-bold text-red-600">
+                          <div className="text-sm text-center font-bold text-red-600">
                             {formatCurrency(calculateTotalRegularInvestments(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-                          <div className="text-sm font-bold text-red-600">
+                          <div className="text-sm text-center font-bold text-red-600">
                             {formatCurrency(calculateTotalGovernmentUplifts(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-                          <div className="text-sm font-bold text-red-600">
+                          <div className="text-sm text-center font-bold text-red-600">
                             {formatCurrency(calculateTotalSwitchIns(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-                          <div className="text-sm font-bold text-red-600">
+                          <div className="text-sm text-center font-bold text-red-600">
                             {formatCurrency(calculateTotalSwitchOuts(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-                          <div className="text-sm font-bold text-red-600">
+                          <div className="text-sm text-center font-bold text-red-600">
                             {formatCurrency(calculateTotalProductSwitchIns(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-                          <div className="text-sm font-bold text-red-600">
+                          <div className="text-sm text-center font-bold text-red-600">
                             {formatCurrency(calculateTotalProductSwitchOuts(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-                          <div className="text-sm font-bold text-red-600">
+                          <div className="text-sm text-center font-bold text-red-600">
                             {formatCurrency(calculateTotalWithdrawals(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-                          <div className="text-sm font-bold text-red-600">
+                          <div className="text-sm text-center font-bold text-red-600">
                             {formatCurrency(calculateTotalValue(holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
                           {isTotalPortfolioIRRLoading ? (
-                            <span className="text-sm text-gray-500">Loading...</span>
+                            <span className="text-sm text-gray-500 text-center">Loading...</span>
                           ) : totalPortfolioIRRError ? (
-                            <span className="text-sm text-red-500" title={totalPortfolioIRRError}>Error</span>
+                            <span className="text-sm text-red-500 text-center" title={totalPortfolioIRRError}>Error</span>
                           ) : totalPortfolioIRR !== null ? (
-                            <div>
+                            <div className="text-center">
                               <div className={`text-sm font-bold ${
                                 totalPortfolioIRR >= 0 ? 'text-green-700' : 'text-red-700'
                               }`}>
@@ -1913,7 +2050,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                               )}
                             </div>
                           ) : (
-                            <span className="text-sm text-gray-500">N/A</span>
+                            <span className="text-sm text-gray-500 text-center">N/A</span>
                           )}
                         </td>
                       </tr>

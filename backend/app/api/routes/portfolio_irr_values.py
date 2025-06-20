@@ -322,26 +322,59 @@ async def update_portfolio_irr_value(
         logger.error(f"Error updating portfolio IRR value: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-@router.delete("/portfolio_irr_values/{irr_value_id}", response_model=dict)
-async def delete_portfolio_irr_value(irr_value_id: int, db = Depends(get_db)):
+@router.delete("/{irr_id}")
+async def delete_portfolio_irr(irr_id: int, db = Depends(get_db)):
     """
-    What it does: Deletes a portfolio IRR value record.
+    Delete a portfolio IRR value by ID with detailed response.
     """
     try:
-        # Check if IRR value exists
-        check_result = db.table("portfolio_irr_values").select("id").eq("id", irr_value_id).execute()
-        if not check_result.data:
-            raise HTTPException(status_code=404, detail=f"Portfolio IRR value with ID {irr_value_id} not found")
+        logger.info(f"Attempting to delete portfolio IRR with ID: {irr_id}")
         
-        result = db.table("portfolio_irr_values").delete().eq("id", irr_value_id).execute()
+        # Get the IRR record details before deletion
+        irr_record_result = db.table("portfolio_irr_values")\
+            .select("*")\
+            .eq("id", irr_id)\
+            .execute()
         
-        return {"message": f"Portfolio IRR value {irr_value_id} deleted successfully"}
+        if not irr_record_result.data:
+            logger.error(f"Portfolio IRR with ID {irr_id} not found")
+            raise HTTPException(status_code=404, detail="Portfolio IRR not found")
+        
+        irr_record = irr_record_result.data[0]
+        portfolio_id = irr_record.get("portfolio_id")
+        irr_date = irr_record.get("date")
+        
+        if isinstance(irr_date, str):
+            irr_date_only = irr_date.split('T')[0]
+        else:
+            irr_date_only = str(irr_date).split(' ')[0] if irr_date else "Unknown"
+        
+        logger.info(f"Deleting portfolio IRR for portfolio {portfolio_id} on date {irr_date_only}")
+        
+        # Delete the portfolio IRR value
+        result = db.table("portfolio_irr_values").delete().eq("id", irr_id).execute()
+        
+        if not result or not hasattr(result, 'data') or not result.data:
+            logger.error(f"Failed to delete portfolio IRR with ID {irr_id}")
+            raise HTTPException(status_code=500, detail="Failed to delete portfolio IRR")
+        
+        logger.info(f"Successfully deleted portfolio IRR with ID {irr_id}")
+        
+        # Return detailed success response
+        return {
+            "message": f"Portfolio IRR with ID {irr_id} deleted successfully",
+            "status": "success",
+            "cascade_deletions": [],
+            "common_date_broken": False,
+            "affected_date": irr_date_only,
+            "portfolio_id": portfolio_id
+        }
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error deleting portfolio IRR value: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        logger.error(f"Error deleting portfolio IRR: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error deleting portfolio IRR: {str(e)}")
 
 @router.get("/portfolios/{portfolio_id}/irr_values", response_model=List[PortfolioIRRValue])
 async def get_portfolio_irr_values_by_portfolio(
