@@ -156,17 +156,94 @@ async def update_portfolio_valuation(
 @router.delete("/portfolio_valuations/{valuation_id}", response_model=dict)
 async def delete_portfolio_valuation(valuation_id: int, db = Depends(get_db)):
     """
-    What it does: Deletes a portfolio valuation record.
+    Delete a portfolio valuation with cascade deletion logic.
+    
+    When a portfolio valuation is deleted:
+    1. Delete any portfolio-level IRR records that reference this valuation
+    2. Delete any portfolio-level IRR records for the same date
     """
     try:
-        # Check if valuation exists
-        check_result = db.table("portfolio_valuations").select("id").eq("id", valuation_id).execute()
+        # Check if valuation exists and get its details
+        check_result = db.table("portfolio_valuations").select("*").eq("id", valuation_id).execute()
         if not check_result.data:
             raise HTTPException(status_code=404, detail=f"Portfolio valuation with ID {valuation_id} not found")
         
+        # Get details of the valuation being deleted
+        valuation_to_delete = check_result.data[0]
+        portfolio_id = valuation_to_delete["portfolio_id"]
+        valuation_date = valuation_to_delete["valuation_date"]
+        
+        # Extract just the date part (YYYY-MM-DD) for comparison
+        if isinstance(valuation_date, str):
+            valuation_date_only = valuation_date.split('T')[0]
+        else:
+            valuation_date_only = valuation_date.strftime('%Y-%m-%d')
+        
+        logger.info(f"Deleting portfolio valuation for portfolio {portfolio_id} on date {valuation_date_only}")
+        
+        # ========================================================================
+        # Step 1: Clean up related portfolio-level IRR records before deleting valuation
+        # ========================================================================
+        cascade_deletions = []
+        
+        try:
+            # Delete any IRR records that reference this valuation
+            irr_cleanup_result = db.table("portfolio_irr_values")\
+                .delete()\
+                .eq("portfolio_valuation_id", valuation_id)\
+                .execute()
+            
+            if irr_cleanup_result.data:
+                logger.info(f"Cleaned up {len(irr_cleanup_result.data)} portfolio IRR records that referenced valuation {valuation_id}")
+                cascade_deletions.append(f"Deleted {len(irr_cleanup_result.data)} IRR records by valuation reference")
+                
+            # Delete related portfolio IRR values for this date
+            try:
+                # Use date range instead of LIKE for timestamp comparison
+                date_start = f"{valuation_date_only}T00:00:00"
+                date_end = f"{valuation_date_only}T23:59:59"
+                
+                portfolio_irr_delete_result = db.table("portfolio_irr_values")\
+                    .delete()\
+                    .eq("portfolio_id", portfolio_id)\
+                    .gte("date", date_start)\
+                    .lte("date", date_end)\
+                    .execute()
+                
+                if portfolio_irr_delete_result.data:
+                    logger.info(f"Deleted {len(portfolio_irr_delete_result.data)} related portfolio IRR records for date {valuation_date_only}")
+                    cascade_deletions.append(f"Deleted {len(portfolio_irr_delete_result.data)} portfolio IRR records")
+                
+            except Exception as e:
+                logger.warning(f"Failed to delete related portfolio IRR records for date {valuation_date_only}: {str(e)}")
+                
+        except Exception as e:
+            logger.warning(f"Failed to clean up related IRR records for portfolio valuation {valuation_id}: {str(e)}")
+        
+        # ========================================================================
+        # Step 2: Delete the portfolio valuation
+        # ========================================================================
         result = db.table("portfolio_valuations").delete().eq("id", valuation_id).execute()
         
-        return {"message": f"Portfolio valuation {valuation_id} deleted successfully"}
+        if not result or not hasattr(result, 'data') or not result.data:
+            logger.error(f"Failed to delete portfolio valuation with ID {valuation_id}")
+            raise HTTPException(status_code=500, detail="Failed to delete portfolio valuation")
+        
+        logger.info(f"Successfully deleted portfolio valuation with ID {valuation_id}")
+        
+        # ========================================================================
+        # Return success with cascade deletion details
+        # ========================================================================
+        response_message = f"Portfolio valuation {valuation_id} deleted successfully"
+        if cascade_deletions:
+            response_message += f". Cascade deletions: {'; '.join(cascade_deletions)}"
+        
+        return {
+            "message": response_message,
+            "status": "success",
+            "cascade_deletions": cascade_deletions,
+            "affected_date": valuation_date_only
+        }
         
     except HTTPException:
         raise

@@ -29,7 +29,7 @@ async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, acti
         activity_date: The date of the activity that was changed (YYYY-MM-DD format)
     """
     try:
-        logger.info(f"🔍 DEBUG: Starting sophisticated IRR recalculation for portfolio fund {portfolio_fund_id}")
+        # Starting sophisticated IRR recalculation
         
         # DEBUG: Get fund details to identify which fund this is
         fund_details = db.table("portfolio_funds")\
@@ -252,8 +252,7 @@ async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, acti
             "common_dates_found": len(common_dates)
         }
         
-        logger.info(f"🔍 DEBUG: ✅ Sophisticated IRR recalculation completed for portfolio fund {portfolio_fund_id}")
-        logger.info(f"🔍 DEBUG: Final result: {result}")
+        # IRR recalculation completed successfully
         return result
         
     except Exception as e:

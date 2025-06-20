@@ -751,26 +751,25 @@ async def calculate_portfolio_irr(
             # Step 1: Calculate portfolio valuation by summing all fund valuations
             logger.info("Calculating portfolio-level valuation and IRR...")
             
-            # Get ALL portfolio fund IDs (both active and inactive) for accurate IRR calculation
-            # Portfolio IRR should include historical activities from inactive funds
+            # Get portfolio fund IDs - separate active and inactive funds
             all_fund_ids = [pf["id"] for pf in portfolio_funds]
             active_fund_ids = [pf["id"] for pf in portfolio_funds if pf.get("status", "active") == "active"]
+            inactive_fund_ids = [pf["id"] for pf in portfolio_funds if pf.get("status", "active") != "active"]
             
             # Also get fund IDs that have valuations (for portfolio valuation calculation)
             funds_with_valuations = [fd["portfolio_fund_id"] for fd in most_recent_valuation_dates]
             
-            logger.info(f"Portfolio {portfolio_id}: {len(all_fund_ids)} total funds ({len(active_fund_ids)} active, {len(all_fund_ids) - len(active_fund_ids)} inactive)")
-            logger.info(f"Funds with valuations: {len(funds_with_valuations)}, Funds without valuations: {len(all_fund_ids) - len(funds_with_valuations)}")
-            logger.info(f"Using ALL {len(all_fund_ids)} funds for IRR calculation: {all_fund_ids}")
+            # UPDATED LOGIC: Use ONLY ACTIVE funds for both valuation AND IRR calculation
+            # This ensures consistency - when a fund is deactivated, it's excluded from current portfolio calculations
             
-            if all_fund_ids:
+            if active_fund_ids:
                 # Calculate total portfolio value using ONLY ACTIVE funds (for current valuation)
                 total_portfolio_value = 0.0
                 for fund_data in most_recent_valuation_dates:
                     if fund_data["portfolio_fund_id"] in active_fund_ids:
                         total_portfolio_value += fund_data["valuation"]
                 
-                logger.info(f"Total portfolio value (active funds only): {total_portfolio_value}")
+
                 
                 # Step 2: Store portfolio valuation
                 portfolio_valuation_data = {
@@ -802,18 +801,18 @@ async def calculate_portfolio_irr(
                     portfolio_valuation_id = portfolio_valuation_result.data[0]["id"] if portfolio_valuation_result.data else None
                     logger.info(f"Created new portfolio valuation for {portfolio_id}")
                 
-                # Step 3: Calculate portfolio-level IRR using ALL funds (active + inactive) for accurate historical IRR
-                logger.info(f"Calculating portfolio IRR using standardized multiple funds endpoint with {len(all_fund_ids)} funds (including inactive funds for historical accuracy)")
+                # Step 3: Calculate portfolio-level IRR using ONLY ACTIVE funds for consistency
+                logger.info(f"Calculating portfolio IRR using ONLY ACTIVE funds for consistency: {len(active_fund_ids)} funds")
                 
                 portfolio_irr_response = await calculate_multiple_portfolio_funds_irr(
-                    portfolio_fund_ids=all_fund_ids,  # Use ALL funds, not just active ones
+                    portfolio_fund_ids=active_fund_ids,  # Use ONLY active funds for consistency
                     irr_date=common_date_iso.split('T')[0],  # Convert to YYYY-MM-DD format
                     db=db
                 )
                 
                 if portfolio_irr_response.get("success"):
                     portfolio_irr_percentage = portfolio_irr_response.get("irr_percentage", 0.0)
-                    logger.info(f"Portfolio IRR calculated: {portfolio_irr_percentage}%")
+                    logger.info(f"Portfolio IRR calculated (active funds only): {portfolio_irr_percentage}%")
                     
                     # Step 4: Store portfolio IRR value
                     portfolio_irr_data = {
@@ -849,7 +848,7 @@ async def calculate_portfolio_irr(
                 else:
                     logger.warning(f"Portfolio IRR calculation failed: {portfolio_irr_response}")
             else:
-                logger.warning("No funds found for portfolio-level calculations")
+                logger.warning("No active funds found for portfolio-level calculations")
         
         except Exception as e:
             logger.error(f"Error calculating portfolio-level valuation and IRR: {str(e)}")
@@ -1222,108 +1221,112 @@ async def get_complete_portfolio(
     Expected output: A JSON object containing the portfolio with all its funds, valuations, and IRR data
     """
     try:
-        logger.info(f"Fetching complete portfolio data for ID: {portfolio_id}")
+
         
-        # First get the portfolio details
-        portfolio_result = db.table("portfolios").select("*").eq("id", portfolio_id).execute()
+        # Get portfolio details
+        portfolio_result = db.table("portfolios")\
+            .select("*")\
+            .eq("id", portfolio_id)\
+            .execute()
         
-        if not portfolio_result.data or len(portfolio_result.data) == 0:
-            raise HTTPException(status_code=404, detail=f"Portfolio with ID {portfolio_id} not found")
+        if not portfolio_result.data:
+            raise HTTPException(status_code=404, detail="Portfolio not found")
         
         portfolio = portfolio_result.data[0]
-        logger.info(f"Found portfolio: {portfolio['portfolio_name']} (ID: {portfolio_id})")
         
-        # If portfolio has a template_generation_id, get the template info
-        template_info = None
-        if portfolio.get("template_generation_id"):
-            template_result = db.table("template_portfolio_generations") \
-                .select("*") \
-                .eq("id", portfolio["template_generation_id"]) \
-                .execute()
-                
-            if template_result.data and len(template_result.data) > 0:
-                template_info = template_result.data[0]
-                portfolio["template_info"] = template_info
+        # Get template generation details
+        template_result = db.table("template_portfolio_generations")\
+            .select("*")\
+            .eq("id", portfolio["template_generation_id"])\
+            .execute()
         
-        # Get all portfolio funds
-        portfolio_funds_result = db.table("portfolio_funds").select("*").eq("portfolio_id", portfolio_id).execute()
+        template_generation = template_result.data[0] if template_result.data else None
+        
+        # Get portfolio funds
+        portfolio_funds_result = db.table("portfolio_funds")\
+            .select("*")\
+            .eq("portfolio_id", portfolio_id)\
+            .execute()
+        
         if not portfolio_funds_result.data:
-            portfolio_funds = []
-        else:
-            portfolio_funds = portfolio_funds_result.data
-            logger.info(f"Found {len(portfolio_funds)} funds in portfolio {portfolio_id}")
-            
-            # Get all fund IDs to fetch related data in batch
-            portfolio_fund_ids = [fund["id"] for fund in portfolio_funds]
-            available_fund_ids = [fund["available_funds_id"] for fund in portfolio_funds if fund.get("available_funds_id")]
-            
-            # Fetch fund details in bulk
-            funds_map = {}
-            if available_fund_ids:
-                funds_result = db.table("available_funds").select("*").in_("id", available_fund_ids).execute()
-                if funds_result.data:
-                    funds_map = {fund["id"]: fund for fund in funds_result.data}
-            
-            # Step 4: Get latest valuations for all funds in one query
-            valuations_map = {}
-            try:
-                valuations_result = db.table("latest_portfolio_fund_valuations").select("*").in_("portfolio_fund_id", portfolio_fund_ids).execute()
-                if valuations_result.data:
-                    valuations_map = {val["portfolio_fund_id"]: val for val in valuations_result.data}
-                    logger.info(f"Found {len(valuations_result.data)} valuations for portfolio funds")
-            except Exception as e:
-                logger.error(f"Error fetching latest valuations: {str(e)}")
-            
-            # Step 5: Get individual fund IRR values
-            irr_map = {}
-            try:
-                # Get the latest IRR values for each fund from latest_portfolio_fund_irr_values view
-                latest_irr_result = db.table("latest_portfolio_fund_irr_values").select("*").in_("fund_id", portfolio_fund_ids).execute()
-                if latest_irr_result.data:
-                    irr_map = {irr.get("fund_id"): irr for irr in latest_irr_result.data}
-                    logger.info(f"Found IRR data for {len(irr_map)} funds")
-                else:
-                    logger.info(f"No fund IRR data found for portfolio {portfolio_id}")
-            except Exception as e:
-                logger.error(f"Error fetching fund IRR values: {str(e)}")
-            
-            # Enhance each portfolio fund with its related data
-            for fund in portfolio_funds:
-                fund_id = fund.get("id")
-                available_funds_id = fund.get("available_funds_id")
-                
-                # Add fund details
-                if available_funds_id and available_funds_id in funds_map:
-                    fund_details = funds_map[available_funds_id]
-                    fund["fund_details"] = fund_details
-                    fund["fund_name"] = fund_details.get("fund_name")
-                    fund["isin_number"] = fund_details.get("isin_number")
-                    fund["risk_factor"] = fund_details.get("risk_factor")
-                
-                # Add latest valuation
-                if fund_id in valuations_map:
-                    valuation = valuations_map[fund_id]
-                    fund["latest_valuation"] = valuation
-                    fund["market_value"] = valuation.get("valuation")
-                    fund["valuation_date"] = valuation.get("valuation_date")
-                
-                # Add individual fund IRR data
-                if fund_id in irr_map:
-                    irr_data = irr_map[fund_id]
-                    fund["irr_result"] = irr_data.get("irr_result")
-                    fund["irr_date"] = irr_data.get("irr_date")
-                else:
-                    # Fund has no IRR data, set default values
-                    fund["irr_result"] = None
-                    fund["irr_date"] = None
+            # Return portfolio data even if no funds
+            return {
+                "portfolio": portfolio,
+                "template_generation": template_generation,
+                "funds": [],
+                "valuations": [],
+                "irr_values": []
+            }
         
-        # Construct the complete response
+        portfolio_funds = portfolio_funds_result.data
+        fund_ids = [pf["id"] for pf in portfolio_funds]
+        
+        # Get available fund details
+        available_fund_ids = list(set([pf["available_funds_id"] for pf in portfolio_funds]))
+        available_funds_result = db.table("available_funds")\
+            .select("*")\
+            .in_("id", available_fund_ids)\
+            .execute()
+        
+        available_funds_lookup = {af["id"]: af for af in available_funds_result.data} if available_funds_result.data else {}
+        
+        # Get latest valuations
+        valuations_result = db.table("latest_portfolio_fund_valuations")\
+            .select("*")\
+            .in_("portfolio_fund_id", fund_ids)\
+            .execute()
+        
+        # Get latest IRR values
+        irr_result = db.table("latest_portfolio_fund_irr_values")\
+            .select("*")\
+            .in_("fund_id", fund_ids)\
+            .execute()
+        
+        if not irr_result.data:
+            irr_values = []
+        else:
+            irr_values = irr_result.data
+        
+        # Create lookup maps for enhanced fund data
+        valuations_lookup = {val["portfolio_fund_id"]: val for val in (valuations_result.data or [])}
+        irr_lookup = {irr["fund_id"]: irr for irr in irr_values}
+        
+        # Enhance portfolio funds with related data
+        for fund in portfolio_funds:
+            fund_id = fund["id"]
+            available_funds_id = fund.get("available_funds_id")
+            
+            # Add fund details
+            if available_funds_id and available_funds_id in available_funds_lookup:
+                fund_details = available_funds_lookup[available_funds_id]
+                fund["fund_details"] = fund_details
+                fund["fund_name"] = fund_details.get("fund_name")
+                fund["isin_number"] = fund_details.get("isin_number")
+                fund["risk_factor"] = fund_details.get("risk_factor")
+            
+            # Add latest valuation
+            if fund_id in valuations_lookup:
+                valuation = valuations_lookup[fund_id]
+                fund["latest_valuation"] = valuation
+                fund["market_value"] = valuation.get("valuation")
+                fund["valuation_date"] = valuation.get("valuation_date")
+            
+            # Add IRR data
+            if fund_id in irr_lookup:
+                irr_data = irr_lookup[fund_id]
+                fund["irr_result"] = irr_data.get("irr_result")
+                fund["irr_date"] = irr_data.get("irr_date")
+            else:
+                fund["irr_result"] = None
+                fund["irr_date"] = None
+        
+        # Construct the complete response in the expected format
         response = {
             "portfolio": portfolio,
-            "template_info": template_info,
+            "template_info": template_generation,
             "portfolio_funds": portfolio_funds,
-            "valuations_map": valuations_map,
-            "irr_map": {}
+            "valuations_map": valuations_lookup,
+            "irr_map": irr_lookup
         }
         
         return response
@@ -1340,25 +1343,20 @@ async def get_latest_portfolio_irr(portfolio_id: int, db = Depends(get_db)):
     This eliminates the need to recalculate IRR when the stored value is sufficient.
     """
     try:
-        logger.info(f"🔍 [IRR DEBUG] Fetching latest portfolio IRR for portfolio {portfolio_id}")
-        
-        # Query the latest_portfolio_irr_values view - using correct column names from database.sql
+        # Query the latest_portfolio_irr_values view
         result = db.table("latest_portfolio_irr_values") \
                    .select("portfolio_id, irr_result, irr_date") \
                    .eq("portfolio_id", portfolio_id) \
                    .execute()
         
-        logger.info(f"🔍 [IRR DEBUG] Database query result for portfolio {portfolio_id}: {result.data}")
-        
         if result.data and len(result.data) > 0:
             irr_data = result.data[0]
             response_data = {
                 "portfolio_id": portfolio_id,
-                "irr_result": irr_data["irr_result"],  # Use irr_result not irr_value
+                "irr_result": irr_data["irr_result"],
                 "irr_date": irr_data["irr_date"],
                 "source": "stored"
             }
-            logger.info(f"✅ [IRR DEBUG] Found stored portfolio IRR for portfolio {portfolio_id}: {response_data}")
             return response_data
         else:
             response_data = {
@@ -1367,7 +1365,6 @@ async def get_latest_portfolio_irr(portfolio_id: int, db = Depends(get_db)):
                 "irr_date": None,
                 "source": "not_found"
             }
-            logger.warning(f"⚠️ [IRR DEBUG] No stored portfolio IRR found for portfolio {portfolio_id}")
             return response_data
     except Exception as e:
         logger.error(f"❌ [IRR DEBUG] Error fetching stored IRR for portfolio {portfolio_id}: {str(e)}")
@@ -1421,7 +1418,7 @@ async def get_portfolio_activity_logs(
     Expected output: A JSON object containing activity logs and optionally summary statistics
     """
     try:
-        logger.info(f"Fetching activity logs for portfolio ID: {portfolio_id}")
+
         
         # First check if the portfolio exists
         portfolio_result = db.table("portfolios").select("id").eq("id", portfolio_id).execute()
@@ -1465,7 +1462,7 @@ async def get_portfolio_activity_logs(
         # Execute the query
         activity_result = query.execute()
         activity_logs = activity_result.data or []
-        logger.info(f"Found {len(activity_logs)} activity logs for portfolio {portfolio_id}")
+
         
         # Prepare the response
         response = {
