@@ -719,4 +719,34 @@ export const removeClientGroupProductOwner = async (associationId: number) => {
   return api.delete(`client_group_product_owners/${associationId}`);
 };
 
+/**
+ * REVENUE ANALYTICS API ENDPOINTS
+ * 
+ * Functions for managing company revenue analytics
+ */
+
+/**
+ * Fetches company-wide revenue analytics from the database view
+ * @returns {Promise} - API response with total revenue, active products, etc.
+ */
+export const getCompanyRevenueAnalytics = async () => {
+  return api.get('company-revenue-analytics');
+};
+
+/**
+ * Fetches revenue breakdown by client groups
+ * @returns {Promise} - API response with client group revenue data
+ */
+export const getClientGroupRevenueBreakdown = async () => {
+  return api.get('client-groups/revenue-breakdown');
+};
+
+export const getRevenueRateAnalytics = async () => {
+  return api.get('revenue-rate-analytics');
+};
+
+export const refreshRevenueRateCache = async () => {
+  return api.post('revenue-rate-analytics/refresh');
+};
+
 export default api; 
