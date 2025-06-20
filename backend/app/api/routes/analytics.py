@@ -247,8 +247,8 @@ async def get_performance_data(
         }
 
         # Get company-wide stats
-        company_stats = await calculate_company_irr(db)
-        response["companyIRR"] = company_stats["company_irr"]
+        company_irr = await calculate_company_irr(db)
+        response["companyIRR"] = company_irr
         
         # Calculate total FUM using latest valuations (consistent with dashboard_stats)
         latest_valuations_result = db.table("latest_portfolio_fund_valuations").select("valuation").execute()
@@ -1602,3 +1602,425 @@ async def get_products_risk_differences(
     except Exception as e:
         logger.error(f"Error calculating risk differences: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error calculating risk differences: {str(e)}") 
+
+@router.get("/company-revenue-analytics")
+async def get_company_revenue_analytics(db = Depends(get_db)):
+    """
+    Get company-wide revenue analytics using the company_revenue_analytics view.
+    Returns total revenue, breakdown by type, and key metrics.
+    """
+    try:
+        logger.info("Fetching company revenue analytics from database view")
+        
+        # Query the company_revenue_analytics view
+        result = db.table("company_revenue_analytics").select("*").execute()
+        
+        if not result.data:
+            logger.warning("No data returned from company_revenue_analytics view")
+            return [{
+                "total_annual_revenue": 0,
+                "total_fixed_revenue": 0,
+                "total_percentage_revenue": 0,
+                "active_products": 0,
+                "revenue_generating_products": 0,
+                "avg_revenue_per_product": 0,
+                "active_providers": 0
+            }]
+        
+        # The view returns a single row with aggregated data
+        revenue_data = result.data[0]
+        
+        # Ensure all values are properly formatted
+        formatted_data = {
+            "total_annual_revenue": float(revenue_data.get("total_annual_revenue", 0) or 0),
+            "total_fixed_revenue": float(revenue_data.get("total_fixed_revenue", 0) or 0),
+            "total_percentage_revenue": float(revenue_data.get("total_percentage_revenue", 0) or 0),
+            "active_products": int(revenue_data.get("active_products", 0) or 0),
+            "revenue_generating_products": int(revenue_data.get("revenue_generating_products", 0) or 0),
+            "avg_revenue_per_product": float(revenue_data.get("avg_revenue_per_product", 0) or 0),
+            "active_providers": int(revenue_data.get("active_providers", 0) or 0)
+        }
+        
+        logger.info(f"Company revenue analytics: Total annual revenue £{formatted_data['total_annual_revenue']:,.2f} from {formatted_data['revenue_generating_products']} products")
+        
+        return [formatted_data]  # Return as array for frontend compatibility
+        
+    except Exception as e:
+        logger.error(f"Error fetching company revenue analytics: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error fetching revenue analytics: {str(e)}")
+
+@router.get("/client-groups/revenue-breakdown")
+async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
+    """
+    Get revenue breakdown by client groups, showing each client group's revenue and percentage of total.
+    """
+    try:
+        logger.info("Calculating client group revenue breakdown")
+        
+        # First get the total company revenue for percentage calculations
+        company_revenue_result = db.table("company_revenue_analytics").select("total_annual_revenue").execute()
+        total_company_revenue = float(company_revenue_result.data[0]["total_annual_revenue"]) if company_revenue_result.data else 0
+        
+        # Get all active client groups
+        client_groups_result = db.table("client_groups").select("id, name, status").eq("status", "active").execute()
+        
+        if not client_groups_result.data:
+            logger.warning("No active client groups found")
+            return []
+        
+        revenue_breakdown = []
+        
+        for client_group in client_groups_result.data:
+            client_id = client_group["id"]
+            client_name = client_group["name"]
+            
+            # Get all products for this client group
+            products_result = db.table("client_products")\
+                .select("id, fixed_cost, percentage_fee, portfolio_id")\
+                .eq("client_id", client_id)\
+                .eq("status", "active")\
+                .execute()
+            
+            if not products_result.data:
+                # Client has no products, add with zero revenue
+                revenue_breakdown.append({
+                    "id": client_id,
+                    "name": client_name,
+                    "status": client_group["status"],
+                    "total_fum": 0,
+                    "total_revenue": 0,
+                    "revenue_percentage_of_total": 0,
+                    "product_count": 0,
+                    "products_with_revenue": 0,
+                    "revenue_status": "no_setup"  # Red dot - no products means no revenue setup
+                })
+                continue
+            
+            total_client_revenue = 0
+            total_client_fum = 0
+            products_with_revenue = 0
+            
+            # Track revenue status for this client
+            has_revenue_setup = False
+            needs_valuation = False
+            
+            for product in products_result.data:
+                fixed_cost = float(product.get("fixed_cost", 0) or 0)
+                percentage_fee = float(product.get("percentage_fee", 0) or 0)
+                portfolio_id = product.get("portfolio_id")
+                
+                # Check if product has any revenue setup
+                if fixed_cost > 0 or percentage_fee > 0:
+                    has_revenue_setup = True
+                
+                # Calculate product FUM from portfolio valuations
+                product_fum = 0
+                if portfolio_id:
+                    # Get all portfolio funds for this portfolio
+                    portfolio_funds_result = db.table("portfolio_funds")\
+                        .select("id")\
+                        .eq("portfolio_id", portfolio_id)\
+                        .eq("status", "active")\
+                        .execute()
+                    
+                    if portfolio_funds_result.data:
+                        # Get latest valuations for all portfolio funds
+                        fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
+                        
+                        for fund_id in fund_ids:
+                            valuation_result = db.table("latest_portfolio_fund_valuations")\
+                                .select("valuation")\
+                                .eq("portfolio_fund_id", fund_id)\
+                                .execute()
+                            
+                            if valuation_result.data and valuation_result.data[0]["valuation"]:
+                                product_fum += float(valuation_result.data[0]["valuation"])
+                
+                total_client_fum += product_fum
+                
+                # Calculate product revenue using the same logic as the view
+                product_revenue = 0
+                
+                # If only fixed cost is set (no percentage fee)
+                if fixed_cost > 0 and percentage_fee == 0:
+                    product_revenue = fixed_cost
+                    products_with_revenue += 1
+                # If percentage fee is involved (with or without fixed cost)
+                elif percentage_fee > 0:
+                    if product_fum > 0:  # Only count if there's valuation
+                        product_revenue = fixed_cost + (product_fum * (percentage_fee / 100))
+                        products_with_revenue += 1
+                    else:
+                        # Has percentage fee setup but no valuation - needs valuation
+                        needs_valuation = True
+                
+                total_client_revenue += product_revenue
+            
+            # Calculate percentage of total company revenue
+            revenue_percentage = 0
+            if total_company_revenue > 0:
+                revenue_percentage = (total_client_revenue / total_company_revenue) * 100
+            
+            # Determine revenue status for visual indicators
+            revenue_status = "complete"  # Green dot - has revenue setup and calculations complete
+            if not has_revenue_setup:
+                revenue_status = "no_setup"  # Red dot - no revenue information configured
+            elif needs_valuation:
+                revenue_status = "needs_valuation"  # Amber dot - has setup but needs latest valuation
+            
+            revenue_breakdown.append({
+                "id": client_id,
+                "name": client_name,
+                "status": client_group["status"],
+                "total_fum": total_client_fum,
+                "total_revenue": total_client_revenue,
+                "revenue_percentage_of_total": revenue_percentage,
+                "product_count": len(products_result.data),
+                "products_with_revenue": products_with_revenue,
+                "revenue_status": revenue_status
+            })
+        
+        # Sort by total revenue (descending)
+        revenue_breakdown.sort(key=lambda x: x["total_revenue"], reverse=True)
+        
+        logger.info(f"Generated revenue breakdown for {len(revenue_breakdown)} client groups. Total company revenue: £{total_company_revenue:,.2f}")
+        
+        return revenue_breakdown
+        
+    except Exception as e:
+        logger.error(f"Error calculating client group revenue breakdown: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error calculating revenue breakdown: {str(e)}") 
+
+import hashlib
+import json
+
+# Simple in-memory cache
+_revenue_cache = {
+    "data": None,
+    "hash": None,
+    "timestamp": None
+}
+
+@router.get("/revenue-rate-analytics")
+async def get_revenue_rate_analytics(db = Depends(get_db)):
+    """
+    Calculate revenue rate only for 'complete' client groups.
+    Complete = has at least one revenue product AND all revenue products have latest valuations.
+    
+    Returns:
+    - total_revenue: Sum of revenue from complete client groups
+    - total_fum: Sum of FUM from complete client groups  
+    - revenue_rate_percentage: (total_revenue / total_fum) * 100
+    - complete_client_groups_count: Number of complete client groups
+    - total_client_groups: Total number of active client groups
+    """
+    try:
+        logger.info("Calculating revenue rate analytics for complete client groups only")
+        
+        # Get a hash of all revenue-relevant data to check if recalculation is needed
+        # Get all active client products with revenue configuration
+        products_for_hash = db.table("client_products")\
+            .select("id, client_id, fixed_cost, percentage_fee, portfolio_id, status")\
+            .eq("status", "active")\
+            .execute()
+        
+        # Get all latest valuations
+        valuations_for_hash = db.table("latest_portfolio_fund_valuations")\
+            .select("portfolio_fund_id, valuation, valuation_date")\
+            .execute()
+        
+        # Create hash of the revenue-relevant data
+        hash_data = {
+            "products": products_for_hash.data,
+            "valuations": valuations_for_hash.data
+        }
+        revenue_data_str = json.dumps(hash_data, sort_keys=True, default=str)
+        current_hash = hashlib.md5(revenue_data_str.encode()).hexdigest()
+        
+        # Check if we can use cached result
+        if (_revenue_cache["hash"] == current_hash and 
+            _revenue_cache["data"] is not None):
+            logger.info(f"Using cached revenue rate analytics (hash: {current_hash[:8]}...)")
+            return _revenue_cache["data"]
+        
+        logger.info(f"Revenue data changed, recalculating (new hash: {current_hash[:8]}...)")
+        
+        # Get all active client groups
+        client_groups_result = db.table("client_groups").select("id, name, status").eq("status", "active").execute()
+        
+        if not client_groups_result.data:
+            logger.warning("No active client groups found")
+            return {
+                "total_revenue": 0,
+                "total_fum": 0,
+                "revenue_rate_percentage": 0,
+                "complete_client_groups_count": 0,
+                "total_client_groups": 0
+            }
+        
+        total_client_groups = len(client_groups_result.data)
+        complete_client_groups = []
+        total_revenue = 0
+        total_fum = 0
+        
+        for client_group in client_groups_result.data:
+            client_id = client_group["id"]
+            client_name = client_group["name"]
+            
+            # Get all active products for this client group
+            products_result = db.table("client_products")\
+                .select("id, fixed_cost, percentage_fee, portfolio_id")\
+                .eq("client_id", client_id)\
+                .eq("status", "active")\
+                .execute()
+            
+            if not products_result.data:
+                continue  # Skip client groups with no products
+            
+            # Find products with revenue configuration
+            revenue_products = []
+            for product in products_result.data:
+                fixed_cost = float(product.get("fixed_cost", 0) or 0)
+                percentage_fee = float(product.get("percentage_fee", 0) or 0)
+                
+                if fixed_cost > 0 or percentage_fee > 0:
+                    revenue_products.append(product)
+            
+            # Skip client groups with no revenue products
+            if len(revenue_products) == 0:
+                continue
+            
+            # Check if ALL revenue products have complete calculations (valuations available)
+            client_revenue = 0
+            all_complete = True
+            
+            # First, check revenue products for completeness and calculate revenue
+            for product in revenue_products:
+                fixed_cost = float(product.get("fixed_cost", 0) or 0)
+                percentage_fee = float(product.get("percentage_fee", 0) or 0)
+                portfolio_id = product.get("portfolio_id")
+                
+                # Calculate product FUM from portfolio valuations
+                product_fum = 0
+                if portfolio_id:
+                    # Get all active portfolio funds for this portfolio
+                    portfolio_funds_result = db.table("portfolio_funds")\
+                        .select("id")\
+                        .eq("portfolio_id", portfolio_id)\
+                        .eq("status", "active")\
+                        .execute()
+                    
+                    if portfolio_funds_result.data:
+                        # Get latest valuations for all portfolio funds
+                        fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
+                        
+                        for fund_id in fund_ids:
+                            valuation_result = db.table("latest_portfolio_fund_valuations")\
+                                .select("valuation")\
+                                .eq("portfolio_fund_id", fund_id)\
+                                .execute()
+                            
+                            if valuation_result.data and valuation_result.data[0]["valuation"]:
+                                product_fum += float(valuation_result.data[0]["valuation"])
+                
+                # Calculate product revenue
+                product_revenue = 0
+                
+                # If only fixed cost is set (no percentage fee)
+                if fixed_cost > 0 and percentage_fee == 0:
+                    product_revenue = fixed_cost
+                # If percentage fee is involved (with or without fixed cost)
+                elif percentage_fee > 0:
+                    if product_fum > 0:  # Only complete if there's valuation
+                        product_revenue = fixed_cost + (product_fum * (percentage_fee / 100))
+                    else:
+                        # Has percentage fee setup but no valuation - not complete
+                        all_complete = False
+                        break
+                
+                client_revenue += product_revenue
+            
+            # Only include this client group if ALL revenue products are complete
+            if all_complete:
+                # Now calculate total FUM from ALL products in the client group (not just revenue products)
+                client_total_fum = 0
+                for product in products_result.data:  # All products, not just revenue_products
+                    portfolio_id = product.get("portfolio_id")
+                    
+                    if portfolio_id:
+                        # Get all active portfolio funds for this portfolio
+                        portfolio_funds_result = db.table("portfolio_funds")\
+                            .select("id")\
+                            .eq("portfolio_id", portfolio_id)\
+                            .eq("status", "active")\
+                            .execute()
+                        
+                        if portfolio_funds_result.data:
+                            # Get latest valuations for all portfolio funds
+                            fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
+                            
+                            for fund_id in fund_ids:
+                                valuation_result = db.table("latest_portfolio_fund_valuations")\
+                                    .select("valuation")\
+                                    .eq("portfolio_fund_id", fund_id)\
+                                    .execute()
+                                
+                                if valuation_result.data and valuation_result.data[0]["valuation"]:
+                                    client_total_fum += float(valuation_result.data[0]["valuation"])
+                
+                complete_client_groups.append({
+                    "id": client_id,
+                    "name": client_name,
+                    "revenue": client_revenue,
+                    "fum": client_total_fum
+                })
+                total_revenue += client_revenue
+                total_fum += client_total_fum
+                
+                # Debug logging
+                logger.info(f"INCLUDED Client Group '{client_name}': £{client_revenue:,.2f} revenue from {len(revenue_products)} revenue products, £{client_total_fum:,.2f} total FUM from {len(products_result.data)} total products")
+            else:
+                # Debug logging for excluded groups
+                logger.info(f"EXCLUDED Client Group '{client_name}': {len(revenue_products)} revenue products, but missing valuations for percentage fee products")
+        
+        # Calculate revenue rate percentage
+        revenue_rate_percentage = 0
+        if total_fum > 0:
+            revenue_rate_percentage = (total_revenue / total_fum) * 100
+        
+        result = {
+            "total_revenue": total_revenue,
+            "total_fum": total_fum,
+            "revenue_rate_percentage": revenue_rate_percentage,
+            "complete_client_groups_count": len(complete_client_groups),
+            "total_client_groups": total_client_groups
+        }
+        
+        logger.info(f"Revenue rate analytics: {len(complete_client_groups)}/{total_client_groups} complete client groups, "
+                   f"Rate: {revenue_rate_percentage:.2f}% (£{total_revenue:,.2f} / £{total_fum:,.2f})")
+        
+        # Cache the result
+        _revenue_cache["data"] = result
+        _revenue_cache["hash"] = current_hash
+        _revenue_cache["timestamp"] = datetime.now()
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error calculating revenue rate analytics: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error calculating revenue rate analytics: {str(e)}")
+
+@router.post("/revenue-rate-analytics/refresh")
+async def refresh_revenue_rate_cache():
+    """
+    Manually clear the revenue rate analytics cache to force recalculation on next request.
+    Useful when you know revenue data has changed and want immediate refresh.
+    """
+    global _revenue_cache
+    _revenue_cache = {
+        "data": None,
+        "hash": None,
+        "timestamp": None
+    }
+    logger.info("Revenue rate analytics cache cleared manually")
+    return {"message": "Cache cleared successfully", "status": "success"}
