@@ -497,6 +497,7 @@ async def calculate_portfolio_irr(
         4. Returns a summary of the calculation results
     Expected output: A JSON object with the calculation results summary
     """
+    logger.info(f"🔍 DEBUG: calculate_portfolio_irr CALLED for portfolio {portfolio_id}")
     try:
         # Check if portfolio exists
         portfolio_result = db.table("portfolios").select("*").eq("id", portfolio_id).execute()

@@ -309,6 +309,7 @@ export const deleteFundValuation = (valuationId: number) => {
  * @returns {Promise} - API response with calculation results
  */
 export const calculatePortfolioIRR = (portfolioId: number) => {
+  console.log(`🔍 DEBUG: API calling POST portfolios/${portfolioId}/calculate-irr`);
   return api.post(`portfolios/${portfolioId}/calculate-irr`);
 };
 

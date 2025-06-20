@@ -726,6 +726,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
   // NEW: Enhanced save logic that preserves existing data
   const saveChangesWithPreservation = async () => {
+    console.log(`🔍 DEBUG: saveChangesWithPreservation called with ${pendingEdits.length} pending edits`);
+    
     if (pendingEdits.length === 0) return;
 
     setIsSubmitting(true);
@@ -803,19 +805,25 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       console.log('Triggering IRR recalculation for affected funds...');
       const affectedFundIds = [...new Set(pendingEdits.map(edit => edit.fundId))];
       
+      console.log(`🔍 DEBUG: portfolioId = ${portfolioId}, affectedFundIds = [${affectedFundIds.join(', ')}], pendingEdits.length = ${pendingEdits.length}`);
+      
       if (portfolioId && affectedFundIds.length > 0) {
         try {
           // Trigger portfolio-level IRR recalculation since activities were updated
-          console.log(`Triggering portfolio IRR recalculation for portfolio ${portfolioId}`);
+          console.log(`🔍 DEBUG: About to call calculatePortfolioIRR for portfolio ${portfolioId}`);
           await calculatePortfolioIRR(portfolioId);
-          console.log(`Portfolio IRR recalculation completed for portfolio ${portfolioId}`);
+          console.log(`🔍 DEBUG: Portfolio IRR recalculation completed successfully for portfolio ${portfolioId}`);
         } catch (irrError) {
-          console.warn(`Failed to trigger portfolio IRR recalculation for portfolio ${portfolioId}:`, irrError);
+          console.error(`🔍 DEBUG: Failed to trigger portfolio IRR recalculation for portfolio ${portfolioId}:`, irrError);
           // Don't fail the entire save operation if IRR recalculation fails
         }
       } else if (!portfolioId) {
-        console.warn('Portfolio ID not available for IRR recalculation');
+        console.warn('🔍 DEBUG: Portfolio ID not available for IRR recalculation');
+      } else if (affectedFundIds.length === 0) {
+        console.warn('🔍 DEBUG: No affected fund IDs found for IRR recalculation');
       }
+      
+      console.log('🔍 DEBUG: About to clear pending edits and call onActivitiesUpdated');
       
       // Clear pending edits and refresh data
       setPendingEdits([]);
