@@ -1460,6 +1460,7 @@ const ReportGenerator: React.FC = () => {
               }
               
               console.log('🚀 Calculating Previous Funds IRR for fund IDs:', inactiveFundIds, 'with date:', formattedDate);
+              console.log('🔍 DEBUG: ReportGenerator.tsx calling IRR with inactive fund IDs:', inactiveFundIds);
               
               const irrResponse = await calculateStandardizedMultipleFundsIRR({
                 portfolioFundIds: inactiveFundIds,

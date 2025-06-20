@@ -224,6 +224,12 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
         // Get portfolio funds from the complete data (includes fund names)
         const portfolioFunds = completeData.portfolio_funds || [];
         
+        // 🔍 DEBUG: Log all portfolio funds from API
+        console.log('🔍 DEBUG: ProductIRRHistory all portfolio funds from API:');
+        portfolioFunds.forEach((pf: any, index: number) => {
+          console.log(`🔍 DEBUG: ProductIRRHistory Fund ${index + 1}: ID=${pf.id}, Name=${pf.fund_name}, Status=${pf.status || 'active'}`);
+        });
+        
         if (portfolioFunds.length === 0) {
           console.warn('No portfolio funds found for this portfolio');
           setHoldings([]);
@@ -294,6 +300,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
         // Calculate portfolio IRR for each common date
         const portfolioIRRResults: {[monthYear: string]: number} = {};
         const portfolioFundIds = portfolioFunds.map((pf: any) => pf.id);
+        console.log('🔍 DEBUG: ProductIRRHistory portfolioFundIds being sent to IRR API:', portfolioFundIds);
         
         // Limit to last 24 months for performance
         const recentDates = commonDates.slice(0, 24);

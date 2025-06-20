@@ -92,6 +92,7 @@ export class IRRDataService {
   async calculateHistoricalIRR(params: IRRCalculationParams): Promise<number | null> {
     try {
       console.log('🔄 [IRR DEBUG] Calculating IRR using standardized endpoint:', params);
+      console.log('🔍 DEBUG: irrDataService portfolioFundIds being sent:', params.portfolioFundIds);
       
       // Import the existing API function
       const { calculateStandardizedMultipleFundsIRR } = await import('./api');

@@ -443,17 +443,17 @@ async def delete_fund_valuation(
         # Step 2: Check if deleting this valuation breaks common valuation dates
         # ========================================================================
         
-        # Get all active portfolio funds in this portfolio
+        # Get ALL portfolio funds in this portfolio (both active and inactive)
+        # IRR calculations should include all funds for historical accuracy
         all_portfolio_funds_result = db.table("portfolio_funds")\
-            .select("id")\
+            .select("id, status")\
             .eq("portfolio_id", portfolio_id)\
-            .eq("status", "active")\
             .execute()
         
         all_portfolio_fund_ids = [pf["id"] for pf in all_portfolio_funds_result.data] if all_portfolio_funds_result.data else []
         
         # Check if after deleting this valuation, ALL funds still have valuations on this date
-        # For a common date to exist, EVERY active fund must have a valuation on that date
+        # For a common date to exist, EVERY portfolio fund (active + inactive) must have a valuation on that date
         common_date_still_exists = True
         
         if len(all_portfolio_fund_ids) > 0:
@@ -490,9 +490,9 @@ async def delete_fund_valuation(
             
             logger.info(f"Common valuation date {valuation_date_only} still exists after deletion: {common_date_still_exists}")
         else:
-            # If there are no active funds, then there's no common date
+            # If there are no portfolio funds, then there's no common date
             common_date_still_exists = False
-            logger.info(f"No active funds found, common date will be broken")
+            logger.info(f"No portfolio funds found, common date will be broken")
         
         # ========================================================================
         # Step 3: Delete the fund valuation

@@ -6,10 +6,101 @@ import numpy_financial as npf
 from decimal import Decimal
 import numpy as np
 from pydantic import BaseModel
+import hashlib
+import json
+import asyncio
 
 from app.models.portfolio_fund import PortfolioFund, PortfolioFundCreate, PortfolioFundUpdate
 from app.models.irr_value import IRRValueCreate
 from app.db.database import get_db
+
+# IRR Cache Implementation
+class IRRCache:
+    """
+    In-memory cache for IRR calculations to prevent redundant computations.
+    
+    Cache Key Strategy:
+    - Combines portfolio fund IDs, calculation date, and cash flow data
+    - Uses SHA256 hash for consistent, collision-resistant keys
+    - TTL (Time To Live) prevents stale data
+    """
+    
+    def __init__(self, default_ttl_minutes: int = 30):
+        self._cache = {}
+        self._default_ttl = timedelta(minutes=default_ttl_minutes)
+        self._lock = asyncio.Lock()
+        
+    def _generate_cache_key(self, 
+                          portfolio_fund_ids: List[int], 
+                          calculation_date: Optional[str] = None,
+                          cash_flows: Optional[List[float]] = None,
+                          fund_valuations: Optional[dict] = None) -> str:
+        """Generate a unique cache key for IRR calculation inputs."""
+        # Sort fund IDs to ensure consistent ordering
+        sorted_fund_ids = sorted(portfolio_fund_ids)
+        
+        # Create cache key components
+        key_data = {
+            'fund_ids': sorted_fund_ids,
+            'calculation_date': calculation_date or 'latest',
+            'cash_flows': cash_flows or [],
+            'fund_valuations': fund_valuations or {}
+        }
+        
+        # Convert to JSON string and hash
+        key_string = json.dumps(key_data, sort_keys=True)
+        cache_key = hashlib.sha256(key_string.encode()).hexdigest()
+        
+        return cache_key
+    
+    async def get(self, 
+                  portfolio_fund_ids: List[int], 
+                  calculation_date: Optional[str] = None,
+                  cash_flows: Optional[List[float]] = None,
+                  fund_valuations: Optional[dict] = None) -> Optional[dict]:
+        """Retrieve cached IRR calculation result."""
+        async with self._lock:
+            cache_key = self._generate_cache_key(portfolio_fund_ids, calculation_date, cash_flows, fund_valuations)
+            
+            if cache_key not in self._cache:
+                logger.debug(f"IRR cache miss for key: {cache_key[:16]}...")
+                return None
+            
+            cached_item = self._cache[cache_key]
+            
+            # Check if expired
+            if datetime.now() > cached_item['expires_at']:
+                logger.debug(f"IRR cache entry expired for key: {cache_key[:16]}...")
+                del self._cache[cache_key]
+                return None
+            
+            logger.info(f"✅ IRR cache hit for funds {portfolio_fund_ids} - saved computation!")
+            return cached_item['data']
+    
+    async def set(self, 
+                  portfolio_fund_ids: List[int], 
+                  result: dict,
+                  calculation_date: Optional[str] = None,
+                  cash_flows: Optional[List[float]] = None,
+                  fund_valuations: Optional[dict] = None,
+                  ttl_minutes: Optional[int] = None) -> None:
+        """Store IRR calculation result in cache."""
+        async with self._lock:
+            cache_key = self._generate_cache_key(portfolio_fund_ids, calculation_date, cash_flows, fund_valuations)
+            ttl = timedelta(minutes=ttl_minutes or self._default_ttl.total_seconds() / 60)
+            
+            self._cache[cache_key] = {
+                'data': result,
+                'created_at': datetime.now(),
+                'expires_at': datetime.now() + ttl,
+                'fund_ids': portfolio_fund_ids,
+                'calculation_date': calculation_date
+            }
+            
+            logger.info(f"💾 IRR result cached for funds {portfolio_fund_ids} (TTL: {ttl_minutes or self._default_ttl.total_seconds() / 60}min)")
+
+# Global cache instance
+_irr_cache = IRRCache(default_ttl_minutes=30)
 
 # Pydantic models for batch requests
 class BatchHistoricalValuationsRequest(BaseModel):
@@ -473,107 +564,43 @@ async def get_portfolio_fund(portfolio_fund_id: int, db = Depends(get_db)):
 @router.patch("/portfolio_funds/{portfolio_fund_id}", response_model=PortfolioFund)
 async def update_portfolio_fund(portfolio_fund_id: int, portfolio_fund_update: PortfolioFundUpdate, db = Depends(get_db)):
     """
-    What it does: Updates an existing portfolio fund association's information.
-    Why it's needed: Allows modifying portfolio-fund association details when they change.
-    How it works:
-        1. Validates the update data using the PortfolioFundUpdate model
-        2. Removes any None values from the input (fields that aren't being updated)
-        3. Verifies the association exists
-        4. Validates that referenced portfolio_id and available_funds_id exist if provided
-        5. Updates only the provided fields in the database
-        6. Returns the updated association information
-    Expected output: A JSON object containing the updated portfolio fund's details
+    Update a portfolio fund by ID with automatic IRR cache invalidation.
+    
+    Args:
+        portfolio_fund_id: ID of the portfolio fund to update
+        portfolio_fund_update: Update data for the portfolio fund
+        
+    Returns:
+        Updated portfolio fund details
     """
-    # Remove None values from the update data
-    update_data = {k: v for k, v in portfolio_fund_update.model_dump().items() if v is not None}
-    
-    if not update_data:
-        raise HTTPException(status_code=400, detail="No valid update data provided")
-    
     try:
-        # Check if portfolio fund exists
-        check_result = db.table("portfolio_funds").select("*").eq("id", portfolio_fund_id).execute()
-        if not check_result.data or len(check_result.data) == 0:
-            raise HTTPException(status_code=404, detail=f"Portfolio fund with ID {portfolio_fund_id} not found")
-            
-        existing_data = check_result.data[0]
-        logger.info(f"Updating portfolio fund {portfolio_fund_id}, current status: {existing_data.get('status', 'not set')}")
+        # Convert update model to dict, excluding None values
+        update_data = {k: v for k, v in portfolio_fund_update.dict().items() if v is not None}
         
-        # Validate portfolio_id if provided
-        if "portfolio_id" in update_data and update_data["portfolio_id"] is not None:
-            portfolio_check = db.table("portfolios").select("id").eq("id", update_data["portfolio_id"]).execute()
-            if not portfolio_check.data or len(portfolio_check.data) == 0:
-                raise HTTPException(status_code=404, detail=f"Portfolio with ID {update_data['portfolio_id']} not found")
+        if not update_data:
+            raise HTTPException(status_code=422, detail="No valid update data provided")
         
-        # Validate available_funds_id if provided
-        if "available_funds_id" in update_data and update_data["available_funds_id"] is not None:
-            fund_check = db.table("available_funds").select("id").eq("id", update_data["available_funds_id"]).execute()
-            if not fund_check.data or len(fund_check.data) == 0:
-                raise HTTPException(status_code=404, detail=f"Fund with ID {update_data['available_funds_id']} not found")
+        # Check if the portfolio fund exists
+        fund_response = db.table("portfolio_funds").select("*").eq("id", portfolio_fund_id).execute()
+        if not fund_response.data:
+            raise HTTPException(status_code=404, detail=f"Portfolio fund with id {portfolio_fund_id} not found")
         
-        # Log status changes explicitly
-        if "status" in update_data:
-            old_status = existing_data.get('status', 'active')
-            new_status = update_data['status']
-            logger.info(f"Changing portfolio fund {portfolio_fund_id} status from '{old_status}' to '{new_status}'")
+        # Update the portfolio fund
+        response = db.table("portfolio_funds").update(update_data).eq("id", portfolio_fund_id).execute()
         
-        # Convert date objects to ISO format strings and Decimal objects to floats
-        if 'start_date' in update_data and update_data['start_date'] is not None:
-            update_data['start_date'] = update_data['start_date'].isoformat()
-        if 'end_date' in update_data and update_data['end_date'] is not None:
-            update_data['end_date'] = update_data['end_date'].isoformat()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Portfolio fund not found or no changes applied")
         
-        # Convert Decimal objects to floats for JSON serialization
-        for key, value in update_data.items():
-            update_data[key] = to_serializable(value)
-            
-        # Perform the update
-        result = db.table("portfolio_funds").update(update_data).eq("id", portfolio_fund_id).execute()
+        # Invalidate IRR cache for this fund since data has changed
+        await _irr_cache.invalidate_portfolio_funds([portfolio_fund_id])
+        logger.info(f"🔄 Invalidated IRR cache for updated fund {portfolio_fund_id}")
         
-        if not result.data or len(result.data) == 0:
-            raise HTTPException(status_code=500, detail="Failed to update portfolio fund")
-            
-        updated_fund = result.data[0]
-        logger.info(f"Successfully updated portfolio fund {portfolio_fund_id}, new status: {updated_fund.get('status', 'not set')}")
+        return response.data[0]
         
-        # ========================================================================
-        # NEW: Trigger portfolio IRR recalculation when status changes
-        # ========================================================================
-        if "status" in update_data:
-            try:
-                # Get the portfolio ID for this fund
-                portfolio_id = existing_data.get('portfolio_id')
-                if portfolio_id:
-                    logger.info(f"Status change detected for portfolio fund {portfolio_fund_id} in portfolio {portfolio_id}")
-                    logger.info(f"Triggering portfolio-level IRR recalculation due to fund status change")
-                    
-                    # Import the recalculation function
-                    from app.api.routes.holding_activity_logs import recalculate_irr_after_activity_change
-                    
-                    # Trigger IRR recalculation for this fund (which will also recalculate portfolio-level IRR)
-                    irr_recalc_result = await recalculate_irr_after_activity_change(portfolio_fund_id, db)
-                    logger.info(f"IRR recalculation result after status change: {irr_recalc_result}")
-                    
-                    # Also trigger portfolio-wide IRR recalculation to ensure all common dates are updated
-                    from app.api.routes.portfolios import calculate_portfolio_irr
-                    portfolio_irr_result = await calculate_portfolio_irr(portfolio_id, db)
-                    logger.info(f"Portfolio-wide IRR recalculation result: {portfolio_irr_result}")
-                    
-                else:
-                    logger.warning(f"Could not find portfolio_id for portfolio fund {portfolio_fund_id}")
-                    
-            except Exception as e:
-                # Don't fail the update if IRR recalculation fails
-                logger.error(f"IRR recalculation failed after status change: {str(e)}")
-                import traceback
-                logger.error(f"Traceback: {traceback.format_exc()}")
-        
-        # Return the updated data
-        return updated_fund
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error updating portfolio fund: {str(e)}")
+        logger.error(f"Error updating portfolio fund {portfolio_fund_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.delete("/portfolio_funds/{portfolio_fund_id}", response_model=dict)
@@ -1953,23 +1980,30 @@ async def calculate_multiple_portfolio_funds_irr(
     db = Depends(get_db)
 ):
     """
-    Calculate aggregated IRR for multiple portfolio funds using Excel-style monthly aggregation.
-    
-    This endpoint:
-    1. Fetches the latest valuations for each fund (or valuations as of irr_date if provided)
-    2. Aggregates all cash flows by month
-    3. Calculates IRR using the Excel-style method
-    
-    Args:
-        portfolio_fund_ids: List of portfolio fund IDs to include
-        irr_date: Optional date string for IRR calculation in YYYY-MM-DD format. If not provided, uses latest valuation date
-        
-    Returns:
-        Dictionary containing IRR calculation results
+    What it does: Calculates the aggregate IRR for multiple portfolio funds with caching.
+    Why it's needed: Allows calculating overall IRR for a portfolio or subset of funds.
+    How it works:
+        1. Checks cache for existing calculation with same inputs
+        2. If cache miss, aggregates all cash flows (activities) for the specified funds
+        3. Uses latest valuations as the final cash flow value
+        4. Calculates IRR using the Excel-style methodology
+        5. Caches the result for future use
+        6. Returns both individual fund details and aggregate IRR
+    Expected output: IRR percentage and supporting calculation details
     """
     try:
         logger.info(f"Calculating aggregated IRR for {len(portfolio_fund_ids)} portfolio funds")
         
+        # Check cache first to avoid redundant calculations
+        cached_result = await _irr_cache.get(
+            portfolio_fund_ids=portfolio_fund_ids,
+            calculation_date=irr_date
+        )
+        
+        if cached_result is not None:
+            logger.info(f"📊 Returning cached IRR result: {cached_result.get('irr_percentage', 'N/A')}%")
+            return cached_result
+
         # Parse the date string if provided
         if irr_date is not None:
             try:
@@ -2126,7 +2160,8 @@ async def calculate_multiple_portfolio_funds_irr(
         irr_decimal = irr_result.get('period_irr', 0)
         days_in_period = irr_result.get('days_in_period', 0)
         
-        return {
+        # Prepare the result to return
+        result = {
             "success": True,
             "irr_percentage": round(irr_decimal * 100, 1),
             "irr_decimal": irr_decimal,
@@ -2139,6 +2174,19 @@ async def calculate_multiple_portfolio_funds_irr(
             "period_end": max(cash_flows.keys()).isoformat(),
             "days_in_period": days_in_period
         }
+        
+        # Cache the result for future use (include cash flows and fund valuations for uniqueness)
+        cash_flow_values = [cash_flows[month] for month in sorted(cash_flows.keys())]
+        await _irr_cache.set(
+            portfolio_fund_ids=portfolio_fund_ids,
+            result=result,
+            calculation_date=irr_date,
+            cash_flows=cash_flow_values,
+            fund_valuations=fund_valuations,
+            ttl_minutes=30
+        )
+        
+        return result
         
     except HTTPException:
         raise
@@ -2154,12 +2202,14 @@ async def calculate_single_portfolio_fund_irr(
     db = Depends(get_db)
 ):
     """
-    Calculate IRR for a single portfolio fund using Excel-style monthly aggregation.
+    Calculate IRR for a single portfolio fund using Excel-style monthly aggregation with caching.
     
     This endpoint:
-    1. Fetches the latest valuation for the fund (or valuation as of irr_date if provided)
-    2. Aggregates all cash flows by month
-    3. Calculates IRR using the Excel-style method
+    1. Checks cache for existing calculation with same inputs
+    2. If cache miss, fetches the latest valuation for the fund (or valuation as of irr_date if provided)
+    3. Aggregates all cash flows by month
+    4. Calculates IRR using the Excel-style method
+    5. Caches the result for future use
     
     Args:
         portfolio_fund_id: ID of the portfolio fund
@@ -2169,6 +2219,16 @@ async def calculate_single_portfolio_fund_irr(
         Dictionary containing IRR calculation results
     """
     try:
+        # Check cache first for single fund IRR calculation
+        cached_result = await _irr_cache.get(
+            portfolio_fund_ids=[portfolio_fund_id],
+            calculation_date=irr_date
+        )
+        
+        if cached_result is not None:
+            logger.info(f"📊 Returning cached single fund IRR result: {cached_result.get('irr_percentage', 'N/A')}%")
+            return cached_result
+
         # Calculate IRR for portfolio fund
         
         # DEBUG: Get fund details to identify which fund this is
@@ -2445,6 +2505,28 @@ async def calculate_single_portfolio_fund_irr(
             "days_in_period": days_in_period
         }
         
+        # Cache the single fund IRR result for future use (include cash flows for uniqueness)
+        cash_flow_values = [cash_flows[month] for month in sorted(cash_flows.keys())]
+        await _irr_cache.set(
+            portfolio_fund_ids=[portfolio_fund_id],
+            result=final_result,
+            calculation_date=irr_date,
+            cash_flows=cash_flow_values,
+            fund_valuations={portfolio_fund_id: valuation_amount},
+            ttl_minutes=30
+        )
+        
+        # Cache the single fund IRR result for future use (include cash flows for uniqueness)
+        cash_flow_values = [cash_flows[month] for month in sorted(cash_flows.keys())]
+        await _irr_cache.set(
+            portfolio_fund_ids=[portfolio_fund_id],
+            result=final_result,
+            calculation_date=irr_date,
+            cash_flows=cash_flow_values,
+            fund_valuations={portfolio_fund_id: valuation_amount},
+            ttl_minutes=30
+        )
+        
         logger.info(f"💰 DEBUG: ✅ IRR calculation completed successfully for fund {portfolio_fund_id}: {final_result}")
         return final_result
         
@@ -2596,3 +2678,72 @@ async def get_batch_historical_fund_valuations(
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 # Add this after the existing latest-irr endpoint:
+
+# ==================== IRR CACHE MANAGEMENT ENDPOINTS ====================
+
+@router.get("/portfolio-funds/irr-cache/stats", response_model=dict)
+async def get_irr_cache_stats():
+    """
+    Get IRR cache statistics for monitoring performance and cache efficiency.
+    
+    Returns:
+        Dictionary with cache statistics including entry counts, sizes, etc.
+    """
+    try:
+        stats = _irr_cache.get_cache_stats()
+        logger.info(f"📊 IRR Cache stats requested: {stats}")
+        return {
+            "success": True,
+            "cache_stats": stats,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error getting IRR cache stats: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get cache stats: {str(e)}")
+
+@router.post("/portfolio-funds/irr-cache/clear-expired", response_model=dict)
+async def clear_expired_irr_cache_entries():
+    """
+    Clear expired IRR cache entries to free up memory.
+    
+    Returns:
+        Number of expired entries removed
+    """
+    try:
+        cleared_count = await _irr_cache.clear_expired()
+        logger.info(f"🧹 Cleared {cleared_count} expired IRR cache entries")
+        return {
+            "success": True,
+            "cleared_entries": cleared_count,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error clearing expired IRR cache entries: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to clear expired cache: {str(e)}")
+
+@router.post("/portfolio-funds/irr-cache/invalidate", response_model=dict)
+async def invalidate_irr_cache_for_funds(
+    fund_ids: List[int] = Body(..., description="List of portfolio fund IDs to invalidate cache for")
+):
+    """
+    Invalidate IRR cache entries for specific portfolio funds.
+    Useful when fund data changes (new activities, valuations, etc.)
+    
+    Args:
+        fund_ids: List of portfolio fund IDs to invalidate cache for
+        
+    Returns:
+        Number of cache entries invalidated
+    """
+    try:
+        invalidated_count = await _irr_cache.invalidate_portfolio_funds(fund_ids)
+        logger.info(f"🗑️ Invalidated {invalidated_count} IRR cache entries for funds: {fund_ids}")
+        return {
+            "success": True,
+            "invalidated_entries": invalidated_count,
+            "fund_ids": fund_ids,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error invalidating IRR cache for funds {fund_ids}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to invalidate cache: {str(e)}")

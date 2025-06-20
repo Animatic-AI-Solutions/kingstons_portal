@@ -528,6 +528,9 @@ export const calculateStandardizedMultipleFundsIRR = (params: {
   portfolioFundIds: number[];
   irrDate?: string;
 }) => {
+  console.log('🔍 DEBUG: api.ts calculateStandardizedMultipleFundsIRR called with:', params);
+  console.log('🔍 DEBUG: portfolioFundIds being sent to backend:', params.portfolioFundIds);
+  
   return api.post('portfolio_funds/multiple/irr', {
     portfolio_fund_ids: params.portfolioFundIds,
     irr_date: params.irrDate || null

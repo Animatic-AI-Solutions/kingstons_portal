@@ -1189,8 +1189,6 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     
     // ALSO include activities from inactive funds (for totals calculation only)
     if (inactiveFundsForTotals && inactiveFundsForTotals.length > 0) {
-      console.log(`Including ${inactiveFundsForTotals.length} inactive funds in ${activityType} totals for ${month}`);
-      
       inactiveFundsForTotals.forEach(inactiveFund => {
         // Get activities for this inactive fund and month/activity type
         const inactiveFundActivities = activitiesState.filter(activity => 
@@ -1199,15 +1197,10 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           convertActivityTypeForBackend(activityType) === activity.activity_type
         );
         
-        if (inactiveFundActivities.length > 0) {
-          console.log(`Found ${inactiveFundActivities.length} ${activityType} activities for inactive fund ${inactiveFund.fund_name} in ${month}`);
-        }
-        
         // Sum up the activities for this inactive fund
         inactiveFundActivities.forEach(activity => {
           const numericValue = parseFloat(activity.amount);
           if (!isNaN(numericValue)) {
-            console.log(`Adding ${numericValue} from inactive fund ${inactiveFund.fund_name} to ${activityType} total for ${month}`);
             // Sign convention: + for money OUT of fund, - for money INTO fund
             // Money going INTO the fund (inflows) - negative sign
             if (activityType === 'Investment' || 

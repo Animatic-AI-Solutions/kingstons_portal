@@ -878,6 +878,14 @@ async def calculate_client_irr(client_id: int, db = Depends(get_db)):
                 .eq("portfolio_id", product["portfolio_id"])\
                 .execute()
                 
+            # DEBUG: Log fund counts for client IRR
+            logger.info(f"🔍 DEBUG: analytics.py client IRR calculation:")
+            logger.info(f"🔍 DEBUG: Product portfolio ID: {product['portfolio_id']}")
+            logger.info(f"🔍 DEBUG: Funds found for this portfolio: {len(portfolio_funds_result.data) if portfolio_funds_result.data else 0}")
+            if portfolio_funds_result.data:
+                fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
+                logger.info(f"🔍 DEBUG: Fund IDs: {fund_ids}")
+                
             if portfolio_funds_result.data:
                 portfolio_fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
                 all_portfolio_fund_ids.extend(portfolio_fund_ids)
@@ -957,6 +965,14 @@ async def calculate_product_irr(product_id: int, db = Depends(get_db)):
             .eq("portfolio_id", portfolio_id)\
             .execute()
             
+        # DEBUG: Log fund counts
+        logger.info(f"🔍 DEBUG: analytics.py product IRR calculation:")
+        logger.info(f"🔍 DEBUG: Portfolio ID: {portfolio_id}")
+        logger.info(f"🔍 DEBUG: Total funds found: {len(portfolio_funds_result.data) if portfolio_funds_result.data else 0}")
+        if portfolio_funds_result.data:
+            fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
+            logger.info(f"🔍 DEBUG: Fund IDs: {fund_ids}")
+        
         if not portfolio_funds_result.data:
             logger.info(f"No portfolio funds found for portfolio {portfolio_id}")
             return {

@@ -511,15 +511,15 @@ async def calculate_portfolio_irr(
         portfolio_funds = portfolio_funds_result.data
         logger.info(f"Found {len(portfolio_funds)} funds in portfolio {portfolio_id}")
         
-        # Debug: Log fund statuses to understand the filtering issue
+        # 🔍 DEBUG: Log fund statuses to understand the filtering issue
         active_funds = [f for f in portfolio_funds if f.get("status", "active") == "active"]
         inactive_funds = [f for f in portfolio_funds if f.get("status", "active") != "active"]
-        logger.info(f"Fund breakdown: {len(active_funds)} active, {len(inactive_funds)} inactive")
+        logger.info(f"🔍 DEBUG: calculate_portfolio_irr - Fund breakdown: {len(active_funds)} active, {len(inactive_funds)} inactive")
         for fund in portfolio_funds:
-            logger.info(f"  Fund {fund['id']}: status = {fund.get('status', 'active')}")
+            logger.info(f"🔍 DEBUG: calculate_portfolio_irr - Fund {fund['id']}: status = {fund.get('status', 'active')}")
         
-        # Get the most recent valuation date that exists for ACTIVE portfolio funds
-        # Include ALL funds (active and inactive) but assume inactive funds have zero valuation
+        # Get the most recent valuation date that exists for ALL portfolio funds
+        # Include ALL funds (active and inactive) for historical accuracy
         all_fund_data = []
         active_funds_with_valuations = []
         
@@ -756,13 +756,20 @@ async def calculate_portfolio_irr(
             active_fund_ids = [pf["id"] for pf in portfolio_funds if pf.get("status", "active") == "active"]
             inactive_fund_ids = [pf["id"] for pf in portfolio_funds if pf.get("status", "active") != "active"]
             
+            # DEBUG: Log fund counts and IDs
+            logger.info(f"🔍 DEBUG: Portfolio {portfolio_id} fund analysis:")
+            logger.info(f"🔍 DEBUG: Total portfolio_funds from query: {len(portfolio_funds)}")
+            logger.info(f"🔍 DEBUG: all_fund_ids: {all_fund_ids}")
+            logger.info(f"🔍 DEBUG: active_fund_ids: {active_fund_ids}")
+            logger.info(f"🔍 DEBUG: inactive_fund_ids: {inactive_fund_ids}")
+            
             # Also get fund IDs that have valuations (for portfolio valuation calculation)
             funds_with_valuations = [fd["portfolio_fund_id"] for fd in most_recent_valuation_dates]
             
-            # UPDATED LOGIC: Use ONLY ACTIVE funds for both valuation AND IRR calculation
-            # This ensures consistency - when a fund is deactivated, it's excluded from current portfolio calculations
+            # UPDATED LOGIC: Use ONLY ACTIVE funds for valuation, but ALL funds for IRR calculation
+            # Portfolio valuation reflects current active holdings, while IRR includes historical accuracy
             
-            if active_fund_ids:
+            if all_fund_ids:
                 # Calculate total portfolio value using ONLY ACTIVE funds (for current valuation)
                 total_portfolio_value = 0.0
                 for fund_data in most_recent_valuation_dates:
@@ -801,18 +808,22 @@ async def calculate_portfolio_irr(
                     portfolio_valuation_id = portfolio_valuation_result.data[0]["id"] if portfolio_valuation_result.data else None
                     logger.info(f"Created new portfolio valuation for {portfolio_id}")
                 
-                # Step 3: Calculate portfolio-level IRR using ONLY ACTIVE funds for consistency
-                logger.info(f"Calculating portfolio IRR using ONLY ACTIVE funds for consistency: {len(active_fund_ids)} funds")
+                # Step 3: Calculate portfolio-level IRR using ALL funds (active + inactive) for historical accuracy
+                logger.info(f"🔍 DEBUG: Calculating portfolio IRR using ALL funds (active + inactive) for historical accuracy: {len(all_fund_ids)} funds")
+                logger.info(f"🔍 DEBUG: all_fund_ids contains: {all_fund_ids}")
+                logger.info(f"🔍 DEBUG: About to call calculate_multiple_portfolio_funds_irr with fund IDs: {all_fund_ids}")
                 
                 portfolio_irr_response = await calculate_multiple_portfolio_funds_irr(
-                    portfolio_fund_ids=active_fund_ids,  # Use ONLY active funds for consistency
+                    portfolio_fund_ids=all_fund_ids,  # Use ALL funds (active + inactive) for historical accuracy
                     irr_date=common_date_iso.split('T')[0],  # Convert to YYYY-MM-DD format
                     db=db
                 )
                 
+                logger.info(f"🔍 DEBUG: calculate_multiple_portfolio_funds_irr returned: {portfolio_irr_response}")
+                
                 if portfolio_irr_response.get("success"):
                     portfolio_irr_percentage = portfolio_irr_response.get("irr_percentage", 0.0)
-                    logger.info(f"Portfolio IRR calculated (active funds only): {portfolio_irr_percentage}%")
+                    logger.info(f"Portfolio IRR calculated (all funds): {portfolio_irr_percentage}%")
                     
                     # Step 4: Store portfolio IRR value
                     portfolio_irr_data = {
@@ -848,7 +859,7 @@ async def calculate_portfolio_irr(
                 else:
                     logger.warning(f"Portfolio IRR calculation failed: {portfolio_irr_response}")
             else:
-                logger.warning("No active funds found for portfolio-level calculations")
+                logger.warning("No funds found for portfolio-level calculations")
         
         except Exception as e:
             logger.error(f"Error calculating portfolio-level valuation and IRR: {str(e)}")
@@ -1248,6 +1259,15 @@ async def get_complete_portfolio(
             .eq("portfolio_id", portfolio_id)\
             .execute()
         
+        # 🔍 DEBUG: Log all portfolio funds from database
+        logger.info(f"🔍 DEBUG: get_complete_portfolio for portfolio {portfolio_id}")
+        if portfolio_funds_result.data:
+            logger.info(f"🔍 DEBUG: Found {len(portfolio_funds_result.data)} portfolio funds:")
+            for i, pf in enumerate(portfolio_funds_result.data):
+                logger.info(f"🔍 DEBUG: Fund {i+1}: ID={pf.get('id')}, AvailableFundID={pf.get('available_funds_id')}, Status={pf.get('status', 'active')}")
+        else:
+            logger.info("🔍 DEBUG: No portfolio funds found")
+        
         if not portfolio_funds_result.data:
             # Return portfolio data even if no funds
             return {
@@ -1328,6 +1348,11 @@ async def get_complete_portfolio(
             "valuations_map": valuations_lookup,
             "irr_map": irr_lookup
         }
+        
+        # 🔍 DEBUG: Log final response portfolio_funds
+        logger.info(f"🔍 DEBUG: Final response contains {len(portfolio_funds)} portfolio_funds:")
+        for i, pf in enumerate(portfolio_funds):
+            logger.info(f"🔍 DEBUG: Response Fund {i+1}: ID={pf.get('id')}, Name={pf.get('fund_name')}, Status={pf.get('status', 'active')}")
         
         return response
     except HTTPException:

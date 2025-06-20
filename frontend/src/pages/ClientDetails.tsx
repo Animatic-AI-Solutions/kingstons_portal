@@ -129,6 +129,7 @@ const PreviousFundsIRRDisplay: React.FC<{ inactiveFundIds: number[] }> = ({ inac
       try {
         console.log(`Calculating live Previous Funds IRR for ${inactiveFundIds.length} inactive funds`);
         console.log('Inactive fund IDs for live calculation:', inactiveFundIds);
+        console.log('🔍 DEBUG: ClientDetails.tsx calling IRR with inactive fund IDs:', inactiveFundIds);
         
         // Use the standardized multiple IRR endpoint with £0 valuation handling
         const response = await calculateStandardizedMultipleFundsIRR({
