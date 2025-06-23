@@ -443,6 +443,35 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     if (pendingEdit) {
       return pendingEdit.value;
     }
+
+    // Check if this is the "Previous Funds" virtual entry
+    const fund = funds.find(f => f.id === fundId);
+    if (fund && fund.isActive === false && fund.inactiveHoldingIds && !fund.isInactiveBreakdown) {
+      // This is the "Previous Funds" virtual entry - calculate sum of all inactive funds
+      let total = 0;
+      
+      if (activityType === 'Current Value') {
+        // For Current Value, sum up valuations from all inactive funds
+        fund.inactiveHoldingIds.forEach(inactiveHolding => {
+          const valuation = getFundValuation(inactiveHolding.id, month);
+          if (valuation) {
+            total += valuation.valuation;
+          }
+        });
+      } else {
+        // For other activity types, sum up activities from all inactive funds
+        fund.inactiveHoldingIds.forEach(inactiveHolding => {
+          const activity = getActivity(inactiveHolding.id, month, activityType);
+          if (activity) {
+            const amount = parseFloat(activity.amount);
+            total += Math.abs(amount);
+          }
+        });
+      }
+      
+      // Return the sum as a string, or empty string if zero
+      return total > 0 ? total.toString() : '';
+    }
     
     // For "Current Value" cells, check fund_valuations first
     if (activityType === 'Current Value') {

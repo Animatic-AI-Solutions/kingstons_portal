@@ -99,6 +99,82 @@ class IRRCache:
             
             logger.info(f"💾 IRR result cached for funds {portfolio_fund_ids} (TTL: {ttl_minutes or self._default_ttl.total_seconds() / 60}min)")
 
+    async def invalidate_portfolio_funds(self, portfolio_fund_ids: List[int]) -> int:
+        """
+        Invalidate cache entries that involve any of the specified portfolio fund IDs.
+        
+        Args:
+            portfolio_fund_ids: List of portfolio fund IDs to invalidate cache for
+            
+        Returns:
+            int: Number of cache entries that were invalidated
+        """
+        async with self._lock:
+            keys_to_remove = []
+            
+            for cache_key, cached_item in self._cache.items():
+                cached_fund_ids = cached_item.get('fund_ids', [])
+                
+                # Check if any of the fund IDs to invalidate are in this cache entry
+                if any(fund_id in cached_fund_ids for fund_id in portfolio_fund_ids):
+                    keys_to_remove.append(cache_key)
+            
+            # Remove the identified cache entries
+            for key in keys_to_remove:
+                del self._cache[key]
+            
+            if keys_to_remove:
+                logger.info(f"🗑️ Invalidated {len(keys_to_remove)} IRR cache entries for funds {portfolio_fund_ids}")
+            
+            return len(keys_to_remove)
+
+    async def clear_expired(self) -> int:
+        """
+        Remove expired cache entries.
+        
+        Returns:
+            int: Number of expired entries that were removed
+        """
+        async with self._lock:
+            current_time = datetime.now()
+            keys_to_remove = []
+            
+            for cache_key, cached_item in self._cache.items():
+                if current_time > cached_item['expires_at']:
+                    keys_to_remove.append(cache_key)
+            
+            # Remove expired entries
+            for key in keys_to_remove:
+                del self._cache[key]
+            
+            if keys_to_remove:
+                logger.info(f"🧹 Cleared {len(keys_to_remove)} expired IRR cache entries")
+            
+            return len(keys_to_remove)
+
+    async def get_stats(self) -> dict:
+        """
+        Get cache statistics.
+        
+        Returns:
+            dict: Cache statistics including total entries, expired entries, etc.
+        """
+        async with self._lock:
+            current_time = datetime.now()
+            total_entries = len(self._cache)
+            expired_entries = 0
+            
+            for cached_item in self._cache.values():
+                if current_time > cached_item['expires_at']:
+                    expired_entries += 1
+            
+            return {
+                'total_entries': total_entries,
+                'active_entries': total_entries - expired_entries,
+                'expired_entries': expired_entries,
+                'cache_hit_potential': f"{((total_entries - expired_entries) / max(total_entries, 1)) * 100:.1f}%"
+            }
+
 # Global cache instance
 _irr_cache = IRRCache(default_ttl_minutes=30)
 
@@ -246,8 +322,10 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
                 'is_simple_return': True
             }
         
-        # Calculate total number of months between start and end
-        total_months = ((end_date.year - start_date.year) * 12) + (end_date.month - start_date.month)
+        # Calculate total number of months between start and end (inclusive)
+        # For IRR calculation, we need the inclusive count of months in the period
+        # Example: Jan to May = 5 months (Jan=0, Feb=1, Mar=2, Apr=3, May=4)
+        total_months = ((end_date.year - start_date.year) * 12) + (end_date.month - start_date.month) + 1
         
         if total_months < 1:
             logger.warning("Investment period is less than one month - using simple IRR calculation")
@@ -269,9 +347,9 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
             }
         
         # Create array for months in the period 
-        # Fix: Use total_months (not +1) to create the correct number of periods
-        # IRR calculation should use the exact number of month differences
-        monthly_amounts = [0] * (total_months + 1)
+        # Since total_months is now the inclusive count, we need exactly that many elements
+        # Example: 5 months (Jan=0, Feb=1, Mar=2, Apr=3, May=4) = array of size 5
+        monthly_amounts = [0] * total_months
         
         # Map all cash flows to their corresponding months, totaling flows within same month
         for date, amount in zip(dates, amounts):
@@ -1296,8 +1374,8 @@ async def get_aggregated_irr_history(
                 .select("irr_result, date")\
                 .eq("portfolio_id", portfolio_id)\
                 .order("date", desc=True)\
-                .execute()
-            
+                    .execute()
+                
             if portfolio_irr_result.data:
                 # Convert stored IRR values to month/year format and match with months_list
                 for irr_record in portfolio_irr_result.data:
@@ -1313,7 +1391,7 @@ async def get_aggregated_irr_history(
                     except Exception as e:
                         logger.warning(f"Error processing portfolio IRR record {irr_record}: {str(e)}")
                         continue
-                        
+                            
                 logger.info(f"Found {len(portfolio_irr_values)} stored portfolio IRR values matching the requested periods")
             else:
                 logger.info("No stored portfolio IRR values found for this portfolio")
@@ -2575,7 +2653,7 @@ async def get_irr_cache_stats():
         Dictionary with cache statistics including entry counts, sizes, etc.
     """
     try:
-        stats = _irr_cache.get_cache_stats()
+        stats = _irr_cache.get_stats()
         logger.info(f"📊 IRR Cache stats requested: {stats}")
         return {
             "success": True,
