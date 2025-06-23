@@ -319,7 +319,7 @@ export const calculatePortfolioIRR = (portfolioId: number) => {
  * @returns {Promise} - API response with the latest portfolio IRR
  */
 export const getLatestPortfolioIRR = (portfolioId: number) => {
-  return api.get(`portfolios/${portfolioId}/latest_irr`);
+  return api.get(`portfolios/${portfolioId}/latest-irr`);
 };
 
 /**

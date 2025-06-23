@@ -801,27 +801,12 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         }
       }
       
-      // Trigger IRR recalculation for affected funds after all edits are saved
-      console.log('Triggering IRR recalculation for affected funds...');
+      // IRR recalculation is now handled automatically by the valuation endpoints
+      // No need to call calculatePortfolioIRR manually - this was causing duplicate IRR creation
+      console.log('IRR recalculation handled automatically by valuation endpoints - no manual trigger needed');
       const affectedFundIds = [...new Set(pendingEdits.map(edit => edit.fundId))];
-      
       console.log(`🔍 DEBUG: portfolioId = ${portfolioId}, affectedFundIds = [${affectedFundIds.join(', ')}], pendingEdits.length = ${pendingEdits.length}`);
-      
-      if (portfolioId && affectedFundIds.length > 0) {
-        try {
-          // Trigger portfolio-level IRR recalculation since activities were updated
-          console.log(`🔍 DEBUG: About to call calculatePortfolioIRR for portfolio ${portfolioId}`);
-          await calculatePortfolioIRR(portfolioId);
-          console.log(`🔍 DEBUG: Portfolio IRR recalculation completed successfully for portfolio ${portfolioId}`);
-        } catch (irrError) {
-          console.error(`🔍 DEBUG: Failed to trigger portfolio IRR recalculation for portfolio ${portfolioId}:`, irrError);
-          // Don't fail the entire save operation if IRR recalculation fails
-        }
-      } else if (!portfolioId) {
-        console.warn('🔍 DEBUG: Portfolio ID not available for IRR recalculation');
-      } else if (affectedFundIds.length === 0) {
-        console.warn('🔍 DEBUG: No affected fund IDs found for IRR recalculation');
-      }
+      console.log(`🔍 DEBUG: Skipping manual calculatePortfolioIRR call to prevent duplicate IRR creation`);
       
       console.log('🔍 DEBUG: About to clear pending edits and call onActivitiesUpdated');
       

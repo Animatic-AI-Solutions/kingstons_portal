@@ -11,6 +11,57 @@ from app.api.routes.holding_activity_logs import recalculate_irr_after_activity_
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+async def should_recalculate_portfolio_irr(portfolio_id: int, valuation_date: str, db) -> bool:
+    """
+    Check if portfolio IRR should be recalculated for a given date.
+    Portfolio IRR should be recalculated whenever there's a common valuation date across all funds.
+    
+    Args:
+        portfolio_id: The portfolio ID to check
+        valuation_date: The valuation date in YYYY-MM-DD format
+        db: Database connection
+    
+    Returns:
+        True if portfolio IRR should be calculated/recalculated, False otherwise
+    """
+    try:
+        # Get all portfolio funds in this portfolio (active and inactive)
+        all_portfolio_funds_result = db.table("portfolio_funds")\
+            .select("id")\
+            .eq("portfolio_id", portfolio_id)\
+            .execute()
+        
+        if not all_portfolio_funds_result.data:
+            return False
+        
+        all_fund_ids = [pf["id"] for pf in all_portfolio_funds_result.data]
+        
+        # Check if ALL funds have a valuation on this date
+        date_start = f"{valuation_date}T00:00:00"
+        date_end = f"{valuation_date}T23:59:59"
+        
+        for fund_id in all_fund_ids:
+            fund_valuation_check = db.table("portfolio_fund_valuations")\
+                .select("id")\
+                .eq("portfolio_fund_id", fund_id)\
+                .gte("valuation_date", date_start)\
+                .lte("valuation_date", date_end)\
+                .execute()
+            
+            if not fund_valuation_check.data:
+                # This fund doesn't have a valuation on this date, so it's not a common date
+                return False
+        
+        # All funds have valuations on this date, so portfolio IRR should be calculated/recalculated
+        # We should ALWAYS recalculate portfolio IRR when fund valuations change on a common date
+        # This ensures portfolio IRR stays in sync with fund-level changes
+        logger.info(f"All {len(all_fund_ids)} funds have valuations on {valuation_date} - portfolio IRR calculation needed")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error checking common valuation date: {str(e)}")
+        return False
+
 @router.post("/fund_valuations", response_model=FundValuation)
 async def create_fund_valuation(
     fund_valuation: FundValuationCreate,
@@ -21,6 +72,7 @@ async def create_fund_valuation(
     Zero-value valuations are now allowed and will be saved.
     """
     try:
+        logger.info(f"🔍 VALUATION ENTRY: create_fund_valuation called for fund {fund_valuation.portfolio_fund_id}, date {fund_valuation.valuation_date}, value {fund_valuation.valuation}")
         # Check if portfolio fund exists
         portfolio_fund_result = db.table("portfolio_funds").select("id").eq("id", fund_valuation.portfolio_fund_id).execute()
         if not portfolio_fund_result.data or len(portfolio_fund_result.data) == 0:
@@ -61,14 +113,83 @@ async def create_fund_valuation(
                 # NEW: Automatically recalculate IRR after updating existing valuation
                 # ========================================================================
                 try:
-                    # Get the valuation date for sophisticated recalculation
+                    # Get the valuation date for IRR recalculation
                     valuation_date = fund_valuation.valuation_date.isoformat().split('T')[0]
                     
-                    # Trigger IRR recalculation after valuation update
-                    irr_recalc_result = await recalculate_irr_after_activity_change(fund_valuation.portfolio_fund_id, db, valuation_date)
+                    # Find existing IRR for this fund and date
+                    existing_irr = db.table("portfolio_fund_irr_values")\
+                        .select("*")\
+                        .eq("fund_id", fund_valuation.portfolio_fund_id)\
+                        .eq("date", valuation_date)\
+                        .execute()
+                    
+                    if existing_irr.data:
+                        # Update existing IRR
+                        from app.api.routes.portfolio_funds import calculate_single_portfolio_fund_irr
+                        irr_result = await calculate_single_portfolio_fund_irr(
+                            portfolio_fund_id=fund_valuation.portfolio_fund_id,
+                            irr_date=valuation_date,
+                            db=db
+                        )
+                        
+                        if irr_result.get("success"):
+                            new_irr = irr_result.get("irr_percentage", 0.0)
+                            db.table("portfolio_fund_irr_values")\
+                                .update({"irr_result": float(new_irr)})\
+                                .eq("id", existing_irr.data[0]["id"])\
+                                .execute()
+                            logger.info(f"Updated existing IRR for {valuation_date}: {new_irr}%")
+                    else:
+                        # Create new IRR if none exists
+                        logger.info(f"No existing IRR found for {valuation_date}, creating new IRR")
+                        from app.api.routes.portfolio_funds import calculate_single_portfolio_fund_irr
+                        irr_result = await calculate_single_portfolio_fund_irr(
+                            portfolio_fund_id=fund_valuation.portfolio_fund_id,
+                            irr_date=valuation_date,
+                            db=db
+                        )
+                        
+                        if irr_result.get("success"):
+                            new_irr = irr_result.get("irr_percentage", 0.0)
+                            
+                            irr_data = {
+                                "fund_id": fund_valuation.portfolio_fund_id,
+                                "irr_result": float(new_irr),
+                                "date": valuation_date,
+                                "fund_valuation_id": updated_valuation.get("id")
+                            }
+                            
+                            db.table("portfolio_fund_irr_values").insert(irr_data).execute()
+                            logger.info(f"Created new IRR for {valuation_date}: {new_irr}%")
+                        
                 except Exception as e:
                     # Don't fail the valuation update if IRR recalculation fails
                     logger.error(f"IRR recalculation failed after valuation update: {str(e)}")
+                # ========================================================================
+                
+                # ========================================================================
+                # NEW: Check if this creates a common valuation date that needs portfolio IRR
+                # ========================================================================
+                try:
+                    # Get the portfolio ID for this fund
+                    portfolio_fund_result = db.table("portfolio_funds").select("portfolio_id").eq("id", fund_valuation.portfolio_fund_id).execute()
+                    if portfolio_fund_result.data:
+                        portfolio_id = portfolio_fund_result.data[0]["portfolio_id"]
+                        valuation_date = fund_valuation.valuation_date.isoformat().split('T')[0]
+                        
+                        # Check if portfolio IRR should be recalculated for this date
+                        if await should_recalculate_portfolio_irr(portfolio_id, valuation_date, db):
+                            logger.info(f"🔍 PORTFOLIO IRR: Portfolio IRR recalculation needed for portfolio {portfolio_id} on date {valuation_date}")
+                            
+                            # Import and call the portfolio IRR calculation function
+                            from app.api.routes.portfolios import calculate_portfolio_irr
+                            portfolio_irr_result = await calculate_portfolio_irr(portfolio_id=portfolio_id, db=db)
+                            logger.info(f"🔍 PORTFOLIO IRR: Portfolio IRR calculation completed: {portfolio_irr_result.get('portfolio_irr', {}).get('calculated', False)}")
+                        else:
+                            logger.info(f"🔍 PORTFOLIO IRR: No portfolio IRR calculation needed for portfolio {portfolio_id} on date {valuation_date}")
+                except Exception as e:
+                    # Don't fail the valuation update if portfolio IRR calculation fails
+                    logger.error(f"🔍 PORTFOLIO IRR: Portfolio IRR calculation failed after valuation update: {str(e)}")
                 # ========================================================================
                 
                 return updated_valuation
@@ -90,19 +211,80 @@ async def create_fund_valuation(
         created_valuation = result.data[0]
         
         # ========================================================================
-        # NEW: Automatically recalculate IRR after creating fund valuation
+        # NEW: Automatically create IRR after creating fund valuation
         # ========================================================================
         try:
-            # Get the valuation date for sophisticated recalculation
+            # Get the valuation date for IRR calculation
             valuation_date = fund_valuation.valuation_date.isoformat().split('T')[0]
             
-            # Trigger IRR recalculation after valuation creation
-            irr_recalc_result = await recalculate_irr_after_activity_change(fund_valuation.portfolio_fund_id, db, valuation_date)
+            logger.info(f"🔍 VALUATION DEBUG: About to check for existing IRR for fund {fund_valuation.portfolio_fund_id}, date {valuation_date}")
+            
+            # Check if IRR already exists for this fund and date
+            existing_irr = db.table("portfolio_fund_irr_values")\
+                .select("*")\
+                .eq("fund_id", fund_valuation.portfolio_fund_id)\
+                .eq("date", valuation_date)\
+                .execute()
+            
+            logger.info(f"🔍 VALUATION DEBUG: Found {len(existing_irr.data) if existing_irr.data else 0} existing IRR records")
+            
+            if not existing_irr.data:
+                logger.info(f"🔍 VALUATION DEBUG: About to create new IRR for fund {fund_valuation.portfolio_fund_id}")
+                # Create new IRR
+                from app.api.routes.portfolio_funds import calculate_single_portfolio_fund_irr
+                irr_result = await calculate_single_portfolio_fund_irr(
+                    portfolio_fund_id=fund_valuation.portfolio_fund_id,
+                    irr_date=valuation_date,
+                    db=db
+                )
+                
+                if irr_result.get("success"):
+                    new_irr = irr_result.get("irr_percentage", 0.0)
+                    
+                    irr_data = {
+                        "fund_id": fund_valuation.portfolio_fund_id,
+                        "irr_result": float(new_irr),
+                        "date": valuation_date,
+                        "fund_valuation_id": created_valuation["id"]
+                    }
+                    
+                    logger.info(f"🔍 VALUATION DEBUG: About to insert IRR data: {irr_data}")
+                    insert_result = db.table("portfolio_fund_irr_values").insert(irr_data).execute()
+                    logger.info(f"🔍 VALUATION DEBUG: Successfully created new IRR: {insert_result.data}")
+            else:
+                logger.info(f"🔍 VALUATION DEBUG: IRR already exists for {valuation_date}, skipping creation")
+                
         except Exception as e:
-            # Don't fail the valuation creation if IRR recalculation fails
-            logger.error(f"IRR recalculation failed after valuation creation: {str(e)}")
+            # Don't fail the valuation creation if IRR calculation fails
+            logger.error(f"🔍 VALUATION DEBUG: IRR calculation failed after valuation creation: {str(e)}")
+        # ========================================================================
+        
+        # ========================================================================
+        # NEW: Check if this creates a common valuation date that needs portfolio IRR
+        # ========================================================================
+        try:
+            # Get the portfolio ID for this fund
+            portfolio_fund_result = db.table("portfolio_funds").select("portfolio_id").eq("id", fund_valuation.portfolio_fund_id).execute()
+            if portfolio_fund_result.data:
+                portfolio_id = portfolio_fund_result.data[0]["portfolio_id"]
+                valuation_date = fund_valuation.valuation_date.isoformat().split('T')[0]
+                
+                # Check if portfolio IRR should be recalculated for this date
+                if await should_recalculate_portfolio_irr(portfolio_id, valuation_date, db):
+                    logger.info(f"🔍 PORTFOLIO IRR: Portfolio IRR recalculation needed for portfolio {portfolio_id} on date {valuation_date}")
+                    
+                    # Import and call the portfolio IRR calculation function
+                    from app.api.routes.portfolios import calculate_portfolio_irr
+                    portfolio_irr_result = await calculate_portfolio_irr(portfolio_id=portfolio_id, db=db)
+                    logger.info(f"🔍 PORTFOLIO IRR: Portfolio IRR calculation completed: {portfolio_irr_result.get('portfolio_irr', {}).get('calculated', False)}")
+                else:
+                    logger.info(f"🔍 PORTFOLIO IRR: No portfolio IRR calculation needed for portfolio {portfolio_id} on date {valuation_date}")
+        except Exception as e:
+            # Don't fail the valuation creation if portfolio IRR calculation fails
+            logger.error(f"🔍 PORTFOLIO IRR: Portfolio IRR calculation failed after valuation creation: {str(e)}")
         # ========================================================================
             
+        logger.info(f"🔍 VALUATION EXIT: create_fund_valuation completed successfully for fund {fund_valuation.portfolio_fund_id}")
         return created_valuation
     except HTTPException:
         raise
@@ -335,23 +517,94 @@ async def update_fund_valuation(
         updated_valuation = result.data[0]
         
         # ========================================================================
-        # NEW: Automatically recalculate IRR after updating fund valuation
+        # NEW: Automatically update IRR after updating fund valuation
         # ========================================================================
         try:
             # Get portfolio_fund_id from the updated record or existing record
             portfolio_fund_id = updated_valuation.get("portfolio_fund_id") or existing_result.data[0]["portfolio_fund_id"]
             
-            # Get the valuation date for sophisticated recalculation (use updated date if provided, otherwise existing)
+            # Get the valuation date (use updated date if provided, otherwise existing)
             valuation_date = updated_valuation.get("valuation_date") or existing_result.data[0]["valuation_date"]
             if isinstance(valuation_date, str):
                 valuation_date = valuation_date.split('T')[0]
             
-            logger.info(f"Triggering sophisticated IRR recalculation after updating valuation for portfolio fund {portfolio_fund_id} on date {valuation_date}")
-            irr_recalc_result = await recalculate_irr_after_activity_change(portfolio_fund_id, db, valuation_date)
-            logger.info(f"Sophisticated IRR recalculation result: {irr_recalc_result}")
+            # Find existing IRR for this fund and date
+            existing_irr = db.table("portfolio_fund_irr_values")\
+                .select("*")\
+                .eq("fund_id", portfolio_fund_id)\
+                .eq("date", valuation_date)\
+                .execute()
+            
+            if existing_irr.data:
+                # Update existing IRR
+                from app.api.routes.portfolio_funds import calculate_single_portfolio_fund_irr
+                irr_result = await calculate_single_portfolio_fund_irr(
+                    portfolio_fund_id=portfolio_fund_id,
+                    irr_date=valuation_date,
+                    db=db
+                )
+                
+                if irr_result.get("success"):
+                    new_irr = irr_result.get("irr_percentage", 0.0)
+                    db.table("portfolio_fund_irr_values")\
+                        .update({"irr_result": float(new_irr)})\
+                        .eq("id", existing_irr.data[0]["id"])\
+                        .execute()
+                    logger.info(f"Updated existing IRR for {valuation_date}: {new_irr}%")
+            else:
+                # Create new IRR if none exists
+                from app.api.routes.portfolio_funds import calculate_single_portfolio_fund_irr
+                irr_result = await calculate_single_portfolio_fund_irr(
+                    portfolio_fund_id=portfolio_fund_id,
+                    irr_date=valuation_date,
+                    db=db
+                )
+                
+                if irr_result.get("success"):
+                    new_irr = irr_result.get("irr_percentage", 0.0)
+                    
+                    irr_data = {
+                        "fund_id": portfolio_fund_id,
+                        "irr_result": float(new_irr),
+                        "date": valuation_date,
+                        "fund_valuation_id": valuation_id
+                    }
+                    
+                    db.table("portfolio_fund_irr_values").insert(irr_data).execute()
+                    logger.info(f"Created new IRR for {valuation_date}: {new_irr}%")
+                    
         except Exception as e:
-            # Don't fail the valuation update if IRR recalculation fails
-            logger.error(f"IRR recalculation failed after valuation update: {str(e)}")
+            # Don't fail the valuation update if IRR update fails
+            logger.error(f"IRR update failed after valuation update: {str(e)}")
+        # ========================================================================
+        
+        # ========================================================================
+        # NEW: Check if this creates a common valuation date that needs portfolio IRR
+        # ========================================================================
+        try:
+            # Get the portfolio ID for this fund
+            portfolio_fund_result = db.table("portfolio_funds").select("portfolio_id").eq("id", updated_valuation.get("portfolio_fund_id") or existing_result.data[0]["portfolio_fund_id"]).execute()
+            if portfolio_fund_result.data:
+                portfolio_id = portfolio_fund_result.data[0]["portfolio_id"]
+                
+                # Get the valuation date (use updated date if provided, otherwise existing)
+                valuation_date = updated_valuation.get("valuation_date") or existing_result.data[0]["valuation_date"]
+                if isinstance(valuation_date, str):
+                    valuation_date = valuation_date.split('T')[0]
+                
+                # Check if portfolio IRR should be recalculated for this date
+                if await should_recalculate_portfolio_irr(portfolio_id, valuation_date, db):
+                    logger.info(f"🔍 PORTFOLIO IRR: Portfolio IRR recalculation needed for portfolio {portfolio_id} on date {valuation_date}")
+                    
+                    # Import and call the portfolio IRR calculation function
+                    from app.api.routes.portfolios import calculate_portfolio_irr
+                    portfolio_irr_result = await calculate_portfolio_irr(portfolio_id=portfolio_id, db=db)
+                    logger.info(f"🔍 PORTFOLIO IRR: Portfolio IRR calculation completed: {portfolio_irr_result.get('portfolio_irr', {}).get('calculated', False)}")
+                else:
+                    logger.info(f"🔍 PORTFOLIO IRR: No portfolio IRR calculation needed for portfolio {portfolio_id} on date {valuation_date}")
+        except Exception as e:
+            # Don't fail the valuation update if portfolio IRR calculation fails
+            logger.error(f"🔍 PORTFOLIO IRR: Portfolio IRR calculation failed after valuation update: {str(e)}")
         # ========================================================================
             
         return updated_valuation

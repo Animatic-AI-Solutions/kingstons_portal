@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNavigationRefresh } from '../hooks/useNavigationRefresh';
 import { getProviderColor } from '../services/providerColors';
 import { EditButton, ActionButton, LapseButton, DeleteButton, AddButton } from '../components/ui';
 import api, { getClientGroupProductOwners, calculateStandardizedMultipleFundsIRR, getProductOwners, addClientGroupProductOwner, removeClientGroupProductOwner } from '../services/api';
@@ -201,7 +202,8 @@ const ClientHeader = ({
   isSaving,
   availableProductOwners,
   onAddProductOwner,
-  onRemoveProductOwner
+  onRemoveProductOwner,
+  handleDelete
 }: { 
   client: Client; 
   totalValue: number;
@@ -216,6 +218,7 @@ const ClientHeader = ({
   availableProductOwners: ClientProductOwner[];
   onAddProductOwner: (productOwnerId: number) => void;
   onRemoveProductOwner: (associationId: number) => void;
+  handleDelete: () => void;
 }) => {
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-GB', {
@@ -506,15 +509,38 @@ const ClientHeader = ({
                       </button>
                     </div>
                   ) : (
-                    <button
-                      onClick={onEditClick}
-                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-primary-700 bg-white border border-primary-200 rounded-md hover:bg-primary-50 hover:border-primary-300 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 shadow-sm flex-shrink-0"
-                    >
-                      <svg className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                      Edit
-                    </button>
+                    <div className="flex items-center space-x-2 flex-shrink-0">
+                      <button
+                        onClick={onEditClick}
+                        className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-primary-700 bg-white border border-primary-200 rounded-md hover:bg-primary-50 hover:border-primary-300 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 shadow-sm"
+                      >
+                        <svg className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Edit
+                      </button>
+                      <DeleteButton
+                        size="sm"
+                        onClick={() => {
+                          if (window.confirm(
+                            `Are you sure you want to delete client group "${client.name}"?\n\n` +
+                            `This will permanently delete:\n` +
+                            `• The client group record\n` +
+                            `• All associated products and portfolios\n` +
+                            `• All portfolio funds and holdings\n` +
+                            `• All investment activity history\n` +
+                            `• All valuations and IRR calculations\n` +
+                            `• All provider switch records\n\n` +
+                            `This action CANNOT be undone!`
+                          )) {
+                            handleDelete();
+                          }
+                        }}
+                        className="ml-2"
+                      >
+                        Delete Client
+                      </DeleteButton>
+                    </div>
                   )}
                 </div>
               </div>
@@ -1000,6 +1026,7 @@ const ClientDetails: React.FC = () => {
   const { clientId } = useParams<{ clientId: string }>();
   const navigate = useNavigate();
   const { api } = useAuth();
+  const { navigateToClientGroups, navigateWithSuccessMessage } = useNavigationRefresh();
   const [client, setClient] = useState<Client | null>(null);
   const [clientAccounts, setClientAccounts] = useState<ClientAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1028,6 +1055,8 @@ const ClientDetails: React.FC = () => {
   const [expandedProducts, setExpandedProducts] = useState<number[]>([]);
   const [expandedProductFunds, setExpandedProductFunds] = useState<Record<number, ProductFund[]>>({});
   const [isLoadingFunds, setIsLoadingFunds] = useState<Record<number, boolean>>({});
+
+
 
   // Toggle expanded state for a product
   const toggleProductExpand = async (accountId: number) => {
@@ -1390,13 +1419,14 @@ const ClientDetails: React.FC = () => {
     try {
       if (!client) return;
       
-      if (window.confirm(`Are you sure you want to delete client ${client.name}? This will also delete all associated products, portfolios, and funds. This action cannot be undone.`)) {
-        await api.delete(`/client_groups/${clientId}`);
-        navigate('/client_groups', { state: { message: `Client ${client.name} deleted successfully` } });
-      }
+      await api.delete(`/client_groups/${clientId}`);
+      navigateWithSuccessMessage(
+        '/client_groups', 
+        `Client group "${client.name}" and all associated data deleted successfully`
+      );
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to delete client');
-      console.error('Error deleting client:', err);
+      setError(err.response?.data?.detail || 'Failed to delete client group');
+      console.error('Error deleting client group:', err);
     }
   };
 
@@ -1511,18 +1541,21 @@ const ClientDetails: React.FC = () => {
     }
   };
 
-  // Breadcrumb component
+  // Breadcrumb component with smart navigation
   const Breadcrumbs = () => {
     return (
       <nav className="mb-4 flex" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
           <li className="inline-flex items-center">
-            <Link to="/client_groups" className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-primary-700">
+            <button 
+              onClick={navigateToClientGroups}
+              className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 rounded"
+            >
               <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
               </svg>
               Clients
-            </Link>
+            </button>
           </li>
           <li aria-current="page">
             <div className="flex items-center">
@@ -1600,6 +1633,7 @@ const ClientDetails: React.FC = () => {
           availableProductOwners={availableProductOwners}
           onAddProductOwner={handleAddProductOwner}
           onRemoveProductOwner={handleRemoveProductOwner}
+          handleDelete={handleDelete}
         />
 
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Fragment, useCallback } from 'react';
+import React, { useState, useEffect, Fragment, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import EditableMonthlyActivitiesTable from '../components/EditableMonthlyActivitiesTable';
@@ -465,6 +465,152 @@ interface AccountIRRCalculationProps {
   accountId?: string;
 }
 
+// Move PreviousFundsIRRDisplay outside main component to prevent recreating on each render
+const PreviousFundsIRRDisplay: React.FC<{ 
+  inactiveHoldings: Holding[]; 
+  latestValuationDate: string | null;
+  activityLogs: ActivityLog[]; // Add activityLogs as dependency since IRR depends on cash flows
+}> = React.memo(({ inactiveHoldings, latestValuationDate, activityLogs }) => {
+  const [livePreviousFundsIRR, setLivePreviousFundsIRR] = useState<number | null>(null);
+  const [isLoadingLivePreviousFundsIRR, setIsLoadingLivePreviousFundsIRR] = useState(false);
+
+  // Memoize the inactive fund IDs to prevent unnecessary recalculations
+  const inactiveFundIds = useMemo(() => 
+    inactiveHoldings.map(h => h.id), 
+    [inactiveHoldings]
+  );
+
+  // Memoize relevant activities for the inactive funds
+  const relevantActivities = useMemo(() => {
+    const activities = activityLogs.filter(activity => 
+      inactiveFundIds.includes(activity.portfolio_fund_id)
+    );
+    
+    // Sort by timestamp and fund ID for consistent comparison
+    return activities.sort((a, b) => {
+      const timeCompare = a.activity_timestamp.localeCompare(b.activity_timestamp);
+      if (timeCompare !== 0) return timeCompare;
+      return a.portfolio_fund_id - b.portfolio_fund_id;
+    });
+  }, [activityLogs, inactiveFundIds]);
+
+  // Create a simple cache key based on fund IDs and activity count/sum
+  const cacheKey = useMemo(() => {
+    const fundIdsStr = inactiveFundIds.sort().join(',');
+    const activitySum = relevantActivities.reduce((sum, activity) => sum + activity.amount, 0);
+    const activityCount = relevantActivities.length;
+    return `${fundIdsStr}-${activityCount}-${activitySum}`;
+  }, [inactiveFundIds, relevantActivities]);
+
+  const calculateLivePreviousFundsIRR = useCallback(async () => {
+    if (inactiveFundIds.length === 0) {
+      console.log('PreviousFundsIRRDisplay: No inactive funds, skipping calculation');
+      return;
+    }
+    
+    console.log(`PreviousFundsIRRDisplay: Starting IRR calculation for funds [${inactiveFundIds.join(', ')}]`);
+    console.log(`PreviousFundsIRRDisplay: Cache key: ${cacheKey}`);
+    
+    setIsLoadingLivePreviousFundsIRR(true);
+    try {
+      const response = await calculateStandardizedMultipleFundsIRR({
+        portfolioFundIds: inactiveFundIds
+      });
+      
+      if (response.data && response.data.irr_percentage !== undefined) {
+        console.log(`PreviousFundsIRRDisplay: IRR calculation completed: ${response.data.irr_percentage}%`);
+        setLivePreviousFundsIRR(response.data.irr_percentage);
+      }
+    } catch (error) {
+      console.error('PreviousFundsIRRDisplay: Error calculating IRR:', error);
+      setLivePreviousFundsIRR(null);
+    } finally {
+      setIsLoadingLivePreviousFundsIRR(false);
+    }
+  }, [inactiveFundIds, cacheKey]);
+
+  // Only recalculate when the cache key changes
+  useEffect(() => {
+    calculateLivePreviousFundsIRR();
+  }, [calculateLivePreviousFundsIRR]);
+
+  if (isLoadingLivePreviousFundsIRR) {
+    return <span className="text-xs text-gray-500 text-center">Loading...</span>;
+  }
+
+  if (livePreviousFundsIRR !== null) {
+    return (
+      <>
+        <div className={`font-medium text-center ${
+          livePreviousFundsIRR >= 0 ? 'text-green-700' : 'text-red-700'
+        }`}>
+          {Math.abs(livePreviousFundsIRR) > 1 
+            ? `${livePreviousFundsIRR.toFixed(1)}%` 
+            : formatPercentage(livePreviousFundsIRR)}
+          <span className="ml-1">
+            {livePreviousFundsIRR >= 0 ? '▲' : '▼'}
+          </span>
+        </div>
+        {livePreviousFundsIRR !== null && (
+          <div className="text-xs text-gray-500 mt-1 text-center">
+            as of {latestValuationDate ? new Date(latestValuationDate).toLocaleDateString() : 'N/A'}
+          </div>
+        )}
+      </>
+    );
+  }
+
+  return <span className="text-gray-500 text-center">N/A</span>;
+}, (prevProps, nextProps) => {
+  // Custom comparison function for React.memo
+  // Only re-render if the actual data that affects IRR calculation has changed
+  
+  // Compare inactive holdings
+  if (prevProps.inactiveHoldings.length !== nextProps.inactiveHoldings.length) {
+    console.log('PreviousFundsIRRDisplay: Re-rendering due to inactive holdings count change');
+    return false;
+  }
+  
+  const prevFundIds = prevProps.inactiveHoldings.map(h => h.id).sort();
+  const nextFundIds = nextProps.inactiveHoldings.map(h => h.id).sort();
+  if (JSON.stringify(prevFundIds) !== JSON.stringify(nextFundIds)) {
+    console.log('PreviousFundsIRRDisplay: Re-rendering due to fund IDs change');
+    return false;
+  }
+  
+  // Compare relevant activities
+  const prevRelevantActivities = prevProps.activityLogs.filter(activity => 
+    prevFundIds.includes(activity.portfolio_fund_id)
+  );
+  const nextRelevantActivities = nextProps.activityLogs.filter(activity => 
+    nextFundIds.includes(activity.portfolio_fund_id)
+  );
+  
+  if (prevRelevantActivities.length !== nextRelevantActivities.length) {
+    console.log('PreviousFundsIRRDisplay: Re-rendering due to activity count change');
+    return false;
+  }
+  
+  // Simple comparison of activity sums (if activities changed, sum will likely change)
+  const prevActivitySum = prevRelevantActivities.reduce((sum, activity) => sum + activity.amount, 0);
+  const nextActivitySum = nextRelevantActivities.reduce((sum, activity) => sum + activity.amount, 0);
+  
+  if (prevActivitySum !== nextActivitySum) {
+    console.log('PreviousFundsIRRDisplay: Re-rendering due to activity sum change');
+    return false;
+  }
+  
+  // Compare valuation date
+  if (prevProps.latestValuationDate !== nextProps.latestValuationDate) {
+    console.log('PreviousFundsIRRDisplay: Re-rendering due to valuation date change');
+    return false;
+  }
+  
+  // If we get here, props are effectively the same
+  console.log('PreviousFundsIRRDisplay: Skipping re-render - props unchanged');
+  return true;
+});
+
 const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId: propAccountId }) => {
   const { accountId: paramAccountId } = useParams<{ accountId: string }>();
   const accountId = propAccountId || paramAccountId;
@@ -556,6 +702,12 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
 
   // Manual IRR recalculation state
   const [isRecalculatingAllIRRs, setIsRecalculatingAllIRRs] = useState(false);
+
+  // Memoize inactiveHoldings to prevent unnecessary recalculations and re-renders
+  const inactiveHoldings = useMemo(() => 
+    filterInactiveHoldings(holdings), 
+    [holdings]
+  );
 
   useEffect(() => {
     if (accountId) {
@@ -988,7 +1140,6 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       }
 
       // Step 2: Recalculate Previous Funds total IRR (inactive funds only)
-      const inactiveHoldings = filterInactiveHoldings(holdings);
       if (inactiveHoldings.length > 0) {
         try {
           const inactiveFundIds = inactiveHoldings.map(h => h.id);
@@ -1385,64 +1536,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
   };
 
   // Component to display live Previous Funds IRR (calculates every render)
-  const PreviousFundsIRRDisplay: React.FC<{ inactiveHoldings: Holding[] }> = ({ inactiveHoldings }) => {
-    const [livePreviousFundsIRR, setLivePreviousFundsIRR] = useState<number | null>(null);
-    const [isLoadingLivePreviousFundsIRR, setIsLoadingLivePreviousFundsIRR] = useState(false);
 
-    const calculateLivePreviousFundsIRR = async () => {
-      if (inactiveHoldings.length === 0) return;
-      
-      setIsLoadingLivePreviousFundsIRR(true);
-      try {
-        const inactiveFundIds = inactiveHoldings.map(h => h.id);
-        
-        const response = await calculateStandardizedMultipleFundsIRR({
-          portfolioFundIds: inactiveFundIds
-        });
-        
-        if (response.data && response.data.irr_percentage !== undefined) {
-          setLivePreviousFundsIRR(response.data.irr_percentage);
-        }
-      } catch (error) {
-        console.error('Error calculating live Previous Funds IRR:', error);
-        setLivePreviousFundsIRR(null);
-      } finally {
-        setIsLoadingLivePreviousFundsIRR(false);
-      }
-    };
-
-    useEffect(() => {
-      calculateLivePreviousFundsIRR();
-    }, [inactiveHoldings]);
-
-    if (isLoadingLivePreviousFundsIRR) {
-      return <span className="text-xs text-gray-500 text-center">Loading...</span>;
-    }
-
-    if (livePreviousFundsIRR !== null) {
-      return (
-        <>
-          <div className={`font-medium text-center ${
-            livePreviousFundsIRR >= 0 ? 'text-green-700' : 'text-red-700'
-          }`}>
-            {Math.abs(livePreviousFundsIRR) > 1 
-              ? `${livePreviousFundsIRR.toFixed(1)}%` 
-              : formatPercentage(livePreviousFundsIRR)}
-            <span className="ml-1">
-              {livePreviousFundsIRR >= 0 ? '▲' : '▼'}
-            </span>
-          </div>
-          {livePreviousFundsIRR !== null && (
-            <div className="text-xs text-gray-500 mt-1 text-center">
-              as of {formatDate(latestValuationDate || '')}
-            </div>
-          )}
-        </>
-      );
-    }
-
-    return <span className="text-gray-500 text-center">N/A</span>;
-  };
 
   if (isLoading) {
     return (
@@ -1605,7 +1699,6 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                     <tbody className="bg-white divide-y divide-gray-200">
                       {(() => {
                         const activeHoldings = filterActiveHoldings(holdings);
-                        const inactiveHoldings = filterInactiveHoldings(holdings);
                         const previousFundsEntry = createPreviousFundsEntry(inactiveHoldings, allTimeActivities);
                         const displayHoldings = [...activeHoldings];
                         if (previousFundsEntry) {
@@ -1757,7 +1850,11 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                   <div>
                                       {holding.isVirtual ? (
                                       // Use live Previous Funds IRR component
-                                      <PreviousFundsIRRDisplay inactiveHoldings={inactiveHoldings} />
+                                      <PreviousFundsIRRDisplay 
+                                        inactiveHoldings={inactiveHoldings} 
+                                        latestValuationDate={latestValuationDate}
+                                        activityLogs={activityLogs}
+                                      />
                                     ) : (
                                       // Use unified single fund IRR display
                                       getSingleFundIRRDisplay(holding)
@@ -1987,7 +2084,6 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
             {/* Separate active and inactive holdings for the table */}
             {(() => {
               const activeHoldings = filterActiveHoldings(holdings);
-              const inactiveHoldings = filterInactiveHoldings(holdings);
               
               // Create a virtual "Previous Funds" entry for the EditableMonthlyActivitiesTable
               const previousFundsEntry = inactiveHoldings.length > 0 ? {

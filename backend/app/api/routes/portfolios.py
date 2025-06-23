@@ -546,7 +546,8 @@ async def calculate_portfolio_irr(
                     )
                 else:
                     # Add active fund with actual valuation
-                    valuation_date = datetime.fromisoformat(latest_valuation.data[0]["valuation_date"])
+                    from datetime import datetime as dt
+                    valuation_date = dt.fromisoformat(latest_valuation.data[0]["valuation_date"])
                     active_funds_with_valuations.append({
                         "portfolio_fund_id": fund_id,
                         "date": valuation_date,
@@ -637,15 +638,31 @@ async def calculate_portfolio_irr(
                 continue
             
             if existing_irr.data and len(existing_irr.data) > 0:
-                # IRR already exists for this fund on this date
+                # IRR already exists for this fund on this date - check if it was recently updated
+                existing_record = existing_irr.data[0]
+                created_at = existing_record.get("created_at", "")
+                updated_recently = False
+                
+                # Check if the record was created/updated in the last 5 minutes (likely from activity change)
+                if created_at:
+                    try:
+                        from datetime import datetime, timedelta
+                        record_time = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                        current_time = datetime.now(record_time.tzinfo)
+                        time_diff = current_time - record_time
+                        updated_recently = time_diff < timedelta(minutes=5)
+                    except:
+                        pass
+                
                 funds_with_existing_irr.append(portfolio_fund_id)
                 calculation_results.append({
                     "portfolio_fund_id": portfolio_fund_id,
                     "status": "skipped",
-                    "message": "IRR already exists for this date",
-                    "existing_irr": existing_irr.data[0]["irr_result"]
+                    "message": f"IRR already exists for this date{' (recently updated)' if updated_recently else ''}",
+                    "existing_irr": existing_record["irr_result"],
+                    "recently_updated": updated_recently
                 })
-                logger.info(f"Skipping IRR calculation for fund {portfolio_fund_id} - already exists with value {existing_irr.data[0]['irr_result']}")
+                logger.info(f"Skipping IRR calculation for fund {portfolio_fund_id} - already exists with value {existing_record['irr_result']}{' (recently updated)' if updated_recently else ''}")
             else:
                 # Add to list of funds that need calculation
                 funds_to_calculate.append({
@@ -1247,12 +1264,14 @@ async def get_complete_portfolio(
         portfolio = portfolio_result.data[0]
         
         # Get template generation details
-        template_result = db.table("template_portfolio_generations")\
-            .select("*")\
-            .eq("id", portfolio["template_generation_id"])\
-            .execute()
-        
-        template_generation = template_result.data[0] if template_result.data else None
+        template_generation = None
+        if portfolio.get("template_generation_id") is not None:
+            template_result = db.table("template_portfolio_generations")\
+                .select("*")\
+                .eq("id", portfolio["template_generation_id"])\
+                .execute()
+            
+            template_generation = template_result.data[0] if template_result.data else None
         
         # Get portfolio funds
         portfolio_funds_result = db.table("portfolio_funds")\

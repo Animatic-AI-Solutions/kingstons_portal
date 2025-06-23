@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNavigationRefresh } from '../hooks/useNavigationRefresh';
 import { 
   BaseInput, 
   InputLabel, 
@@ -28,6 +29,7 @@ interface ProductOwner {
 const AddClient: React.FC = () => {
   const navigate = useNavigate();
   const { api } = useAuth();
+  const { navigateWithSuccessMessage, navigateToClientGroups } = useNavigationRefresh();
   const [formData, setFormData] = useState<ClientFormData>({
     name: '',
     status: 'active',
@@ -142,38 +144,39 @@ const AddClient: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     setError(null);
-    
-    // Validate form data
-    if (!formData.name?.trim()) {
-      setError('Client name is required');
-      return;
-    }
-    
+
     try {
-      setIsSubmitting(true);
+      console.log('Creating client with data:', formData);
       
-      // Create the client group
       const response = await api.post('/client_groups', formData);
-      const newClientGroup = response.data;
+      const newClientId = response.data.id;
       
-      // If there are selected product owners, create associations
+      console.log('Client created successfully:', response.data);
+      
+      // Create product owner associations if any are selected
       if (selectedProductOwners.length > 0) {
+        console.log('Creating product owner associations...');
         for (const productOwnerId of selectedProductOwners) {
           try {
             await api.post('/client_group_product_owners', {
-              client_group_id: newClientGroup.id,
+              client_group_id: newClientId,
               product_owner_id: productOwnerId
             });
-          } catch (err) {
-            console.error(`Error associating product owner ${productOwnerId} with client group:`, err);
+            console.log(`Associated product owner ${productOwnerId} with client ${newClientId}`);
+          } catch (err: any) {
+            console.error(`Failed to associate product owner ${productOwnerId}:`, err);
             // Continue with other associations even if one fails
           }
         }
       }
       
-      // Redirect to clients list
-      navigate('/client_groups');
+      // Navigate back to clients list with success message and refresh data
+      navigateWithSuccessMessage(
+        '/client_groups',
+        `Client group "${formData.name}" created successfully`
+      );
     } catch (err: any) {
       setError(`Failed to create client: ${JSON.stringify(err.response?.data || err.message)}`);
       console.error('Error creating client:', err);
@@ -211,7 +214,7 @@ const AddClient: React.FC = () => {
         <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Add New Client Group</h1>
         <ActionButton
           variant="cancel"
-          onClick={() => navigate('/client_groups')}
+          onClick={navigateToClientGroups}
         />
       </div>
 
@@ -318,7 +321,7 @@ const AddClient: React.FC = () => {
           <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
             <ActionButton
               variant="cancel"
-              onClick={() => navigate('/client_groups')}
+              onClick={navigateToClientGroups}
               className="min-w-[140px]"
             />
             <ActionButton

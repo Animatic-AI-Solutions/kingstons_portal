@@ -1286,118 +1286,37 @@ async def get_aggregated_irr_history(
         # Convert months set to sorted list (newest first)
         months_list = sorted(list(months_set), key=lambda d: datetime.strptime(d, "%b %Y"), reverse=True)
         
-        # Calculate portfolio-level IRR for each month if requested
+        # Fetch stored portfolio-level IRR values from portfolio_irr_values table
         portfolio_irr_values = {}
         if include_portfolio_irr and portfolio_id and months_list:
-            logger.info(f"Calculating portfolio IRR for {len(months_list)} months")
+            logger.info(f"Fetching stored portfolio IRR values for {len(months_list)} months")
             
-            # Get ALL funds in the portfolio (including inactive)
-            all_fund_ids = list(portfolio_fund_map.keys())  # Include all funds regardless of status
+            # Get all stored portfolio IRR values for this portfolio
+            portfolio_irr_result = db.table("portfolio_irr_values")\
+                .select("irr_result, date")\
+                .eq("portfolio_id", portfolio_id)\
+                .order("date", desc=True)\
+                .execute()
             
-            if all_fund_ids:
-                # Get activity logs for all funds
-                activity_logs_result = db.table("holding_activity_log")\
-                    .select("*")\
-                    .in_("portfolio_fund_id", all_fund_ids)\
-                    .execute()
-                
-                activity_logs = activity_logs_result.data or []
-                
-                # Calculate portfolio IRR for each month/year
-                for month_year in months_list:
+            if portfolio_irr_result.data:
+                # Convert stored IRR values to month/year format and match with months_list
+                for irr_record in portfolio_irr_result.data:
                     try:
-                        # Parse the month/year to get the year
-                        month_year_date = datetime.strptime(month_year, "%b %Y")
-                        year = month_year_date.year
+                        # Parse the IRR date
+                        irr_date = datetime.fromisoformat(irr_record["date"].replace("Z", "+00:00"))
+                        irr_month_year = irr_date.strftime("%b %Y")
                         
-                        # Use the existing portfolio total IRR calculation logic
-                        # but filter activities up to the specific month/year
-                        monthly_cash_flows = {}
-                        portfolio_fund_id_set = set(all_fund_ids)
-                        
-                        # Process activity logs up to this month/year
-                        cutoff_date = datetime(year, month_year_date.month, 28)  # End of month
-                        
-                        for activity in activity_logs:
-                            activity_date = datetime.fromisoformat(activity["activity_timestamp"].replace('Z', '+00:00'))
+                        # Only include if it matches one of our month/year periods
+                        if irr_month_year in months_list:
+                            portfolio_irr_values[irr_month_year] = float(irr_record["irr_result"])
                             
-                            # Only include activities up to the cutoff date
-                            if activity_date > cutoff_date:
-                                continue
-                            
-                            month_key = f"{activity_date.year}-{activity_date.month:02d}"
-                            
-                            if month_key not in monthly_cash_flows:
-                                monthly_cash_flows[month_key] = {
-                                    "date": datetime(activity_date.year, activity_date.month, 15),
-                                    "amount": 0
-                                }
-                            
-                            amount = float(activity["amount"])
-                            activity_type = activity["activity_type"]
-                            related_fund = activity.get("related_fund")
-                            
-                            # Handle internal transfers
-                            if (activity_type == "SwitchIn" or activity_type == "SwitchOut") and related_fund in portfolio_fund_id_set:
-                                continue
-                            
-                            # External cash flows
-                            if activity_type in ["Investment", "RegularInvestment", "GovernmentUplift"]:
-                                monthly_cash_flows[month_key]["amount"] -= amount
-                            elif activity_type in ["Withdrawal", "RegularWithdrawal"]:
-                                monthly_cash_flows[month_key]["amount"] += amount
-                            elif activity_type == "SwitchIn" and related_fund not in portfolio_fund_id_set:
-                                monthly_cash_flows[month_key]["amount"] -= amount
-                            elif activity_type == "SwitchOut" and related_fund not in portfolio_fund_id_set:
-                                monthly_cash_flows[month_key]["amount"] += amount
-                        
-                        # Get valuations for the specific month/year
-                        total_value = 0
-                        valuation_date = None
-                        
-                        for fund_id in all_fund_ids:
-                            # Find valuation closest to the end of the month/year
-                            valuation_result = db.table("portfolio_fund_valuations")\
-                                .select("*")\
-                                .eq("portfolio_fund_id", fund_id)\
-                                .lte("valuation_date", cutoff_date.isoformat())\
-                                .order("valuation_date", desc=True)\
-                                .limit(1)\
-                                .execute()
-                            
-                            if valuation_result.data:
-                                valuation = valuation_result.data[0]
-                                total_value += float(valuation["valuation"])
-                                
-                                valuation_date_obj = datetime.fromisoformat(valuation["valuation_date"].replace('Z', '+00:00'))
-                                if valuation_date is None or valuation_date_obj > valuation_date:
-                                    valuation_date = valuation_date_obj
-                        
-                        if total_value > 0 and valuation_date and len(monthly_cash_flows) >= 1:
-                            # Add final valuation
-                            final_month_key = f"{valuation_date.year}-{valuation_date.month:02d}"
-                            if final_month_key not in monthly_cash_flows:
-                                monthly_cash_flows[final_month_key] = {
-                                    "date": valuation_date,
-                                    "amount": total_value
-                                }
-                            else:
-                                monthly_cash_flows[final_month_key]["amount"] += total_value
-                            
-                            # Calculate IRR if we have enough cash flows
-                            if len(monthly_cash_flows) >= 2:
-                                sorted_cash_flows = sorted(monthly_cash_flows.values(), key=lambda x: x["date"])
-                                dates = [cf["date"] for cf in sorted_cash_flows]
-                                amounts = [cf["amount"] for cf in sorted_cash_flows]
-                                
-                                # Calculate IRR
-                                irr_result = calculate_excel_style_irr(dates, amounts)
-                                portfolio_irr_percentage = round(irr_result['period_irr'] * 100, 2)
-                                portfolio_irr_values[month_year] = portfolio_irr_percentage
-                                
                     except Exception as e:
-                        logger.warning(f"Error calculating portfolio IRR for {month_year}: {str(e)}")
+                        logger.warning(f"Error processing portfolio IRR record {irr_record}: {str(e)}")
                         continue
+                        
+                logger.info(f"Found {len(portfolio_irr_values)} stored portfolio IRR values matching the requested periods")
+            else:
+                logger.info("No stored portfolio IRR values found for this portfolio")
                         
         # Add any missing funds (those with no IRR values)
         for fund_id in fund_ids:
@@ -2061,7 +1980,7 @@ async def calculate_multiple_portfolio_funds_irr(
         for fund_id in portfolio_fund_ids:
             if fund_id not in fund_valuations:
                 logger.warning(f"No valuation found for fund {fund_id} as of {irr_date_obj}")
-                fund_valuations[fund_id] = 0.0
+                fund_valuations[fund_id] = None  # Use None instead of 0.0 for missing valuations
         
         logger.info(f"✅ Batch valuation optimization complete - Fund valuations: {fund_valuations}")
         
@@ -2116,7 +2035,8 @@ async def calculate_multiple_portfolio_funds_irr(
         # Activities are assumed to happen at the start of the month
         # Both should be combined in the same month for correct IRR calculation
         
-        total_valuation = sum(fund_valuations.values())
+        # Calculate total valuation, treating None values as 0 for calculation purposes
+        total_valuation = sum(v for v in fund_valuations.values() if v is not None)
         
         # EDGE CASE HANDLING: For zero total valuation, omit final valuations completely
         # This allows IRR calculation to proceed using only activities for fully exited funds
@@ -2219,6 +2139,8 @@ async def calculate_single_portfolio_fund_irr(
         Dictionary containing IRR calculation results
     """
     try:
+        logger.info(f"🔍 IRR CALC ENTRY: calculate_single_portfolio_fund_irr called for fund {portfolio_fund_id}, date {irr_date}")
+        
         # Check cache first for single fund IRR calculation
         cached_result = await _irr_cache.get(
             portfolio_fund_ids=[portfolio_fund_id],
@@ -2416,20 +2338,8 @@ async def calculate_single_portfolio_fund_irr(
                 logger.info(f"💰 DEBUG: Deleted {len(existing_irr_response.data)} existing IRR value(s) for zero valuation fund {portfolio_fund_id} on {irr_date_iso}")
             
             # Insert the new 0% IRR value for zero valuation fund
-            new_irr_data = {
-                "fund_id": portfolio_fund_id,
-                "irr_result": 0.0,
-                "date": irr_date_iso,
-                "fund_valuation_id": None
-            }
-            
-            logger.info(f"💰 DEBUG: Inserting 0% IRR for zero valuation fund: {new_irr_data}")
-            insert_response = db.table("portfolio_fund_irr_values").insert(new_irr_data).execute()
-            
-            if insert_response.data:
-                logger.info(f"💰 DEBUG: ✅ Successfully stored 0% IRR for zero valuation fund {portfolio_fund_id} on {irr_date_iso}")
-            else:
-                logger.warning(f"💰 DEBUG: ⚠️  Failed to store 0% IRR for zero valuation fund {portfolio_fund_id}")
+            # REMOVED: Database insertion - this function should only calculate, not store
+            logger.info(f"💰 DEBUG: IRR calculation completed: 0% for zero valuation fund {portfolio_fund_id} on {irr_date_iso}")
             
             return {
                 "success": True,
@@ -2463,34 +2373,9 @@ async def calculate_single_portfolio_fund_irr(
         
         logger.info(f"💰 DEBUG: Final IRR calculation - Decimal: {irr_decimal}, Percentage: {irr_percentage}%")
         
-        # Check if IRR already exists for this fund and date
-        existing_irr_response = db.table("portfolio_fund_irr_values")\
-            .select("id")\
-            .eq("fund_id", portfolio_fund_id)\
-            .eq("date", irr_date_iso)\
-            .execute()
-        
-        # Delete existing IRR values if any (to replace them)
-        if existing_irr_response.data:
-            for irr_record in existing_irr_response.data:
-                db.table("portfolio_fund_irr_values").delete().eq("id", irr_record["id"]).execute()
-            logger.info(f"💰 DEBUG: Deleted {len(existing_irr_response.data)} existing IRR value(s) for fund {portfolio_fund_id} on {irr_date_iso}")
-        
-        # Insert the new IRR value
-        new_irr_data = {
-            "fund_id": portfolio_fund_id,
-            "irr_result": float(irr_percentage),
-            "date": irr_date_iso,
-            "fund_valuation_id": None  # We don't have the valuation ID in this context
-        }
-        
-        logger.info(f"💰 DEBUG: Inserting new IRR data: {new_irr_data}")
-        insert_response = db.table("portfolio_fund_irr_values").insert(new_irr_data).execute()
-        
-        if insert_response.data:
-            logger.info(f"💰 DEBUG: ✅ Successfully stored IRR value: {irr_percentage}% for fund {portfolio_fund_id} on {irr_date_iso}")
-        else:
-            logger.warning(f"💰 DEBUG: ⚠️  Failed to store IRR value for fund {portfolio_fund_id}")
+        # REMOVED: Database insertion - this function should only calculate, not store
+        # The calling function (like valuation endpoint) is responsible for storing the IRR
+        logger.info(f"💰 DEBUG: IRR calculation completed: {irr_percentage}% for fund {portfolio_fund_id} on {irr_date_iso}")
 
         final_result = {
             "success": True,
@@ -2590,11 +2475,11 @@ async def get_batch_fund_valuations(
                 }
                 seen_funds.add(fund_id)
         
-        # Ensure all requested funds are represented (some might have 0 valuation)
+        # Ensure all requested funds are represented (some might have no valuation)
         for fund_id in fund_ids:
             if fund_id not in fund_valuations:
                 fund_valuations[fund_id] = {
-                    "valuation": 0.0,
+                    "valuation": None,  # Use None instead of 0.0 for missing valuations
                     "valuation_date": None
                 }
         

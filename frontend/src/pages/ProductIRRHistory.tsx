@@ -449,7 +449,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
 
   // Format percentage value
   const formatPercentage = (value: number | undefined): string => {
-    if (value === undefined || value === null) return '-';
+    if (value === undefined || value === null) return 'N/A';
     return `${value.toFixed(2)}%`;
   };
 

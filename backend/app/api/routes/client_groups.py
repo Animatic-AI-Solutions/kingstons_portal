@@ -451,51 +451,146 @@ async def delete_client_group_products(
     current_user: dict = Depends(get_current_user)
 ):
     """
-    What it does: Deletes all products associated with a specific client group.
-    Why it's needed: Provides a way to clean up all products when a client group is removed.
+    What it does: Comprehensively deletes all data associated with a client group in the correct order.
+    Why it's needed: Ensures complete data cleanup when removing a client group, including all related portfolios, funds, activities, valuations, and IRR calculations.
     How it works:
         1. Validates that the client group exists
-        2. Finds all products associated with this client group
-        3. Deletes each product and its associated data
-        4. Returns the count of deleted products
-    Expected output: A dict with the count of deleted products
+        2. Finds all products and their related data
+        3. Deletes all related data in dependency order to avoid foreign key violations
+        4. Returns detailed count of deleted items
+    Expected output: A dict with counts of all deleted data types
     """
     try:
-        logger.info(f"Deleting all products for client group {client_group_id}")
+        logger.info(f"Starting comprehensive deletion for client group {client_group_id}")
         
-        # First, check if the client group exists
+        # Check if client group exists
         client_group_result = db.table('client_groups').select('*').eq('id', client_group_id).execute()
-        
         if not client_group_result.data:
             raise HTTPException(status_code=404, detail="Client group not found")
         
+        # First, always delete client group product owner associations
+        client_owner_associations_result = db.table('client_group_product_owners').delete().eq('client_group_id', client_group_id).execute()
+        client_owner_associations_count = len(client_owner_associations_result.data) if client_owner_associations_result.data else 0
+        logger.info(f"Deleted {client_owner_associations_count} client group product owner associations")
+
         # Get all products for this client group
-        products_result = db.table('client_products').select('id').eq('client_id', client_group_id).execute()
-        
+        products_result = db.table('client_products').select('id, portfolio_id').eq('client_id', client_group_id).execute()
         if not products_result.data:
             logger.info(f"No products found for client group {client_group_id}")
-            return {"deleted_count": 0, "message": "No products found for this client group"}
+            return {
+                "deleted_count": 0, 
+                "total_items_deleted": client_owner_associations_count,
+                "detailed_counts": {},
+                "client_owner_associations_deleted": client_owner_associations_count,
+                "message": "No products found for this client group, but deleted client group associations"
+            }
         
         product_ids = [product['id'] for product in products_result.data]
-        logger.info(f"Found {len(product_ids)} products to delete for client group {client_group_id}")
+        portfolio_ids = [product['portfolio_id'] for product in products_result.data if product['portfolio_id']]
         
-        # Delete all products for this client group
-        # The database CASCADE constraints should handle related data
-        delete_result = db.table('client_products').delete().eq('client_id', client_group_id).execute()
+        logger.info(f"Found {len(product_ids)} products and {len(portfolio_ids)} portfolios for client group {client_group_id}")
         
-        logger.info(f"Successfully deleted {len(product_ids)} products for client group {client_group_id}")
+        # Initialize counters
+        deleted_counts = {
+            "products": 0,
+            "portfolios": 0,
+            "portfolio_funds": 0,
+            "fund_valuations": 0,
+            "portfolio_valuations": 0,
+            "fund_irr_values": 0,
+            "portfolio_irr_values": 0,
+            "activity_logs": 0,
+            "provider_switches": 0,
+            "product_owner_associations": 0
+        }
+        
+        # Get all portfolio funds for the portfolios
+        portfolio_fund_ids = []
+        if portfolio_ids:
+            portfolio_funds_result = db.table('portfolio_funds').select('id').in_('portfolio_id', portfolio_ids).execute()
+            portfolio_fund_ids = [pf['id'] for pf in portfolio_funds_result.data] if portfolio_funds_result.data else []
+            logger.info(f"Found {len(portfolio_fund_ids)} portfolio funds to delete")
+        
+        # Step 1: Delete fund-level IRR values (they reference fund valuations)
+        if portfolio_fund_ids:
+            fund_irr_result = db.table('portfolio_fund_irr_values').delete().in_('fund_id', portfolio_fund_ids).execute()
+            deleted_counts["fund_irr_values"] = len(fund_irr_result.data) if fund_irr_result.data else 0
+            logger.info(f"Deleted {deleted_counts['fund_irr_values']} fund IRR values")
+        
+        # Step 2: Delete portfolio-level IRR values (they reference portfolio valuations)
+        if portfolio_ids:
+            portfolio_irr_result = db.table('portfolio_irr_values').delete().in_('portfolio_id', portfolio_ids).execute()
+            deleted_counts["portfolio_irr_values"] = len(portfolio_irr_result.data) if portfolio_irr_result.data else 0
+            logger.info(f"Deleted {deleted_counts['portfolio_irr_values']} portfolio IRR values")
+        
+        # Step 3: Delete fund valuations (now safe since IRR values are gone)
+        if portfolio_fund_ids:
+            fund_valuations_result = db.table('portfolio_fund_valuations').delete().in_('portfolio_fund_id', portfolio_fund_ids).execute()
+            deleted_counts["fund_valuations"] = len(fund_valuations_result.data) if fund_valuations_result.data else 0
+            logger.info(f"Deleted {deleted_counts['fund_valuations']} fund valuations")
+        
+        # Step 4: Delete portfolio valuations (now safe since IRR values are gone)
+        if portfolio_ids:
+            portfolio_valuations_result = db.table('portfolio_valuations').delete().in_('portfolio_id', portfolio_ids).execute()
+            deleted_counts["portfolio_valuations"] = len(portfolio_valuations_result.data) if portfolio_valuations_result.data else 0
+            logger.info(f"Deleted {deleted_counts['portfolio_valuations']} portfolio valuations")
+        
+        # Step 5: Delete holding activity logs
+        if portfolio_fund_ids:
+            activity_logs_result = db.table('holding_activity_log').delete().in_('portfolio_fund_id', portfolio_fund_ids).execute()
+            deleted_counts["activity_logs"] = len(activity_logs_result.data) if activity_logs_result.data else 0
+            logger.info(f"Deleted {deleted_counts['activity_logs']} activity log entries")
+        
+        # Step 6: Delete provider switch logs
+        if product_ids:
+            switch_logs_result = db.table('provider_switch_log').delete().in_('client_product_id', product_ids).execute()
+            deleted_counts["provider_switches"] = len(switch_logs_result.data) if switch_logs_result.data else 0
+            logger.info(f"Deleted {deleted_counts['provider_switches']} provider switch records")
+        
+        # Step 7: Delete product owner associations
+        if product_ids:
+            owner_associations_result = db.table('product_owner_products').delete().in_('product_id', product_ids).execute()
+            deleted_counts["product_owner_associations"] = len(owner_associations_result.data) if owner_associations_result.data else 0
+            logger.info(f"Deleted {deleted_counts['product_owner_associations']} product owner associations")
+        
+        # Step 8: Delete portfolio funds (now safe since valuations and IRR values are gone)
+        if portfolio_fund_ids:
+            portfolio_funds_delete_result = db.table('portfolio_funds').delete().in_('id', portfolio_fund_ids).execute()
+            deleted_counts["portfolio_funds"] = len(portfolio_funds_delete_result.data) if portfolio_funds_delete_result.data else 0
+            logger.info(f"Deleted {deleted_counts['portfolio_funds']} portfolio funds")
+        
+        # Step 9: Delete portfolios
+        if portfolio_ids:
+            portfolios_result = db.table('portfolios').delete().in_('id', portfolio_ids).execute()
+            deleted_counts["portfolios"] = len(portfolios_result.data) if portfolios_result.data else 0
+            logger.info(f"Deleted {deleted_counts['portfolios']} portfolios")
+        
+        # Step 10: Delete client products
+        products_delete_result = db.table('client_products').delete().eq('client_id', client_group_id).execute()
+        deleted_counts["products"] = len(products_delete_result.data) if products_delete_result.data else 0
+        logger.info(f"Deleted {deleted_counts['products']} client products")
+        
+        total_deleted = sum(deleted_counts.values()) + client_owner_associations_count
+        
+        logger.info(f"Successfully completed comprehensive deletion for client group {client_group_id}")
+        logger.info(f"Total items deleted: {total_deleted}")
         
         return {
-            "deleted_count": len(product_ids),
-            "message": f"Successfully deleted {len(product_ids)} products for client group {client_group_id}",
-            "deleted_product_ids": product_ids
+            "deleted_count": deleted_counts["products"],
+            "total_items_deleted": total_deleted,
+            "detailed_counts": deleted_counts,
+            "client_owner_associations_deleted": client_owner_associations_count,
+            "message": f"Successfully deleted all data for client group {client_group_id}",
+            "deleted_product_ids": product_ids,
+            "deleted_portfolio_ids": portfolio_ids,
+            "deleted_portfolio_fund_ids": portfolio_fund_ids
         }
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error deleting products for client group {client_group_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        logger.error(f"Error in comprehensive deletion for client group {client_group_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error during deletion: {str(e)}")
 
 @router.get("/client_groups/{client_group_id}/products", response_model=List[dict])
 async def get_client_group_products(

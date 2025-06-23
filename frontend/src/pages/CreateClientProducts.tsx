@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom';
 import { Modal } from 'antd';
 import AddFundModal from '../components/AddFundModal';
 
@@ -11,6 +11,7 @@ import SearchableDropdown from '../components/ui/SearchableDropdown';
 import { BaseInput, NumberInput, DateInput, BaseDropdown, MultiSelectDropdown, AutocompleteSearch, AutocompleteOption, ActionButton, AddButton, DeleteButton } from '../components/ui';
 import { getProviderColor } from '../services/providerColors';
 import { findCashFund, isCashFund } from '../utils/fundUtils';
+import { useNavigationRefresh } from '../hooks/useNavigationRefresh';
 
 interface Client {
   id: number;
@@ -91,7 +92,9 @@ interface PortfolioGeneration {
 const CreateClientProducts: React.FC = (): JSX.Element => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { api } = useAuth();
+  const { navigateToClientGroups } = useNavigationRefresh();
   
   // Add custom styles for validation errors
   useEffect(() => {
@@ -129,7 +132,6 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   const [returnPath, setReturnPath] = useState<string>('/products'); // Default fallback
   
   // Get client info from URL parameters
-  const searchParams = new URLSearchParams(location.search);
   const urlClientId = searchParams.get('client_id');
   const clientName = searchParams.get('client_name');
   
@@ -1831,7 +1833,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     );
   }
 
-  // Breadcrumb component
+  // Breadcrumb component with smart navigation
   const Breadcrumbs = () => {
     const selectedClient = clients.find(c => c.id === selectedClientId);
     
@@ -1839,12 +1841,15 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       <nav className="mb-4 flex" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
           <li className="inline-flex items-center">
-            <Link to="/client_groups" className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-primary-700">
+            <button 
+              onClick={navigateToClientGroups}
+              className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 rounded"
+            >
               <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
               </svg>
               Clients
-            </Link>
+            </button>
           </li>
           {selectedClient && (
             <li>

@@ -29,6 +29,7 @@ async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, acti
         activity_date: The date of the activity that was changed (YYYY-MM-DD format)
     """
     try:
+        logger.info(f"🔍 RECALC ENTRY: recalculate_irr_after_activity_change called for fund {portfolio_fund_id}, activity_date {activity_date}")
         # Starting sophisticated IRR recalculation
         
         # DEBUG: Get fund details to identify which fund this is
@@ -148,8 +149,11 @@ async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, acti
                 error_msg = fund_irr_result.get("error", "Unknown error")
                 logger.warning(f"🔍 DEBUG: ❌ Failed to recalculate IRR for date {irr_date}: {error_msg}")
         
-        # Step 5: Create individual fund IRR entries for any valuation dates where IRR doesn't exist
-        # First, get all valuation dates for this specific portfolio fund from activity date onwards
+        # Step 5: Only create individual fund IRR entries for valuation dates where IRR truly doesn't exist
+        # This step should be conservative and only create entries for dates that have valuations but no IRR records
+        # The previous step (Step 4) already updated all existing IRR records from the activity date onwards
+        
+        # Get all valuation dates for this specific portfolio fund from activity date onwards
         fund_valuations = db.table("portfolio_fund_valuations")\
             .select("valuation_date, valuation")\
             .eq("portfolio_fund_id", portfolio_fund_id)\
@@ -164,11 +168,20 @@ async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, acti
         
         new_entries_created = 0
         
-        # Create IRR entries for each valuation date where IRR doesn't exist
+        # Only create IRR entries for valuation dates where IRR truly doesn't exist
+        # Skip dates that were already processed in Step 4 (existing IRR updates)
+        existing_irr_dates = set(irr_record["date"].split('T')[0] for irr_record in existing_irr_values.data)
+        logger.info(f"🔍 DEBUG: Existing IRR dates that were updated: {existing_irr_dates}")
+        
         for valuation_date, valuation_amount in fund_valuation_dates:
+            # Skip if this date already had an IRR record that was updated
+            if valuation_date in existing_irr_dates:
+                logger.info(f"🔍 DEBUG: IRR for {valuation_date} was already updated in Step 4, skipping creation")
+                continue
+                
             logger.info(f"🔍 DEBUG: Checking if IRR exists for date {valuation_date} (valuation: £{valuation_amount})")
             
-            # Check if IRR already exists for this fund and date
+            # Double-check if IRR already exists for this fund and date
             existing_check = db.table("portfolio_fund_irr_values")\
                 .select("id")\
                 .eq("fund_id", portfolio_fund_id)\

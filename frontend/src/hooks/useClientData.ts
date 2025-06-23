@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getBulkClientData } from '../services/api';
 
 export interface ClientGroup {
@@ -47,12 +47,15 @@ export interface BulkClientDataResponse {
  * Features:
  * - Single bulk API call (replacing multiple sequential calls)
  * - 5-minute cache duration for fast subsequent loads
- * - Background refetching for fresh data
+ * - Background refetching for fresh data when navigating back
  * - Request deduplication (eliminates duplicate calls)
  * - Automatic retry on failure
+ * - Manual refresh capability for post-action updates
  */
 export const useClientData = () => {
-  return useQuery({
+  const queryClient = useQueryClient();
+  
+  const query = useQuery({
     queryKey: ['client-bulk-data'],
     queryFn: async () => {
       console.log('🚀 Fetching client data with bulk API...');
@@ -62,11 +65,27 @@ export const useClientData = () => {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh
     gcTime: 10 * 60 * 1000, // 10 minutes - cache retention
-    refetchOnWindowFocus: false, // Don't refetch on window focus
-    refetchOnMount: false, // Don't refetch if we have cached data
+    refetchOnWindowFocus: false, // Don't refetch on window focus to avoid unnecessary requests
+    refetchOnMount: true, // Enable refetch on mount to get fresh data when navigating back
     retry: 2, // Retry failed requests 2 times
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
   });
+
+  // Function to force refresh the data (useful after deletions, etc.)
+  const forceRefresh = () => {
+    return queryClient.invalidateQueries({ queryKey: ['client-bulk-data'] });
+  };
+
+  // Function to refresh data in background without affecting UI
+  const refreshInBackground = () => {
+    return queryClient.refetchQueries({ queryKey: ['client-bulk-data'] });
+  };
+
+  return {
+    ...query,
+    forceRefresh,
+    refreshInBackground
+  };
 };
 
 export default useClientData; 

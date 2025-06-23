@@ -31,7 +31,7 @@ const Clients: React.FC = () => {
   const advisorFilterRef = useRef<HTMLDivElement>(null);
   
   // Use React Query hook for optimized client data fetching
-  const { data: bulkClientData, isLoading, error: queryError, refetch } = useClientData();
+  const { data: bulkClientData, isLoading, error: queryError, refetch, forceRefresh } = useClientData();
   
   // Refs for positioning dropdown menus
   const [advisorDropdownPosition, setAdvisorDropdownPosition] = useState({ top: 0, left: 0 });
@@ -74,6 +74,9 @@ const Clients: React.FC = () => {
       // Clear the message from location state after displaying it
       window.history.replaceState({}, document.title);
       
+      // Force refresh data when there's a success message (likely from deletion or other actions)
+      forceRefresh();
+      
       // Auto-hide the message after 5 seconds
       const timer = setTimeout(() => {
         setSuccessMessage(null);
@@ -81,7 +84,24 @@ const Clients: React.FC = () => {
       
       return () => clearTimeout(timer);
     }
-  }, [location]);
+  }, [location, forceRefresh]);
+
+  // Add page visibility listener to refresh data when page becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      // Only refresh if page becomes visible and we have data
+      if (!document.hidden && bulkClientData) {
+        console.log('Page became visible, checking for fresh data...');
+        refetch();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [refetch, bulkClientData]);
 
   // Handle click outside to close the filter dropdowns
   useEffect(() => {
