@@ -105,9 +105,6 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   portfolioId
 }) => {
   const [months, setMonths] = useState<string[]>([]);
-  const [allAvailableMonths, setAllAvailableMonths] = useState<string[]>([]);
-  const [currentMonthPage, setCurrentMonthPage] = useState(0);
-  const [monthsPerPage] = useState(12); // Show 12 months at a time
   const [pendingEdits, setPendingEdits] = useState<CellEdit[]>([]);
   
   // Debug effect to track pendingEdits changes
@@ -399,7 +396,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     };
   }, [pendingEdits, navigate]);
 
-  // Initialize all available months and set up pagination
+  // Initialize all months from product start date to current month
   useEffect(() => {
     // Get current date for comparison
     const now = new Date();
@@ -429,23 +426,10 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       iterDate.setMonth(iterDate.getMonth() + 1);
     }
     
-    // Sort months in ascending order (oldest first)
+    // Sort months in ascending order (oldest first) and set directly
     const sortedMonths = allMonths.sort();
-    setAllAvailableMonths(sortedMonths);
-    
-    // Start by showing the most recent months (last page)
-    const totalPages = Math.ceil(sortedMonths.length / monthsPerPage);
-    const lastPageIndex = Math.max(0, totalPages - 1);
-    setCurrentMonthPage(lastPageIndex);
-  }, [productStartDate, monthsPerPage]);
-
-  // Update displayed months when page changes
-  useEffect(() => {
-    const startIndex = currentMonthPage * monthsPerPage;
-    const endIndex = startIndex + monthsPerPage;
-    const pageMonths = allAvailableMonths.slice(startIndex, endIndex);
-    setMonths(pageMonths);
-  }, [allAvailableMonths, currentMonthPage, monthsPerPage]);
+    setMonths(sortedMonths);
+  }, [productStartDate]);
   
   // No longer auto-focusing the first cell to avoid disrupting user flow
   useEffect(() => {
@@ -461,6 +445,21 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       });
     }
   }, [funds, months]);
+
+  // Auto-scroll to the most recent months when the table loads
+  useEffect(() => {
+    if (months.length > 0 && tableContainerRef.current) {
+      // Small delay to ensure the table has rendered
+      const scrollTimer = setTimeout(() => {
+        if (tableContainerRef.current) {
+          // Scroll to the rightmost position (most recent months)
+          tableContainerRef.current.scrollLeft = tableContainerRef.current.scrollWidth;
+        }
+      }, 100);
+
+      return () => clearTimeout(scrollTimer);
+    }
+  }, [months]);
 
   // Get fund valuation for a specific fund and month
   const getFundValuation = (fundId: number, month: string): FundValuation | undefined => {
@@ -1603,28 +1602,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   };
 
   // Navigation functions for month pages
-  const goToPreviousMonths = () => {
-    setCurrentMonthPage(prev => Math.max(0, prev - 1));
-  };
 
-  const goToNextMonths = () => {
-    const totalPages = Math.ceil(allAvailableMonths.length / monthsPerPage);
-    setCurrentMonthPage(prev => Math.min(totalPages - 1, prev + 1));
-  };
-
-  const goToFirstMonths = () => {
-    setCurrentMonthPage(0);
-  };
-
-  const goToLatestMonths = () => {
-    const totalPages = Math.ceil(allAvailableMonths.length / monthsPerPage);
-    setCurrentMonthPage(Math.max(0, totalPages - 1));
-  };
-
-  const canGoToPrevious = currentMonthPage > 0;
-  const canGoToNext = currentMonthPage < Math.ceil(allAvailableMonths.length / monthsPerPage) - 1;
-  const totalPages = Math.ceil(allAvailableMonths.length / monthsPerPage);
-  const currentPage = currentMonthPage + 1;
 
   return (
     <>
@@ -1647,58 +1625,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
             </div>
           </div>
             
-            {/* Month Navigation */}
-            {allAvailableMonths.length > monthsPerPage && (
-              <div className="flex justify-center">
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">
-                    Page {currentPage} of {totalPages} ({allAvailableMonths.length} months total)
-                  </span>
-                  <div className="flex items-center space-x-1">
-                    <button
-                      onClick={goToFirstMonths}
-                      disabled={!canGoToPrevious}
-                      className="p-1.5 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed"
-                      title="Go to first months"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M21 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={goToPreviousMonths}
-                      disabled={!canGoToPrevious}
-                      className="p-1.5 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed"
-                      title="Previous months"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={goToNextMonths}
-                      disabled={!canGoToNext}
-                      className="p-1.5 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed"
-                      title="Next months"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={goToLatestMonths}
-                      disabled={!canGoToNext}
-                      className="p-1.5 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed"
-                      title="Go to latest months"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M3 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+
           </div>
         
         {error && (
@@ -1733,21 +1660,22 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         
         <div 
           ref={tableContainerRef}
-          className="overflow-hidden border rounded-lg shadow-md w-full" 
+          className="overflow-x-auto border rounded-lg shadow-md w-full" 
           style={{ scrollBehavior: 'smooth' }}
         >
           <div className="relative">
             <table 
               ref={tableRef}
-              className="w-full divide-y divide-gray-200 table-fixed relative"
+              className="divide-y divide-gray-200 table-auto relative"
+              style={{minWidth: `${240 + (months.length * 100) + 80}px`}}
             >
               <colgroup>
-                <col className="w-[12%] sticky left-0 z-10" />
-                <col className="w-[12%] sticky left-0 z-10" />
+                <col className="sticky left-0 z-10" style={{minWidth: '120px'}} />
+                <col className="sticky left-0 z-10" style={{minWidth: '120px'}} />
                 {months.map((month, index) => (
-                  <col key={`col-${month}`} className={`w-[${68 / months.length}%]`} />
+                  <col key={`col-${month}`} style={{minWidth: '100px'}} />
                 ))}
-                <col className="w-[8%]" />
+                <col style={{minWidth: '80px'}} />
               </colgroup>
               <thead 
                 className="bg-blue-50 shadow-lg"
@@ -2435,58 +2363,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           </div>
         </div>
         
-        {/* Bottom Pagination Controls */}
-        {allAvailableMonths.length > monthsPerPage && (
-          <div className="flex justify-center mt-4">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600">
-                Page {currentPage} of {totalPages} ({allAvailableMonths.length} months total)
-              </span>
-              <div className="flex items-center space-x-1">
-                <button
-                  onClick={goToFirstMonths}
-                  disabled={!canGoToPrevious}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed"
-                  title="Go to first months"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M21 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                <button
-                  onClick={goToPreviousMonths}
-                  disabled={!canGoToPrevious}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed"
-                  title="Previous months"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                <button
-                  onClick={goToNextMonths}
-                  disabled={!canGoToNext}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed"
-                  title="Next months"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-                <button
-                  onClick={goToLatestMonths}
-                  disabled={!canGoToNext}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed"
-                  title="Go to latest months"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M3 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+
       </div>
       
       
