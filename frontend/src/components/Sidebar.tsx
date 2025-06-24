@@ -20,6 +20,7 @@ const Sidebar: React.FC = () => {
   // Navigation items with icons
   const navigationItems = [
     {
+      type: 'link',
       path: '/',
       label: 'Home',
       icon: (
@@ -29,6 +30,7 @@ const Sidebar: React.FC = () => {
       )
     },
     {
+      type: 'link',
       path: '/client_groups',
       label: 'Client Groups',
       icon: (
@@ -38,6 +40,7 @@ const Sidebar: React.FC = () => {
       )
     },
     {
+      type: 'link',
       path: '/products',
       label: 'Products',
       icon: (
@@ -47,6 +50,21 @@ const Sidebar: React.FC = () => {
       )
     },
     {
+      type: 'divider',
+      label: 'Definitions'
+    },
+    {
+      type: 'link',
+      path: '/product_owners',
+      label: 'Product Owners',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      )
+    },
+    {
+      type: 'link',
       path: '/definitions/funds',
       label: 'Funds',
       icon: (
@@ -56,6 +74,7 @@ const Sidebar: React.FC = () => {
       )
     },
     {
+      type: 'link',
       path: '/definitions/providers',
       label: 'Providers',
       icon: (
@@ -65,6 +84,7 @@ const Sidebar: React.FC = () => {
       )
     },
     {
+      type: 'link',
       path: '/definitions/portfolio-templates',
       label: 'Templates',
       icon: (
@@ -74,6 +94,11 @@ const Sidebar: React.FC = () => {
       )
     },
     {
+      type: 'divider',
+      label: 'Analysis'
+    },
+    {
+      type: 'link',
       path: '/analytics',
       label: 'Analytics',
       icon: (
@@ -83,6 +108,7 @@ const Sidebar: React.FC = () => {
       )
     },
     {
+      type: 'link',
       path: '/revenue',
       label: 'Revenue',
       icon: (
@@ -92,6 +118,7 @@ const Sidebar: React.FC = () => {
       )
     },
     {
+      type: 'link',
       path: '/report-generator',
       label: 'Report',
       icon: (
@@ -101,6 +128,11 @@ const Sidebar: React.FC = () => {
       )
     },
     {
+      type: 'divider',
+      label: 'Development'
+    },
+    {
+      type: 'link',
       path: '/components',
       label: 'Components',
       icon: (
@@ -128,11 +160,18 @@ const Sidebar: React.FC = () => {
       <nav className="h-[calc(100vh-4rem)] p-2 overflow-y-auto">
         <ul className="space-y-2">
           {navigationItems.map((item) => (
+            item.type === 'divider' ? (
+                <li key={item.label} className="px-3 pt-4 pb-2">
+                    <span className={`text-xs font-semibold text-gray-500 uppercase transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+                        {isHovered ? item.label : ''}
+                    </span>
+                </li>
+            ) : (
             <li key={item.path}>
               <Link
-                to={item.path}
+                to={item.path!}
                 className={`flex items-center p-3 rounded-lg transition-all duration-200 group relative ${
-                  isActive(item.path)
+                  isActive(item.path!)
                     ? 'bg-primary-100 text-primary-700'
                     : 'text-gray-700 hover:bg-gray-100 hover:text-primary-700'
                 }`}
@@ -141,7 +180,7 @@ const Sidebar: React.FC = () => {
                 <div className={`flex items-center justify-center flex-shrink-0 w-6 h-6 ${
                   isHovered ? 'mr-3' : ''
                 } ${
-                  isActive(item.path) ? 'text-primary-700' : 'text-gray-500 group-hover:text-primary-700'
+                  isActive(item.path!) ? 'text-primary-700' : 'text-gray-500 group-hover:text-primary-700'
                 }`}>
                   {item.icon}
                 </div>
@@ -152,6 +191,7 @@ const Sidebar: React.FC = () => {
                 )}
               </Link>
             </li>
+            )
           ))}
         </ul>
       </nav>

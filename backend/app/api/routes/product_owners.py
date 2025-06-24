@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Path, Response, status
 from typing import List, Optional, Dict, Any
 import logging
+from pydantic import BaseModel
 
 from ...db.database import get_db
 from ...models.product_owner import ProductOwner, ProductOwnerCreate, ProductOwnerUpdate
@@ -23,7 +24,7 @@ async def get_product_owners_list(
     try:
         logger.info(f"Fetching product owners with skip={skip}, limit={limit}, status={status}, search={search}")
         
-        query = db.table("product_owners").select("id, name, status, created_at") # Select specific fields
+        query = db.table("product_owners").select("id, firstname, surname, known_as, status, created_at") # Select specific fields
 
         if status:
             query = query.eq("status", status)
@@ -32,14 +33,15 @@ async def get_product_owners_list(
             query = query.neq("status", "inactive")
             
         if search:
-            # Basic search by name (case-insensitive)
-            query = query.ilike("name", f"%{search}%")
+            # Basic search by name fields (case-insensitive)
+            search_term = f"%{search}%"
+            query = query.or_(f"firstname.ilike.{search_term},surname.ilike.{search_term},known_as.ilike.{search_term}")
         
         # Apply pagination
         query = query.range(skip, skip + limit - 1)
         
-        # Add ordering, e.g., by name
-        query = query.order("name", desc=False)
+        # Add ordering, e.g., by firstname then surname
+        query = query.order("firstname", desc=False).order("surname", desc=False)
         
         result = query.execute()
         
@@ -85,22 +87,44 @@ async def create_product_owner(
     Create a new product owner.
     """
     try:
-        logger.info(f"Creating new product owner: {product_owner.model_dump()}")
+        # Extract only the database fields, excluding computed fields
+        insert_data = {
+            "firstname": product_owner.firstname,
+            "surname": product_owner.surname,
+            "known_as": product_owner.known_as,
+            "status": product_owner.status
+        }
+        
+        logger.info(f"Creating new product owner: {insert_data}")
         
         # Insert the new product owner
-        result = db.table("product_owners").insert(product_owner.model_dump()).execute()
+        result = db.table("product_owners").insert(insert_data).execute()
+        
+        logger.info(f"Insert result: {result}")
+        logger.info(f"Insert result.data: {result.data}")
         
         if not result.data:
-            raise HTTPException(status_code=500, detail="Failed to create product owner")
+            logger.error("Insert result.data is empty or None")
+            raise HTTPException(status_code=500, detail="Failed to create product owner - no data returned from insert")
         
         # Get the created product owner
         created_product_owner_id = result.data[0]["id"]
-        new_product_owner = db.table("product_owners").select("*").eq("id", created_product_owner_id).execute()
+        logger.info(f"Created product owner ID: {created_product_owner_id}")
+        
+        new_product_owner = db.table("product_owners").select("id, firstname, surname, known_as, status, created_at").eq("id", created_product_owner_id).execute()
+        
+        logger.info(f"Retrieved new product owner: {new_product_owner.data}")
+        
+        if not new_product_owner.data:
+            raise HTTPException(status_code=500, detail="Failed to retrieve created product owner")
         
         return new_product_owner.data[0]
     
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error creating product owner: {str(e)}")
+        logger.error(f"Exception type: {type(e)}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @router.patch("/product_owners/{product_owner_id}", response_model=ProductOwner)
@@ -253,7 +277,7 @@ async def get_product_owner_products(
         for product in products_result.data:
             # Get all product owners for this product
             product_owner_associations = db.table("product_owner_products") \
-                .select("product_owner_id, product_owners(id, name)") \
+                .select("product_owner_id, product_owners(id, firstname, surname, known_as)") \
                 .eq("product_id", product["id"]) \
                 .execute()
             
@@ -262,9 +286,15 @@ async def get_product_owner_products(
             if product_owner_associations.data:
                 for assoc in product_owner_associations.data:
                     if assoc.get("product_owners"):
+                        po = assoc["product_owners"]
+                        # Create display name from firstname and surname, falling back to known_as
+                        display_name = f"{po.get('firstname', '')} {po.get('surname', '')}".strip()
+                        if not display_name and po.get('known_as'):
+                            display_name = po['known_as']
+                        
                         product_owners.append({
-                            "id": assoc["product_owners"]["id"],
-                            "name": assoc["product_owners"]["name"]
+                            "id": po["id"],
+                            "name": display_name
                         })
             
             # Add provider information if available
@@ -296,16 +326,22 @@ async def get_product_owner_products(
         logger.error(f"Error retrieving products for product owner {product_owner_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
+class ProductOwnerProductCreate(BaseModel):
+    product_owner_id: int
+    product_id: int
+
 @router.post("/product_owner_products", status_code=status.HTTP_201_CREATED, response_model=Dict[str, Any])
 async def create_product_owner_product(
-    product_owner_id: int,
-    product_id: int,
+    association: ProductOwnerProductCreate,
     db = Depends(get_db)
 ):
     """
     Create a new association between a product owner and a product.
     """
     try:
+        product_owner_id = association.product_owner_id
+        product_id = association.product_id
+        
         logger.info(f"Creating association between product owner {product_owner_id} and product {product_id}")
         
         # Check if product owner exists

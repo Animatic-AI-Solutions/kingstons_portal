@@ -126,7 +126,7 @@ async def get_client_products_with_owners(
                 product_owner_ids.extend(owners)
             
             if product_owner_ids:
-                owners_result = db.table("product_owners").select("*").in_("id", list(set(product_owner_ids))).execute()
+                owners_result = db.table("product_owners").select("id, firstname, surname, known_as, status, created_at").in_("id", list(set(product_owner_ids))).execute()
                 if owners_result.data:
                     product_owners_map = {owner.get("id"): owner for owner in owners_result.data}
                     
@@ -185,7 +185,17 @@ async def get_client_products_with_owners(
                 owner_ids = product_owner_associations[product_id]
                 for owner_id in owner_ids:
                     if owner_id in product_owners_map:
-                        product_owners.append(product_owners_map[owner_id])
+                        owner = product_owners_map[owner_id]
+                        # Create display name from firstname and surname, falling back to known_as
+                        display_name = f"{owner.get('firstname', '')} {owner.get('surname', '')}".strip()
+                        if not display_name and owner.get('known_as'):
+                            display_name = owner['known_as']
+                        
+                        enhanced_owner = {
+                            **owner,
+                            "name": display_name  # Add computed name field for frontend compatibility
+                        }
+                        product_owners.append(enhanced_owner)
             
             enhanced_product["product_owners"] = product_owners
             enhanced_products.append(enhanced_product)
@@ -428,7 +438,7 @@ async def get_client_products(
         product_owners_map = {}
         if product_owner_ids:
             try:
-                owners_result = db.table("product_owners").select("*").in_("id", list(set(product_owner_ids))).execute()
+                owners_result = db.table("product_owners").select("id, firstname, surname, known_as, status, created_at").in_("id", list(set(product_owner_ids))).execute()
                 if owners_result.data:
                     product_owners_map = {owner.get("id"): owner for owner in owners_result.data}
             except Exception as e:
@@ -1233,9 +1243,23 @@ async def get_complete_product_details(client_product_id: int, db = Depends(get_
                 owner_ids = [pop.get("product_owner_id") for pop in pop_result.data]
                 
                 # Fetch all product owners in one query
-                owners_result = db.table("product_owners").select("*").in_("id", owner_ids).execute()
+                owners_result = db.table("product_owners").select("id, firstname, surname, known_as, status, created_at").in_("id", owner_ids).execute()
                 if owners_result.data:
-                    response["product_owners"] = owners_result.data
+                    # Create display names for frontend compatibility
+                    enhanced_owners = []
+                    for owner in owners_result.data:
+                        # Create display name from firstname and surname, falling back to known_as
+                        display_name = f"{owner.get('firstname', '')} {owner.get('surname', '')}".strip()
+                        if not display_name and owner.get('known_as'):
+                            display_name = owner['known_as']
+                        
+                        enhanced_owner = {
+                            **owner,
+                            "name": display_name  # Add computed name field for frontend compatibility
+                        }
+                        enhanced_owners.append(enhanced_owner)
+                    
+                    response["product_owners"] = enhanced_owners
         except Exception as e:
             logger.error(f"Error fetching product owners: {str(e)}")
         

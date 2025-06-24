@@ -27,6 +27,8 @@ import ClientDetails from './pages/ClientDetails';
 // Product Management Pages - For handling financial products
 import Products from './pages/Products';
 import ProductDetails from './pages/ProductDetails';
+import ProductOwners from './pages/ProductOwners';
+import ProductOwnerDetails from './pages/ProductOwnerDetails';
 
 // Definitions Pages - System configuration and reference data management
 import DefinitionsFunds from './pages/DefinitionsFunds';
@@ -97,6 +99,8 @@ const AppContent: React.FC = () => {
           {/* Product Management Section - Managing client products */}
           <Route path="/products" element={<AppLayout><Products /></AppLayout>} />
           <Route path="/products/:productId/*" element={<AppLayout><ProductDetails /></AppLayout>} />
+          <Route path="/product_owners" element={<AppLayout><ProductOwners /></AppLayout>} />
+          <Route path="/product_owners/:productOwnerId" element={<AppLayout><ProductOwnerDetails /></AppLayout>} />
           
           {/* Definitions Section - System setup and configuration */}
           {/* Separate definition pages */}

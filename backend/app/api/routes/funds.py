@@ -261,7 +261,7 @@ async def get_fund_products_with_owners(
         owner_ids = list(set(owner_ids))
         
         # Get all owner details
-        owners_result = db.table("product_owners").select("*").in_("id", owner_ids).execute()
+        owners_result = db.table("product_owners").select("id, firstname, surname, known_as, status, created_at").in_("id", owner_ids).execute()
         owner_map = {owner["id"]: owner for owner in owners_result.data} if owners_result.data else {}
         
         # Create portfolio map for quick lookup

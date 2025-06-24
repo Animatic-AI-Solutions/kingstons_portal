@@ -21,7 +21,10 @@ interface ClientFormData {
 
 interface ProductOwner {
   id: number;
-  name: string;
+  firstname?: string;
+  surname?: string;
+  known_as?: string;
+  name?: string; // Computed field from backend
   status: string;
   created_at: string;
 }
@@ -117,8 +120,15 @@ const AddClient: React.FC = () => {
     setIsCreatingProductOwner(true);
     try {
       // Create a new product owner
+      // Parse the name into firstname and surname if it contains a space
+      const nameParts = newProductOwnerName.trim().split(' ');
+      const firstname = nameParts[0] || '';
+      const surname = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+      
       const response = await api.post('/product_owners', {
-        name: newProductOwnerName,
+        firstname: firstname,
+        surname: surname || null,
+        known_as: null,
         status: 'active'
       });
 
@@ -205,7 +215,7 @@ const AddClient: React.FC = () => {
 
   const productOwnerOptions = productOwners.map(po => ({
     value: po.id,
-    label: po.name
+    label: po.name || `Product Owner ${po.id}`
   }));
 
   return (

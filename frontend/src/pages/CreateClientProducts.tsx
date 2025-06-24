@@ -12,6 +12,7 @@ import { BaseInput, NumberInput, DateInput, BaseDropdown, MultiSelectDropdown, A
 import { getProviderColor } from '../services/providerColors';
 import { findCashFund, isCashFund } from '../utils/fundUtils';
 import { useNavigationRefresh } from '../hooks/useNavigationRefresh';
+import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
 
 interface Client {
   id: number;
@@ -30,7 +31,10 @@ interface Provider {
 
 interface ProductOwner {
   id: number;
-  name: string;
+  firstname?: string;
+  surname?: string;
+  known_as?: string;
+  name?: string; // Computed field from backend
   status: string;
   created_at: string;
 }
@@ -164,7 +168,11 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   
   // Add state for the create product owner modal
   const [showCreateProductOwnerModal, setShowCreateProductOwnerModal] = useState(false);
-  const [newProductOwnerName, setNewProductOwnerName] = useState('');
+  const [newProductOwnerData, setNewProductOwnerData] = useState({
+    firstname: '',
+    surname: '',
+    known_as: ''
+  });
   const [isCreatingProductOwner, setIsCreatingProductOwner] = useState(false);
   const [currentProductId, setCurrentProductId] = useState<string>('');
   
@@ -789,7 +797,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     const ownerNames = product.product_owner_ids
       .map(ownerId => {
         const owner = productOwners.find(o => o.id === ownerId);
-        return owner ? owner.name : '';
+        return owner ? getProductOwnerDisplayName(owner) : '';
       })
       .filter(name => name.length > 0);
 
@@ -1753,16 +1761,18 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
 
   // Add a function to handle creating a new product owner
   const handleCreateProductOwner = async () => {
-    if (!newProductOwnerName.trim()) {
-      showError('Please enter a name for the product owner');
+    if (!newProductOwnerData.firstname.trim()) {
+      showError('First name is required for the product owner');
       return;
     }
 
     setIsCreatingProductOwner(true);
     try {
-      // Create a new product owner
+      // Create a new product owner with detailed name structure
       const response = await api.post('/api/product_owners', {
-        name: newProductOwnerName,
+        firstname: newProductOwnerData.firstname.trim(),
+        surname: newProductOwnerData.surname.trim() || null,
+        known_as: newProductOwnerData.known_as.trim() || null,
         status: 'active'
       });
 
@@ -1782,8 +1792,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       
       // Close the modal and reset
       setShowCreateProductOwnerModal(false);
-      setNewProductOwnerName('');
-      showToastMessage(`Product owner "${newProductOwnerName}" created successfully!`);
+      setNewProductOwnerData({ firstname: '', surname: '', known_as: '' });
+      const displayName = getProductOwnerDisplayName(newProductOwner);
+      showToastMessage(`Product owner "${displayName}" created successfully!`);
     } catch (error) {
       console.error('Error creating product owner:', error);
       showError('Failed to create product owner. Please try again.');
@@ -2214,10 +2225,10 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                       <div className="flex-grow">
                                         <MultiSelectDropdown
                                           label="Product Owners"
-                                          options={productOwners.map(owner => ({ 
-                                            value: owner.id.toString(), 
-                                            label: owner.name 
-                                          }))}
+                                                                    options={productOwners.map(owner => ({ 
+                            value: owner.id.toString(), 
+                            label: getProductOwnerDisplayName(owner)
+                          }))}
                                           values={product.product_owner_ids.map(id => id.toString())}
                                           onChange={(values) => {
                                             const numericValues = values.map(v => parseInt(String(v)));
@@ -2313,7 +2324,10 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         <Modal
           title="Create New Product Owner"
           open={showCreateProductOwnerModal}
-          onCancel={() => setShowCreateProductOwnerModal(false)}
+          onCancel={() => {
+            setShowCreateProductOwnerModal(false);
+            setNewProductOwnerData({ firstname: '', surname: '', known_as: '' });
+          }}
           onOk={handleCreateProductOwner}
           confirmLoading={isCreatingProductOwner}
           okText="Create Product Owner"
@@ -2321,22 +2335,39 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           centered
           className="product-owner-modal"
         >
-          <div className="mb-4">
+          <div className="space-y-4">
             <BaseInput
-              label="Product Owner Name"
-              value={newProductOwnerName}
-              onChange={(e) => setNewProductOwnerName(e.target.value)}
-              placeholder="Enter product owner name"
+              label="First Name"
+              value={newProductOwnerData.firstname}
+              onChange={(e) => setNewProductOwnerData(prev => ({ ...prev, firstname: e.target.value }))}
+              placeholder="Enter first name"
               required
               size="sm"
               fullWidth
+              autoFocus
+            />
+            <BaseInput
+              label="Surname"
+              value={newProductOwnerData.surname}
+              onChange={(e) => setNewProductOwnerData(prev => ({ ...prev, surname: e.target.value }))}
+              placeholder="Enter surname (optional)"
+              size="sm"
+              fullWidth
+            />
+            <BaseInput
+              label="Known As"
+              value={newProductOwnerData.known_as}
+              onChange={(e) => setNewProductOwnerData(prev => ({ ...prev, known_as: e.target.value }))}
+              placeholder="Preferred name or nickname (optional)"
+              size="sm"
+              fullWidth
+              helperText="This will be used as the display name if provided"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
                   handleCreateProductOwner();
                 }
               }}
-              autoFocus
             />
           </div>
         </Modal>
