@@ -37,6 +37,7 @@ interface Product {
   portfolio_id?: number;
   status: string;
   total_value?: number;
+  plan_number?: string;
 }
 
 interface Fund {
@@ -74,9 +75,15 @@ interface ProductPeriodSummary {
   product_owner_name?: string;
   start_date: string | null;
   total_investment: number;
+  total_regular_investment: number;
+  total_government_uplift: number;
+  total_product_switch_in: number;
+  total_product_switch_out: number;
+  total_fund_switch_in: number;
+  total_fund_switch_out: number;
   total_withdrawal: number;
-  total_switch_in: number;
-  total_switch_out: number;
+  total_switch_in: number; // Keep for backward compatibility
+  total_switch_out: number; // Keep for backward compatibility
   net_flow: number;
   current_valuation: number;
   irr: number | null;
@@ -85,6 +92,7 @@ interface ProductPeriodSummary {
   funds?: FundSummary[]; // Add funds array to store individual fund data
   weighted_risk?: number; // Weighted risk based on fund valuations and risk factors
   status?: string; // Product status to determine if it should be greyed out
+  plan_number?: string; // Plan number for title generation
 }
 
 // New interface for fund-level summary data
@@ -93,9 +101,15 @@ interface FundSummary {
   available_funds_id: number;
   fund_name: string;
   total_investment: number;
+  total_regular_investment: number;
+  total_government_uplift: number;
+  total_product_switch_in: number;
+  total_product_switch_out: number;
+  total_fund_switch_in: number;
+  total_fund_switch_out: number;
   total_withdrawal: number;
-  total_switch_in: number;
-  total_switch_out: number;
+  total_switch_in: number; // Keep for backward compatibility
+  total_switch_out: number; // Keep for backward compatibility
   net_flow: number;
   current_valuation: number;
   irr: number | null;
@@ -1058,10 +1072,17 @@ const ReportGenerator: React.FC = () => {
       }
         
         // Calculate all-time summary for this product
+        // Calculate totals for the product - tracking specific activity types
         let totalInvestment = 0;
+        let totalRegularInvestment = 0;
+        let totalGovernmentUplift = 0;
+        let totalProductSwitchIn = 0;
+        let totalProductSwitchOut = 0;
+        let totalFundSwitchIn = 0;
+        let totalFundSwitchOut = 0;
         let totalWithdrawal = 0;
-        let totalSwitchIn = 0;
-        let totalSwitchOut = 0;
+        let totalSwitchIn = 0; // For backward compatibility
+        let totalSwitchOut = 0; // For backward compatibility
         let productValuation = 0;
         let productStartDate: string | null = null;
         
@@ -1078,17 +1099,33 @@ const ReportGenerator: React.FC = () => {
           }
         
         switch(log.activity_type) {
-            case 'Investment': case 'RegularInvestment': case 'GovernmentUplift': case 'ProductSwitchIn':
+            case 'Investment':
               totalInvestment += parsedAmount; 
               break;
-            case 'Withdrawal': case 'ProductSwitchOut':
+            case 'RegularInvestment':
+              totalRegularInvestment += parsedAmount; 
+              break;
+            case 'GovernmentUplift':
+              totalGovernmentUplift += parsedAmount; 
+              break;
+            case 'Product Switch In':
+            case 'ProductSwitchIn':
+              totalProductSwitchIn += parsedAmount; 
+              break;
+            case 'Product Switch Out':
+            case 'ProductSwitchOut':
+              totalProductSwitchOut += parsedAmount; 
+              break;
+            case 'Withdrawal':
               totalWithdrawal += parsedAmount; 
               break;
             case 'SwitchIn': case 'FundSwitchIn': 
-              totalSwitchIn += parsedAmount; 
+              totalFundSwitchIn += parsedAmount;
+              totalSwitchIn += parsedAmount; // For backward compatibility
               break;
             case 'SwitchOut': case 'FundSwitchOut': 
-              totalSwitchOut += parsedAmount; 
+              totalFundSwitchOut += parsedAmount;
+              totalSwitchOut += parsedAmount; // For backward compatibility
               break;
           }
         });
@@ -1231,11 +1268,17 @@ const ReportGenerator: React.FC = () => {
           
           console.log(`Fund ${fundName} (ID: ${portfolioFund.id}) has ${fundLogs.length} activity logs`);
           
-          // Calculate totals for this fund
+          // Calculate totals for this fund - tracking specific activity types
           let fundInvestment = 0;
+          let fundRegularInvestment = 0;
+          let fundGovernmentUplift = 0;
+          let fundProductSwitchIn = 0;
+          let fundProductSwitchOut = 0;
+          let fundFundSwitchIn = 0;
+          let fundFundSwitchOut = 0;
           let fundWithdrawal = 0;
-          let fundSwitchIn = 0;
-          let fundSwitchOut = 0;
+          let fundSwitchIn = 0; // For backward compatibility
+          let fundSwitchOut = 0; // For backward compatibility
           
           // Debug: Log all activities for this fund
           if (fundLogs.length > 0) {
@@ -1268,27 +1311,47 @@ const ReportGenerator: React.FC = () => {
             }
             
             switch(log.activity_type) {
-              case 'Investment': case 'RegularInvestment': case 'GovernmentUplift': case 'ProductSwitchIn':
+              case 'Investment':
                 fundInvestment += amount; 
                 break;
-              case 'Withdrawal': case 'ProductSwitchOut':
+              case 'RegularInvestment':
+                fundRegularInvestment += amount; 
+                break;
+              case 'GovernmentUplift':
+                fundGovernmentUplift += amount; 
+                break;
+              case 'Product Switch In':
+              case 'ProductSwitchIn':
+                fundProductSwitchIn += amount; 
+                break;
+              case 'Product Switch Out':
+              case 'ProductSwitchOut':
+                fundProductSwitchOut += amount; 
+                break;
+              case 'Withdrawal':
                 fundWithdrawal += amount; 
                 break;
               case 'SwitchIn': case 'FundSwitchIn': 
-                fundSwitchIn += amount; 
+                fundFundSwitchIn += amount;
+                fundSwitchIn += amount; // For backward compatibility
                 break;
               case 'SwitchOut': case 'FundSwitchOut': 
-                fundSwitchOut += amount; 
+                fundFundSwitchOut += amount;
+                fundSwitchOut += amount; // For backward compatibility
                 break;
             }
           });
           
           console.log(`Fund ${fundName} activity totals:`, {
             fundInvestment,
+            fundRegularInvestment,
+            fundGovernmentUplift,
+            fundProductSwitchIn,
+            fundProductSwitchOut,
+            fundFundSwitchIn,
+            fundFundSwitchOut,
             fundWithdrawal,
-            fundSwitchIn,
-            fundSwitchOut,
-            netFlow: fundInvestment - fundWithdrawal + fundSwitchIn - fundSwitchOut
+            netFlow: fundInvestment + fundRegularInvestment + fundGovernmentUplift + fundProductSwitchIn + fundFundSwitchIn - fundWithdrawal - fundProductSwitchOut - fundFundSwitchOut
           });
           
           // Get current valuation (include inactive funds for inactive products)
@@ -1308,22 +1371,29 @@ const ReportGenerator: React.FC = () => {
           // Get historical IRR data for this fund
           const historicalIRRValues = historicalIRRMap.get(portfolioFund.id) || [];
 
-          // Add to fund summaries
+          // Add to fund summaries with proper activity type values
           fundSummaries.push({
             id: portfolioFund.id,
             available_funds_id: portfolioFund.available_funds_id,
             fund_name: fundName,
             total_investment: fundInvestment,
+            total_regular_investment: fundRegularInvestment,
+            total_government_uplift: fundGovernmentUplift,
+            total_product_switch_in: fundProductSwitchIn,
+            total_product_switch_out: fundProductSwitchOut,
+            total_fund_switch_in: fundFundSwitchIn,
+            total_fund_switch_out: fundFundSwitchOut,
             total_withdrawal: fundWithdrawal,
             total_switch_in: fundSwitchIn,
             total_switch_out: fundSwitchOut,
-            net_flow: fundInvestment - fundWithdrawal + fundSwitchIn - fundSwitchOut,
+            net_flow: fundInvestment + fundRegularInvestment + fundGovernmentUplift + fundProductSwitchIn + fundFundSwitchIn - fundWithdrawal - fundProductSwitchOut - fundFundSwitchOut,
             current_valuation: fundValuation,
             irr: fundIRR,
             isin_number: isinNumber,
             status: portfolioFund.status || 'active',
             risk_factor: riskFactor, // Use the risk factor from the available fund
-            historical_irr: historicalIRRValues // Add historical IRR data
+            historical_irr: historicalIRRValues, // Add historical IRR data
+            historical_dates: historicalIRRMonths
           });
         }
 
@@ -1611,6 +1681,12 @@ const ReportGenerator: React.FC = () => {
             available_funds_id: -1,
             fund_name: 'Previous Funds',
             total_investment: totalInvestment,
+            total_regular_investment: totalInvestment,
+            total_government_uplift: 0,
+            total_product_switch_in: 0,
+            total_product_switch_out: 0,
+            total_fund_switch_in: 0,
+            total_fund_switch_out: 0,
             total_withdrawal: totalWithdrawal,
             total_switch_in: totalSwitchIn,
             total_switch_out: totalSwitchOut,
@@ -1693,7 +1769,7 @@ const ReportGenerator: React.FC = () => {
           }
         }
 
-        // Add to summary results with fund data
+        // Add to summary results with fund data and proper activity type totals
         productSummaryResults.push({
           id: productId,
           product_name: productDetails.product_name,
@@ -1701,17 +1777,24 @@ const ReportGenerator: React.FC = () => {
           product_owner_name: productOwnerName,
           start_date: productStartDate,
           total_investment: totalInvestment,
+          total_regular_investment: totalRegularInvestment,
+          total_government_uplift: totalGovernmentUplift,
+          total_product_switch_in: totalProductSwitchIn,
+          total_product_switch_out: totalProductSwitchOut,
+          total_fund_switch_in: totalFundSwitchIn,
+          total_fund_switch_out: totalFundSwitchOut,
           total_withdrawal: totalWithdrawal,
           total_switch_in: totalSwitchIn,
           total_switch_out: totalSwitchOut,
-          net_flow: totalInvestment - totalWithdrawal + totalSwitchIn - totalSwitchOut,
+          net_flow: totalInvestment + totalRegularInvestment + totalGovernmentUplift + totalProductSwitchIn + totalFundSwitchIn - totalWithdrawal - totalProductSwitchOut - totalFundSwitchOut,
           current_valuation: productValuation,
           irr: productIRR,
           provider_name: productDetails.provider_name,
           provider_theme_color: productDetails.provider_theme_color,
           funds: finalFundList,
           weighted_risk: productWeightedRisk,
-          status: productDetails.status // Add product status for greying out inactive products
+          status: productDetails.status, // Add product status for greying out inactive products
+          plan_number: productDetails.plan_number // Add plan number for title generation
         });
         
         // Add to overall valuation
@@ -2482,7 +2565,7 @@ Please select a different valuation date or ensure all active funds have valuati
                       Profit Made
                       </th>
                     <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider bg-purple-100">
-                      Average Return p.a.
+                      Average Returns p.a.
                       </th>
                       <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
                         Risk
@@ -2553,7 +2636,7 @@ Please select a different valuation date or ensure all active funds have valuati
                             {fund.isVirtual && fund.fund_name !== 'Previous Funds' ? (
                               <span className="text-gray-500">-</span>
                             ) : fund.risk_factor !== undefined && fund.risk_factor !== null ? (
-                              <span className="px-2 py-1 text-xs font-medium rounded bg-gray-100">
+                              <span className="text-xs font-medium">
                                 {formatRiskFallback(fund.risk_factor)}
                                 </span>
                               ) : (
@@ -2630,7 +2713,7 @@ Please select a different valuation date or ensure all active funds have valuati
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
                                 {inactiveFund.risk_factor !== undefined && inactiveFund.risk_factor !== null ? (
-                                  <span className="px-2 py-1 text-xs font-medium rounded bg-gray-100">
+                                  <span className="text-xs font-medium">
                                     {formatRiskFallback(inactiveFund.risk_factor)}
                                     </span>
                                   ) : (
@@ -2692,7 +2775,7 @@ Please select a different valuation date or ensure all active funds have valuati
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
                         {product.weighted_risk !== undefined && product.weighted_risk !== null ? (
-                          <span className="px-2 py-1 text-xs font-medium rounded bg-gray-200">
+                          <span className="text-xs font-medium">
                             {product.weighted_risk.toFixed(1)}
                           </span>
                         ) : (
@@ -2743,7 +2826,7 @@ Please select a different valuation date or ensure all active funds have valuati
                       Profit Made
                     </th>
                     <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider bg-purple-100">
-                      Average Return p.a.
+                      Average Returns p.a.
                     </th>
                     <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
                       Risk

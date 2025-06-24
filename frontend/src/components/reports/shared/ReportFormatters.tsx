@@ -44,6 +44,19 @@ export const formatDateFallback = (dateString: string | null): string => {
 
 export const formatCurrencyFallback = (amount: number | null): string => {
   if (amount === null || amount === undefined) return '-';
+  
+  // Handle negative values to display as -£XXXX instead of £-XXXX
+  if (amount < 0) {
+    const positiveAmount = Math.abs(amount);
+    const formatted = new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: 'GBP',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(positiveAmount);
+    return `-${formatted}`;
+  }
+  
   return new Intl.NumberFormat('en-GB', {
     style: 'currency',
     currency: 'GBP',
