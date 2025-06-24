@@ -1099,24 +1099,10 @@ const ReportGenerator: React.FC = () => {
           }
         
         switch(log.activity_type) {
-            case 'Investment':
+            case 'Investment': case 'RegularInvestment': case 'GovernmentUplift': case 'ProductSwitchIn': case 'Product Switch In':
               totalInvestment += parsedAmount; 
               break;
-            case 'RegularInvestment':
-              totalRegularInvestment += parsedAmount; 
-              break;
-            case 'GovernmentUplift':
-              totalGovernmentUplift += parsedAmount; 
-              break;
-            case 'Product Switch In':
-            case 'ProductSwitchIn':
-              totalProductSwitchIn += parsedAmount; 
-              break;
-            case 'Product Switch Out':
-            case 'ProductSwitchOut':
-              totalProductSwitchOut += parsedAmount; 
-              break;
-            case 'Withdrawal':
+            case 'Withdrawal': case 'ProductSwitchOut': case 'Product Switch Out':
               totalWithdrawal += parsedAmount; 
               break;
             case 'SwitchIn': case 'FundSwitchIn': 
@@ -1311,24 +1297,10 @@ const ReportGenerator: React.FC = () => {
             }
             
             switch(log.activity_type) {
-              case 'Investment':
+              case 'Investment': case 'RegularInvestment': case 'GovernmentUplift': case 'ProductSwitchIn': case 'Product Switch In':
                 fundInvestment += amount; 
                 break;
-              case 'RegularInvestment':
-                fundRegularInvestment += amount; 
-                break;
-              case 'GovernmentUplift':
-                fundGovernmentUplift += amount; 
-                break;
-              case 'Product Switch In':
-              case 'ProductSwitchIn':
-                fundProductSwitchIn += amount; 
-                break;
-              case 'Product Switch Out':
-              case 'ProductSwitchOut':
-                fundProductSwitchOut += amount; 
-                break;
-              case 'Withdrawal':
+              case 'Withdrawal': case 'ProductSwitchOut': case 'Product Switch Out':
                 fundWithdrawal += amount; 
                 break;
               case 'SwitchIn': case 'FundSwitchIn': 

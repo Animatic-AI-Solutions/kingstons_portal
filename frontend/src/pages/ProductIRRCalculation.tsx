@@ -834,20 +834,8 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
     }
   }, [account?.id]);
 
-  // Save notes to localStorage before page unload
+  // Save notes to localStorage when tab becomes hidden (but no beforeunload warning)
   useEffect(() => {
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (account?.notes && hasUnsavedNotes) {
-        // Save to localStorage as backup
-        saveNotesToStorage(account.notes);
-        
-        // Show warning if there are unsaved changes
-        const message = 'You have unsaved notes. Are you sure you want to leave?';
-        event.returnValue = message;
-        return message;
-      }
-    };
-
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden' && account?.notes) {
         // Save to localStorage when tab becomes hidden
@@ -855,14 +843,12 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       }
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [account?.notes, hasUnsavedNotes]);
+  }, [account?.notes]);
 
 
   const fetchData = async (accountId: string) => {
