@@ -622,9 +622,7 @@ const ReportDisplay: React.FC = () => {
 
   const handleTabChange = (tab: 'summary' | 'irr-history') => {
     setActiveTab(tab);
-    if (tab === 'irr-history' && !irrHistoryData) {
-      fetchIrrHistory();
-    }
+    // IRR history is now fetched automatically on page load, no need for conditional fetching
   };
 
   useEffect(() => {
@@ -639,10 +637,11 @@ const ReportDisplay: React.FC = () => {
     }
   }, [location.state, navigate]);
 
-  // Calculate real-time total IRR when report data is loaded
+  // Calculate real-time total IRR and fetch IRR history when report data is loaded
   useEffect(() => {
     if (reportData) {
       calculateRealTimeTotalIRR();
+      fetchIrrHistory(); // Automatically fetch IRR history on page load
     }
   }, [reportData]);
 
@@ -1796,7 +1795,7 @@ const ReportDisplay: React.FC = () => {
                             ))}
 
                             {/* Product Total Row */}
-                            <tr className="bg-gray-100 font-semibold border-t-2 border-gray-300">
+                            <tr className="bg-gray-100 font-semibold border-t-2 border-gray-400">
                               <td className="px-2 py-2 text-xs font-bold text-gray-800 text-left">
                                 TOTAL
                               </td>
@@ -1842,10 +1841,10 @@ const ReportDisplay: React.FC = () => {
                                   return <span className="text-black font-bold">{formatted.value}</span>;
                                 })()}
                               </td>
-                              <td className="px-2 py-2 text-xs font-bold text-right bg-green-50 text-black">
+                              <td className="px-2 py-2 text-xs font-bold text-right bg-green-100 text-black">
                                 {formatCurrencyWithZeroToggle(product.funds.reduce((sum, fund) => sum + fund.current_valuation, 0))}
                               </td>
-                              <td className="px-2 py-2 text-xs font-bold text-right bg-blue-50 text-black">
+                              <td className="px-2 py-2 text-xs font-bold text-right bg-blue-100 text-black">
                                 {(() => {
                                   const totalGains = product.funds.reduce((sum, fund) => sum + fund.current_valuation + fund.total_withdrawal + fund.total_product_switch_out + fund.total_fund_switch_out, 0);
                                   const totalCosts = product.funds.reduce((sum, fund) => sum + fund.total_investment + fund.total_regular_investment + fund.total_government_uplift + fund.total_product_switch_in + fund.total_fund_switch_in, 0);
@@ -1854,7 +1853,7 @@ const ReportDisplay: React.FC = () => {
                                   return <span className="text-black font-bold">{formatted.value}</span>;
                                 })()}
                               </td>
-                              <td className="px-2 py-2 text-xs font-bold text-right bg-purple-50">
+                              <td className="px-2 py-2 text-xs font-bold text-right bg-purple-100">
                                 {(() => {
                                   // Calculate weighted average IRR for this product
                                   const fundsWithIrr = product.funds.filter(fund => fund.irr !== null && fund.irr !== undefined && fund.current_valuation > 0);
@@ -1914,8 +1913,8 @@ const ReportDisplay: React.FC = () => {
 
         </div>
 
-        {/* IRR History Section - Force page break before */}
-        <div className={`irr-history-section ${activeTab === 'irr-history' ? '' : 'hidden'} print:block`}>
+        {/* IRR History Section - Always visible in print, force page break before */}
+        <div className={`irr-history-section ${activeTab === 'irr-history' ? '' : 'hidden'} print:block print:mt-8`}>
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900">IRR History</h2>
           </div>

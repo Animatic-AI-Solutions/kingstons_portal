@@ -208,6 +208,12 @@
     page-break-inside: avoid;
     break-inside: avoid;
   }
+  
+  /* Ensure both report sections are visible in print */
+  .irr-history-section {
+    display: block !important;
+    page-break-before: always;
+  }
 }
 
 /* Compact table styles for portfolio summary and product tables */
@@ -232,6 +238,18 @@
 /* Ensure the first column (Product) stays left-aligned */
 .portfolio-summary-table th:first-child,
 .portfolio-summary-table td:first-child {
+  text-align: left !important;
+}
+
+/* Ensure all product fund table columns are right-aligned except the first (Fund Name) column */
+.product-fund-table th:not(:first-child),
+.product-fund-table td:not(:first-child) {
+  text-align: right !important;
+}
+
+/* Ensure the first column (Fund Name) stays left-aligned */
+.product-fund-table th:first-child,
+.product-fund-table td:first-child {
   text-align: left !important;
 }
 
