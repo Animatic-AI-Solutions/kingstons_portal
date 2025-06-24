@@ -21,6 +21,7 @@ interface ClientGroup {
 interface ProductOwner {
   id: number;
   name: string;
+  known_as?: string;
   type?: string;
 }
 
@@ -29,7 +30,7 @@ interface Product {
   product_name: string;
   product_type?: string;
   product_owner_name?: string;
-  product_owners?: Array<{ id: number; name: string; }>;
+  product_owners?: Array<{ id: number; name: string; known_as?: string; }>;
   client_id: number;
   provider_id?: number;
   provider_name?: string;
@@ -1733,11 +1734,14 @@ const ReportGenerator: React.FC = () => {
         let productOwnerName: string | undefined = undefined;
         if (productDetails.product_owners && Array.isArray(productDetails.product_owners) && productDetails.product_owners.length > 0) {
           if (productDetails.product_owners.length === 1) {
-            // Single owner
-            productOwnerName = productDetails.product_owners[0].name;
+            // Single owner - use known_as if available, otherwise fall back to name
+            const owner = productDetails.product_owners[0];
+            productOwnerName = (owner.known_as && owner.known_as.trim()) ? owner.known_as.trim() : owner.name;
           } else {
-            // Multiple owners - join with commas
-            productOwnerName = productDetails.product_owners.map((owner: any) => owner.name).join(', ');
+            // Multiple owners - join with commas, using known_as when available
+            productOwnerName = productDetails.product_owners.map((owner: any) => 
+              (owner.known_as && owner.known_as.trim()) ? owner.known_as.trim() : owner.name
+            ).join(', ');
           }
         }
 
@@ -1939,7 +1943,8 @@ Please select a different valuation date or ensure all active funds have valuati
         })(),
         // Report settings
         showInactiveProducts,
-        showPreviousFunds
+        showPreviousFunds,
+        showInactiveProductDetails: Array.from(showInactiveProductDetails)
       };
 
       // Navigate to the report display page
