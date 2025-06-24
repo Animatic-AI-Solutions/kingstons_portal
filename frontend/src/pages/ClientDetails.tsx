@@ -662,7 +662,15 @@ const ProductCard: React.FC<{
     }).format(amount);
   };
 
-  // Format percentage with 2 decimal places
+  // Format currency with zero handling (show "-" for zeros except valuations)
+  const formatCurrencyWithZeroHandling = (amount: number, isValuation: boolean = false): string => {
+    if (amount === 0 && !isValuation) {
+      return '-';
+    }
+    return formatCurrency(amount);
+  };
+
+  // Format percentage with 1 decimal place
   const formatPercentage = (value: number | string | null | undefined): string => {
     if (value === null || value === undefined) {
       return 'N/A';
@@ -670,7 +678,7 @@ const ProductCard: React.FC<{
     if (typeof value === 'string') {
       return value; // Return string values as-is (like "-")
     }
-    return `${(value).toFixed(2)}%`;
+    return `${(value).toFixed(1)}%`;
   };
 
   // Calculate estimated annual revenue with proper validation logic
@@ -903,18 +911,29 @@ const ProductCard: React.FC<{
             </div>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-gray-200 mt-2">
-              <table className="min-w-full divide-y divide-gray-200 text-xs">
+              <table className="w-full table-fixed divide-y divide-gray-200 text-xs">
+                <colgroup>
+                  <col className="w-1/4" />
+                  <col className="w-[10%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[6%]" />
+                </colgroup>
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fund</th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Investments</th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Withdrawals</th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Fund Switch In</th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Fund Switch Out</th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Product Switch In</th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Product Switch Out</th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Current Valuation</th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Most Recent IRR</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fund Name</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Invest.</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Withdraw.</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Fund In</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Fund Out</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Prod. In</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Prod. Out</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Valuation</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">IRR</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -923,25 +942,25 @@ const ProductCard: React.FC<{
                       key={fund.id} 
                       className={`${fund.is_virtual_entry ? 'bg-gray-50' : 'hover:bg-gray-50'}`}
                     >
-                      <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-gray-900">
+                      <td className="px-3 py-2 text-xs font-medium text-gray-900 truncate" title={fund.fund_name}>
                         {fund.is_virtual_entry ? (
                           <div className="flex items-center">
-                            <span>{fund.fund_name.split('(')[0]}</span>
-                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            <span className="truncate">{fund.fund_name.split('(')[0]}</span>
+                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 flex-shrink-0">
                               {fund.inactive_fund_count}
                             </span>
                           </div>
                         ) : (
-                          fund.fund_name
+                          <span className="truncate block">{fund.fund_name}</span>
                         )}
                       </td>
-                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(fund.investments || 0)}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(fund.withdrawals || 0)}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(fund.switch_in || 0)}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(fund.switch_out || 0)}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(fund.product_switch_in || 0)}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(fund.product_switch_out || 0)}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(fund.market_value || 0)}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.investments || 0)}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.withdrawals || 0)}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.switch_in || 0)}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.switch_out || 0)}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.product_switch_in || 0)}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.product_switch_out || 0)}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.market_value || 0, true)}</td>
                       <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
                         {fund.is_virtual_entry ? (
                           (() => {
@@ -971,27 +990,27 @@ const ProductCard: React.FC<{
                   
                   {/* Totals row */}
                   <tr className="bg-gray-50 font-medium">
-                    <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-gray-900">TOTAL</td>
+                    <td className="px-3 py-2 text-xs font-medium text-gray-900 truncate">TOTAL</td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
-                      {formatCurrency(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.investments || 0), 0))}
+                      {formatCurrencyWithZeroHandling(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.investments || 0), 0))}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
-                      {formatCurrency(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.withdrawals || 0), 0))}
+                      {formatCurrencyWithZeroHandling(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.withdrawals || 0), 0))}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
-                      {formatCurrency(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.switch_in || 0), 0))}
+                      {formatCurrencyWithZeroHandling(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.switch_in || 0), 0))}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
-                      {formatCurrency(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.switch_out || 0), 0))}
+                      {formatCurrencyWithZeroHandling(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.switch_out || 0), 0))}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
-                      {formatCurrency(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.product_switch_in || 0), 0))}
+                      {formatCurrencyWithZeroHandling(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.product_switch_in || 0), 0))}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
-                      {formatCurrency(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.product_switch_out || 0), 0))}
+                      {formatCurrencyWithZeroHandling(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.product_switch_out || 0), 0))}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
-                      {formatCurrency(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.market_value || 0), 0))}
+                      {formatCurrencyWithZeroHandling(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.market_value || 0), 0), true)}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
                       {account.irr !== undefined && account.irr !== null ? (
