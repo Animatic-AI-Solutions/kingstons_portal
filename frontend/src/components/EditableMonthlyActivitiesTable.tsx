@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, Fragment } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { formatCurrency } from '../utils/formatters';
 import api, { createFundValuation, calculatePortfolioIRR } from '../services/api';
 import BulkMonthActivitiesModal from './BulkMonthActivitiesModal';
@@ -108,6 +109,11 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   const [currentMonthPage, setCurrentMonthPage] = useState(0);
   const [monthsPerPage] = useState(12); // Show 12 months at a time
   const [pendingEdits, setPendingEdits] = useState<CellEdit[]>([]);
+  
+  // Debug effect to track pendingEdits changes
+  useEffect(() => {
+    console.log('🔍 DEBUG: pendingEdits state changed, length:', pendingEdits.length, 'edits:', pendingEdits);
+  }, [pendingEdits]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fundValuations, setFundValuations] = useState<FundValuation[]>([]);
@@ -298,6 +304,100 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       }
     };
   }, []);
+
+  // Add beforeunload warning for unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      console.log('🔍 DEBUG: beforeunload triggered, pendingEdits.length:', pendingEdits.length);
+      if (pendingEdits.length > 0) {
+        console.log('🔍 DEBUG: Showing beforeunload warning due to pending edits:', pendingEdits);
+        const message = 'You have unsaved changes in the monthly activities table. Are you sure you want to leave without saving?';
+        e.preventDefault();
+        e.returnValue = message; // Standard way to show the dialog
+        return message; // For older browsers
+      } else {
+        console.log('🔍 DEBUG: No pending edits, allowing navigation');
+      }
+    };
+
+    // Add the event listener
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [pendingEdits]);
+
+  // Custom navigation blocking using popstate and link interception
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Block browser back/forward navigation when there are unsaved changes
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (pendingEdits.length > 0) {
+        const confirmNavigation = window.confirm(
+          'You have unsaved changes in the monthly activities table. Are you sure you want to leave without saving?'
+        );
+        
+        if (!confirmNavigation) {
+          // Push the current state back to prevent navigation
+          window.history.pushState(null, '', window.location.href);
+        }
+      }
+    };
+
+    // Add popstate listener for browser back/forward buttons
+    window.addEventListener('popstate', handlePopState);
+    
+    // Push current state to enable popstate detection
+    window.history.pushState(null, '', window.location.href);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [pendingEdits]);
+
+  // Intercept link clicks when there are unsaved changes
+  useEffect(() => {
+    const handleLinkClick = (event: MouseEvent) => {
+      if (pendingEdits.length > 0) {
+        const target = event.target as HTMLElement;
+        const link = target.closest('a[href]') as HTMLAnchorElement;
+        
+        if (link && link.href && !link.href.startsWith('mailto:') && !link.href.startsWith('tel:')) {
+          // Check if it's an internal link (same origin)
+          try {
+            const linkUrl = new URL(link.href);
+            const currentUrl = new URL(window.location.href);
+            
+            if (linkUrl.origin === currentUrl.origin && linkUrl.pathname !== currentUrl.pathname) {
+              event.preventDefault();
+              
+              const confirmNavigation = window.confirm(
+                'You have unsaved changes in the monthly activities table. Are you sure you want to leave without saving?'
+              );
+              
+              if (confirmNavigation) {
+                // Allow navigation by programmatically navigating
+                navigate(linkUrl.pathname + linkUrl.search + linkUrl.hash);
+              }
+            }
+          } catch (e) {
+            // If URL parsing fails, let the default behavior happen
+          }
+        }
+      }
+    };
+
+    // Add click listener to document to catch all link clicks
+    document.addEventListener('click', handleLinkClick, true);
+
+    return () => {
+      document.removeEventListener('click', handleLinkClick, true);
+    };
+  }, [pendingEdits, navigate]);
 
   // Initialize all available months and set up pagination
   useEffect(() => {
@@ -618,11 +718,35 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     // Allow necessary characters for math expressions and ensure zeros are handled correctly
     const sanitizedValue = value === "0" ? "0" : (value.trim() === '' ? '' : value);
     
-    // Get current value to check if this is actually a change
-    const currentValue = getCellValue(fundId, month, activityType);
+    // Get the original value from the database (not from pending edits)
+    let originalValue = '';
+    let existingId = undefined;
     
-    // If the value hasn't actually changed, don't create an edit
-    if (sanitizedValue === currentValue) {
+    if (activityType === 'Current Value') {
+      const valuation = getFundValuation(fundId, month);
+      if (valuation) {
+        originalValue = valuation.valuation.toString();
+        existingId = valuation.id;
+      }
+    } else {
+      const activity = getActivity(fundId, month, activityType);
+      if (activity) {
+        originalValue = Math.abs(parseFloat(activity.amount)).toString();
+        existingId = activity.id;
+      }
+    }
+    
+    // If the value hasn't actually changed from the original, don't create an edit
+    if (sanitizedValue === originalValue) {
+      // Remove any existing pending edit for this cell since we're back to the original value
+      setPendingEdits(prev => prev.filter(edit => 
+        !(edit.fundId === fundId && edit.month === month && edit.activityType === activityType)
+      ));
+      return;
+    }
+    
+    // If both the new value and original value are empty, don't create an edit
+    if (sanitizedValue === '' && originalValue === '') {
       // Remove any existing pending edit for this cell
       setPendingEdits(prev => prev.filter(edit => 
         !(edit.fundId === fundId && edit.month === month && edit.activityType === activityType)
@@ -630,26 +754,16 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       return;
     }
     
-    // Get existing activity or valuation
-    let existingId = undefined;
-    if (activityType === 'Current Value') {
-      const valuation = getFundValuation(fundId, month);
-      existingId = valuation?.id;
-    } else {
-      const activity = getActivity(fundId, month, activityType);
-      existingId = activity?.id;
-    }
-    
     // Create the new edit
-      const newEdit: CellEdit = {
-        fundId,
-        month,
-        activityType,
-        value: sanitizedValue,
-        isNew: !existingId,
-        originalActivityId: existingId,
-        toDelete: sanitizedValue === '' && !!existingId
-      };
+    const newEdit: CellEdit = {
+      fundId,
+      month,
+      activityType,
+      value: sanitizedValue,
+      isNew: !existingId,
+      originalActivityId: existingId,
+      toDelete: sanitizedValue === '' && !!existingId
+    };
       
     // Update pending edits by replacing any existing edit for this cell
     setPendingEdits(prev => [
@@ -838,9 +952,11 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       console.log(`🔍 DEBUG: Skipping manual calculatePortfolioIRR call to prevent duplicate IRR creation`);
       
       console.log('🔍 DEBUG: About to clear pending edits and call onActivitiesUpdated');
+      console.log('🔍 DEBUG: Current pendingEdits before clearing:', pendingEdits.length);
       
       // Clear pending edits and refresh data
       setPendingEdits([]);
+      console.log('🔍 DEBUG: setPendingEdits([]) called - should clear pending edits');
       onActivitiesUpdated();
       
     } catch (error: any) {
@@ -1280,7 +1396,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     if (isNaN(num)) return value;
     
     // For non-decimal values, format without decimal places
-      return num.toFixed(0);
+    return num.toFixed(0);
   };
 
   // Format the total for display with correct signs
@@ -1529,57 +1645,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                 {isCompactView ? 'Detailed View' : 'Compact View'}
               </button>
             </div>
-            
-              <button
-                onClick={saveChanges}
-                disabled={isSubmitting || pendingEdits.length === 0}
-                className={`
-                  relative px-4 py-2 font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out
-                  ${pendingEdits.length > 0 
-                    ? 'bg-orange-500 text-white hover:bg-orange-600 focus:ring-orange-500 transform hover:scale-105 animate-pulse shadow-lg border-2 border-orange-400' 
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }
-                  ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}
-                `}
-                title={pendingEdits.length > 0 ? `Save ${pendingEdits.length} pending changes` : 'No changes to save'}
-              >
-                <div className="flex items-center space-x-2">
-                  {/* Save icon */}
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                  
-                  <span>
-                    {isSubmitting 
-                      ? 'Saving...' 
-                      : pendingEdits.length > 0 
-                        ? `Save Changes` 
-                        : 'Save Changes'
-                    }
-                  </span>
-                  
-                  {/* Change count badge */}
-                  {pendingEdits.length > 0 && !isSubmitting && (
-                    <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-orange-100 bg-orange-700 rounded-full animate-bounce">
-                      {pendingEdits.length}
-                    </span>
-                  )}
-                  
-                  {/* Loading spinner */}
-                  {isSubmitting && (
-                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  )}
-                </div>
-                
-                {/* Glowing effect when changes are pending */}
-                {pendingEdits.length > 0 && !isSubmitting && (
-                  <div className="absolute inset-0 rounded-md bg-orange-400 opacity-20 animate-ping"></div>
-                )}
-              </button>
-            </div>
+          </div>
             
             {/* Month Navigation */}
             {allAvailableMonths.length > monthsPerPage && (
@@ -1640,10 +1706,34 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
             <p>{error}</p>
           </div>
         )}
+
+        {/* Unsaved changes warning */}
+        {pendingEdits.length > 0 && (
+          <div className="mb-4 p-3 bg-orange-100 border-l-4 border-orange-500 text-orange-700 flex items-center justify-between">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 mr-2 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <span className="font-medium">
+                You have {pendingEdits.length} unsaved change{pendingEdits.length !== 1 ? 's' : ''} in the monthly activities table.
+              </span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm">Save your changes before leaving this page.</span>
+              <button
+                onClick={saveChanges}
+                disabled={isSubmitting}
+                className="px-3 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50 text-sm font-medium transition-colors"
+              >
+                {isSubmitting ? 'Saving...' : 'Save Now'}
+              </button>
+            </div>
+          </div>
+        )}
         
         <div 
           ref={tableContainerRef}
-          className="overflow-x-auto border rounded-lg shadow-md w-full" 
+          className="overflow-hidden border rounded-lg shadow-md w-full" 
           style={{ scrollBehavior: 'smooth' }}
         >
           <div className="relative">
@@ -1652,12 +1742,12 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
               className="w-full divide-y divide-gray-200 table-fixed relative"
             >
               <colgroup>
-                <col className="w-[15%] sticky left-0 z-10" />
-                <col className="w-[15%] sticky left-0 z-10" />
+                <col className="w-[12%] sticky left-0 z-10" />
+                <col className="w-[12%] sticky left-0 z-10" />
                 {months.map((month, index) => (
-                  <col key={`col-${month}`} className={`w-[${60 / months.length}%]`} />
+                  <col key={`col-${month}`} className={`w-[${68 / months.length}%]`} />
                 ))}
-                <col className="w-[10%]" />
+                <col className="w-[8%]" />
               </colgroup>
               <thead 
                 className="bg-blue-50 shadow-lg"
@@ -1846,7 +1936,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                               : 'bg-white border-t border-gray-200'
                       }`}>
                         {/* Fund name column */}
-                        <td className={`px-1 py-0 font-semibold ${
+                        <td className={`px-1 py-0 font-semibold text-sm ${
                           fund.isActive === false 
                             ? fund.isInactiveBreakdown 
                               ? 'text-gray-600 pl-4' 
@@ -1892,7 +1982,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       </td>
                         
                         {/* Activity column - shows "Total Activities" */}
-                        <td className={`px-1 py-0 font-medium text-red-600 sticky left-0 z-10 ${
+                        <td className={`px-1 py-0 font-medium text-sm text-red-600 sticky left-0 z-10 ${
                             fund.isActive === false 
                               ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
                             : 'bg-white'
@@ -1981,7 +2071,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                         <tr key={`${fund.id}-${activityType}${fund.isInactiveBreakdown ? '-breakdown' : ''}`} 
                               className={`${fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-white'} border-t border-gray-100`}>
                             {/* Fund name column - only show on first activity row */}
-                            <td className={`px-1 py-0 ${
+                            <td className={`px-1 py-0 text-sm ${
                               fund.isActive === false 
                                 ? fund.isInactiveBreakdown 
                                   ? 'text-gray-600' 
@@ -2027,7 +2117,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                             </td>
                             
                             {/* Activity type column */}
-                            <td className={`px-1 py-0 font-medium text-gray-500 sticky left-0 z-10 ${
+                            <td className={`px-1 py-0 font-medium text-sm text-gray-500 sticky left-0 z-10 ${
                               fund.isActive === false 
                                 ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
                                 : 'bg-white'
@@ -2048,7 +2138,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                 key={`${fund.id}-${month}-${activityType}${fund.isInactiveBreakdown ? '-breakdown' : ''}`} 
                                 className={`${getCellClass(fund.id, month, activityType, true)} ${
                                   fund.isInactiveBreakdown ? 'bg-gray-50 opacity-75' : ''
-                                }`}
+                                } overflow-hidden`}
                                 id={`cell-${fund.id}-${month}-${activityType}${fund.isInactiveBreakdown ? '-breakdown' : ''}`}
                               onClick={(e) => {
                                   if (fund.isInactiveBreakdown || fund.isActive === false) return;
@@ -2071,7 +2161,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                               <div className="flex justify-center items-center">
                                   <input
                                     type="text"
-                                    className={`focus:outline-none bg-transparent text-center border-0 shadow-none w-auto min-w-0 ${!fund.isActive || fund.isInactiveBreakdown ? 'text-gray-500 cursor-not-allowed' : ''}`}
+                                    className={`focus:outline-none bg-transparent text-center border-0 shadow-none w-full ${!fund.isActive || fund.isInactiveBreakdown ? 'text-gray-500 cursor-not-allowed' : ''}`}
                                     value={formatCellValue(cellValue)}
                                     disabled={isSubmitting || fund.isActive === false || fund.isInactiveBreakdown}
                                     onChange={(e) => {
@@ -2084,7 +2174,6 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                           }
                                         }
                                         handleCellValueChangeEnhanced(fund.id, month, activityType, value);
-                                        e.target.style.width = (value.length + 1) + 'ch';
                                       }
                                     }}
                                     onBlur={(e) => {
@@ -2113,9 +2202,11 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                     boxShadow: 'none',
                                     background: 'transparent',
                                     padding: '0 1px',
+                                    fontSize: '0.75rem',
+                                    opacity: fund.isActive === false || fund.isInactiveBreakdown ? 0.7 : 1,
                                     width: '100%',
-                                    fontSize: '0.875rem',
-                                    opacity: fund.isActive === false || fund.isInactiveBreakdown ? 0.7 : 1
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap'
                                   }}
                                   inputMode="text"
                                 />
@@ -2209,7 +2300,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       <td className="px-1 py-0 font-medium text-gray-500 sticky left-0 z-10 bg-white">
                         {/* Empty for fund column */}
                       </td>
-                      <td className="px-1 py-0 font-medium text-gray-500 sticky left-0 z-10 bg-white">
+                      <td className="px-1 py-0 font-medium text-sm text-gray-500 sticky left-0 z-10 bg-white">
                         {formatActivityType(activityType)}
                       </td>
                       {months.map((month, monthIndex) => {

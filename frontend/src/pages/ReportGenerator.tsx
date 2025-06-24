@@ -1078,10 +1078,10 @@ const ReportGenerator: React.FC = () => {
           }
         
         switch(log.activity_type) {
-            case 'Investment': case 'RegularInvestment': case 'GovernmentUplift': case 'ProductSwitchIn':
+            case 'Investment': case 'RegularInvestment': case 'GovernmentUplift': case 'ProductSwitchIn': case 'Product Switch In':
               totalInvestment += parsedAmount; 
               break;
-            case 'Withdrawal': case 'ProductSwitchOut':
+            case 'Withdrawal': case 'ProductSwitchOut': case 'Product Switch Out':
               totalWithdrawal += parsedAmount; 
               break;
             case 'SwitchIn': case 'FundSwitchIn': 
@@ -1268,10 +1268,10 @@ const ReportGenerator: React.FC = () => {
             }
             
             switch(log.activity_type) {
-              case 'Investment': case 'RegularInvestment': case 'GovernmentUplift': case 'ProductSwitchIn':
+              case 'Investment': case 'RegularInvestment': case 'GovernmentUplift': case 'ProductSwitchIn': case 'Product Switch In':
                 fundInvestment += amount; 
                 break;
-              case 'Withdrawal': case 'ProductSwitchOut':
+              case 'Withdrawal': case 'ProductSwitchOut': case 'Product Switch Out':
                 fundWithdrawal += amount; 
                 break;
               case 'SwitchIn': case 'FundSwitchIn': 
