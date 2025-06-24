@@ -53,10 +53,14 @@ const AddFundModal: React.FC<AddFundModalProps> = ({ isOpen, onClose, onFundAdde
 
   // New handlers for BaseInput components
   const handleFundNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      fund_name: e.target.value
-    }));
+    const value = e.target.value;
+    // Limit fund name to 30 characters
+    if (value.length <= 30) {
+      setFormData(prev => ({
+        ...prev,
+        fund_name: value
+      }));
+    }
   };
 
   const handleIsinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,6 +101,12 @@ const AddFundModal: React.FC<AddFundModalProps> = ({ isOpen, onClose, onFundAdde
     // Validate form
     if (!formData.fund_name?.trim()) {
       setError('Fund name is required');
+      return;
+    }
+
+    // Validate fund name length
+    if (formData.fund_name.length > 30) {
+      setError('Fund name must be 30 characters or less');
       return;
     }
 
@@ -202,7 +212,8 @@ const AddFundModal: React.FC<AddFundModalProps> = ({ isOpen, onClose, onFundAdde
               value={formData.fund_name}
               onChange={handleFundNameChange}
               required
-              helperText="Unique identifier for this investment fund"
+              maxLength={30}
+              helperText={`Unique identifier for this investment fund (${formData.fund_name.length}/30 characters)`}
             />
 
             <BaseInput
