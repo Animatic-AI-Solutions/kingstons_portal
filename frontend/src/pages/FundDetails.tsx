@@ -294,23 +294,23 @@ const FundDetails: React.FC = () => {
       // Validate fund name length
       if (formData.fund_name && formData.fund_name.length > 30) {
         setError('Fund name must be 30 characters or less');
-        return;
-      }
+      return;
+    }
 
       // Validate risk factor if provided
       if (formData.risk_factor !== undefined && formData.risk_factor !== null) {
         if (formData.risk_factor < 1 || formData.risk_factor > 7) {
-          setError('Risk factor must be between 1 and 7');
-          return;
-        }
+      setError('Risk factor must be between 1 and 7');
+      return;
+    }
       }
 
       const response = await api.put(`/funds/${fund?.id}`, formData);
-      
+
       if (response.data) {
         setFund(response.data);
-        setIsEditing(false);
-        setFormData({});
+      setIsEditing(false);
+      setFormData({});
         setOriginalFormData({});
         setError(null);
       }
@@ -329,10 +329,10 @@ const FundDetails: React.FC = () => {
       return; // Don't update if exceeding 30 characters
     }
     
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
   };
 
   // CSV Export function
@@ -536,15 +536,15 @@ const FundDetails: React.FC = () => {
           <div className="mt-1">
             {isEditing ? (
               <div>
-                <input
-                  type="text"
-                  name="fund_name"
-                  value={formData.fund_name || ''}
-                  onChange={handleChange}
+              <input
+                type="text"
+                name="fund_name"
+                value={formData.fund_name || ''}
+                onChange={handleChange}
                   maxLength={30}
-                  className="block w-full text-lg font-semibold border-0 p-0 focus:ring-0 focus:border-0 bg-transparent"
-                  placeholder="Enter fund name"
-                />
+                className="block w-full text-lg font-semibold border-0 p-0 focus:ring-0 focus:border-0 bg-transparent"
+                placeholder="Enter fund name"
+              />
                 <div className="text-xs text-gray-400 mt-1">
                   {(formData.fund_name || '').length}/30 characters
                 </div>

@@ -56,10 +56,10 @@ const AddFundModal: React.FC<AddFundModalProps> = ({ isOpen, onClose, onFundAdde
     const value = e.target.value;
     // Limit fund name to 30 characters
     if (value.length <= 30) {
-      setFormData(prev => ({
-        ...prev,
+    setFormData(prev => ({
+      ...prev,
         fund_name: value
-      }));
+    }));
     }
   };
 
