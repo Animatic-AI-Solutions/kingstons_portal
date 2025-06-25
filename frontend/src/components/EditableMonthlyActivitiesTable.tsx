@@ -854,6 +854,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     // Convert activity types for matching using our helper function
     const matchType = convertActivityTypeForBackend(activityType);
     
+
     // Use indexed lookup for O(1) performance instead of array.find()
     const key = `${fundId}-${month}-${matchType}`;
     return activitiesIndex.get(key);
@@ -1193,13 +1194,20 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           }
         } else {
           // Handle regular activities with uniform structure
+          const backendActivityType = convertActivityTypeForBackend(edit.activityType);
+          
+          // Add debugging to track activity type conversion
+          console.log(`🔍 ACTIVITY TYPE DEBUG: UI Type: "${edit.activityType}" -> Backend Type: "${backendActivityType}"`);
+          
           const activityData = {
               portfolio_fund_id: edit.fundId,
               account_holding_id: accountHoldingId,
-              activity_type: convertActivityTypeForBackend(edit.activityType),
+              activity_type: backendActivityType,
             activity_timestamp: `${edit.month}-01`,
             amount: edit.value
           };
+
+          console.log(`🔍 SAVING ACTIVITY: ${JSON.stringify(activityData)}`);
 
           if (edit.isNew) {
             await api.post('holding_activity_logs', activityData);
@@ -1550,8 +1558,10 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
   // Calculate total for all funds for a specific activity type - now uses memoized results
   const calculateActivityTypeTotal = (activityType: string, month: string): number => {
+
     const key = `${activityType}-${month}`;
     return calculationResults.activityTypeTotals.get(key) || 0;
+
   };
 
   // Calculate total for all activity types and all funds for a specific month - now uses memoized results
@@ -1589,16 +1599,24 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
   // Format the total for display with correct signs
   const formatTotal = (total: number): string => {
-    // Round to 2 decimal places, then remove unnecessary trailing zeros
+    // Return '-' for zero values
+    if (total === 0) {
+      return '-';
+    }
+    // Round to 2 decimal places and format with exactly 2 decimal places
     const rounded = Math.round(total * 100) / 100;
-    return rounded.toString();
+    return rounded.toFixed(2);
   };
 
   // Format row totals rounded to 2 decimal places
   const formatRowTotal = (total: number): string => {
-    // Round to 2 decimal places, then remove unnecessary trailing zeros
+    // Return '-' for zero values
+    if (total === 0) {
+      return '-';
+    }
+    // Round to 2 decimal places and format with exactly 2 decimal places
     const rounded = Math.round(total * 100) / 100;
-    return rounded.toString();
+    return rounded.toFixed(2);
   };
 
   
@@ -1669,10 +1687,21 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     // Convert bulk data to pending edits format
     const newEdits: CellEdit[] = [];
     
+    console.log(`🔍 BULK SAVE DEBUG: Received bulk data:`, bulkData);
+    
     Object.keys(bulkData).forEach(fundIdStr => {
       const fundId = parseInt(fundIdStr);
       Object.keys(bulkData[fundId]).forEach(activityType => {
         const value = bulkData[fundId][activityType];
+        
+        // Validate activity type to ensure it's in the expected UI format
+        if (!ACTIVITY_TYPES.includes(activityType)) {
+          console.error(`🔍 BULK SAVE ERROR: Invalid activity type received: "${activityType}"`);
+          console.error(`🔍 BULK SAVE ERROR: Expected one of:`, ACTIVITY_TYPES);
+          return; // Skip this invalid activity type
+        }
+        
+        console.log(`🔍 BULK SAVE DEBUG: Processing Fund ${fundId}, Activity: "${activityType}", Value: "${value}"`);
         
         // Get current value to check if this is actually a change
         const currentValue = getCellValue(fundId, selectedBulkMonth, activityType);
@@ -1692,17 +1721,20 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         const newEdit: CellEdit = {
           fundId,
           month: selectedBulkMonth,
-          activityType,
+          activityType, // Keep in UI format - conversion happens in saveChangesWithPreservation
           value: value,
           isNew: !existingId,
           originalActivityId: existingId,
           toDelete: value === '' && !!existingId
         };
         
+        console.log(`🔍 BULK SAVE DEBUG: Created edit:`, newEdit);
         newEdits.push(newEdit);
         }
       });
     });
+    
+    console.log(`🔍 BULK SAVE DEBUG: Total new edits created:`, newEdits.length);
     
     // Only replace edits for cells that actually changed
     // Remove existing pending edits for the changed cells only

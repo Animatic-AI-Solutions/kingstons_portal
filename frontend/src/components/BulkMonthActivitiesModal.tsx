@@ -468,9 +468,14 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
           }
           // Keep activity types in UI format for compatibility with main table
           changedData[fundId][activityType] = currentValue;
+          
+          // Add debugging to track what's being saved from bulk modal
+          console.log(`🔍 BULK MODAL DEBUG: Fund ${fundId}, Activity Type: "${activityType}", Value: "${currentValue}"`);
         }
       });
     });
+    
+    console.log(`🔍 BULK MODAL SAVE: Changed data:`, changedData);
     
     onSave(changedData);
     onClose();
@@ -639,9 +644,13 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
       const fundSwitchOutTotal = calculateActivityTotal('Fund Switch Out');
       const fundSwitchInTotal = calculateActivityTotal('Fund Switch In');
       
-      // Only show warning if both have values and they don't match
-      if ((fundSwitchOutTotal > 0 || fundSwitchInTotal > 0) && fundSwitchOutTotal !== fundSwitchInTotal) {
-        const difference = Math.abs(fundSwitchOutTotal - fundSwitchInTotal);
+      // Use tolerance-based comparison to handle floating-point precision issues
+      // 0.01 tolerance (1 penny) is appropriate for financial calculations
+      const tolerance = 0.01;
+      const difference = Math.abs(fundSwitchOutTotal - fundSwitchInTotal);
+      
+      // Only show warning if both have values and they don't match within tolerance
+      if ((fundSwitchOutTotal > 0 || fundSwitchInTotal > 0) && difference > tolerance) {
         warnings.push(`Fund Switch activities are unbalanced. Fund Switch Out: ${formatCurrency(fundSwitchOutTotal)}, Fund Switch In: ${formatCurrency(fundSwitchInTotal)}. Difference: ${formatCurrency(difference)}`);
       }
     }
