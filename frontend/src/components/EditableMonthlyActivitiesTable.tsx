@@ -85,10 +85,10 @@ const ACTIVITY_TYPES = [
   'Investment',
   'RegularInvestment',
   'GovernmentUplift',
-  'Product Switch In',
-  'Product Switch Out',
-  'Fund Switch In',
-  'Fund Switch Out',
+  'ProductSwitchIn',
+  'ProductSwitchOut',
+  'FundSwitchIn',
+  'FundSwitchOut',
   'Withdrawal',
   'Current Value'
 ];
@@ -525,12 +525,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   const convertActivityTypeForBackend = (uiActivityType: string): string => {
     // Convert UI-friendly activity types to backend format
     switch (uiActivityType) {
-      case 'Product Switch In': return 'ProductSwitchIn';
-      case 'Product Switch Out': return 'ProductSwitchOut';
-      case 'Fund Switch In': return 'FundSwitchIn';
-      case 'Fund Switch Out': return 'FundSwitchOut';
       case 'Current Value': return 'Valuation';
-      default: return uiActivityType;
+      default: return uiActivityType; // Activity types are already in camelCase format
     }
   };
 
@@ -718,7 +714,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     }
     
     // Only show the fund selection modal for Fund Switch In/Out cells with a value
-    if ((activityType === 'Fund Switch In' || activityType === 'Fund Switch Out')) {
+    if ((activityType === 'FundSwitchIn' || activityType === 'FundSwitchOut')) {
       // Get the current value from pendingEdits
       const cellEdit = pendingEdits.find(
         edit => edit.fundId === fundId && 
@@ -1321,10 +1317,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   // Calculate the total for a specific fund and month
   const calculateFundMonthTotal = (fundId: number, month: string): number => {
     // Sum up all non-zero values for each activity type for this fund and month
-    // Skip "Current Value" as it's not part of the sum total
+    // Include "Current Value" as part of the fund total
     // Sign convention: + for money OUT of fund, - for money INTO fund
     return ACTIVITY_TYPES
-      .filter(activityType => activityType !== 'Current Value') // Exclude Current Value from totals
       .reduce((total, activityType) => {
         const cellValue = getCellValue(fundId, month, activityType);
         if (cellValue && !isNaN(parseFloat(cellValue))) {
@@ -1333,15 +1328,19 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           if (activityType === 'Investment' || 
               activityType === 'RegularInvestment' || 
               activityType === 'GovernmentUplift' || 
-              activityType === 'Product Switch In' ||
-              activityType === 'Fund Switch In') {
+              activityType === 'ProductSwitchIn' ||
+              activityType === 'FundSwitchIn') {
             return total - value; // Negative for inflows
           } 
           // Money coming OUT of the fund (outflows) - positive sign
           else if (activityType === 'Withdrawal' || 
-                   activityType === 'Product Switch Out' ||
-                   activityType === 'Fund Switch Out') {
+                   activityType === 'ProductSwitchOut' ||
+                   activityType === 'FundSwitchOut') {
             return total + value; // Positive for outflows
+          }
+          // Current Value (valuation) - include as positive (represents fund value)
+          else if (activityType === 'Current Value') {
+            return total + value; // Positive for current value
           }
         }
         return total;
@@ -1363,14 +1362,14 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           if (activityType === 'Investment' || 
               activityType === 'RegularInvestment' || 
               activityType === 'GovernmentUplift' || 
-              activityType === 'Product Switch In' ||
-              activityType === 'Fund Switch In') {
+              activityType === 'ProductSwitchIn' ||
+              activityType === 'FundSwitchIn') {
             total -= numericValue; // Negative for inflows
           } 
           // Money coming OUT of the fund (outflows) - positive sign
           else if (activityType === 'Withdrawal' ||
-                   activityType === 'Product Switch Out' ||
-                   activityType === 'Fund Switch Out') {
+                   activityType === 'ProductSwitchOut' ||
+                   activityType === 'FundSwitchOut') {
             total += numericValue; // Positive for outflows
           }
         }
@@ -1396,14 +1395,14 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
             if (activityType === 'Investment' || 
                 activityType === 'RegularInvestment' || 
                 activityType === 'GovernmentUplift' || 
-                activityType === 'Product Switch In' ||
-                activityType === 'Fund Switch In') {
+                activityType === 'ProductSwitchIn' ||
+                activityType === 'FundSwitchIn') {
               total -= numericValue; // Negative for inflows
             } 
             // Money coming OUT of the fund (outflows) - positive sign
             else if (activityType === 'Withdrawal' ||
-                     activityType === 'Product Switch Out' ||
-                     activityType === 'Fund Switch Out') {
+                     activityType === 'ProductSwitchOut' ||
+                     activityType === 'FundSwitchOut') {
               total += numericValue; // Positive for outflows
             }
           }
@@ -1604,21 +1603,25 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       const cellValue = getCellValue(fundId, month, activityType);
       const numericValue = parseFloat(cellValue) || 0;
       
-      if (numericValue !== 0 && activityType !== 'Current Value') {
+      if (numericValue !== 0) {
         // Sign convention: + for money OUT of fund, - for money INTO fund
         // Money going INTO the fund (inflows) - negative sign
         if (activityType === 'Investment' || 
             activityType === 'RegularInvestment' || 
             activityType === 'GovernmentUplift' || 
-            activityType === 'Product Switch In' ||
-            activityType === 'Fund Switch In') {
+            activityType === 'ProductSwitchIn' ||
+            activityType === 'FundSwitchIn') {
           total -= numericValue; // Negative for inflows
         } 
         // Money coming OUT of the fund (outflows) - positive sign
         else if (activityType === 'Withdrawal' ||
-                 activityType === 'Product Switch Out' ||
-                 activityType === 'Fund Switch Out') {
+                 activityType === 'ProductSwitchOut' ||
+                 activityType === 'FundSwitchOut') {
           total += numericValue; // Positive for outflows
+        }
+        // Current Value (valuation) - include as positive (represents fund value)
+        else if (activityType === 'Current Value') {
+          total += numericValue; // Positive for current value
         }
       }
     });
@@ -1634,8 +1637,23 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       const cellValue = getCellValue(fundId, month, activityType);
       const numericValue = parseFloat(cellValue) || 0;
       
-      if (numericValue !== 0) {
-        total += numericValue;
+      if (numericValue !== 0 && activityType !== 'Current Value') {
+        // Apply sign convention: + for money OUT of fund, - for money INTO fund
+        // Money going INTO the fund (inflows) - negative sign
+        if (activityType === 'Investment' || 
+            activityType === 'RegularInvestment' || 
+            activityType === 'GovernmentUplift' || 
+            activityType === 'ProductSwitchIn' ||
+            activityType === 'FundSwitchIn') {
+          total -= numericValue; // Negative for inflows
+        } 
+        // Money coming OUT of the fund (outflows) - positive sign
+        else if (activityType === 'Withdrawal' ||
+                 activityType === 'ProductSwitchOut' ||
+                 activityType === 'FundSwitchOut') {
+          total += numericValue; // Positive for outflows
+        }
+        // For Current Value, don't include in row totals (same as monthly totals)
       }
     });
 
