@@ -34,6 +34,7 @@ const ProductOwnerDetails: React.FC = () => {
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
   const [isAddingProducts, setIsAddingProducts] = useState(false);
+  const [removingProductId, setRemovingProductId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -169,16 +170,37 @@ const ProductOwnerDetails: React.FC = () => {
   };
 
   const handleRemoveProduct = async (productId: number) => {
-    if (!productOwner) return;
+    if (!productOwner || removingProductId === productId) return;
+    
+    // Show confirmation dialog
+    const productToRemove = associatedProducts.find(p => p.id === productId);
+    const confirmMessage = `Are you sure you want to remove "${productToRemove?.product_name}" from ${getProductOwnerDisplayName(productOwner)}?\n\nThis will only remove the association - the product itself will not be deleted.`;
+    
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
     
     try {
-      // Note: We'll need to implement a specific endpoint for removing individual associations
-      // For now, we'll use the existing delete endpoint and recreate others
-      console.log('Remove product functionality needs backend endpoint implementation');
-      alert('Remove product functionality coming soon');
+      setRemovingProductId(productId);
+      
+      // Call the new specific endpoint to delete the association
+      await api.delete(`/api/product_owner_products/${productOwner.id}/${productId}`);
+      
+      // Refresh the associated products list
+      await fetchAssociatedProducts(productOwner.id);
+      
+      console.log('Product association removed successfully');
     } catch (error: any) {
-      console.error('Error removing product:', error);
-      alert('Failed to remove product. Please try again.');
+      console.error('Error removing product association:', error);
+      let errorMessage = 'Failed to remove product association. Please try again.';
+      
+      if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      }
+      
+      alert(errorMessage);
+    } finally {
+      setRemovingProductId(null);
     }
   };
 
@@ -221,20 +243,36 @@ const ProductOwnerDetails: React.FC = () => {
   const handleSaveChanges = async () => {
     if (!productOwner) return;
     
+    // Validate that known_as is not empty
+    if (!formData.known_as.trim()) {
+      alert('Known As field is required');
+      return;
+    }
+    
     try {
       setIsSaving(true);
       
       const updateData = {
         firstname: formData.firstname.trim() || null,
         surname: formData.surname.trim() || null,
-        known_as: formData.known_as.trim() || null,
+        known_as: formData.known_as.trim(),
         status: formData.status
       };
       
       const response = await api.patch(`/api/product_owners/${productOwner.id}`, updateData);
       
       setProductOwner(response.data);
-      setOriginalFormData(formData);
+      
+      // Update form data with the actual saved values
+      const savedFormData = {
+        firstname: response.data.firstname || '',
+        surname: response.data.surname || '',
+        known_as: response.data.known_as || '',
+        status: response.data.status || 'active'
+      };
+      
+      setFormData(savedFormData);
+      setOriginalFormData(savedFormData);
       setIsEditing(false);
       
       console.log('Product owner updated successfully');
@@ -419,32 +457,14 @@ const ProductOwnerDetails: React.FC = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <BaseInput
-                label="First Name"
-                value={formData.firstname}
-                onChange={handleChange('firstname')}
-                disabled={!isEditing}
-                required
-                size="sm"
-                fullWidth
-              />
-              
-              <BaseInput
-                label="Surname"
-                value={formData.surname}
-                onChange={handleChange('surname')}
-                disabled={!isEditing}
-                size="sm"
-                fullWidth
-              />
-              
-              <BaseInput
                 label="Known As"
                 value={formData.known_as}
                 onChange={handleChange('known_as')}
                 disabled={!isEditing}
+                required
                 size="sm"
                 fullWidth
-                helperText="Preferred name or nickname"
+                helperText="Primary display name (required)"
               />
               
               <div>
@@ -461,6 +481,26 @@ const ProductOwnerDetails: React.FC = () => {
                   <option value="inactive">Inactive</option>
                 </select>
               </div>
+              
+              <BaseInput
+                label="First Name"
+                value={formData.firstname}
+                onChange={handleChange('firstname')}
+                disabled={!isEditing}
+                size="sm"
+                fullWidth
+                helperText="Optional"
+              />
+              
+              <BaseInput
+                label="Surname"
+                value={formData.surname}
+                onChange={handleChange('surname')}
+                disabled={!isEditing}
+                size="sm"
+                fullWidth
+                helperText="Optional"
+              />
             </div>
             
             <div className="mt-6 pt-6 border-t border-gray-200">
@@ -528,12 +568,24 @@ const ProductOwnerDetails: React.FC = () => {
                           e.stopPropagation();
                           handleRemoveProduct(product.id);
                         }}
-                        className="ml-3 text-red-400 hover:text-red-600 transition-colors"
-                        title="Remove product"
+                        disabled={removingProductId === product.id}
+                        className={`ml-3 transition-colors ${
+                          removingProductId === product.id 
+                            ? 'text-gray-400 cursor-not-allowed' 
+                            : 'text-red-400 hover:text-red-600'
+                        }`}
+                        title={removingProductId === product.id ? "Removing..." : "Remove product"}
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        {removingProductId === product.id ? (
+                          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        ) : (
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        )}
                       </button>
                     </div>
                   </div>

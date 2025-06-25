@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNavigationRefresh } from '../hooks/useNavigationRefresh';
 import { getProviderColor } from '../services/providerColors';
 import { EditButton, ActionButton, LapseButton, DeleteButton, AddButton } from '../components/ui';
 import api, { getClientGroupProductOwners, calculateStandardizedMultipleFundsIRR, getProductOwners, addClientGroupProductOwner, removeClientGroupProductOwner } from '../services/api';
+import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
 
 // Enhanced TypeScript interfaces
 interface Client {
@@ -22,7 +23,9 @@ interface Client {
 
 interface ClientProductOwner {
   id: number;
-  name: string;
+  firstname?: string;
+  surname?: string;
+  known_as?: string;
   status: string;
   created_at: string;
   association_id?: number; // ID of the client_group_product_owners record
@@ -67,7 +70,9 @@ interface ClientAccount {
 // Add ProductOwner interface
 interface ProductOwner {
   id: number;
-  name: string;
+  firstname?: string;
+  surname?: string;
+  known_as?: string;
   status: string;
   created_at: string;
 }
@@ -418,7 +423,7 @@ const ClientHeader = ({
                                  key={owner.id}
                                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
                                >
-                                 {owner.name}
+                                 {getProductOwnerDisplayName(owner)}
                                                                    {isEditing && owner.association_id && (
                                     <button
                                       onClick={() => onRemoveProductOwner(owner.association_id!)}
@@ -449,7 +454,7 @@ const ClientHeader = ({
                              <option value="">+ Add Owner</option>
                              {availableProductOwners.map((owner) => (
                                <option key={owner.id} value={owner.id}>
-                                 {owner.name}
+                                 {getProductOwnerDisplayName(owner)}
                                </option>
                              ))}
                            </select>
@@ -837,7 +842,7 @@ const ProductCard: React.FC<{
                         color: themeColor
                       }}
                     >
-                      {owner.name}
+                      {getProductOwnerDisplayName(owner)}
                     </span>
                   ))}
                 </div>
@@ -1129,7 +1134,9 @@ const ClientDetails: React.FC = () => {
             if (productOwner) {
               currentProductOwners.push({
                 id: productOwner.id,
-                name: productOwner.name,
+                firstname: productOwner.firstname,
+                surname: productOwner.surname,
+                known_as: productOwner.known_as,
                 status: productOwner.status,
                 created_at: productOwner.created_at,
                 association_id: association.id // Store the association ID for deletion
@@ -1148,7 +1155,9 @@ const ClientDetails: React.FC = () => {
         .filter((owner: any) => !currentProductOwners.find(current => current.id === owner.id))
         .map((owner: any) => ({
           id: owner.id,
-          name: owner.name,
+          firstname: owner.firstname,
+          surname: owner.surname,
+          known_as: owner.known_as,
           status: owner.status,
           created_at: owner.created_at
         }));

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom';
-import { Modal } from 'antd';
 import AddFundModal from '../components/AddFundModal';
+import CreateProductOwnerModal from '../components/CreateProductOwnerModal';
 
 import { useAuth } from '../context/AuthContext';
 import { Radio, Select, Input, Checkbox, DatePicker } from 'antd';
@@ -168,12 +168,6 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   
   // Add state for the create product owner modal
   const [showCreateProductOwnerModal, setShowCreateProductOwnerModal] = useState(false);
-  const [newProductOwnerData, setNewProductOwnerData] = useState({
-    firstname: '',
-    surname: '',
-    known_as: ''
-  });
-  const [isCreatingProductOwner, setIsCreatingProductOwner] = useState(false);
   const [currentProductId, setCurrentProductId] = useState<string>('');
   
   // Add Fund Modal state
@@ -1760,47 +1754,23 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   };
 
   // Add a function to handle creating a new product owner
-  const handleCreateProductOwner = async () => {
-    if (!newProductOwnerData.firstname.trim()) {
-      showError('First name is required for the product owner');
-      return;
-    }
-
-    setIsCreatingProductOwner(true);
-    try {
-      // Create a new product owner with detailed name structure
-      const response = await api.post('/api/product_owners', {
-        firstname: newProductOwnerData.firstname.trim(),
-        surname: newProductOwnerData.surname.trim() || null,
-        known_as: newProductOwnerData.known_as.trim() || null,
-        status: 'active'
-      });
-
-      const newProductOwner = response.data;
-      
-      // Add to the list of product owners
-      setProductOwners(prevOwners => [...prevOwners, newProductOwner]);
-      
-      // Add this product owner to the current product's selected owners
-      if (currentProductId) {
-        const currentProduct = products.find(p => p.id === currentProductId);
-        if (currentProduct) {
-          const updatedOwnerIds = [...currentProduct.product_owner_ids, newProductOwner.id];
-          handleProductChange(currentProductId, 'product_owner_ids', updatedOwnerIds);
-        }
+  const handleCreateProductOwner = async (newProductOwner: ProductOwner) => {
+    // Add to the list of product owners
+    setProductOwners(prevOwners => [...prevOwners, newProductOwner]);
+    
+    // Add this product owner to the current product's selected owners
+    if (currentProductId) {
+      const currentProduct = products.find(p => p.id === currentProductId);
+      if (currentProduct) {
+        const updatedOwnerIds = [...currentProduct.product_owner_ids, newProductOwner.id];
+        handleProductChange(currentProductId, 'product_owner_ids', updatedOwnerIds);
       }
-      
-      // Close the modal and reset
-      setShowCreateProductOwnerModal(false);
-      setNewProductOwnerData({ firstname: '', surname: '', known_as: '' });
-      const displayName = getProductOwnerDisplayName(newProductOwner);
-      showToastMessage(`Product owner "${displayName}" created successfully!`);
-    } catch (error) {
-      console.error('Error creating product owner:', error);
-      showError('Failed to create product owner. Please try again.');
-    } finally {
-      setIsCreatingProductOwner(false);
     }
+    
+    // Close the modal and reset
+    setShowCreateProductOwnerModal(false);
+    const displayName = getProductOwnerDisplayName(newProductOwner);
+    showToastMessage(`Product owner "${displayName}" created successfully!`);
   };
 
   // Add a function to open the create product owner modal
@@ -2321,56 +2291,15 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
 
       {/* Create Product Owner Modal */}
       {showCreateProductOwnerModal && (
-        <Modal
-          title="Create New Product Owner"
-          open={showCreateProductOwnerModal}
-          onCancel={() => {
+        <CreateProductOwnerModal
+          isOpen={showCreateProductOwnerModal}
+          onClose={() => {
             setShowCreateProductOwnerModal(false);
-            setNewProductOwnerData({ firstname: '', surname: '', known_as: '' });
           }}
-          onOk={handleCreateProductOwner}
-          confirmLoading={isCreatingProductOwner}
-          okText="Create Product Owner"
-          maskClosable={false}
-          centered
-          className="product-owner-modal"
-        >
-          <div className="space-y-4">
-            <BaseInput
-              label="First Name"
-              value={newProductOwnerData.firstname}
-              onChange={(e) => setNewProductOwnerData(prev => ({ ...prev, firstname: e.target.value }))}
-              placeholder="Enter first name"
-              required
-              size="sm"
-              fullWidth
-              autoFocus
-            />
-            <BaseInput
-              label="Surname"
-              value={newProductOwnerData.surname}
-              onChange={(e) => setNewProductOwnerData(prev => ({ ...prev, surname: e.target.value }))}
-              placeholder="Enter surname (optional)"
-              size="sm"
-              fullWidth
-            />
-            <BaseInput
-              label="Known As"
-              value={newProductOwnerData.known_as}
-              onChange={(e) => setNewProductOwnerData(prev => ({ ...prev, known_as: e.target.value }))}
-              placeholder="Preferred name or nickname (optional)"
-              size="sm"
-              fullWidth
-              helperText="This will be used as the display name if provided"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleCreateProductOwner();
-                }
-              }}
-            />
-          </div>
-        </Modal>
+          onSuccess={handleCreateProductOwner}
+          includeProductSelection={false}
+          title="Create New Product Owner"
+        />
       )}
 
       {/* Add Fund Modal */}

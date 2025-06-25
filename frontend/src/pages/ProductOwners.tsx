@@ -75,25 +75,25 @@ const ProductOwners: React.FC = () => {
   };
 
   const handleCreateProductOwner = async () => {
-    if (!newProductOwnerData.firstname.trim()) {
-      alert('First name is required');
+    if (!newProductOwnerData.known_as.trim()) {
+      alert('Known As field is required');
       return;
     }
 
     setIsCreating(true);
     try {
       console.log('Creating product owner with data:', {
-        firstname: newProductOwnerData.firstname.trim(),
+        firstname: newProductOwnerData.firstname.trim() || null,
         surname: newProductOwnerData.surname.trim() || null,
-        known_as: newProductOwnerData.known_as.trim() || null,
+        known_as: newProductOwnerData.known_as.trim(),
         status: 'active'
       });
 
       // Create the product owner
       const response = await api.post('/api/product_owners', {
-        firstname: newProductOwnerData.firstname.trim(),
+        firstname: newProductOwnerData.firstname.trim() || null,
         surname: newProductOwnerData.surname.trim() || null,
-        known_as: newProductOwnerData.known_as.trim() || null,
+        known_as: newProductOwnerData.known_as.trim(),
         status: 'active'
       });
 
@@ -278,14 +278,23 @@ const ProductOwners: React.FC = () => {
         >
           <div className="space-y-4">
             <BaseInput
-              label="First Name"
-              value={newProductOwnerData.firstname}
-              onChange={(e) => setNewProductOwnerData(prev => ({ ...prev, firstname: e.target.value }))}
-              placeholder="Enter first name"
+              label="Known As"
+              value={newProductOwnerData.known_as}
+              onChange={(e) => setNewProductOwnerData(prev => ({ ...prev, known_as: e.target.value }))}
+              placeholder="Enter preferred name or nickname"
               required
               size="sm"
               fullWidth
               autoFocus
+              helperText="This is the primary display name and is required"
+            />
+            <BaseInput
+              label="First Name"
+              value={newProductOwnerData.firstname}
+              onChange={(e) => setNewProductOwnerData(prev => ({ ...prev, firstname: e.target.value }))}
+              placeholder="Enter first name (optional)"
+              size="sm"
+              fullWidth
             />
             <BaseInput
               label="Surname"
@@ -294,15 +303,6 @@ const ProductOwners: React.FC = () => {
               placeholder="Enter surname (optional)"
               size="sm"
               fullWidth
-            />
-            <BaseInput
-              label="Known As"
-              value={newProductOwnerData.known_as}
-              onChange={(e) => setNewProductOwnerData(prev => ({ ...prev, known_as: e.target.value }))}
-              placeholder="Preferred name or nickname (optional)"
-              size="sm"
-              fullWidth
-              helperText="This will be used as the display name if provided"
             />
             <MultiSelectDropdown
               label="Assign to Products (Optional)"

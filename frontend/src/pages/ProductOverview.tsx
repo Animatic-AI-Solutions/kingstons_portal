@@ -13,6 +13,7 @@ import {
   DateInput
 } from '../components/ui';
 import { isCashFund } from '../utils/fundUtils';
+import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
 import ActionButton from '../components/ui/ActionButton';
 
 
@@ -78,8 +79,10 @@ interface Holding {
 
 interface ProductOwner {
   id: number;
-  name: string;
-  type?: string;
+  firstname?: string;
+  surname?: string;
+  known_as?: string;
+  name?: string; // Computed field from backend
   status?: string;
 }
 
@@ -2089,7 +2092,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             label=""
                             options={allProductOwners.map(owner => ({
                               value: owner.id,
-                              label: owner.name
+                              label: getProductOwnerDisplayName(owner)
                             }))}
                             values={editOwnersFormData.selected_owner_ids}
                             onChange={(values) => setEditOwnersFormData(prev => ({
@@ -2153,7 +2156,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                               <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                               </svg>
-                              {owner.name}
+                              {getProductOwnerDisplayName(owner)}
                             </span>
                           ))}
                         </div>

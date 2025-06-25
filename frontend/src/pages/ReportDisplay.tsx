@@ -163,13 +163,35 @@ const ReportDisplay: React.FC = () => {
       groupedProducts[normalizedType].push(product);
     });
 
-    // Sort products within each type by provider name
+    // Sort products within each type by provider name, with special ordering for ISAs
     Object.keys(groupedProducts).forEach(type => {
-      groupedProducts[type].sort((a, b) => {
-        const providerA = a.provider_name || '';
-        const providerB = b.provider_name || '';
-        return providerA.localeCompare(providerB);
-      });
+      if (type === 'ISAs') {
+        // Special sorting for ISAs: ISA products first, then JISA products, then by provider
+        groupedProducts[type].sort((a, b) => {
+          const typeA = a.product_type?.toLowerCase().trim() || '';
+          const typeB = b.product_type?.toLowerCase().trim() || '';
+          
+          // Check if products are JISA
+          const isJISA_A = typeA === 'jisa';
+          const isJISA_B = typeB === 'jisa';
+          
+          // If one is JISA and the other is not, non-JISA comes first
+          if (isJISA_A && !isJISA_B) return 1;
+          if (!isJISA_A && isJISA_B) return -1;
+          
+          // If both are same type (both JISA or both ISA), sort by provider
+          const providerA = a.provider_name || '';
+          const providerB = b.provider_name || '';
+          return providerA.localeCompare(providerB);
+        });
+      } else {
+        // Standard sorting by provider name for other product types
+        groupedProducts[type].sort((a, b) => {
+          const providerA = a.provider_name || '';
+          const providerB = b.provider_name || '';
+          return providerA.localeCompare(providerB);
+        });
+      }
     });
 
     // Return products in the specified order
@@ -231,13 +253,35 @@ const ReportDisplay: React.FC = () => {
       groupedProducts[normalizedType].push(product);
     });
 
-    // Sort products within each type by provider name
+    // Sort products within each type by provider name, with special ordering for ISAs
     Object.keys(groupedProducts).forEach(type => {
-      groupedProducts[type].sort((a, b) => {
-        const providerA = a.provider_name || '';
-        const providerB = b.provider_name || '';
-        return providerA.localeCompare(providerB);
-      });
+      if (type === 'ISAs') {
+        // Special sorting for ISAs: ISA products first, then JISA products, then by provider
+        groupedProducts[type].sort((a, b) => {
+          const typeA = a.product_type?.toLowerCase().trim() || '';
+          const typeB = b.product_type?.toLowerCase().trim() || '';
+          
+          // Check if products are JISA
+          const isJISA_A = typeA === 'jisa';
+          const isJISA_B = typeB === 'jisa';
+          
+          // If one is JISA and the other is not, non-JISA comes first
+          if (isJISA_A && !isJISA_B) return 1;
+          if (!isJISA_A && isJISA_B) return -1;
+          
+          // If both are same type (both JISA or both ISA), sort by provider
+          const providerA = a.provider_name || '';
+          const providerB = b.provider_name || '';
+          return providerA.localeCompare(providerB);
+        });
+      } else {
+        // Standard sorting by provider name for other product types
+        groupedProducts[type].sort((a, b) => {
+          const providerA = a.provider_name || '';
+          const providerB = b.provider_name || '';
+          return providerA.localeCompare(providerB);
+        });
+      }
     });
 
     // Return grouped structure with headers

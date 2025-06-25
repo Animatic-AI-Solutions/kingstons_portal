@@ -20,7 +20,8 @@ interface ClientGroup {
 
 interface ProductOwner {
   id: number;
-  name: string;
+  firstname?: string;
+  surname?: string;
   known_as?: string;
   type?: string;
 }
@@ -30,7 +31,7 @@ interface Product {
   product_name: string;
   product_type?: string;
   product_owner_name?: string;
-  product_owners?: Array<{ id: number; name: string; known_as?: string; }>;
+  product_owners?: Array<{ id: number; firstname?: string; surname?: string; known_as?: string; }>;
   client_id: number;
   provider_id?: number;
   provider_name?: string;
@@ -1734,13 +1735,13 @@ const ReportGenerator: React.FC = () => {
         let productOwnerName: string | undefined = undefined;
         if (productDetails.product_owners && Array.isArray(productDetails.product_owners) && productDetails.product_owners.length > 0) {
           if (productDetails.product_owners.length === 1) {
-            // Single owner - use known_as if available, otherwise fall back to name
+            // Single owner - use known_as only for reports
             const owner = productDetails.product_owners[0];
-            productOwnerName = (owner.known_as && owner.known_as.trim()) ? owner.known_as.trim() : owner.name;
+            productOwnerName = owner.known_as && owner.known_as.trim() ? owner.known_as.trim() : 'Unknown';
           } else {
-            // Multiple owners - join with commas, using known_as when available
+            // Multiple owners - join with commas, using known_as only for reports
             productOwnerName = productDetails.product_owners.map((owner: any) => 
-              (owner.known_as && owner.known_as.trim()) ? owner.known_as.trim() : owner.name
+              owner.known_as && owner.known_as.trim() ? owner.known_as.trim() : 'Unknown'
             ).join(', ');
           }
         }

@@ -11,6 +11,8 @@ import {
 } from '../components/ui';
 import SearchableDropdown from '../components/ui/SearchableDropdown';
 import { MultiSelectDropdown, CreatableDropdown, BaseDropdown } from '../components/ui';
+import CreateProductOwnerModal from '../components/CreateProductOwnerModal';
+import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
 
 interface ClientFormData {
   name: string;
@@ -24,7 +26,6 @@ interface ProductOwner {
   firstname?: string;
   surname?: string;
   known_as?: string;
-  name?: string; // Computed field from backend
   status: string;
   created_at: string;
 }
@@ -41,9 +42,7 @@ const AddClient: React.FC = () => {
   });
   const [productOwners, setProductOwners] = useState<ProductOwner[]>([]);
   const [selectedProductOwners, setSelectedProductOwners] = useState<number[]>([]);
-  const [newProductOwnerName, setNewProductOwnerName] = useState<string>('');
   const [showCreateProductOwnerModal, setShowCreateProductOwnerModal] = useState<boolean>(false);
-  const [isCreatingProductOwner, setIsCreatingProductOwner] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [advisors, setAdvisors] = useState<string[]>([]);
@@ -111,45 +110,16 @@ const AddClient: React.FC = () => {
     }
   };
 
-  const handleCreateProductOwner = async () => {
-    if (!newProductOwnerName.trim()) {
-      setError('Please enter a name for the product owner');
-      return;
-    }
-
-    setIsCreatingProductOwner(true);
-    try {
-      // Create a new product owner
-      // Parse the name into firstname and surname if it contains a space
-      const nameParts = newProductOwnerName.trim().split(' ');
-      const firstname = nameParts[0] || '';
-      const surname = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
-      
-      const response = await api.post('/product_owners', {
-        firstname: firstname,
-        surname: surname || null,
-        known_as: null,
-        status: 'active'
-      });
-
-      const newProductOwner = response.data;
-      
-      // Add to the list of product owners
-      setProductOwners(prevOwners => [...prevOwners, newProductOwner]);
-      
-      // Select the newly created product owner
-      setSelectedProductOwners(prevSelected => [...prevSelected, newProductOwner.id]);
-      
-      // Close the modal and reset
-      setShowCreateProductOwnerModal(false);
-      setNewProductOwnerName('');
-      setError(null);
-    } catch (err) {
-      console.error('Error creating product owner:', err);
-      setError('Failed to create product owner. Please try again.');
-    } finally {
-      setIsCreatingProductOwner(false);
-    }
+  const handleCreateProductOwner = async (newProductOwner: ProductOwner) => {
+    // Add to the list of product owners
+    setProductOwners(prevOwners => [...prevOwners, newProductOwner]);
+    
+    // Select the newly created product owner
+    setSelectedProductOwners(prevSelected => [...prevSelected, newProductOwner.id]);
+    
+    // Close the modal and reset
+    setShowCreateProductOwnerModal(false);
+    setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -215,7 +185,7 @@ const AddClient: React.FC = () => {
 
   const productOwnerOptions = productOwners.map(po => ({
     value: po.id,
-    label: po.name || `Product Owner ${po.id}`
+    label: getProductOwnerDisplayName(po)
   }));
 
   return (
@@ -350,64 +320,16 @@ const AddClient: React.FC = () => {
 
       {/* Create Product Owner Modal */}
       {showCreateProductOwnerModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Create New Product Owner</h3>
-              <ActionButton
-                variant="cancel"
-                size="icon"
-                iconOnly
-                onClick={() => {
-                  setShowCreateProductOwnerModal(false);
-                  setNewProductOwnerName('');
-                  setError(null);
-                }}
-              />
-            </div>
-
-            <div className="mb-6">
-              <BaseInput
-                label="Product Owner Name"
-                placeholder="Enter product owner name"
-                value={newProductOwnerName}
-                onChange={(e) => setNewProductOwnerName(e.target.value)}
-                required
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleCreateProductOwner();
-                  }
-                }}
-                autoFocus
-                leftIcon={
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                }
-              />
-            </div>
-
-            <div className="flex justify-end space-x-3">
-              <ActionButton
-                variant="cancel"
-                onClick={() => {
-                  setShowCreateProductOwnerModal(false);
-                  setNewProductOwnerName('');
-                  setError(null);
-                }}
-              />
-              <AddButton
-                context="Product Owner"
-                design="balanced"
-                size="md"
-                onClick={handleCreateProductOwner}
-                loading={isCreatingProductOwner}
-                disabled={isCreatingProductOwner || !newProductOwnerName.trim()}
-              />
-            </div>
-          </div>
-        </div>
+        <CreateProductOwnerModal
+          isOpen={showCreateProductOwnerModal}
+          onClose={() => {
+            setShowCreateProductOwnerModal(false);
+            setError(null);
+          }}
+          onSuccess={handleCreateProductOwner}
+          includeProductSelection={false}
+          title="Create New Product Owner"
+        />
       )}
     </div>
   );

@@ -9,8 +9,11 @@ export interface ClientGroup {
 
 export interface ProductOwner {
   id: number;
-  name: string;
-  type?: string;
+  firstname?: string;
+  surname?: string;
+  known_as?: string;
+  status: string;
+  created_at: string;
 }
 
 export interface Product {

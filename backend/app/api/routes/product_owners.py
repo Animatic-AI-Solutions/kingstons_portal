@@ -145,8 +145,8 @@ async def update_product_owner(
         if not check_result.data:
             raise HTTPException(status_code=404, detail=f"Product owner with ID {product_owner_id} not found")
         
-        # Filter out None values to only update provided fields
-        update_data = {k: v for k, v in product_owner_update.model_dump().items() if v is not None}
+        # Get all fields from the update model (including None values to allow clearing fields)
+        update_data = product_owner_update.model_dump(exclude_unset=True)
         
         if not update_data:
             # No fields to update, return the original
@@ -175,10 +175,12 @@ async def delete_product_owner(
     db = Depends(get_db)
 ):
     """
-    Delete a product owner.
+    Delete a product owner and all their associations.
     
-    Note: This will delete the product owner but not any associated product owner-client group
-    or product owner-product relationships. Those will need to be deleted separately.
+    This will:
+    1. Delete all product owner-product associations
+    2. Delete all product owner-client group associations  
+    3. Delete the product owner record
     """
     try:
         logger.info(f"Deleting product owner with ID: {product_owner_id}")
@@ -189,9 +191,32 @@ async def delete_product_owner(
         if not check_result.data:
             raise HTTPException(status_code=404, detail=f"Product owner with ID {product_owner_id} not found")
         
-        # Delete the product owner
-        db.table("product_owners").delete().eq("id", product_owner_id).execute()
+        # Step 1: Delete all product owner-product associations
+        logger.info(f"Deleting product owner-product associations for product owner {product_owner_id}")
+        try:
+            db.table("product_owner_products").delete().eq("product_owner_id", product_owner_id).execute()
+            logger.info(f"Successfully deleted product owner-product associations for product owner {product_owner_id}")
+        except Exception as e:
+            logger.warning(f"Error deleting product owner-product associations: {str(e)}")
+            # Continue anyway as the associations might not exist
         
+        # Step 2: Delete all product owner-client group associations
+        logger.info(f"Deleting product owner-client group associations for product owner {product_owner_id}")
+        try:
+            db.table("client_group_product_owners").delete().eq("product_owner_id", product_owner_id).execute()
+            logger.info(f"Successfully deleted product owner-client group associations for product owner {product_owner_id}")
+        except Exception as e:
+            logger.warning(f"Error deleting product owner-client group associations: {str(e)}")
+            # Continue anyway as the associations might not exist
+        
+        # Step 3: Delete the product owner
+        logger.info(f"Deleting product owner record {product_owner_id}")
+        delete_result = db.table("product_owners").delete().eq("id", product_owner_id).execute()
+        
+        if not delete_result.data:
+            raise HTTPException(status_code=404, detail=f"Product owner with ID {product_owner_id} not found")
+        
+        logger.info(f"Successfully deleted product owner {product_owner_id}")
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     
     except HTTPException:
@@ -414,4 +439,54 @@ async def delete_product_owner_products_by_product(
         raise
     except Exception as e:
         logger.error(f"Error deleting product owner associations for product {product_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@router.delete("/product_owner_products/{product_owner_id}/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_specific_product_owner_product_association(
+    product_owner_id: int = Path(..., description="The ID of the product owner"),
+    product_id: int = Path(..., description="The ID of the product"),
+    db = Depends(get_db)
+):
+    """
+    Delete a specific association between a product owner and a product.
+    
+    This endpoint is used to remove individual product-owner relationships.
+    """
+    try:
+        logger.info(f"Deleting association between product owner {product_owner_id} and product {product_id}")
+        
+        # Check if product owner exists
+        product_owner_result = db.table("product_owners").select("id").eq("id", product_owner_id).execute()
+        if not product_owner_result.data:
+            raise HTTPException(status_code=404, detail=f"Product owner with ID {product_owner_id} not found")
+        
+        # Check if product exists
+        product_result = db.table("client_products").select("id").eq("id", product_id).execute()
+        if not product_result.data:
+            raise HTTPException(status_code=404, detail=f"Product with ID {product_id} not found")
+        
+        # Check if the association exists
+        existing_result = db.table("product_owner_products") \
+            .select("*") \
+            .eq("product_owner_id", product_owner_id) \
+            .eq("product_id", product_id) \
+            .execute()
+        
+        if not existing_result.data:
+            raise HTTPException(status_code=404, detail=f"No association found between product owner {product_owner_id} and product {product_id}")
+        
+        # Delete the specific association
+        db.table("product_owner_products") \
+            .delete() \
+            .eq("product_owner_id", product_owner_id) \
+            .eq("product_id", product_id) \
+            .execute()
+        
+        logger.info(f"Successfully deleted association between product owner {product_owner_id} and product {product_id}")
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting association between product owner {product_owner_id} and product {product_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") 
