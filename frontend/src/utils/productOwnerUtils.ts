@@ -9,21 +9,15 @@ export interface ProductOwner {
   known_as?: string;
   status?: string;
   created_at?: string;
-  // Computed field from backend
-  name?: string;
 }
 
 /**
  * Gets the display name for a product owner.
- * It will construct the name from "firstname surname".
+ * Prioritizes "firstname surname" when both are available, 
+ * falls back to known_as when firstname and surname are not both present.
  */
 export const getProductOwnerDisplayName = (owner: ProductOwner): string => {
-  // If backend provides computed name field, use it first
-  if (owner.name) {
-    return owner.name;
-  }
-  
-  // Fallback to client-side computation
+  // Client-side computation with same logic as backend
   const nameParts = [];
   if (owner.firstname && owner.firstname.trim() !== '') {
     nameParts.push(owner.firstname.trim());
@@ -32,11 +26,22 @@ export const getProductOwnerDisplayName = (owner: ProductOwner): string => {
     nameParts.push(owner.surname.trim());
   }
   
-  if (nameParts.length > 0) {
+  // If we have both firstname and surname, use them
+  if (nameParts.length === 2) {
     return nameParts.join(' ');
   }
   
-  // Use known_as as a last resort if other names are not available
+  // If we only have one name part but known_as is available, prefer known_as
+  if (nameParts.length === 1 && owner.known_as && owner.known_as.trim() !== '') {
+    return owner.known_as.trim();
+  }
+  
+  // If we have one name part but no known_as, use the single name part
+  if (nameParts.length === 1) {
+    return nameParts[0];
+  }
+  
+  // If no firstname/surname, fall back to known_as
   if (owner.known_as && owner.known_as.trim() !== '') {
     return owner.known_as.trim();
   }

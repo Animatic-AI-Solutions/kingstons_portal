@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api, { getActiveTemplatePortfolioGenerations } from '../services/api';
@@ -6,6 +6,7 @@ import { getProviderColor } from '../services/providerColors';
 import FilterDropdown from '../components/ui/FilterDropdown';
 import { FilterSearch } from '../components/ui';
 import ActionButton from '../components/ui/ActionButton';
+import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
 
 interface Product {
   id: number;
@@ -35,7 +36,7 @@ interface Product {
   target_risk?: number;
   portfolio_id?: number;
   notes?: string;
-  product_owners?: Array<{id: number, name: string, type?: string}>;
+  product_owners?: Array<{id: number, firstname?: string, surname?: string, known_as?: string, type?: string}>;
   current_portfolio?: {
     id: number;
     portfolio_name: string;
@@ -118,8 +119,8 @@ const Products: React.FC = () => {
 
       // Product Owners
       const productOwnerOptions = productOwnersRes.data.map((owner: any) => ({
-        value: owner.name,
-        label: owner.name
+        value: getProductOwnerDisplayName(owner),
+        label: getProductOwnerDisplayName(owner)
       }));
       setProductOwners(productOwnerOptions);
 
@@ -196,7 +197,7 @@ const Products: React.FC = () => {
       
       if (selectedProductOwners.length > 0) {
         productsData = productsData.filter((product: Product) => 
-          product.product_owners?.some(owner => selectedProductOwners.includes(owner.name))
+          product.product_owners?.some(owner => selectedProductOwners.includes(getProductOwnerDisplayName(owner)))
         );
       }
       
@@ -620,7 +621,7 @@ const Products: React.FC = () => {
                               <div className="flex flex-wrap gap-1">
                                 {product.product_owners.map((owner, index) => (
                                   <span key={owner.id} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                    {owner.name}
+                                    {getProductOwnerDisplayName(owner)}
                                   </span>
                                 ))}
                               </div>

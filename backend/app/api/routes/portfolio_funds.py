@@ -2091,6 +2091,8 @@ async def calculate_multiple_portfolio_funds_irr(
             
             if any(keyword in activity_type.lower() for keyword in ["investment"]):
                 cash_flows[month_key] -= amount  # Negative for investments
+            elif activity_type.lower() in ["governmentuplift"]:
+                cash_flows[month_key] -= amount  # Government uplift = negative (inflow)
             elif activity_type.lower() in ["productswitchin"]:
                 cash_flows[month_key] -= amount  # Product switch in = negative (money out)
             elif activity_type.lower() in ["fundswitchin"]:
@@ -2329,6 +2331,9 @@ async def calculate_single_portfolio_fund_irr(
             if any(keyword in activity_type for keyword in ["investment"]):
                 cash_flows[month_key] -= amount  # Negative for investments
                 logger.info(f"💰 DEBUG: Applied as INVESTMENT (negative): -£{amount}")
+            elif activity_type in ["governmentuplift"]:
+                cash_flows[month_key] -= amount  # Government uplift = negative (inflow)
+                logger.info(f"💰 DEBUG: Applied as GOVERNMENT UPLIFT (negative): -£{amount}")
             elif activity_type in ["productswitchin"]:
                 cash_flows[month_key] -= amount  # Product switch in = negative (money out)
                 logger.info(f"💰 DEBUG: Applied as PRODUCT SWITCH IN (negative): -£{amount}")

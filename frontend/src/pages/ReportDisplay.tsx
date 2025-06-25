@@ -79,6 +79,7 @@ interface ReportData {
   formatWithdrawalsAsNegative?: boolean;
   showInactiveProducts: boolean;
   showPreviousFunds: boolean;
+  showInactiveProductDetails?: number[]; // Array of product IDs that should show detailed cards
 }
 
 const ReportDisplay: React.FC = () => {
@@ -114,6 +115,189 @@ const ReportDisplay: React.FC = () => {
 
   // Create ref for the printable content
   const printRef = useRef<HTMLDivElement>(null);
+
+  // Function to organize products by type in the specified order
+  const organizeProductsByType = (products: ProductPeriodSummary[]) => {
+    const productTypeOrder = [
+      'ISAs',
+      'GIAs', 
+      'Onshore Bonds',
+      'Offshore Bonds',
+      'Pensions',
+      'Other'
+    ];
+
+    // Normalize product type for consistent comparison
+    const normalizeProductType = (type: string | undefined): string => {
+      if (!type) return 'Other';
+      
+      const normalized = type.toLowerCase().trim();
+      
+      // ISA variations
+      if (normalized.includes('isa')) return 'ISAs';
+      
+      // GIA variations
+      if (normalized.includes('gia') || normalized === 'general investment account') return 'GIAs';
+      
+      // Bond variations
+      if (normalized.includes('onshore') && normalized.includes('bond')) return 'Onshore Bonds';
+      if (normalized.includes('offshore') && normalized.includes('bond')) return 'Offshore Bonds';
+      if (normalized.includes('bond') && !normalized.includes('onshore') && !normalized.includes('offshore')) {
+        return 'Onshore Bonds'; // Default bonds to onshore
+      }
+      
+      // Pension variations
+      if (normalized.includes('pension') || normalized.includes('sipp') || normalized.includes('ssas')) return 'Pensions';
+      
+      return 'Other';
+    };
+
+    // Group products by normalized type
+    const groupedProducts: { [key: string]: ProductPeriodSummary[] } = {};
+    
+    products.forEach(product => {
+      const normalizedType = normalizeProductType(product.product_type);
+      if (!groupedProducts[normalizedType]) {
+        groupedProducts[normalizedType] = [];
+      }
+      groupedProducts[normalizedType].push(product);
+    });
+
+    // Sort products within each type by provider name, with special ordering for ISAs
+    Object.keys(groupedProducts).forEach(type => {
+      if (type === 'ISAs') {
+        // Special sorting for ISAs: ISA products first, then JISA products, then by provider
+        groupedProducts[type].sort((a, b) => {
+          const typeA = a.product_type?.toLowerCase().trim() || '';
+          const typeB = b.product_type?.toLowerCase().trim() || '';
+          
+          // Check if products are JISA
+          const isJISA_A = typeA === 'jisa';
+          const isJISA_B = typeB === 'jisa';
+          
+          // If one is JISA and the other is not, non-JISA comes first
+          if (isJISA_A && !isJISA_B) return 1;
+          if (!isJISA_A && isJISA_B) return -1;
+          
+          // If both are same type (both JISA or both ISA), sort by provider
+          const providerA = a.provider_name || '';
+          const providerB = b.provider_name || '';
+          return providerA.localeCompare(providerB);
+        });
+      } else {
+        // Standard sorting by provider name for other product types
+        groupedProducts[type].sort((a, b) => {
+          const providerA = a.provider_name || '';
+          const providerB = b.provider_name || '';
+          return providerA.localeCompare(providerB);
+        });
+      }
+    });
+
+    // Return products in the specified order
+    const orderedProducts: ProductPeriodSummary[] = [];
+    
+    productTypeOrder.forEach(type => {
+      if (groupedProducts[type]) {
+        orderedProducts.push(...groupedProducts[type]);
+      }
+    });
+
+    return orderedProducts;
+  };
+
+  // Function to organize products by type with grouped structure for headers
+  const organizeProductsByTypeWithHeaders = (products: ProductPeriodSummary[]) => {
+    const productTypeOrder = [
+      'ISAs',
+      'GIAs', 
+      'Onshore Bonds',
+      'Offshore Bonds',
+      'Pensions',
+      'Other'
+    ];
+
+    // Normalize product type for consistent comparison
+    const normalizeProductType = (type: string | undefined): string => {
+      if (!type) return 'Other';
+      
+      const normalized = type.toLowerCase().trim();
+      
+      // ISA variations
+      if (normalized.includes('isa')) return 'ISAs';
+      
+      // GIA variations
+      if (normalized.includes('gia') || normalized === 'general investment account') return 'GIAs';
+      
+      // Bond variations
+      if (normalized.includes('onshore') && normalized.includes('bond')) return 'Onshore Bonds';
+      if (normalized.includes('offshore') && normalized.includes('bond')) return 'Offshore Bonds';
+      if (normalized.includes('bond') && !normalized.includes('onshore') && !normalized.includes('offshore')) {
+        return 'Onshore Bonds'; // Default bonds to onshore
+      }
+      
+      // Pension variations
+      if (normalized.includes('pension') || normalized.includes('sipp') || normalized.includes('ssas')) return 'Pensions';
+      
+      return 'Other';
+    };
+
+    // Group products by normalized type
+    const groupedProducts: { [key: string]: ProductPeriodSummary[] } = {};
+    
+    products.forEach(product => {
+      const normalizedType = normalizeProductType(product.product_type);
+      if (!groupedProducts[normalizedType]) {
+        groupedProducts[normalizedType] = [];
+      }
+      groupedProducts[normalizedType].push(product);
+    });
+
+    // Sort products within each type by provider name, with special ordering for ISAs
+    Object.keys(groupedProducts).forEach(type => {
+      if (type === 'ISAs') {
+        // Special sorting for ISAs: ISA products first, then JISA products, then by provider
+        groupedProducts[type].sort((a, b) => {
+          const typeA = a.product_type?.toLowerCase().trim() || '';
+          const typeB = b.product_type?.toLowerCase().trim() || '';
+          
+          // Check if products are JISA
+          const isJISA_A = typeA === 'jisa';
+          const isJISA_B = typeB === 'jisa';
+          
+          // If one is JISA and the other is not, non-JISA comes first
+          if (isJISA_A && !isJISA_B) return 1;
+          if (!isJISA_A && isJISA_B) return -1;
+          
+          // If both are same type (both JISA or both ISA), sort by provider
+          const providerA = a.provider_name || '';
+          const providerB = b.provider_name || '';
+          return providerA.localeCompare(providerB);
+        });
+      } else {
+        // Standard sorting by provider name for other product types
+        groupedProducts[type].sort((a, b) => {
+          const providerA = a.provider_name || '';
+          const providerB = b.provider_name || '';
+          return providerA.localeCompare(providerB);
+        });
+      }
+    });
+
+    // Return grouped structure with headers
+    const groupedResult: Array<{ type: string; products: ProductPeriodSummary[] }> = [];
+    
+    productTypeOrder.forEach(type => {
+      if (groupedProducts[type] && groupedProducts[type].length > 0) {
+        groupedResult.push({
+          type,
+          products: groupedProducts[type]
+        });
+      }
+    });
+
+    return groupedResult;
+  };
 
   // Add CSS for product fund table column alignment
   React.useEffect(() => {
@@ -631,6 +815,11 @@ const ReportDisplay: React.FC = () => {
       console.log('🔍 [REPORT DISPLAY DEBUG] Received report data with', location.state.reportData.productSummaries.length, 'products');
       
       setReportData(location.state.reportData);
+      
+      // Initialize inactive product details from report data
+      if (location.state.reportData.showInactiveProductDetails) {
+        setShowInactiveProductDetails(new Set(location.state.reportData.showInactiveProductDetails));
+      }
     } else {
       // If no report data, redirect back to report generator
       navigate('/report-generator');
@@ -1021,7 +1210,7 @@ const ReportDisplay: React.FC = () => {
 
             {/* Product Title List */}
             <div className="space-y-4">
-              {reportData.productSummaries.map(product => {
+              {organizeProductsByType(reportData.productSummaries).map(product => {
                 const defaultTitle = generateProductTitle(product);
                 const currentModalTitle = modalTitles.get(product.id) || defaultTitle;
                 const isCustom = currentModalTitle !== defaultTitle;
@@ -1365,7 +1554,7 @@ const ReportDisplay: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {reportData.productSummaries
+                    {organizeProductsByType(reportData.productSummaries)
                       .filter(product => {
                         // Show all products that are in the report data - if they were selected in the generator, they should appear
                         // The filtering already happened in the ReportGenerator, so we show everything passed to us
@@ -1589,15 +1778,26 @@ const ReportDisplay: React.FC = () => {
           </div>
 
           <div className="mb-8">
-            {reportData.productSummaries
-              .filter(product => {
-                // For inactive products, only show detailed cards if the checkbox was checked
-                if (product.status === 'inactive') {
-                  return reportData.showInactiveProducts || showInactiveProductDetails.has(product.id);
-                }
-                return true;
-              })
-              .map(product => (
+            {organizeProductsByTypeWithHeaders(reportData.productSummaries)
+              .map(({ type, products }) => (
+                <div key={type} className="mb-12">
+                  {/* Product Type Header */}
+                  <div className="mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900 border-b-2 border-gray-300 pb-2">
+                      {type}
+                    </h2>
+                  </div>
+                  
+                  {/* Products in this type */}
+                  {products
+                    .filter(product => {
+                      // For inactive products, only show detailed cards if the checkbox was checked
+                      if (product.status === 'inactive') {
+                        return reportData.showInactiveProducts || showInactiveProductDetails.has(product.id);
+                      }
+                      return true;
+                    })
+                    .map(product => (
                 <div 
                   key={product.id} 
                   className={`mb-8 bg-white shadow-sm rounded-lg border border-gray-200 p-6 w-full product-card print-clean ${product.status === 'inactive' ? 'opacity-60 bg-gray-50' : ''}`}
@@ -1907,6 +2107,8 @@ const ReportDisplay: React.FC = () => {
                     </table>
                   </div>
                 </div>
+                    ))}
+                </div>
               ))}
           </div>
 
@@ -1928,8 +2130,13 @@ const ReportDisplay: React.FC = () => {
             </div>
           ) : irrHistoryData ? (
             <div className="space-y-8">
-              {irrHistoryData.map((productHistory: any, index: number) => {
-                const product = reportData.productSummaries[index];
+              {(() => {
+                // Organize products and create mapping for IRR history data
+                const organizedProducts = organizeProductsByType(reportData.productSummaries);
+                
+                return organizedProducts.map((product, index) => {
+                  const originalIndex = reportData.productSummaries.findIndex(p => p.id === product.id);
+                  const productHistory = irrHistoryData[originalIndex];
                 
                 // Get all unique dates from both portfolio and fund IRR history
                 const allDates = new Set<string>();
@@ -2266,7 +2473,8 @@ const ReportDisplay: React.FC = () => {
                     </div>
                   </div>
                 );
-              })}
+                });
+              })()}
             </div>
           ) : (
             <div className="text-center py-8 text-gray-500 print-hide">

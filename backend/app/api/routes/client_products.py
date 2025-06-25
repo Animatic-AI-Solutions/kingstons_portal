@@ -181,6 +181,7 @@ async def get_client_products_with_owners(
             
             # Add product owners
             product_owners = []
+            product_owner_name = None  # Add this field for report compatibility
             if product_id in product_owner_associations:
                 owner_ids = product_owner_associations[product_id]
                 for owner_id in owner_ids:
@@ -196,8 +197,13 @@ async def get_client_products_with_owners(
                             "name": display_name  # Add computed name field for frontend compatibility
                         }
                         product_owners.append(enhanced_owner)
+                        
+                        # For reports, use known_as only, not firstname/surname combination
+                        if product_owner_name is None:
+                            product_owner_name = owner.get('known_as') or "No Owner"
             
             enhanced_product["product_owners"] = product_owners
+            enhanced_product["product_owner_name"] = product_owner_name or "No Owner"  # Add this for report compatibility
             enhanced_products.append(enhanced_product)
         
         logger.info(f"Retrieved {len(enhanced_products)} client products using optimized products_list_view")
@@ -505,14 +511,29 @@ async def get_client_products(
             
             # Add product owners - this is the key improvement
             product_owners = []
+            product_owner_name = None  # Add this field for report compatibility
             if product_id in product_owner_associations:
                 owner_ids = product_owner_associations[product_id]
                 for owner_id in owner_ids:
                     if owner_id in product_owners_map:
-                        product_owners.append(product_owners_map[owner_id])
+                        owner = product_owners_map[owner_id]
+                        # Create display name from firstname and surname, falling back to known_as
+                        display_name = f"{owner.get('firstname', '')} {owner.get('surname', '')}".strip()
+                        if not display_name and owner.get('known_as'):
+                            display_name = owner['known_as']
+                        
+                        enhanced_owner = {
+                            **owner,
+                            "name": display_name  # Add computed name field for frontend compatibility
+                        }
+                        product_owners.append(enhanced_owner)
+                        
+                        # For reports, use known_as only, not firstname/surname combination
+                        if product_owner_name is None:
+                            product_owner_name = owner.get('known_as') or "No Owner"
             
             product["product_owners"] = product_owners
-            
+            product["product_owner_name"] = product_owner_name or "No Owner"  # Add this for report compatibility
             enhanced_data.append(product)
         
         logger.info(f"Retrieved {len(enhanced_data)} client products with all related data including owners")

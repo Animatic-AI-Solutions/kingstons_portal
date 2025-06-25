@@ -114,6 +114,7 @@ const Revenue: React.FC = () => {
     direction: 'desc'
   });
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'dormant'>('all');
+  const [revenueFilter, setRevenueFilter] = useState<'all' | 'low' | 'medium' | 'high'>('all');
 
   // Format currency
   const formatCurrency = (amount: number): string => {
@@ -199,8 +200,26 @@ const Revenue: React.FC = () => {
   const sortedAndFilteredData = React.useMemo(() => {
     let filtered = clientRevenueData;
     
+    // Filter by status
     if (filterStatus !== 'all') {
       filtered = filtered.filter(client => client.status === filterStatus);
+    }
+
+    // Filter by revenue amount
+    if (revenueFilter !== 'all') {
+      filtered = filtered.filter(client => {
+        const revenue = client.total_revenue;
+        switch (revenueFilter) {
+          case 'low':
+            return revenue < 950;
+          case 'medium':
+            return revenue >= 950 && revenue <= 11400;
+          case 'high':
+            return revenue > 11400;
+          default:
+            return true;
+        }
+      });
     }
 
     return [...filtered].sort((a, b) => {
@@ -228,7 +247,7 @@ const Revenue: React.FC = () => {
       
       return 0;
     });
-  }, [clientRevenueData, sortConfig, filterStatus]);
+  }, [clientRevenueData, sortConfig, filterStatus, revenueFilter]);
 
   // Calculate totals for the filtered data
   const totals = React.useMemo(() => {
@@ -359,7 +378,7 @@ const Revenue: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                {/* Filter */}
+                {/* Status Filter */}
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value as any)}
@@ -368,6 +387,18 @@ const Revenue: React.FC = () => {
                   <option value="all">All Clients</option>
                   <option value="active">Active Only</option>
                   <option value="dormant">Dormant Only</option>
+                </select>
+
+                {/* Revenue Amount Filter */}
+                <select
+                  value={revenueFilter}
+                  onChange={(e) => setRevenueFilter(e.target.value as any)}
+                  className="px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Revenue</option>
+                  <option value="low">&lt; £950</option>
+                  <option value="medium">£950 - £11,400</option>
+                  <option value="high">&gt; £11,400</option>
                 </select>
                 
                 {/* Refresh button */}
