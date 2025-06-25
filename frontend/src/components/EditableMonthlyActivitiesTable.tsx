@@ -182,6 +182,15 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     return map;
   }, [funds]);
 
+  // Helper function to convert UI activity types to backend format
+  const convertActivityTypeForBackend = (uiActivityType: string): string => {
+    // Convert UI-friendly activity types to backend format
+    switch (uiActivityType) {
+      case 'Current Value': return 'Valuation';
+      default: return uiActivityType; // Activity types are already in PascalCase format (ProductSwitchIn, etc.)
+    }
+  };
+
   const pendingEditsMap = useMemo(() => {
     const map = new Map();
     pendingEdits.forEach(edit => {
@@ -190,6 +199,314 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     });
     return map;
   }, [pendingEdits]);
+
+  // Memoized indexed lookups for activities - O(1) lookups instead of O(n) array.find()
+  const activitiesIndex = useMemo(() => {
+    const index = new Map<string, Activity>();
+    activitiesState.forEach(activity => {
+      const date = new Date(activity.activity_timestamp);
+      const activityMonthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const key = `${activity.portfolio_fund_id}-${activityMonthYear}-${activity.activity_type}`;
+      index.set(key, activity);
+    });
+    return index;
+  }, [activitiesState]);
+
+  // Memoized indexed lookups for fund valuations - O(1) lookups
+  const fundValuationsIndex = useMemo(() => {
+    const index = new Map<string, FundValuation>();
+    fundValuations.forEach(valuation => {
+      const date = new Date(valuation.valuation_date);
+      const valuationMonthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const key = `${valuation.portfolio_fund_id}-${valuationMonthYear}`;
+      index.set(key, valuation);
+    });
+    return index;
+  }, [fundValuations]);
+
+  // Memoized indexed lookups for provider switches - O(1) lookups
+  const providerSwitchesIndex = useMemo(() => {
+    const index = new Map<string, ProviderSwitch>();
+    providerSwitches.forEach(providerSwitch => {
+      const date = new Date(providerSwitch.switch_date);
+      const switchMonthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      index.set(switchMonthYear, providerSwitch);
+    });
+    return index;
+  }, [providerSwitches]);
+
+  // Memoized indexed lookups for inactive funds - O(1) lookups
+  const inactiveFundsIndex = useMemo(() => {
+    const index = new Map<number, any>();
+    if (inactiveFundsForTotals && inactiveFundsForTotals.length > 0) {
+      inactiveFundsForTotals.forEach(fund => {
+        index.set(fund.id, fund);
+      });
+    }
+    return index;
+  }, [inactiveFundsForTotals]);
+
+  // Memoized activity type sign convention lookup - O(1) lookups
+  const activityTypeSignMap = useMemo(() => {
+    const signMap = new Map<string, 'inflow' | 'outflow' | 'neutral'>();
+    
+    // Inflows (money INTO fund) - should be negative
+    ['Investment', 'RegularInvestment', 'GovernmentUplift', 'ProductSwitchIn', 'FundSwitchIn'].forEach(type => {
+      signMap.set(type, 'inflow');
+    });
+    
+    // Outflows (money OUT OF fund) - should be positive  
+    ['Withdrawal', 'ProductSwitchOut', 'FundSwitchOut'].forEach(type => {
+      signMap.set(type, 'outflow');
+    });
+    
+    // Neutral (Current Value) - should be positive
+    signMap.set('Current Value', 'neutral');
+    
+    return signMap;
+  }, []);
+
+  // Memoized cell values cache - prevents recalculating cell values on every render
+  const cellValuesCache = useMemo(() => {
+    const cache = new Map<string, string>();
+    
+    funds.forEach(fund => {
+      months.forEach(month => {
+        ACTIVITY_TYPES.forEach(activityType => {
+          const key = `${fund.id}-${month}-${activityType}`;
+          
+          // Check pending edits first
+          const pendingEdit = pendingEditsMap.get(key);
+          if (pendingEdit) {
+            cache.set(key, pendingEdit.value);
+            return;
+          }
+
+          // Handle "Previous Funds" virtual entry
+          if (fund.isActive === false && fund.inactiveHoldingIds && !fund.isInactiveBreakdown) {
+            let total = 0;
+            
+            if (activityType === 'Current Value') {
+              fund.inactiveHoldingIds.forEach(inactiveHolding => {
+                const valuationKey = `${inactiveHolding.id}-${month}`;
+                const valuation = fundValuationsIndex.get(valuationKey);
+                if (valuation) {
+                  total += valuation.valuation;
+                }
+              });
+            } else {
+              const backendType = convertActivityTypeForBackend(activityType);
+              fund.inactiveHoldingIds.forEach(inactiveHolding => {
+                const activityKey = `${inactiveHolding.id}-${month}-${backendType}`;
+                const activity = activitiesIndex.get(activityKey);
+                if (activity) {
+                  const amount = parseFloat(activity.amount);
+                  total += Math.abs(amount);
+                }
+              });
+            }
+            
+            cache.set(key, total > 0 ? total.toString() : '');
+            return;
+          }
+
+          // Handle Current Value
+          if (activityType === 'Current Value') {
+            const valuationKey = `${fund.id}-${month}`;
+            const valuation = fundValuationsIndex.get(valuationKey);
+            if (valuation) {
+              cache.set(key, valuation.valuation.toString());
+              return;
+            }
+            
+            // Fallback to activity log
+            const activityKey = `${fund.id}-${month}-${convertActivityTypeForBackend(activityType)}`;
+            const activity = activitiesIndex.get(activityKey);
+            if (activity && activity.market_value_held) {
+              cache.set(key, activity.market_value_held.toString());
+              return;
+            }
+            
+            cache.set(key, '');
+            return;
+          }
+
+          // Handle other activity types
+          const backendType = convertActivityTypeForBackend(activityType);
+          const activityKey = `${fund.id}-${month}-${backendType}`;
+          const activity = activitiesIndex.get(activityKey);
+          if (activity) {
+            const amount = parseFloat(activity.amount);
+            cache.set(key, Math.abs(amount).toString());
+          } else {
+            cache.set(key, '');
+          }
+        });
+      });
+    });
+    
+    return cache;
+  }, [funds, months, activitiesState, fundValuations, pendingEditsMap, activitiesIndex, fundValuationsIndex]);
+
+  // Memoized calculation results - pre-calculate all totals
+  const calculationResults = useMemo(() => {
+    const results = {
+      fundMonthTotals: new Map<string, number>(),
+      activityTypeTotals: new Map<string, number>(),
+      monthTotals: new Map<string, number>(),
+      fundTotals: new Map<string, number>(),
+      rowTotals: new Map<string, number>(),
+      fundRowTotals: new Map<number, number>()
+    };
+
+    // Calculate fund month totals
+    funds.forEach(fund => {
+      months.forEach(month => {
+        const key = `${fund.id}-${month}`;
+        let total = 0;
+        
+        ACTIVITY_TYPES.forEach(activityType => {
+          const cellKey = `${fund.id}-${month}-${activityType}`;
+          const cellValue = cellValuesCache.get(cellKey) || '';
+          const numericValue = parseFloat(cellValue) || 0;
+          
+          if (numericValue !== 0) {
+            const signType = activityTypeSignMap.get(activityType);
+            if (signType === 'inflow') {
+              total -= numericValue; // Negative for inflows
+            } else if (signType === 'outflow') {
+              total += numericValue; // Positive for outflows
+            } else if (signType === 'neutral' && activityType === 'Current Value') {
+              total += numericValue; // Positive for current value
+            }
+          }
+        });
+        
+        results.fundMonthTotals.set(key, total);
+        results.fundTotals.set(key, total); // Same calculation for fundTotals
+      });
+    });
+
+    // Calculate activity type totals
+    ACTIVITY_TYPES.forEach(activityType => {
+      months.forEach(month => {
+        const key = `${activityType}-${month}`;
+        let total = 0;
+        
+        // Include activities from displayed funds
+        funds.forEach(fund => {
+          const cellKey = `${fund.id}-${month}-${activityType}`;
+          const cellValue = cellValuesCache.get(cellKey) || '';
+          const numericValue = parseFloat(cellValue.replace(/,/g, '')) || 0;
+          
+          if (numericValue !== 0) {
+            const signType = activityTypeSignMap.get(activityType);
+            if (signType === 'inflow') {
+              total -= numericValue; // Negative for inflows
+            } else if (signType === 'outflow') {
+              total += numericValue; // Positive for outflows
+            } else if (signType === 'neutral' && activityType === 'Current Value') {
+              total += numericValue; // Positive for current value
+            }
+          }
+        });
+        
+        // Also include activities from inactive funds
+        if (inactiveFundsForTotals && inactiveFundsForTotals.length > 0) {
+          inactiveFundsForTotals.forEach(inactiveFund => {
+            const backendType = convertActivityTypeForBackend(activityType);
+            const activityKey = `${inactiveFund.id}-${month}-${backendType}`;
+            const activity = activitiesIndex.get(activityKey);
+            
+            if (activity) {
+              const numericValue = parseFloat(activity.amount);
+              if (!isNaN(numericValue)) {
+                const signType = activityTypeSignMap.get(activityType);
+                if (signType === 'inflow') {
+                  total -= numericValue; // Negative for inflows
+                } else if (signType === 'outflow') {
+                  total += numericValue; // Positive for outflows
+                } else if (signType === 'neutral' && activityType === 'Current Value') {
+                  total += numericValue; // Positive for current value
+                }
+              }
+            }
+          });
+        }
+        
+        results.activityTypeTotals.set(key, total);
+      });
+    });
+
+    // Calculate month totals
+    months.forEach(month => {
+      const total = ACTIVITY_TYPES
+        .filter(activityType => activityType !== 'Current Value')
+        .reduce((sum, activityType) => {
+          const key = `${activityType}-${month}`;
+          return sum + (results.activityTypeTotals.get(key) || 0);
+        }, 0);
+      
+      results.monthTotals.set(month, total);
+    });
+
+    // Calculate row totals
+    funds.forEach(fund => {
+      ACTIVITY_TYPES.forEach(activityType => {
+        const key = `${fund.id}-${activityType}`;
+        let total = 0;
+
+        months.forEach(month => {
+          const cellKey = `${fund.id}-${month}-${activityType}`;
+          const cellValue = cellValuesCache.get(cellKey) || '';
+          const numericValue = parseFloat(cellValue) || 0;
+          
+          if (numericValue !== 0 && activityType !== 'Current Value') {
+            const signType = activityTypeSignMap.get(activityType);
+            if (signType === 'inflow') {
+              total -= numericValue; // Negative for inflows
+            } else if (signType === 'outflow') {
+              total += numericValue; // Positive for outflows
+            } else if (signType === 'neutral' && activityType === 'Current Value') {
+              total += numericValue; // Positive for current value
+            }
+          }
+        });
+
+        results.rowTotals.set(key, total);
+      });
+    });
+
+    // Calculate fund row totals
+    funds.forEach(fund => {
+      let total = 0;
+      
+      ACTIVITY_TYPES.forEach(activityType => {
+        if (activityType !== 'Current Value') {
+          months.forEach(month => {
+            const cellKey = `${fund.id}-${month}-${activityType}`;
+            const cellValue = cellValuesCache.get(cellKey) || '';
+            const numericValue = parseFloat(cellValue) || 0;
+            
+            if (numericValue !== 0) {
+              const signType = activityTypeSignMap.get(activityType);
+              if (signType === 'inflow') {
+                total -= numericValue;
+              } else if (signType === 'outflow') {
+                total += numericValue;
+              } else if (signType === 'neutral' && activityType === 'Current Value') {
+                total += numericValue;
+              }
+            }
+          });
+        }
+      });
+      
+      results.fundRowTotals.set(fund.id, total);
+    });
+
+    return results;
+  }, [funds, months, cellValuesCache, inactiveFundsForTotals, activitiesIndex, activityTypeSignMap]);
 
   // Color management for switch groups
   const SWITCH_COLORS = [
@@ -503,31 +820,11 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     }
   }, [months]);
 
-  // Get fund valuation for a specific fund and month
+  // Get fund valuation for a specific fund and month - now uses indexed lookup
   const getFundValuation = (fundId: number, month: string): FundValuation | undefined => {
-    const [year, monthNum] = month.split('-');
-    const monthStart = `${year}-${monthNum}-01`;
-    const monthPrefix = `${year}-${monthNum}`;
-    
-    // Only proceed with find if fundValuations is an array
-    const foundValuation = Array.isArray(fundValuations) 
-      ? fundValuations.find(valuation => {
-          const match = valuation.portfolio_fund_id === fundId && 
-                       valuation.valuation_date.startsWith(monthPrefix);
-          return match;
-        })
-      : undefined;
-      
-    return foundValuation;
-  };
-
-  // Add this helper function before the formatMonth function
-  const convertActivityTypeForBackend = (uiActivityType: string): string => {
-    // Convert UI-friendly activity types to backend format
-    switch (uiActivityType) {
-      case 'Current Value': return 'Valuation';
-      default: return uiActivityType; // Activity types are already in camelCase format
-    }
+    // Use indexed lookup for O(1) performance instead of array.find()
+    const key = `${fundId}-${month}`;
+    return fundValuationsIndex.get(key);
   };
 
   // Format activity type for display - convert camelCase or snake_case to spaces
@@ -557,84 +854,15 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     // Convert activity types for matching using our helper function
     const matchType = convertActivityTypeForBackend(activityType);
     
-    // Use activitiesState instead of activities prop for fresh data
-    return activitiesState.find(activity => {
-      const date = new Date(activity.activity_timestamp);
-      const activityMonthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      
-      return activity.portfolio_fund_id === fundId && 
-             activityMonthYear === month && 
-             activity.activity_type === matchType;
-    });
+    // Use indexed lookup for O(1) performance instead of array.find()
+    const key = `${fundId}-${month}-${matchType}`;
+    return activitiesIndex.get(key);
   };
 
-  // Get the cell value for display
+  // Get the cell value for display - now uses memoized cache
   const getCellValue = (fundId: number, month: string, activityType: string): string => {
-    // First check if there's a pending edit for this cell
-    const pendingEdit = pendingEdits.find(
-      edit => edit.fundId === fundId && 
-              edit.month === month && 
-              edit.activityType === activityType
-    );
-    
-    if (pendingEdit) {
-      return pendingEdit.value;
-    }
-
-    // Check if this is the "Previous Funds" virtual entry
-    const fund = funds.find(f => f.id === fundId);
-    if (fund && fund.isActive === false && fund.inactiveHoldingIds && !fund.isInactiveBreakdown) {
-      // This is the "Previous Funds" virtual entry - calculate sum of all inactive funds
-      let total = 0;
-      
-      if (activityType === 'Current Value') {
-        // For Current Value, sum up valuations from all inactive funds
-        fund.inactiveHoldingIds.forEach(inactiveHolding => {
-          const valuation = getFundValuation(inactiveHolding.id, month);
-          if (valuation) {
-            total += valuation.valuation;
-          }
-        });
-      } else {
-        // For other activity types, sum up activities from all inactive funds
-        fund.inactiveHoldingIds.forEach(inactiveHolding => {
-          const activity = getActivity(inactiveHolding.id, month, activityType);
-          if (activity) {
-            const amount = parseFloat(activity.amount);
-            total += Math.abs(amount);
-          }
-        });
-      }
-      
-      // Return the sum as a string, or empty string if zero
-      return total > 0 ? total.toString() : '';
-    }
-    
-    // For "Current Value" cells, check fund_valuations first
-    if (activityType === 'Current Value') {
-      const valuation = getFundValuation(fundId, month);
-      if (valuation) {
-        return valuation.valuation.toString();
-      }
-      
-      // Fallback to activity log if no valuation found
-      const activity = getActivity(fundId, month, activityType);
-      if (activity && activity.market_value_held) {
-        return activity.market_value_held.toString();
-      }
-      
-      return '';
-    }
-    
-    // For other activity types, use activity logs
-    const activity = getActivity(fundId, month, activityType);
-    if (activity) {
-      // For regular activities, return the amount (absolute value for withdrawals and switch out)
-      const amount = parseFloat(activity.amount);
-      return Math.abs(amount).toString();
-    }
-    
-    return '';
+    const key = `${fundId}-${month}-${activityType}`;
+    return cellValuesCache.get(key) || '';
   };
 
   // New function to evaluate mathematical expressions
@@ -1021,62 +1249,62 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         return cache.get(key);
       }
       
-      // Base class for all cells - remove fixed width constraints to allow full width usage
-      let baseClass = "px-1 py-0 border box-border w-full";
-      
+    // Base class for all cells - remove fixed width constraints to allow full width usage
+    let baseClass = "px-1 py-0 border box-border w-full";
+    
       // Use indexed lookup instead of array.find() - O(1) instead of O(n)
       const fund = fundsById.get(fundId);
-      const isPreviousFunds = fund && fund.isActive === false;
-      
-      // Check if this cell is currently focused
-      const isFocused = focusedCell && 
-                       focusedCell.fundId === fundId && 
-                       focusedCell.activityType === activityType && 
-                       months[focusedCell.monthIndex] === month;
-      
-      // Check if this cell is in the same row or column as the focused cell
-      const isInFocusedRow = focusedCell && 
-                             focusedCell.fundId === fundId && 
-                             focusedCell.activityType === activityType;
-      const isInFocusedColumn = focusedCell && 
-                               months[focusedCell.monthIndex] === month;
-      
-      // Add focused indicator - bold border all around
-      if (isFocused) {
-        baseClass += " border-[3px] border-blue-500 bg-blue-50 z-10";
-      } else if (isInFocusedRow || isInFocusedColumn) {
-        baseClass += " bg-gray-50";
-      }
-      
+    const isPreviousFunds = fund && fund.isActive === false;
+    
+    // Check if this cell is currently focused
+    const isFocused = focusedCell && 
+                     focusedCell.fundId === fundId && 
+                     focusedCell.activityType === activityType && 
+                     months[focusedCell.monthIndex] === month;
+    
+    // Check if this cell is in the same row or column as the focused cell
+    const isInFocusedRow = focusedCell && 
+                           focusedCell.fundId === fundId && 
+                           focusedCell.activityType === activityType;
+    const isInFocusedColumn = focusedCell && 
+                             months[focusedCell.monthIndex] === month;
+    
+    // Add focused indicator - bold border all around
+    if (isFocused) {
+      baseClass += " border-[3px] border-blue-500 bg-blue-50 z-10";
+    } else if (isInFocusedRow || isInFocusedColumn) {
+      baseClass += " bg-gray-50";
+    }
+    
       // Use indexed lookup instead of array.find() - O(1) instead of O(n)
       const pendingEdit = pendingEditsMap.get(`${fundId}-${month}-${activityType}`);
-      
-      // Add edit indicator if there's a pending edit
-      if (pendingEdit) {
-        baseClass += " bg-yellow-50";
-        if (isFocused) {
-          baseClass += " border-yellow-400";
-        }
+    
+    // Add edit indicator if there's a pending edit
+    if (pendingEdit) {
+      baseClass += " bg-yellow-50";
+      if (isFocused) {
+        baseClass += " border-yellow-400";
       }
-      
-      // Add subtle indicator for Current Value cells but maintain same base color
-      if (activityType === 'Current Value') {
-        baseClass += " hover:bg-blue-50 border-b border-blue-200";
-        // Override if focused
-        if (isFocused) {
-          baseClass = baseClass.replace("border-b border-blue-200", "");
-        }
+    }
+    
+    // Add subtle indicator for Current Value cells but maintain same base color
+    if (activityType === 'Current Value') {
+      baseClass += " hover:bg-blue-50 border-b border-blue-200";
+      // Override if focused
+      if (isFocused) {
+        baseClass = baseClass.replace("border-b border-blue-200", "");
       }
-      
-      // Add specific styling for Previous Funds cells
-      if (isPreviousFunds) {
-        baseClass += " bg-gray-50 text-gray-500";
-      }
-      
+    }
+    
+    // Add specific styling for Previous Funds cells
+    if (isPreviousFunds) {
+      baseClass += " bg-gray-50 text-gray-500";
+    }
+    
       // Cache the result
       cache.set(key, baseClass);
-      return baseClass;
-    };
+    return baseClass;
+  };
   }, [fundsById, pendingEditsMap, focusedCell, months, pendingEdits.length]);
 
   // Handle keyboard navigation
@@ -1314,112 +1542,21 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     }
   };
 
-  // Calculate the total for a specific fund and month
+  // Calculate the total for a specific fund and month - now uses memoized results
   const calculateFundMonthTotal = (fundId: number, month: string): number => {
-    // Sum up all non-zero values for each activity type for this fund and month
-    // Include "Current Value" as part of the fund total
-    // Sign convention: + for money OUT of fund, - for money INTO fund
-    return ACTIVITY_TYPES
-      .reduce((total, activityType) => {
-        const cellValue = getCellValue(fundId, month, activityType);
-        if (cellValue && !isNaN(parseFloat(cellValue))) {
-          const value = parseFloat(cellValue);
-          // Money going INTO the fund (inflows) - negative sign
-          if (activityType === 'Investment' || 
-              activityType === 'RegularInvestment' || 
-              activityType === 'GovernmentUplift' || 
-              activityType === 'ProductSwitchIn' ||
-              activityType === 'FundSwitchIn') {
-            return total - value; // Negative for inflows
-          } 
-          // Money coming OUT of the fund (outflows) - positive sign
-          else if (activityType === 'Withdrawal' || 
-                   activityType === 'ProductSwitchOut' ||
-                   activityType === 'FundSwitchOut') {
-            return total + value; // Positive for outflows
-          }
-          // Current Value (valuation) - include as positive (represents fund value)
-          else if (activityType === 'Current Value') {
-            return total + value; // Positive for current value
-          }
-        }
-        return total;
-      }, 0);
+    const key = `${fundId}-${month}`;
+    return calculationResults.fundMonthTotals.get(key) || 0;
   };
 
-  // Calculate total for all funds for a specific activity type
+  // Calculate total for all funds for a specific activity type - now uses memoized results
   const calculateActivityTypeTotal = (activityType: string, month: string): number => {
-    let total = 0;
-    
-    // Include activities from displayed funds (active funds + Previous Funds virtual entry)
-    funds.forEach(fund => {
-      const value = getCellValue(fund.id, month, activityType);
-      if (value) {
-        const numericValue = parseFloat(value.replace(/,/g, ''));
-        if (!isNaN(numericValue)) {
-          // Sign convention: + for money OUT of fund, - for money INTO fund
-          // Money going INTO the fund (inflows) - negative sign
-          if (activityType === 'Investment' || 
-              activityType === 'RegularInvestment' || 
-              activityType === 'GovernmentUplift' || 
-              activityType === 'ProductSwitchIn' ||
-              activityType === 'FundSwitchIn') {
-            total -= numericValue; // Negative for inflows
-          } 
-          // Money coming OUT of the fund (outflows) - positive sign
-          else if (activityType === 'Withdrawal' ||
-                   activityType === 'ProductSwitchOut' ||
-                   activityType === 'FundSwitchOut') {
-            total += numericValue; // Positive for outflows
-          }
-        }
-      }
-    });
-    
-    // ALSO include activities from inactive funds (for totals calculation only)
-    if (inactiveFundsForTotals && inactiveFundsForTotals.length > 0) {
-      inactiveFundsForTotals.forEach(inactiveFund => {
-        // Get activities for this inactive fund and month/activity type
-        const inactiveFundActivities = activitiesState.filter(activity => 
-          activity.portfolio_fund_id === inactiveFund.id &&
-          activity.activity_timestamp.startsWith(month) &&
-          convertActivityTypeForBackend(activityType) === activity.activity_type
-        );
-        
-        // Sum up the activities for this inactive fund
-        inactiveFundActivities.forEach(activity => {
-          const numericValue = parseFloat(activity.amount);
-          if (!isNaN(numericValue)) {
-            // Sign convention: + for money OUT of fund, - for money INTO fund
-            // Money going INTO the fund (inflows) - negative sign
-            if (activityType === 'Investment' || 
-                activityType === 'RegularInvestment' || 
-                activityType === 'GovernmentUplift' || 
-                activityType === 'ProductSwitchIn' ||
-                activityType === 'FundSwitchIn') {
-              total -= numericValue; // Negative for inflows
-            } 
-            // Money coming OUT of the fund (outflows) - positive sign
-            else if (activityType === 'Withdrawal' ||
-                     activityType === 'ProductSwitchOut' ||
-                     activityType === 'FundSwitchOut') {
-              total += numericValue; // Positive for outflows
-            }
-          }
-        });
-      });
-    }
-    
-    return total;
+    const key = `${activityType}-${month}`;
+    return calculationResults.activityTypeTotals.get(key) || 0;
   };
 
-  // Calculate total for all activity types and all funds for a specific month
+  // Calculate total for all activity types and all funds for a specific month - now uses memoized results
   const calculateMonthTotal = (month: string): number => {
-    return ACTIVITY_TYPES
-      .filter(activityType => activityType !== 'Current Value') // Exclude Current Value from totals
-      .reduce((total, activityType) => {
-        return total + calculateActivityTypeTotal(activityType, month);
-      }, 0);
+    return calculationResults.monthTotals.get(month) || 0;
   };
 
   // Format cell value for display - more compact for the table view
@@ -1492,15 +1629,10 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     return baseClass;
   };
 
-  // Helper function to check if a month has a provider switch
+  // Helper function to check if a month has a provider switch - now uses indexed lookup
   const getProviderSwitchForMonth = (month: string): ProviderSwitch | undefined => {
-    if (!providerSwitches) return undefined;
-    
-    return providerSwitches.find(ps => {
-      const switchDate = new Date(ps.switch_date);
-      const switchMonth = `${switchDate.getFullYear()}-${String(switchDate.getMonth() + 1).padStart(2, '0')}`;
-      return switchMonth === month;
-    });
+    // Use indexed lookup for O(1) performance instead of array.find()
+    return providerSwitchesIndex.get(month);
   };
 
   // Function to reactivate a fund
@@ -1595,81 +1727,21 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     setShowBulkMonthModal(true);
   };
 
-  // Calculate fund total for a specific month (for compact view)
+  // Calculate fund total for a specific month - now uses memoized results
   const calculateFundTotal = (fundId: number, month: string): number => {
-    let total = 0;
-    
-    ACTIVITY_TYPES.forEach(activityType => {
-      const cellValue = getCellValue(fundId, month, activityType);
-      const numericValue = parseFloat(cellValue) || 0;
-      
-      if (numericValue !== 0) {
-        // Sign convention: + for money OUT of fund, - for money INTO fund
-        // Money going INTO the fund (inflows) - negative sign
-        if (activityType === 'Investment' || 
-            activityType === 'RegularInvestment' || 
-            activityType === 'GovernmentUplift' || 
-            activityType === 'ProductSwitchIn' ||
-            activityType === 'FundSwitchIn') {
-          total -= numericValue; // Negative for inflows
-        } 
-        // Money coming OUT of the fund (outflows) - positive sign
-        else if (activityType === 'Withdrawal' ||
-                 activityType === 'ProductSwitchOut' ||
-                 activityType === 'FundSwitchOut') {
-          total += numericValue; // Positive for outflows
-        }
-        // Current Value (valuation) - include as positive (represents fund value)
-        else if (activityType === 'Current Value') {
-          total += numericValue; // Positive for current value
-        }
-      }
-    });
-    
-    return total;
+    const key = `${fundId}-${month}`;
+    return calculationResults.fundTotals.get(key) || 0;
   };
 
-  // Calculate row total for a specific fund and activity across all displayed months
+  // Calculate row total for a specific fund and activity across all displayed months - now uses memoized results
   const calculateRowTotal = (fundId: number, activityType: string): number => {
-    let total = 0;
-
-    months.forEach(month => {
-      const cellValue = getCellValue(fundId, month, activityType);
-      const numericValue = parseFloat(cellValue) || 0;
-      
-      if (numericValue !== 0 && activityType !== 'Current Value') {
-        // Apply sign convention: + for money OUT of fund, - for money INTO fund
-        // Money going INTO the fund (inflows) - negative sign
-        if (activityType === 'Investment' || 
-            activityType === 'RegularInvestment' || 
-            activityType === 'GovernmentUplift' || 
-            activityType === 'ProductSwitchIn' ||
-            activityType === 'FundSwitchIn') {
-          total -= numericValue; // Negative for inflows
-        } 
-        // Money coming OUT of the fund (outflows) - positive sign
-        else if (activityType === 'Withdrawal' ||
-                 activityType === 'ProductSwitchOut' ||
-                 activityType === 'FundSwitchOut') {
-          total += numericValue; // Positive for outflows
-        }
-        // For Current Value, don't include in row totals (same as monthly totals)
-      }
-    });
-
-    return total;
+    const key = `${fundId}-${activityType}`;
+    return calculationResults.rowTotals.get(key) || 0;
   };
 
-  // Calculate row total for fund across all activities and months (for compact view)
+  // Calculate row total for fund across all activities and months - now uses memoized results
   const calculateFundRowTotal = (fundId: number): number => {
-    let total = 0;
-
-    months.forEach(month => {
-      const monthTotal = calculateFundTotal(fundId, month);
-      total += monthTotal;
-    });
-
-    return total;
+    return calculationResults.fundRowTotals.get(fundId) || 0;
   };
 
   // Navigation functions for month pages
@@ -1922,40 +1994,40 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                             : 'bg-white'
                         }`}>
                           <div className="flex flex-col">
-                            <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between">
                               <div className="font-semibold">
-                                {fund.isInactiveBreakdown && 
-                                  <span className="text-gray-400 mr-2">→</span>
-                                }
-                                {fund.fund_name}
-                                {fund.isActive === false && !fund.isInactiveBreakdown && (
+                              {fund.isInactiveBreakdown && 
+                                <span className="text-gray-400 mr-2">→</span>
+                              }
+                        {fund.fund_name}
+                              {fund.isActive === false && !fund.isInactiveBreakdown && (
                                   <span className="text-xs text-gray-500 font-normal ml-1">
-                                    ({fund.inactiveHoldingIds?.length || 0} inactive {(fund.inactiveHoldingIds?.length || 0) === 1 ? 'fund' : 'funds'})
+                                  ({fund.inactiveHoldingIds?.length || 0} inactive {(fund.inactiveHoldingIds?.length || 0) === 1 ? 'fund' : 'funds'})
                                   </span>
-                                )}
-                              </div>
-                              {fund.isActive === false && !fund.isInactiveBreakdown && fund.inactiveHoldingIds && fund.inactiveHoldingIds.length > 0 && (
-                                <button
-                                  onClick={() => setShowInactiveFunds(!showInactiveFunds)}
-                                  className="ml-2 px-2 py-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                                  title={showInactiveFunds ? "Hide inactive funds" : "Show inactive funds breakdown"}
-                                >
-                                  {showInactiveFunds ? "Hide" : "Show"} Breakdown
-                                </button>
-                              )}
-                              {fund.isInactiveBreakdown && (
-                                <button
-                                  onClick={() => reactivateFund(fund.id, fund.fund_name)}
-                                  disabled={reactivatingFunds.has(fund.id)}
-                                  className="ml-2 px-2 py-1 text-xs bg-green-50 hover:bg-green-100 text-green-700 rounded border border-green-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                  title="Reactivate this fund"
-                                >
-                                  {reactivatingFunds.has(fund.id) ? 'Reactivating...' : 'Reactivate'}
-                                </button>
                               )}
                             </div>
+                            {fund.isActive === false && !fund.isInactiveBreakdown && fund.inactiveHoldingIds && fund.inactiveHoldingIds.length > 0 && (
+                              <button
+                                onClick={() => setShowInactiveFunds(!showInactiveFunds)}
+                                className="ml-2 px-2 py-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                                title={showInactiveFunds ? "Hide inactive funds" : "Show inactive funds breakdown"}
+                              >
+                                {showInactiveFunds ? "Hide" : "Show"} Breakdown
+                              </button>
+                            )}
+                            {fund.isInactiveBreakdown && (
+                              <button
+                                onClick={() => reactivateFund(fund.id, fund.fund_name)}
+                                disabled={reactivatingFunds.has(fund.id)}
+                                className="ml-2 px-2 py-1 text-xs bg-green-50 hover:bg-green-100 text-green-700 rounded border border-green-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Reactivate this fund"
+                              >
+                                {reactivatingFunds.has(fund.id) ? 'Reactivating...' : 'Reactivate'}
+                              </button>
+                            )}
+                          </div>
                             <div className="font-medium text-red-600 text-sm mt-1">
-                              Total Activities
+                          Total Activities
                             </div>
                           </div>
                         </td>
@@ -2032,53 +2104,53 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                     
                     fundsToDisplay.forEach(fund => {
                       // Add fund name row first
-                      rows.push(
+                        rows.push(
                         <tr key={`fund-header-${fund.id}${fund.isInactiveBreakdown ? '-breakdown' : ''}`} 
                             className={`${fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-white'} border-t-2 border-gray-300`}>
                           {/* Activity column - shows fund name */}
                           <td className={`px-1 py-1 text-sm font-semibold ${
-                            fund.isActive === false 
-                              ? fund.isInactiveBreakdown 
-                                ? 'text-gray-600' 
-                                : 'text-blue-800' 
-                              : 'text-gray-900'
-                          } sticky left-0 z-10 ${
-                            fund.isActive === false 
-                              ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
-                              : 'bg-white'
+                              fund.isActive === false 
+                                ? fund.isInactiveBreakdown 
+                                  ? 'text-gray-600' 
+                                  : 'text-blue-800' 
+                                : 'text-gray-900'
+                            } sticky left-0 z-10 ${
+                              fund.isActive === false 
+                                ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
+                                : 'bg-white'
                           }`}>
-                            <div className="flex items-center justify-between">
-                              <div>
-                                {fund.isInactiveBreakdown && 
-                                  <span className="text-gray-400 mr-2">→</span>
-                                }
-                                {fund.fund_name}
-                                {fund.isActive === false && !fund.isInactiveBreakdown && (
-                                  <div className="text-xs text-gray-500 font-normal">
-                                    ({fund.inactiveHoldingIds?.length || 0} inactive {(fund.inactiveHoldingIds?.length || 0) === 1 ? 'fund' : 'funds'})
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    {fund.isInactiveBreakdown && 
+                                      <span className="text-gray-400 mr-2">→</span>
+                                    }
+                                    {fund.fund_name}
+                                    {fund.isActive === false && !fund.isInactiveBreakdown && (
+                                      <div className="text-xs text-gray-500 font-normal">
+                                        ({fund.inactiveHoldingIds?.length || 0} inactive {(fund.inactiveHoldingIds?.length || 0) === 1 ? 'fund' : 'funds'})
+                                      </div>
+                                    )}
                                   </div>
-                                )}
-                              </div>
-                              {fund.isActive === false && !fund.isInactiveBreakdown && fund.inactiveHoldingIds && fund.inactiveHoldingIds.length > 0 && (
-                                <button
-                                  onClick={() => setShowInactiveFunds(!showInactiveFunds)}
-                                  className="ml-2 px-2 py-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                                >
-                                  {showInactiveFunds ? "Hide" : "Show"} Breakdown
-                                </button>
-                              )}
-                              {fund.isInactiveBreakdown && (
-                                <button
-                                  onClick={() => reactivateFund(fund.id, fund.fund_name)}
-                                  disabled={reactivatingFunds.has(fund.id)}
-                                  className="ml-2 px-2 py-1 text-xs bg-green-50 hover:bg-green-100 text-green-700 rounded border border-green-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  {reactivatingFunds.has(fund.id) ? 'Reactivating...' : 'Reactivate'}
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                          
+                                  {fund.isActive === false && !fund.isInactiveBreakdown && fund.inactiveHoldingIds && fund.inactiveHoldingIds.length > 0 && (
+                                    <button
+                                      onClick={() => setShowInactiveFunds(!showInactiveFunds)}
+                                      className="ml-2 px-2 py-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                                    >
+                                      {showInactiveFunds ? "Hide" : "Show"} Breakdown
+                                    </button>
+                                  )}
+                                  {fund.isInactiveBreakdown && (
+                                    <button
+                                      onClick={() => reactivateFund(fund.id, fund.fund_name)}
+                                      disabled={reactivatingFunds.has(fund.id)}
+                                      className="ml-2 px-2 py-1 text-xs bg-green-50 hover:bg-green-100 text-green-700 rounded border border-green-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      {reactivatingFunds.has(fund.id) ? 'Reactivating...' : 'Reactivate'}
+                                    </button>
+                                  )}
+                                </div>
+                            </td>
+                            
                           {/* Empty month data columns for fund header */}
                           {months.map(month => (
                             <td key={`fund-header-${fund.id}-${month}`} 
@@ -2111,118 +2183,118 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                 ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
                                 : 'bg-white'
                             }`}>
-                              {fund.isInactiveBreakdown && 
-                                <span className="text-gray-400 mr-2">→</span>
-                              }
-                              {formatActivityType(activityType)}
-                            </td>
+                            {fund.isInactiveBreakdown && 
+                              <span className="text-gray-400 mr-2">→</span>
+                            }
+                            {formatActivityType(activityType)}
+                          </td>
                             
                             {/* Month data columns */}
-                            {months.map((month, monthIndex) => {
-                              const cellValue = getCellValue(fund.id, month, activityType);
-                              
-                              return (
-                                <td 
-                                    key={`${fund.id}-${month}-${activityType}${fund.isInactiveBreakdown ? '-breakdown' : ''}`} 
-                                    className={`${getCellClass(fund.id, month, activityType, true)} ${
-                                      fund.isInactiveBreakdown ? 'bg-gray-50 opacity-75' : ''
-                                    } overflow-hidden`}
-                                    id={`cell-${fund.id}-${month}-${activityType}${fund.isInactiveBreakdown ? '-breakdown' : ''}`}
-                                  onClick={(e) => {
-                                      if (fund.isInactiveBreakdown || fund.isActive === false) return;
-                                      
-                                    setFocusedCell({
-                                      fundId: fund.id,
-                                      activityType,
-                                      monthIndex: months.indexOf(month)
-                                    });
-                                    
-                                    const input = e.currentTarget.querySelector('input');
-                                    if (input && !input.disabled) {
-                                      input.focus();
-                                      if (e.detail === 2) {
-                                        input.select();
+                        {months.map((month, monthIndex) => {
+                          const cellValue = getCellValue(fund.id, month, activityType);
+                          
+                          return (
+                            <td 
+                                key={`${fund.id}-${month}-${activityType}${fund.isInactiveBreakdown ? '-breakdown' : ''}`} 
+                                className={`${getCellClass(fund.id, month, activityType, true)} ${
+                                  fund.isInactiveBreakdown ? 'bg-gray-50 opacity-75' : ''
+                                } overflow-hidden`}
+                                id={`cell-${fund.id}-${month}-${activityType}${fund.isInactiveBreakdown ? '-breakdown' : ''}`}
+                              onClick={(e) => {
+                                  if (fund.isInactiveBreakdown || fund.isActive === false) return;
+                                  
+                                setFocusedCell({
+                                  fundId: fund.id,
+                                  activityType,
+                                  monthIndex: months.indexOf(month)
+                                });
+                                
+                                const input = e.currentTarget.querySelector('input');
+                                if (input && !input.disabled) {
+                                  input.focus();
+                                  if (e.detail === 2) {
+                                    input.select();
+                                  }
+                                }
+                              }}
+                            >
+                              <div className="flex justify-center items-center">
+                                  <input
+                                    type="text"
+                                    className={`focus:outline-none bg-transparent text-center border-0 shadow-none w-full ${!fund.isActive || fund.isInactiveBreakdown ? 'text-gray-500 cursor-not-allowed' : ''}`}
+                                    value={formatCellValue(cellValue)}
+                                    disabled={isSubmitting || fund.isActive === false || fund.isInactiveBreakdown}
+                                    onChange={(e) => {
+                                      if (fund.isActive !== false && !fund.isInactiveBreakdown) {
+                                        const value = e.target.value;
+                                        if (value.includes('.')) {
+                                          const parts = value.split('.');
+                                          if (parts[1] && parts[1].length > 2) {
+                                            return;
+                                          }
+                                        }
+                                        handleCellValueChangeEnhanced(fund.id, month, activityType, value);
                                       }
-                                    }
+                                    }}
+                                    onBlur={(e) => {
+                                      if (fund.isActive !== false && !fund.isInactiveBreakdown) {
+                                        handleCellBlur(fund.id, month, activityType);
+                                      }
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (fund.isActive !== false && !fund.isInactiveBreakdown) {
+                                        handleKeyDown(e, fund.id, activityType, monthIndex);
+                                      }
+                                    }}
+                                    onFocus={() => {
+                                      if (fund.isActive !== false && !fund.isInactiveBreakdown) {
+                                        setFocusedCell({
+                                          fundId: fund.id,
+                                          activityType,
+                                          monthIndex: months.indexOf(month)
+                                        });
+                                      }
+                                    }}
+                                    tabIndex={fund.isActive === false || fund.isInactiveBreakdown ? -1 : 0}
+                                  style={{
+                                    border: 'none',
+                                    outline: 'none',
+                                    boxShadow: 'none',
+                                    background: 'transparent',
+                                    padding: '0 1px',
+                                    fontSize: '0.75rem',
+                                    opacity: fund.isActive === false || fund.isInactiveBreakdown ? 0.7 : 1,
+                                    width: '100%',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap'
                                   }}
-                                >
-                                  <div className="flex justify-center items-center">
-                                      <input
-                                        type="text"
-                                        className={`focus:outline-none bg-transparent text-center border-0 shadow-none w-full ${!fund.isActive || fund.isInactiveBreakdown ? 'text-gray-500 cursor-not-allowed' : ''}`}
-                                        value={formatCellValue(cellValue)}
-                                        disabled={isSubmitting || fund.isActive === false || fund.isInactiveBreakdown}
-                                        onChange={(e) => {
-                                          if (fund.isActive !== false && !fund.isInactiveBreakdown) {
-                                            const value = e.target.value;
-                                            if (value.includes('.')) {
-                                              const parts = value.split('.');
-                                              if (parts[1] && parts[1].length > 2) {
-                                                return;
-                                              }
-                                            }
-                                            handleCellValueChangeEnhanced(fund.id, month, activityType, value);
-                                          }
-                                        }}
-                                        onBlur={(e) => {
-                                          if (fund.isActive !== false && !fund.isInactiveBreakdown) {
-                                            handleCellBlur(fund.id, month, activityType);
-                                          }
-                                        }}
-                                        onKeyDown={(e) => {
-                                          if (fund.isActive !== false && !fund.isInactiveBreakdown) {
-                                            handleKeyDown(e, fund.id, activityType, monthIndex);
-                                          }
-                                        }}
-                                        onFocus={() => {
-                                          if (fund.isActive !== false && !fund.isInactiveBreakdown) {
-                                            setFocusedCell({
-                                              fundId: fund.id,
-                                              activityType,
-                                              monthIndex: months.indexOf(month)
-                                            });
-                                          }
-                                        }}
-                                        tabIndex={fund.isActive === false || fund.isInactiveBreakdown ? -1 : 0}
-                                      style={{
-                                        border: 'none',
-                                        outline: 'none',
-                                        boxShadow: 'none',
-                                        background: 'transparent',
-                                        padding: '0 1px',
-                                        fontSize: '0.75rem',
-                                        opacity: fund.isActive === false || fund.isInactiveBreakdown ? 0.7 : 1,
-                                        width: '100%',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap'
-                                      }}
-                                      inputMode="text"
-                                    />
-                                  </div>
-                                </td>
-                              );
-                            })}
-                            
-                            {/* Row Total column for detailed view */}
-                            <td className={`px-1 py-0 text-center text-sm font-bold border-l border-gray-300 ${
-                              fund.isActive === false 
-                                ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
-                                : 'bg-white'
-                            }`}>
-                              {(() => {
-                                const rowTotal = calculateRowTotal(fund.id, activityType);
-                                return (
-                                  <span className={
-                                    rowTotal > 0 ? 'text-green-700' : 
-                                    rowTotal < 0 ? 'text-red-700' : 
-                                    'text-gray-500'
-                                  }>
-                                    {rowTotal !== 0 ? formatRowTotal(rowTotal) : ''}
-                                  </span>
-                                );
-                              })()}
+                                  inputMode="text"
+                                />
+                              </div>
                             </td>
-                          </tr>
+                          );
+                        })}
+                        
+                        {/* Row Total column for detailed view */}
+                        <td className={`px-1 py-0 text-center text-sm font-bold border-l border-gray-300 ${
+                          fund.isActive === false 
+                            ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
+                            : 'bg-white'
+                        }`}>
+                          {(() => {
+                            const rowTotal = calculateRowTotal(fund.id, activityType);
+                            return (
+                              <span className={
+                                rowTotal > 0 ? 'text-green-700' : 
+                                rowTotal < 0 ? 'text-red-700' : 
+                                'text-gray-500'
+                              }>
+                                {rowTotal !== 0 ? formatRowTotal(rowTotal) : ''}
+                              </span>
+                            );
+                          })()}
+                        </td>
+                      </tr>
                         );
                       });
                       
@@ -2231,30 +2303,30 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                         rows.push(
                           <tr key={`total-${fund.id}`} className="bg-gray-100 border-t border-gray-200">
                             <td className="px-1 py-0 font-semibold text-red-600 sticky left-0 z-10 bg-gray-100 pl-4">
-                              Total
-                            </td>
-                            {months.map(month => {
-                              const total = calculateFundMonthTotal(fund.id, month);
-                              const formattedTotal = formatTotal(total);
-                              
-                              return (
-                                <td 
-                                        key={`total-${fund.id}-${month}`} 
-                                        className="px-1 py-0 text-center font-semibold text-red-600"
-                                >
-                                  {formattedTotal}
-                                </td>
-                              );
-                            })}
-                            
-                            {/* Row Total column for fund total row */}
-                            <td className="px-1 py-0 text-center font-semibold text-red-600 border-l border-gray-300 bg-gray-100">
-                              {(() => {
-                                const rowTotal = calculateFundRowTotal(fund.id);
-                                return formatRowTotal(rowTotal);
-                              })()}
-                            </td>
-                          </tr>
+                        Total
+                      </td>
+                      {months.map(month => {
+                        const total = calculateFundMonthTotal(fund.id, month);
+                        const formattedTotal = formatTotal(total);
+                        
+                        return (
+                          <td 
+                                  key={`total-${fund.id}-${month}`} 
+                                  className="px-1 py-0 text-center font-semibold text-red-600"
+                          >
+                            {formattedTotal}
+                          </td>
+                        );
+                      })}
+                      
+                      {/* Row Total column for fund total row */}
+                      <td className="px-1 py-0 text-center font-semibold text-red-600 border-l border-gray-300 bg-gray-100">
+                        {(() => {
+                          const rowTotal = calculateFundRowTotal(fund.id);
+                          return formatRowTotal(rowTotal);
+                        })()}
+                      </td>
+                    </tr>
                         );
                       }
                     });
@@ -2311,18 +2383,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                           </td>
                         );
                       })}
-                      
-                      {/* Row Total column for activity type totals */}
-                      <td className="px-1 py-0 text-center font-medium text-gray-500 border-l border-gray-300 bg-white">
-                        {(() => {
-                          let activityRowTotal = 0;
-                          months.forEach(month => {
-                            const monthTotal = calculateActivityTypeTotal(activityType, month);
-                            activityRowTotal += monthTotal;
-                          });
-                          return formatRowTotal(activityRowTotal);
-                        })()}
-                      </td>
+                      <td className="px-1 py-0 text-center border-l border-gray-300 bg-white"></td>
                     </tr>
                   ))}
 
@@ -2357,18 +2418,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       </td>
                     );
                   })}
-                  
-                  {/* Row Total column for valuation total */}
-                  <td className="px-1 py-0 text-center font-medium text-blue-700 border-l border-gray-300 bg-blue-50">
-                    {(() => {
-                      let valuationRowTotal = 0;
-                      months.forEach(month => {
-                        const monthTotal = calculateActivityTypeTotal('Current Value', month);
-                        valuationRowTotal += monthTotal;
-                      });
-                      return formatRowTotal(valuationRowTotal);
-                    })()}
-                  </td>
+                  <td className="px-1 py-0 text-center border-l border-gray-300 bg-blue-50"></td>
                 </tr>
 
                 {/* Grand total row */}
@@ -2402,18 +2452,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       </td>
                     );
                   })}
-                  
-                  {/* Row Total column for grand total */}
-                  <td className="px-1 py-0 text-center font-semibold text-red-600 border-l border-gray-300 bg-gray-100">
-                    {(() => {
-                      let grandRowTotal = 0;
-                      months.forEach(month => {
-                        const monthTotal = calculateMonthTotal(month);
-                        grandRowTotal += monthTotal;
-                      });
-                      return formatRowTotal(grandRowTotal);
-                    })()}
-                  </td>
+                  <td className="px-1 py-0 text-center border-l border-gray-300 bg-gray-100"></td>
                 </tr>
               </tbody>
             </table>
