@@ -519,6 +519,21 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     // Convert activity types for matching using our helper function
     const matchType = convertActivityTypeForBackend(activityType);
     
+    // Create an array of possible activity type formats to match against
+    // This handles database inconsistencies without requiring database changes
+    const possibleActivityTypes = [matchType];
+    
+    // Add alternative formats for switch activities to handle database inconsistencies
+    if (activityType === 'Fund Switch In') {
+      possibleActivityTypes.push('FundSwitchIn', 'Fund Switch In', 'SwitchIn');
+    } else if (activityType === 'Fund Switch Out') {
+      possibleActivityTypes.push('FundSwitchOut', 'Fund Switch Out', 'SwitchOut');
+    } else if (activityType === 'Product Switch In') {
+      possibleActivityTypes.push('ProductSwitchIn', 'Product Switch In');
+    } else if (activityType === 'Product Switch Out') {
+      possibleActivityTypes.push('ProductSwitchOut', 'Product Switch Out');
+    }
+    
     // Use activitiesState instead of activities prop for fresh data
     return activitiesState.find(activity => {
       const date = new Date(activity.activity_timestamp);
@@ -526,7 +541,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       
       return activity.portfolio_fund_id === fundId && 
              activityMonthYear === month && 
-             activity.activity_type === matchType;
+             possibleActivityTypes.includes(activity.activity_type);
     });
   };
 
@@ -927,13 +942,20 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           }
         } else {
           // Handle regular activities with uniform structure
+          const backendActivityType = convertActivityTypeForBackend(edit.activityType);
+          
+          // Add debugging to track activity type conversion
+          console.log(`🔍 ACTIVITY TYPE DEBUG: UI Type: "${edit.activityType}" -> Backend Type: "${backendActivityType}"`);
+          
           const activityData = {
               portfolio_fund_id: edit.fundId,
               account_holding_id: accountHoldingId,
-              activity_type: convertActivityTypeForBackend(edit.activityType),
+              activity_type: backendActivityType,
             activity_timestamp: `${edit.month}-01`,
             amount: edit.value
           };
+
+          console.log(`🔍 SAVING ACTIVITY: ${JSON.stringify(activityData)}`);
 
           if (edit.isNew) {
             await api.post('holding_activity_logs', activityData);
@@ -1305,9 +1327,13 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       if (value) {
         const numericValue = parseFloat(value.replace(/,/g, ''));
         if (!isNaN(numericValue)) {
-          // Sign convention: + for money OUT of fund, - for money INTO fund
+          // Handle Current Value (valuations) - just add the value directly
+          if (activityType === 'Current Value') {
+            total += numericValue;
+          }
+          // Sign convention for cash flows: + for money OUT of fund, - for money INTO fund
           // Money going INTO the fund (inflows) - negative sign
-          if (activityType === 'Investment' || 
+          else if (activityType === 'Investment' || 
               activityType === 'RegularInvestment' || 
               activityType === 'GovernmentUplift' || 
               activityType === 'Product Switch In' ||
@@ -1327,34 +1353,42 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     // ALSO include activities from inactive funds (for totals calculation only)
     if (inactiveFundsForTotals && inactiveFundsForTotals.length > 0) {
       inactiveFundsForTotals.forEach(inactiveFund => {
-        // Get activities for this inactive fund and month/activity type
-        const inactiveFundActivities = activitiesState.filter(activity => 
-          activity.portfolio_fund_id === inactiveFund.id &&
-          activity.activity_timestamp.startsWith(month) &&
-          convertActivityTypeForBackend(activityType) === activity.activity_type
-        );
-        
-        // Sum up the activities for this inactive fund
-        inactiveFundActivities.forEach(activity => {
-          const numericValue = parseFloat(activity.amount);
-          if (!isNaN(numericValue)) {
-            // Sign convention: + for money OUT of fund, - for money INTO fund
-            // Money going INTO the fund (inflows) - negative sign
-            if (activityType === 'Investment' || 
-                activityType === 'RegularInvestment' || 
-                activityType === 'GovernmentUplift' || 
-                activityType === 'Product Switch In' ||
-                activityType === 'Fund Switch In') {
-              total -= numericValue; // Negative for inflows
-            } 
-            // Money coming OUT of the fund (outflows) - positive sign
-            else if (activityType === 'Withdrawal' ||
-                     activityType === 'Product Switch Out' ||
-                     activityType === 'Fund Switch Out') {
-              total += numericValue; // Positive for outflows
-            }
+        if (activityType === 'Current Value') {
+          // For Current Value, check fund valuations
+          const valuation = getFundValuation(inactiveFund.id, month);
+          if (valuation) {
+            total += valuation.valuation;
           }
-        });
+        } else {
+          // Get activities for this inactive fund and month/activity type
+          const inactiveFundActivities = activitiesState.filter(activity => 
+            activity.portfolio_fund_id === inactiveFund.id &&
+            activity.activity_timestamp.startsWith(month) &&
+            convertActivityTypeForBackend(activityType) === activity.activity_type
+          );
+          
+          // Sum up the activities for this inactive fund
+          inactiveFundActivities.forEach(activity => {
+            const numericValue = parseFloat(activity.amount);
+            if (!isNaN(numericValue)) {
+              // Sign convention: + for money OUT of fund, - for money INTO fund
+              // Money going INTO the fund (inflows) - negative sign
+              if (activityType === 'Investment' || 
+                  activityType === 'RegularInvestment' || 
+                  activityType === 'GovernmentUplift' || 
+                  activityType === 'Product Switch In' ||
+                  activityType === 'Fund Switch In') {
+                total -= numericValue; // Negative for inflows
+              } 
+              // Money coming OUT of the fund (outflows) - positive sign
+              else if (activityType === 'Withdrawal' ||
+                       activityType === 'Product Switch Out' ||
+                       activityType === 'Fund Switch Out') {
+                total += numericValue; // Positive for outflows
+              }
+            }
+          });
+        }
       });
     }
     
@@ -1363,11 +1397,17 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
   // Calculate total for all activity types and all funds for a specific month
   const calculateMonthTotal = (month: string): number => {
-    return ACTIVITY_TYPES
-      .filter(activityType => activityType !== 'Current Value') // Exclude Current Value from totals
+    // Calculate cash flow total (all activities except Current Value)
+    const cashFlowTotal = ACTIVITY_TYPES
+      .filter(activityType => activityType !== 'Current Value')
       .reduce((total, activityType) => {
         return total + calculateActivityTypeTotal(activityType, month);
       }, 0);
+    
+    // Add the total valuation to get the complete picture
+    const valuationTotal = calculateActivityTypeTotal('Current Value', month);
+    
+    return cashFlowTotal + valuationTotal;
   };
 
   // Format cell value for display - more compact for the table view
@@ -1400,16 +1440,24 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
   // Format the total for display with correct signs
   const formatTotal = (total: number): string => {
-    // Round to 2 decimal places, then remove unnecessary trailing zeros
+    // Return '-' for zero values
+    if (total === 0) {
+      return '-';
+    }
+    // Round to 2 decimal places and format with exactly 2 decimal places
     const rounded = Math.round(total * 100) / 100;
-    return rounded.toString();
+    return rounded.toFixed(2);
   };
 
   // Format row totals rounded to 2 decimal places
   const formatRowTotal = (total: number): string => {
-    // Round to 2 decimal places, then remove unnecessary trailing zeros
+    // Return '-' for zero values
+    if (total === 0) {
+      return '-';
+    }
+    // Round to 2 decimal places and format with exactly 2 decimal places
     const rounded = Math.round(total * 100) / 100;
-    return rounded.toString();
+    return rounded.toFixed(2);
   };
 
   
@@ -1485,10 +1533,21 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     // Convert bulk data to pending edits format
     const newEdits: CellEdit[] = [];
     
+    console.log(`🔍 BULK SAVE DEBUG: Received bulk data:`, bulkData);
+    
     Object.keys(bulkData).forEach(fundIdStr => {
       const fundId = parseInt(fundIdStr);
       Object.keys(bulkData[fundId]).forEach(activityType => {
         const value = bulkData[fundId][activityType];
+        
+        // Validate activity type to ensure it's in the expected UI format
+        if (!ACTIVITY_TYPES.includes(activityType)) {
+          console.error(`🔍 BULK SAVE ERROR: Invalid activity type received: "${activityType}"`);
+          console.error(`🔍 BULK SAVE ERROR: Expected one of:`, ACTIVITY_TYPES);
+          return; // Skip this invalid activity type
+        }
+        
+        console.log(`🔍 BULK SAVE DEBUG: Processing Fund ${fundId}, Activity: "${activityType}", Value: "${value}"`);
         
         // Get current value to check if this is actually a change
         const currentValue = getCellValue(fundId, selectedBulkMonth, activityType);
@@ -1508,17 +1567,20 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         const newEdit: CellEdit = {
           fundId,
           month: selectedBulkMonth,
-          activityType,
+          activityType, // Keep in UI format - conversion happens in saveChangesWithPreservation
           value: value,
           isNew: !existingId,
           originalActivityId: existingId,
           toDelete: value === '' && !!existingId
         };
         
+        console.log(`🔍 BULK SAVE DEBUG: Created edit:`, newEdit);
         newEdits.push(newEdit);
         }
       });
     });
+    
+    console.log(`🔍 BULK SAVE DEBUG: Total new edits created:`, newEdits.length);
     
     // Only replace edits for cells that actually changed
     // Remove existing pending edits for the changed cells only
