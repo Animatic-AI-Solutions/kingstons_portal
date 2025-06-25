@@ -1289,17 +1289,21 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
   // Calculate the total for a specific fund and month
   const calculateFundMonthTotal = (fundId: number, month: string): number => {
-    // Sum up all non-zero values for each activity type for this fund and month
-    // Skip "Current Value" as it's not part of the sum total
-    // Sign convention: + for money OUT of fund, - for money INTO fund
+    // Sum up all values for each activity type for this fund and month
+    // Include Current Value (valuations) in the total
+    // Sign convention: + for money OUT of fund, - for money INTO fund, + for Current Value
     return ACTIVITY_TYPES
-      .filter(activityType => activityType !== 'Current Value') // Exclude Current Value from totals
       .reduce((total, activityType) => {
         const cellValue = getCellValue(fundId, month, activityType);
         if (cellValue && !isNaN(parseFloat(cellValue))) {
           const value = parseFloat(cellValue);
+          
+          // Current Value (valuations) - add directly as positive
+          if (activityType === 'Current Value') {
+            return total + value;
+          }
           // Money going INTO the fund (inflows) - negative sign
-          if (activityType === 'Investment' || 
+          else if (activityType === 'Investment' || 
               activityType === 'RegularInvestment' || 
               activityType === 'GovernmentUplift' || 
               activityType === 'Product Switch In' ||
@@ -1398,7 +1402,6 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   // Calculate total for all activity types and all funds for a specific month
   const calculateMonthTotal = (month: string): number => {
     return ACTIVITY_TYPES
-      .filter(activityType => activityType !== 'Current Value') // Exclude Current Value from totals
       .reduce((total, activityType) => {
         return total + calculateActivityTypeTotal(activityType, month);
       }, 0);
