@@ -1397,17 +1397,11 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
   // Calculate total for all activity types and all funds for a specific month
   const calculateMonthTotal = (month: string): number => {
-    // Calculate cash flow total (all activities except Current Value)
-    const cashFlowTotal = ACTIVITY_TYPES
-      .filter(activityType => activityType !== 'Current Value')
+    return ACTIVITY_TYPES
+      .filter(activityType => activityType !== 'Current Value') // Exclude Current Value from totals
       .reduce((total, activityType) => {
         return total + calculateActivityTypeTotal(activityType, month);
       }, 0);
-    
-    // Add the total valuation to get the complete picture
-    const valuationTotal = calculateActivityTypeTotal('Current Value', month);
-    
-    return cashFlowTotal + valuationTotal;
   };
 
   // Format cell value for display - more compact for the table view

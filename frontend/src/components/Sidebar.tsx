@@ -50,10 +50,6 @@ const Sidebar: React.FC = () => {
       )
     },
     {
-      type: 'divider',
-      label: 'Definitions'
-    },
-    {
       type: 'link',
       path: '/product_owners',
       label: 'Product Owners',
@@ -94,10 +90,6 @@ const Sidebar: React.FC = () => {
       )
     },
     {
-      type: 'divider',
-      label: 'Analysis'
-    },
-    {
       type: 'link',
       path: '/analytics',
       label: 'Analytics',
@@ -128,10 +120,6 @@ const Sidebar: React.FC = () => {
       )
     },
     {
-      type: 'divider',
-      label: 'Development'
-    },
-    {
       type: 'link',
       path: '/components',
       label: 'Components',
@@ -160,13 +148,6 @@ const Sidebar: React.FC = () => {
       <nav className="h-[calc(100vh-4rem)] p-2 overflow-y-auto">
         <ul className="space-y-2">
           {navigationItems.map((item) => (
-            item.type === 'divider' ? (
-                <li key={item.label} className="px-3 pt-4 pb-2">
-                    <span className={`text-xs font-semibold text-gray-500 uppercase transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
-                        {isHovered ? item.label : ''}
-                    </span>
-                </li>
-            ) : (
             <li key={item.path}>
               <Link
                 to={item.path!}
@@ -191,7 +172,6 @@ const Sidebar: React.FC = () => {
                 )}
               </Link>
             </li>
-            )
           ))}
         </ul>
       </nav>
