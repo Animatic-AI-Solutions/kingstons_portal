@@ -292,8 +292,8 @@ const FundDetails: React.FC = () => {
   const handleSaveChanges = async () => {
     try {
       // Validate fund name length
-      if (formData.fund_name && formData.fund_name.length > 30) {
-        setError('Fund name must be 30 characters or less');
+      if (formData.fund_name && formData.fund_name.length > 60) {
+        setError('Fund name must be 60 characters or less');
       return;
     }
 
@@ -325,8 +325,8 @@ const FundDetails: React.FC = () => {
     const { name, value } = e.target;
     
     // Apply character limit for fund_name
-    if (name === 'fund_name' && value.length > 30) {
-      return; // Don't update if exceeding 30 characters
+    if (name === 'fund_name' && value.length > 60) {
+      return; // Don't update if exceeding 60 characters
     }
     
       setFormData(prev => ({
@@ -541,12 +541,12 @@ const FundDetails: React.FC = () => {
                 name="fund_name"
                 value={formData.fund_name || ''}
                 onChange={handleChange}
-                  maxLength={30}
+                  maxLength={60}
                 className="block w-full text-lg font-semibold border-0 p-0 focus:ring-0 focus:border-0 bg-transparent"
                 placeholder="Enter fund name"
               />
                 <div className="text-xs text-gray-400 mt-1">
-                  {(formData.fund_name || '').length}/30 characters
+                  {(formData.fund_name || '').length}/60 characters
                 </div>
               </div>
             ) : (

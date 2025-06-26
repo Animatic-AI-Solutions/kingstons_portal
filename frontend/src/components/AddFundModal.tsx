@@ -105,8 +105,8 @@ const AddFundModal: React.FC<AddFundModalProps> = ({ isOpen, onClose, onFundAdde
     }
 
     // Validate fund name length
-    if (formData.fund_name.length > 30) {
-      setError('Fund name must be 30 characters or less');
+    if (formData.fund_name.length > 60) {
+      setError('Fund name must be 60 characters or less');
       return;
     }
 
@@ -212,8 +212,8 @@ const AddFundModal: React.FC<AddFundModalProps> = ({ isOpen, onClose, onFundAdde
               value={formData.fund_name}
               onChange={handleFundNameChange}
               required
-              maxLength={30}
-              helperText={`Unique identifier for this investment fund (${formData.fund_name.length}/30 characters)`}
+              maxLength={60}
+              helperText={`Unique identifier for this investment fund (${formData.fund_name.length}/60 characters)`}
             />
 
             <BaseInput

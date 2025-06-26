@@ -99,6 +99,9 @@ const ReportDisplay: React.FC = () => {
   const [realTimeTotalIRR, setRealTimeTotalIRR] = useState<number | null>(null);
   const [loadingTotalIRR, setLoadingTotalIRR] = useState(false);
   
+  // Portfolio IRR values from database
+  const [portfolioIrrValues, setPortfolioIrrValues] = useState<Map<number, number>>(new Map());
+  
   // Toggle for hiding zero values
   const [hideZeros, setHideZeros] = useState(false);
   
@@ -718,6 +721,66 @@ const ReportDisplay: React.FC = () => {
     `
   });
 
+  const fetchPortfolioIrrValues = async () => {
+    if (!reportData) return;
+    
+    try {
+      console.log('🔍 [PORTFOLIO IRR] Fetching portfolio IRR values from database...');
+      
+      const productIds = reportData.productSummaries.map(product => product.id);
+      console.log('🔍 [PORTFOLIO IRR] Product IDs:', productIds);
+      
+      // Fetch latest portfolio IRR values for each product
+      const irrPromises = productIds.map(async (productId) => {
+        try {
+          // First, get the portfolio_id for this product from client_products
+          console.log(`🔗 [PORTFOLIO IRR] Getting portfolio ID for product ${productId}...`);
+          const clientProductResponse = await api.get(`/client_products/${productId}`);
+          
+          if (!clientProductResponse.data) {
+            console.warn(`⚠️ [PORTFOLIO IRR] No client product found for product ${productId}`);
+            return { productId, irr: null };
+          }
+          
+          // Get the portfolio_id from the client product
+          const portfolioId = clientProductResponse.data.portfolio_id;
+          if (!portfolioId) {
+            console.warn(`⚠️ [PORTFOLIO IRR] No portfolio_id found for product ${productId}`);
+            return { productId, irr: null };
+          }
+          
+          console.log(`🔗 [PORTFOLIO IRR] Product ${productId} maps to portfolio ${portfolioId}`);
+          
+          // Now fetch the latest IRR for this portfolio
+          const response = await api.get(`/portfolios/${portfolioId}/latest_irr`);
+          const irrValue = response.data?.irr_result || response.data?.irr_value || null;
+          
+          console.log(`✅ [PORTFOLIO IRR] Product ${productId} (portfolio ${portfolioId}) IRR:`, irrValue);
+          return { productId, irr: irrValue };
+        } catch (error) {
+          console.warn(`⚠️ [PORTFOLIO IRR] Failed to fetch IRR for product ${productId}:`, error);
+          return { productId, irr: null };
+        }
+      });
+      
+      const irrResults = await Promise.all(irrPromises);
+      
+      // Create a map of product_id to IRR value
+      const irrMap = new Map();
+      irrResults.forEach(({ productId, irr }) => {
+        if (irr !== null) {
+          irrMap.set(productId, irr);
+        }
+      });
+      
+      console.log('✅ [PORTFOLIO IRR] Final IRR values map:', Object.fromEntries(irrMap));
+      setPortfolioIrrValues(irrMap);
+      
+    } catch (error) {
+      console.error('❌ [PORTFOLIO IRR] Error fetching portfolio IRR values:', error);
+    }
+  };
+
   const fetchIrrHistory = async () => {
     if (!reportData || loadingIrrHistory) return;
     
@@ -744,6 +807,8 @@ const ReportDisplay: React.FC = () => {
     
     setLoadingTotalIRR(true);
     try {
+      console.log('🎯 [REAL-TIME TOTAL IRR] Calculating aggregated IRR using multiple portfolio funds...');
+      
       // Collect all portfolio fund IDs from all products
       const allPortfolioFundIds: number[] = [];
       
@@ -757,7 +822,7 @@ const ReportDisplay: React.FC = () => {
         }
       });
 
-      console.log('🎯 [REAL-TIME TOTAL IRR] Calculating with portfolio fund IDs:', allPortfolioFundIds);
+      console.log('🔗 [REAL-TIME TOTAL IRR] Collected portfolio fund IDs:', allPortfolioFundIds);
       
       if (allPortfolioFundIds.length === 0) {
         console.warn('⚠️ [REAL-TIME TOTAL IRR] No portfolio fund IDs found');
@@ -766,38 +831,36 @@ const ReportDisplay: React.FC = () => {
       }
 
       // Convert partial date (YYYY-MM) to full date (YYYY-MM-DD) by using last day of month
-      let endDate: string | undefined = undefined;
-      if (reportData.selectedValuationDate) {
-        if (reportData.selectedValuationDate.includes('-') && reportData.selectedValuationDate.split('-').length === 2) {
-          // Partial date format (YYYY-MM) - convert to last day of month
-          const [year, month] = reportData.selectedValuationDate.split('-');
-          const lastDayOfMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
-          endDate = `${year}-${month.padStart(2, '0')}-${lastDayOfMonth.toString().padStart(2, '0')}`;
-          console.log(`🔄 [REAL-TIME TOTAL IRR] Converted partial date ${reportData.selectedValuationDate} to full date ${endDate}`);
-        } else {
-          // Already a full date
-          endDate = reportData.selectedValuationDate;
-        }
+      let irrDate = reportData.selectedValuationDate;
+      if (irrDate && irrDate.length === 7) { // Format: YYYY-MM
+        const [year, month] = irrDate.split('-');
+        const lastDayOfMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+        irrDate = `${year}-${month}-${lastDayOfMonth.toString().padStart(2, '0')}`;
       }
 
-      // Use the optimized IRR service to calculate total IRR
-      const totalIRRData = await irrDataService.getOptimizedIRRData({
-        portfolioFundIds: allPortfolioFundIds,
-        endDate: endDate,
-        includeHistorical: false
+      console.log(`🎯 [REAL-TIME TOTAL IRR] Using IRR date: ${irrDate}`);
+
+      // Call the multiple portfolio funds IRR endpoint
+      const response = await api.post('/portfolio_funds/multiple/irr', {
+        portfolio_fund_ids: allPortfolioFundIds,
+        irr_date: irrDate
       });
 
-      console.log('🎯 [REAL-TIME TOTAL IRR] Response:', totalIRRData);
-      
-      if (totalIRRData.portfolioIRR !== null && totalIRRData.portfolioIRR !== undefined) {
-        setRealTimeTotalIRR(totalIRRData.portfolioIRR);
-        console.log('✅ [REAL-TIME TOTAL IRR] Calculated:', totalIRRData.portfolioIRR);
+      console.log('🔍 [REAL-TIME TOTAL IRR] API Response:', response.data);
+
+      if (response.data && response.data.irr_percentage !== null && response.data.irr_percentage !== undefined) {
+        const aggregatedIrr = response.data.irr_percentage;
+        setRealTimeTotalIRR(aggregatedIrr);
+        console.log(`✅ [REAL-TIME TOTAL IRR] Calculated aggregated IRR: ${aggregatedIrr.toFixed(2)}% from ${allPortfolioFundIds.length} portfolio funds`);
+        console.log(`📊 [REAL-TIME TOTAL IRR] Total valuation: £${response.data.total_valuation?.toLocaleString()}, Cash flows: ${response.data.cash_flows_count}`);
       } else {
+        console.warn('⚠️ [REAL-TIME TOTAL IRR] No valid aggregated IRR returned from API');
+        console.warn('🔍 [REAL-TIME TOTAL IRR] Response data structure:', response.data);
+        console.warn('🔍 [REAL-TIME TOTAL IRR] irr_percentage value:', response.data?.irr_percentage);
         setRealTimeTotalIRR(null);
-        console.warn('⚠️ [REAL-TIME TOTAL IRR] No IRR result returned');
       }
     } catch (error) {
-      console.error('❌ [REAL-TIME TOTAL IRR] Error calculating total IRR:', error);
+      console.error('❌ [REAL-TIME TOTAL IRR] Error calculating aggregated IRR:', error);
       setRealTimeTotalIRR(null);
     } finally {
       setLoadingTotalIRR(false);
@@ -829,8 +892,9 @@ const ReportDisplay: React.FC = () => {
   // Calculate real-time total IRR and fetch IRR history when report data is loaded
   useEffect(() => {
     if (reportData) {
-      calculateRealTimeTotalIRR();
+      fetchPortfolioIrrValues(); // Fetch portfolio IRR values from database
       fetchIrrHistory(); // Automatically fetch IRR history on page load
+      calculateRealTimeTotalIRR(); // Calculate aggregated IRR using multiple portfolio funds
     }
   }, [reportData]);
 
@@ -1630,13 +1694,18 @@ const ReportDisplay: React.FC = () => {
                               </span>
                             </td>
                             <td className="px-2 py-2 text-xs text-right bg-purple-50">
-                              {product.irr !== null && product.irr !== undefined ? (
-                                <span className={product.irr >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
-                                  {formatIrrWithPrecision(product.irr)}
-                                </span>
-                              ) : (
-                                <span className="text-gray-400">N/A</span>
-                              )}
+                              {(() => {
+                                const portfolioIrr = portfolioIrrValues.get(product.id);
+                                if (portfolioIrr !== null && portfolioIrr !== undefined) {
+                                  return (
+                                    <span className={portfolioIrr >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                                      {formatIrrWithPrecision(portfolioIrr)}
+                                    </span>
+                                  );
+                                } else {
+                                  return <span className="text-gray-400">N/A</span>;
+                                }
+                              })()}
                             </td>
                             <td className="px-2 py-2 whitespace-nowrap text-xs text-right">
                               {product.weighted_risk !== undefined && product.weighted_risk !== null ? (
@@ -2055,15 +2124,12 @@ const ReportDisplay: React.FC = () => {
                               </td>
                               <td className="px-2 py-2 text-xs font-bold text-right bg-purple-100">
                                 {(() => {
-                                  // Calculate weighted average IRR for this product
-                                  const fundsWithIrr = product.funds.filter(fund => fund.irr !== null && fund.irr !== undefined && fund.current_valuation > 0);
-                                  if (fundsWithIrr.length > 0) {
-                                    const totalWeightedIrr = fundsWithIrr.reduce((sum, fund) => sum + (fund.irr! * fund.current_valuation), 0);
-                                    const totalValuation = fundsWithIrr.reduce((sum, fund) => sum + fund.current_valuation, 0);
-                                    const weightedAvgIrr = totalValuation > 0 ? totalWeightedIrr / totalValuation : 0;
+                                  // Use portfolio IRR value from database instead of calculating from funds
+                                  const portfolioIrr = portfolioIrrValues.get(product.id);
+                                  if (portfolioIrr !== null && portfolioIrr !== undefined) {
                                     return (
-                                      <span className={weightedAvgIrr >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
-                                        {formatIrrWithPrecision(weightedAvgIrr)}
+                                      <span className={portfolioIrr >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
+                                        {formatIrrWithPrecision(portfolioIrr)}
                                       </span>
                                     );
                                   }
@@ -2160,7 +2226,11 @@ const ReportDisplay: React.FC = () => {
                 }
                 
                 // Sort dates in descending order (most recent first)
-                const sortedDates = Array.from(allDates).sort((a, b) => new Date(b).getTime() - new Date(a).getTime()).slice(0, 12);
+                const allSortedDates = Array.from(allDates).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+                
+                // Exclude the most recent date (current IRR) from historical columns
+                // Keep only historical dates (excluding the current/latest IRR)
+                const sortedDates = allSortedDates.slice(1, 13); // Skip first (current) and take next 12 historical dates
                 
                 // Create lookup maps for quick access
                 const portfolioIrrMap = new Map();
@@ -2217,10 +2287,10 @@ const ReportDisplay: React.FC = () => {
                               Fund Name
                             </th>
                             <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                              Risk
+                              Current "Risk" 1-7 scale, (7 High)
                             </th>
-                            <th scope="col" className="px-2 py-2 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide bg-purple-100">
-                              Average Returns p.a.
+                            <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide bg-purple-100">
+                              Current Average Return p.a.
                             </th>
                             {sortedDates.map((date) => (
                               <th key={date} scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
@@ -2321,18 +2391,20 @@ const ReportDisplay: React.FC = () => {
                                         <span className="text-gray-400">-</span>
                                       )}
                                     </td>
-                                    <td className="px-2 py-2 text-xs text-center bg-purple-50">
+                                    <td className="px-2 py-2 text-xs text-right bg-purple-50">
                                       {(() => {
-                                        // Calculate average IRR for this fund
+                                        // Show current IRR (latest/most recent) for this fund, not historical average
                                         if (fund.historical_irr && fund.historical_irr.length > 0) {
-                                          const validIrrs = fund.historical_irr.filter((record: any) => 
-                                            record.irr_result !== null && record.irr_result !== undefined
-                                          );
-                                          if (validIrrs.length > 0) {
-                                            const avgIrr = validIrrs.reduce((sum: number, record: any) => sum + record.irr_result, 0) / validIrrs.length;
+                                          // Sort by date descending to get the most recent IRR
+                                          const sortedIrrs = fund.historical_irr
+                                            .filter((record: any) => record.irr_result !== null && record.irr_result !== undefined)
+                                            .sort((a: any, b: any) => new Date(b.irr_date).getTime() - new Date(a.irr_date).getTime());
+                                          
+                                          if (sortedIrrs.length > 0) {
+                                            const currentIrr = sortedIrrs[0].irr_result; // Most recent IRR
                                             return (
-                                              <span className={avgIrr >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
-                                                {avgIrr.toFixed(1)}%
+                                              <span className={currentIrr >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                                                {currentIrr.toFixed(1)}%
                                               </span>
                                             );
                                           }
@@ -2433,21 +2505,16 @@ const ReportDisplay: React.FC = () => {
                                 }
                               })()}
                             </td>
-                            <td className="px-2 py-2 text-xs font-bold text-right text-gray-800">
+                            <td className="px-2 py-2 text-xs font-bold text-right text-gray-800 bg-purple-50">
                               {(() => {
-                                // Calculate average IRR across all portfolio IRR values
-                                if (productHistory.portfolio_historical_irr && productHistory.portfolio_historical_irr.length > 0) {
-                                  const validIrrs = productHistory.portfolio_historical_irr.filter((record: any) => 
-                                    record.irr_result !== null && record.irr_result !== undefined
+                                // Show current IRR from portfolio_irr_values (not historical average)
+                                const currentIrr = portfolioIrrValues.get(product.id);
+                                if (currentIrr !== null && currentIrr !== undefined) {
+                                  return (
+                                    <span className={currentIrr >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
+                                      {currentIrr.toFixed(1)}%
+                                    </span>
                                   );
-                                  if (validIrrs.length > 0) {
-                                    const avgIrr = validIrrs.reduce((sum: number, record: any) => sum + record.irr_result, 0) / validIrrs.length;
-                                    return (
-                                      <span className={avgIrr >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
-                                        {avgIrr.toFixed(1)}%
-                                      </span>
-                                    );
-                                  }
                                 }
                                 return <span className="text-gray-400 font-bold">N/A</span>;
                               })()}
