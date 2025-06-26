@@ -185,7 +185,9 @@ const AddPortfolioTemplate: React.FC = () => {
           funds: fundsData
         });
         
-        navigate('/definitions?tab=portfolios');
+        // Navigate to the template details page using the returned portfolio ID
+        const newPortfolioId = portfolioResponse.data.id;
+        navigate(`/definitions/portfolio-templates/${newPortfolioId}`);
       } catch (err: any) {
         console.error('Error creating portfolio template:', err);
         if (err.response?.data?.detail) {

@@ -220,7 +220,7 @@ const AddPortfolioGeneration: React.FC = () => {
         });
         
         // Navigate back to the template details page
-        navigate(`/portfolio-templates/${portfolioId}`);
+        navigate(`/definitions/portfolio-templates/${portfolioId}`);
       } catch (err: any) {
         console.error('Error creating portfolio generation:', err);
         if (err.response?.data?.detail) {
@@ -348,7 +348,7 @@ const AddPortfolioGeneration: React.FC = () => {
               <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                 <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
               </svg>
-              <Link to={`/portfolio-templates/${portfolioId}`} className="ml-1 text-sm font-medium text-gray-500 hover:text-primary-700 md:ml-2">
+              <Link to={`/definitions/portfolio-templates/${portfolioId}`} className="ml-1 text-sm font-medium text-gray-500 hover:text-primary-700 md:ml-2">
                 {portfolio?.name || 'Template'}
               </Link>
             </div>
@@ -377,7 +377,7 @@ const AddPortfolioGeneration: React.FC = () => {
           </h1>
         </div>
         <Link
-          to={`/portfolio-templates/${portfolioId}`}
+          to={`/definitions/portfolio-templates/${portfolioId}`}
           className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
         >
           <svg className="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -661,7 +661,7 @@ const AddPortfolioGeneration: React.FC = () => {
           {/* Footer Actions */}
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
             <Link
-              to={`/portfolio-templates/${portfolioId}`}
+              to={`/definitions/portfolio-templates/${portfolioId}`}
               className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
             >
               Cancel
