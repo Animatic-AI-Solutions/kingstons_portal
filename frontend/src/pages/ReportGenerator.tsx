@@ -1100,11 +1100,24 @@ const ReportGenerator: React.FC = () => {
             productStartDate = log.activity_timestamp;
           }
         
+        // Fixed product-level activity type grouping - separate each activity type properly
         switch(log.activity_type) {
-            case 'Investment': case 'RegularInvestment': case 'GovernmentUplift': case 'ProductSwitchIn': case 'Product Switch In':
+            case 'Investment':
               totalInvestment += parsedAmount; 
               break;
-            case 'Withdrawal': case 'ProductSwitchOut': case 'Product Switch Out':
+            case 'RegularInvestment':
+              totalRegularInvestment += parsedAmount;
+              break;
+            case 'GovernmentUplift':
+              totalGovernmentUplift += parsedAmount;
+              break;
+            case 'ProductSwitchIn': case 'Product Switch In':
+              totalProductSwitchIn += parsedAmount;
+              break;
+            case 'ProductSwitchOut': case 'Product Switch Out':
+              totalProductSwitchOut += parsedAmount;
+              break;
+            case 'Withdrawal':
               totalWithdrawal += parsedAmount; 
               break;
             case 'SwitchIn': case 'FundSwitchIn': 
@@ -1298,11 +1311,24 @@ const ReportGenerator: React.FC = () => {
               return;
             }
             
+            // Fixed activity type grouping - separate each activity type properly
             switch(log.activity_type) {
-              case 'Investment': case 'RegularInvestment': case 'GovernmentUplift': case 'ProductSwitchIn': case 'Product Switch In':
+              case 'Investment':
                 fundInvestment += amount; 
                 break;
-              case 'Withdrawal': case 'ProductSwitchOut': case 'Product Switch Out':
+              case 'RegularInvestment':
+                fundRegularInvestment += amount;
+                break;
+              case 'GovernmentUplift':
+                fundGovernmentUplift += amount;
+                break;
+              case 'ProductSwitchIn': case 'Product Switch In':
+                fundProductSwitchIn += amount;
+                break;
+              case 'ProductSwitchOut': case 'Product Switch Out':
+                fundProductSwitchOut += amount;
+                break;
+              case 'Withdrawal':
                 fundWithdrawal += amount; 
                 break;
               case 'SwitchIn': case 'FundSwitchIn': 
@@ -1746,24 +1772,48 @@ const ReportGenerator: React.FC = () => {
           }
         }
 
-        // Add to summary results with fund data and proper activity type totals
+        // Calculate product totals by summing all fund summaries (including inactive funds)
+        // This ensures consistency between fund-level and product-level totals
+        const productTotalInvestment = fundSummaries.reduce((sum, fund) => sum + fund.total_investment, 0);
+        const productTotalRegularInvestment = fundSummaries.reduce((sum, fund) => sum + fund.total_regular_investment, 0);
+        const productTotalGovernmentUplift = fundSummaries.reduce((sum, fund) => sum + fund.total_government_uplift, 0);
+        const productTotalProductSwitchIn = fundSummaries.reduce((sum, fund) => sum + fund.total_product_switch_in, 0);
+        const productTotalProductSwitchOut = fundSummaries.reduce((sum, fund) => sum + fund.total_product_switch_out, 0);
+        const productTotalFundSwitchIn = fundSummaries.reduce((sum, fund) => sum + fund.total_fund_switch_in, 0);
+        const productTotalFundSwitchOut = fundSummaries.reduce((sum, fund) => sum + fund.total_fund_switch_out, 0);
+        const productTotalWithdrawal = fundSummaries.reduce((sum, fund) => sum + fund.total_withdrawal, 0);
+        const productTotalSwitchIn = fundSummaries.reduce((sum, fund) => sum + fund.total_switch_in, 0);
+        const productTotalSwitchOut = fundSummaries.reduce((sum, fund) => sum + fund.total_switch_out, 0);
+
+        console.log(`✅ Product ${productDetails.product_name} corrected totals from fund summaries:`, {
+          investment: productTotalInvestment,
+          regular_investment: productTotalRegularInvestment,
+          government_uplift: productTotalGovernmentUplift,
+          product_switch_in: productTotalProductSwitchIn,
+          product_switch_out: productTotalProductSwitchOut,
+          fund_switch_in: productTotalFundSwitchIn,
+          fund_switch_out: productTotalFundSwitchOut,
+          withdrawal: productTotalWithdrawal
+        });
+
+        // Add to summary results with fund data and corrected activity type totals
         productSummaryResults.push({
           id: productId,
           product_name: productDetails.product_name,
           product_type: productDetails.product_type,
           product_owner_name: productOwnerName,
           start_date: productStartDate,
-          total_investment: totalInvestment,
-          total_regular_investment: totalRegularInvestment,
-          total_government_uplift: totalGovernmentUplift,
-          total_product_switch_in: totalProductSwitchIn,
-          total_product_switch_out: totalProductSwitchOut,
-          total_fund_switch_in: totalFundSwitchIn,
-          total_fund_switch_out: totalFundSwitchOut,
-          total_withdrawal: totalWithdrawal,
-          total_switch_in: totalSwitchIn,
-          total_switch_out: totalSwitchOut,
-          net_flow: totalInvestment + totalRegularInvestment + totalGovernmentUplift + totalProductSwitchIn + totalFundSwitchIn - totalWithdrawal - totalProductSwitchOut - totalFundSwitchOut,
+          total_investment: productTotalInvestment,
+          total_regular_investment: productTotalRegularInvestment,
+          total_government_uplift: productTotalGovernmentUplift,
+          total_product_switch_in: productTotalProductSwitchIn,
+          total_product_switch_out: productTotalProductSwitchOut,
+          total_fund_switch_in: productTotalFundSwitchIn,
+          total_fund_switch_out: productTotalFundSwitchOut,
+          total_withdrawal: productTotalWithdrawal,
+          total_switch_in: productTotalSwitchIn,
+          total_switch_out: productTotalSwitchOut,
+          net_flow: productTotalInvestment + productTotalRegularInvestment + productTotalGovernmentUplift + productTotalProductSwitchIn + productTotalFundSwitchIn - productTotalWithdrawal - productTotalProductSwitchOut - productTotalFundSwitchOut,
           current_valuation: productValuation,
           irr: productIRR,
           provider_name: productDetails.provider_name,
