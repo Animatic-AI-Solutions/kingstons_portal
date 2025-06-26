@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNavigationRefresh } from '../hooks/useNavigationRefresh';
 import { getProviderColor } from '../services/providerColors';
 import { EditButton, ActionButton, LapseButton, DeleteButton, AddButton } from '../components/ui';
 import api, { getClientGroupProductOwners, calculateStandardizedMultipleFundsIRR, getProductOwners, addClientGroupProductOwner, removeClientGroupProductOwner } from '../services/api';
+import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
 
 // Enhanced TypeScript interfaces
 interface Client {
@@ -22,7 +23,9 @@ interface Client {
 
 interface ClientProductOwner {
   id: number;
-  name: string;
+  firstname?: string;
+  surname?: string;
+  known_as?: string;
   status: string;
   created_at: string;
   association_id?: number; // ID of the client_group_product_owners record
@@ -67,7 +70,9 @@ interface ClientAccount {
 // Add ProductOwner interface
 interface ProductOwner {
   id: number;
-  name: string;
+  firstname?: string;
+  surname?: string;
+  known_as?: string;
   status: string;
   created_at: string;
 }
@@ -418,7 +423,7 @@ const ClientHeader = ({
                                  key={owner.id}
                                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
                                >
-                                 {owner.name}
+                                 {getProductOwnerDisplayName(owner)}
                                                                    {isEditing && owner.association_id && (
                                     <button
                                       onClick={() => onRemoveProductOwner(owner.association_id!)}
@@ -449,7 +454,7 @@ const ClientHeader = ({
                              <option value="">+ Add Owner</option>
                              {availableProductOwners.map((owner) => (
                                <option key={owner.id} value={owner.id}>
-                                 {owner.name}
+                                 {getProductOwnerDisplayName(owner)}
                                </option>
                              ))}
                            </select>
@@ -837,7 +842,7 @@ const ProductCard: React.FC<{
                         color: themeColor
                       }}
                     >
-                      {owner.name}
+                      {getProductOwnerDisplayName(owner)}
                     </span>
                   ))}
                 </div>
@@ -1129,7 +1134,9 @@ const ClientDetails: React.FC = () => {
             if (productOwner) {
               currentProductOwners.push({
                 id: productOwner.id,
-                name: productOwner.name,
+                firstname: productOwner.firstname,
+                surname: productOwner.surname,
+                known_as: productOwner.known_as,
                 status: productOwner.status,
                 created_at: productOwner.created_at,
                 association_id: association.id // Store the association ID for deletion
@@ -1148,7 +1155,9 @@ const ClientDetails: React.FC = () => {
         .filter((owner: any) => !currentProductOwners.find(current => current.id === owner.id))
         .map((owner: any) => ({
           id: owner.id,
-          name: owner.name,
+          firstname: owner.firstname,
+          surname: owner.surname,
+          known_as: owner.known_as,
           status: owner.status,
           created_at: owner.created_at
         }));
@@ -1494,70 +1503,63 @@ const ClientDetails: React.FC = () => {
   // Handle revenue assignment save
   const handleRevenueAssignmentSave = async (updates: Record<number, { fixed_cost: number | null; percentage_fee: number | null }>) => {
     try {
-      // Update each product with new revenue settings
-      const updatePromises = Object.entries(updates).map(async ([productId, data]) => {
-        console.log(`Processing product ${productId}:`, data);
-        
-        // Get current product data for comparison
-        const currentProduct = clientAccounts.find(p => p.id === parseInt(productId));
-        console.log(`Current product data for ${productId}:`, {
-          fixed_cost: currentProduct?.fixed_cost,
-          percentage_fee: currentProduct?.percentage_fee
-        });
-        
-        // Only send fields that have actual values or need to be cleared
-        const updateData: any = {};
-        
-        // Handle fixed_cost: send null to clear, number to set, skip if unchanged
-        if (data.fixed_cost !== null) {
-          updateData.fixed_cost = data.fixed_cost;
-        } else {
-          // Check if we need to explicitly clear it
-          if (currentProduct?.fixed_cost) {
-            updateData.fixed_cost = null;
-          }
-        }
-        
-        // Handle percentage_fee: send null to clear, number to set, skip if unchanged  
-        if (data.percentage_fee !== null) {
-          updateData.percentage_fee = data.percentage_fee;
-        } else {
-          // Check if we need to explicitly clear it
-          if (currentProduct?.percentage_fee) {
-            updateData.percentage_fee = null;
-          }
-        }
-        
-        // Only make API call if there's something to update
-        if (Object.keys(updateData).length > 0) {
-          console.log(`Updating product ${productId} with:`, updateData);
-          console.log(`API call: PATCH /client_products/${productId}`, JSON.stringify(updateData, null, 2));
-          try {
-            return await api.patch(`/client_products/${productId}`, updateData);
-          } catch (error: any) {
-            console.error(`Failed to update product ${productId}:`, error);
-            console.error(`Error response:`, error.response?.data);
-            console.error(`Error status:`, error.response?.status);
-            throw error;
-          }
-        } else {
-          console.log(`No changes for product ${productId}, skipping update`);
-          return Promise.resolve();
-        }
-      });
-
-      await Promise.all(updatePromises);
+      setIsSaving(true);
       
-      // Refresh client data to show updated revenue calculations
+      // Call API to update products with revenue data
+      for (const [productId, data] of Object.entries(updates)) {
+        await api.patch(`/api/client_products/${productId}`, data);
+      }
+      
+      // Refresh client data to show updated values
       await fetchClientData();
       
-      console.log('Revenue assignments updated successfully');
-    } catch (err: any) {
-      console.error('Error updating revenue assignments:', err);
-      console.error('Error details:', err.response?.data);
-      setError(err.response?.data?.detail || 'Failed to update revenue assignments');
-      throw err; // Re-throw to let modal handle the error
+      console.log('Revenue assignments saved successfully');
+    } catch (error: any) {
+      console.error('Error saving revenue assignments:', error);
+      alert('Failed to save revenue assignments. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
+  };
+
+  // Function to organize products by type in the specified order
+  const organizeProductsByType = (accounts: ClientAccount[]) => {
+    const productTypeOrder = ['ISA', 'GIA', 'Onshore Bond', 'Offshore Bond', 'Pension', 'Other'];
+    
+    const groupedProducts = accounts.reduce((acc, account) => {
+      let productType = account.product_type || 'Other';
+      
+      // Normalize product type names to match the specified order
+      if (productType.toLowerCase().includes('isa')) {
+        productType = 'ISA';
+      } else if (productType.toLowerCase().includes('gia')) {
+        productType = 'GIA';
+      } else if (productType.toLowerCase().includes('onshore')) {
+        productType = 'Onshore Bond';
+      } else if (productType.toLowerCase().includes('offshore')) {
+        productType = 'Offshore Bond';
+      } else if (productType.toLowerCase().includes('pension') || productType.toLowerCase().includes('sipp')) {
+        productType = 'Pension';
+      } else if (!productTypeOrder.includes(productType)) {
+        productType = 'Other';
+      }
+      
+      if (!acc[productType]) {
+        acc[productType] = [];
+      }
+      acc[productType].push(account);
+      return acc;
+    }, {} as Record<string, ClientAccount[]>);
+
+    // Return organized groups in the specified order with products sorted alphabetically by provider
+    return productTypeOrder.map(type => ({
+      type,
+      products: (groupedProducts[type] || []).sort((a, b) => {
+        const providerA = a.provider_name || '';
+        const providerB = b.provider_name || '';
+        return providerA.localeCompare(providerB);
+      })
+    })).filter(group => group.products.length > 0);
   };
 
   // Breadcrumb component with smart navigation
@@ -1687,29 +1689,34 @@ const ClientDetails: React.FC = () => {
           {!isLoading ? (
             clientAccounts.length > 0 ? (
               <div className="space-y-6">
-                {/* Active Products */}
-                {clientAccounts.filter(account => account.status === 'active').length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Active Products</h3>
+                {/* Organize products by type */}
+                {organizeProductsByType(clientAccounts.filter(account => account.status === 'active')).map(group => (
+                  <div key={group.type}>
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">
+                      {group.type === 'ISA' ? 'ISAs' : 
+                       group.type === 'GIA' ? 'GIAs' : 
+                       group.type === 'Onshore Bond' ? 'Onshore Bonds' : 
+                       group.type === 'Offshore Bond' ? 'Offshore Bonds' : 
+                       group.type === 'Pension' ? 'Pensions' : 
+                       'Other'}
+                    </h3>
                     <div className="grid grid-cols-1 gap-4">
-                      {clientAccounts
-                        .filter(account => account.status === 'active')
-                        .map(account => (
-                          <ProductCard 
-                            key={account.id} 
-                            account={account} 
-                            isExpanded={expandedProducts.includes(account.id)}
-                            onToggleExpand={() => toggleProductExpand(account.id)}
-                            funds={expandedProductFunds[account.id] || []}
-                            isLoadingFunds={isLoadingFunds[account.id] || false}
-                            client={client}
-                          />
-                        ))}
+                      {group.products.map((account: ClientAccount) => (
+                        <ProductCard 
+                          key={account.id} 
+                          account={account} 
+                          isExpanded={expandedProducts.includes(account.id)}
+                          onToggleExpand={() => toggleProductExpand(account.id)}
+                          funds={expandedProductFunds[account.id] || []}
+                          isLoadingFunds={isLoadingFunds[account.id] || false}
+                          client={client}
+                        />
+                      ))}
                     </div>
                   </div>
-                )}
+                ))}
                 
-                {/* Lapsed Products */}
+                {/* Lapsed Products - Show separately at the bottom */}
                 {clientAccounts.filter(account => account.status === 'inactive').length > 0 && (
                   <div>
                     <h3 className="text-lg font-medium text-gray-500 mb-4">Lapsed Products</h3>

@@ -44,6 +44,36 @@ interface NewGenerationFormData {
   copy_from_generation_id?: number;
 }
 
+interface LinkedProduct {
+  id: number;
+  product_name: string;
+  product_type?: string;
+  plan_number?: string;
+  start_date: string;
+  end_date?: string;
+  status: string;
+  client_id: number;
+  provider_id?: number;
+  portfolio_id?: number;
+  template_generation_id?: number;
+  link_type: 'portfolio' | 'direct';
+  client_groups?: {
+    id: number;
+    name: string;
+    advisor?: string;
+  };
+  available_providers?: {
+    id: number;
+    name: string;
+    theme_color?: string;
+  };
+  portfolios?: {
+    id: number;
+    portfolio_name: string;
+    template_generation_id?: number;
+  };
+}
+
 const PortfolioTemplateDetails: React.FC = () => {
   const { portfolioId } = useParams<{ portfolioId: string }>();
   const navigate = useNavigate();
@@ -68,11 +98,14 @@ const PortfolioTemplateDetails: React.FC = () => {
   const [generationToDelete, setGenerationToDelete] = useState<Generation | null>(null);
   const [isDeletingGeneration, setIsDeletingGeneration] = useState(false);
   const [generationProductCounts, setGenerationProductCounts] = useState<Record<number, number>>({});
+  const [linkedProducts, setLinkedProducts] = useState<LinkedProduct[]>([]);
+  const [isLoadingLinkedProducts, setIsLoadingLinkedProducts] = useState(false);
 
   useEffect(() => {
     if (portfolioId && portfolioId !== 'undefined') {
       fetchPortfolioTemplate();
       fetchGenerations();
+      fetchLinkedProducts();
     } else {
       setError('No portfolio template ID provided');
       setIsLoading(false);
@@ -153,6 +186,23 @@ const PortfolioTemplateDetails: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Error fetching funds for generation:', err);
+    }
+  };
+
+  const fetchLinkedProducts = async () => {
+    try {
+      setIsLoadingLinkedProducts(true);
+      console.log(`Fetching products linked to portfolio template ${portfolioId}`);
+      const response = await api.get(`/available_portfolios/${portfolioId}/linked-products`);
+      console.log('Linked products data received:', response.data);
+      
+      setLinkedProducts(response.data || []);
+    } catch (err: any) {
+      console.error('Error fetching linked products:', err);
+      // Don't set error state as this is not critical functionality
+      setLinkedProducts([]);
+    } finally {
+      setIsLoadingLinkedProducts(false);
     }
   };
 
@@ -540,7 +590,9 @@ const PortfolioTemplateDetails: React.FC = () => {
         </div>
         <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
           <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Products Using Template</div>
-          <div className="mt-1 text-lg font-semibold text-gray-900">{productsCount}</div>
+          <div className="mt-1 text-lg font-semibold text-gray-900">
+            {isLoadingLinkedProducts ? '...' : linkedProducts.length}
+          </div>
         </div>
         <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
           <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Generations</div>
@@ -751,6 +803,128 @@ const PortfolioTemplateDetails: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Linked Products Section */}
+      <div className="bg-white shadow-sm rounded-lg border border-gray-100 mb-4">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">Products Using This Template</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Products that are linked to this portfolio template through their portfolio generations
+          </p>
+        </div>
+        
+        <div className="p-6">
+          {isLoadingLinkedProducts ? (
+            <div className="flex justify-center items-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+            </div>
+          ) : linkedProducts.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-teal-300">
+                      Product Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-teal-300">
+                      Client
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-teal-300">
+                      Provider
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-teal-300">
+                      Product Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-teal-300">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-teal-300">
+                      Link Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-teal-300">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {linkedProducts.map((product) => (
+                    <tr key={product.id} className="hover:bg-teal-50 transition-colors duration-150 border-b border-gray-100">
+                      <td className="px-6 py-3 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-800">
+                          {product.product_name}
+                        </div>
+                        {product.plan_number && (
+                          <div className="text-xs text-gray-500">
+                            Plan: {product.plan_number}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-3 whitespace-nowrap">
+                        <div className="text-sm text-gray-800">
+                          {product.client_groups?.name || 'Unknown Client'}
+                        </div>
+                        {product.client_groups?.advisor && (
+                          <div className="text-xs text-gray-500">
+                            Advisor: {product.client_groups?.advisor}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-3 whitespace-nowrap">
+                        <div className="text-sm text-gray-800">
+                          {product.available_providers?.name || 'N/A'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-3 whitespace-nowrap">
+                        <div className="text-sm text-gray-600">
+                          {product.product_type || 'N/A'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-3 whitespace-nowrap">
+                        <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          product.status === 'active' 
+                            ? 'bg-green-100 text-green-800' 
+                            : product.status === 'inactive'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {product.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3 whitespace-nowrap">
+                        <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          product.link_type === 'portfolio'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-purple-100 text-purple-800'
+                        }`}>
+                          {product.link_type === 'portfolio' ? 'Via Portfolio' : 'Direct Link'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3 whitespace-nowrap text-sm font-medium">
+                        <Link
+                          to={`/products/${product.id}`}
+                          className="text-teal-600 hover:text-teal-900 transition-colors"
+                        >
+                          View Product
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No products using this template</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                No products are currently linked to this portfolio template.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (

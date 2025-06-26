@@ -290,71 +290,49 @@ const FundDetails: React.FC = () => {
   };
 
   const handleSaveChanges = async () => {
-    if (!fund) return;
-
-    // Check if any changes were made
-    const hasChanges = Object.keys(formData).some(key => {
-      const formValue = formData[key as keyof typeof formData];
-      const originalValue = originalFormData[key as keyof typeof originalFormData];
-      return formValue !== originalValue;
-    });
-
-    if (!hasChanges) {
-      // No changes were made, just exit edit mode
-      setIsEditing(false);
-      setFormData({});
+    try {
+      // Validate fund name length
+      if (formData.fund_name && formData.fund_name.length > 60) {
+        setError('Fund name must be 60 characters or less');
       return;
     }
 
-    // Validate risk factor is between 1 and 7
-    if (formData.risk_factor !== undefined && 
-        formData.risk_factor !== null && 
-        (formData.risk_factor < 1 || formData.risk_factor > 7)) {
+      // Validate risk factor if provided
+      if (formData.risk_factor !== undefined && formData.risk_factor !== null) {
+        if (formData.risk_factor < 1 || formData.risk_factor > 7) {
       setError('Risk factor must be between 1 and 7');
       return;
     }
+      }
 
-    try {
-      await api.patch(`/funds/${id}`, formData);
-      await fetchFundDetails();
+      const response = await api.put(`/funds/${fund?.id}`, formData);
+
+      if (response.data) {
+        setFund(response.data);
       setIsEditing(false);
       setFormData({});
+        setOriginalFormData({});
+        setError(null);
+      }
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to update fund');
+      const errorMessage = err.response?.data?.detail || 'Failed to update fund';
+      setError(errorMessage);
       console.error('Error updating fund:', err);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
+    const { name, value } = e.target;
     
-    if (name === 'provider_id' || name === 'portfolio_id') {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value === '' ? null : Number(value)
-      }));
-    } else if (name === 'risk_factor') {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value === '' ? null : Number(value)
-      }));
-    } else if (name === 'fund_cost') {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value === '' ? null : parseFloat(value)
-      }));
-    } else if (type === 'checkbox') {
-      const target = e.target as HTMLInputElement;
-      setFormData(prev => ({
-        ...prev,
-        [name]: target.checked
-      }));
-    } else {
+    // Apply character limit for fund_name
+    if (name === 'fund_name' && value.length > 60) {
+      return; // Don't update if exceeding 60 characters
+    }
+    
       setFormData(prev => ({
         ...prev,
         [name]: value
       }));
-    }
   };
 
   // CSV Export function
@@ -557,14 +535,20 @@ const FundDetails: React.FC = () => {
           <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Fund Name</div>
           <div className="mt-1">
             {isEditing ? (
+              <div>
               <input
                 type="text"
                 name="fund_name"
                 value={formData.fund_name || ''}
                 onChange={handleChange}
+                  maxLength={60}
                 className="block w-full text-lg font-semibold border-0 p-0 focus:ring-0 focus:border-0 bg-transparent"
                 placeholder="Enter fund name"
               />
+                <div className="text-xs text-gray-400 mt-1">
+                  {(formData.fund_name || '').length}/60 characters
+                </div>
+              </div>
             ) : (
               <div className="text-lg font-semibold text-gray-900">{fund.fund_name}</div>
             )}

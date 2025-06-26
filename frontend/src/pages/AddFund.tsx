@@ -50,10 +50,14 @@ const AddFund: React.FC = () => {
 
   // New handlers for BaseInput components
   const handleFundNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Limit fund name to 30 characters
+    if (value.length <= 30) {
     setFormData(prev => ({
       ...prev,
-      fund_name: e.target.value
+        fund_name: value
     }));
+    }
   };
 
   const handleIsinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -94,6 +98,12 @@ const AddFund: React.FC = () => {
     // Validate form
     if (!formData.fund_name?.trim()) {
       setError('Fund name is required');
+      return;
+    }
+
+    // Validate fund name length
+    if (formData.fund_name.length > 60) {
+      setError('Fund name must be 60 characters or less');
       return;
     }
 
@@ -213,7 +223,8 @@ const AddFund: React.FC = () => {
               value={formData.fund_name}
               onChange={handleFundNameChange}
               required
-              helperText="Unique identifier for this investment fund"
+              maxLength={60}
+              helperText={`Unique identifier for this investment fund (${formData.fund_name.length}/60 characters)`}
             />
 
             <BaseInput

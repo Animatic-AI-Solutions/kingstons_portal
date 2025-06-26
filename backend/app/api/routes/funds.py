@@ -287,6 +287,12 @@ async def get_fund_products_with_owners(
             owner_ids = product_owner_map.get(product_id, [])
             owners = [owner_map.get(owner_id) for owner_id in owner_ids if owner_id in owner_map]
             
+            # For reports, use known_as only, not firstname/surname combination
+            product_owner_name = "No Owner"
+            if owners:
+                owner = owners[0]
+                product_owner_name = owner.get('known_as') or "No Owner"
+            
             # Build product entry
             product_entry = {
                 "product_id": product_id,
@@ -296,7 +302,7 @@ async def get_fund_products_with_owners(
                 "portfolio_name": portfolio.get("portfolio_name", ""),
                 "target_weighting": portfolio_fund.get("target_weighting", 0),
                 "start_date": product["start_date"],
-                "product_owner_name": owners[0]["name"] if owners else "No Owner"
+                "product_owner_name": product_owner_name
             }
             
             products_with_owners.append(product_entry)

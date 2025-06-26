@@ -79,6 +79,7 @@ interface ReportData {
   formatWithdrawalsAsNegative?: boolean;
   showInactiveProducts: boolean;
   showPreviousFunds: boolean;
+  showInactiveProductDetails?: number[]; // Array of product IDs that should show detailed cards
 }
 
 const ReportDisplay: React.FC = () => {
@@ -98,6 +99,9 @@ const ReportDisplay: React.FC = () => {
   const [realTimeTotalIRR, setRealTimeTotalIRR] = useState<number | null>(null);
   const [loadingTotalIRR, setLoadingTotalIRR] = useState(false);
   
+  // Portfolio IRR values from database
+  const [portfolioIrrValues, setPortfolioIrrValues] = useState<Map<number, number>>(new Map());
+  
   // Toggle for hiding zero values
   const [hideZeros, setHideZeros] = useState(false);
   
@@ -114,6 +118,189 @@ const ReportDisplay: React.FC = () => {
 
   // Create ref for the printable content
   const printRef = useRef<HTMLDivElement>(null);
+
+  // Function to organize products by type in the specified order
+  const organizeProductsByType = (products: ProductPeriodSummary[]) => {
+    const productTypeOrder = [
+      'ISAs',
+      'GIAs', 
+      'Onshore Bonds',
+      'Offshore Bonds',
+      'Pensions',
+      'Other'
+    ];
+
+    // Normalize product type for consistent comparison
+    const normalizeProductType = (type: string | undefined): string => {
+      if (!type) return 'Other';
+      
+      const normalized = type.toLowerCase().trim();
+      
+      // ISA variations
+      if (normalized.includes('isa')) return 'ISAs';
+      
+      // GIA variations
+      if (normalized.includes('gia') || normalized === 'general investment account') return 'GIAs';
+      
+      // Bond variations
+      if (normalized.includes('onshore') && normalized.includes('bond')) return 'Onshore Bonds';
+      if (normalized.includes('offshore') && normalized.includes('bond')) return 'Offshore Bonds';
+      if (normalized.includes('bond') && !normalized.includes('onshore') && !normalized.includes('offshore')) {
+        return 'Onshore Bonds'; // Default bonds to onshore
+      }
+      
+      // Pension variations
+      if (normalized.includes('pension') || normalized.includes('sipp') || normalized.includes('ssas')) return 'Pensions';
+      
+      return 'Other';
+    };
+
+    // Group products by normalized type
+    const groupedProducts: { [key: string]: ProductPeriodSummary[] } = {};
+    
+    products.forEach(product => {
+      const normalizedType = normalizeProductType(product.product_type);
+      if (!groupedProducts[normalizedType]) {
+        groupedProducts[normalizedType] = [];
+      }
+      groupedProducts[normalizedType].push(product);
+    });
+
+    // Sort products within each type by provider name, with special ordering for ISAs
+    Object.keys(groupedProducts).forEach(type => {
+      if (type === 'ISAs') {
+        // Special sorting for ISAs: ISA products first, then JISA products, then by provider
+        groupedProducts[type].sort((a, b) => {
+          const typeA = a.product_type?.toLowerCase().trim() || '';
+          const typeB = b.product_type?.toLowerCase().trim() || '';
+          
+          // Check if products are JISA
+          const isJISA_A = typeA === 'jisa';
+          const isJISA_B = typeB === 'jisa';
+          
+          // If one is JISA and the other is not, non-JISA comes first
+          if (isJISA_A && !isJISA_B) return 1;
+          if (!isJISA_A && isJISA_B) return -1;
+          
+          // If both are same type (both JISA or both ISA), sort by provider
+          const providerA = a.provider_name || '';
+          const providerB = b.provider_name || '';
+          return providerA.localeCompare(providerB);
+        });
+      } else {
+        // Standard sorting by provider name for other product types
+        groupedProducts[type].sort((a, b) => {
+          const providerA = a.provider_name || '';
+          const providerB = b.provider_name || '';
+          return providerA.localeCompare(providerB);
+        });
+      }
+    });
+
+    // Return products in the specified order
+    const orderedProducts: ProductPeriodSummary[] = [];
+    
+    productTypeOrder.forEach(type => {
+      if (groupedProducts[type]) {
+        orderedProducts.push(...groupedProducts[type]);
+      }
+    });
+
+    return orderedProducts;
+  };
+
+  // Function to organize products by type with grouped structure for headers
+  const organizeProductsByTypeWithHeaders = (products: ProductPeriodSummary[]) => {
+    const productTypeOrder = [
+      'ISAs',
+      'GIAs', 
+      'Onshore Bonds',
+      'Offshore Bonds',
+      'Pensions',
+      'Other'
+    ];
+
+    // Normalize product type for consistent comparison
+    const normalizeProductType = (type: string | undefined): string => {
+      if (!type) return 'Other';
+      
+      const normalized = type.toLowerCase().trim();
+      
+      // ISA variations
+      if (normalized.includes('isa')) return 'ISAs';
+      
+      // GIA variations
+      if (normalized.includes('gia') || normalized === 'general investment account') return 'GIAs';
+      
+      // Bond variations
+      if (normalized.includes('onshore') && normalized.includes('bond')) return 'Onshore Bonds';
+      if (normalized.includes('offshore') && normalized.includes('bond')) return 'Offshore Bonds';
+      if (normalized.includes('bond') && !normalized.includes('onshore') && !normalized.includes('offshore')) {
+        return 'Onshore Bonds'; // Default bonds to onshore
+      }
+      
+      // Pension variations
+      if (normalized.includes('pension') || normalized.includes('sipp') || normalized.includes('ssas')) return 'Pensions';
+      
+      return 'Other';
+    };
+
+    // Group products by normalized type
+    const groupedProducts: { [key: string]: ProductPeriodSummary[] } = {};
+    
+    products.forEach(product => {
+      const normalizedType = normalizeProductType(product.product_type);
+      if (!groupedProducts[normalizedType]) {
+        groupedProducts[normalizedType] = [];
+      }
+      groupedProducts[normalizedType].push(product);
+    });
+
+    // Sort products within each type by provider name, with special ordering for ISAs
+    Object.keys(groupedProducts).forEach(type => {
+      if (type === 'ISAs') {
+        // Special sorting for ISAs: ISA products first, then JISA products, then by provider
+        groupedProducts[type].sort((a, b) => {
+          const typeA = a.product_type?.toLowerCase().trim() || '';
+          const typeB = b.product_type?.toLowerCase().trim() || '';
+          
+          // Check if products are JISA
+          const isJISA_A = typeA === 'jisa';
+          const isJISA_B = typeB === 'jisa';
+          
+          // If one is JISA and the other is not, non-JISA comes first
+          if (isJISA_A && !isJISA_B) return 1;
+          if (!isJISA_A && isJISA_B) return -1;
+          
+          // If both are same type (both JISA or both ISA), sort by provider
+          const providerA = a.provider_name || '';
+          const providerB = b.provider_name || '';
+          return providerA.localeCompare(providerB);
+        });
+      } else {
+        // Standard sorting by provider name for other product types
+        groupedProducts[type].sort((a, b) => {
+          const providerA = a.provider_name || '';
+          const providerB = b.provider_name || '';
+          return providerA.localeCompare(providerB);
+        });
+      }
+    });
+
+    // Return grouped structure with headers
+    const groupedResult: Array<{ type: string; products: ProductPeriodSummary[] }> = [];
+    
+    productTypeOrder.forEach(type => {
+      if (groupedProducts[type] && groupedProducts[type].length > 0) {
+        groupedResult.push({
+          type,
+          products: groupedProducts[type]
+        });
+      }
+    });
+
+    return groupedResult;
+  };
 
   // Add CSS for product fund table column alignment
   React.useEffect(() => {
@@ -534,6 +721,66 @@ const ReportDisplay: React.FC = () => {
     `
   });
 
+  const fetchPortfolioIrrValues = async () => {
+    if (!reportData) return;
+    
+    try {
+      console.log('🔍 [PORTFOLIO IRR] Fetching portfolio IRR values from database...');
+      
+      const productIds = reportData.productSummaries.map(product => product.id);
+      console.log('🔍 [PORTFOLIO IRR] Product IDs:', productIds);
+      
+      // Fetch latest portfolio IRR values for each product
+      const irrPromises = productIds.map(async (productId) => {
+        try {
+          // First, get the portfolio_id for this product from client_products
+          console.log(`🔗 [PORTFOLIO IRR] Getting portfolio ID for product ${productId}...`);
+          const clientProductResponse = await api.get(`/client_products/${productId}`);
+          
+          if (!clientProductResponse.data) {
+            console.warn(`⚠️ [PORTFOLIO IRR] No client product found for product ${productId}`);
+            return { productId, irr: null };
+          }
+          
+          // Get the portfolio_id from the client product
+          const portfolioId = clientProductResponse.data.portfolio_id;
+          if (!portfolioId) {
+            console.warn(`⚠️ [PORTFOLIO IRR] No portfolio_id found for product ${productId}`);
+            return { productId, irr: null };
+          }
+          
+          console.log(`🔗 [PORTFOLIO IRR] Product ${productId} maps to portfolio ${portfolioId}`);
+          
+          // Now fetch the latest IRR for this portfolio
+          const response = await api.get(`/portfolios/${portfolioId}/latest_irr`);
+          const irrValue = response.data?.irr_result || response.data?.irr_value || null;
+          
+          console.log(`✅ [PORTFOLIO IRR] Product ${productId} (portfolio ${portfolioId}) IRR:`, irrValue);
+          return { productId, irr: irrValue };
+        } catch (error) {
+          console.warn(`⚠️ [PORTFOLIO IRR] Failed to fetch IRR for product ${productId}:`, error);
+          return { productId, irr: null };
+        }
+      });
+      
+      const irrResults = await Promise.all(irrPromises);
+      
+      // Create a map of product_id to IRR value
+      const irrMap = new Map();
+      irrResults.forEach(({ productId, irr }) => {
+        if (irr !== null) {
+          irrMap.set(productId, irr);
+        }
+      });
+      
+      console.log('✅ [PORTFOLIO IRR] Final IRR values map:', Object.fromEntries(irrMap));
+      setPortfolioIrrValues(irrMap);
+      
+    } catch (error) {
+      console.error('❌ [PORTFOLIO IRR] Error fetching portfolio IRR values:', error);
+    }
+  };
+
   const fetchIrrHistory = async () => {
     if (!reportData || loadingIrrHistory) return;
     
@@ -560,6 +807,8 @@ const ReportDisplay: React.FC = () => {
     
     setLoadingTotalIRR(true);
     try {
+      console.log('🎯 [REAL-TIME TOTAL IRR] Calculating aggregated IRR using multiple portfolio funds...');
+      
       // Collect all portfolio fund IDs from all products
       const allPortfolioFundIds: number[] = [];
       
@@ -573,7 +822,7 @@ const ReportDisplay: React.FC = () => {
         }
       });
 
-      console.log('🎯 [REAL-TIME TOTAL IRR] Calculating with portfolio fund IDs:', allPortfolioFundIds);
+      console.log('🔗 [REAL-TIME TOTAL IRR] Collected portfolio fund IDs:', allPortfolioFundIds);
       
       if (allPortfolioFundIds.length === 0) {
         console.warn('⚠️ [REAL-TIME TOTAL IRR] No portfolio fund IDs found');
@@ -582,38 +831,36 @@ const ReportDisplay: React.FC = () => {
       }
 
       // Convert partial date (YYYY-MM) to full date (YYYY-MM-DD) by using last day of month
-      let endDate: string | undefined = undefined;
-      if (reportData.selectedValuationDate) {
-        if (reportData.selectedValuationDate.includes('-') && reportData.selectedValuationDate.split('-').length === 2) {
-          // Partial date format (YYYY-MM) - convert to last day of month
-          const [year, month] = reportData.selectedValuationDate.split('-');
-          const lastDayOfMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
-          endDate = `${year}-${month.padStart(2, '0')}-${lastDayOfMonth.toString().padStart(2, '0')}`;
-          console.log(`🔄 [REAL-TIME TOTAL IRR] Converted partial date ${reportData.selectedValuationDate} to full date ${endDate}`);
-        } else {
-          // Already a full date
-          endDate = reportData.selectedValuationDate;
-        }
+      let irrDate = reportData.selectedValuationDate;
+      if (irrDate && irrDate.length === 7) { // Format: YYYY-MM
+        const [year, month] = irrDate.split('-');
+        const lastDayOfMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+        irrDate = `${year}-${month}-${lastDayOfMonth.toString().padStart(2, '0')}`;
       }
 
-      // Use the optimized IRR service to calculate total IRR
-      const totalIRRData = await irrDataService.getOptimizedIRRData({
-        portfolioFundIds: allPortfolioFundIds,
-        endDate: endDate,
-        includeHistorical: false
+      console.log(`🎯 [REAL-TIME TOTAL IRR] Using IRR date: ${irrDate}`);
+
+      // Call the multiple portfolio funds IRR endpoint
+      const response = await api.post('/portfolio_funds/multiple/irr', {
+        portfolio_fund_ids: allPortfolioFundIds,
+        irr_date: irrDate
       });
 
-      console.log('🎯 [REAL-TIME TOTAL IRR] Response:', totalIRRData);
-      
-      if (totalIRRData.portfolioIRR !== null && totalIRRData.portfolioIRR !== undefined) {
-        setRealTimeTotalIRR(totalIRRData.portfolioIRR);
-        console.log('✅ [REAL-TIME TOTAL IRR] Calculated:', totalIRRData.portfolioIRR);
+      console.log('🔍 [REAL-TIME TOTAL IRR] API Response:', response.data);
+
+      if (response.data && response.data.irr_percentage !== null && response.data.irr_percentage !== undefined) {
+        const aggregatedIrr = response.data.irr_percentage;
+        setRealTimeTotalIRR(aggregatedIrr);
+        console.log(`✅ [REAL-TIME TOTAL IRR] Calculated aggregated IRR: ${aggregatedIrr.toFixed(2)}% from ${allPortfolioFundIds.length} portfolio funds`);
+        console.log(`📊 [REAL-TIME TOTAL IRR] Total valuation: £${response.data.total_valuation?.toLocaleString()}, Cash flows: ${response.data.cash_flows_count}`);
       } else {
+        console.warn('⚠️ [REAL-TIME TOTAL IRR] No valid aggregated IRR returned from API');
+        console.warn('🔍 [REAL-TIME TOTAL IRR] Response data structure:', response.data);
+        console.warn('🔍 [REAL-TIME TOTAL IRR] irr_percentage value:', response.data?.irr_percentage);
         setRealTimeTotalIRR(null);
-        console.warn('⚠️ [REAL-TIME TOTAL IRR] No IRR result returned');
       }
     } catch (error) {
-      console.error('❌ [REAL-TIME TOTAL IRR] Error calculating total IRR:', error);
+      console.error('❌ [REAL-TIME TOTAL IRR] Error calculating aggregated IRR:', error);
       setRealTimeTotalIRR(null);
     } finally {
       setLoadingTotalIRR(false);
@@ -631,6 +878,11 @@ const ReportDisplay: React.FC = () => {
       console.log('🔍 [REPORT DISPLAY DEBUG] Received report data with', location.state.reportData.productSummaries.length, 'products');
       
       setReportData(location.state.reportData);
+      
+      // Initialize inactive product details from report data
+      if (location.state.reportData.showInactiveProductDetails) {
+        setShowInactiveProductDetails(new Set(location.state.reportData.showInactiveProductDetails));
+      }
     } else {
       // If no report data, redirect back to report generator
       navigate('/report-generator');
@@ -640,8 +892,9 @@ const ReportDisplay: React.FC = () => {
   // Calculate real-time total IRR and fetch IRR history when report data is loaded
   useEffect(() => {
     if (reportData) {
-      calculateRealTimeTotalIRR();
+      fetchPortfolioIrrValues(); // Fetch portfolio IRR values from database
       fetchIrrHistory(); // Automatically fetch IRR history on page load
+      calculateRealTimeTotalIRR(); // Calculate aggregated IRR using multiple portfolio funds
     }
   }, [reportData]);
 
@@ -1021,7 +1274,7 @@ const ReportDisplay: React.FC = () => {
 
             {/* Product Title List */}
             <div className="space-y-4">
-              {reportData.productSummaries.map(product => {
+              {organizeProductsByType(reportData.productSummaries).map(product => {
                 const defaultTitle = generateProductTitle(product);
                 const currentModalTitle = modalTitles.get(product.id) || defaultTitle;
                 const isCustom = currentModalTitle !== defaultTitle;
@@ -1365,7 +1618,7 @@ const ReportDisplay: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {reportData.productSummaries
+                    {organizeProductsByType(reportData.productSummaries)
                       .filter(product => {
                         // Show all products that are in the report data - if they were selected in the generator, they should appear
                         // The filtering already happened in the ReportGenerator, so we show everything passed to us
@@ -1441,13 +1694,18 @@ const ReportDisplay: React.FC = () => {
                               </span>
                             </td>
                             <td className="px-2 py-2 text-xs text-right bg-purple-50">
-                              {product.irr !== null && product.irr !== undefined ? (
-                                <span className={product.irr >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
-                                  {formatIrrWithPrecision(product.irr)}
-                                </span>
-                              ) : (
-                                <span className="text-gray-400">N/A</span>
-                              )}
+                              {(() => {
+                                const portfolioIrr = portfolioIrrValues.get(product.id);
+                                if (portfolioIrr !== null && portfolioIrr !== undefined) {
+                                  return (
+                                    <span className={portfolioIrr >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                                      {formatIrrWithPrecision(portfolioIrr)}
+                                    </span>
+                                  );
+                                } else {
+                                  return <span className="text-gray-400">N/A</span>;
+                                }
+                              })()}
                             </td>
                             <td className="px-2 py-2 whitespace-nowrap text-xs text-right">
                               {product.weighted_risk !== undefined && product.weighted_risk !== null ? (
@@ -1589,15 +1847,26 @@ const ReportDisplay: React.FC = () => {
           </div>
 
           <div className="mb-8">
-            {reportData.productSummaries
-              .filter(product => {
-                // For inactive products, only show detailed cards if the checkbox was checked
-                if (product.status === 'inactive') {
-                  return reportData.showInactiveProducts || showInactiveProductDetails.has(product.id);
-                }
-                return true;
-              })
-              .map(product => (
+            {organizeProductsByTypeWithHeaders(reportData.productSummaries)
+              .map(({ type, products }) => (
+                <div key={type} className="mb-12">
+                  {/* Product Type Header */}
+                  <div className="mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900 border-b-2 border-gray-300 pb-2">
+                      {type}
+                    </h2>
+                  </div>
+                  
+                  {/* Products in this type */}
+                  {products
+                    .filter(product => {
+                      // For inactive products, only show detailed cards if the checkbox was checked
+                      if (product.status === 'inactive') {
+                        return reportData.showInactiveProducts || showInactiveProductDetails.has(product.id);
+                      }
+                      return true;
+                    })
+                    .map(product => (
                 <div 
                   key={product.id} 
                   className={`mb-8 bg-white shadow-sm rounded-lg border border-gray-200 p-6 w-full product-card print-clean ${product.status === 'inactive' ? 'opacity-60 bg-gray-50' : ''}`}
@@ -1855,15 +2124,12 @@ const ReportDisplay: React.FC = () => {
                               </td>
                               <td className="px-2 py-2 text-xs font-bold text-right bg-purple-100">
                                 {(() => {
-                                  // Calculate weighted average IRR for this product
-                                  const fundsWithIrr = product.funds.filter(fund => fund.irr !== null && fund.irr !== undefined && fund.current_valuation > 0);
-                                  if (fundsWithIrr.length > 0) {
-                                    const totalWeightedIrr = fundsWithIrr.reduce((sum, fund) => sum + (fund.irr! * fund.current_valuation), 0);
-                                    const totalValuation = fundsWithIrr.reduce((sum, fund) => sum + fund.current_valuation, 0);
-                                    const weightedAvgIrr = totalValuation > 0 ? totalWeightedIrr / totalValuation : 0;
+                                  // Use portfolio IRR value from database instead of calculating from funds
+                                  const portfolioIrr = portfolioIrrValues.get(product.id);
+                                  if (portfolioIrr !== null && portfolioIrr !== undefined) {
                                     return (
-                                      <span className={weightedAvgIrr >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
-                                        {formatIrrWithPrecision(weightedAvgIrr)}
+                                      <span className={portfolioIrr >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
+                                        {formatIrrWithPrecision(portfolioIrr)}
                                       </span>
                                     );
                                   }
@@ -1907,6 +2173,8 @@ const ReportDisplay: React.FC = () => {
                     </table>
                   </div>
                 </div>
+                    ))}
+                </div>
               ))}
           </div>
 
@@ -1928,8 +2196,13 @@ const ReportDisplay: React.FC = () => {
             </div>
           ) : irrHistoryData ? (
             <div className="space-y-8">
-              {irrHistoryData.map((productHistory: any, index: number) => {
-                const product = reportData.productSummaries[index];
+              {(() => {
+                // Organize products and create mapping for IRR history data
+                const organizedProducts = organizeProductsByType(reportData.productSummaries);
+                
+                return organizedProducts.map((product, index) => {
+                  const originalIndex = reportData.productSummaries.findIndex(p => p.id === product.id);
+                  const productHistory = irrHistoryData[originalIndex];
                 
                 // Get all unique dates from both portfolio and fund IRR history
                 const allDates = new Set<string>();
@@ -1953,7 +2226,11 @@ const ReportDisplay: React.FC = () => {
                 }
                 
                 // Sort dates in descending order (most recent first)
-                const sortedDates = Array.from(allDates).sort((a, b) => new Date(b).getTime() - new Date(a).getTime()).slice(0, 12);
+                const allSortedDates = Array.from(allDates).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+                
+                // Exclude the most recent date (current IRR) from historical columns
+                // Keep only historical dates (excluding the current/latest IRR)
+                const sortedDates = allSortedDates.slice(1, 13); // Skip first (current) and take next 12 historical dates
                 
                 // Create lookup maps for quick access
                 const portfolioIrrMap = new Map();
@@ -2010,10 +2287,10 @@ const ReportDisplay: React.FC = () => {
                               Fund Name
                             </th>
                             <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                              Risk
+                              Current "Risk" 1-7 scale, (7 High)
                             </th>
-                            <th scope="col" className="px-2 py-2 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide bg-purple-100">
-                              Average Returns p.a.
+                            <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide bg-purple-100">
+                              Current Average Return p.a.
                             </th>
                             {sortedDates.map((date) => (
                               <th key={date} scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
@@ -2114,18 +2391,20 @@ const ReportDisplay: React.FC = () => {
                                         <span className="text-gray-400">-</span>
                                       )}
                                     </td>
-                                    <td className="px-2 py-2 text-xs text-center bg-purple-50">
+                                    <td className="px-2 py-2 text-xs text-right bg-purple-50">
                                       {(() => {
-                                        // Calculate average IRR for this fund
+                                        // Show current IRR (latest/most recent) for this fund, not historical average
                                         if (fund.historical_irr && fund.historical_irr.length > 0) {
-                                          const validIrrs = fund.historical_irr.filter((record: any) => 
-                                            record.irr_result !== null && record.irr_result !== undefined
-                                          );
-                                          if (validIrrs.length > 0) {
-                                            const avgIrr = validIrrs.reduce((sum: number, record: any) => sum + record.irr_result, 0) / validIrrs.length;
+                                          // Sort by date descending to get the most recent IRR
+                                          const sortedIrrs = fund.historical_irr
+                                            .filter((record: any) => record.irr_result !== null && record.irr_result !== undefined)
+                                            .sort((a: any, b: any) => new Date(b.irr_date).getTime() - new Date(a.irr_date).getTime());
+                                          
+                                          if (sortedIrrs.length > 0) {
+                                            const currentIrr = sortedIrrs[0].irr_result; // Most recent IRR
                                             return (
-                                              <span className={avgIrr >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
-                                                {avgIrr.toFixed(1)}%
+                                              <span className={currentIrr >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                                                {currentIrr.toFixed(1)}%
                                               </span>
                                             );
                                           }
@@ -2226,21 +2505,16 @@ const ReportDisplay: React.FC = () => {
                                 }
                               })()}
                             </td>
-                            <td className="px-2 py-2 text-xs font-bold text-right text-gray-800">
+                            <td className="px-2 py-2 text-xs font-bold text-right text-gray-800 bg-purple-50">
                               {(() => {
-                                // Calculate average IRR across all portfolio IRR values
-                                if (productHistory.portfolio_historical_irr && productHistory.portfolio_historical_irr.length > 0) {
-                                  const validIrrs = productHistory.portfolio_historical_irr.filter((record: any) => 
-                                    record.irr_result !== null && record.irr_result !== undefined
+                                // Show current IRR from portfolio_irr_values (not historical average)
+                                const currentIrr = portfolioIrrValues.get(product.id);
+                                if (currentIrr !== null && currentIrr !== undefined) {
+                                  return (
+                                    <span className={currentIrr >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
+                                      {currentIrr.toFixed(1)}%
+                                    </span>
                                   );
-                                  if (validIrrs.length > 0) {
-                                    const avgIrr = validIrrs.reduce((sum: number, record: any) => sum + record.irr_result, 0) / validIrrs.length;
-                                    return (
-                                      <span className={avgIrr >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
-                                        {avgIrr.toFixed(1)}%
-                                      </span>
-                                    );
-                                  }
                                 }
                                 return <span className="text-gray-400 font-bold">N/A</span>;
                               })()}
@@ -2266,7 +2540,8 @@ const ReportDisplay: React.FC = () => {
                     </div>
                   </div>
                 );
-              })}
+                });
+              })()}
             </div>
           ) : (
             <div className="text-center py-8 text-gray-500 print-hide">

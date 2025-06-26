@@ -4,11 +4,17 @@ from datetime import datetime
 
 class FundBase(BaseModel):
     """Base model for fund data"""
-    fund_name: Optional[str] = None
+    fund_name: Optional[str] = Field(None, max_length=60, description="Fund name (max 60 characters)")
     isin_number: Optional[str] = None
     risk_factor: Optional[int] = Field(None, ge=1, le=7, description="Risk factor between 1-7")
     fund_cost: Optional[float] = None
     status: str = "active"
+    
+    @validator('fund_name')
+    def validate_fund_name_length(cls, v):
+        if v is not None and len(v) > 60:
+            raise ValueError('Fund name must be 60 characters or less')
+        return v
     
     @validator('risk_factor')
     def validate_risk_factor(cls, v):
@@ -18,7 +24,7 @@ class FundBase(BaseModel):
 
 class FundCreate(FundBase):
     """Model for creating a new fund"""
-    fund_name: str
+    fund_name: str = Field(..., max_length=60, description="Fund name (max 60 characters)")
     isin_number: str
     risk_factor: int = Field(..., ge=1, le=7, description="Risk factor between 1-7")
     fund_cost: float
