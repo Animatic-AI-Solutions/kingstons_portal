@@ -162,6 +162,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   const [columnPositions, setColumnPositions] = useState<{left: number, width: number}[]>([]);
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const isScrollSyncingRef = useRef<boolean>(false);
   
 
   
@@ -658,6 +660,50 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       if (tableContainer) {
         tableContainer.removeEventListener('scroll', throttledHandleScroll);
       }
+    };
+  }, []);
+
+  // Synchronize scroll between top and bottom scroll bars
+  useEffect(() => {
+    const topScrollElement = topScrollRef.current;
+    const bottomScrollElement = tableContainerRef.current;
+
+    if (!topScrollElement || !bottomScrollElement) return;
+
+    const handleTopScroll = () => {
+      if (isScrollSyncingRef.current) return;
+      
+      isScrollSyncingRef.current = true;
+      bottomScrollElement.scrollLeft = topScrollElement.scrollLeft;
+      
+      // Use a very short timeout to reset the flag
+      setTimeout(() => {
+        isScrollSyncingRef.current = false;
+      }, 0);
+    };
+
+    const handleBottomScroll = () => {
+      if (isScrollSyncingRef.current) return;
+      
+      isScrollSyncingRef.current = true;
+      topScrollElement.scrollLeft = bottomScrollElement.scrollLeft;
+      
+      // Use a very short timeout to reset the flag
+      setTimeout(() => {
+        isScrollSyncingRef.current = false;
+      }, 0);
+    };
+
+    // Use throttled versions to reduce frequency
+    const throttledTopScroll = throttle(handleTopScroll, 16); // ~60fps
+    const throttledBottomScroll = throttle(handleBottomScroll, 16); // ~60fps
+
+    topScrollElement.addEventListener('scroll', throttledTopScroll, { passive: true });
+    bottomScrollElement.addEventListener('scroll', throttledBottomScroll, { passive: true });
+
+    return () => {
+      topScrollElement.removeEventListener('scroll', throttledTopScroll);
+      bottomScrollElement.removeEventListener('scroll', throttledBottomScroll);
     };
   }, []);
 
@@ -1833,9 +1879,25 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           </div>
         )}
         
+        {/* Top scroll bar */}
+        <div 
+          ref={topScrollRef}
+          className="overflow-x-auto border-t border-l border-r rounded-t-lg w-full bg-gray-50"
+          style={{ height: '20px', paddingTop: '2px', paddingBottom: '2px' }}
+        >
+          <div 
+            style={{ 
+              height: '16px', 
+              width: `${120 + (months.length * 100) + 80}px`,
+              minWidth: `${120 + (months.length * 100) + 80}px`,
+              backgroundColor: 'transparent'
+            }}
+          />
+        </div>
+        
         <div 
           ref={tableContainerRef}
-          className="overflow-x-auto border rounded-lg shadow-md w-full" 
+          className="overflow-x-auto border-l border-r border-b rounded-b-lg shadow-md w-full" 
           style={{ scrollBehavior: 'smooth' }}
         >
           <div className="relative">
@@ -2369,10 +2431,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
                 {/* Grand totals section - totals by activity type across all funds */}
                 <tr className="bg-gray-50 border-t-2 border-gray-300 font-semibold">
-                  <td className="px-1 py-0 text-gray-900 sticky left-0 z-10 bg-gray-50">
-                    {/* Empty for fund column */}
-                  </td>
-                  <td className="px-1 py-0 text-gray-900 sticky left-0 z-10 bg-gray-50">
+                  <td className="px-1 py-0 text-gray-900 sticky left-0 z-10 bg-gray-50" style={{minWidth: '120px'}}>
                     Monthly Totals
                   </td>
                   {months.map(month => (
@@ -2386,10 +2445,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                   .filter(activityType => activityType !== 'Current Value') // Exclude Current Value from totals
                   .map(activityType => (
                     <tr key={`totals-${activityType}`} className="bg-white border-t border-gray-200">
-                      <td className="px-1 py-0 font-medium text-gray-500 sticky left-0 z-10 bg-white">
-                        {/* Empty for fund column */}
-                      </td>
-                      <td className="px-1 py-0 font-medium text-sm text-gray-500 sticky left-0 z-10 bg-white">
+                      <td className="px-1 py-0 font-medium text-sm text-gray-500 sticky left-0 z-10 bg-white" style={{minWidth: '120px'}}>
                         {formatActivityType(activityType)}
                       </td>
                       {months.map((month, monthIndex) => {
@@ -2421,10 +2477,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
                 {/* Valuation total row */}
                 <tr className="bg-blue-50 border-t border-blue-200">
-                  <td className="px-1 py-0 font-medium text-blue-700 sticky left-0 z-10 bg-blue-50">
-                    {/* Empty for fund column */}
-                  </td>
-                  <td className="px-1 py-0 font-medium text-blue-700 sticky left-0 z-10 bg-blue-50">
+                  <td className="px-1 py-0 font-medium text-blue-700 sticky left-0 z-10 bg-blue-50" style={{minWidth: '120px'}}>
                     Total Valuation
                   </td>
                   {months.map((month, monthIndex) => {
@@ -2455,10 +2508,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
                 {/* Grand total row */}
                 <tr className="bg-gray-100 border-t border-gray-200">
-                  <td className="px-1 py-0 font-semibold text-red-600 sticky left-0 z-10 bg-gray-100">
-                    {/* Empty for fund column */}
-                  </td>
-                  <td className="px-1 py-0 font-semibold text-red-600 sticky left-0 z-10 bg-gray-100">
+                  <td className="px-1 py-0 font-semibold text-red-600 sticky left-0 z-10 bg-gray-100" style={{minWidth: '120px'}}>
                     Overall Total
                   </td>
                   {months.map((month, monthIndex) => {
