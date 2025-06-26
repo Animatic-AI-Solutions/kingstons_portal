@@ -1610,10 +1610,14 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       const cellValue = getCellValue(fundId, month, activityType);
       const numericValue = parseFloat(cellValue) || 0;
       
-      if (numericValue !== 0 && activityType !== 'Current Value') {
-        // Sign convention: + for money OUT of fund, - for money INTO fund
+      if (numericValue !== 0) {
+        // Current Value (valuations) - add directly as positive
+        if (activityType === 'Current Value') {
+          total += numericValue;
+        }
+        // Sign convention for cash flows: + for money OUT of fund, - for money INTO fund  
         // Money going INTO the fund (inflows) - negative sign
-        if (activityType === 'Investment' || 
+        else if (activityType === 'Investment' || 
             activityType === 'RegularInvestment' || 
             activityType === 'GovernmentUplift' || 
             activityType === 'Product Switch In' ||
