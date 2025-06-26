@@ -1135,4 +1135,121 @@ async def get_generation_with_funds_batch(generation_id: int, db = Depends(get_d
         raise
     except Exception as e:
         logger.error(f"Error in batch generation/funds fetch: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/{portfolio_id}/linked-products", response_model=List[dict])
+async def get_products_linked_to_template(portfolio_id: int, db = Depends(get_db)):
+    """
+    Get all products that are linked to this portfolio template through their template generations.
+    
+    Products can be linked to a template in two ways:
+    1. Through their portfolio's template_generation_id
+    2. Directly through their own template_generation_id
+    
+    Args:
+        portfolio_id: The ID of the portfolio template
+        
+    Returns:
+        List of products with client and provider information
+    """
+    try:
+        logger.info(f"Fetching products linked to portfolio template {portfolio_id}")
+        
+        # First, get all generations for this portfolio template
+        generations_response = db.table('template_portfolio_generations')\
+            .select('id')\
+            .eq('available_portfolio_id', portfolio_id)\
+            .execute()
+        
+        if not generations_response.data:
+            logger.info(f"No generations found for portfolio template {portfolio_id}")
+            return []
+        
+        generation_ids = [gen['id'] for gen in generations_response.data]
+        logger.info(f"Found {len(generation_ids)} generations for template {portfolio_id}")
+        
+        # Query products linked through portfolios (where portfolio.template_generation_id matches)
+        products_via_portfolio = db.table('client_products')\
+            .select('*')\
+            .not_.is_('portfolio_id', 'null')\
+            .execute()
+        
+        # Query products directly linked to template generations
+        products_direct = db.table('client_products')\
+            .select('*')\
+            .in_('template_generation_id', generation_ids)\
+            .execute()
+        
+        # Helper function to enrich product with related data
+        async def enrich_product(product):
+            # Fetch client group
+            if product.get('client_id'):
+                client_response = db.table('client_groups')\
+                    .select('id, name, advisor')\
+                    .eq('id', product['client_id'])\
+                    .execute()
+                product['client_groups'] = client_response.data[0] if client_response.data else None
+            
+            # Fetch provider
+            if product.get('provider_id'):
+                provider_response = db.table('available_providers')\
+                    .select('id, name, theme_color')\
+                    .eq('id', product['provider_id'])\
+                    .execute()
+                product['available_providers'] = provider_response.data[0] if provider_response.data else None
+            
+            # Fetch portfolio
+            if product.get('portfolio_id'):
+                portfolio_response = db.table('portfolios')\
+                    .select('id, portfolio_name, template_generation_id')\
+                    .eq('id', product['portfolio_id'])\
+                    .execute()
+                product['portfolios'] = portfolio_response.data[0] if portfolio_response.data else None
+            
+            return product
+        
+        # Combine and deduplicate results
+        all_products = []
+        seen_product_ids = set()
+        
+        # Add products from portfolio links (filter by portfolio's template_generation_id)
+        if products_via_portfolio.data:
+            for product in products_via_portfolio.data:
+                if product['id'] not in seen_product_ids:
+                    # Enrich product with related data
+                    enriched_product = await enrich_product(product.copy())
+                    
+                    # Check if this product's portfolio is linked to our template
+                    portfolio = enriched_product.get('portfolios')
+                    if portfolio and portfolio.get('template_generation_id') in generation_ids:
+                        enriched_product['link_type'] = 'portfolio'
+                        all_products.append(enriched_product)
+                        seen_product_ids.add(product['id'])
+        
+        # Add products from direct links
+        if products_direct.data:
+            for product in products_direct.data:
+                if product['id'] not in seen_product_ids:
+                    # Enrich product with related data
+                    enriched_product = await enrich_product(product.copy())
+                    enriched_product['link_type'] = 'direct'
+                    all_products.append(enriched_product)
+                    seen_product_ids.add(product['id'])
+        
+        logger.info(f"Found {len(all_products)} total products linked to template {portfolio_id}")
+        
+        # Log sample product for debugging
+        if all_products:
+            logger.info(f"Sample product structure: {all_products[0]}")
+        
+        # Sort by client name, then product name
+        all_products.sort(key=lambda x: (
+            x.get('client_groups', {}).get('name', '') if x.get('client_groups') else '',
+            x.get('product_name', '')
+        ))
+        
+        return all_products
+        
+    except Exception as e:
+        logger.error(f"Error fetching products linked to template {portfolio_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e)) 
