@@ -1500,9 +1500,11 @@ async def update_irr_value(
                     
                     for log in activity_logs.data:
                         amount = float(log["amount"])
-                        # Apply sign convention
-                        if log["activity_type"] in ["Investment", "RegularInvestment", "GovernmentUplift"]:
+                        # Apply sign convention - GovernmentUplift separated from investments
+                        if log["activity_type"] in ["Investment", "RegularInvestment"]:
                             amount = -amount
+                        elif log["activity_type"] in ["GovernmentUplift"]:
+                            amount = -amount  # Government uplifts are still money going in (negative)
                         elif log["activity_type"] in ["Withdrawal", "RegularWithdrawal", "SwitchOut"]:
                             amount = abs(amount)
                         
@@ -1804,9 +1806,12 @@ async def calculate_portfolio_fund_irr(
             activity_type = log["activity_type"]
             amount = float(log["amount"])
             
-            # Apply sign convention based on activity type
-            if activity_type in ["Investment", "RegularInvestment", "GovernmentUplift"]:
+            # Apply sign convention based on activity type - GovernmentUplift separated from investments
+            if activity_type in ["Investment", "RegularInvestment"]:
                 # Investments are money going out (negative)
+                amount = -amount
+            elif activity_type in ["GovernmentUplift"]:
+                # Government uplifts are money going in (negative) like investments
                 amount = -amount
             elif activity_type in ["Withdrawal", "RegularWithdrawal", "SwitchOut"]:
                 # Withdrawals and SwitchOut are money coming in (positive)

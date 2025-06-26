@@ -1042,12 +1042,11 @@ const ReportDisplay: React.FC = () => {
       };
     }
 
-    // Special handling for fund switches - show net gain/loss
+    // Special handling for fund switches - show as total activity (neutral black)
     if (activityType === 'fund_switch') {
-      const isLoss = roundedAmount < 0;
       return {
-        value: isLoss ? `-£${Math.abs(roundedAmount).toLocaleString()}` : `£${roundedAmount.toLocaleString()}`,
-        className: isLoss ? 'text-red-600' : 'text-green-600'
+        value: `£${Math.abs(roundedAmount).toLocaleString()}`,
+        className: 'text-gray-900'
       };
     }
 
@@ -1669,7 +1668,7 @@ const ReportDisplay: React.FC = () => {
                             </td>
                             <td className="px-2 py-2 whitespace-nowrap text-xs text-right">
                               {(() => {
-                                const formatted = formatCurrencyWithVisualSigning(product.total_fund_switch_out - product.total_fund_switch_in, 'fund_switch');
+                                const formatted = formatCurrencyWithVisualSigning(product.total_fund_switch_in + product.total_fund_switch_out, 'fund_switch');
                                 return <span className={formatted.className}>{formatted.value}</span>;
                               })()}
                             </td>
@@ -1757,7 +1756,7 @@ const ReportDisplay: React.FC = () => {
                       <td className="px-2 py-2 text-xs font-bold text-right text-black">
                         {(() => {
                           const totalAmount = reportData.productSummaries.reduce((sum, product) => 
-                            sum + (product.total_fund_switch_out - product.total_fund_switch_in), 0
+                            sum + product.total_fund_switch_in + product.total_fund_switch_out, 0
                           );
                           const formatted = formatCurrencyWithVisualSigning(totalAmount, 'fund_switch');
                           return <span className="text-black font-bold">{formatted.value}</span>;
@@ -2008,7 +2007,7 @@ const ReportDisplay: React.FC = () => {
                                   </td>
                                   <td className="px-2 py-2 text-xs text-right">
                                     {(() => {
-                                      const formatted = formatCurrencyWithVisualSigning(fund.total_fund_switch_out - fund.total_fund_switch_in, 'fund_switch');
+                                      const formatted = formatCurrencyWithVisualSigning(fund.total_fund_switch_in + fund.total_fund_switch_out, 'fund_switch');
                                       return <span className={formatted.className}>{formatted.value}</span>;
                                     })()}
                                   </td>
@@ -2091,7 +2090,7 @@ const ReportDisplay: React.FC = () => {
                               </td>
                               <td className="px-2 py-2 text-xs font-bold text-right text-black">
                                 {(() => {
-                                  const totalAmount = product.funds.reduce((sum, fund) => sum + (fund.total_fund_switch_out - fund.total_fund_switch_in), 0);
+                                  const totalAmount = product.funds.reduce((sum, fund) => sum + fund.total_fund_switch_in + fund.total_fund_switch_out, 0);
                                   const formatted = formatCurrencyWithVisualSigning(totalAmount, 'fund_switch');
                                   return <span className="text-black font-bold">{formatted.value}</span>;
                                 })()}
