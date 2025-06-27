@@ -109,11 +109,11 @@ const calculateSwitchOuts = (activities: ActivityLog[], fundId: number): number 
 };
 
 const calculateProductSwitchIns = (activities: ActivityLog[], fundId: number): number => {
-  return calculateActivityTotalByType(activities, 'Product Switch In', fundId);
+  return calculateActivityTotalByType(activities, 'ProductSwitchIn', fundId);
 };
 
 const calculateProductSwitchOuts = (activities: ActivityLog[], fundId: number): number => {
-  return calculateActivityTotalByType(activities, 'Product Switch Out', fundId);
+  return calculateActivityTotalByType(activities, 'ProductSwitchOut', fundId);
 };
 
 const calculateWithdrawals = (activities: ActivityLog[], fundId: number): number => {

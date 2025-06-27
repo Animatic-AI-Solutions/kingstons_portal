@@ -163,10 +163,10 @@ const ACTIVITY_TYPES = [
   'Investment',
   'RegularInvestment',
   'GovernmentUplift',
-  'Product Switch In',
-  'Product Switch Out',
-  'Fund Switch In',
-  'Fund Switch Out',
+  'ProductSwitchIn',
+  'ProductSwitchOut',
+  'FundSwitchIn',
+  'FundSwitchOut',
   'Withdrawal',
   'Current Value'
 ];
@@ -193,10 +193,10 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
   // Convert UI-friendly activity types to backend format (same as main table)
   const convertActivityTypeForBackend = (uiActivityType: string): string => {
     switch (uiActivityType) {
-      case 'Product Switch In': return 'ProductSwitchIn';
-      case 'Product Switch Out': return 'ProductSwitchOut';
-      case 'Fund Switch In': return 'FundSwitchIn';
-      case 'Fund Switch Out': return 'FundSwitchOut';
+          case 'ProductSwitchIn': return 'ProductSwitchIn';
+    case 'ProductSwitchOut': return 'ProductSwitchOut';
+    case 'FundSwitchIn': return 'FundSwitchIn';
+    case 'FundSwitchOut': return 'FundSwitchOut';
       case 'Current Value': return 'Valuation';
       default: return uiActivityType;
     }
@@ -449,7 +449,7 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
     // Check if switch activities are balanced before saving
     const { hasWarning } = getSwitchBalanceWarning();
     if (hasWarning) {
-      alert('Cannot save: Fund Switch In and Fund Switch Out amounts must match.');
+              alert('Cannot save: FundSwitchIn and FundSwitchOut amounts must match.');
       return;
     }
 
@@ -620,7 +620,7 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
           return total - numValue;
         } 
         // Switch activities are shown as total amounts (neutral for net calculations)
-        else if (activityType === 'Fund Switch In' || activityType === 'Fund Switch Out') {
+        else if (activityType === 'FundSwitchIn' || activityType === 'FundSwitchOut') {
           return total + numValue;
         } 
         // All other activities including Current Value/Valuations are added to totals
@@ -637,12 +637,12 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
     const warnings: string[] = [];
     
     // Check Fund Switch balance
-    const hasFundSwitchIn = selectedActivities.has('Fund Switch In');
-    const hasFundSwitchOut = selectedActivities.has('Fund Switch Out');
+    const hasFundSwitchIn = selectedActivities.has('FundSwitchIn');
+    const hasFundSwitchOut = selectedActivities.has('FundSwitchOut');
     
     if (hasFundSwitchIn && hasFundSwitchOut) {
-      const fundSwitchOutTotal = calculateActivityTotal('Fund Switch Out');
-      const fundSwitchInTotal = calculateActivityTotal('Fund Switch In');
+      const fundSwitchOutTotal = calculateActivityTotal('FundSwitchOut');
+      const fundSwitchInTotal = calculateActivityTotal('FundSwitchIn');
       
       // Use tolerance-based comparison to handle floating-point precision issues
       // 0.01 tolerance (1 penny) is appropriate for financial calculations
@@ -651,7 +651,7 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
       
       // Only show warning if both have values and they don't match within tolerance
       if ((fundSwitchOutTotal > 0 || fundSwitchInTotal > 0) && difference > tolerance) {
-        warnings.push(`Fund Switch activities are unbalanced. Fund Switch Out: ${formatCurrency(fundSwitchOutTotal)}, Fund Switch In: ${formatCurrency(fundSwitchInTotal)}. Difference: ${formatCurrency(difference)}`);
+        warnings.push(`Fund Switch activities are unbalanced. FundSwitchOut: ${formatCurrency(fundSwitchOutTotal)}, FundSwitchIn: ${formatCurrency(fundSwitchInTotal)}. Difference: ${formatCurrency(difference)}`);
       }
     }
     
@@ -859,9 +859,9 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
                               {getDisplayedActivities().map(activityType => {
                                 const total = calculateActivityTotal(activityType);
                                 const isCurrentValue = activityType === 'Current Value';
-                                const isSwitchActivity = activityType === 'Fund Switch In' || activityType === 'Fund Switch Out' || activityType === 'Product Switch In' || activityType === 'Product Switch Out';
-                              const isWithdrawal = activityType === 'Withdrawal' || activityType === 'Product Switch Out';
-                              const isInvestment = activityType === 'Investment' || activityType === 'RegularInvestment' || activityType === 'GovernmentUplift' || activityType === 'Product Switch In';
+                                  const isSwitchActivity = activityType === 'FundSwitchIn' || activityType === 'FundSwitchOut' || activityType === 'ProductSwitchIn' || activityType === 'ProductSwitchOut';
+  const isWithdrawal = activityType === 'Withdrawal' || activityType === 'ProductSwitchOut';
+  const isInvestment = activityType === 'Investment' || activityType === 'RegularInvestment' || activityType === 'GovernmentUplift' || activityType === 'ProductSwitchIn';
                                 
                                 return (
                                   <td

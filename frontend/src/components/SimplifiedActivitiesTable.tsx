@@ -47,10 +47,10 @@ const ACTIVITY_TYPES = [
   'Investment',
   'RegularInvestment', 
   'GovernmentUplift',
-  'Product Switch In',
-  'Product Switch Out',
-  'Fund Switch In',
-  'Fund Switch Out',
+  'ProductSwitchIn',
+  'ProductSwitchOut',
+  'FundSwitchIn',
+  'FundSwitchOut',
   'Withdrawal',
   'Current Value'
 ];
@@ -207,10 +207,10 @@ const SimplifiedActivitiesTable: React.FC<SimplifiedActivitiesTableProps> = ({
       'Investment': 'Investment',
       'RegularInvestment': 'Regular Investment',
       'GovernmentUplift': 'Government Uplift',
-      'Product Switch In': 'Product Switch In',
-      'Product Switch Out': 'Product Switch Out',
-      'Fund Switch In': 'Switch In',
-      'Fund Switch Out': 'Switch Out',
+        'ProductSwitchIn': 'Product Switch In',
+  'ProductSwitchOut': 'Product Switch Out',
+  'FundSwitchIn': 'Switch In',
+  'FundSwitchOut': 'Switch Out',
       'Withdrawal': 'Withdrawal',
     
       'Current Value': 'Current Value'
