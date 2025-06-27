@@ -162,6 +162,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   const [columnPositions, setColumnPositions] = useState<{left: number, width: number}[]>([]);
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const isScrollSyncingRef = useRef<boolean>(false);
   
 
   
@@ -661,6 +663,50 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     };
   }, []);
 
+  // Synchronize scroll between top and bottom scroll bars
+  useEffect(() => {
+    const topScrollElement = topScrollRef.current;
+    const bottomScrollElement = tableContainerRef.current;
+
+    if (!topScrollElement || !bottomScrollElement) return;
+
+    const handleTopScroll = () => {
+      if (isScrollSyncingRef.current) return;
+      
+      isScrollSyncingRef.current = true;
+      bottomScrollElement.scrollLeft = topScrollElement.scrollLeft;
+      
+      // Use a very short timeout to reset the flag
+      setTimeout(() => {
+        isScrollSyncingRef.current = false;
+      }, 0);
+    };
+
+    const handleBottomScroll = () => {
+      if (isScrollSyncingRef.current) return;
+      
+      isScrollSyncingRef.current = true;
+      topScrollElement.scrollLeft = bottomScrollElement.scrollLeft;
+      
+      // Use a very short timeout to reset the flag
+      setTimeout(() => {
+        isScrollSyncingRef.current = false;
+      }, 0);
+    };
+
+    // Use throttled versions to reduce frequency
+    const throttledTopScroll = throttle(handleTopScroll, 16); // ~60fps
+    const throttledBottomScroll = throttle(handleBottomScroll, 16); // ~60fps
+
+    topScrollElement.addEventListener('scroll', throttledTopScroll, { passive: true });
+    bottomScrollElement.addEventListener('scroll', throttledBottomScroll, { passive: true });
+
+    return () => {
+      topScrollElement.removeEventListener('scroll', throttledTopScroll);
+      bottomScrollElement.removeEventListener('scroll', throttledBottomScroll);
+    };
+  }, []);
+
   // Add beforeunload warning for unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -805,20 +851,52 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     }
   }, [funds, months]);
 
-  // Auto-scroll to the most recent months when the table loads
+  // Auto-scroll to the month with the latest activity when the table loads
   useEffect(() => {
-    if (months.length > 0 && tableContainerRef.current) {
+    if (months.length > 0 && activities.length > 0 && tableContainerRef.current) {
       // Small delay to ensure the table has rendered
       const scrollTimer = setTimeout(() => {
         if (tableContainerRef.current) {
-          // Scroll to the rightmost position (most recent months)
+          // Find the latest activity month
+          let latestActivityMonth = '';
+          let latestActivityDate = new Date(0); // Start with epoch
+          
+          activities.forEach(activity => {
+            const activityDate = new Date(activity.activity_timestamp);
+            if (activityDate > latestActivityDate) {
+              latestActivityDate = activityDate;
+              // Convert to YYYY-MM format to match our months array
+              latestActivityMonth = `${activityDate.getFullYear()}-${String(activityDate.getMonth() + 1).padStart(2, '0')}`;
+            }
+          });
+          
+          // Find the index of the latest activity month in our months array
+          const latestMonthIndex = months.findIndex(month => month === latestActivityMonth);
+          
+          if (latestMonthIndex !== -1) {
+            // Calculate approximate scroll position to center the latest activity month
+            const monthColumnWidth = 120; // Approximate width of each month column
+            const scrollPosition = Math.max(0, (latestMonthIndex * monthColumnWidth) - (tableContainerRef.current.clientWidth / 2));
+            tableContainerRef.current.scrollLeft = scrollPosition;
+          } else {
+            // Fallback: if no activities found or month not in range, scroll to the rightmost position
+            tableContainerRef.current.scrollLeft = tableContainerRef.current.scrollWidth;
+          }
+        }
+      }, 100);
+
+      return () => clearTimeout(scrollTimer);
+    } else if (months.length > 0 && activities.length === 0 && tableContainerRef.current) {
+      // If no activities, fallback to scrolling to the rightmost position
+      const scrollTimer = setTimeout(() => {
+        if (tableContainerRef.current) {
           tableContainerRef.current.scrollLeft = tableContainerRef.current.scrollWidth;
         }
       }, 100);
 
       return () => clearTimeout(scrollTimer);
     }
-  }, [months]);
+  }, [months, activities]);
 
   // Get fund valuation for a specific fund and month - now uses indexed lookup
   const getFundValuation = (fundId: number, month: string): FundValuation | undefined => {
@@ -868,13 +946,13 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
   // New function to evaluate mathematical expressions
   const evaluateExpression = (expression: string): string => {
-    // Special case: if expression is "0", we should keep it as "0"
+    // Special case: if expression is "0", return as is
     if (expression === "0") return "0";
     
-    // If it's empty or already a valid number, return as is
+    // If it's empty, return as is
     if (!expression || expression.trim() === '') return '';
     
-    // If it's already a number, just return it
+    // If it's already a simple number, return as is (formatting happens on blur)
     if (!isNaN(Number(expression))) return expression;
     
     try {
@@ -890,21 +968,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         
         // Check if the result is a valid number
         if (typeof result === 'number' && !isNaN(result) && isFinite(result)) {
-          // Handle zero case explicitly
-          if (result === 0) return "0";
-          
-          // Check if the original expression had a decimal point
-          const hadDecimalPoint = expression.includes('.');
-          
-          // Preserve decimal format if the original expression had one
-          // or if the result has a fractional part
-          if (hadDecimalPoint || result % 1 !== 0) {
-            // Format with 2 decimal places if result has a fractional part
-            return result % 1 !== 0 ? result.toFixed(2) : result.toFixed(1);
-          } else {
-            // Return as an integer otherwise
-            return result.toFixed(0);
-          }
+          // Return the result as a string (formatting happens on blur)
+          return result.toString();
         }
       }
       
@@ -917,7 +982,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     }
   };
 
-  // Update the handleCellBlur function to evaluate expressions
+  // Update the handleCellBlur function to evaluate expressions and format to 2 decimal places
   const handleCellBlur = (fundId: number, month: string, activityType: string) => {
     // Find the current edit for this cell
     const cellEditIndex = pendingEdits.findIndex(
@@ -926,23 +991,31 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
               edit.activityType === activityType
     );
     
-    // If we have a pending edit for this cell, evaluate any expression
+    // If we have a pending edit for this cell, evaluate any expression and format
     if (cellEditIndex !== -1) {
       const currentEdit = pendingEdits[cellEditIndex];
-      const evaluatedValue = evaluateExpression(currentEdit.value);
+      let processedValue = evaluateExpression(currentEdit.value);
       
-      // If the value changed after evaluation, update the pending edit
-      if (evaluatedValue !== currentEdit.value) {
+      // If the value is a valid number (and not empty), format it to 2 decimal places
+      if (processedValue && processedValue.trim() !== '') {
+        const num = parseFloat(processedValue);
+        if (!isNaN(num) && isFinite(num)) {
+          processedValue = num.toFixed(2);
+        }
+      }
+      
+      // If the value changed after evaluation/formatting, update the pending edit
+      if (processedValue !== currentEdit.value) {
         const updatedEdits = [...pendingEdits];
         updatedEdits[cellEditIndex] = {
           ...currentEdit,
-          value: evaluatedValue
+          value: processedValue
         };
         setPendingEdits(updatedEdits);
       }
     }
     
-    // Only show the fund selection modal for Fund Switch In/Out cells with a value
+    // Only show the fund selection modal for FundSwitchIn/FundSwitchOut cells with a value
     if ((activityType === 'FundSwitchIn' || activityType === 'FundSwitchOut')) {
       // Get the current value from pendingEdits
       const cellEdit = pendingEdits.find(
@@ -1047,8 +1120,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   const formatCurrency = (value: number): string => {
     return new Intl.NumberFormat('en-GB', {
       style: 'decimal',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(value);
   };
 
@@ -1569,11 +1642,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     return calculationResults.monthTotals.get(month) || 0;
   };
 
-  // Format cell value for display - more compact for the table view
-  const formatCellValue = (value: string): string => {
-    // Special case: if value is "0", we should display it
-    if (value === "0") return "0";
-    
+  // Format cell value for display - format to 2 decimal places unless actively editing
+  const formatCellValue = (value: string, fundId?: number, month?: string, activityType?: string): string => {
     if (!value || value.trim() === '') return '';
     
     // If it contains math operators, return it as-is for editing
@@ -1581,20 +1651,25 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       return value;
     }
     
-    // Preserve decimal point and trailing zeros during editing
-    // This is important for financial values where the user might want to 
-    // explicitly differentiate between e.g., "10" and "10.0"
-    if (value.includes('.')) {
-      // If the string representation has a decimal point, preserve it exactly as typed
+    // Check if this cell is currently being edited (focused)
+    const isCurrentlyEditing = fundId && month && activityType && 
+      focusedCell && 
+      focusedCell.fundId === fundId && 
+      focusedCell.activityType === activityType &&
+      months[focusedCell.monthIndex] === month;
+    
+    // If currently editing, return raw value for user input
+    if (isCurrentlyEditing) {
       return value;
     }
     
-    // Try to parse as number
+    // For display, format numbers to 2 decimal places
     const num = parseFloat(value);
-    if (isNaN(num)) return value;
+    if (!isNaN(num) && isFinite(num)) {
+      return num.toFixed(2);
+    }
     
-    // For non-decimal values, format without decimal places
-    return num.toFixed(0);
+    return value;
   };
 
   // Format the total for display with correct signs
@@ -1603,20 +1678,28 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     if (total === 0) {
       return '-';
     }
-    // Round to 2 decimal places and format with exactly 2 decimal places
+    // Round to 2 decimal places and format with commas and 2 decimal places
     const rounded = Math.round(total * 100) / 100;
-    return rounded.toFixed(2);
+    return new Intl.NumberFormat('en-GB', {
+      style: 'decimal',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(rounded);
   };
 
-  // Format row totals rounded to 2 decimal places
+  // Format row totals rounded to 2 decimal places with comma separators
   const formatRowTotal = (total: number): string => {
     // Return '-' for zero values
     if (total === 0) {
       return '-';
     }
-    // Round to 2 decimal places and format with exactly 2 decimal places
+    // Round to 2 decimal places and format with commas and 2 decimal places
     const rounded = Math.round(total * 100) / 100;
-    return rounded.toFixed(2);
+    return new Intl.NumberFormat('en-GB', {
+      style: 'decimal',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(rounded);
   };
 
   
@@ -1833,9 +1916,25 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           </div>
         )}
         
+        {/* Top scroll bar */}
+        <div 
+          ref={topScrollRef}
+          className="overflow-x-auto border-t border-l border-r rounded-t-lg w-full bg-gray-50"
+          style={{ height: '20px', paddingTop: '2px', paddingBottom: '2px' }}
+        >
+          <div 
+            style={{ 
+              height: '16px', 
+              width: `${120 + (months.length * 100) + 80}px`,
+              minWidth: `${120 + (months.length * 100) + 80}px`,
+              backgroundColor: 'transparent'
+            }}
+          />
+        </div>
+        
         <div 
           ref={tableContainerRef}
-          className="overflow-x-auto border rounded-lg shadow-md w-full" 
+          className="overflow-x-auto border-l border-r border-b rounded-b-lg shadow-md w-full" 
           style={{ scrollBehavior: 'smooth' }}
         >
           <div className="relative">
@@ -1896,7 +1995,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                     return (
                       <th 
                         key={month} 
-                        className="px-1 py-0 text-center font-medium text-gray-800 whitespace-nowrap bg-blue-50 border-b border-gray-300 relative group sticky top-0 z-20 cursor-pointer hover:bg-blue-100"
+                        className="px-1 py-0 text-right font-medium text-gray-800 whitespace-nowrap bg-blue-50 border-b border-gray-300 relative group sticky top-0 z-20 cursor-pointer hover:bg-blue-100"
                         onClick={() => handleMonthHeaderClick(month)}
                         title="Click to bulk edit activities for this month"
                         style={{
@@ -1940,7 +2039,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                     );
                   })}
                   <th 
-                    className="px-1 py-0 text-center font-medium text-gray-800 whitespace-nowrap bg-blue-50 border-b border-gray-300 sticky top-0 z-20"
+                    className="px-1 py-0 text-right font-medium text-gray-800 whitespace-nowrap bg-blue-50 border-b border-gray-300 sticky top-0 z-20"
                   >
                     <span className="text-sm">Row Total</span>
                   </th>
@@ -2069,7 +2168,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                           const total = calculateFundTotal(fund.id, month);
                           return (
                             <td key={`compact-${fund.id}-${month}`} 
-                                className={`px-1 py-0 text-center text-sm font-medium ${
+                                className={`px-1 py-0 text-right text-sm font-medium ${
                                   fund.isActive === false 
                                     ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
                                     : 'bg-white'
@@ -2084,7 +2183,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                         })}
                         
                         {/* Row Total column for compact view */}
-                        <td className={`px-1 py-0 text-center text-sm font-bold border-l border-gray-300 ${
+                        <td className={`px-1 py-0 text-right text-sm font-bold border-l border-gray-300 ${
                           fund.isActive === false 
                             ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
                             : 'bg-white'
@@ -2253,8 +2352,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                               <div className="flex justify-center items-center">
                                   <input
                                     type="text"
-                                    className={`focus:outline-none bg-transparent text-center border-0 shadow-none w-full ${!fund.isActive || fund.isInactiveBreakdown ? 'text-gray-500 cursor-not-allowed' : ''}`}
-                                    value={formatCellValue(cellValue)}
+                                    className={`focus:outline-none bg-transparent text-right border-0 shadow-none w-full ${!fund.isActive || fund.isInactiveBreakdown ? 'text-gray-500 cursor-not-allowed' : ''}`}
+                                    value={formatCellValue(cellValue, fund.id, month, activityType)}
                                     disabled={isSubmitting || fund.isActive === false || fund.isInactiveBreakdown}
                                     onChange={(e) => {
                                       if (fund.isActive !== false && !fund.isInactiveBreakdown) {
@@ -2308,7 +2407,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                         })}
                         
                         {/* Row Total column for detailed view */}
-                        <td className={`px-1 py-0 text-center text-sm font-bold border-l border-gray-300 ${
+                        <td className={`px-1 py-0 text-right text-sm font-bold border-l border-gray-300 ${
                           fund.isActive === false 
                             ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
                             : 'bg-white'
@@ -2344,7 +2443,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                         return (
                           <td 
                                   key={`total-${fund.id}-${month}`} 
-                                  className="px-1 py-0 text-center font-semibold text-red-600"
+                                  className="px-1 py-0 text-right font-semibold text-red-600"
                           >
                             {formattedTotal}
                           </td>
@@ -2352,7 +2451,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       })}
                       
                       {/* Row Total column for fund total row */}
-                      <td className="px-1 py-0 text-center font-semibold text-red-600 border-l border-gray-300 bg-gray-100">
+                      <td className="px-1 py-0 text-right font-semibold text-red-600 border-l border-gray-300 bg-gray-100">
                         {(() => {
                           const rowTotal = calculateFundRowTotal(fund.id);
                           return formatRowTotal(rowTotal);
@@ -2369,16 +2468,13 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
                 {/* Grand totals section - totals by activity type across all funds */}
                 <tr className="bg-gray-50 border-t-2 border-gray-300 font-semibold">
-                  <td className="px-1 py-0 text-gray-900 sticky left-0 z-10 bg-gray-50">
-                    {/* Empty for fund column */}
-                  </td>
-                  <td className="px-1 py-0 text-gray-900 sticky left-0 z-10 bg-gray-50">
+                  <td className="px-1 py-0 text-gray-900 sticky left-0 z-10 bg-gray-50" style={{minWidth: '120px'}}>
                     Monthly Totals
                   </td>
                   {months.map(month => (
-                    <td key={`totals-header-${month}`} className="px-1 py-0 text-center"></td>
+                    <td key={`totals-header-${month}`} className="px-1 py-0 text-right"></td>
                   ))}
-                  <td className="px-1 py-0 text-center border-l border-gray-300 bg-gray-50"></td>
+                  <td className="px-1 py-0 text-right border-l border-gray-300 bg-gray-50"></td>
                 </tr>
 
                 {/* Activity type total rows */}
@@ -2386,10 +2482,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                   .filter(activityType => activityType !== 'Current Value') // Exclude Current Value from totals
                   .map(activityType => (
                     <tr key={`totals-${activityType}`} className="bg-white border-t border-gray-200">
-                      <td className="px-1 py-0 font-medium text-gray-500 sticky left-0 z-10 bg-white">
-                        {/* Empty for fund column */}
-                      </td>
-                      <td className="px-1 py-0 font-medium text-sm text-gray-500 sticky left-0 z-10 bg-white">
+                      <td className="px-1 py-0 font-medium text-sm text-gray-500 sticky left-0 z-10 bg-white" style={{minWidth: '120px'}}>
                         {formatActivityType(activityType)}
                       </td>
                       {months.map((month, monthIndex) => {
@@ -2400,7 +2493,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                           <td 
                             key={`totals-${activityType}-${month}`}
                             id={`totals-cell-${activityType}-${month}`}
-                            className="px-1 py-0 text-center focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 focus:bg-blue-50 focus:z-20 relative"
+                            className="px-1 py-0 text-right focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 focus:bg-blue-50 focus:z-20 relative"
                             tabIndex={0}
                             onKeyDown={(e) => handleTotalsKeyDown(e, activityType, monthIndex)}
                             onFocus={() => {
@@ -2415,16 +2508,13 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                           </td>
                         );
                       })}
-                      <td className="px-1 py-0 text-center border-l border-gray-300 bg-white"></td>
+                      <td className="px-1 py-0 text-right border-l border-gray-300 bg-white"></td>
                     </tr>
                   ))}
 
                 {/* Valuation total row */}
                 <tr className="bg-blue-50 border-t border-blue-200">
-                  <td className="px-1 py-0 font-medium text-blue-700 sticky left-0 z-10 bg-blue-50">
-                    {/* Empty for fund column */}
-                  </td>
-                  <td className="px-1 py-0 font-medium text-blue-700 sticky left-0 z-10 bg-blue-50">
+                  <td className="px-1 py-0 font-medium text-blue-700 sticky left-0 z-10 bg-blue-50" style={{minWidth: '120px'}}>
                     Total Valuation
                   </td>
                   {months.map((month, monthIndex) => {
@@ -2435,7 +2525,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       <td 
                         key={`totals-valuation-${month}`}
                         id={`totals-cell-Total Valuation-${month}`}
-                        className="px-1 py-0 text-center font-medium text-blue-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-600 focus:bg-blue-100 focus:z-20 relative"
+                        className="px-1 py-0 text-right font-medium text-blue-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-600 focus:bg-blue-100 focus:z-20 relative"
                         tabIndex={0}
                         onKeyDown={(e) => handleTotalsKeyDown(e, 'Total Valuation', monthIndex)}
                         onFocus={() => {
@@ -2450,15 +2540,12 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       </td>
                     );
                   })}
-                  <td className="px-1 py-0 text-center border-l border-gray-300 bg-blue-50"></td>
+                  <td className="px-1 py-0 text-right border-l border-gray-300 bg-blue-50"></td>
                 </tr>
 
                 {/* Grand total row */}
                 <tr className="bg-gray-100 border-t border-gray-200">
-                  <td className="px-1 py-0 font-semibold text-red-600 sticky left-0 z-10 bg-gray-100">
-                    {/* Empty for fund column */}
-                  </td>
-                  <td className="px-1 py-0 font-semibold text-red-600 sticky left-0 z-10 bg-gray-100">
+                  <td className="px-1 py-0 font-semibold text-red-600 sticky left-0 z-10 bg-gray-100" style={{minWidth: '120px'}}>
                     Overall Total
                   </td>
                   {months.map((month, monthIndex) => {
@@ -2469,7 +2556,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       <td 
                         key={`grand-total-${month}`}
                         id={`totals-cell-Overall Total-${month}`}
-                        className="px-1 py-0 text-center font-semibold text-red-600 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 focus:bg-blue-50 focus:z-20 relative"
+                        className="px-1 py-0 text-right font-semibold text-red-600 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 focus:bg-blue-50 focus:z-20 relative"
                         tabIndex={0}
                         onKeyDown={(e) => handleTotalsKeyDown(e, 'Overall Total', monthIndex)}
                         onFocus={() => {
@@ -2484,7 +2571,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       </td>
                     );
                   })}
-                  <td className="px-1 py-0 text-center border-l border-gray-300 bg-gray-100"></td>
+                  <td className="px-1 py-0 text-right border-l border-gray-300 bg-gray-100"></td>
                 </tr>
               </tbody>
             </table>

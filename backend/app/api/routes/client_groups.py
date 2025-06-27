@@ -892,8 +892,9 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                                     "investments": fund["total_investments"] or 0,
                     "government_uplift": fund["total_government_uplift"] or 0,
                 "withdrawals": fund["total_withdrawals"] or 0,
-                    "switch_in": fund["total_fund_switch_in"] or 0,
-                    "switch_out": fund["total_fund_switch_out"] or 0,
+                "fund_switch_in": fund["total_fund_switch_in"] or 0,
+                "fund_switch_out": fund["total_fund_switch_out"] or 0,
+
                 "product_switch_in": fund["total_product_switch_in"] or 0,
                 "product_switch_out": fund["total_product_switch_out"] or 0,
                     "irr": fund["irr"],
@@ -907,8 +908,8 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                 total_investments = sum(f["total_investments"] or 0 for f in inactive_funds)
                 total_government_uplift = sum(f["total_government_uplift"] or 0 for f in inactive_funds)
                 total_withdrawals = sum(f["total_withdrawals"] or 0 for f in inactive_funds)
-                total_switch_in = sum(f["total_fund_switch_in"] or 0 for f in inactive_funds)
-                total_switch_out = sum(f["total_fund_switch_out"] or 0 for f in inactive_funds)
+                total_fund_switch_in = sum(f["total_fund_switch_in"] or 0 for f in inactive_funds)
+                total_fund_switch_out = sum(f["total_fund_switch_out"] or 0 for f in inactive_funds)
                 total_product_switch_in = sum(f["total_product_switch_in"] or 0 for f in inactive_funds)
                 total_product_switch_out = sum(f["total_product_switch_out"] or 0 for f in inactive_funds)
                 total_market_value = sum(f["market_value"] or 0 for f in inactive_funds)
@@ -923,8 +924,8 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                     "investments": total_investments,
                     "government_uplift": total_government_uplift,
                     "withdrawals": total_withdrawals,
-                    "switch_in": total_switch_in,
-                    "switch_out": total_switch_out,
+                    "fund_switch_in": total_fund_switch_in,
+                    "fund_switch_out": total_fund_switch_out,
                     "product_switch_in": total_product_switch_in,
                     "product_switch_out": total_product_switch_out,
                     "irr": None,
@@ -1115,6 +1116,8 @@ async def get_client_group_irr(client_group_id: int, db = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error calculating IRR for client group {client_group_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+
 
  
 
