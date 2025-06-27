@@ -269,7 +269,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           ...lastProduct,
           id: `temp-${Date.now()}`,
           product_name: '',
-          start_date: dayjs(), // Reset to current date for new product
+          start_date: dayjs().startOf('month'), // Reset to first day of current month for new product
           portfolio: {
             ...lastProduct.portfolio,
             name: '', // Will be auto-generated based on product details
@@ -436,7 +436,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         console.log("Data fetched successfully for CreateClientProducts");
       } catch (err: any) {
         console.error('Error fetching data:', err);
-        setError(err.response?.data?.detail || 'Failed to fetch data');
+        showError(err.response?.data?.detail || 'Failed to fetch data');
       } finally {
         setIsLoading(false);
       }
@@ -501,7 +501,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
 
   const handleAddProduct = () => {
     if (!selectedClientId) {
-      setError('Please select a client first');
+      showError('Please select a client first');
       return;
     }
     
@@ -520,7 +520,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       product_type: '',
       product_name: '',
       status: 'active',
-      start_date: dayjs(), // Default to current date
+      start_date: dayjs().startOf('month'), // Default to first day of current month
       plan_number: '', // Initialize as empty string
       product_owner_ids: [],
       portfolio: {
@@ -541,7 +541,6 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
 
   const handleRemoveProduct = (id: string) => {
     setProducts(prevProducts => prevProducts.filter(product => product.id !== id));
-    setError(null);
   };
 
   const handleProductChange = (productId: string, field: string, value: any) => {
@@ -1017,9 +1016,13 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   const showError = (msg: string) => {
     // Make sure msg is always a string to avoid React errors with objects
     const errorMessage = typeof msg === 'object' ? JSON.stringify(msg) : msg;
-    setError(errorMessage);
+    console.log('Showing error:', errorMessage); // Debug log
+    setError(errorMessage); // Only set for popup display
     setShowErrorPopup(true);
-    setTimeout(() => setShowErrorPopup(false), 4000);
+    setTimeout(() => {
+      setShowErrorPopup(false);
+      setError(''); // Clear error after hiding popup
+    }, 6000); // Increased timeout to 6 seconds
   };
 
   const validateForm = (): boolean => {
@@ -1098,8 +1101,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       } else {
         // Bespoke portfolio validations
         if (product.portfolio.selectedFunds.length === 0) {
-          showError(`Please select at least one fund for the portfolio in the product`);
-          return false;
+          productErrors.funds = 'Please select at least one fund for the portfolio';
+          hasErrors = true;
         }
         
         // Flexible weighting validation: Allow no weightings OR weightings that don't exceed 100%
@@ -1118,9 +1121,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           
           // Allow under 100% but prevent over 100%
           if (totalWeighting > 100) {
-            showError(`Fund weightings cannot exceed 100%. Current total: ${totalWeighting.toFixed(1)}%. You can leave some weightings empty for partial allocation.`);
-          return false;
-        }
+            productErrors.weightings = `Fund weightings cannot exceed 100%. Current total: ${totalWeighting.toFixed(1)}%`;
+            hasErrors = true;
+          }
         
           // Validate individual weighting values
         for (const fundId of product.portfolio.selectedFunds) {
@@ -1128,8 +1131,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             
             if (weighting && weighting.trim() !== '') {
               const weightValue = parseFloat(weighting);
-              if (isNaN(weightValue) || weightValue <= 0 || weightValue > 100) {
-                productWeightingErrors[fundId.toString()] = 'Must be between 0.01 and 100';
+              if (isNaN(weightValue) || weightValue < 0 || weightValue > 100) {
+                productWeightingErrors[fundId.toString()] = 'Must be between 0 and 100';
                 hasErrors = true;
               }
             }
@@ -1140,8 +1143,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           const cashWeighting = product.portfolio.fundWeightings[cashFund.id.toString()];
             const cashWeightValue = parseFloat(cashWeighting);
             if (isNaN(cashWeightValue) || cashWeightValue < 0 || cashWeightValue > 100) {
-              showError(`Cash fund weighting must be between 0 and 100%.`);
-              return false;
+              productErrors.cashWeighting = 'Cash fund weighting must be between 0 and 100%';
+              hasErrors = true;
             }
           }
         }
@@ -1169,8 +1172,33 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         }, 100);
       }
       
-      // Show a gentle error message without clearing form data
-      showToastMessage('Please fix the highlighted errors before saving.');
+      // Show a clear error message with specific details
+      const errorCount = Object.keys(newValidationErrors).length + Object.keys(newWeightingErrors).length;
+      
+      // Collect specific error messages (avoid duplicates with Set)
+      const errorSet = new Set<string>();
+      
+      Object.values(newValidationErrors).forEach(productErrors => {
+        Object.values(productErrors).forEach(errorMsg => {
+          errorSet.add(errorMsg);
+        });
+      });
+      
+      Object.values(newWeightingErrors).forEach(productErrors => {
+        Object.values(productErrors).forEach(errorMsg => {
+          errorSet.add(errorMsg);
+        });
+      });
+      
+      const errorMessages = Array.from(errorSet);
+      
+      // Only show unique, meaningful error messages
+      const uniqueErrors = errorMessages.filter(msg => msg && msg.trim().length > 0);
+      const errorSummary = uniqueErrors.length > 0 
+        ? `Please fix the following errors: ${uniqueErrors.slice(0, 3).join(', ')}${uniqueErrors.length > 3 ? ' and others' : ''}`
+        : 'Please complete all required fields before saving.';
+      
+      showError(errorSummary);
       return false;
     }
 
@@ -1186,7 +1214,6 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     }
     
     setIsSaving(true);
-    setError('');
     
     try {
       // Find the Cash fund ID (if it exists in our funds list)
@@ -1354,7 +1381,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       // Successful completion
       alert('Successfully created client products and portfolios');
 
-      navigate(returnPath);
+      // Navigate to client details page
+      navigate(`/clients/${selectedClientId}`);
 
     } catch (err: any) { // Type the error as any
       console.error('Error in form submission:', err);
@@ -1370,9 +1398,18 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         } else if (typeof err.response.data.detail === 'string') {
           errorMessage = err.response.data.detail;
         }
+      } else if (err.message) {
+        errorMessage = err.message;
       }
       
-      showError(errorMessage);
+      // Ensure we don't lose user progress by preserving form state
+      try {
+        showError(errorMessage);
+      } catch (displayErr) {
+        console.error('Error displaying error message:', displayErr);
+        // Fallback error display
+        alert(`Error: ${errorMessage}`);
+      }
     } finally {
       setIsSaving(false);
     }
@@ -1414,8 +1451,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <h4 className="text-xs font-medium text-gray-700">Selected Funds</h4>
-                <div className="bg-primary-100 text-primary-800 px-2 py-0.5 rounded-full text-xs font-medium">
-                  {product.portfolio.selectedFunds.length}
+                <div className="bg-primary-100 text-primary-800 px-2 py-0.5 rounded-full text-xs font-medium" title="Number of selected funds">
+                  Funds: {product.portfolio.selectedFunds.length}
                 </div>
                 {product.portfolio.type === 'bespoke' && (
                   <div className={`px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -1426,13 +1463,13 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                       if (totalWeight > 0) return 'bg-blue-100 text-blue-800';
                       return 'bg-gray-100 text-gray-600';
                     })()
-                  }`}>
-                    {calculateTotalFundWeighting(product).toFixed(1)}%
+                  }`} title="Total portfolio weighting percentage">
+                    Weight: {calculateTotalFundWeighting(product).toFixed(1)}%
                   </div>
                 )}
                 {/* Portfolio Risk - Inline */}
                 {product.portfolio.selectedFunds.length > 0 && (
-                  <div className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-medium">
+                  <div className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-medium" title="Portfolio risk level calculated from selected funds">
                     Risk: {(() => {
                       const risk = calculateTargetRiskFromFunds(product);
                       return risk ? risk.toFixed(1) : 'N/A';
@@ -1469,41 +1506,10 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                 </div>
               ) : (
                 <div className="p-0.5 sm:p-1 space-y-0.5 sm:space-y-1">
-                  {/* Cash fund for bespoke portfolios */}
-                  {product.portfolio.type === 'bespoke' && (() => {
-                    const cashFund = findCashFund(funds);
-                    if (cashFund) {
-                      return (
-                        <div key={`cash-${cashFund.id}`} className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded p-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2 flex-1 min-w-0">
-                              <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
-                              <div className="min-w-0 flex-1">
-                                <div className="text-xs font-medium text-blue-900">{cashFund.fund_name}</div>
-                                <div className="text-xs text-blue-700">Auto-included</div>
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-1 flex-shrink-0">
-                              <input
-                                type="text"
-                                value={product.portfolio.fundWeightings[cashFund.id.toString()] || '0'}
-                                onChange={(e) => handleWeightingChange(product.id, cashFund.id, e.target.value)}
-                                className="w-12 text-xs text-center border border-blue-300 rounded px-1 py-0.5 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                                placeholder="0"
-                              />
-                              <span className="text-xs text-blue-700">%</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
-                  
-                  {/* Other selected funds */}
+                  {/* Other selected funds (non-cash) */}
                   {product.portfolio.selectedFunds.map((fundId) => {
                     const fund = funds.find(f => f.id === fundId);
-                    // Skip Cash fund as it's shown above for bespoke
+                    // Skip Cash fund as it's shown at the bottom for bespoke
                     if (product.portfolio.type === 'bespoke' && fund && isCashFund(fund)) {
                       return null;
                     }
@@ -1564,6 +1570,37 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                       </div>
                     );
                   })}
+                  
+                  {/* Cash fund for bespoke portfolios - always last */}
+                  {product.portfolio.type === 'bespoke' && (() => {
+                    const cashFund = findCashFund(funds);
+                    if (cashFund && product.portfolio.selectedFunds.includes(cashFund.id)) {
+                      return (
+                        <div key={`cash-${cashFund.id}`} className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded p-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2 flex-1 min-w-0">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                              <div className="min-w-0 flex-1">
+                                <div className="text-xs font-medium text-blue-900">{cashFund.fund_name}</div>
+                                <div className="text-xs text-blue-700">Auto-included</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-1 flex-shrink-0">
+                              <input
+                                type="text"
+                                value={product.portfolio.fundWeightings[cashFund.id.toString()] || '0'}
+                                onChange={(e) => handleWeightingChange(product.id, cashFund.id, e.target.value)}
+                                className="w-12 text-xs text-center border border-blue-300 rounded px-1 py-0.5 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                placeholder="0"
+                              />
+                              <span className="text-xs text-blue-700">%</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
               )}
             </div>
@@ -1613,6 +1650,23 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               }
             />
             
+            {/* Fund validation errors */}
+            {validationErrors[product.id]?.funds && (
+              <div className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200">
+                {validationErrors[product.id].funds}
+              </div>
+            )}
+            {validationErrors[product.id]?.weightings && (
+              <div className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200">
+                {validationErrors[product.id].weightings}
+              </div>
+            )}
+            {validationErrors[product.id]?.cashWeighting && (
+              <div className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200">
+                {validationErrors[product.id].cashWeighting}
+              </div>
+            )}
+            
             {/* Available Fund List */}
             <div className={`h-80 sm:h-96 lg:h-[450px] overflow-y-auto border rounded p-2 bg-gray-50 ${
               validationErrors[product.id]?.funds ? 'border-red-500 bg-red-50' : 'border-gray-200'
@@ -1627,12 +1681,18 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                     <div 
                       key={fund.id} 
                       className="flex items-center space-x-2 p-2 hover:bg-white rounded text-xs cursor-pointer transition-colors"
-                      onClick={() => handleFundSelection(product.id, fund.id)}
+                      onClick={(e) => {
+                        // Only handle the click if it's not on the checkbox itself
+                        if (e.target !== e.currentTarget.querySelector('input[type="checkbox"]')) {
+                          handleFundSelection(product.id, fund.id);
+                        }
+                      }}
                     >
                       <Checkbox
                         checked={product.portfolio.selectedFunds.includes(fund.id)}
                         onChange={() => handleFundSelection(product.id, fund.id)}
                         disabled={isEitherLoading}
+                        onClick={(e) => e.stopPropagation()} // Prevent the div click when clicking the checkbox
                       />
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-gray-900 truncate" title={fund.fund_name}>
@@ -1898,16 +1958,35 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         </div>
       )}
 
+      {/* Error popup notification */}
+      {showErrorPopup && (
+        <div className="fixed top-4 right-4 z-50 bg-red-100 border-l-4 border-red-500 text-red-700 p-3 rounded shadow-md">
+          <div className="flex items-center">
+            <div className="py-1">
+              <svg className="h-5 w-5 text-red-500 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-medium text-sm">Error</p>
+              <p className="text-xs">{error}</p>
+            </div>
+            <ActionButton
+              variant="cancel"
+              size="icon"
+              iconOnly
+              onClick={() => setShowErrorPopup(false)}
+            />
+          </div>
+        </div>
+      )}
+
 
 
       <div className="space-y-1">
         {isLoading ? (
           <div className="flex justify-center py-4">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-700"></div>
-          </div>
-        ) : error ? (
-          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-1 mb-1 rounded">
-            <p className="text-sm">{error}</p>
           </div>
         ) : (
           <div className="bg-white shadow-sm rounded-lg border border-gray-200">
@@ -1953,7 +2032,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                 ...lastProduct,
                                 id: `temp-${Date.now()}`,
                                 product_name: '',
-                                start_date: dayjs(), // Reset to current date for new product
+                                start_date: dayjs().startOf('month'), // Reset to first day of current month for new product
                                 portfolio: {
                                   ...lastProduct.portfolio,
                                   name: '', // Will be auto-generated based on product details
@@ -2111,20 +2190,27 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                   {/* Row 2: Start Date and Plan Number */}
                                   <div className="grid grid-cols-2 gap-1 sm:gap-2">
                                     <div>
-                                      <DateInput
-                                        label="Start Date"
-                                        value={product.start_date ? product.start_date.toDate() : undefined}
-                                        onChange={(date: Date | null) => {
-                                          // Convert Date back to dayjs for consistency with existing code
-                                          const dayjsDate = date ? dayjs(date) : dayjs();
+                                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                                        Start Date <span className="text-red-500">*</span>
+                                      </label>
+                                      <DatePicker
+                                        picker="month"
+                                        placeholder="mm/yyyy"
+                                        value={product.start_date || null}
+                                        onChange={(date) => {
+                                          // Always set to first day of the selected month
+                                          const dayjsDate = date ? date.startOf('month') : dayjs().startOf('month');
                                           handleProductChange(product.id, 'start_date', dayjsDate);
                                         }}
-                                        error={validationErrors[product.id]?.start_date}
-                                        required
-                                        size="sm"
-                                        fullWidth
-                                        placeholder="dd/mm/yyyy"
+                                        size="small"
+                                        className={`w-full ${validationErrors[product.id]?.start_date ? 'border-red-500' : ''}`}
+                                        format="MMM YYYY"
                                       />
+                                      {validationErrors[product.id]?.start_date && (
+                                        <div className="text-xs text-red-600 mt-1">
+                                          {validationErrors[product.id].start_date}
+                                        </div>
+                                      )}
                                     </div>
 
                                     <div>
