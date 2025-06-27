@@ -1201,6 +1201,15 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
     });
   };
 
+  // Format date for Period Overview table (month and year only)
+  const formatDateMonthYear = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', {
+      year: 'numeric',
+      month: 'short'
+    });
+  };
+
   // Format activity type for display - convert camelCase or snake_case to spaces
   const formatActivityType = (activityType: string): string => {
     if (!activityType) return '';
@@ -1485,7 +1494,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
           </div>
           {viewIRR.date && (
             <div className="text-xs text-gray-500 mt-1 text-center">
-              as of {formatDate(viewIRR.date)}
+              {formatDateMonthYear(viewIRR.date)}
             </div>
           )}
         </>
@@ -1508,7 +1517,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
           </div>
           {fund.irr_calculation_date && (
             <div className="text-xs text-gray-500 mt-1 text-center">
-              as of {formatDate(fund.irr_calculation_date)}
+              {formatDateMonthYear(fund.irr_calculation_date)}
             </div>
           )}
         </>
@@ -1824,7 +1833,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                           <div>{formatCurrency(holding.market_value)}</div>
                                           {holding.valuation_date && (
                                             <div className="text-xs text-gray-500 mt-1">
-                                              as of {formatDate(holding.valuation_date)}
+                                              {formatDateMonthYear(holding.valuation_date)}
                                             </div>
                                           )}
                                         </div>
@@ -2001,7 +2010,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                               </div>
                               {totalPortfolioIRRDate && (
                                 <div className="text-xs text-gray-500 mt-1">
-                                  as of {formatDate(totalPortfolioIRRDate)}
+                                  {formatDateMonthYear(totalPortfolioIRRDate)}
                                 </div>
                               )}
                             </div>

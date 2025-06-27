@@ -507,6 +507,12 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     
     // Create a new empty product with a temporary ID
     const productId = `temp-${Date.now()}`;
+    
+    // Find cash fund to preselect it
+    const cashFund = findCashFund(funds);
+    const initialSelectedFunds = cashFund ? [cashFund.id] : [];
+    const initialFundWeightings = cashFund ? { [cashFund.id.toString()]: '0' } : {};
+    
     const newProduct: ProductItem = {
       id: productId,
       client_id: selectedClientId,
@@ -519,9 +525,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       product_owner_ids: [],
       portfolio: {
         name: '', // Will be generated when product details are filled
-        selectedFunds: [],
+        selectedFunds: initialSelectedFunds,
         type: 'bespoke',
-        fundWeightings: {}
+        fundWeightings: initialFundWeightings
       }
     };
     
@@ -671,6 +677,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             ...product.portfolio,
             type: updatedType,
             templateId: updatedType === 'bespoke' ? undefined : product.portfolio.templateId,
+            generationId: updatedType === 'bespoke' ? undefined : product.portfolio.generationId,
             selectedFunds: updatedFunds,
             fundWeightings: updatedWeightings
           }
@@ -868,18 +875,25 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           fundWeightings: {} as Record<string, string>
         };
 
-        // If switching to bespoke and there are already selected funds, initialize weightings
-        if (type === 'bespoke' && product.portfolio.selectedFunds.length > 0) {
-          updatedPortfolio.selectedFunds = product.portfolio.selectedFunds;
-          product.portfolio.selectedFunds.forEach(fundId => {
-            const fund = funds.find(f => f.id === fundId);
-            // Initialize Cash fund with 0, others with empty string
-            if (fund && isCashFund(fund)) {
-              updatedPortfolio.fundWeightings[fundId.toString()] = '0';
-            } else {
-              updatedPortfolio.fundWeightings[fundId.toString()] = '';
-            }
-          });
+        // If switching to bespoke, automatically include Cash fund
+        if (type === 'bespoke') {
+          const cashFund = findCashFund(funds);
+          if (cashFund) {
+            updatedPortfolio.selectedFunds = [cashFund.id];
+            updatedPortfolio.fundWeightings[cashFund.id.toString()] = '0';
+          }
+
+          // If there are already selected funds, merge them with Cash fund
+          if (product.portfolio.selectedFunds.length > 0) {
+            // Add existing funds if they're not Cash (to avoid duplicates)
+            product.portfolio.selectedFunds.forEach(fundId => {
+              const fund = funds.find(f => f.id === fundId);
+              if (fund && !isCashFund(fund) && !updatedPortfolio.selectedFunds.includes(fundId)) {
+                updatedPortfolio.selectedFunds.push(fundId);
+                updatedPortfolio.fundWeightings[fundId.toString()] = '';
+              }
+            });
+          }
         }
 
         return {
