@@ -890,9 +890,11 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                     "amount_invested": fund["amount_invested"] or 0,
                     "market_value": fund["market_value"] or 0,
                                     "investments": fund["total_investments"] or 0,
+                    "government_uplift": fund["total_government_uplift"] or 0,
                 "withdrawals": fund["total_withdrawals"] or 0,
                 "fund_switch_in": fund["total_fund_switch_in"] or 0,
                 "fund_switch_out": fund["total_fund_switch_out"] or 0,
+
                 "product_switch_in": fund["total_product_switch_in"] or 0,
                 "product_switch_out": fund["total_product_switch_out"] or 0,
                     "irr": fund["irr"],
@@ -904,6 +906,7 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
             # Process inactive funds into aggregated "Previous Funds" entry if they exist
             if inactive_funds:
                 total_investments = sum(f["total_investments"] or 0 for f in inactive_funds)
+                total_government_uplift = sum(f["total_government_uplift"] or 0 for f in inactive_funds)
                 total_withdrawals = sum(f["total_withdrawals"] or 0 for f in inactive_funds)
                 total_fund_switch_in = sum(f["total_fund_switch_in"] or 0 for f in inactive_funds)
                 total_fund_switch_out = sum(f["total_fund_switch_out"] or 0 for f in inactive_funds)
@@ -919,6 +922,7 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                     "amount_invested": 0,
                     "market_value": total_market_value,
                     "investments": total_investments,
+                    "government_uplift": total_government_uplift,
                     "withdrawals": total_withdrawals,
                     "fund_switch_in": total_fund_switch_in,
                     "fund_switch_out": total_fund_switch_out,
