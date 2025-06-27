@@ -86,8 +86,8 @@ interface ProductFund {
   market_value?: number;
   investments?: number;
   withdrawals?: number;
-  switch_in?: number;
-  switch_out?: number;
+  fund_switch_in?: number;
+  fund_switch_out?: number;
   product_switch_in?: number;
   product_switch_out?: number;
   irr?: number | string;
@@ -961,10 +961,10 @@ const ProductCard: React.FC<{
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.investments || 0)}</td>
                       <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.withdrawals || 0)}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.switch_in || 0)}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.switch_out || 0)}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.product_switch_in || 0)}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.product_switch_out || 0)}</td>
+                                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.fund_switch_in || 0)}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.fund_switch_out || 0)}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.product_switch_in || 0)}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.product_switch_out || 0)}</td>
                       <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.market_value || 0, true)}</td>
                       <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
                         {fund.is_virtual_entry ? (
@@ -1003,10 +1003,10 @@ const ProductCard: React.FC<{
                       {formatCurrencyWithZeroHandling(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.withdrawals || 0), 0))}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
-                      {formatCurrencyWithZeroHandling(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.switch_in || 0), 0))}
+                      {formatCurrencyWithZeroHandling(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.fund_switch_in || 0), 0))}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
-                      {formatCurrencyWithZeroHandling(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.switch_out || 0), 0))}
+                      {formatCurrencyWithZeroHandling(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.fund_switch_out || 0), 0))}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
                       {formatCurrencyWithZeroHandling(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.product_switch_in || 0), 0))}
@@ -1223,7 +1223,7 @@ const ClientDetails: React.FC = () => {
       const fundDataMap: { [key: number]: ProductFund[] } = {};
       completeData.products.forEach((product: any) => {
         if (product.funds && product.funds.length > 0) {
-          fundDataMap[product.id] = product.funds.map((fund: any) => ({
+          const mappedFunds = product.funds.map((fund: any) => ({
             id: fund.id,
             fund_name: fund.fund_name,
             isin_number: fund.isin_number,
@@ -1232,8 +1232,8 @@ const ClientDetails: React.FC = () => {
             market_value: fund.market_value,
             investments: fund.investments,
             withdrawals: fund.withdrawals,
-            switch_in: fund.switch_in,
-            switch_out: fund.switch_out,
+            fund_switch_in: fund.fund_switch_in,
+            fund_switch_out: fund.fund_switch_out,
             product_switch_in: fund.product_switch_in,
             product_switch_out: fund.product_switch_out,
             irr: fund.irr,
@@ -1242,6 +1242,20 @@ const ClientDetails: React.FC = () => {
             inactive_fund_count: fund.inactive_fund_count,
             inactive_fund_ids: fund.inactive_fund_ids // Add the missing field for Previous Funds IRR calculation
           }));
+          
+          // Sort funds so that Cash fund always appears last
+          fundDataMap[product.id] = mappedFunds.sort((a: ProductFund, b: ProductFund) => {
+            const aIsCash = a.fund_name?.toLowerCase().includes('cash') || false;
+            const bIsCash = b.fund_name?.toLowerCase().includes('cash') || false;
+            
+            // If both are cash or both are not cash, maintain original order
+            if (aIsCash === bIsCash) {
+              return 0;
+            }
+            
+            // Cash fund goes to the end (return 1 means a comes after b)
+            return aIsCash ? 1 : -1;
+          });
         }
       });
       
