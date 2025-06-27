@@ -125,6 +125,16 @@ interface FundSummary {
   historical_dates?: string[]; // Array of corresponding dates for historical IRRs
 }
 
+interface SelectedIRRDate {
+  date: string; // YYYY-MM-DD format
+  label: string; // "Jan 2024" format
+  productIds: number[]; // Which products have data for this date
+}
+
+interface ProductIRRSelections {
+  [productId: number]: string[]; // Array of selected date strings for each product
+}
+
 // Main component
 const ReportGenerator: React.FC = () => {
   const { api } = useAuth();
@@ -207,6 +217,10 @@ const ReportGenerator: React.FC = () => {
   // State for inactive product detailed view control
   const [showInactiveProductDetails, setShowInactiveProductDetails] = useState<Set<number>>(new Set());
   
+  // New state for IRR date selection (replaces historicalIRRYears)
+  const [availableIRRDates, setAvailableIRRDates] = useState<SelectedIRRDate[]>([]);
+  const [selectedIRRDates, setSelectedIRRDates] = useState<ProductIRRSelections>({});
+  const [historicalIRRMonths, setHistoricalIRRMonths] = useState<string[]>([]);
 
   
   // Fetch initial data
@@ -600,11 +614,7 @@ const ReportGenerator: React.FC = () => {
     fetchAvailableValuationDates();
   }, [relatedProducts, excludedProductIds, api, selectedValuationDate]);
 
-  // State to store historical IRR month labels
-  const [historicalIRRMonths, setHistoricalIRRMonths] = useState<string[]>([]);
   
-  // State for historical IRR years setting
-  const [historicalIRRYears, setHistoricalIRRYears] = useState<number>(2);
 
   // Calculate if we have any effective product selection (simplified for client groups and products only)
   const hasEffectiveProductSelection = useMemo(() => {
@@ -639,124 +649,145 @@ const ReportGenerator: React.FC = () => {
     return effectiveProductCount > 0;
   }, [selectedProductIds, selectedClientGroupIds, excludedProductIds, relatedProducts]);
 
-  // Function to fetch historical IRR data for all funds in products
-  // Only includes months where ALL portfolio funds have IRR data
-  const fetchAllHistoricalIRRData = async (productIds: number[]): Promise<Map<number, number[]>> => {
+  // Function to fetch all available IRR dates for products
+  const fetchAvailableIRRDates = async (productIds: number[]): Promise<SelectedIRRDate[]> => {
+    const allDatesMap = new Map<string, Set<number>>(); // date -> set of product IDs
+    
+    try {
+      console.log(`📊 Fetching available IRR dates for ${productIds.length} products`);
+      
+      // Fetch historical IRR data for each product (no limit to get all dates)
+      for (const productId of productIds) {
+        const response = await historicalIRRService.getCombinedHistoricalIRR(productId, 1000); // Large limit to get all data
+        
+        if (response.funds_historical_irr && response.funds_historical_irr.length > 0) {
+          // Extract all unique dates from this product's IRR data
+          const productDates = new Set<string>();
+          
+        response.funds_historical_irr.forEach((fund: any) => {
+          if (fund.historical_irr && fund.historical_irr.length > 0) {
+            fund.historical_irr.forEach((record: any) => {
+              if (record.irr_result !== null && record.irr_date) {
+                  productDates.add(record.irr_date);
+                }
+              });
+            }
+          });
+          
+          // Add this product's dates to the global map
+          productDates.forEach(date => {
+            if (!allDatesMap.has(date)) {
+              allDatesMap.set(date, new Set());
+            }
+            allDatesMap.get(date)!.add(productId);
+          });
+        }
+      }
+      
+      // Convert to SelectedIRRDate array
+      const availableDates: SelectedIRRDate[] = [];
+      allDatesMap.forEach((productIds, date) => {
+        const dateObj = new Date(date);
+        const label = dateObj.toLocaleDateString('en-US', { 
+          month: 'long', 
+          year: 'numeric' 
+        });
+        
+        availableDates.push({
+          date,
+          label,
+          productIds: Array.from(productIds)
+        });
+      });
+      
+      // Sort by date (most recent first)
+      availableDates.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      
+      console.log(`Found ${availableDates.length} unique IRR dates across all products`);
+      return availableDates;
+      
+    } catch (error) {
+      console.error('Error fetching available IRR dates:', error);
+      return [];
+    }
+  };
+
+  // Function to fetch historical IRR data for selected dates
+  const fetchAllHistoricalIRRData = async (
+    productIds: number[], 
+    selectedDates: ProductIRRSelections
+  ): Promise<Map<number, number[]>> => {
     const fundHistoricalIRRMap = new Map<number, number[]>();
     let globalSelectedMonths: string[] = [];
     
     try {
-      console.log(`📊 Fetching historical IRR data: ${historicalIRRYears} years (${historicalIRRYears * 12} months) for ${productIds.length} products`);
+      console.log(`📊 Fetching historical IRR data for selected dates across ${productIds.length} products`);
       
-      // Process each product separately to ensure completeness within each portfolio
+      // Process each product separately using their selected dates
       for (const productId of productIds) {
-        const monthsToRetrieve = historicalIRRYears * 12; // Convert years to months
-        const response = await historicalIRRService.getCombinedHistoricalIRR(productId, monthsToRetrieve);
+        const productSelectedDates = selectedDates[productId] || [];
+        
+        if (productSelectedDates.length === 0) {
+          console.log(`Product ${productId}: No dates selected, skipping`);
+          continue;
+        }
+        
+        // Fetch all historical IRR data for this product
+        const response = await historicalIRRService.getCombinedHistoricalIRR(productId, 1000);
         
         if (!response.funds_historical_irr || response.funds_historical_irr.length === 0) {
+          console.log(`Product ${productId}: No historical IRR data available`);
           continue;
         }
 
-        // Group historical IRR data by month for each fund
-        const fundsByMonth = new Map<string, Map<number, number>>();
+        // Group historical IRR data by date for each fund
+        const fundsByDate = new Map<string, Map<number, number>>();
         const allFundIds = new Set<number>();
-        const latestIRRMonths = new Map<number, string>(); // Track latest IRR month for each fund
 
-        // First pass: identify the latest IRR month for each fund
+        // Extract IRR data for selected dates only
         response.funds_historical_irr.forEach((fund: any) => {
           if (fund.historical_irr && fund.historical_irr.length > 0) {
             allFundIds.add(fund.portfolio_fund_id);
             
-            let latestMonth = '';
             fund.historical_irr.forEach((record: any) => {
               if (record.irr_result !== null && record.irr_date) {
-                const dateObj = new Date(record.irr_date);
-                const yearMonth = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
-                
-                // Track the latest month for this fund
-                if (yearMonth > latestMonth) {
-                  latestMonth = yearMonth;
+                // Only include data for selected dates
+                if (productSelectedDates.includes(record.irr_date)) {
+                  if (!fundsByDate.has(record.irr_date)) {
+                    fundsByDate.set(record.irr_date, new Map());
+                  }
+                  fundsByDate.get(record.irr_date)!.set(fund.portfolio_fund_id, record.irr_result);
                 }
-              }
-            });
-            
-            if (latestMonth) {
-              latestIRRMonths.set(fund.portfolio_fund_id, latestMonth);
-            }
-          }
-        });
-
-        // Second pass: group historical IRR data by month
-        // Only exclude latest month if we have sufficient historical data (more than 2 months)
-        response.funds_historical_irr.forEach((fund: any) => {
-          if (fund.historical_irr && fund.historical_irr.length > 0) {
-            const fundLatestMonth = latestIRRMonths.get(fund.portfolio_fund_id);
-            // Be more conservative about excluding latest month - only exclude if we have at least 3 months of data
-            const shouldExcludeLatest = fund.historical_irr.length > 2;
-            
-            fund.historical_irr.forEach((record: any) => {
-              if (record.irr_result !== null && record.irr_date) {
-                const dateObj = new Date(record.irr_date);
-                const yearMonth = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
-                
-                // Skip this IRR if it's the latest month AND we have enough data to exclude it
-                if (shouldExcludeLatest && yearMonth === fundLatestMonth) {
-                  console.log(`Excluding latest IRR for fund ${fund.portfolio_fund_id}: ${yearMonth} (${record.irr_result}%) - sufficient historical data available`);
-                  return;
-                }
-                
-                if (!fundsByMonth.has(yearMonth)) {
-                  fundsByMonth.set(yearMonth, new Map());
-                }
-                
-                fundsByMonth.get(yearMonth)!.set(fund.portfolio_fund_id, record.irr_result);
               }
             });
           }
         });
 
-        // Find months where majority of funds have IRR data
-        // Use more lenient coverage requirements when we have limited data
-        const completeMonths: string[] = [];
-        const totalFundsInPortfolio = allFundIds.size;
-        const totalMonthsAvailable = fundsByMonth.size;
+        // Sort selected dates (most recent first) for consistent ordering
+        const sortedSelectedDates = [...productSelectedDates].sort((a, b) => 
+          new Date(b).getTime() - new Date(a).getTime()
+        );
         
-        // If we have very limited historical data (1-2 months), be more lenient with coverage requirements
-        let coverageThreshold: number;
-        if (totalMonthsAvailable <= 2) {
-          // For limited data, require at least 50% coverage
-          coverageThreshold = Math.max(1, Math.ceil(totalFundsInPortfolio * 0.5));
-        } else {
-          // For sufficient data, use 75% coverage
-          coverageThreshold = Math.max(1, Math.ceil(totalFundsInPortfolio * 0.75));
+        // Build the global selected months list (for column headers)
+        if (globalSelectedMonths.length === 0 && sortedSelectedDates.length > 0) {
+          globalSelectedMonths = sortedSelectedDates.map(date => {
+            const dateObj = new Date(date);
+            return `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
+          });
         }
         
-        for (const [yearMonth, fundsData] of fundsByMonth.entries()) {
-          if (fundsData.size >= coverageThreshold) {
-            completeMonths.push(yearMonth);
-          }
-        }
-        
-        console.log(`Product ${productId} coverage: ${totalFundsInPortfolio} total funds, requiring ${coverageThreshold} for inclusion (${totalMonthsAvailable} months available)`);
-
-        // Sort months by date (most recent first)
-        completeMonths.sort((a, b) => b.localeCompare(a));
-
-        // Take only the first 3 complete months and populate the fund map
-        const selectedMonths = completeMonths.slice(0, 3);
-        
-        // Use the first product's complete months as the global reference
-        if (globalSelectedMonths.length === 0 && selectedMonths.length > 0) {
-          globalSelectedMonths = selectedMonths;
-        }
-        
+        // Populate the fund map with IRR values for selected dates
         for (const fundId of allFundIds) {
           const historicalValues: number[] = [];
           
-          for (const yearMonth of selectedMonths) {
-            const irrValue = fundsByMonth.get(yearMonth)?.get(fundId);
+          for (const date of sortedSelectedDates) {
+            const irrValue = fundsByDate.get(date)?.get(fundId);
             if (irrValue !== undefined) {
               historicalValues.push(irrValue);
+            } else {
+              // If no IRR value for this date, push null/undefined to maintain column alignment
+              // This will be handled in the display logic
+              historicalValues.push(0); // or use null if the display logic can handle it
             }
           }
           
@@ -765,16 +796,7 @@ const ReportGenerator: React.FC = () => {
           }
         }
 
-        console.log(`Product ${productId}: Found ${completeMonths.length} complete months, using ${selectedMonths.length} most recent: ${selectedMonths.join(', ')}`);
-        
-        // Additional debugging for this product
-        console.log(`Product ${productId} debug:`, {
-          totalFundsInPortfolio: allFundIds.size,
-          totalMonthsWithData: fundsByMonth.size,
-          fundsWithHistoricalData: response.funds_historical_irr?.length || 0,
-          completeMonths: completeMonths,
-          selectedMonths: selectedMonths
-        });
+        console.log(`Product ${productId}: Using ${sortedSelectedDates.length} selected dates: ${sortedSelectedDates.join(', ')}`);
       }
       
       // Format the month labels for display and store them in state
@@ -782,7 +804,7 @@ const ReportGenerator: React.FC = () => {
         const monthLabels = globalSelectedMonths.map(yearMonth => {
           const [year, month] = yearMonth.split('-');
           const date = new Date(parseInt(year), parseInt(month) - 1);
-          return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+          return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
         });
         
         setHistoricalIRRMonths(monthLabels);
@@ -869,7 +891,7 @@ const ReportGenerator: React.FC = () => {
 
       // Fetch historical IRR data for all products
       console.log("Fetching historical IRR data for products:", uniqueProductIds);
-      const historicalIRRMap = await fetchAllHistoricalIRRData(uniqueProductIds);
+      const historicalIRRMap = await fetchAllHistoricalIRRData(uniqueProductIds, selectedIRRDates);
       console.log("Historical IRR data fetched:", historicalIRRMap.size, "funds with historical data");
 
       // --- Step 2: Get Portfolio IDs for all selected products ---
@@ -1370,6 +1392,13 @@ const ReportGenerator: React.FC = () => {
           
           // Get historical IRR data for this fund
           const historicalIRRValues = historicalIRRMap.get(portfolioFund.id) || [];
+          
+          // Get the actual dates corresponding to the historical IRR values
+          // These should be the selected dates for the product this fund belongs to
+          const productSelectedDates = selectedIRRDates[productId] || [];
+          const sortedSelectedDates = [...productSelectedDates].sort((a, b) => 
+            new Date(b).getTime() - new Date(a).getTime()
+          );
 
           // Add to fund summaries with proper activity type values
           fundSummaries.push({
@@ -1393,7 +1422,7 @@ const ReportGenerator: React.FC = () => {
             status: portfolioFund.status || 'active',
             risk_factor: riskFactor, // Use the risk factor from the available fund
             historical_irr: historicalIRRValues, // Add historical IRR data
-            historical_dates: historicalIRRMonths
+            historical_dates: sortedSelectedDates // Use actual dates, not formatted labels
           });
         }
 
@@ -1443,7 +1472,7 @@ const ReportGenerator: React.FC = () => {
                 // For inactive products, get the latest portfolio-level IRR
                 console.log(`🎯 [PRODUCT IRR DEBUG] Fetching portfolio IRR for INACTIVE product: ${productDetails.product_name} (ID: ${productId})`);
                 try {
-                  const portfolioIRRResponse = await api.get(`/api/portfolios/${productDetails.portfolio_id}/latest-irr`);
+                  const portfolioIRRResponse = await api.get(`/api/portfolios/${productDetails.portfolio_id}/latest_irr`);
                   if (portfolioIRRResponse.data && typeof portfolioIRRResponse.data.irr_result === 'number') {
                     productIRR = portfolioIRRResponse.data.irr_result;
                     console.log(`Latest portfolio IRR for inactive product ${productId}: ${productIRR}% (date: ${portfolioIRRResponse.data.irr_date})`);
@@ -1584,6 +1613,13 @@ const ReportGenerator: React.FC = () => {
                   // Add historical IRR data for inactive funds
                   const historicalIRRValues = historicalIRRMap.get(fund.id) || [];
                   fund.historical_irr = historicalIRRValues;
+                  
+                  // Get the actual dates corresponding to the historical IRR values
+                  const productSelectedDates = selectedIRRDates[productId] || [];
+                  const sortedSelectedDates = [...productSelectedDates].sort((a, b) => 
+                    new Date(b).getTime() - new Date(a).getTime()
+                  );
+                  fund.historical_dates = sortedSelectedDates;
                 }
               }
             }
@@ -1995,7 +2031,9 @@ Please select a different valuation date or ensure all active funds have valuati
         // Report settings
         showInactiveProducts,
         showPreviousFunds,
-        showInactiveProductDetails: Array.from(showInactiveProductDetails)
+        showInactiveProductDetails: Array.from(showInactiveProductDetails),
+        selectedHistoricalIRRDates: selectedIRRDates,
+        availableHistoricalIRRDates: availableIRRDates
       };
 
       // Navigate to the report display page
@@ -2112,7 +2150,108 @@ Please select a different valuation date or ensure all active funds have valuati
     };
   };
 
+  // Helper functions for IRR date selection
+  const getAvailableDatesForProduct = (productId: number): Array<{value: string, label: string}> => {
+    return availableIRRDates
+      .filter(date => date.productIds.includes(productId))
+      .map(date => ({
+        value: date.date,
+        label: date.label
+      }));
+  };
 
+  const handleProductIRRDatesChange = (productId: number, selectedDates: (string | number)[]) => {
+    setSelectedIRRDates(prev => ({
+      ...prev,
+      [productId]: selectedDates.map(d => String(d))
+    }));
+  };
+
+  const selectCommonDates = () => {
+    // Find dates available across ALL included products (not excluded)
+    const includedProducts = relatedProducts.filter(product => !excludedProductIds.has(product.id));
+    const allProductIds = includedProducts.map(p => p.id);
+    const commonDates = availableIRRDates.filter(date => 
+      allProductIds.every(productId => date.productIds.includes(productId))
+    );
+    
+    // Select up to 3 most recent common dates for all included products
+    const selectedCommonDates = commonDates.slice(0, 3).map(d => d.date);
+    
+    const newSelections: ProductIRRSelections = {};
+    allProductIds.forEach(productId => {
+      newSelections[productId] = selectedCommonDates;
+    });
+    
+    setSelectedIRRDates(newSelections);
+  };
+
+  const selectRecentDatesForAll = (count: number) => {
+    // Select the N most recent dates for each included product (not excluded)
+    const newSelections: ProductIRRSelections = {};
+    
+    const includedProducts = relatedProducts.filter(product => !excludedProductIds.has(product.id));
+    includedProducts.forEach(product => {
+      const availableDates = getAvailableDatesForProduct(product.id);
+      const recentDates = availableDates.slice(0, count).map(d => d.value);
+      newSelections[product.id] = recentDates;
+    });
+    
+    setSelectedIRRDates(newSelections);
+  };
+
+  const selectAllDatesForAll = () => {
+    // Select ALL available dates for each included product (not excluded)
+    const newSelections: ProductIRRSelections = {};
+    
+    const includedProducts = relatedProducts.filter(product => !excludedProductIds.has(product.id));
+    includedProducts.forEach(product => {
+      const availableDates = getAvailableDatesForProduct(product.id);
+      const allDates = availableDates.map(d => d.value);
+      newSelections[product.id] = allDates;
+    });
+    
+    setSelectedIRRDates(newSelections);
+  };
+
+  // Effect to clean up IRR date selections for excluded products
+  useEffect(() => {
+    if (excludedProductIds.size > 0) {
+      setSelectedIRRDates(prev => {
+        const cleaned = { ...prev };
+        excludedProductIds.forEach(productId => {
+          delete cleaned[productId];
+        });
+        return cleaned;
+      });
+    }
+  }, [excludedProductIds]);
+
+  // Effect to fetch available IRR dates when products change
+  useEffect(() => {
+    const fetchDates = async () => {
+      // Only fetch IRR dates for products that are not excluded
+      const includedProducts = relatedProducts.filter(product => !excludedProductIds.has(product.id));
+      
+      if (includedProducts.length > 0) {
+        console.log('📊 Fetching available IRR dates for', includedProducts.length, 'products');
+        const productIds = includedProducts.map(p => p.id);
+        const dates = await fetchAvailableIRRDates(productIds);
+        setAvailableIRRDates(dates);
+        
+        // Auto-select ALL available dates for each product as default
+        if (dates.length > 0) {
+          selectAllDatesForAll();
+        }
+      } else {
+        // Clear IRR dates if no products are included
+        setAvailableIRRDates([]);
+        setSelectedIRRDates({});
+      }
+    };
+    
+    fetchDates();
+  }, [relatedProducts, excludedProductIds]);
 
   return (
     <div className="mx-auto px-4 sm:px-6 lg:px-8 py-3">
@@ -2205,27 +2344,76 @@ Please select a different valuation date or ensure all active funds have valuati
               <div className="space-y-2">
 
                 
-                {/* Historical IRR Years Setting */}
-                <div className="flex items-center space-x-3">
-                  <label htmlFor="historical-irr-years" className="text-sm text-gray-600">
-                    Historical IRR years back:
-                  </label>
-                  <select
-                    id="historical-irr-years"
-                    value={historicalIRRYears}
-                    onChange={(e) => setHistoricalIRRYears(Number(e.target.value))}
-                    className="block w-20 px-2 py-1 text-sm border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
-                  >
-                    <option value={1}>1</option>
-                    <option value={2}>2</option>
-                    <option value={3}>3</option>
-                    <option value={4}>4</option>
-                    <option value={5}>5</option>
-                  </select>
-                  <span className="text-xs text-gray-500">
-                    years (up to {historicalIRRYears * 12} months)
+                {/* Historical IRR Date Selection */}
+                {relatedProducts.length > 0 && availableIRRDates.length > 0 && (
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg border">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">
+                      Historical IRR Date Selection
+                    </h4>
+                    <p className="text-xs text-gray-500 mb-3">
+                      All available dates are selected by default. You can unselect dates you don't want to include.
+                      Different products may have different available dates.
+                    </p>
+                    
+                    {/* Quick selection buttons */}
+                    <div className="flex gap-2 mb-3">
+                      <button
+                        type="button"
+                        onClick={selectAllDatesForAll}
+                        className="px-2 py-1 text-xs bg-blue-100 border border-blue-300 rounded hover:bg-blue-200 font-medium"
+                      >
+                        Select All
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => selectRecentDatesForAll(1)}
+                        className="px-2 py-1 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50"
+                      >
+                        1 Recent Each
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => selectRecentDatesForAll(2)}
+                        className="px-2 py-1 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50"
+                      >
+                        2 Recent Each
+                      </button>
+                      <button
+                        type="button"
+                        onClick={selectCommonDates}
+                        className="px-2 py-1 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50"
+                      >
+                        Common Dates
+                      </button>
+                    </div>
+                    
+                    {relatedProducts.filter(product => !excludedProductIds.has(product.id)).map(product => (
+                      <div key={product.id} className="mb-4 p-3 bg-white rounded border">
+                        <h5 className="text-sm font-medium text-gray-800 mb-2">
+                          {product.product_name}
+                        </h5>
+                        
+                        <MultiSelectDropdown
+                          options={getAvailableDatesForProduct(product.id)}
+                          values={selectedIRRDates[product.id] || []}
+                          onChange={(dates) => handleProductIRRDatesChange(product.id, dates)}
+                          placeholder="Select historical IRR dates..."
+                          maxSelectedDisplay={3}
+                          size="sm"
+                        />
+                        
+                        <div className="mt-2 text-xs text-gray-500">
+                          Available dates: {getAvailableDatesForProduct(product.id).length}
+                          {selectedIRRDates[product.id] && selectedIRRDates[product.id].length > 0 && (
+                            <span className="ml-2">
+                              | Selected: {selectedIRRDates[product.id].length}
                   </span>
+                          )}
                 </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 
                 {/* Inactive Product Detail Controls */}
                 {relatedProducts.filter(product => !excludedProductIds.has(product.id) && product.status === 'inactive').length > 0 && (

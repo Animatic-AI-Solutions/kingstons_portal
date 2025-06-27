@@ -514,7 +514,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           console.log('🚀 Fetching stored portfolio IRR for portfolio:', completeData.portfolio_id);
           
           // Use the optimized endpoint to get stored IRR from latest_portfolio_irr_values view
-          const irrResponse = await api.get(`/api/portfolios/${completeData.portfolio_id}/latest-irr`);
+          const irrResponse = await api.get(`/api/portfolios/${completeData.portfolio_id}/latest_irr`);
           
           console.log('✅ Stored IRR response:', irrResponse.data);
           
