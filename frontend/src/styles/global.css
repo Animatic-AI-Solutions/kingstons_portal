@@ -194,6 +194,14 @@
     display: none !important;
   }
   
+  /* Company logo print styling */
+  .print\\:block img {
+    max-height: 4rem !important;
+    width: auto !important;
+    margin: 0 auto 1rem auto !important;
+    display: block !important;
+  }
+  
   /* Ensure print-friendly styling for reports */
   .product-card {
     page-break-inside: avoid;
@@ -214,18 +222,58 @@
     display: block !important;
     page-break-before: always;
   }
+  
+  /* Ensure IRR history table columns are right-aligned in print */
+  .landscape-table th:not(:first-child),
+  .landscape-table td:not(:first-child) {
+    text-align: right !important;
+  }
+  
+  /* Ensure the first column (Fund Name) stays left-aligned in print */
+  .landscape-table th:first-child,
+  .landscape-table td:first-child {
+    text-align: left !important;
+  }
+  
+  /* Remove borders from Portfolio Summary table container in print */
+  .portfolio-summary-table {
+    border: none !important;
+    box-shadow: none !important;
+  }
+  
+  .portfolio-summary-table .bg-white {
+    border: none !important;
+    box-shadow: none !important;
+  }
+  
+  /* Make Portfolio Summary column headers smaller in print only */
+  .portfolio-summary-table th {
+    font-size: 10px !important;
+    line-height: 1.1 !important;
+    padding-left: 1px !important;
+    padding-right: 1px !important;
+  }
+  
+  /* Also reduce padding and font size for data cells in print */
+  .portfolio-summary-table td {
+    padding-left: 1px !important;
+    padding-right: 1px !important;
+    font-size: 9px !important;
+    line-height: 1.2 !important;
+  }
 }
 
 /* Compact table styles for portfolio summary and product tables */
 .portfolio-summary-table th,
 .product-fund-table th {
-  @apply px-1.5 py-1.5 text-xs;
+  @apply px-0.5 py-1 text-xs;
   line-height: 1.2;
 }
 
 .portfolio-summary-table td,
 .product-fund-table td {
-  @apply px-1.5 py-1.5 text-xs;
+  @apply px-0.5 py-1;
+  font-size: 10px;
   line-height: 1.3;
 }
 

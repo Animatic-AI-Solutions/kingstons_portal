@@ -65,6 +65,16 @@ interface FundSummary {
   historical_dates?: string[];
 }
 
+interface SelectedIRRDate {
+  date: string; // YYYY-MM-DD format
+  label: string; // "Jan 2024" format
+  productIds: number[]; // Which products have data for this date
+}
+
+interface ProductIRRSelections {
+  [productId: number]: string[]; // Array of selected date strings for each product
+}
+
 interface ReportData {
   productSummaries: ProductPeriodSummary[];
   totalIRR: number | null;
@@ -80,6 +90,8 @@ interface ReportData {
   showInactiveProducts: boolean;
   showPreviousFunds: boolean;
   showInactiveProductDetails?: number[]; // Array of product IDs that should show detailed cards
+  selectedHistoricalIRRDates?: ProductIRRSelections; // Per-product selected dates
+  availableHistoricalIRRDates?: SelectedIRRDate[]; // All available dates with metadata
 }
 
 const ReportDisplay: React.FC = () => {
@@ -752,7 +764,7 @@ const ReportDisplay: React.FC = () => {
           console.log(`🔗 [PORTFOLIO IRR] Product ${productId} maps to portfolio ${portfolioId}`);
           
           // Now fetch the latest IRR for this portfolio
-          const response = await api.get(`/portfolios/${portfolioId}/latest_irr`);
+          const response = await api.get(`/api/portfolios/${portfolioId}/latest_irr`);
           const irrValue = response.data?.irr_result || response.data?.irr_value || null;
           
           console.log(`✅ [PORTFOLIO IRR] Product ${productId} (portfolio ${portfolioId}) IRR:`, irrValue);
@@ -784,19 +796,91 @@ const ReportDisplay: React.FC = () => {
   const fetchIrrHistory = async () => {
     if (!reportData || loadingIrrHistory) return;
     
+    // Check if we have selected historical IRR dates from report generation
+    if (!reportData.selectedHistoricalIRRDates || !reportData.availableHistoricalIRRDates) {
+      console.log('📊 [IRR HISTORY] No selected historical IRR dates available');
+      return;
+    }
+    
     setLoadingIrrHistory(true);
     try {
-      const productIds = reportData.productSummaries.map(p => p.id);
-      const historyPromises = productIds.map(async (productId) => {
-        const response = await fetch(`/api/historical-irr/combined/${productId}?limit=24`);
-        if (!response.ok) throw new Error(`Failed to fetch IRR history for product ${productId}`);
-        return await response.json();
+      console.log('📊 [IRR HISTORY] Using pre-selected historical IRR dates from report generation');
+      console.log('📊 [IRR HISTORY] Selected dates:', reportData.selectedHistoricalIRRDates);
+      console.log('📊 [IRR HISTORY] Available dates:', reportData.availableHistoricalIRRDates);
+      
+      // Create the IRR history data structure that matches what the table expects
+      const irrHistoryResults = reportData.productSummaries.map(product => {
+        const selectedDates = reportData.selectedHistoricalIRRDates![product.id] || [];
+        console.log(`📊 [IRR HISTORY] Product ${product.id} (${product.product_name}) selected dates:`, selectedDates);
+        
+        // Create portfolio historical IRR data (if available)
+        const portfolioHistoricalIrr = selectedDates.map(dateStr => {
+          // Convert YYYY-MM format to YYYY-MM-DD format for consistency
+          const fullDate = dateStr.length === 7 ? `${dateStr}-01` : dateStr;
+          return {
+            irr_date: fullDate,
+            irr_result: product.irr // Use current product IRR as placeholder - this would ideally come from historical data
+          };
+        });
+        
+        // Create funds historical IRR data using the fund's historical_irr and historical_dates arrays
+        const fundsHistoricalIrr = product.funds?.map(fund => {
+          // Create historical IRR records for this fund based on selected dates
+          const fundHistoricalRecords = selectedDates.map((dateStr, index) => {
+            // Get the corresponding IRR value from the fund's historical data
+            let irrValue = null;
+            
+            if (fund.historical_irr && fund.historical_dates) {
+              // Find the index of this date in the fund's historical dates
+              const dateIndex = fund.historical_dates.findIndex(histDate => {
+                // Handle both YYYY-MM and YYYY-MM-DD formats
+                const normalizedHistDate = histDate.length === 7 ? histDate : histDate.substring(0, 7);
+                const normalizedSelectedDate = dateStr.length === 7 ? dateStr : dateStr.substring(0, 7);
+                return normalizedHistDate === normalizedSelectedDate;
+              });
+              
+              if (dateIndex >= 0 && fund.historical_irr[dateIndex] !== undefined) {
+                irrValue = fund.historical_irr[dateIndex];
+              }
+            }
+            
+            // Convert YYYY-MM format to YYYY-MM-DD format for consistency
+            const fullDate = dateStr.length === 7 ? `${dateStr}-01` : dateStr;
+            
+            return {
+              irr_date: fullDate,
+              irr_result: irrValue
+            };
+          });
+          
+          return {
+            portfolio_fund_id: fund.id,
+            fund_name: fund.fund_name,
+            fund_status: fund.status,
+            risk_factor: fund.risk_factor,
+            isin_number: fund.isin_number,
+            historical_irr: fundHistoricalRecords,
+            isVirtual: fund.isVirtual,
+            inactiveFundCount: fund.inactiveFundCount
+          };
+        }) || [];
+      
+        const result = {
+          product_id: product.id,
+          product_name: product.product_name,
+          portfolio_historical_irr: portfolioHistoricalIrr,
+          funds_historical_irr: fundsHistoricalIrr
+        };
+        
+        console.log(`📊 [IRR HISTORY] Created data structure for product ${product.id}:`, result);
+        return result;
       });
       
-      const historyResults = await Promise.all(historyPromises);
-      setIrrHistoryData(historyResults);
+      console.log('📊 [IRR HISTORY] Final processed historical IRR data:', irrHistoryResults);
+      setIrrHistoryData(irrHistoryResults);
+      
     } catch (error) {
-      console.error('Error fetching IRR history:', error);
+      console.error('❌ [IRR HISTORY] Error processing historical IRR data:', error);
     } finally {
       setLoadingIrrHistory(false);
     }
@@ -941,7 +1025,7 @@ const ReportDisplay: React.FC = () => {
   const formatIrrWithPrecision = (irr: number | null | undefined): string => {
     if (irr === null || irr === undefined) return '-';
     
-    // Always round to 1 decimal place
+    // Always round to 1 decimal place for product/total IRRs
       return `${irr.toFixed(1)}%`;
   };
 
@@ -1374,6 +1458,14 @@ const ReportDisplay: React.FC = () => {
     );
   };
 
+  // Fund IRR formatting - 0 decimal places
+  const formatFundIrr = (irr: number | null | undefined): string => {
+    if (irr === null || irr === undefined) return '-';
+    
+    // Round to 0 decimal places for fund IRRs
+    return `${Math.round(irr)}%`;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header with navigation and actions */}
@@ -1433,16 +1525,29 @@ const ReportDisplay: React.FC = () => {
 
       {/* Report Content */}
       <div ref={printRef} className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Print-only Company Logo Header */}
+        <div className="hidden print:block mb-8 text-center">
+          <img 
+            src="/images/Company logo.svg" 
+            alt="Kingstons Logo" 
+            className="mx-auto h-16 w-auto mb-6"
+          />
+        </div>
+
         {/* Report Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Report Summary
+        <div className="text-center mb-6">
+          <div className="relative inline-block">
+            <h1 className="text-4xl font-light text-slate-800 mb-1 tracking-wide">
+              Investment Summary
           </h1>
-          <div className="text-lg text-gray-700 mb-1">
+            <div className="w-full h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 mb-4"></div>
+          </div>
+          <div className="text-lg font-light text-slate-700 mb-2 tracking-wide">
             {reportData.timePeriod}
           </div>
           {reportData.productOwnerNames.length > 0 && (
-            <div className="text-md text-gray-600">
+            <div className="text-base text-slate-500 font-normal">
               {reportData.productOwnerNames.join(', ')}
             </div>
           )}
@@ -1480,7 +1585,7 @@ const ReportDisplay: React.FC = () => {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Report Summary
+                Investment Summary
               </button>
               <button
                 onClick={() => handleTabChange('irr-history')}
@@ -1501,10 +1606,10 @@ const ReportDisplay: React.FC = () => {
         <div className={`${activeTab === 'summary' ? '' : 'hidden'} print:block`}>
           {/* Portfolio Total Average Returns */}
           <div className="mb-6 bg-white shadow-sm rounded-lg border border-gray-200 p-4 product-card print-clean">
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Portfolio Performance</h2>
+                          <h2 className="text-lg font-semibold text-gray-900 mb-3">Investment Performance</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 portfolio-performance-grid">
               <div className="bg-purple-50 rounded-lg p-3 portfolio-performance-card relative flex flex-col justify-center items-center h-24">
-                <div className="text-xs font-medium text-purple-700 mb-2">Total Current Average Returns</div>
+                <div className="text-sm font-medium text-purple-700 mb-2">Total Current Average Returns</div>
                 {loadingTotalIRR ? (
                   <div className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600"></div>
@@ -1520,14 +1625,14 @@ const ReportDisplay: React.FC = () => {
               </div>
               {reportData.totalValuation !== null && (
                 <div className="bg-green-50 rounded-lg p-3 portfolio-performance-card relative flex flex-col justify-center items-center h-24">
-                  <div className="text-xs font-medium text-green-700 mb-2">Total Portfolio Value</div>
+                  <div className="text-sm font-medium text-green-700 mb-2">Total Portfolio Value</div>
                   <div className="text-2xl font-bold text-black">
                     {formatCurrencyWithTruncation(reportData.totalValuation)}
                   </div>
                 </div>
               )}
               <div className="bg-blue-50 rounded-lg p-3 portfolio-performance-card relative flex flex-col justify-center items-center h-24">
-                <div className="text-xs font-medium text-blue-700 mb-2">Total Profit Made</div>
+                <div className="text-sm font-medium text-blue-700 mb-2">Total Profit Made</div>
                 {(() => {
                   const totalGains = reportData.productSummaries.reduce((sum, product) => 
                     sum + product.current_valuation + product.total_withdrawal + product.total_product_switch_out + product.total_fund_switch_out, 0
@@ -1550,8 +1655,8 @@ const ReportDisplay: React.FC = () => {
 
           {/* Portfolio Summary Table - Moved to top for better printing */}
           <div className="mb-8 product-card print-clean">
-            <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Portfolio Summary</h2>
+            <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-4">
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">Investment Summary</h2>
               <div className="overflow-x-auto product-table">
                 <table className="w-full table-fixed divide-y divide-gray-300 landscape-table portfolio-summary-table">
                   <colgroup>
@@ -1569,49 +1674,49 @@ const ReportDisplay: React.FC = () => {
                   </colgroup>
                   <thead className="bg-gray-100">
                     <tr>
-                      <th scope="col" className="px-2 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                      <th scope="col" className="px-1 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
                         Product
                       </th>
-                      <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                      <th scope="col" className="px-1 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
                         Investment
                       </th>
-                      <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                      <th scope="col" className="px-1 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
                         <div className="leading-tight">
                           Government<br />Uplift
                         </div>
                       </th>
-                      <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                      <th scope="col" className="px-1 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
                         <div className="leading-tight">
                           Product<br />Switch In
                         </div>
                       </th>
-                      <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                      <th scope="col" className="px-1 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
                         <div className="leading-tight">
                           Fund<br />Switches
                         </div>
                       </th>
-                      <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                      <th scope="col" className="px-1 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
                         <div className="leading-tight">
                           Product<br />Switch Out
                         </div>
                       </th>
-                      <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                      <th scope="col" className="px-1 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
                         Withdrawal
                       </th>
-                      <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide bg-green-100">
+                      <th scope="col" className="px-1 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide bg-green-100">
                         Valuation
                       </th>
-                      <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide bg-blue-100">
+                      <th scope="col" className="px-1 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide bg-blue-100">
                         <div className="leading-tight">
                           Profit<br />Made
                         </div>
                       </th>
-                      <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide bg-purple-100">
+                      <th scope="col" className="px-1 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide bg-purple-100">
                         <div className="leading-tight">
                           Average Returns<br />p.a.
                         </div>
                       </th>
-                      <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                      <th scope="col" className="px-1 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
                         Risk
                       </th>
                     </tr>
@@ -1701,14 +1806,13 @@ const ReportDisplay: React.FC = () => {
                                       {formatIrrWithPrecision(portfolioIrr)}
                                     </span>
                                   );
-                                } else {
-                                  return <span className="text-gray-400">N/A</span>;
                                 }
+                                return <span className="text-gray-400">N/A</span>;
                               })()}
                             </td>
                             <td className="px-2 py-2 whitespace-nowrap text-xs text-right">
                               {product.weighted_risk !== undefined && product.weighted_risk !== null ? (
-                                <span className="text-xs font-medium">
+                                <span className="text-xs">
                                   {formatWeightedRisk(product.weighted_risk)}
                                 </span>
                               ) : (
@@ -1810,7 +1914,7 @@ const ReportDisplay: React.FC = () => {
                             <span className="text-xs text-purple-600">Calc...</span>
                           </div>
                         ) : realTimeTotalIRR !== null ? (
-                          <span className={realTimeTotalIRR >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
+                          <span className="text-black font-bold">
                             {formatIrrWithPrecision(realTimeTotalIRR)}
                           </span>
                         ) : (
@@ -1845,19 +1949,9 @@ const ReportDisplay: React.FC = () => {
             </div>
           </div>
 
-          <div className="mb-8">
+          <div className="mb-8 print:break-before-page">
             {organizeProductsByTypeWithHeaders(reportData.productSummaries)
-              .map(({ type, products }) => (
-                <div key={type} className="mb-12">
-                  {/* Product Type Header */}
-                  <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900 border-b-2 border-gray-300 pb-2">
-                      {type}
-                    </h2>
-                  </div>
-                  
-                  {/* Products in this type */}
-                  {products
+              .flatMap(({ products }) => products)
                     .filter(product => {
                       // For inactive products, only show detailed cards if the checkbox was checked
                       if (product.status === 'inactive') {
@@ -2041,7 +2135,7 @@ const ReportDisplay: React.FC = () => {
                                   <td className="px-2 py-2 text-xs text-right bg-purple-50">
                                     {fund.irr !== null && fund.irr !== undefined ? (
                                       <span className={fund.irr >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
-                                        {formatIrrWithPrecision(fund.irr)}
+                                        {formatFundIrr(fund.irr)}
                                       </span>
                                     ) : (
                                       <span className="text-gray-400">N/A</span>
@@ -2051,7 +2145,7 @@ const ReportDisplay: React.FC = () => {
                                     {fund.fund_name === 'Previous Funds' ? (
                                       <span className="text-gray-500">N/A</span>
                                     ) : fund.risk_factor !== undefined && fund.risk_factor !== null ? (
-                                      <span className="text-xs font-medium">
+                                      <span className="text-xs">
                                         {formatFundRisk(fund.risk_factor)}
                                       </span>
                                     ) : (
@@ -2127,7 +2221,7 @@ const ReportDisplay: React.FC = () => {
                                   const portfolioIrr = portfolioIrrValues.get(product.id);
                                   if (portfolioIrr !== null && portfolioIrr !== undefined) {
                                     return (
-                                      <span className={portfolioIrr >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
+                                      <span className="text-black font-bold">
                                         {formatIrrWithPrecision(portfolioIrr)}
                                       </span>
                                     );
@@ -2172,8 +2266,6 @@ const ReportDisplay: React.FC = () => {
                     </table>
                   </div>
                 </div>
-                    ))}
-                </div>
               ))}
           </div>
 
@@ -2196,8 +2288,9 @@ const ReportDisplay: React.FC = () => {
           ) : irrHistoryData ? (
             <div className="space-y-8">
               {(() => {
-                // Organize products and create mapping for IRR history data
-                const organizedProducts = organizeProductsByType(reportData.productSummaries);
+                // Organize products and create mapping for IRR history data - use same ordering as product cards
+                const organizedProductGroups = organizeProductsByTypeWithHeaders(reportData.productSummaries);
+                const organizedProducts = organizedProductGroups.flatMap(group => group.products);
                 
                 return organizedProducts.map((product, index) => {
                   const originalIndex = reportData.productSummaries.findIndex(p => p.id === product.id);
@@ -2271,7 +2364,7 @@ const ReportDisplay: React.FC = () => {
                         />
                       )}
                       <h3 className={`text-xl font-semibold ${product?.status === 'inactive' ? 'text-gray-600' : 'text-gray-800'}`}>
-                        {[product?.product_type, product?.provider_name, product?.product_owner_name].filter(Boolean).join(' - ')}
+                        {generateProductTitle(product, customTitles.get(product.id))}
                         {product?.status === 'inactive' && (
                           <span className="ml-2 text-sm text-red-600 font-medium">(Inactive)</span>
                         )}
@@ -2297,7 +2390,7 @@ const ReportDisplay: React.FC = () => {
                                   const dateObj = new Date(date);
                                   const year = dateObj.getFullYear();
                                   const month = dateObj.toLocaleDateString('en-US', { month: 'long' });
-                                  return `${year} ${month}`;
+                                  return `${month} ${year}`;
                                 })()}
                               </th>
                             ))}
@@ -2373,7 +2466,7 @@ const ReportDisplay: React.FC = () => {
                                   <tr key={fundIndex} className={`hover:bg-blue-50 ${fund.isVirtual ? 'bg-gray-100 font-medium' : ''}`}>
                                     <td className="px-2 py-2 text-xs font-medium text-gray-800 text-left">
                                       {fund.fund_name}
-                                      {fund.isVirtual && fund.inactiveFundCount && (
+                                      {fund.isVirtual && fund.inactiveFundCount && fund.fund_name !== 'Previous Funds' && (
                                         <span className="ml-2 inline-flex items-center px-1 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-800">
                                           {fund.inactiveFundCount} {fund.inactiveFundCount === 1 ? 'fund' : 'funds'}
                                         </span>
@@ -2383,7 +2476,7 @@ const ReportDisplay: React.FC = () => {
                                       {fund.fund_name === 'Previous Funds' ? (
                                         <span className="text-gray-500">N/A</span>
                                       ) : fund.risk_factor !== null && fund.risk_factor !== undefined ? (
-                                        <span className="text-xs font-medium">
+                                        <span className="text-xs">
                                           {formatFundRisk(fund.risk_factor)}
                                         </span>
                                       ) : (
@@ -2403,7 +2496,7 @@ const ReportDisplay: React.FC = () => {
                                             const currentIrr = sortedIrrs[0].irr_result; // Most recent IRR
                                             return (
                                               <span className={currentIrr >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
-                                                {currentIrr.toFixed(1)}%
+                                                {Math.round(currentIrr)}%
                                               </span>
                                             );
                                           }
@@ -2418,7 +2511,7 @@ const ReportDisplay: React.FC = () => {
                                           if (irrValue !== null && irrValue !== undefined) {
                                             return (
                                               <span className={irrValue >= 0 ? 'text-green-600' : 'text-red-600'}>
-                                                {irrValue.toFixed(1)}%
+                                                {Math.round(irrValue)}%
                                               </span>
                                             );
                                           }
@@ -2510,7 +2603,7 @@ const ReportDisplay: React.FC = () => {
                                 const currentIrr = portfolioIrrValues.get(product.id);
                                 if (currentIrr !== null && currentIrr !== undefined) {
                                   return (
-                                    <span className={currentIrr >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
+                                    <span className="text-black font-bold">
                                       {currentIrr.toFixed(1)}%
                                     </span>
                                   );
@@ -2524,7 +2617,7 @@ const ReportDisplay: React.FC = () => {
                                   const portfolioIrr = portfolioIrrMap.get(date);
                                   if (portfolioIrr !== null && portfolioIrr !== undefined) {
                                     return (
-                                      <span className={portfolioIrr >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
+                                      <span className="text-black font-bold">
                                         {portfolioIrr.toFixed(1)}%
                                       </span>
                                     );
