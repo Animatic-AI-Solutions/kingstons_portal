@@ -236,8 +236,8 @@ export class ReportDataService {
         start_date: null, // Would need to fetch from activity logs
         total_investment: 0, // Would need to calculate from activities
         total_withdrawal: 0,
-        total_switch_in: 0,
-        total_switch_out: 0,
+        total_fund_switch_in: 0,
+        total_fund_switch_out: 0,
         net_flow: 0,
         current_valuation: productValuation,
         irr: irrData?.portfolioIRR || null,

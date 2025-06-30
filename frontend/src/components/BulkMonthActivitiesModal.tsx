@@ -162,7 +162,7 @@ if (typeof document !== 'undefined') {
 const ACTIVITY_TYPES = [
   'Investment',
   'RegularInvestment',
-  'GovernmentUplift',
+          'TaxUplift',
   'ProductSwitchIn',
   'ProductSwitchOut',
   'FundSwitchIn',
@@ -861,7 +861,7 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
                                 const isCurrentValue = activityType === 'Current Value';
                                   const isSwitchActivity = activityType === 'FundSwitchIn' || activityType === 'FundSwitchOut' || activityType === 'ProductSwitchIn' || activityType === 'ProductSwitchOut';
   const isWithdrawal = activityType === 'Withdrawal' || activityType === 'ProductSwitchOut';
-  const isInvestment = activityType === 'Investment' || activityType === 'RegularInvestment' || activityType === 'GovernmentUplift' || activityType === 'ProductSwitchIn';
+  const isInvestment = activityType === 'Investment' || activityType === 'RegularInvestment' || activityType === 'TaxUplift' || activityType === 'ProductSwitchIn';
                                 
                                 return (
                                   <td

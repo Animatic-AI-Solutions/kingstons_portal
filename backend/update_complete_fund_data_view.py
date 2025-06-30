@@ -4,7 +4,7 @@ def update_complete_fund_data_view():
     # Get database connection
     db = get_db()
     
-    # Updated view SQL to include total_government_uplift column
+    # Updated view SQL to include total_tax_uplift column
     view_sql = """
     CREATE OR REPLACE VIEW public.complete_fund_data AS
     SELECT 
@@ -25,7 +25,7 @@ def update_complete_fund_data_view():
         liv.irr_result as irr,
         liv.irr_date,
         fas.total_investments,
-        fas.total_government_uplift,
+        fas.total_tax_uplift,
         fas.total_withdrawals,
         fas.total_fund_switch_in,
         fas.total_fund_switch_out,
@@ -41,7 +41,7 @@ def update_complete_fund_data_view():
     try:
         # Execute the view update
         result = db.rpc('execute_sql', {'sql_query': view_sql}).execute()
-        print("Successfully updated complete_fund_data view to include total_government_uplift!")
+        print("Successfully updated complete_fund_data view to include total_tax_uplift!")
         print(f"Result: {result}")
         
         # Test the updated view with a sample query
@@ -52,7 +52,7 @@ def update_complete_fund_data_view():
         for record in test_result.data:
             print(f"  Portfolio Fund ID: {record['portfolio_fund_id']}")
             print(f"    Investments: {record['total_investments']}")
-            print(f"    Government Uplift: {record['total_government_uplift']}")
+            print(f"    Tax Uplift: {record['total_tax_uplift']}")
             print(f"    Product Switch In: {record['total_product_switch_in']}")
             print(f"    Product Switch Out: {record['total_product_switch_out']}")
             print()

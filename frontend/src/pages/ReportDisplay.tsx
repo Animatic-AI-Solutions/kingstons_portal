@@ -19,14 +19,12 @@ interface ProductPeriodSummary {
   start_date: string | null;
   total_investment: number;
   total_regular_investment: number;
-  total_government_uplift: number;
+  total_tax_uplift: number;
   total_product_switch_in: number;
   total_product_switch_out: number;
   total_fund_switch_in: number;
   total_fund_switch_out: number;
   total_withdrawal: number;
-  total_switch_in: number; // Keep for backward compatibility
-  total_switch_out: number; // Keep for backward compatibility
   net_flow: number;
   current_valuation: number;
   irr: number | null;
@@ -44,14 +42,12 @@ interface FundSummary {
   fund_name: string;
   total_investment: number;
   total_regular_investment: number;
-  total_government_uplift: number;
+  total_tax_uplift: number;
   total_product_switch_in: number;
   total_product_switch_out: number;
   total_fund_switch_in: number;
   total_fund_switch_out: number;
   total_withdrawal: number;
-  total_switch_in: number; // Keep for backward compatibility
-  total_switch_out: number; // Keep for backward compatibility
   net_flow: number;
   current_valuation: number;
   irr: number | null;
@@ -1059,18 +1055,18 @@ const ReportDisplay: React.FC = () => {
   };
 
   // Visual signing helper functions
-  const isOutflowActivity = (activityType: 'investment' | 'government_uplift' | 'product_switch_in' | 'product_switch_out' | 'withdrawal' | 'fund_switch'): boolean => {
+  const isOutflowActivity = (activityType: 'investment' | 'tax_uplift' | 'product_switch_in' | 'product_switch_out' | 'withdrawal' | 'fund_switch'): boolean => {
     return activityType === 'withdrawal' || activityType === 'product_switch_out';
   };
 
-  const isInflowActivity = (activityType: 'investment' | 'government_uplift' | 'product_switch_in' | 'product_switch_out' | 'withdrawal' | 'fund_switch'): boolean => {
-    return activityType === 'investment' || activityType === 'government_uplift' || activityType === 'product_switch_in';
-  };
+  const isInflowActivity = (activityType: 'investment' | 'tax_uplift' | 'product_switch_in' | 'product_switch_out' | 'withdrawal' | 'fund_switch'): boolean => {
+return activityType === 'investment' || activityType === 'tax_uplift' || activityType === 'product_switch_in';
+};
 
   const formatCurrencyWithVisualSigning = (
-    amount: number | null | undefined, 
-    activityType: 'investment' | 'government_uplift' | 'product_switch_in' | 'product_switch_out' | 'withdrawal' | 'fund_switch'
-  ): { value: string; className: string } => {
+amount: number | null | undefined, 
+activityType: 'investment' | 'tax_uplift' | 'product_switch_in' | 'product_switch_out' | 'withdrawal' | 'fund_switch'
+): { value: string; className: string } => {
     if (!visualSigning) {
       // In normal view, show outflows as negative values
       if (amount === null || amount === undefined) {
@@ -1638,7 +1634,7 @@ const ReportDisplay: React.FC = () => {
                     sum + product.current_valuation + product.total_withdrawal + product.total_product_switch_out + product.total_fund_switch_out, 0
                   );
                   const totalCosts = reportData.productSummaries.reduce((sum, product) => 
-                    sum + product.total_investment + product.total_regular_investment + product.total_government_uplift + product.total_product_switch_in + product.total_fund_switch_in, 0
+                    sum + product.total_investment + product.total_regular_investment + product.total_tax_uplift + product.total_product_switch_in + product.total_fund_switch_in, 0
                   );
                   const totalProfit = totalGains - totalCosts;
                   return (
@@ -1682,7 +1678,7 @@ const ReportDisplay: React.FC = () => {
                       </th>
                       <th scope="col" className="px-1 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
                         <div className="leading-tight">
-                          Government<br />Uplift
+                                                        Tax<br />Uplift
                         </div>
                       </th>
                       <th scope="col" className="px-1 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
@@ -1730,7 +1726,7 @@ const ReportDisplay: React.FC = () => {
                       })
                       .map(product => {
                         const totalGains = product.current_valuation + product.total_withdrawal + product.total_product_switch_out + product.total_fund_switch_out;
-                        const totalCosts = product.total_investment + product.total_regular_investment + product.total_government_uplift + product.total_product_switch_in + product.total_fund_switch_in;
+                        const totalCosts = product.total_investment + product.total_regular_investment + product.total_tax_uplift + product.total_product_switch_in + product.total_fund_switch_in;
                         const profit = totalGains - totalCosts;
                         
                         return (
@@ -1761,7 +1757,7 @@ const ReportDisplay: React.FC = () => {
                             </td>
                             <td className="px-2 py-2 whitespace-nowrap text-xs text-right">
                               {(() => {
-                                const formatted = formatCurrencyWithVisualSigning(product.total_government_uplift, 'government_uplift');
+                                const formatted = formatCurrencyWithVisualSigning(product.total_tax_uplift, 'tax_uplift');
                                 return <span className={formatted.className}>{formatted.value}</span>;
                               })()}
                             </td>
@@ -1842,9 +1838,9 @@ const ReportDisplay: React.FC = () => {
                       <td className="px-2 py-2 text-xs font-bold text-right text-black">
                         {(() => {
                           const totalAmount = reportData.productSummaries.reduce((sum, product) => 
-                            sum + product.total_government_uplift, 0
+                            sum + product.total_tax_uplift, 0
                           );
-                          const formatted = formatCurrencyWithVisualSigning(totalAmount, 'government_uplift');
+                                                      const formatted = formatCurrencyWithVisualSigning(totalAmount, 'tax_uplift');
                           return <span className="text-black font-bold">{formatted.value}</span>;
                         })()}
                       </td>
@@ -1897,7 +1893,7 @@ const ReportDisplay: React.FC = () => {
                             sum + product.current_valuation + product.total_withdrawal + product.total_product_switch_out + product.total_fund_switch_out, 0
                           );
                           const totalCosts = reportData.productSummaries.reduce((sum, product) => 
-                            sum + product.total_investment + product.total_regular_investment + product.total_government_uplift + product.total_product_switch_in + product.total_fund_switch_in, 0
+                            sum + product.total_investment + product.total_regular_investment + product.total_tax_uplift + product.total_product_switch_in + product.total_fund_switch_in, 0
                           );
                           const totalProfit = totalGains - totalCosts;
                           return (
@@ -2014,7 +2010,7 @@ const ReportDisplay: React.FC = () => {
                           </th>
                           <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
                             <div className="leading-tight">
-                              Government<br />Uplift
+                              Tax<br />Uplift
                             </div>
                           </th>
                           <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
@@ -2089,7 +2085,7 @@ const ReportDisplay: React.FC = () => {
                                   </td>
                                   <td className="px-2 py-2 text-xs text-right">
                                     {(() => {
-                                      const formatted = formatCurrencyWithVisualSigning(fund.total_government_uplift, 'government_uplift');
+                                      const formatted = formatCurrencyWithVisualSigning(fund.total_tax_uplift, 'tax_uplift');
                                       return <span className={formatted.className}>{formatted.value}</span>;
                                     })()}
                                   </td>
@@ -2123,7 +2119,7 @@ const ReportDisplay: React.FC = () => {
                                   <td className="px-2 py-2 text-xs text-right bg-blue-50">
                                     {(() => {
                                       const gains = fund.current_valuation + fund.total_withdrawal + fund.total_product_switch_out + fund.total_fund_switch_out;
-                                      const costs = fund.total_investment + fund.total_regular_investment + fund.total_government_uplift + fund.total_product_switch_in + fund.total_fund_switch_in;
+                                      const costs = fund.total_investment + fund.total_regular_investment + fund.total_tax_uplift + fund.total_product_switch_in + fund.total_fund_switch_in;
                                       const profit = gains - costs;
                                       return (
                                         <span className={profit >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
@@ -2170,8 +2166,8 @@ const ReportDisplay: React.FC = () => {
                               </td>
                               <td className="px-2 py-2 text-xs font-bold text-right text-black">
                                 {(() => {
-                                  const totalAmount = product.funds.reduce((sum, fund) => sum + fund.total_government_uplift, 0);
-                                  const formatted = formatCurrencyWithVisualSigning(totalAmount, 'government_uplift');
+                                  const totalAmount = product.funds.reduce((sum, fund) => sum + fund.total_tax_uplift, 0);
+                                  const formatted = formatCurrencyWithVisualSigning(totalAmount, 'tax_uplift');
                                   return <span className="text-black font-bold">{formatted.value}</span>;
                                 })()}
                               </td>
@@ -2209,7 +2205,7 @@ const ReportDisplay: React.FC = () => {
                               <td className="px-2 py-2 text-xs font-bold text-right bg-blue-100 text-black">
                                 {(() => {
                                   const totalGains = product.funds.reduce((sum, fund) => sum + fund.current_valuation + fund.total_withdrawal + fund.total_product_switch_out + fund.total_fund_switch_out, 0);
-                                  const totalCosts = product.funds.reduce((sum, fund) => sum + fund.total_investment + fund.total_regular_investment + fund.total_government_uplift + fund.total_product_switch_in + fund.total_fund_switch_in, 0);
+                                  const totalCosts = product.funds.reduce((sum, fund) => sum + fund.total_investment + fund.total_regular_investment + fund.total_tax_uplift + fund.total_product_switch_in + fund.total_fund_switch_in, 0);
                                   const totalProfit = totalGains - totalCosts;
                                   const formatted = formatCurrencyWithVisualSigning(totalProfit, totalProfit >= 0 ? 'investment' : 'withdrawal');
                                   return <span className="text-black font-bold">{formatted.value}</span>;

@@ -84,7 +84,7 @@ interface ExistingMonthData {
 const ACTIVITY_TYPES = [
   'Investment',
   'RegularInvestment',
-  'GovernmentUplift',
+      'TaxUplift',
   'ProductSwitchIn',
   'ProductSwitchOut',
   'FundSwitchIn',
@@ -253,7 +253,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     const signMap = new Map<string, 'inflow' | 'outflow' | 'neutral'>();
     
     // Inflows (money INTO fund) - should be negative
-    ['Investment', 'RegularInvestment', 'GovernmentUplift', 'ProductSwitchIn', 'FundSwitchIn'].forEach(type => {
+    ['Investment', 'RegularInvestment', 'TaxUplift', 'ProductSwitchIn', 'FundSwitchIn'].forEach(type => {
       signMap.set(type, 'inflow');
     });
     
