@@ -22,6 +22,8 @@ export interface NumberInputProps extends Omit<InputHTMLAttributes<HTMLInputElem
   // Override value and onChange to be number-specific
   value?: number;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  // Allow onKeyDown to be passed through
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 }
 
 const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(({
@@ -40,6 +42,7 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(({
   value,
   onChange,
   onBlur,
+  onKeyDown,
   // Number-specific props
   format = 'decimal',
   currency = '£',
@@ -151,6 +154,20 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(({
       if (onChange) {
         onChange(e);
       }
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Prevent form submission when Enter is pressed unless specifically overridden
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      // Optionally blur the field to simulate moving to next field
+      e.currentTarget.blur();
+    }
+    
+    // Call custom onKeyDown handler if provided
+    if (onKeyDown) {
+      onKeyDown(e);
     }
   };
   
@@ -272,6 +289,7 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(({
           onChange={handleChange}
           onFocus={handleFocus}
           onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
           aria-invalid={error ? 'true' : 'false'}
           aria-describedby={
             error ? `${inputId}-error` : 

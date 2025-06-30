@@ -2548,6 +2548,12 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             <div className="flex items-center justify-center space-x-2">
                               <input
                                 type="number"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    e.currentTarget.blur();
+                                  }
+                                }}
                                 value={holding.target_weighting || ''}
                                 onChange={(e) => {
                                   const newWeighting = parseFloat(e.target.value) || 0;

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 interface PortfolioTemplate {
@@ -77,6 +77,7 @@ interface LinkedProduct {
 const PortfolioTemplateDetails: React.FC = () => {
   const { portfolioId } = useParams<{ portfolioId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { api } = useAuth();
   const [template, setTemplate] = useState<PortfolioTemplate | null>(null);
   const [generations, setGenerations] = useState<Generation[]>([]);
@@ -99,18 +100,137 @@ const PortfolioTemplateDetails: React.FC = () => {
   const [isDeletingGeneration, setIsDeletingGeneration] = useState(false);
   const [generationProductCounts, setGenerationProductCounts] = useState<Record<number, number>>({});
   const [linkedProducts, setLinkedProducts] = useState<LinkedProduct[]>([]);
-  const [isLoadingLinkedProducts, setIsLoadingLinkedProducts] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [migrationNotes, setMigrationNotes] = useState<Record<number, string>>({});
+  const [expandedArchivedGenerations, setExpandedArchivedGenerations] = useState<Set<number>>(new Set<number>());
 
+  // Create a comprehensive refresh function
+  const refreshAllData = useCallback(async () => {
+    if (!portfolioId || portfolioId === 'undefined') return;
+    
+    try {
+      setIsRefreshing(true);
+      setError(null);
+      
+      // Fetch all data in parallel
+      await Promise.all([
+        (async () => {
+          try {
+            setIsLoading(true);
+            console.log(`Fetching portfolio template with ID: ${portfolioId}`);
+            const response = await api.get(`/available_portfolios/${portfolioId}`);
+            console.log('Portfolio template data received:', response.data);
+            setTemplate(response.data);
+          } catch (err: any) {
+            console.error('Error fetching portfolio template:', err);
+            if (err.response?.data?.detail) {
+              const detail = err.response.data.detail;
+              if (Array.isArray(detail)) {
+                setError(detail.map(item => typeof item === 'object' ? 
+                  (item.msg || JSON.stringify(item)) : String(item)).join(', '));
+              } else if (typeof detail === 'object') {
+                setError(JSON.stringify(detail));
+              } else {
+                setError(String(detail));
+              }
+            } else {
+              setError('Failed to fetch portfolio template');
+            }
+          } finally {
+            setIsLoading(false);
+          }
+        })(),
+        (async () => {
+          try {
+            const response = await api.get(`/available_portfolios/${portfolioId}/generations`);
+            console.log('Generations data received:', response.data);
+            
+            if (response.data && response.data.length > 0) {
+              setGenerations(response.data);
+              // Select the first generation by default
+              setSelectedGeneration(response.data[0]);
+            }
+          } catch (err: any) {
+            console.error('Error fetching generations:', err);
+          }
+        })(),
+        (async () => {
+          try {
+            console.log(`Fetching products linked to portfolio template ${portfolioId}`);
+            const response = await api.get(`/available_portfolios/${portfolioId}/linked-products`);
+            console.log('Linked products data received:', response.data);
+            
+            setLinkedProducts(response.data || []);
+          } catch (err: any) {
+            console.error('Error fetching linked products:', err);
+            // Don't set error state as this is not critical functionality
+            setLinkedProducts([]);
+          }
+        })()
+      ]);
+      
+      console.log('✅ Portfolio template data refreshed successfully');
+    } catch (error) {
+      console.error('❌ Error refreshing portfolio template data:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [portfolioId, api]);
+
+  // Check for refresh needed when location state indicates return from edit
+  useEffect(() => {
+    const locationState = location.state as any;
+    if (locationState?.refreshNeeded) {
+      console.log('🔄 Refresh requested via navigation state');
+      refreshAllData();
+      
+      // Clear the state to prevent unnecessary refreshes
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, refreshAllData, navigate, location.pathname]);
+
+  // Add window focus event listener to refresh data when returning to page
+  useEffect(() => {
+    const handleWindowFocus = () => {
+      console.log('🔄 Window focused - checking if refresh needed');
+      // Only refresh if the component is mounted and has been idle for a bit
+      setTimeout(() => {
+        if (portfolioId && portfolioId !== 'undefined') {
+          refreshAllData();
+        }
+      }, 500);
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    
+    return () => {
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, [portfolioId, refreshAllData]);
+
+  // Load migration notes from localStorage
   useEffect(() => {
     if (portfolioId && portfolioId !== 'undefined') {
-      fetchPortfolioTemplate();
-      fetchGenerations();
-      fetchLinkedProducts();
+      try {
+        const savedNotes = localStorage.getItem(`migrationNotes_${portfolioId}`);
+        if (savedNotes) {
+          setMigrationNotes(JSON.parse(savedNotes));
+        }
+      } catch (error) {
+        console.warn('Failed to load migration notes from localStorage:', error);
+      }
+    }
+  }, [portfolioId]);
+
+  // Initial data load
+  useEffect(() => {
+    if (portfolioId && portfolioId !== 'undefined') {
+      refreshAllData();
     } else {
       setError('No portfolio template ID provided');
       setIsLoading(false);
     }
-  }, [portfolioId]);
+  }, [portfolioId, refreshAllData]);
 
   // When a generation is selected, fetch the funds for that generation
   useEffect(() => {
@@ -126,48 +246,7 @@ const PortfolioTemplateDetails: React.FC = () => {
     }
   }, [generations]);
 
-  const fetchPortfolioTemplate = async () => {
-    try {
-      setIsLoading(true);
-      console.log(`Fetching portfolio template with ID: ${portfolioId}`);
-      const response = await api.get(`/available_portfolios/${portfolioId}`);
-      console.log('Portfolio template data received:', response.data);
-      
-      setTemplate(response.data);
-    } catch (err: any) {
-      console.error('Error fetching portfolio template:', err);
-      if (err.response?.data?.detail) {
-        const detail = err.response.data.detail;
-        if (Array.isArray(detail)) {
-          setError(detail.map(item => typeof item === 'object' ? 
-            (item.msg || JSON.stringify(item)) : String(item)).join(', '));
-        } else if (typeof detail === 'object') {
-          setError(JSON.stringify(detail));
-        } else {
-          setError(String(detail));
-        }
-      } else {
-        setError('Failed to fetch portfolio template');
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  const fetchGenerations = async () => {
-    try {
-      const response = await api.get(`/available_portfolios/${portfolioId}/generations`);
-      console.log('Generations data received:', response.data);
-      
-      if (response.data && response.data.length > 0) {
-        setGenerations(response.data);
-        // Select the first generation by default
-        setSelectedGeneration(response.data[0]);
-      }
-    } catch (err: any) {
-      console.error('Error fetching generations:', err);
-    }
-  };
 
   const fetchFundsForGeneration = async (generationId: number) => {
     try {
@@ -189,22 +268,28 @@ const PortfolioTemplateDetails: React.FC = () => {
     }
   };
 
-  const fetchLinkedProducts = async () => {
-    try {
-      setIsLoadingLinkedProducts(true);
-      console.log(`Fetching products linked to portfolio template ${portfolioId}`);
-      const response = await api.get(`/available_portfolios/${portfolioId}/linked-products`);
-      console.log('Linked products data received:', response.data);
-      
-      setLinkedProducts(response.data || []);
-    } catch (err: any) {
-      console.error('Error fetching linked products:', err);
-      // Don't set error state as this is not critical functionality
-      setLinkedProducts([]);
-    } finally {
-      setIsLoadingLinkedProducts(false);
-    }
-  };
+
+
+
+
+  // Add window focus event listener to refresh data when returning to page
+  useEffect(() => {
+    const handleWindowFocus = () => {
+      console.log('🔄 Window focused - checking if refresh needed');
+      // Only refresh if the component is mounted and has been idle for a bit
+      setTimeout(() => {
+        if (portfolioId && portfolioId !== 'undefined') {
+          refreshAllData();
+        }
+      }, 500);
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    
+    return () => {
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, [portfolioId, refreshAllData]);
 
   const handleBack = () => {
     navigate('/definitions/portfolio-templates');
@@ -270,7 +355,7 @@ const PortfolioTemplateDetails: React.FC = () => {
       });
       
       // Refresh the generations list
-      await fetchGenerations();
+      await refreshAllData();
       
       // Show success message (could be implemented with a toast notification)
       console.log('Generation activated successfully');
@@ -342,6 +427,64 @@ const PortfolioTemplateDetails: React.FC = () => {
     } else {
       // Risk 6.0-7.0: Red
       return { textClass: 'text-red-600', bgClass: 'bg-red-500' };
+    }
+  };
+
+  // Helper functions for archived generations and migration tracking
+  const getArchivedGenerations = () => {
+    return generations.filter(gen => gen.status !== 'active');
+  };
+
+  const getProductsForGeneration = (generationId: number) => {
+    return linkedProducts.filter(product => product.template_generation_id === generationId);
+  };
+
+  const toggleArchivedGenerationExpansion = (generationId: number) => {
+    const newExpanded = new Set(expandedArchivedGenerations);
+    if (newExpanded.has(generationId)) {
+      newExpanded.delete(generationId);
+    } else {
+      newExpanded.add(generationId);
+    }
+    setExpandedArchivedGenerations(newExpanded);
+  };
+
+  const updateMigrationNote = (productId: number, note: string) => {
+    const newNotes = {
+      ...migrationNotes,
+      [productId]: note
+    };
+    setMigrationNotes(newNotes);
+    
+    // Persist to localStorage
+    try {
+      localStorage.setItem(`migrationNotes_${portfolioId}`, JSON.stringify(newNotes));
+    } catch (error) {
+      console.warn('Failed to save migration notes to localStorage:', error);
+    }
+  };
+
+  const getMigrationPriority = (product: LinkedProduct) => {
+    // Determine migration priority based on product status and age
+    if (product.status === 'inactive') return 'low';
+    if (product.end_date && new Date(product.end_date) < new Date()) return 'low';
+    
+    // Check if product was created recently (within last 90 days)
+    const startDate = new Date(product.start_date);
+    const now = new Date();
+    const daysDiff = (now.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
+    
+    if (daysDiff > 365) return 'high';
+    if (daysDiff > 180) return 'medium';
+    return 'low';
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'bg-red-100 text-red-800 border-red-200';
+      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'low': return 'bg-green-100 text-green-800 border-green-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
@@ -418,7 +561,7 @@ const PortfolioTemplateDetails: React.FC = () => {
       await api.delete(`/available_portfolios/${portfolioId}/generations/${generationToDelete.id}`);
       
       // Refresh the generations list
-      await fetchGenerations();
+      await refreshAllData();
       
       // If the deleted generation was selected, select the first available generation
       if (selectedGeneration?.id === generationToDelete.id) {
@@ -554,9 +697,20 @@ const PortfolioTemplateDetails: React.FC = () => {
               </div>
               
               <div>
-                <h1 className="text-2xl font-semibold text-gray-900">
-                  {template?.name || 'Unnamed Template'}
-                </h1>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-2xl font-semibold text-gray-900">
+                    {template?.name || 'Unnamed Template'}
+                  </h1>
+                  {isRefreshing && (
+                    <div className="flex items-center text-sm text-gray-500">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Refreshing...
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             
@@ -589,16 +743,276 @@ const PortfolioTemplateDetails: React.FC = () => {
           <div className="mt-1 text-lg font-semibold text-gray-900">{formatDate(template?.created_at)}</div>
         </div>
         <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
-          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Products Using Template</div>
-          <div className="mt-1 text-lg font-semibold text-gray-900">
-            {isLoadingLinkedProducts ? '...' : linkedProducts.length}
-          </div>
-        </div>
-        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
           <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Generations</div>
           <div className="mt-1 text-lg font-semibold text-gray-900">{generations?.length || 0}</div>
         </div>
+        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
+          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Migration Status</div>
+          <div className="mt-1">
+            {(() => {
+              const archivedGenerations = getArchivedGenerations();
+              const productsNeedingMigration = archivedGenerations.reduce((total, gen) => 
+                total + getProductsForGeneration(gen.id).length, 0
+              );
+              
+              if (archivedGenerations.length === 0) {
+                return <div className="text-lg font-semibold text-green-700">All Current</div>;
+              } else if (productsNeedingMigration === 0) {
+                return <div className="text-lg font-semibold text-green-700">Complete</div>;
+              } else {
+                return (
+                  <div className="flex items-center">
+                    <div className="text-lg font-semibold text-orange-700">{productsNeedingMigration}</div>
+                    <div className="text-xs text-gray-500 ml-1">need migration</div>
+                  </div>
+                );
+              }
+            })()}
+          </div>
+        </div>
       </div>
+
+      {/* Archived Generations Migration Checklist */}
+      {getArchivedGenerations().length > 0 && (
+        <div className="bg-white shadow-sm rounded-lg border border-gray-100 mb-4">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <svg className="h-5 w-5 text-orange-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  Migration Checklist - Archived Generations
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Products still using archived generations need to be migrated to the active generation for optimal fund composition
+                </p>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="text-sm text-gray-500">
+                  {getArchivedGenerations().length} archived generation{getArchivedGenerations().length !== 1 ? 's' : ''}
+                </div>
+                <button
+                  onClick={() => {
+                    const archivedGenerations = getArchivedGenerations();
+                    const allExpanded = archivedGenerations.every(gen => expandedArchivedGenerations.has(gen.id));
+                    
+                    if (allExpanded) {
+                      setExpandedArchivedGenerations(new Set<number>());
+                    } else {
+                      setExpandedArchivedGenerations(new Set(archivedGenerations.map(gen => gen.id)));
+                    }
+                  }}
+                  className="inline-flex items-center px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                >
+                  {getArchivedGenerations().every(gen => expandedArchivedGenerations.has(gen.id)) ? 'Collapse All' : 'Expand All'}
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-6 space-y-4">
+            {getArchivedGenerations().map((generation) => {
+              const productsUsingGeneration = getProductsForGeneration(generation.id);
+              const isExpanded = expandedArchivedGenerations.has(generation.id);
+              
+              return (
+                <div key={generation.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div 
+                    className="bg-gray-50 px-4 py-3 cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => toggleArchivedGenerationExpansion(generation.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <svg 
+                          className={`h-5 w-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} 
+                          fill="none" 
+                          viewBox="0 0 24 24" 
+                          stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                        <div>
+                          <h3 className="text-base font-medium text-gray-900 flex items-center">
+                            {generation.generation_name || `Version ${generation.version_number}`}
+                            <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
+                              generation.status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {generation.status}
+                            </span>
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            Created {formatDate(generation.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-4">
+                        <div className="text-right">
+                          <div className="text-sm font-medium text-gray-900">
+                            {productsUsingGeneration.length} product{productsUsingGeneration.length !== 1 ? 's' : ''}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {productsUsingGeneration.length > 0 ? 'Need migration' : 'Fully migrated'}
+                          </div>
+                        </div>
+                        <div className={`h-3 w-3 rounded-full ${
+                          productsUsingGeneration.length === 0 ? 'bg-green-500' : 'bg-orange-500'
+                        }`}></div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {isExpanded && productsUsingGeneration.length > 0 && (
+                    <div className="border-t border-gray-200 bg-white p-4">
+                      <div className="mb-3">
+                        <h4 className="text-sm font-medium text-gray-900 mb-2">
+                          Products requiring migration ({productsUsingGeneration.length})
+                        </h4>
+                        <p className="text-xs text-gray-600 mb-3">
+                          These products are still using the archived generation and should be migrated to maintain optimal fund composition.
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        {productsUsingGeneration.map((product) => {
+                          const priority = getMigrationPriority(product);
+                          const priorityColor = getPriorityColor(priority);
+                          
+                          return (
+                            <div key={product.id} className="border border-gray-200 rounded-md p-3 bg-gray-50">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-2 mb-2">
+                                    <Link
+                                      to={`/products/${product.id}`}
+                                      state={{
+                                        from: 'portfolio-template',
+                                        portfolioId: portfolioId,
+                                        portfolioName: template?.name || 'Portfolio Template',
+                                        breadcrumb: [
+                                          { name: 'Portfolio Templates', path: '/definitions/portfolio-templates' },
+                                          { name: template?.name || 'Template', path: `/definitions/portfolio-templates/${portfolioId}` }
+                                        ]
+                                      }}
+                                      className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                                    >
+                                      {product.product_name}
+                                    </Link>
+                                    <span className={`px-2 py-0.5 text-xs rounded-full border ${priorityColor}`}>
+                                      {priority} priority
+                                    </span>
+                                    <span className={`px-2 py-0.5 text-xs rounded-full ${
+                                      product.status === 'active' 
+                                        ? 'bg-green-100 text-green-800' 
+                                        : 'bg-red-100 text-red-800'
+                                    }`}>
+                                      {product.status}
+                                    </span>
+                                  </div>
+                                  
+                                  <div className="grid grid-cols-2 gap-4 text-xs text-gray-600 mb-2">
+                                    <div>
+                                      <span className="font-medium">Client:</span> {product.client_groups?.name || 'Unknown'}
+                                    </div>
+                                    <div>
+                                      <span className="font-medium">Provider:</span> {product.available_providers?.name || 'N/A'}
+                                    </div>
+                                    <div>
+                                      <span className="font-medium">Start Date:</span> {formatDate(product.start_date)}
+                                    </div>
+                                    <div>
+                                      <span className="font-medium">Product Type:</span> {product.product_type || 'N/A'}
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="mt-2">
+                                    <label htmlFor={`migration-note-${product.id}`} className="block text-xs font-medium text-gray-700 mb-1">
+                                      Migration Notes:
+                                    </label>
+                                    <textarea
+                                      id={`migration-note-${product.id}`}
+                                      rows={2}
+                                      value={migrationNotes[product.id] || ''}
+                                      onChange={(e) => updateMigrationNote(product.id, e.target.value)}
+                                      placeholder="Add notes about migration status, timeline, or issues..."
+                                      className="w-full text-xs border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                  </div>
+                                </div>
+                                
+                                <div className="ml-4 flex flex-col space-y-1">
+                                  <Link
+                                    to={`/products/${product.id}`}
+                                    state={{
+                                      from: 'portfolio-template',
+                                      portfolioId: portfolioId,
+                                      portfolioName: template?.name || 'Portfolio Template',
+                                      breadcrumb: [
+                                        { name: 'Portfolio Templates', path: '/definitions/portfolio-templates' },
+                                        { name: template?.name || 'Template', path: `/definitions/portfolio-templates/${portfolioId}` }
+                                      ]
+                                    }}
+                                    className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-blue-600 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                                  >
+                                    View
+                                  </Link>
+                                  <button
+                                    onClick={() => {
+                                      // This could open a migration wizard or navigate to edit product
+                                      console.log(`Initiating migration for product ${product.id}`);
+                                    }}
+                                    className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-green-600 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                                  >
+                                    Migrate
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      {productsUsingGeneration.length > 0 && (
+                        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                          <div className="flex items-start">
+                            <svg className="h-4 w-4 text-blue-500 mt-0.5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div className="text-xs text-blue-800">
+                              <p className="font-medium mb-1">Migration Recommendation:</p>
+                              <p>
+                                Review each product and migrate to the active generation to ensure optimal fund composition. 
+                                High priority products should be migrated first, especially those with active status.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {isExpanded && productsUsingGeneration.length === 0 && (
+                    <div className="border-t border-gray-200 bg-white p-4">
+                      <div className="flex items-center justify-center py-4">
+                        <div className="text-center">
+                          <svg className="mx-auto h-8 w-8 text-green-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          <p className="text-sm font-medium text-green-800">Migration Complete</p>
+                          <p className="text-xs text-green-600 mt-1">
+                            No products are using this archived generation
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Generations Section */}
       {generations.length > 0 && (
@@ -804,127 +1218,7 @@ const PortfolioTemplateDetails: React.FC = () => {
         </div>
       )}
 
-      {/* Linked Products Section */}
-      <div className="bg-white shadow-sm rounded-lg border border-gray-100 mb-4">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Products Using This Template</h2>
-          <p className="text-sm text-gray-600 mt-1">
-            Products that are linked to this portfolio template through their portfolio generations
-          </p>
-        </div>
-        
-        <div className="p-6">
-          {isLoadingLinkedProducts ? (
-            <div className="flex justify-center items-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
-            </div>
-          ) : linkedProducts.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-teal-300">
-                      Product Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-teal-300">
-                      Client
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-teal-300">
-                      Provider
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-teal-300">
-                      Product Type
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-teal-300">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-teal-300">
-                      Link Type
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-teal-300">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {linkedProducts.map((product) => (
-                    <tr key={product.id} className="hover:bg-teal-50 transition-colors duration-150 border-b border-gray-100">
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-800">
-                          {product.product_name}
-                        </div>
-                        {product.plan_number && (
-                          <div className="text-xs text-gray-500">
-                            Plan: {product.plan_number}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm text-gray-800">
-                          {product.client_groups?.name || 'Unknown Client'}
-                        </div>
-                        {product.client_groups?.advisor && (
-                          <div className="text-xs text-gray-500">
-                            Advisor: {product.client_groups?.advisor}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm text-gray-800">
-                          {product.available_providers?.name || 'N/A'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm text-gray-600">
-                          {product.product_type || 'N/A'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          product.status === 'active' 
-                            ? 'bg-green-100 text-green-800' 
-                            : product.status === 'inactive'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {product.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          product.link_type === 'portfolio'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-purple-100 text-purple-800'
-                        }`}>
-                          {product.link_type === 'portfolio' ? 'Via Portfolio' : 'Direct Link'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap text-sm font-medium">
-                        <Link
-                          to={`/products/${product.id}`}
-                          className="text-teal-600 hover:text-teal-900 transition-colors"
-                        >
-                          View Product
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No products using this template</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                No products are currently linked to this portfolio template.
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
+
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (

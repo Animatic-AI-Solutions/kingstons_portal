@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { findCashFund, isCashFund } from '../utils/fundUtils';
 
 interface Fund {
   id: number;
@@ -94,6 +95,15 @@ const AddPortfolioGeneration: React.FC = () => {
         a.fund_name.localeCompare(b.fund_name)
       );
       setAvailableFunds(sortedFunds);
+      
+      // Automatically select cash fund if it exists and no other funds are selected yet
+      const cashFund = findCashFund(sortedFunds);
+      if (cashFund && selectedFunds.length === 0) {
+        setSelectedFunds([cashFund.id]);
+        setFundWeightings({
+          [cashFund.id.toString()]: '0'
+        });
+      }
     } catch (err: any) {
       setError('Failed to fetch funds');
       console.error('Error fetching funds:', err);
@@ -118,6 +128,13 @@ const AddPortfolioGeneration: React.FC = () => {
           weightings[fund.fund_id.toString()] = fund.target_weighting.toString();
         });
         
+        // Ensure cash fund is always included
+        const cashFund = findCashFund(availableFunds);
+        if (cashFund && !fundIds.includes(cashFund.id)) {
+          fundIds.push(cashFund.id);
+          weightings[cashFund.id.toString()] = '0';
+        }
+        
         setSelectedFunds(fundIds);
         setFundWeightings(weightings);
       }
@@ -138,6 +155,14 @@ const AddPortfolioGeneration: React.FC = () => {
   };
 
   const handleFundSelection = (fundId: number) => {
+    const fund = availableFunds.find(f => f.id === fundId);
+    
+    // Prevent deselection of cash fund
+    if (fund && isCashFund(fund) && selectedFunds.includes(fundId)) {
+      // Show a brief message or just ignore the action
+      return;
+    }
+    
     setSelectedFunds(prev => {
       if (prev.includes(fundId)) {
         const newSelected = prev.filter(id => id !== fundId);
@@ -219,8 +244,10 @@ const AddPortfolioGeneration: React.FC = () => {
           funds: fundsData
         });
         
-        // Navigate back to the template details page
-        navigate(`/definitions/portfolio-templates/${portfolioId}`);
+        // Navigate back to the template details page with refresh flag
+        navigate(`/definitions/portfolio-templates/${portfolioId}`, {
+          state: { refreshNeeded: true }
+        });
       } catch (err: any) {
         console.error('Error creating portfolio generation:', err);
         if (err.response?.data?.detail) {
@@ -348,9 +375,14 @@ const AddPortfolioGeneration: React.FC = () => {
               <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                 <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
               </svg>
-              <Link to={`/definitions/portfolio-templates/${portfolioId}`} className="ml-1 text-sm font-medium text-gray-500 hover:text-primary-700 md:ml-2">
+              <button 
+                onClick={() => navigate(`/definitions/portfolio-templates/${portfolioId}`, {
+                  state: { refreshNeeded: true }
+                })}
+                className="ml-1 text-sm font-medium text-gray-500 hover:text-primary-700 md:ml-2"
+              >
                 {portfolio?.name || 'Template'}
-              </Link>
+              </button>
             </div>
           </li>
           <li aria-current="page">
@@ -376,15 +408,17 @@ const AddPortfolioGeneration: React.FC = () => {
             Add Generation to {portfolio?.name || 'Template Portfolio'}
           </h1>
         </div>
-        <Link
-          to={`/definitions/portfolio-templates/${portfolioId}`}
+        <button
+          onClick={() => navigate(`/definitions/portfolio-templates/${portfolioId}`, {
+            state: { refreshNeeded: true }
+          })}
           className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
         >
           <svg className="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
             <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
           </svg>
           Back
-        </Link>
+        </button>
       </div>
 
       {/* Main Content */}
@@ -563,26 +597,43 @@ const AddPortfolioGeneration: React.FC = () => {
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {filteredFunds.map((fund) => (
+                          {filteredFunds.map((fund) => {
+                            const isCash = isCashFund(fund);
+                            const isSelected = selectedFunds.includes(fund.id);
+                            
+                            return (
                             <tr 
                               key={fund.id} 
-                              className={`transition-all duration-150 cursor-pointer border-b border-gray-100 ${
-                                selectedFunds.includes(fund.id) 
-                                  ? 'bg-blue-50 border-blue-200' 
-                                  : 'hover:bg-gray-50 hover:border-gray-200'
-                              }`}
-                              onClick={() => handleFundSelection(fund.id)}
+                                className={`transition-all duration-150 ${
+                                  isCash ? 'bg-blue-50 border-blue-200' : 
+                                  isSelected ? 'bg-blue-50 border-blue-200' : 
+                                  'hover:bg-gray-50 hover:border-gray-200 cursor-pointer'
+                                } border-b border-gray-100`}
+                                onClick={() => !isCash && handleFundSelection(fund.id)}
                             >
                               <td className="px-6 py-3 whitespace-nowrap">
+                                  <div className="flex items-center">
                                 <input
                                   type="checkbox"
-                                  checked={selectedFunds.includes(fund.id)}
-                                  onChange={() => handleFundSelection(fund.id)}
-                                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded pointer-events-none"
-                                />
+                                      checked={isSelected}
+                                      onChange={() => !isCash && handleFundSelection(fund.id)}
+                                      disabled={isCash}
+                                      className={`h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded ${
+                                        isCash ? 'cursor-not-allowed opacity-75' : 'pointer-events-none'
+                                      }`}
+                                    />
+                                    {isCash && (
+                                      <span className="ml-2 text-xs text-blue-600 font-medium">Required</span>
+                                    )}
+                                  </div>
                               </td>
                               <td className="px-6 py-3 whitespace-nowrap">
-                                <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{fund.fund_name}</div>
+                                  <div className={`text-sm font-medium font-sans tracking-tight ${
+                                    isCash ? 'text-blue-800' : 'text-gray-800'
+                                  }`}>
+                                    {fund.fund_name}
+                                    {isCash && <span className="ml-2 text-xs text-blue-600 font-normal">(Always included)</span>}
+                                  </div>
                               </td>
                               <td className="px-6 py-3 whitespace-nowrap">
                                 <div className="text-sm text-gray-600 font-sans">{fund.isin_number || 'N/A'}</div>
@@ -610,7 +661,7 @@ const AddPortfolioGeneration: React.FC = () => {
                                 </span>
                               </td>
                               <td className="px-6 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                                {selectedFunds.includes(fund.id) && (
+                                  {isSelected && (
                                   <div className="flex items-center">
                                     <input
                                       type="text"
@@ -619,18 +670,27 @@ const AddPortfolioGeneration: React.FC = () => {
                                         fund.id,
                                         e.target.value
                                       )}
+                                      onKeyDown={(e) => {
+                                        // Prevent form submission when Enter is pressed
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          // Optionally blur the field to simulate moving to next field
+                                          e.currentTarget.blur();
+                                        }
+                                      }}
                                       placeholder="0.00"
                                       className="w-20 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
                                     />
                                     <span className="ml-2 text-gray-500">%</span>
                                   </div>
                                 )}
-                                {!selectedFunds.includes(fund.id) && (
+                                  {!isSelected && (
                                   <span className="text-gray-400 text-sm">Click to select</span>
                                 )}
                               </td>
                             </tr>
-                          ))}
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
