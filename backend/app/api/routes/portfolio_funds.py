@@ -1500,18 +1500,18 @@ async def update_irr_value(
                     
                     for log in activity_logs.data:
                         amount = float(log["amount"])
-                        # Apply sign convention - GovernmentUplift separated from investments
+                        # Apply sign convention - TaxUplift separated from investments
                         if log["activity_type"] in ["Investment", "RegularInvestment"]:
                             amount = -amount
-                        elif log["activity_type"] in ["GovernmentUplift"]:
-                            amount = -amount  # Government uplifts are still money going in (negative)
+                        elif log["activity_type"] in ["TaxUplift"]:
+                            amount = -amount  # Tax uplifts are still money going in (negative)
                         elif log["activity_type"] in ["Withdrawal", "RegularWithdrawal", "SwitchOut"]:
                             amount = abs(amount)
                         
                         date = datetime.fromisoformat(log["activity_timestamp"])
                         dates.append(date)
                         amounts.append(amount)
-                        logger.info(f"Added cash flow: {log['activity_type']}, date={activity_date}, amount={amount}")
+                        logger.info(f"Added cash flow: {log['activity_type']}, date={date}, amount={amount}")
                 
                 # Add the final valuation as a positive cash flow
                 valuation_date = data.get("date", irr_record["date"])
@@ -1806,12 +1806,12 @@ async def calculate_portfolio_fund_irr(
             activity_type = log["activity_type"]
             amount = float(log["amount"])
             
-            # Apply sign convention based on activity type - GovernmentUplift separated from investments
+            # Apply sign convention based on activity type - TaxUplift separated from investments
             if activity_type in ["Investment", "RegularInvestment"]:
                 # Investments are money going out (negative)
                 amount = -amount
-            elif activity_type in ["GovernmentUplift"]:
-                # Government uplifts are money going in (negative) like investments
+            elif activity_type in ["TaxUplift"]:
+                # Tax uplifts are money going in (negative) like investments
                 amount = -amount
             elif activity_type in ["Withdrawal", "RegularWithdrawal", "SwitchOut"]:
                 # Withdrawals and SwitchOut are money coming in (positive)
@@ -2096,8 +2096,8 @@ async def calculate_multiple_portfolio_funds_irr(
             
             if any(keyword in activity_type.lower() for keyword in ["investment"]):
                 cash_flows[month_key] -= amount  # Negative for investments
-            elif activity_type.lower() in ["governmentuplift"]:
-                cash_flows[month_key] -= amount  # Government uplift = negative (inflow)
+            elif activity_type.lower() in ["taxuplift"]:
+                cash_flows[month_key] -= amount  # Tax uplift = negative (inflow)
             elif activity_type.lower() in ["productswitchin"]:
                 cash_flows[month_key] -= amount  # Product switch in = negative (money out)
             elif activity_type.lower() in ["fundswitchin"]:
@@ -2336,9 +2336,9 @@ async def calculate_single_portfolio_fund_irr(
             if any(keyword in activity_type for keyword in ["investment"]):
                 cash_flows[month_key] -= amount  # Negative for investments
                 logger.info(f"💰 DEBUG: Applied as INVESTMENT (negative): -£{amount}")
-            elif activity_type in ["governmentuplift"]:
-                cash_flows[month_key] -= amount  # Government uplift = negative (inflow)
-                logger.info(f"💰 DEBUG: Applied as GOVERNMENT UPLIFT (negative): -£{amount}")
+            elif activity_type in ["taxuplift", "taxuplift_tax"]:
+                cash_flows[month_key] -= amount  # Tax uplift = negative (inflow)
+                logger.info(f"💰 DEBUG: Applied as TAX UPLIFT (negative): -£{amount}")
             elif activity_type in ["productswitchin"]:
                 cash_flows[month_key] -= amount  # Product switch in = negative (money out)
                 logger.info(f"💰 DEBUG: Applied as PRODUCT SWITCH IN (negative): -£{amount}")

@@ -96,8 +96,8 @@ const calculateRegularInvestments = (activities: ActivityLog[], fundId: number):
   return calculateActivityTotalByType(activities, 'RegularInvestment', fundId);
 };
 
-const calculateGovernmentUplifts = (activities: ActivityLog[], fundId: number): number => {
-  return calculateActivityTotalByType(activities, 'GovernmentUplift', fundId);
+const calculateTaxUplifts = (activities: ActivityLog[], fundId: number): number => {
+  return calculateActivityTotalByType(activities, 'TaxUplift', fundId);
 };
 
 const calculateSwitchIns = (activities: ActivityLog[], fundId: number): number => {
@@ -125,11 +125,11 @@ const calculateWithdrawals = (activities: ActivityLog[], fundId: number): number
 const calculateInvestmentsPlusSwitchIns = (activities: ActivityLog[], fundId: number): number => {
   const investments = calculateInvestments(activities, fundId);
   const regularInvestments = calculateRegularInvestments(activities, fundId);
-  const governmentUplifts = calculateGovernmentUplifts(activities, fundId);
-  const switchIns = calculateSwitchIns(activities, fundId);
-  const productSwitchIns = calculateProductSwitchIns(activities, fundId);
-  
-  return investments + regularInvestments + governmentUplifts + switchIns + productSwitchIns;
+      const taxUplifts = calculateTaxUplifts(activities, fundId);
+    const switchIns = calculateSwitchIns(activities, fundId);
+    const productSwitchIns = calculateProductSwitchIns(activities, fundId);
+    
+    return investments + regularInvestments + taxUplifts + switchIns + productSwitchIns;
 };
 
 const calculateValueMinusWithdrawals = (marketValue: number, activities: ActivityLog[], fundId: number): number => {
@@ -280,9 +280,9 @@ const calculatePreviousFundsRegularInvestments = (activities: ActivityLog[], ina
   }, 0);
 };
 
-const calculatePreviousFundsGovernmentUplifts = (activities: ActivityLog[], inactiveHoldings: Holding[]): number => {
+const calculatePreviousFundsTaxUplifts = (activities: ActivityLog[], inactiveHoldings: Holding[]): number => {
   return inactiveHoldings.reduce((total, holding) => {
-    return total + calculateGovernmentUplifts(activities, holding.id);
+    return total + calculateTaxUplifts(activities, holding.id);
   }, 0);
 };
 
@@ -329,11 +329,11 @@ const calculateTotalRegularInvestments = (activities: ActivityLog[], holdings: H
   return total;
 };
 
-const calculateTotalGovernmentUplifts = (activities: ActivityLog[], holdings: Holding[]): number => {
+const calculateTotalTaxUplifts = (activities: ActivityLog[], holdings: Holding[]): number => {
   // Include ALL real holdings (active and inactive) but exclude virtual entries
   const allRealHoldings = holdings.filter(h => !h.isVirtual);
   const total = allRealHoldings.reduce((total, holding) => {
-    const amount = calculateGovernmentUplifts(activities, holding.id);
+    const amount = calculateTaxUplifts(activities, holding.id);
     return total + amount;
   }, 0);
   
@@ -474,6 +474,15 @@ const PreviousFundsIRRDisplay: React.FC<{
   const [livePreviousFundsIRR, setLivePreviousFundsIRR] = useState<number | null>(null);
   const [isLoadingLivePreviousFundsIRR, setIsLoadingLivePreviousFundsIRR] = useState(false);
 
+  // Format date for display (month and year only)
+  const formatDateMonthYear = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', {
+      year: 'numeric',
+      month: 'short'
+    });
+  };
+
   // Memoize the inactive fund IDs to prevent unnecessary recalculations
   const inactiveFundIds = useMemo(() => 
     inactiveHoldings.map(h => h.id), 
@@ -552,8 +561,8 @@ const PreviousFundsIRRDisplay: React.FC<{
           </span>
         </div>
         {livePreviousFundsIRR !== null && (
-          <div className="text-xs text-gray-500 mt-1 text-center">
-            as of {latestValuationDate ? new Date(latestValuationDate).toLocaleDateString() : 'N/A'}
+          <div className="text-xs text-gray-600 mt-1">
+            {latestValuationDate ? formatDateMonthYear(latestValuationDate) : 'N/A'}
           </div>
         )}
       </>
@@ -1681,7 +1690,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                         <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-24" title="Fund Name">Name</th>
                         <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Total Investments">INV.</th>
                         <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Regular Investments">REG. INV.</th>
-                        <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Government Uplifts">GOV. UPLIFTS</th>
+                        <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Tax Uplifts">TAX UPLIFTS</th>
                         <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Fund Switch Ins">FUND SWITCH IN</th>
                         <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Fund Switch Outs">FUND SWITCH OUT</th>
                         <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Product Switch Ins">PROD SWITCH IN</th>
@@ -1784,8 +1793,8 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                 <td className="px-1 py-1 whitespace-nowrap">
                                   <div className={`text-sm text-center ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
-                                      ? formatCurrency(calculatePreviousFundsGovernmentUplifts(allTimeActivities, inactiveHoldings))
-                                      : formatCurrency(calculateGovernmentUplifts(allTimeActivities, holding.id))}
+                                      ? formatCurrency(calculatePreviousFundsTaxUplifts(allTimeActivities, inactiveHoldings))
+: formatCurrency(calculateTaxUplifts(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
@@ -1893,7 +1902,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                   </td>
                                   <td className="px-1 py-1 whitespace-nowrap">
                                     <div className="text-sm text-center text-gray-700">
-                                      {formatCurrency(calculateGovernmentUplifts(allTimeActivities, inactiveHolding.id))}
+                                      {formatCurrency(calculateTaxUplifts(allTimeActivities, inactiveHolding.id))}
                                     </div>
                                   </td>
                                   <td className="px-1 py-1 whitespace-nowrap">
@@ -1960,7 +1969,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
                           <div className="text-sm text-center font-bold text-red-600">
-                            {formatCurrency(calculateTotalGovernmentUplifts(allTimeActivities, holdings))}
+                            {formatCurrency(calculateTotalTaxUplifts(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">

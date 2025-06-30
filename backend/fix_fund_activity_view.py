@@ -4,13 +4,13 @@ def fix_fund_activity_view():
     # Get database connection
     db = get_db()
     
-    # Updated view SQL with correct activity types - GovernmentUplift separated from investments
+    # Updated view SQL with correct activity types - TaxUplift separated from investments
     view_sql = """
     CREATE OR REPLACE VIEW public.fund_activity_summary AS
     SELECT 
         portfolio_fund_id,
         SUM(CASE WHEN activity_type IN ('Investment', 'RegularInvestment') THEN amount ELSE 0 END) as total_investments,
-        SUM(CASE WHEN activity_type IN ('GovernmentUplift') THEN amount ELSE 0 END) as total_government_uplift,
+        SUM(CASE WHEN activity_type IN ('TaxUplift') THEN amount ELSE 0 END) as total_tax_uplift,
         SUM(CASE WHEN activity_type IN ('Withdrawal', 'RegularWithdrawal') THEN amount ELSE 0 END) as total_withdrawals,
         SUM(CASE WHEN activity_type IN ('SwitchIn', 'FundSwitchIn') THEN amount ELSE 0 END) as total_switch_in,
         SUM(CASE WHEN activity_type IN ('SwitchOut', 'FundSwitchOut') THEN amount ELSE 0 END) as total_switch_out,

@@ -46,7 +46,7 @@ interface SimplifiedActivitiesTableProps {
 const ACTIVITY_TYPES = [
   'Investment',
   'RegularInvestment', 
-  'GovernmentUplift',
+      'TaxUplift',
   'ProductSwitchIn',
   'ProductSwitchOut',
   'FundSwitchIn',
@@ -206,7 +206,7 @@ const SimplifiedActivitiesTable: React.FC<SimplifiedActivitiesTableProps> = ({
     const typeMap: { [key: string]: string } = {
       'Investment': 'Investment',
       'RegularInvestment': 'Regular Investment',
-      'GovernmentUplift': 'Government Uplift',
+      'TaxUplift': 'Tax Uplift',
         'ProductSwitchIn': 'Product Switch In',
   'ProductSwitchOut': 'Product Switch Out',
   'FundSwitchIn': 'Switch In',

@@ -78,7 +78,7 @@ interface ProductPeriodSummary {
   start_date: string | null;
   total_investment: number;
   total_regular_investment: number;
-  total_government_uplift: number;
+  total_tax_uplift: number;
   total_product_switch_in: number;
   total_product_switch_out: number;
   total_fund_switch_in: number;
@@ -104,7 +104,7 @@ interface FundSummary {
   fund_name: string;
   total_investment: number;
   total_regular_investment: number;
-  total_government_uplift: number;
+  total_tax_uplift: number;
   total_product_switch_in: number;
   total_product_switch_out: number;
   total_fund_switch_in: number;
@@ -1099,7 +1099,7 @@ const ReportGenerator: React.FC = () => {
         // Calculate totals for the product - tracking specific activity types
         let totalInvestment = 0;
         let totalRegularInvestment = 0;
-        let totalGovernmentUplift = 0;
+        let totalTaxUplift = 0;
         let totalProductSwitchIn = 0;
         let totalProductSwitchOut = 0;
         let totalFundSwitchIn = 0;
@@ -1127,8 +1127,8 @@ const ReportGenerator: React.FC = () => {
             case 'Investment': case 'RegularInvestment':
               totalInvestment += parsedAmount; 
               break;
-            case 'GovernmentUplift':
-              totalGovernmentUplift += parsedAmount;
+            case 'TaxUplift':
+              totalTaxUplift += parsedAmount;
               break;
             case 'ProductSwitchIn':
               totalProductSwitchIn += parsedAmount;
@@ -1294,7 +1294,7 @@ const ReportGenerator: React.FC = () => {
           // Calculate totals for this fund - tracking specific activity types
           let fundInvestment = 0;
           let fundRegularInvestment = 0;
-          let fundGovernmentUplift = 0;
+          let fundTaxUplift = 0;
           let fundProductSwitchIn = 0;
           let fundProductSwitchOut = 0;
           let fundFundSwitchIn = 0;
@@ -1338,8 +1338,8 @@ const ReportGenerator: React.FC = () => {
               case 'Investment': case 'RegularInvestment':
                 fundInvestment += amount; 
                 break;
-              case 'GovernmentUplift':
-                fundGovernmentUplift += amount;
+              case 'TaxUplift':
+                fundTaxUplift += amount;
                 break;
               case 'ProductSwitchIn':
                 fundProductSwitchIn += amount;
@@ -1366,13 +1366,13 @@ const ReportGenerator: React.FC = () => {
           console.log(`Fund ${fundName} activity totals:`, {
             fundInvestment,
             fundRegularInvestment,
-            fundGovernmentUplift,
+            fundTaxUplift,
             fundProductSwitchIn,
             fundProductSwitchOut,
             fundFundSwitchIn,
             fundFundSwitchOut,
             fundWithdrawal,
-            netFlow: fundInvestment + fundRegularInvestment + fundGovernmentUplift + fundProductSwitchIn + fundFundSwitchIn - fundWithdrawal - fundProductSwitchOut - fundFundSwitchOut
+            netFlow: fundInvestment + fundRegularInvestment + fundTaxUplift + fundProductSwitchIn + fundFundSwitchIn - fundWithdrawal - fundProductSwitchOut - fundFundSwitchOut
           });
           
           // Get current valuation (include inactive funds for inactive products)
@@ -1406,7 +1406,7 @@ const ReportGenerator: React.FC = () => {
             fund_name: fundName,
             total_investment: fundInvestment,
             total_regular_investment: fundRegularInvestment,
-            total_government_uplift: fundGovernmentUplift,
+            total_tax_uplift: fundTaxUplift,
             total_product_switch_in: fundProductSwitchIn,
             total_product_switch_out: fundProductSwitchOut,
             total_fund_switch_in: fundFundSwitchIn,
@@ -1414,7 +1414,7 @@ const ReportGenerator: React.FC = () => {
             total_withdrawal: fundWithdrawal,
             total_switch_in: fundSwitchIn,
             total_switch_out: fundSwitchOut,
-            net_flow: fundInvestment + fundRegularInvestment + fundGovernmentUplift + fundProductSwitchIn + fundFundSwitchIn - fundWithdrawal - fundProductSwitchOut - fundFundSwitchOut,
+            net_flow: fundInvestment + fundRegularInvestment + fundTaxUplift + fundProductSwitchIn + fundFundSwitchIn - fundWithdrawal - fundProductSwitchOut - fundFundSwitchOut,
             current_valuation: fundValuation,
             irr: fundIRR,
             isin_number: isinNumber,
@@ -1717,7 +1717,7 @@ const ReportGenerator: React.FC = () => {
             fund_name: 'Previous Funds',
             total_investment: totalInvestment,
             total_regular_investment: totalInvestment,
-            total_government_uplift: 0,
+            total_tax_uplift: 0,
             total_product_switch_in: 0,
             total_product_switch_out: 0,
             total_fund_switch_in: 0,
@@ -1811,7 +1811,7 @@ const ReportGenerator: React.FC = () => {
         // This ensures consistency between fund-level and product-level totals
         const productTotalInvestment = fundSummaries.reduce((sum, fund) => sum + fund.total_investment, 0);
         const productTotalRegularInvestment = fundSummaries.reduce((sum, fund) => sum + fund.total_regular_investment, 0);
-        const productTotalGovernmentUplift = fundSummaries.reduce((sum, fund) => sum + fund.total_government_uplift, 0);
+        const productTotalTaxUplift = fundSummaries.reduce((sum, fund) => sum + fund.total_tax_uplift, 0);
         const productTotalProductSwitchIn = fundSummaries.reduce((sum, fund) => sum + fund.total_product_switch_in, 0);
         const productTotalProductSwitchOut = fundSummaries.reduce((sum, fund) => sum + fund.total_product_switch_out, 0);
         const productTotalFundSwitchIn = fundSummaries.reduce((sum, fund) => sum + fund.total_fund_switch_in, 0);
@@ -1823,7 +1823,7 @@ const ReportGenerator: React.FC = () => {
         console.log(`✅ Product ${productDetails.product_name} corrected totals from fund summaries:`, {
           investment: productTotalInvestment,
           regular_investment: productTotalRegularInvestment,
-          government_uplift: productTotalGovernmentUplift,
+          tax_uplift: productTotalTaxUplift,
           product_switch_in: productTotalProductSwitchIn,
           product_switch_out: productTotalProductSwitchOut,
           fund_switch_in: productTotalFundSwitchIn,
@@ -1840,7 +1840,7 @@ const ReportGenerator: React.FC = () => {
           start_date: productStartDate,
           total_investment: productTotalInvestment,
           total_regular_investment: productTotalRegularInvestment,
-          total_government_uplift: productTotalGovernmentUplift,
+          total_tax_uplift: productTotalTaxUplift,
           total_product_switch_in: productTotalProductSwitchIn,
           total_product_switch_out: productTotalProductSwitchOut,
           total_fund_switch_in: productTotalFundSwitchIn,
@@ -1848,7 +1848,7 @@ const ReportGenerator: React.FC = () => {
           total_withdrawal: productTotalWithdrawal,
           total_switch_in: productTotalSwitchIn,
           total_switch_out: productTotalSwitchOut,
-          net_flow: productTotalInvestment + productTotalRegularInvestment + productTotalGovernmentUplift + productTotalProductSwitchIn + productTotalFundSwitchIn - productTotalWithdrawal - productTotalProductSwitchOut - productTotalFundSwitchOut,
+          net_flow: productTotalInvestment + productTotalRegularInvestment + productTotalTaxUplift + productTotalProductSwitchIn + productTotalFundSwitchIn - productTotalWithdrawal - productTotalProductSwitchOut - productTotalFundSwitchOut,
           current_valuation: productValuation,
           irr: productIRR,
           provider_name: productDetails.provider_name,
@@ -2759,7 +2759,7 @@ Please select a different valuation date or ensure all active funds have valuati
                         Investment
                     </th>
                     <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                      Government Uplift
+                      Tax Uplift
                       </th>
                     <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
                       Product Switch In
@@ -2806,7 +2806,7 @@ Please select a different valuation date or ensure all active funds have valuati
                             {formatCurrencyWithTruncation(fund.total_investment)}
                         </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
-                            {formatCurrencyWithTruncation(0)} {/* Government uplift - placeholder for now */}
+                            {formatCurrencyWithTruncation(0)} {/* Tax uplift - placeholder for now */}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
                             {formatCurrencyWithTruncation(0)} {/* Product switch in - placeholder for now */}
@@ -2825,9 +2825,9 @@ Please select a different valuation date or ensure all active funds have valuati
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-center bg-blue-50">
                             {(() => {
-                              // Calculate profit: (valuation + withdrawals + product switch outs + fund switch outs) - (investments + fund switch ins + government uplift + product switch ins)
+                              // Calculate profit: (valuation + withdrawals + product switch outs + fund switch outs) - (investments + fund switch ins + tax uplift + product switch ins)
                               const gains = fund.current_valuation + fund.total_withdrawal + 0 + fund.total_switch_out; // product switch out is 0 for now
-                              const costs = fund.total_investment + fund.total_fund_switch_in + fund.total_product_switch_in + 0; // government uplift is 0 for now
+                              const costs = fund.total_investment + fund.total_fund_switch_in + fund.total_product_switch_in + 0; // tax uplift is 0 for now
                               const profit = gains - costs;
                               return (
                                 <span className={profit >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
@@ -2887,7 +2887,7 @@ Please select a different valuation date or ensure all active funds have valuati
                                 {formatCurrencyWithTruncation(inactiveFund.total_investment)}
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-700">
-                                {formatCurrencyWithTruncation(0)} {/* Government uplift - placeholder for inactive funds */}
+                                {formatCurrencyWithTruncation(0)} {/* Tax uplift - placeholder for inactive funds */}
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-700">
                                 {formatCurrencyWithTruncation(0)} {/* Product switch in - placeholder for inactive funds */}
@@ -2906,9 +2906,9 @@ Please select a different valuation date or ensure all active funds have valuati
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-700 bg-blue-50">
                                 {(() => {
-                                  // Calculate profit for inactive funds: (valuation + withdrawals + product switch outs + fund switch outs) - (investments + fund switch ins + government uplift + product switch ins)
+                                  // Calculate profit for inactive funds: (valuation + withdrawals + product switch outs + fund switch outs) - (investments + fund switch ins + tax uplift + product switch ins)
                                   const gains = 0 + inactiveFund.total_withdrawal + 0 + (inactiveFund.total_fund_switch_out + inactiveFund.total_product_switch_out); // valuation is 0 for inactive funds
-                                  const costs = inactiveFund.total_investment + inactiveFund.total_fund_switch_in + inactiveFund.total_product_switch_in + 0; // government uplift is 0 for now
+                                  const costs = inactiveFund.total_investment + inactiveFund.total_fund_switch_in + inactiveFund.total_product_switch_in + 0; // tax uplift is 0 for now
                                   const profit = gains - costs;
                                   return (
                                     <span className={profit >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
@@ -2949,7 +2949,7 @@ Please select a different valuation date or ensure all active funds have valuati
                         {formatCurrencyWithTruncation(product.total_investment)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
-                        {formatCurrencyWithTruncation(0)} {/* Government uplift total - placeholder for now */}
+                        {formatCurrencyWithTruncation(0)} {/* Tax uplift total - placeholder for now */}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
                         {formatCurrencyWithTruncation(0)} {/* Product switch in total - placeholder for now */}
@@ -2968,9 +2968,9 @@ Please select a different valuation date or ensure all active funds have valuati
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-center bg-blue-50">
                         {(() => {
-                          // Calculate profit for product total: (valuation + withdrawals + product switch outs + fund switch outs) - (investments + fund switch ins + government uplift + product switch ins)
+                          // Calculate profit for product total: (valuation + withdrawals + product switch outs + fund switch outs) - (investments + fund switch ins + tax uplift + product switch ins)
                           const gains = product.current_valuation + product.total_withdrawal + 0 + (product.total_fund_switch_out + product.total_product_switch_out); // product switch out is 0 for now
-                          const costs = product.total_investment + (product.total_fund_switch_in + product.total_product_switch_in) + 0 + 0; // government uplift and product switch in are 0 for now
+                          const costs = product.total_investment + (product.total_fund_switch_in + product.total_product_switch_in) + 0 + 0; // tax uplift and product switch in are 0 for now
                           const profit = gains - costs;
                           return (
                             <span className={profit >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
@@ -3020,7 +3020,7 @@ Please select a different valuation date or ensure all active funds have valuati
                       Investment
                     </th>
                     <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                      Government Uplift
+                      Tax Uplift
                     </th>
                     <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
                       Product Switch In
@@ -3098,7 +3098,7 @@ Please select a different valuation date or ensure all active funds have valuati
                         {formatCurrencyWithTruncation(product.total_investment)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
-                        {formatCurrencyWithTruncation(0)} {/* Government uplift - placeholder for now */}
+                        {formatCurrencyWithTruncation(0)} {/* Tax uplift - placeholder for now */}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
                         {formatCurrencyWithTruncation(0)} {/* Product switch in - placeholder for now */}
@@ -3117,9 +3117,9 @@ Please select a different valuation date or ensure all active funds have valuati
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-center bg-blue-50">
                         {(() => {
-                          // Calculate profit for portfolio summary: (valuation + withdrawals + product switch outs + fund switch outs) - (investments + fund switch ins + government uplift + product switch ins)
+                          // Calculate profit for portfolio summary: (valuation + withdrawals + product switch outs + fund switch outs) - (investments + fund switch ins + tax uplift + product switch ins)
                           const gains = product.current_valuation + product.total_withdrawal + 0 + (product.total_fund_switch_out + product.total_product_switch_out); // product switch out is 0 for now
-                          const costs = product.total_investment + (product.total_fund_switch_in + product.total_product_switch_in) + 0 + 0; // government uplift and product switch in are 0 for now
+                          const costs = product.total_investment + (product.total_fund_switch_in + product.total_product_switch_in) + 0 + 0; // tax uplift and product switch in are 0 for now
                           const profit = gains - costs;
                           return (
                             <span className={profit >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
@@ -3159,7 +3159,7 @@ Please select a different valuation date or ensure all active funds have valuati
                       {formatCurrencyWithTruncation(productSummaries.reduce((sum, product) => sum + product.total_investment, 0))}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
-                      {formatCurrencyWithTruncation(0)} {/* Government uplift total - placeholder for now */}
+                      {formatCurrencyWithTruncation(0)} {/* Tax uplift total - placeholder for now */}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
                       {formatCurrencyWithTruncation(0)} {/* Product switch in total - placeholder for now */}
@@ -3178,9 +3178,9 @@ Please select a different valuation date or ensure all active funds have valuati
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-center bg-blue-50">
                       {(() => {
-                        // Calculate total portfolio profit: (valuation + withdrawals + product switch outs + fund switch outs) - (investments + fund switch ins + government uplift + product switch ins)
+                        // Calculate total portfolio profit: (valuation + withdrawals + product switch outs + fund switch outs) - (investments + fund switch ins + tax uplift + product switch ins)
                         const totalGains = productSummaries.reduce((sum, product) => sum + product.current_valuation + product.total_withdrawal + 0 + (product.total_fund_switch_out + product.total_product_switch_out), 0); // product switch out is 0 for now
-                        const totalCosts = productSummaries.reduce((sum, product) => sum + product.total_investment + (product.total_fund_switch_in + product.total_product_switch_in) + 0 + 0, 0); // government uplift and product switch in are 0 for now
+                        const totalCosts = productSummaries.reduce((sum, product) => sum + product.total_investment + (product.total_fund_switch_in + product.total_product_switch_in) + 0 + 0, 0); // tax uplift and product switch in are 0 for now
                         const totalProfit = totalGains - totalCosts;
                         return (
                           <span className={totalProfit >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>

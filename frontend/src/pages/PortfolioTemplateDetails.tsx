@@ -115,44 +115,44 @@ const PortfolioTemplateDetails: React.FC = () => {
       // Fetch all data in parallel
       await Promise.all([
         (async () => {
-          try {
-            setIsLoading(true);
-            console.log(`Fetching portfolio template with ID: ${portfolioId}`);
-            const response = await api.get(`/available_portfolios/${portfolioId}`);
-            console.log('Portfolio template data received:', response.data);
-            setTemplate(response.data);
-          } catch (err: any) {
-            console.error('Error fetching portfolio template:', err);
-            if (err.response?.data?.detail) {
-              const detail = err.response.data.detail;
-              if (Array.isArray(detail)) {
-                setError(detail.map(item => typeof item === 'object' ? 
-                  (item.msg || JSON.stringify(item)) : String(item)).join(', '));
-              } else if (typeof detail === 'object') {
-                setError(JSON.stringify(detail));
-              } else {
-                setError(String(detail));
-              }
-            } else {
-              setError('Failed to fetch portfolio template');
-            }
-          } finally {
-            setIsLoading(false);
-          }
+    try {
+      setIsLoading(true);
+      console.log(`Fetching portfolio template with ID: ${portfolioId}`);
+      const response = await api.get(`/available_portfolios/${portfolioId}`);
+      console.log('Portfolio template data received:', response.data);
+      setTemplate(response.data);
+    } catch (err: any) {
+      console.error('Error fetching portfolio template:', err);
+      if (err.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        if (Array.isArray(detail)) {
+          setError(detail.map(item => typeof item === 'object' ? 
+            (item.msg || JSON.stringify(item)) : String(item)).join(', '));
+        } else if (typeof detail === 'object') {
+          setError(JSON.stringify(detail));
+        } else {
+          setError(String(detail));
+        }
+      } else {
+        setError('Failed to fetch portfolio template');
+      }
+    } finally {
+      setIsLoading(false);
+    }
         })(),
         (async () => {
-          try {
-            const response = await api.get(`/available_portfolios/${portfolioId}/generations`);
-            console.log('Generations data received:', response.data);
-            
-            if (response.data && response.data.length > 0) {
-              setGenerations(response.data);
-              // Select the first generation by default
-              setSelectedGeneration(response.data[0]);
-            }
-          } catch (err: any) {
-            console.error('Error fetching generations:', err);
-          }
+    try {
+      const response = await api.get(`/available_portfolios/${portfolioId}/generations`);
+      console.log('Generations data received:', response.data);
+      
+      if (response.data && response.data.length > 0) {
+        setGenerations(response.data);
+        // Select the first generation by default
+        setSelectedGeneration(response.data[0]);
+      }
+    } catch (err: any) {
+      console.error('Error fetching generations:', err);
+    }
         })(),
         (async () => {
           try {
@@ -698,9 +698,9 @@ const PortfolioTemplateDetails: React.FC = () => {
               
               <div>
                 <div className="flex items-center gap-3">
-                  <h1 className="text-2xl font-semibold text-gray-900">
-                    {template?.name || 'Unnamed Template'}
-                  </h1>
+                <h1 className="text-2xl font-semibold text-gray-900">
+                  {template?.name || 'Unnamed Template'}
+                </h1>
                   {isRefreshing && (
                     <div className="flex items-center text-sm text-gray-500">
                       <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

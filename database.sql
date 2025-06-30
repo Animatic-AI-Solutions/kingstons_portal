@@ -689,13 +689,14 @@ ORDER BY pv.portfolio_id, month_year DESC;
 -- View for fund activity summaries (aggregated by portfolio_fund_id)
 CREATE OR REPLACE VIEW public.fund_activity_summary AS
 SELECT 
-    portfolio_fund_id,
-    SUM(CASE WHEN activity_type IN ('Investment', 'RegularInvestment', 'GovernmentUplift') THEN amount ELSE 0 END) as total_investments,
-    SUM(CASE WHEN activity_type IN ('Withdrawal', 'RegularWithdrawal') THEN amount ELSE 0 END) as total_withdrawals,
-    SUM(CASE WHEN activity_type IN ('FundSwitchIn') THEN amount ELSE 0 END) as total_switch_in,
-    SUM(CASE WHEN activity_type IN ('FundSwitchOut') THEN amount ELSE 0 END) as total_switch_out,
-    SUM(CASE WHEN activity_type IN ('ProductSwitchIn') THEN amount ELSE 0 END) as total_product_switch_in,
-    SUM(CASE WHEN activity_type IN ('ProductSwitchOut') THEN amount ELSE 0 END) as total_product_switch_out
+portfolio_fund_id,
+SUM(CASE WHEN activity_type IN ('Investment', 'RegularInvestment') THEN amount ELSE 0 END) as total_investments,
+SUM(CASE WHEN activity_type = 'TaxUplift' THEN amount ELSE 0 END) as total_tax_uplift,
+SUM(CASE WHEN activity_type IN ('Withdrawal') THEN amount ELSE 0 END) as total_withdrawals,
+SUM(CASE WHEN activity_type = 'FundSwitchIn' THEN amount ELSE 0 END) as total_switch_in,
+SUM(CASE WHEN activity_type = 'FundSwitchOut' THEN amount ELSE 0 END) as total_switch_out,
+SUM(CASE WHEN activity_type IN ('Product Switch In', 'ProductSwitchIn') THEN amount ELSE 0 END) as total_product_switch_in,
+SUM(CASE WHEN activity_type IN ('Product Switch Out', 'ProductSwitchOut') THEN amount ELSE 0 END) as total_product_switch_out
 FROM holding_activity_log
 GROUP BY portfolio_fund_id;
 
@@ -719,7 +720,8 @@ SELECT
     liv.irr_result as irr,
     liv.irr_date,
     fas.total_investments,
-    fas.total_withdrawals,
+fas.total_tax_uplift,
+fas.total_withdrawals,
     fas.total_switch_in,
     fas.total_switch_out,
     fas.total_product_switch_in,
