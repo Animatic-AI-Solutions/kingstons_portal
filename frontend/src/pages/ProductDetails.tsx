@@ -26,34 +26,59 @@ const ProductDetails: React.FC = () => {
     
     // Check if we have state from the previous navigation
     if (location.state?.from) {
-      const fromPath = location.state.from.pathname;
-      const fromLabel = location.state.from.label || 'Back';
-      
-      // Build trail based on the previous page
-      if (fromPath.startsWith('/client_groups/')) {
-        // Coming from client details page
-        trail.push({ path: '/client_groups', label: 'Client Groups' });
-        trail.push({ path: fromPath, label: fromLabel });
-      } else if (fromPath.startsWith('/portfolios/')) {
-        // Coming from portfolio details page  
-        trail.push({ path: '/definitions/portfolio-templates', label: 'Portfolio Templates' });
-        trail.push({ path: fromPath, label: fromLabel });
-      } else if (fromPath.startsWith('/definitions/providers/')) {
-        // Coming from provider details page
-        trail.push({ path: '/definitions/providers', label: 'Providers' });
-        trail.push({ path: fromPath, label: fromLabel });
-      } else if (fromPath === '/products') {
-        // Coming from products page
-        trail.push({ path: '/products', label: 'Products' });
-      } else if (fromPath === '/') {
-        // Coming from dashboard
-        trail.push({ path: '/', label: 'Dashboard' });
-      } else {
-        // Default case
-        trail.push({ path: fromPath, label: fromLabel });
+      // Handle new breadcrumb format
+      if (location.state.breadcrumb && Array.isArray(location.state.breadcrumb)) {
+        // Use the provided breadcrumb trail
+        return location.state.breadcrumb.map((item: any) => ({
+          path: item.path,
+          label: item.name
+        }));
       }
       
-      return trail;
+      // Handle portfolio template navigation
+      if (location.state.from === 'portfolio-template') {
+        if (location.state.portfolioId && location.state.portfolioName) {
+          trail.push({ path: '/definitions', label: 'Definitions' });
+          trail.push({ path: '/definitions/portfolio-templates', label: 'Portfolios' });
+          trail.push({ 
+            path: `/definitions/portfolio-templates/${location.state.portfolioId}`, 
+            label: location.state.portfolioName 
+          });
+        }
+        return trail;
+      }
+      
+      // Handle legacy object format
+      if (typeof location.state.from === 'object' && location.state.from.pathname) {
+        const fromPath = location.state.from.pathname;
+        const fromLabel = location.state.from.label || 'Back';
+        
+        // Build trail based on the previous page
+        if (fromPath.startsWith('/client_groups/')) {
+          // Coming from client details page
+          trail.push({ path: '/client_groups', label: 'Client Groups' });
+          trail.push({ path: fromPath, label: fromLabel });
+        } else if (fromPath.startsWith('/portfolios/')) {
+          // Coming from portfolio details page  
+          trail.push({ path: '/definitions/portfolio-templates', label: 'Portfolio Templates' });
+          trail.push({ path: fromPath, label: fromLabel });
+        } else if (fromPath.startsWith('/definitions/providers/')) {
+          // Coming from provider details page
+          trail.push({ path: '/definitions/providers', label: 'Providers' });
+          trail.push({ path: fromPath, label: fromLabel });
+        } else if (fromPath === '/products') {
+          // Coming from products page
+          trail.push({ path: '/products', label: 'Products' });
+        } else if (fromPath === '/') {
+          // Coming from dashboard
+          trail.push({ path: '/', label: 'Dashboard' });
+        } else {
+          // Default case
+          trail.push({ path: fromPath, label: fromLabel });
+        }
+        
+        return trail;
+      }
     }
     
     // Check URL parameters for previous page info

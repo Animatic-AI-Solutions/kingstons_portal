@@ -112,9 +112,11 @@ const BaseInput = forwardRef<HTMLInputElement, BaseInputProps>(({
             helperText ? `${inputId}-helper` : undefined
           }
           onKeyDown={(e) => {
-            // Prevent form submission on Enter key if not in a form
-            if (e.key === 'Enter' && !e.currentTarget.form) {
+            // Prevent form submission on Enter key to avoid premature submissions
+            if (e.key === 'Enter') {
               e.preventDefault();
+              // Optionally blur the field to simulate moving to next field
+              e.currentTarget.blur();
             }
             // Call any existing onKeyDown handler
             if (props.onKeyDown) {
