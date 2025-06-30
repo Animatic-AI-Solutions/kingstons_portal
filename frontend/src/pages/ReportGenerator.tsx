@@ -129,11 +129,164 @@ interface SelectedIRRDate {
   date: string; // YYYY-MM-DD format
   label: string; // "Jan 2024" format
   productIds: number[]; // Which products have data for this date
+  isGreyedOut?: boolean; // Whether this date is greyed out due to end valuation date filtering
 }
 
 interface ProductIRRSelections {
   [productId: number]: string[]; // Array of selected date strings for each product
 }
+
+interface FilteredIRRDate extends SelectedIRRDate {
+  isAvailableForProduct: boolean; // Whether this date is available for the current product
+}
+
+// IRR Date Selection Grid Component
+interface IRRDateSelectionGridProps {
+  products: Product[];
+  excludedProductIds: Set<number>;
+  availableIRRDates: SelectedIRRDate[];
+  selectedIRRDates: ProductIRRSelections;
+  onSelectionChange: (productId: number, selectedDates: string[]) => void;
+  onSelectAllForProduct: (productId: number) => void;
+  onClearAllForProduct: (productId: number) => void;
+  onSelectRecentForProduct: (productId: number, count: number) => void;
+}
+
+const IRRDateSelectionGrid: React.FC<IRRDateSelectionGridProps> = ({
+  products,
+  excludedProductIds,
+  availableIRRDates,
+  selectedIRRDates,
+  onSelectionChange,
+  onSelectAllForProduct,
+  onClearAllForProduct,
+  onSelectRecentForProduct
+}) => {
+  const handleDateToggle = (productId: number, dateStr: string, isGreyedOut: boolean) => {
+    if (isGreyedOut) return; // Don't allow selection of greyed out dates
+    
+    const currentSelected = selectedIRRDates[productId] || [];
+    const newSelected = currentSelected.includes(dateStr)
+      ? currentSelected.filter((d: string) => d !== dateStr)
+      : [...currentSelected, dateStr];
+    
+    onSelectionChange(productId, newSelected);
+  };
+
+  const getFilteredDatesForProduct = (productId: number): FilteredIRRDate[] => {
+    return availableIRRDates.map(date => ({
+      ...date,
+      isAvailableForProduct: date.productIds.includes(productId)
+    })).filter(date => date.isAvailableForProduct);
+  };
+
+  return (
+    <div className="mt-4 p-3 bg-blue-50 rounded-lg border">
+      <h4 className="text-sm font-medium text-gray-700 mb-2">
+        Historical IRR Date Selection
+      </h4>
+      <p className="text-xs text-gray-500 mb-4">
+        Select which historical IRR dates to include in the report. Dates after your selected end valuation date are greyed out and cannot be selected.
+      </p>
+
+      {products.filter(product => !excludedProductIds.has(product.id)).map(product => {
+        const productDates = getFilteredDatesForProduct(product.id);
+        const selectedDates = selectedIRRDates[product.id] || [];
+        const availableCount = productDates.filter(d => !d.isGreyedOut).length;
+        const selectedCount = selectedDates.length;
+
+        return (
+          <div key={product.id} className="mb-6 p-4 bg-white rounded-lg border">
+            {/* Product Header */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                {product.provider_theme_color && (
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: product.provider_theme_color }}
+                  />
+                )}
+                <h5 className="text-sm font-medium text-gray-800">
+                  {product.product_name}
+                </h5>
+              </div>
+              <div className="text-xs text-gray-500">
+                {selectedCount} of {availableCount} selected
+              </div>
+            </div>
+
+            {/* Quick Action Buttons */}
+            <div className="flex gap-2 mb-3">
+              <button
+                type="button"
+                onClick={() => onSelectAllForProduct(product.id)}
+                className="px-2 py-1 text-xs bg-blue-100 border border-blue-300 rounded hover:bg-blue-200 font-medium"
+              >
+                Select All
+              </button>
+              <button
+                type="button"
+                onClick={() => onSelectRecentForProduct(product.id, 1)}
+                className="px-2 py-1 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50"
+              >
+                Latest Only
+              </button>
+              <button
+                type="button"
+                onClick={() => onSelectRecentForProduct(product.id, 3)}
+                className="px-2 py-1 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50"
+              >
+                3 Recent
+              </button>
+              <button
+                type="button"
+                onClick={() => onClearAllForProduct(product.id)}
+                className="px-2 py-1 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50 text-red-600"
+              >
+                Clear All
+              </button>
+            </div>
+
+            {/* Date Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+              {productDates.map(date => {
+                const isSelected = selectedDates.includes(date.date);
+                const isGreyedOut = date.isGreyedOut || false;
+
+                return (
+                  <button
+                    key={date.date}
+                    type="button"
+                    onClick={() => handleDateToggle(product.id, date.date, isGreyedOut)}
+                    disabled={isGreyedOut}
+                    className={`
+                      px-2 py-2 text-xs rounded border transition-all duration-150
+                      ${isGreyedOut 
+                        ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed opacity-50' 
+                        : isSelected
+                          ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50 hover:border-blue-300'
+                      }
+                    `}
+                    title={isGreyedOut ? 'Date is after selected end valuation date' : ''}
+                  >
+                    <div className="font-medium">{date.label}</div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {productDates.length === 0 && (
+              <div className="text-center py-4 text-xs text-gray-500">
+                No IRR dates available for this product
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 // Main component
 const ReportGenerator: React.FC = () => {
@@ -648,6 +801,39 @@ const ReportGenerator: React.FC = () => {
 
     return effectiveProductCount > 0;
   }, [selectedProductIds, selectedClientGroupIds, excludedProductIds, relatedProducts]);
+
+  // Function to filter IRR dates based on end valuation date
+  const getFilteredIRRDates = (dates: SelectedIRRDate[], maxDate: string | null): SelectedIRRDate[] => {
+    if (!maxDate) return dates.map(date => ({ ...date, isGreyedOut: false }));
+    
+    const maxDateObj = new Date(maxDate);
+    
+    return dates.map(date => ({
+      ...date,
+      isGreyedOut: new Date(date.date) > maxDateObj
+    }));
+  };
+
+  // Function to auto-update selected dates when end valuation date changes
+  const updateSelectedDatesForNewEndDate = (newEndDate: string | null) => {
+    if (!newEndDate) return;
+    
+    const maxDateObj = new Date(newEndDate);
+    
+    setSelectedIRRDates(prev => {
+      const updated: ProductIRRSelections = {};
+      
+      Object.entries(prev).forEach(([productIdStr, selectedDates]) => {
+        const productId = parseInt(productIdStr);
+        const validDates = selectedDates.filter((dateStr: string) => {
+          return new Date(dateStr) <= maxDateObj;
+        });
+        updated[productId] = validDates;
+      });
+      
+      return updated;
+    });
+  };
 
   // Function to fetch all available IRR dates for products
   const fetchAvailableIRRDates = async (productIds: number[]): Promise<SelectedIRRDate[]> => {
@@ -2200,17 +2386,62 @@ Please select a different valuation date or ensure all active funds have valuati
   };
 
   const selectAllDatesForAll = () => {
-    // Select ALL available dates for each included product (not excluded)
     const newSelections: ProductIRRSelections = {};
     
-    const includedProducts = relatedProducts.filter(product => !excludedProductIds.has(product.id));
-    includedProducts.forEach(product => {
-      const availableDates = getAvailableDatesForProduct(product.id);
-      const allDates = availableDates.map(d => d.value);
-      newSelections[product.id] = allDates;
-    });
+    relatedProducts
+      .filter(product => !excludedProductIds.has(product.id))
+      .forEach(product => {
+        const availableDates = getAvailableDatesForProduct(product.id).map(option => option.value);
+        newSelections[product.id] = availableDates;
+      });
     
     setSelectedIRRDates(newSelections);
+  };
+
+  // New handler functions for the grid component
+  const handleGridSelectionChange = (productId: number, selectedDates: string[]) => {
+    setSelectedIRRDates(prev => ({
+      ...prev,
+      [productId]: selectedDates
+    }));
+  };
+
+  const handleSelectAllForProduct = (productId: number) => {
+    const availableDates = getAvailableDatesForProduct(productId)
+      .map(option => option.value)
+      .filter((dateStr: string) => {
+        // Only select dates that are not greyed out
+        const date = availableIRRDates.find(d => d.date === dateStr);
+        return !date?.isGreyedOut;
+      });
+    
+    setSelectedIRRDates(prev => ({
+      ...prev,
+      [productId]: availableDates
+    }));
+  };
+
+  const handleClearAllForProduct = (productId: number) => {
+    setSelectedIRRDates(prev => ({
+      ...prev,
+      [productId]: []
+    }));
+  };
+
+  const handleSelectRecentForProduct = (productId: number, count: number) => {
+    const availableDates = getAvailableDatesForProduct(productId)
+      .map(option => option.value)
+      .filter((dateStr: string) => {
+        // Only select dates that are not greyed out
+        const date = availableIRRDates.find(d => d.date === dateStr);
+        return !date?.isGreyedOut;
+      })
+      .slice(0, count); // Take the most recent N dates
+    
+    setSelectedIRRDates(prev => ({
+      ...prev,
+      [productId]: availableDates
+    }));
   };
 
   // Effect to clean up IRR date selections for excluded products
@@ -2251,6 +2482,20 @@ Please select a different valuation date or ensure all active funds have valuati
     
     fetchDates();
   }, [relatedProducts, excludedProductIds]);
+
+  // Effect to handle end valuation date changes and filter IRR dates
+  useEffect(() => {
+    if (selectedValuationDate && availableIRRDates.length > 0) {
+      console.log('📅 End valuation date changed, filtering IRR dates:', selectedValuationDate);
+      
+      // Filter IRR dates based on the new end valuation date
+      const filteredDates = getFilteredIRRDates(availableIRRDates, selectedValuationDate);
+      setAvailableIRRDates(filteredDates);
+      
+      // Auto-update selected dates to remove any that are now greyed out
+      updateSelectedDatesForNewEndDate(selectedValuationDate);
+    }
+  }, [selectedValuationDate]);
 
   return (
     <div className="mx-auto px-4 sm:px-6 lg:px-8 py-3">
@@ -2345,73 +2590,16 @@ Please select a different valuation date or ensure all active funds have valuati
                 
                 {/* Historical IRR Date Selection */}
                 {relatedProducts.length > 0 && availableIRRDates.length > 0 && (
-                  <div className="mt-4 p-3 bg-blue-50 rounded-lg border">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">
-                      Historical IRR Date Selection
-                    </h4>
-                    <p className="text-xs text-gray-500 mb-3">
-                      All available dates are selected by default. You can unselect dates you don't want to include.
-                      Different products may have different available dates.
-                    </p>
-                    
-                    {/* Quick selection buttons */}
-                    <div className="flex gap-2 mb-3">
-                      <button
-                        type="button"
-                        onClick={selectAllDatesForAll}
-                        className="px-2 py-1 text-xs bg-blue-100 border border-blue-300 rounded hover:bg-blue-200 font-medium"
-                      >
-                        Select All
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => selectRecentDatesForAll(1)}
-                        className="px-2 py-1 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50"
-                      >
-                        1 Recent Each
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => selectRecentDatesForAll(2)}
-                        className="px-2 py-1 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50"
-                      >
-                        2 Recent Each
-                      </button>
-                      <button
-                        type="button"
-                        onClick={selectCommonDates}
-                        className="px-2 py-1 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50"
-                      >
-                        Common Dates
-                      </button>
-                    </div>
-                    
-                    {relatedProducts.filter(product => !excludedProductIds.has(product.id)).map(product => (
-                      <div key={product.id} className="mb-4 p-3 bg-white rounded border">
-                        <h5 className="text-sm font-medium text-gray-800 mb-2">
-                          {product.product_name}
-                        </h5>
-                        
-                        <MultiSelectDropdown
-                          options={getAvailableDatesForProduct(product.id)}
-                          values={selectedIRRDates[product.id] || []}
-                          onChange={(dates) => handleProductIRRDatesChange(product.id, dates)}
-                          placeholder="Select historical IRR dates..."
-                          maxSelectedDisplay={3}
-                          size="sm"
-                        />
-                        
-                        <div className="mt-2 text-xs text-gray-500">
-                          Available dates: {getAvailableDatesForProduct(product.id).length}
-                          {selectedIRRDates[product.id] && selectedIRRDates[product.id].length > 0 && (
-                            <span className="ml-2">
-                              | Selected: {selectedIRRDates[product.id].length}
-                  </span>
-                          )}
-                </div>
-                      </div>
-                    ))}
-                  </div>
+                  <IRRDateSelectionGrid
+                    products={relatedProducts}
+                    excludedProductIds={excludedProductIds}
+                    availableIRRDates={availableIRRDates}
+                    selectedIRRDates={selectedIRRDates}
+                    onSelectionChange={handleGridSelectionChange}
+                    onSelectAllForProduct={handleSelectAllForProduct}
+                    onClearAllForProduct={handleClearAllForProduct}
+                    onSelectRecentForProduct={handleSelectRecentForProduct}
+                  />
                 )}
                 
                 {/* Inactive Product Detail Controls */}

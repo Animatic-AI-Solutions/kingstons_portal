@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { BaseInput, BaseDropdown, TextArea, ActionButton } from '../components/ui';
+import { findCashFund, isCashFund } from '../utils/fundUtils';
 
 interface Fund {
   id: number;
@@ -58,6 +59,16 @@ const AddPortfolioTemplate: React.FC = () => {
         a.fund_name.localeCompare(b.fund_name)
       );
       setAvailableFunds(sortedFunds);
+      
+      // Auto-select Cash fund if it exists
+      const cashFund = findCashFund(sortedFunds);
+      if (cashFund && !selectedFunds.includes(cashFund.id)) {
+        setSelectedFunds(prev => [...prev, cashFund.id]);
+        setFundWeightings(prev => ({
+          ...prev,
+          [cashFund.id.toString()]: '0'
+        }));
+      }
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to fetch funds');
       console.error('Error fetching funds:', err);
@@ -108,6 +119,14 @@ const AddPortfolioTemplate: React.FC = () => {
   const handleFundSelection = (fundId: number) => {
     setSelectedFunds(prev => {
       if (prev.includes(fundId)) {
+        // Check if this is the Cash fund - prevent removal
+        const fund = availableFunds.find(f => f.id === fundId);
+        if (fund && isCashFund(fund)) {
+          // Show a toast message instead of removing
+          alert('Cash fund cannot be removed from portfolio templates.');
+          return prev;
+        }
+        
         const newSelected = prev.filter(id => id !== fundId);
         // Remove weighting for unselected fund
         const newWeightings = { ...fundWeightings };
@@ -115,10 +134,13 @@ const AddPortfolioTemplate: React.FC = () => {
         setFundWeightings(newWeightings);
         return newSelected;
       } else {
-        // Set empty weighting for newly selected fund
+        // Set appropriate weighting for newly selected fund
+        const fund = availableFunds.find(f => f.id === fundId);
+        const initialWeighting = fund && isCashFund(fund) ? '0' : '';
+        
         setFundWeightings(prev => ({
           ...prev,
-          [fundId.toString()]: ''
+          [fundId.toString()]: initialWeighting
         }));
         return [...prev, fundId];
       }
@@ -249,15 +271,21 @@ const AddPortfolioTemplate: React.FC = () => {
     return 'bg-blue-500'; // Still collecting
   };
 
-  // Filter funds based on search query
+  // Filter funds based on search query and exclude Cash funds
   const filteredFunds = useMemo(() => {
-    if (!searchQuery.trim()) return availableFunds;
+    // First filter out Cash funds
+    let filtered = availableFunds.filter(fund => !isCashFund(fund));
     
-    const query = searchQuery.toLowerCase();
-    return availableFunds.filter(fund => 
-      (fund.fund_name && fund.fund_name.toLowerCase().includes(query)) || 
-      (fund.isin_number && fund.isin_number.toLowerCase().includes(query))
-    );
+    // Then apply search filter if there's a search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(fund => 
+        (fund.fund_name && fund.fund_name.toLowerCase().includes(query)) || 
+        (fund.isin_number && fund.isin_number.toLowerCase().includes(query))
+      );
+    }
+    
+    return filtered;
   }, [availableFunds, searchQuery]);
 
   return (
@@ -389,23 +417,11 @@ const AddPortfolioTemplate: React.FC = () => {
           <div className="p-5">
           {/* Fund Selection Section */}
             <div className="rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 sm:px-6 flex justify-between items-center">
+              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 sm:px-6">
                 <h3 className="text-base font-medium text-gray-900">Select Funds</h3>
-                <div className="flex items-center">
-                  <span className="text-sm text-gray-500 mr-2">Allocation: </span>
-                  <div className="w-56 bg-gray-200 rounded-full h-2.5 flex-grow">
-                    <div 
-                      className={`h-2.5 rounded-full ${getProgressBarColor()}`} 
-                      style={{ width: `${Math.min(totalWeighting, 100)}%` }}
-                    ></div>
-                  </div>
-                  <span className={`ml-2 text-sm font-medium ${
-                    Math.abs(totalWeighting - 100) < 0.01 ? 'text-green-700' : 
-                    totalWeighting > 100 ? 'text-red-700' : 'text-gray-700'
-                  }`}>
-                    {totalWeighting.toFixed(1)}%
-                  </span>
-                </div>
+                <p className="mt-1 text-sm text-gray-500">
+                  Choose funds and set their target weightings. The total weighting must equal 100%.
+                </p>
               </div>
               
               <div className="p-4">
@@ -429,145 +445,276 @@ const AddPortfolioTemplate: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {/* Search Bar */}
-                    <div className="mb-2">
-                      <BaseInput
-                        placeholder="Search funds by name or ISIN..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        leftIcon={
-                          <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                          </svg>
-                        }
-                        rightIcon={searchQuery && (
-                          <button
-                            type="button"
-                            className="text-gray-400 hover:text-gray-600 focus:outline-none"
-                            onClick={() => setSearchQuery('')}
-                          >
-                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        )}
-                      />
-                    </div>
-
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-100">
-                      <tr>
-                            <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                          Select
-                        </th>
-                            <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                          Fund Name
-                        </th>
-                            <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                          ISIN
-                        </th>
-                            <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                          Risk Factor
-                        </th>
-                            <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                          Status
-                        </th>
-                            <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                          Target Weighting (%)
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                          {filteredFunds.map((fund) => (
-                            <tr 
-                              key={fund.id} 
-                              className={`transition-all duration-150 cursor-pointer border-b border-gray-100 ${
-                                selectedFunds.includes(fund.id) 
-                                  ? 'bg-blue-50 border-blue-200' 
-                                  : 'hover:bg-gray-50 hover:border-gray-200'
-                              }`}
-                              onClick={() => handleFundSelection(fund.id)}
+                  <div className="space-y-2">
+                    {/* Side-by-side Layout with Headers, Search, and Lists */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {/* Selected Funds Section - Left Side */}
+                      <div className="space-y-2">
+                        {/* Selected Funds Header */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <h4 className="text-sm font-medium text-gray-700">Selected Funds</h4>
+                            <div className="bg-primary-100 text-primary-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                              {selectedFunds.length}
+                            </div>
+                            <div className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                              (() => {
+                                const totalWeight = totalWeighting;
+                                if (Math.abs(totalWeight - 100) < 0.01) return 'bg-green-100 text-green-800';
+                                if (totalWeight > 100) return 'bg-red-100 text-red-800';
+                                if (totalWeight > 0) return 'bg-blue-100 text-blue-800';
+                                return 'bg-gray-100 text-gray-600';
+                              })()
+                            }`}>
+                              {totalWeighting.toFixed(1)}%
+                            </div>
+                          </div>
+                          {selectedFunds.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedFunds([]);
+                                setFundWeightings({});
+                              }}
+                              className="text-gray-400 hover:text-red-500 text-xs font-medium"
+                              title="Clear all"
                             >
-                              <td className="px-6 py-3 whitespace-nowrap">
-                                <input
-                                  type="checkbox"
-                                  checked={selectedFunds.includes(fund.id)}
-                                  onChange={() => handleFundSelection(fund.id)}
-                                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded pointer-events-none"
-                                />
-                              </td>
-                              <td className="px-6 py-3 whitespace-nowrap">
-                                <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{fund.fund_name}</div>
-                              </td>
-                              <td className="px-6 py-3 whitespace-nowrap">
-                                <div className="text-sm text-gray-600 font-sans">{fund.isin_number || 'N/A'}</div>
-                              </td>
-                              <td className="px-6 py-3 whitespace-nowrap">
-                                <div className="text-sm text-gray-600 font-sans">
-                                  {fund.risk_factor !== undefined && fund.risk_factor !== null ? (
-                                    <span className="flex items-center">
-                                      {fund.risk_factor}
-                                      <span className={`ml-1.5 w-2 h-2 rounded-full ${
-                                        fund.risk_factor <= 2 ? 'bg-green-500' : 
-                                        fund.risk_factor <= 4 ? 'bg-blue-500' : 
-                                        fund.risk_factor <= 6 ? 'bg-yellow-500' : 
-                                        'bg-red-500'
-                                      }`}></span>
-                                    </span>
-                                  ) : 'N/A'}
+                              Clear all
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Selected Funds Display */}
+                        <div className="h-80 sm:h-96 lg:h-[450px] overflow-y-auto border rounded bg-white">
+                          {selectedFunds.length === 0 ? (
+                            <div className="h-full flex items-center justify-center text-sm text-gray-500">
+                              <div className="text-center">
+                                <div className="mx-auto w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mb-3">
+                                  <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                  </svg>
                                 </div>
-                              </td>
-                              <td className="px-6 py-3 whitespace-nowrap">
-                                <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                  fund.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                }`}>
-                                  {fund.status}
-                                </span>
-                              </td>
-                              <td className="px-6 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                                {selectedFunds.includes(fund.id) && (
-                                  <div className="flex items-center">
-                                    <input
-                                      type="text"
-                                      value={fundWeightings[fund.id.toString()] || ''}
-                                      onChange={(e) => handleWeightingChange(fund.id, e.target.value)}
-                                      placeholder="0.00"
-                                      className="w-20 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                                    />
-                                    <span className="ml-2 text-gray-500">%</span>
+                                <p className="text-sm font-medium">No funds selected</p>
+                                <p className="text-xs">Choose funds from the list on the right</p>
+                              </div>
+                            </div>
+                          ) : (
+                                                        <div className="p-1 space-y-1">
+                              {selectedFunds.map((fundId) => {
+                                const fund = availableFunds.find(f => f.id === fundId);
+                                if (!fund) return null;
+                                
+                                const isCash = isCashFund(fund);
+                                
+                                return (
+                                  <div key={fundId} className={`border rounded-md p-2 transition-colors ${
+                                    isCash 
+                                      ? 'bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200 hover:from-blue-100 hover:to-blue-150' 
+                                      : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                                  }`}>
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center space-x-2 flex-1 min-w-0">
+                                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                          isCash ? 'bg-blue-500' : 'bg-primary-500'
+                                        }`}></div>
+                                        <div className="min-w-0 flex-1">
+                                          <div className="flex items-center justify-between">
+                                            <div className="min-w-0 flex-1">
+                                              <div className={`text-xs font-medium truncate ${
+                                                isCash ? 'text-blue-900' : 'text-gray-900'
+                                              }`} title={fund.fund_name}>
+                                                {fund.fund_name}
+                                                {isCash && <span className="ml-1 text-blue-600">(Auto)</span>}
+                                              </div>
+                                              <div className="flex items-center space-x-2 text-xs">
+                                                {fund.isin_number && (
+                                                  <span className={`truncate ${
+                                                    isCash ? 'text-blue-600' : 'text-gray-500'
+                                                  }`} title={fund.isin_number}>
+                                                    {fund.isin_number}
+                                                  </span>
+                                                )}
+                                                {fund.risk_factor !== undefined && fund.risk_factor !== null && (
+                                                  <span className={`flex items-center ${
+                                                    isCash ? 'text-blue-600' : 'text-gray-600'
+                                                  }`}>
+                                                    Risk: {fund.risk_factor}
+                                                    <span className={`ml-1 w-1.5 h-1.5 rounded-full ${
+                                                      fund.risk_factor <= 2 ? 'bg-green-500' : 
+                                                      fund.risk_factor <= 4 ? 'bg-blue-500' : 
+                                                      fund.risk_factor <= 6 ? 'bg-yellow-500' : 
+                                                      'bg-red-500'
+                                                    }`}></span>
+                                                  </span>
+                                                )}
+                                              </div>
+                                            </div>
+                                            
+                                            <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
+                                              <input
+                                                type="text"
+                                                value={fundWeightings[fundId.toString()] || ''}
+                                                onChange={(e) => handleWeightingChange(fundId, e.target.value)}
+                                                className={`w-12 text-xs text-center border rounded px-1 py-0.5 focus:ring-1 ${
+                                                  isCash 
+                                                    ? 'border-blue-300 focus:ring-blue-500 focus:border-blue-500 bg-white' 
+                                                    : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500'
+                                                }`}
+                                                placeholder="0"
+                                              />
+                                              <span className={`text-xs ${
+                                                isCash ? 'text-blue-700' : 'text-gray-500'
+                                              }`}>%</span>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleFundSelection(fundId)}
+                                                className={`p-0.5 rounded transition-colors ${
+                                                  isCash 
+                                                    ? 'text-blue-300 cursor-not-allowed' 
+                                                    : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
+                                                }`}
+                                                title={isCash ? "Cash fund cannot be removed" : "Remove fund"}
+                                                disabled={isCash}
+                                              >
+                                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                              </button>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
                                   </div>
-                                )}
-                                {!selectedFunds.includes(fund.id) && (
-                                  <span className="text-gray-400 text-sm">Click to select</span>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                    </tbody>
-                  </table>
-                </div>
-                
-                    <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg">
-                  <div className="text-sm text-gray-500">
-                    {selectedFunds.length} fund(s) selected
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Selected Funds Summary */}
+                        <div className="bg-gray-50 p-3 rounded-lg border">
+                          <div className="flex justify-between items-center">
+                            <div className="text-sm text-gray-600">
+                              {selectedFunds.length} fund(s) selected
+                            </div>
+                            <div className={`text-sm font-medium ${
+                              Math.abs(totalWeighting - 100) < 0.01
+                                ? 'text-green-600' 
+                                : totalWeighting > 100
+                                  ? 'text-red-600'
+                                  : 'text-gray-600'
+                            }`}>
+                              Total: {totalWeighting.toFixed(2)}%
+                              {selectedFunds.length > 0 && Math.abs(totalWeighting - 100) > 0.01 && 
+                                <span className="ml-2 text-xs">(Must equal 100%)</span>
+                              }
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Available Funds Section - Right Side */}
+                      <div className="space-y-2">
+                        {/* Available Funds Header */}
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-medium text-gray-700">
+                            Available Funds
+                          </h4>
+                        </div>
+                        
+                        {/* Fund Search */}
+                        <BaseInput
+                          placeholder="Search funds by name or ISIN..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          size="sm"
+                          fullWidth
+                          leftIcon={
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                          }
+                          rightIcon={searchQuery && (
+                            <button
+                              type="button"
+                              className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                              onClick={() => setSearchQuery('')}
+                            >
+                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          )}
+                        />
+                        
+                        {/* Available Fund List */}
+                        <div className="h-80 sm:h-96 lg:h-[450px] overflow-y-auto border rounded p-2 bg-gray-50">
+                          {filteredFunds.length === 0 ? (
+                            <div className="text-sm text-gray-500 text-center py-8">
+                              <div className="mx-auto w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mb-3">
+                                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                              </div>
+                              <p className="font-medium">No funds found</p>
+                              <p className="text-xs">Try adjusting your search terms</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-1">
+                              {filteredFunds.map(fund => (
+                                <div 
+                                  key={fund.id} 
+                                  className={`flex items-center space-x-3 p-2 rounded cursor-pointer transition-colors ${
+                                    selectedFunds.includes(fund.id)
+                                      ? 'bg-primary-50 border border-primary-200'
+                                      : 'hover:bg-white border border-transparent'
+                                  }`}
+                                  onClick={() => handleFundSelection(fund.id)}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedFunds.includes(fund.id)}
+                                    onChange={() => handleFundSelection(fund.id)}
+                                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-medium text-gray-900 truncate" title={fund.fund_name}>
+                                      {fund.fund_name}
+                                    </div>
+                                    <div className="flex items-center space-x-2 text-xs text-gray-500">
+                                      {fund.isin_number && (
+                                        <span title={fund.isin_number} className="truncate">
+                                          {fund.isin_number}
+                                        </span>
+                                      )}
+                                      {fund.risk_factor !== undefined && fund.risk_factor !== null && (
+                                        <span className="flex items-center">
+                                          Risk: {fund.risk_factor}
+                                          <span className={`ml-1 w-2 h-2 rounded-full ${
+                                            fund.risk_factor <= 2 ? 'bg-green-500' : 
+                                            fund.risk_factor <= 4 ? 'bg-blue-500' : 
+                                            fund.risk_factor <= 6 ? 'bg-yellow-500' : 
+                                            'bg-red-500'
+                                          }`}></span>
+                                        </span>
+                                      )}
+                                      <span className={`px-1.5 py-0.5 rounded-full text-xs ${
+                                        fund.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                      }`}>
+                                        {fund.status}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className={`text-sm ${
-                        Math.abs(totalWeighting - 100) < 0.01
-                          ? 'text-green-600 font-medium' 
-                          : totalWeighting > 100
-                            ? 'text-red-600 font-medium'
-                            : 'text-gray-600'
-                      }`}>
-                        Total weighting: {totalWeighting.toFixed(2)}%
-                        {selectedFunds.length > 0 && Math.abs(totalWeighting - 100) > 0.01 && 
-                          <span className="ml-2 text-sm">(Must equal 100%)</span>
-                    }
-                  </div>
-                </div>
-              </div>
-            )}
+                )}
               </div>
             </div>
           </div>
