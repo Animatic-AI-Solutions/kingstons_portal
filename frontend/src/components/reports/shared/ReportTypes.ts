@@ -49,8 +49,8 @@ export interface MonthlyTransaction {
   year_month: string;
   total_investment: number;
   total_withdrawal: number;
-  total_switch_in: number;
-  total_switch_out: number;
+  total_fund_switch_in: number;
+  total_fund_switch_out: number;
   net_flow: number;
   valuation: number;
 }
@@ -61,8 +61,8 @@ export interface FundSummary {
   fund_name: string;
   total_investment: number;
   total_withdrawal: number;
-  total_switch_in: number;
-  total_switch_out: number;
+  total_fund_switch_in: number;
+  total_fund_switch_out: number;
   net_flow: number;
   current_valuation: number;
   irr: number | null;
@@ -79,8 +79,8 @@ export interface ProductPeriodSummary {
   start_date: string | null;
   total_investment: number;
   total_withdrawal: number;
-  total_switch_in: number;
-  total_switch_out: number;
+  total_fund_switch_in: number;
+  total_fund_switch_out: number;
   net_flow: number;
   current_valuation: number;
   irr: number | null;

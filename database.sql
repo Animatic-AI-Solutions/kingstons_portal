@@ -688,49 +688,89 @@ ORDER BY pv.portfolio_id, month_year DESC;
 
 -- View for fund activity summaries (aggregated by portfolio_fund_id)
 CREATE OR REPLACE VIEW public.fund_activity_summary AS
-SELECT 
-portfolio_fund_id,
-SUM(CASE WHEN activity_type IN ('Investment', 'RegularInvestment') THEN amount ELSE 0 END) as total_investments,
-SUM(CASE WHEN activity_type = 'TaxUplift' THEN amount ELSE 0 END) as total_tax_uplift,
-SUM(CASE WHEN activity_type IN ('Withdrawal') THEN amount ELSE 0 END) as total_withdrawals,
-SUM(CASE WHEN activity_type = 'FundSwitchIn' THEN amount ELSE 0 END) as total_switch_in,
-SUM(CASE WHEN activity_type = 'FundSwitchOut' THEN amount ELSE 0 END) as total_switch_out,
-SUM(CASE WHEN activity_type IN ('Product Switch In', 'ProductSwitchIn') THEN amount ELSE 0 END) as total_product_switch_in,
-SUM(CASE WHEN activity_type IN ('Product Switch Out', 'ProductSwitchOut') THEN amount ELSE 0 END) as total_product_switch_out
-FROM holding_activity_log
-GROUP BY portfolio_fund_id;
+SELECT
+  holding_activity_log.portfolio_fund_id,
+  SUM(
+    CASE
+      WHEN holding_activity_log.activity_type = ANY (
+        ARRAY['Investment'::text, 'RegularInvestment'::text]
+      ) THEN holding_activity_log.amount
+      ELSE 0::numeric
+    END
+  ) AS total_investments,
+  SUM(
+    CASE
+      WHEN holding_activity_log.activity_type = 'TaxUplift'::text THEN holding_activity_log.amount
+      ELSE 0::numeric
+    END
+  ) AS total_tax_uplift,
+  SUM(
+    CASE
+      WHEN holding_activity_log.activity_type = 'Withdrawal'::text THEN holding_activity_log.amount
+      ELSE 0::numeric
+    END
+  ) AS total_withdrawals,
+  SUM(
+    CASE
+      WHEN holding_activity_log.activity_type = 'FundSwitchIn'::text THEN holding_activity_log.amount
+      ELSE 0::numeric
+    END
+  ) AS total_fund_switch_in,
+  SUM(
+    CASE
+      WHEN holding_activity_log.activity_type = 'FundSwitchOut'::text THEN holding_activity_log.amount
+      ELSE 0::numeric
+    END
+  ) AS total_fund_switch_out,
+  SUM(
+    CASE
+      WHEN holding_activity_log.activity_type = 'ProductSwitchIn'::text THEN holding_activity_log.amount
+      ELSE 0::numeric
+    END
+  ) AS total_product_switch_in,
+  SUM(
+    CASE
+      WHEN holding_activity_log.activity_type = 'ProductSwitchOut'::text THEN holding_activity_log.amount
+      ELSE 0::numeric
+    END
+  ) AS total_product_switch_out
+FROM
+  holding_activity_log
+GROUP BY
+  holding_activity_log.portfolio_fund_id;
 
 -- View for complete fund data with all related information
 CREATE OR REPLACE VIEW public.complete_fund_data AS
-SELECT 
-    pf.id as portfolio_fund_id,
-    pf.portfolio_id,
-    pf.available_funds_id,
-    pf.status,
-    pf.target_weighting,
-    pf.start_date,
-    pf.end_date,
-    pf.amount_invested,
-    af.fund_name,
-    af.isin_number,
-    af.risk_factor,
-    af.fund_cost,
-    lfv.valuation as market_value,
-    lfv.valuation_date,
-    liv.irr_result as irr,
-    liv.irr_date,
-    fas.total_investments,
-fas.total_tax_uplift,
-fas.total_withdrawals,
-    fas.total_switch_in,
-    fas.total_switch_out,
-    fas.total_product_switch_in,
-    fas.total_product_switch_out
-FROM portfolio_funds pf
-LEFT JOIN available_funds af ON af.id = pf.available_funds_id
-LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id
-LEFT JOIN latest_portfolio_fund_irr_values liv ON liv.fund_id = pf.id
-LEFT JOIN fund_activity_summary fas ON fas.portfolio_fund_id = pf.id;
+SELECT
+  pf.id AS portfolio_fund_id,
+  pf.portfolio_id,
+  pf.available_funds_id,
+  pf.status,
+  pf.target_weighting,
+  pf.start_date,
+  pf.end_date,
+  pf.amount_invested,
+  af.fund_name,
+  af.isin_number,
+  af.risk_factor,
+  af.fund_cost,
+  lfv.valuation AS market_value,
+  lfv.valuation_date,
+  liv.irr_result AS irr,
+  liv.irr_date,
+  fas.total_investments,
+  fas.total_tax_uplift,
+  fas.total_withdrawals,
+  fas.total_fund_switch_in,
+  fas.total_fund_switch_out,
+  fas.total_product_switch_in,
+  fas.total_product_switch_out
+FROM
+  portfolio_funds pf
+  LEFT JOIN available_funds af ON af.id = pf.available_funds_id
+  LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id
+  LEFT JOIN latest_portfolio_fund_irr_values liv ON liv.fund_id = pf.id
+  LEFT JOIN fund_activity_summary fas ON fas.portfolio_fund_id = pf.id;
 
 -- View for complete client group data with all products and funds
 CREATE OR REPLACE VIEW public.client_group_complete_data AS

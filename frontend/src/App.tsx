@@ -31,9 +31,9 @@ import ProductOwners from './pages/ProductOwners';
 import ProductOwnerDetails from './pages/ProductOwnerDetails';
 
 // Definitions Pages - System configuration and reference data management
-import DefinitionsFunds from './pages/DefinitionsFunds';
-import DefinitionsProviders from './pages/DefinitionsProviders';
-import DefinitionsTemplates from './pages/DefinitionsTemplates';
+import Funds from './pages/Funds';
+import Providers from './pages/Providers';
+import PortfolioTemplates from './pages/PortfolioTemplates';
 import ProviderDetails from './pages/ProviderDetails';
 import FundDetails from './pages/FundDetails';
 import PortfolioDetails from './pages/PortfolioDetails';
@@ -104,9 +104,9 @@ const AppContent: React.FC = () => {
           
           {/* Definitions Section - System setup and configuration */}
           {/* Separate definition pages */}
-          <Route path="/definitions/funds" element={<AppLayout><DefinitionsFunds /></AppLayout>} />
-          <Route path="/definitions/providers" element={<AppLayout><DefinitionsProviders /></AppLayout>} />
-          <Route path="/definitions/portfolio-templates" element={<AppLayout><DefinitionsTemplates /></AppLayout>} />
+          <Route path="/definitions/funds" element={<AppLayout><Funds /></AppLayout>} />
+          <Route path="/definitions/providers" element={<AppLayout><Providers /></AppLayout>} />
+          <Route path="/definitions/portfolio-templates" element={<AppLayout><PortfolioTemplates /></AppLayout>} />
           
           {/* Legacy unified definitions page (redirect to funds by default) */}
           <Route path="/definitions" element={<Navigate to="/definitions/funds" replace />} />

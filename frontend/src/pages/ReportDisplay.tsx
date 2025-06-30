@@ -25,8 +25,6 @@ interface ProductPeriodSummary {
   total_fund_switch_in: number;
   total_fund_switch_out: number;
   total_withdrawal: number;
-  total_switch_in: number; // Keep for backward compatibility
-  total_switch_out: number; // Keep for backward compatibility
   net_flow: number;
   current_valuation: number;
   irr: number | null;
@@ -50,8 +48,6 @@ interface FundSummary {
   total_fund_switch_in: number;
   total_fund_switch_out: number;
   total_withdrawal: number;
-  total_switch_in: number; // Keep for backward compatibility
-  total_switch_out: number; // Keep for backward compatibility
   net_flow: number;
   current_valuation: number;
   irr: number | null;

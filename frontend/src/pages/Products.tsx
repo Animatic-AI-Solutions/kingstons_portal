@@ -56,7 +56,6 @@ const Products: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [groupByClient, setGroupByClient] = useState(false);
 
 
   // State for portfolio type filtering
@@ -346,15 +345,6 @@ const Products: React.FC = () => {
       <div className="flex justify-between items-center mb-3">
         <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Products</h1>
         <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={groupByClient}
-              onChange={(e) => setGroupByClient(e.target.checked)}
-              className="form-checkbox h-5 w-5 text-blue-600"
-            />
-            <span>Group by Client Group</span>
-          </label>
           <ActionButton
             variant="add"
             size="md"

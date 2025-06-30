@@ -84,8 +84,6 @@ interface ProductPeriodSummary {
   total_fund_switch_in: number;
   total_fund_switch_out: number;
   total_withdrawal: number;
-  total_switch_in: number; // Keep for backward compatibility
-  total_switch_out: number; // Keep for backward compatibility
   net_flow: number;
   current_valuation: number;
   irr: number | null;
@@ -110,8 +108,6 @@ interface FundSummary {
   total_fund_switch_in: number;
   total_fund_switch_out: number;
   total_withdrawal: number;
-  total_switch_in: number; // Keep for backward compatibility
-  total_switch_out: number; // Keep for backward compatibility
   net_flow: number;
   current_valuation: number;
   irr: number | null;
@@ -1412,8 +1408,7 @@ const ReportGenerator: React.FC = () => {
             total_fund_switch_in: fundFundSwitchIn,
             total_fund_switch_out: fundFundSwitchOut,
             total_withdrawal: fundWithdrawal,
-            total_switch_in: fundSwitchIn,
-            total_switch_out: fundSwitchOut,
+
             net_flow: fundInvestment + fundRegularInvestment + fundTaxUplift + fundProductSwitchIn + fundFundSwitchIn - fundWithdrawal - fundProductSwitchOut - fundFundSwitchOut,
             current_valuation: fundValuation,
             irr: fundIRR,
@@ -1704,8 +1699,8 @@ const ReportGenerator: React.FC = () => {
               risk: f.risk_factor, 
               totalInvestment: f.total_investment,
               totalWithdrawal: f.total_withdrawal,
-              totalSwitchIn: f.total_switch_in,
-              totalSwitchOut: f.total_switch_out,
+                        totalSwitchIn: f.total_fund_switch_in,
+          totalSwitchOut: f.total_fund_switch_out,
               netFlow: f.net_flow
             }))
           });
@@ -1723,8 +1718,7 @@ const ReportGenerator: React.FC = () => {
             total_fund_switch_in: 0,
             total_fund_switch_out: 0,
             total_withdrawal: totalWithdrawal,
-            total_switch_in: totalSwitchIn,
-            total_switch_out: totalSwitchOut,
+
             net_flow: totalInvestment - totalWithdrawal + totalSwitchIn - totalSwitchOut,
             current_valuation: totalValuation,
             irr: previousFundsIRR, // Calculate IRR for Previous Funds using standardized endpoint
@@ -1817,8 +1811,8 @@ const ReportGenerator: React.FC = () => {
         const productTotalFundSwitchIn = fundSummaries.reduce((sum, fund) => sum + fund.total_fund_switch_in, 0);
         const productTotalFundSwitchOut = fundSummaries.reduce((sum, fund) => sum + fund.total_fund_switch_out, 0);
         const productTotalWithdrawal = fundSummaries.reduce((sum, fund) => sum + fund.total_withdrawal, 0);
-        const productTotalSwitchIn = fundSummaries.reduce((sum, fund) => sum + fund.total_switch_in, 0);
-        const productTotalSwitchOut = fundSummaries.reduce((sum, fund) => sum + fund.total_switch_out, 0);
+        const productTotalSwitchIn = fundSummaries.reduce((sum, fund) => sum + fund.total_fund_switch_in, 0);
+        const productTotalSwitchOut = fundSummaries.reduce((sum, fund) => sum + fund.total_fund_switch_out, 0);
 
         console.log(`✅ Product ${productDetails.product_name} corrected totals from fund summaries:`, {
           investment: productTotalInvestment,
@@ -1846,8 +1840,7 @@ const ReportGenerator: React.FC = () => {
           total_fund_switch_in: productTotalFundSwitchIn,
           total_fund_switch_out: productTotalFundSwitchOut,
           total_withdrawal: productTotalWithdrawal,
-          total_switch_in: productTotalSwitchIn,
-          total_switch_out: productTotalSwitchOut,
+
           net_flow: productTotalInvestment + productTotalRegularInvestment + productTotalTaxUplift + productTotalProductSwitchIn + productTotalFundSwitchIn - productTotalWithdrawal - productTotalProductSwitchOut - productTotalFundSwitchOut,
           current_valuation: productValuation,
           irr: productIRR,
@@ -2050,8 +2043,8 @@ Please select a different valuation date or ensure all active funds have valuati
   const transactionRowLabels = [
     { key: 'total_investment', label: 'Investment' },
     { key: 'total_withdrawal', label: 'Withdrawal' },
-    { key: 'total_switch_in', label: 'Fund Switch In' },
-    { key: 'total_switch_out', label: 'Fund Switch Out' },
+    { key: 'total_fund_switch_in', label: 'Fund Switch In' },
+    { key: 'total_fund_switch_out', label: 'Fund Switch Out' },
     { key: 'valuation', label: 'Valuation' },
   ];
 
@@ -2826,7 +2819,7 @@ Please select a different valuation date or ensure all active funds have valuati
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-center bg-blue-50">
                             {(() => {
                               // Calculate profit: (valuation + withdrawals + product switch outs + fund switch outs) - (investments + fund switch ins + tax uplift + product switch ins)
-                              const gains = fund.current_valuation + fund.total_withdrawal + 0 + fund.total_switch_out; // product switch out is 0 for now
+                              const gains = fund.current_valuation + fund.total_withdrawal + 0 + fund.total_fund_switch_out; // product switch out is 0 for now
                               const costs = fund.total_investment + fund.total_fund_switch_in + fund.total_product_switch_in + 0; // tax uplift is 0 for now
                               const profit = gains - costs;
                               return (
@@ -3104,7 +3097,7 @@ Please select a different valuation date or ensure all active funds have valuati
                         {formatCurrencyWithTruncation(0)} {/* Product switch in - placeholder for now */}
                         </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
-                        {formatCurrencyWithTruncation(product.total_switch_out - product.total_switch_in)}
+                        {formatCurrencyWithTruncation(product.total_fund_switch_out - product.total_fund_switch_in)}
                           </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
                         {formatCurrencyWithTruncation(0)} {/* Product switch out - placeholder for now */}
@@ -3165,7 +3158,7 @@ Please select a different valuation date or ensure all active funds have valuati
                       {formatCurrencyWithTruncation(0)} {/* Product switch in total - placeholder for now */}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
-                      {formatCurrencyWithTruncation(productSummaries.reduce((sum, product) => sum + (product.total_switch_out - product.total_switch_in), 0))}
+                      {formatCurrencyWithTruncation(productSummaries.reduce((sum, product) => sum + (product.total_fund_switch_out - product.total_fund_switch_in), 0))}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
                       {formatCurrencyWithTruncation(0)} {/* Product switch out total - placeholder for now */}

@@ -15,13 +15,12 @@ import {
 } from '../utils/definitionsShared';
 import api from '../services/api';
 
-const DefinitionsTemplates: React.FC = () => {
+const PortfolioTemplates: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   
   // State management
   const [searchQuery, setSearchQuery] = useState('');
-  const [showInactive, setShowInactive] = useState(false);
   const [portfolioSortField, setPortfolioSortField] = useState<PortfolioSortField>('name');
   const [portfolioSortOrder, setPortfolioSortOrder] = useState<SortOrder>('asc');
   const [riskRangeFilters, setRiskRangeFilters] = useState<(string | number)[]>([]);
@@ -173,26 +172,10 @@ const DefinitionsTemplates: React.FC = () => {
       });
     }
     
-    // Apply inactive filter
-    if (!showInactive) {
-      console.log('Checking portfolio statuses before filtering:');
-      portfolios.forEach((portfolio, index) => {
-        console.log(`Portfolio ${index + 1}:`, {
-          id: portfolio.id,
-          name: portfolio.name,
-          status: portfolio.status,
-          hasStatus: 'status' in portfolio
-        });
-      });
-      
-      // Only filter if portfolios actually have status field
-      const portfoliosWithStatus = portfolios.filter(p => 'status' in p && p.status);
-      if (portfoliosWithStatus.length > 0) {
-        filtered = filtered.filter(portfolio => portfolio.status === 'active');
-        console.log('After status filter (active only):', filtered.length);
-      } else {
-        console.log('No status field found in portfolios, skipping status filter');
-      }
+    // Apply status filter - only show active templates
+    const portfoliosWithStatus = portfolios.filter(p => 'status' in p && p.status);
+    if (portfoliosWithStatus.length > 0) {
+      filtered = filtered.filter(portfolio => portfolio.status === 'active');
     }
     
     console.log('Filtered portfolios:', filtered.length);
@@ -233,7 +216,7 @@ const DefinitionsTemplates: React.FC = () => {
           : bValue - aValue;
       }
     });
-  }, [portfolios, searchQuery, portfolioTypeFilters, riskRangeFilters, showInactive, portfolioSortField, portfolioSortOrder]);
+  }, [portfolios, searchQuery, portfolioTypeFilters, riskRangeFilters, portfolioSortField, portfolioSortOrder]);
 
   if (!user) return null;
 
@@ -242,16 +225,6 @@ const DefinitionsTemplates: React.FC = () => {
       <div className="flex justify-between items-center mb-3">
         <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Portfolio Templates</h1>
         <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={showInactive}
-              onChange={(e) => setShowInactive(e.target.checked)}
-              className="form-checkbox h-5 w-5 text-blue-600"
-              aria-label="Show inactive items"
-            />
-            <span>Show Inactive</span>
-          </label>
           <button
             onClick={handleAddNew}
             className="bg-teal-600 text-white px-4 py-1.5 rounded-xl font-medium hover:bg-teal-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 shadow-sm flex items-center gap-1"
@@ -387,4 +360,4 @@ const DefinitionsTemplates: React.FC = () => {
   );
 };
 
-export default DefinitionsTemplates; 
+export default PortfolioTemplates; 
