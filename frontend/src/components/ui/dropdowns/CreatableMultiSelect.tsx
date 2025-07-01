@@ -84,19 +84,28 @@ const CreatableMultiSelect = React.forwardRef<HTMLDivElement, CreatableMultiSele
   // Calculate total options for keyboard navigation
   const totalOptions = filteredOptions.length + (showCreateOption ? 1 : 0);
   
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside - improved reliability
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (event: Event) => {
+      const target = event.target as Node;
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         setIsOpen(false);
         setSearchTerm('');
         setFocusedIndex(-1);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    if (isOpen) {
+      // Use capture phase to ensure this fires before other handlers
+      document.addEventListener('click', handleClickOutside, true);
+      document.addEventListener('mousedown', handleClickOutside, true);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside, true);
+      document.removeEventListener('mousedown', handleClickOutside, true);
+    };
+  }, [isOpen]);
   
   // Reset focused index when filtered options change
   useEffect(() => {
@@ -217,7 +226,7 @@ const CreatableMultiSelect = React.forwardRef<HTMLDivElement, CreatableMultiSele
   };
   
   // Base classes - matching Group 1 design system
-  const baseClasses = 'block border rounded-md shadow-sm transition-all duration-150 ease-in-out focus:outline-none focus:ring-3 focus:ring-offset-2';
+  const baseClasses = 'block border rounded-md shadow-sm transition-all duration-150 ease-in-out focus:outline-none focus:ring-4 focus:ring-offset-2';
   
   // Size classes - consistent with Group 1 heights (min 32px, 40px, 48px)
   const sizeClasses = {
@@ -368,7 +377,7 @@ const CreatableMultiSelect = React.forwardRef<HTMLDivElement, CreatableMultiSele
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search or type to create..."
-                  className="block w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-700 focus:border-primary-700"
+                  className="block w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-700 focus:border-primary-700"
                 />
               </div>
             </div>

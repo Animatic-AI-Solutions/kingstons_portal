@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { SearchableDropdown, FilterSearch } from '../components/ui';
-import FilterDropdown from '../components/ui/FilterDropdown';
+import FilterDropdown from '../components/ui/dropdowns/FilterDropdown';
 import { useClientData } from '../hooks/useClientData';
 
 interface Client {

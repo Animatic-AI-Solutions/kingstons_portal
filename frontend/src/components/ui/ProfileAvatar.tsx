@@ -22,7 +22,7 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
     lg: 'h-14 w-14'
   };
   
-  const commonClasses = `${onClick ? 'cursor-pointer hover:ring-2 hover:ring-primary-300' : ''} overflow-hidden rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 border-2 border-gray-200`;
+  const commonClasses = `${onClick ? 'cursor-pointer hover:ring-3 hover:ring-primary-300' : ''} overflow-hidden rounded-full focus:outline-none focus:ring-3 focus:ring-primary-500 focus:ring-offset-2 border-2 border-gray-200`;
   
   const imageElement = (
     <img 

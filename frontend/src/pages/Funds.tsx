@@ -1,10 +1,10 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import FilterDropdown from '../components/ui/FilterDropdown';
-import { TableSkeleton } from '../components/ui/TableSkeleton';
-import { EmptyState } from '../components/ui/EmptyState';
-import { ErrorDisplay } from '../components/ui/ErrorDisplay';
+import FilterDropdown from '../components/ui/dropdowns/FilterDropdown';
+import { TableSkeleton } from '../components/ui/feedback/TableSkeleton';
+import { EmptyState } from '../components/ui/feedback/EmptyState';
+import { ErrorDisplay } from '../components/ui/feedback/ErrorDisplay';
 import { useEntityData } from '../hooks/useEntityData';
 import { 
   Fund, 

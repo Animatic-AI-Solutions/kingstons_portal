@@ -111,7 +111,7 @@ const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(({
   const showText = !iconOnly && buttonText;
 
   // Base classes with sleek modern styling
-  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-1 transition-all duration-150 ease-out active:scale-[0.98] relative';
+  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-md focus:outline-none focus:ring-3 focus:ring-offset-1 transition-all duration-150 ease-out active:scale-[0.98] relative';
 
   // Size classes - even more compact with modern radius
   const sizeClasses = {

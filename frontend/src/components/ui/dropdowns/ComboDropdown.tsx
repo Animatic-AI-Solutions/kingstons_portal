@@ -64,18 +64,27 @@ const ComboDropdown = React.forwardRef<HTMLInputElement, ComboDropdownProps>(({
       )
     : options.filter(option => !option.disabled);
   
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside - improved reliability
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (event: Event) => {
+      const target = event.target as Node;
+      if (containerRef.current && !containerRef.current.contains(target)) {
         setIsOpen(false);
         setFocusedIndex(-1);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    if (isOpen) {
+      // Use capture phase to ensure this fires before other handlers
+      document.addEventListener('click', handleClickOutside, true);
+      document.addEventListener('mousedown', handleClickOutside, true);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside, true);
+      document.removeEventListener('mousedown', handleClickOutside, true);
+    };
+  }, [isOpen]);
   
   // Reset focused index when filtered options change
   useEffect(() => {
@@ -183,7 +192,7 @@ const ComboDropdown = React.forwardRef<HTMLInputElement, ComboDropdownProps>(({
   };
   
   // Base classes - matching Group 1 design system
-  const baseClasses = 'block border rounded-md shadow-sm transition-all duration-150 ease-in-out focus:outline-none focus:ring-3 focus:ring-offset-2';
+  const baseClasses = 'block border rounded-md shadow-sm transition-all duration-150 ease-in-out focus:outline-none focus:ring-4 focus:ring-offset-2';
   
   // Size classes - consistent with Group 1 heights (32px, 40px, 48px)
   const sizeClasses = {

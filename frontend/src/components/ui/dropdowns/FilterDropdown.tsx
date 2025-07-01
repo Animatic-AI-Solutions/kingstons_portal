@@ -122,16 +122,24 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
   }, [searchTerm, isOpen]);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (event: Event) => {
+      const target = event.target as Node;
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         setIsOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
+
+    if (isOpen) {
+      // Use capture phase to ensure this fires before other handlers
+      document.addEventListener('click', handleClickOutside, true);
+      document.addEventListener('mousedown', handleClickOutside, true);
+    }
+
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('click', handleClickOutside, true);
+      document.removeEventListener('mousedown', handleClickOutside, true);
     };
-  }, []);
+  }, [isOpen]);
 
   useEffect(() => {
     if (focusedIndex >= 0 && optionsRef.current) {
@@ -203,7 +211,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
       <button
         type="button"
         id={id}
-        className={`flex items-center px-3 py-1.5 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                  className={`flex items-center px-3 py-1.5 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-3 focus:ring-indigo-500 focus:border-indigo-500 ${
           disabled ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white hover:bg-indigo-50'
         }`}
         style={{ width: `${calculatedWidth}px` }}

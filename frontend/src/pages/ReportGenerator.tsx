@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import MultiSelectDropdown from '../components/ui/MultiSelectDropdown';
+import MultiSelectDropdown from '../components/ui/dropdowns/MultiSelectDropdown';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import { calculateStandardizedMultipleFundsIRR, getLatestFundIRRs } from '../services/api';
 import { createIRRDataService } from '../services/irrDataService';

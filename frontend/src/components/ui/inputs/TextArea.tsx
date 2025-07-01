@@ -58,7 +58,7 @@ const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(({
   };
   
   // Base classes
-  const baseClasses = 'block w-full border rounded-md shadow-sm transition-all duration-150 ease-in-out focus:outline-none focus:ring-3 focus:ring-offset-2';
+  const baseClasses = 'block w-full border rounded-md shadow-sm transition-all duration-150 ease-in-out focus:outline-none focus:ring-4 focus:ring-offset-2';
   
   // Size classes
   const sizeClasses = {

@@ -1,5 +1,5 @@
 import React from 'react';
-import ChangeIndicator from './ChangeIndicator';
+import ChangeIndicator from './card/ChangeIndicator';
 
 interface StatBoxProps {
   title: string;

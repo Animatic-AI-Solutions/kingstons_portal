@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { globalSearch } from '../../services/api';
+import { globalSearch } from '../../../services/api';
 import { 
   MagnifyingGlassIcon,
   UsersIcon,
@@ -63,18 +63,27 @@ const GlobalSearch: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [query]);
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside - improved reliability
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (event: Event) => {
+      const target = event.target as Node;
+      if (searchRef.current && !searchRef.current.contains(target)) {
         setIsOpen(false);
         setSelectedIndex(-1);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    if (isOpen) {
+      // Use capture phase to ensure this fires before other handlers
+      document.addEventListener('click', handleClickOutside, true);
+      document.addEventListener('mousedown', handleClickOutside, true);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside, true);
+      document.removeEventListener('mousedown', handleClickOutside, true);
+    };
+  }, [isOpen]);
 
   // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -227,7 +236,7 @@ const GlobalSearch: React.FC = () => {
           placeholder="Search clients, products, funds..."
           className="block w-full h-10 px-3 py-2 pl-10 pr-10 text-sm border border-gray-300 rounded-md shadow-sm bg-white 
                      transition-all duration-150 ease-in-out 
-                     focus:outline-none focus:ring-3 focus:ring-offset-2 focus:border-primary-700 focus:ring-primary-700/10
+                     focus:outline-none focus:ring-4 focus:ring-offset-2 focus:border-primary-700 focus:ring-primary-700/10
                      hover:border-gray-400"
           aria-expanded={isOpen}
           aria-haspopup="listbox"

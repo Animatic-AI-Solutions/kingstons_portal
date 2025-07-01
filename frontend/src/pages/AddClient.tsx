@@ -9,7 +9,7 @@ import {
   ActionButton,
   AddButton
 } from '../components/ui';
-import SearchableDropdown from '../components/ui/SearchableDropdown';
+import SearchableDropdown from '../components/ui/dropdowns/SearchableDropdown';
 import { MultiSelectDropdown, CreatableDropdown, BaseDropdown } from '../components/ui';
 import CreateProductOwnerModal from '../components/CreateProductOwnerModal';
 import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';

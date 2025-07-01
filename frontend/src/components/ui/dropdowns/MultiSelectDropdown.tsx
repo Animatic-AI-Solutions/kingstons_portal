@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDownIcon, ChevronUpIcon, MagnifyingGlassIcon, CheckIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChevronUpIcon, MagnifyingGlassIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { DropdownOption } from './BaseDropdown';
 
-export interface CreatableDropdownProps {
+export interface MultiSelectDropdownProps {
   label?: string;
   error?: string;
   helperText?: string;
@@ -11,20 +11,18 @@ export interface CreatableDropdownProps {
   variant?: 'default' | 'success' | 'error';
   fullWidth?: boolean;
   options: DropdownOption[];
-  value?: string | number;
-  onChange?: (value: string | number) => void;
-  onCreateOption?: (inputValue: string) => Promise<DropdownOption> | DropdownOption;
+  values?: (string | number)[];
+  onChange?: (values: (string | number)[]) => void;
   placeholder?: string;
   disabled?: boolean;
   loading?: boolean;
   searchable?: boolean;
   id?: string;
   className?: string;
-  createLabel?: string;
-  allowCreate?: boolean;
+  maxSelectedDisplay?: number;
 }
 
-const CreatableDropdown = React.forwardRef<HTMLButtonElement, CreatableDropdownProps>(({
+const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdownProps>(({
   label,
   error,
   helperText,
@@ -33,37 +31,33 @@ const CreatableDropdown = React.forwardRef<HTMLButtonElement, CreatableDropdownP
   variant = 'default',
   fullWidth = true,
   options = [],
-  value,
+  values = [],
   onChange,
-  onCreateOption,
-  placeholder = 'Select or create an option...',
+  placeholder = 'Select options...',
   disabled = false,
   loading = false,
   searchable = true,
   id,
   className = '',
-  createLabel = 'Create',
-  allowCreate = true,
+  maxSelectedDisplay = 3,
   ...props
 }, ref) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [focusedIndex, setFocusedIndex] = useState(-1);
-  const [isCreating, setIsCreating] = useState(false);
   
   const dropdownRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   
   // Generate unique ID if not provided
-  const dropdownId = id || `creatable-dropdown-${Math.random().toString(36).substr(2, 9)}`;
+  const dropdownId = id || `multiselect-${Math.random().toString(36).substr(2, 9)}`;
   
   // Determine variant based on error state
   const currentVariant = error ? 'error' : variant;
   
-  // Find selected option
-  const selectedOption = options.find(option => option.value === value);
-  const displayValue = selectedOption ? selectedOption.label : placeholder;
+  // Get selected options
+  const selectedOptions = options.filter(option => values.includes(option.value));
   
   // Filter options based on search term
   const filteredOptions = searchable && searchTerm
@@ -72,27 +66,28 @@ const CreatableDropdown = React.forwardRef<HTMLButtonElement, CreatableDropdownP
       )
     : options.filter(option => !option.disabled);
   
-  // Check if search term matches any existing option exactly
-  const exactMatch = options.find(option => 
-    option.label.toLowerCase() === searchTerm.toLowerCase()
-  );
-  
-  // Show create option when there's a search term, no exact match, and creation is allowed
-  const showCreateOption = allowCreate && searchTerm && !exactMatch && searchTerm.trim().length > 0;
-  
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside - improved reliability
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (event: Event) => {
+      const target = event.target as Node;
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         setIsOpen(false);
         setSearchTerm('');
         setFocusedIndex(-1);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    if (isOpen) {
+      // Use capture phase to ensure this fires before other handlers
+      document.addEventListener('click', handleClickOutside, true);
+      document.addEventListener('mousedown', handleClickOutside, true);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside, true);
+      document.removeEventListener('mousedown', handleClickOutside, true);
+    };
+  }, [isOpen]);
   
   // Reset focused index when filtered options change
   useEffect(() => {
@@ -109,10 +104,30 @@ const CreatableDropdown = React.forwardRef<HTMLButtonElement, CreatableDropdownP
     }
   }, [focusedIndex]);
   
-  const handleToggle = () => {
+  const handleInputClick = () => {
+    if (!disabled && !isOpen) {
+      setIsOpen(true);
+      setSearchTerm('');
+      setFocusedIndex(-1);
+      // Focus search input when opening
+      setTimeout(() => {
+        if (searchable && searchInputRef.current) {
+          searchInputRef.current.focus();
+        }
+      }, 0);
+    }
+  };
+
+  const handleArrowClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (!disabled) {
-      setIsOpen(!isOpen);
-      if (!isOpen) {
+      if (isOpen) {
+        setIsOpen(false);
+        setSearchTerm('');
+        setFocusedIndex(-1);
+      } else {
+        setIsOpen(true);
         setSearchTerm('');
         setFocusedIndex(-1);
         // Focus search input when opening
@@ -126,35 +141,27 @@ const CreatableDropdown = React.forwardRef<HTMLButtonElement, CreatableDropdownP
   };
   
   const handleSelect = (optionValue: string | number) => {
-    if (onChange) {
-      onChange(optionValue);
-    }
-    setIsOpen(false);
-    setSearchTerm('');
-    setFocusedIndex(-1);
-  };
-  
-  const handleCreate = async () => {
-    if (!onCreateOption || !searchTerm.trim() || isCreating) return;
+    if (!onChange) return;
     
-    setIsCreating(true);
-    try {
-      const newOption = await onCreateOption(searchTerm.trim());
-      if (newOption && onChange) {
-        onChange(newOption.value);
-      }
-      setIsOpen(false);
-      setSearchTerm('');
-      setFocusedIndex(-1);
-    } catch (error) {
-      console.error('Failed to create option:', error);
-    } finally {
-      setIsCreating(false);
+    let newValues: (string | number)[];
+    if (values.includes(optionValue)) {
+      newValues = values.filter(v => v !== optionValue);
+    } else {
+      newValues = [...values, optionValue];
     }
+    onChange(newValues);
   };
   
-  // Calculate total options for keyboard navigation
-  const totalOptions = filteredOptions.length + (showCreateOption ? 1 : 0);
+  const handleRemove = (optionValue: string | number) => {
+    if (!onChange) return;
+    const newValues = values.filter(v => v !== optionValue);
+    onChange(newValues);
+  };
+  
+  const handleClear = () => {
+    if (!onChange) return;
+    onChange([]);
+  };
   
   // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -169,7 +176,7 @@ const CreatableDropdown = React.forwardRef<HTMLButtonElement, CreatableDropdownP
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setFocusedIndex(prev => (prev < totalOptions - 1 ? prev + 1 : prev));
+        setFocusedIndex(prev => (prev < filteredOptions.length - 1 ? prev + 1 : prev));
         break;
       case 'ArrowUp':
         e.preventDefault();
@@ -177,14 +184,8 @@ const CreatableDropdown = React.forwardRef<HTMLButtonElement, CreatableDropdownP
         break;
       case 'Enter':
         e.preventDefault();
-        if (focusedIndex >= 0) {
-          if (focusedIndex < filteredOptions.length) {
-            // Select existing option
-            handleSelect(filteredOptions[focusedIndex].value);
-          } else if (showCreateOption) {
-            // Create new option
-            handleCreate();
-          }
+        if (focusedIndex >= 0 && filteredOptions[focusedIndex]) {
+          handleSelect(filteredOptions[focusedIndex].value);
         }
         break;
       case 'Escape':
@@ -201,13 +202,13 @@ const CreatableDropdown = React.forwardRef<HTMLButtonElement, CreatableDropdownP
   };
   
   // Base classes - matching Group 1 design system
-  const baseClasses = 'block border rounded-md shadow-sm transition-all duration-150 ease-in-out focus:outline-none focus:ring-3 focus:ring-offset-2';
+  const baseClasses = 'block border rounded-md shadow-sm transition-all duration-150 ease-in-out focus:outline-none focus:ring-4 focus:ring-offset-2';
   
-  // Size classes - consistent with Group 1 heights (32px, 40px, 48px)
+  // Size classes - consistent with Group 1 heights (min 32px, 40px, 48px)
   const sizeClasses = {
-    sm: 'px-3 py-1.5 text-sm h-8', // 32px height
-    md: 'px-3 py-2 text-sm h-10',  // 40px height  
-    lg: 'px-4 py-3 text-base h-12' // 48px height
+    sm: 'px-3 py-1.5 text-sm min-h-8', // 32px min height
+    md: 'px-3 py-2 text-sm min-h-10',  // 40px min height  
+    lg: 'px-4 py-3 text-base min-h-12' // 48px min height
   };
   
   // Variant classes - matching Group 1 purple theme
@@ -225,7 +226,7 @@ const CreatableDropdown = React.forwardRef<HTMLButtonElement, CreatableDropdownP
   // Width classes
   const widthClasses = fullWidth ? 'w-full' : '';
   
-  const buttonClasses = `
+  const containerClasses = `
     ${baseClasses}
     ${sizeClasses[size]}
     ${variantClasses[currentVariant]}
@@ -243,6 +244,10 @@ const CreatableDropdown = React.forwardRef<HTMLButtonElement, CreatableDropdownP
     </svg>
   );
 
+  // Display logic for selected items
+  const displayedOptions = selectedOptions.slice(0, maxSelectedDisplay);
+  const remainingCount = selectedOptions.length - maxSelectedDisplay;
+
   return (
     <div ref={dropdownRef} className={`${fullWidth ? 'w-full' : ''} relative`}>
       {/* Label */}
@@ -256,20 +261,30 @@ const CreatableDropdown = React.forwardRef<HTMLButtonElement, CreatableDropdownP
         </label>
       )}
 
-      {/* Selected Option Tag */}
-      {selectedOption && (
+      {/* Selected Options Tags */}
+      {selectedOptions.length > 0 && (
         <div className="inline-flex flex-wrap gap-1.5 mb-2">
-          <div className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-primary-50 text-primary-700 border border-primary-200">
-            <span className="truncate">{selectedOption.label}</span>
-            <button
-              type="button"
-              onClick={() => onChange && onChange('')}
-              className="ml-1.5 inline-flex items-center justify-center w-3.5 h-3.5 rounded hover:bg-primary-100 focus:outline-none focus:ring-1 focus:ring-primary-300"
-              aria-label={`Remove ${selectedOption.label}`}
+          {selectedOptions.map((option) => (
+            <div
+              key={option.value}
+              className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800 border border-primary-300 shadow-sm"
             >
-              <XMarkIcon className="h-2.5 w-2.5" />
-            </button>
-          </div>
+              <span>{option.label}</span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  handleRemove(option.value);
+                }}
+                className="ml-1.5 text-xs text-primary-600 hover:text-red-600 focus:outline-none focus:text-red-600 transition-colors duration-150 cursor-pointer"
+                aria-label={`Remove ${option.label}`}
+                title={`Remove ${option.label}`}
+              >
+                ×
+              </button>
+            </div>
+          ))}
         </div>
       )}
       
@@ -288,7 +303,7 @@ const CreatableDropdown = React.forwardRef<HTMLButtonElement, CreatableDropdownP
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          onFocus={() => setIsOpen(true)}
+          onClick={handleInputClick}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
@@ -305,8 +320,11 @@ const CreatableDropdown = React.forwardRef<HTMLButtonElement, CreatableDropdownP
         />
         
         {/* Dropdown Icon */}
-        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-          <div className="h-4 w-4 text-gray-400">
+        <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+          <div
+            onClick={handleArrowClick}
+            className="h-4 w-4 text-gray-400 cursor-pointer"
+          >
             {loading ? loadingIcon : (
               isOpen ? <ChevronUpIcon className="h-4 w-4" /> : <ChevronDownIcon className="h-4 w-4" />
             )}
@@ -318,75 +336,45 @@ const CreatableDropdown = React.forwardRef<HTMLButtonElement, CreatableDropdownP
       {isOpen && (
         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
           {/* Options List */}
-          <ul ref={listRef} role="listbox" className="py-1">
+          <ul ref={listRef} role="listbox" className="py-1" aria-multiselectable="true">
             {filteredOptions.length > 0 ? (
-              filteredOptions.map((option, index) => (
-                <li
-                  key={option.value}
-                  role="option"
-                  aria-selected={option.value === value}
-                >
-                  <button
-                    type="button"
-                    onClick={() => handleSelect(option.value)}
-                    className={`
-                      w-full text-left px-4 py-2 text-sm font-normal
-                      transition-colors duration-150
-                      flex items-center justify-between
-                      ${option.value === value 
-                        ? 'bg-primary-50 text-primary-900 border-l-2 border-primary-500' 
-                        : 'hover:bg-gray-50 text-gray-900'
-                      }
-                      ${focusedIndex === index && option.value !== value 
-                        ? 'bg-gray-50' 
-                        : ''
-                      }
-                      focus:outline-none focus:bg-gray-50
-                    `.trim().replace(/\s+/g, ' ')}
+              filteredOptions.map((option, index) => {
+                const isSelected = values.includes(option.value);
+                return (
+                  <li
+                    key={option.value}
+                    role="option"
+                    aria-selected={isSelected}
                   >
-                    <span className="truncate">{option.label}</span>
-                    {option.value === value && (
-                      <CheckIcon className="h-4 w-4 text-primary-600 flex-shrink-0" />
-                    )}
-                  </button>
-                </li>
-              ))
+                    <button
+                      type="button"
+                      onClick={() => handleSelect(option.value)}
+                      className={`
+                        w-full text-left px-4 py-2 text-sm font-normal
+                        transition-colors duration-150
+                        flex items-center justify-between
+                        ${isSelected 
+                          ? 'bg-primary-50 text-primary-900 border-l-2 border-primary-500' 
+                          : 'hover:bg-gray-50 text-gray-900'
+                        }
+                        ${focusedIndex === index && !isSelected 
+                          ? 'bg-gray-50' 
+                          : ''
+                        }
+                        focus:outline-none focus:bg-gray-50
+                      `.trim().replace(/\s+/g, ' ')}
+                    >
+                      <span className="truncate">{option.label}</span>
+                      {isSelected && (
+                        <CheckIcon className="h-4 w-4 text-primary-600 flex-shrink-0" />
+                      )}
+                    </button>
+                  </li>
+                );
+              })
             ) : (
               <li className="px-4 py-2 text-sm text-gray-500 text-center">
                 {searchTerm ? 'No options found' : 'No options available'}
-              </li>
-            )}
-
-            {/* Create Option */}
-            {showCreateOption && (
-              <li>
-                <button
-                  type="button"
-                  onClick={handleCreate}
-                  disabled={isCreating}
-                  className={`
-                    w-full text-left px-4 py-2 text-sm font-normal
-                    transition-colors duration-150
-                    flex items-center gap-2
-                    ${focusedIndex === filteredOptions.length 
-                      ? 'bg-gray-50' 
-                      : 'hover:bg-gray-50'
-                    }
-                    focus:outline-none focus:bg-gray-50
-                    text-primary-700
-                  `.trim().replace(/\s+/g, ' ')}
-                >
-                  <PlusIcon className="h-4 w-4 flex-shrink-0" />
-                  <span>{createLabel} "{searchTerm}"</span>
-                  {isCreating && (
-                    <div className="ml-auto">
-                      <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                    </div>
-                  )}
-                </button>
               </li>
             )}
           </ul>
@@ -419,6 +407,6 @@ const CreatableDropdown = React.forwardRef<HTMLButtonElement, CreatableDropdownP
   );
 });
 
-CreatableDropdown.displayName = 'CreatableDropdown';
+MultiSelectDropdown.displayName = 'MultiSelectDropdown';
 
-export default CreatableDropdown; 
+export default MultiSelectDropdown; 

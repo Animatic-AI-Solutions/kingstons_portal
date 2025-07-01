@@ -4,8 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { Modal } from 'antd';
 
 import { getProductOwnerDisplayName, ProductOwner } from '../utils/productOwnerUtils';
-import FilterSearch from '../components/ui/FilterSearch';
-import FilterDropdown from '../components/ui/FilterDropdown';
+import FilterSearch from '../components/ui/search/FilterSearch';
+import FilterDropdown from '../components/ui/dropdowns/FilterDropdown';
 import { BaseInput, MultiSelectDropdown, ActionButton } from '../components/ui';
 
 interface Product {

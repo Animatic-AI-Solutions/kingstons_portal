@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import FilterDropdown from '../components/ui/FilterDropdown';
+import FilterDropdown from '../components/ui/dropdowns/FilterDropdown';
 
 interface Portfolio {
   id: number;
