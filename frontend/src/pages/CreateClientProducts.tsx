@@ -4,7 +4,7 @@ import AddFundModal from '../components/AddFundModal';
 import CreateProductOwnerModal from '../components/CreateProductOwnerModal';
 
 import { useAuth } from '../context/AuthContext';
-import { Radio, Select, Input, Checkbox, DatePicker } from 'antd';
+import { Radio, Select, Input, Checkbox } from 'antd';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import SearchableDropdown from '../components/ui/SearchableDropdown';
@@ -2190,27 +2190,25 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                   {/* Row 2: Start Date and Plan Number */}
                                   <div className="grid grid-cols-2 gap-1 sm:gap-2">
                                     <div>
-                                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                                        Start Date <span className="text-red-500">*</span>
-                                      </label>
-                                      <DatePicker
-                                        picker="month"
-                                        placeholder="mm/yyyy"
-                                        value={product.start_date || null}
+                                      <DateInput
+                                        label="Start Date"
+                                        placeholder="dd/mm/yyyy"
+                                        value={product.start_date ? product.start_date.toDate() : undefined}
                                         onChange={(date) => {
-                                          // Always set to first day of the selected month
-                                          const dayjsDate = date ? date.startOf('month') : dayjs().startOf('month');
-                                          handleProductChange(product.id, 'start_date', dayjsDate);
+                                          if (date) {
+                                            // Convert to first day of the month and create dayjs object
+                                            const firstOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+                                            const dayjsDate = dayjs(firstOfMonth);
+                                            handleProductChange(product.id, 'start_date', dayjsDate);
+                                          } else {
+                                            handleProductChange(product.id, 'start_date', dayjs().startOf('month'));
+                                          }
                                         }}
-                                        size="small"
-                                        className={`w-full ${validationErrors[product.id]?.start_date ? 'border-red-500' : ''}`}
-                                        format="MMM YYYY"
+                                        size="sm"
+                                        required
+                                        error={validationErrors[product.id]?.start_date}
+                                        helperText="Product start date (will be set to 1st of the selected month)"
                                       />
-                                      {validationErrors[product.id]?.start_date && (
-                                        <div className="text-xs text-red-600 mt-1">
-                                          {validationErrors[product.id].start_date}
-                                        </div>
-                                      )}
                                     </div>
 
                                     <div>

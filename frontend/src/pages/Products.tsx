@@ -578,7 +578,7 @@ const Products: React.FC = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredAndSortedProducts.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 border-b border-gray-200">
+                      <td colSpan={8} className="px-6 py-3 whitespace-nowrap text-sm text-center text-gray-500 border-b border-gray-200">
                         No products found
                       </td>
                     </tr>
@@ -589,28 +589,28 @@ const Products: React.FC = () => {
                         className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
                       onClick={() => handleProductClick(product.id)}
                     >
-                        <td className="px-6 py-3 whitespace-nowrap">
+                        <td className="px-6 py-2 whitespace-nowrap">
                           <div className="text-sm text-gray-600 font-sans">{product.product_name}</div>
                         </td>
-                        <td className="px-6 py-3 whitespace-nowrap">
+                        <td className="px-6 py-2 whitespace-nowrap">
                           <div className="text-sm text-gray-600 font-sans">{product.client_name || 'N/A'}</div>
                         </td>
-                        <td className="px-6 py-3 whitespace-nowrap">
+                        <td className="px-6 py-2 whitespace-nowrap">
                           <div className="text-sm text-gray-600 font-sans">
                             {product.product_type || 'N/A'}
                           </div>
                         </td>
-                        <td className="px-6 py-3 whitespace-nowrap">
+                        <td className="px-6 py-2 whitespace-nowrap">
                           <div className="text-sm text-gray-600 font-sans">
                             {product.provider_name || 'N/A'}
                           </div>
                         </td>
-                        <td className="px-6 py-3 whitespace-nowrap">
+                        <td className="px-6 py-2 whitespace-nowrap">
                           <div className="text-sm text-gray-600 font-sans">
                             {product.product_owners && product.product_owners.length > 0 ? (
                               <div className="flex flex-wrap gap-1">
                                 {product.product_owners.map((owner, index) => (
-                                  <span key={owner.id} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                  <span key={owner.id} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                     {getProductOwnerDisplayName(owner)}
                                   </span>
                                 ))}
@@ -620,12 +620,12 @@ const Products: React.FC = () => {
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-3 whitespace-nowrap">
+                        <td className="px-6 py-2 whitespace-nowrap">
                           <div className="text-sm text-gray-600 font-sans">
                             {product.portfolio_type_display || 'Bespoke'}
                           </div>
                         </td>
-                        <td className="px-6 py-3 whitespace-nowrap">
+                        <td className="px-6 py-2 whitespace-nowrap">
                           {product.total_value !== undefined ? (
                             <div className="text-sm font-medium text-indigo-600">
                               {formatCurrency(product.total_value)}
@@ -634,7 +634,7 @@ const Products: React.FC = () => {
                             <div className="text-sm text-gray-500">N/A</div>
                           )}
                         </td>
-                        <td className="px-6 py-3 whitespace-nowrap">
+                        <td className="px-6 py-2 whitespace-nowrap">
                           {product.irr !== undefined && product.irr !== null ? (
                           <div>
                               <div className={`text-sm font-medium ${(product.irr ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>

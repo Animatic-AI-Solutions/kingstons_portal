@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getAvailableColors } from '../services/api';
+import { EditButton, DeleteButton, ActionButton } from '../components/ui';
 
 interface Provider {
   id: number;
@@ -56,24 +57,9 @@ const ProviderDetails: React.FC = () => {
   const fetchAvailableColors = async () => {
     try {
       setIsLoadingColors(true);
-      const response = await getAvailableColors();
-      let colors = response.data;
       
-      // If the provider already has a color, add it to the available colors
-      if (provider?.theme_color) {
-        const currentColorExists = colors.some((c: ColorOption) => c.value === provider.theme_color);
-        if (!currentColorExists) {
-          const colorName = getColorNameByValue(provider.theme_color) || 'Current Color';
-          colors = [{ name: colorName, value: provider.theme_color }, ...colors];
-        }
-      }
-      
-      setAvailableColors(colors);
-    } catch (err: any) {
-      console.error('Error fetching available colors:', err);
-      
-      // Use a diverse set of fallback colors
-      const fallbackColors = [
+      // Use a comprehensive set of colors (15 colors)
+      const comprehensiveColors = [
         // Vibrant / Pure Colors
         {name: 'Blue', value: '#2563EB'},         // Bright Blue
         {name: 'Red', value: '#DC2626'},          // Pure Red
@@ -96,17 +82,19 @@ const ProviderDetails: React.FC = () => {
         {name: 'Slate', value: '#334155'},        // Dark Slate
       ];
       
-      // If the provider already has a color, add it to the fallback colors
-      let colorsWithCurrent = [...fallbackColors];
+      // If the provider already has a color that's not in our list, add it
+      let colors = [...comprehensiveColors];
       if (provider?.theme_color) {
-        const currentColorExists = colorsWithCurrent.some(c => c.value === provider.theme_color);
+        const currentColorExists = colors.some(c => c.value === provider.theme_color);
         if (!currentColorExists) {
           const colorName = getColorNameByValue(provider.theme_color) || 'Current Color';
-          colorsWithCurrent = [{ name: colorName, value: provider.theme_color }, ...colorsWithCurrent];
+          colors = [{ name: colorName, value: provider.theme_color }, ...colors];
         }
       }
       
-      setAvailableColors(colorsWithCurrent);
+      setAvailableColors(colors);
+    } catch (err: any) {
+      console.error('Error setting up available colors:', err);
     } finally {
       setIsLoadingColors(false);
     }
@@ -370,57 +358,28 @@ const ProviderDetails: React.FC = () => {
             <div className="flex items-center gap-2">
               {!isEditing ? (
                 <>
-                  <button
+                  <EditButton
+                    context="Provider"
+                    design="balanced"
                     onClick={() => setIsEditing(true)}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Edit
-                  </button>
-                  <button
+                  />
+                  <DeleteButton
+                    context="Provider"
+                    design="balanced"
                     onClick={handleDeleteClick}
-                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    Delete
-                  </button>
+                  />
                 </>
               ) : (
                 <>
-                  <button
+                  <ActionButton
+                    variant="cancel"
                     onClick={handleCancel}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
+                  />
+                  <ActionButton
+                    variant="save"
+                    loading={isSaving}
                     onClick={handleSaveChanges}
-                    disabled={isSaving}
-                    className={`inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors ${
-                      isSaving ? 'opacity-70 cursor-not-allowed' : ''
-                    }`}
-                  >
-                    {isSaving ? (
-                      <>
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        Save Changes
-                      </>
-                    )}
-                  </button>
+                  />
                 </>
               )}
             </div>
@@ -489,7 +448,7 @@ const ProviderDetails: React.FC = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-5 gap-1">
-                    {availableColors.slice(0, 10).map((color) => (
+                    {availableColors.map((color) => (
                       <button
                         key={color.value}
                         type="button"
@@ -536,38 +495,15 @@ const ProviderDetails: React.FC = () => {
             </div>
           )}
           <div className="flex justify-end space-x-3">
-            <button
-              type="button"
+            <ActionButton
+              variant="cancel"
               onClick={handleCancel}
-              className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
+            />
+            <ActionButton
+              variant="save"
+              loading={isSaving}
               onClick={handleSaveChanges}
-              disabled={isSaving}
-              className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors ${
-                isSaving ? 'opacity-70 cursor-not-allowed' : ''
-              }`}
-            >
-              {isSaving ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Save Changes
-                </>
-              )}
-            </button>
+            />
           </div>
         </div>
       )}
@@ -687,30 +623,17 @@ const ProviderDetails: React.FC = () => {
                   )}
                 </p>
                 <div className="flex justify-end gap-3">
-                  <button
+                  <ActionButton
+                    variant="cancel"
                     onClick={handleCancelDelete}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
                     disabled={isDeleting}
-                  >
-                    Cancel
-                  </button>
-                  <button
+                  />
+                  <DeleteButton
+                    context="Provider"
+                    design="descriptive"
+                    loading={isDeleting}
                     onClick={handleDelete}
-                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
-                    disabled={isDeleting}
-                  >
-                    {isDeleting ? (
-                      <>
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Deleting...
-                      </>
-                    ) : (
-                      'Delete Provider'
-                    )}
-                  </button>
+                  />
                 </div>
               </div>
             </div>

@@ -1756,34 +1756,18 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                     {isEditMode ? (
 
                       <>
-                        <button
+                        <ActionButton
+                          variant="cancel"
+                          size="xs"
                           onClick={toggleEditMode}
-                          className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs leading-4 font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                        >
-                          Cancel
-                        </button>
-                        <button
+                        />
+                        <ActionButton
+                          variant="save"
+                          size="xs"
                           onClick={handleSubmit}
                           disabled={isSubmitting}
-                          className="inline-flex items-center px-2 py-1 border border-transparent text-xs leading-4 font-medium rounded shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
-                        >
-                          {isSubmitting ? (
-                            <>
-                              <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                              Saving...
-                            </>
-                          ) : (
-                            <>
-                              <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                              Save Changes
-                            </>
-                          )}
-                        </button>
+                          loading={isSubmitting}
+                        />
                       </>
                     ) : (
                       <>
@@ -1794,27 +1778,23 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                         />
                         {/* Show Lapse button only when total value is zero */}
                         {account.status === 'active' && portfolioTotalValue !== null && portfolioTotalValue <= 0.01 && (
-                          <button
+                          <ActionButton
+                            variant="lapse"
+                            size="xs"
                             onClick={() => setIsLapseModalOpen(true)}
-                            className="inline-flex items-center px-2 py-1 border border-yellow-300 shadow-sm text-xs leading-4 font-medium rounded text-yellow-700 bg-white hover:bg-yellow-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
                           >
-                            <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
                             Lapse
-                          </button>
+                          </ActionButton>
                         )}
                         {/* Show Reactivate button only when product is inactive */}
                         {account.status === 'inactive' && (
-                          <button
+                          <ActionButton
+                            variant="add"
+                            size="xs"
                             onClick={() => setIsReactivateModalOpen(true)}
-                            className="inline-flex items-center px-2 py-1 border border-green-300 shadow-sm text-xs leading-4 font-medium rounded text-green-700 bg-white hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                           >
-                            <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
                             Reactivate
-                          </button>
+                          </ActionButton>
                         )}
                         <ActionButton
                           variant="delete"
@@ -1942,44 +1922,64 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                     <div className="grid grid-cols-3 gap-4">
                       {/* Fixed Cost */}
                       <div>
-                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Fixed Cost (£)</div>
                         {isEditMode ? (
-                          <input
-                            type="number"
-                            name="fixed_cost"
-                            value={editFormData.fixed_cost}
-                            onChange={handleInputChange}
-                            placeholder="e.g. 500"
-                            min="0"
-                            step="0.01"
-                            className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm font-medium text-gray-900 border-gray-300 rounded-md py-1.5 px-2"
-                          />
-                        ) : (
-                          <div className="text-sm font-medium text-gray-900">
-                            {account.fixed_cost ? formatCurrency(account.fixed_cost) : 'Not set'}
+                          <div className="space-y-1">
+                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Fixed Cost (£)</div>
+                            <div className="relative">
+                              <input
+                                type="number"
+                                name="fixed_cost"
+                                value={editFormData.fixed_cost}
+                                onChange={handleInputChange}
+                                placeholder="0.00"
+                                min="0"
+                                step="0.01"
+                                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm font-medium text-gray-900 border-gray-300 rounded-md py-1.5 px-7"
+                              />
+                              <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                                <span className="text-gray-500 text-sm">£</span>
+                              </div>
+                            </div>
                           </div>
+                        ) : (
+                          <>
+                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Fixed Cost (£)</div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {account.fixed_cost ? formatCurrency(account.fixed_cost) : 'Not set'}
+                            </div>
+                          </>
                         )}
               </div>
 
                       {/* Percentage Fee */}
                       <div>
-                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Percentage Fee (%)</div>
                         {isEditMode ? (
-                          <input
-                            type="number"
-                            name="percentage_fee"
-                            value={editFormData.percentage_fee}
-                            onChange={handleInputChange}
-                            placeholder="e.g. 1.5"
-                            min="0"
-                            max="100"
-                            step="0.1"
-                            className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm font-medium text-gray-900 border-gray-300 rounded-md py-1.5 px-2"
-                          />
-                        ) : (
-                          <div className="text-sm font-medium text-gray-900">
-                            {account.percentage_fee ? `${account.percentage_fee}%` : 'Not set'}
+                          <div className="space-y-1">
+                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Percentage Fee (%)</div>
+                            <div className="relative">
+                              <input
+                                type="number"
+                                name="percentage_fee"
+                                value={editFormData.percentage_fee}
+                                onChange={handleInputChange}
+                                placeholder="0.0"
+                                min="0"
+                                max="100"
+                                step="0.1"
+                                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm font-medium text-gray-900 border-gray-300 rounded-md py-1.5 pr-7 px-2"
+                              />
+                              <div className="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none">
+                                <span className="text-gray-500 text-sm">%</span>
+                              </div>
+                            </div>
                           </div>
+                        ) : (
+                          <>
+                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Percentage Fee (%)</div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {account.percentage_fee ? `${account.percentage_fee}%` : 'Not set'}
+                            </div>
+                          </>
                         )}
                       </div>
 
@@ -2065,23 +2065,23 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                     <form onSubmit={handleOwnersSubmit} className="space-y-3">
                       <div className="grid grid-cols-1 gap-3">
                         <div>
-                          <label htmlFor="owners-portfolio_id" className="block text-xs font-medium text-gray-700 mb-1">
-                            Portfolio Assignment
-                          </label>
-                          <select
-                            id="owners-portfolio_id"
-                            name="portfolio_id"
+                          <BaseDropdown
+                            label="Portfolio Assignment"
+                            options={[
+                              { value: '', label: 'Select Portfolio' },
+                              ...portfolios.map(portfolio => ({
+                                value: portfolio.id.toString(),
+                                label: portfolio.portfolio_name
+                              }))
+                            ]}
                             value={editOwnersFormData.portfolio_id}
-                            onChange={handleOwnersInputChange}
-                            className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-xs border-gray-300 rounded-md py-1.5 px-2"
-                          >
-                            <option value="">Select Portfolio</option>
-                            {portfolios.map(portfolio => (
-                              <option key={portfolio.id} value={portfolio.id}>
-                                {portfolio.portfolio_name}
-                              </option>
-                            ))}
-                          </select>
+                            onChange={(value) => setEditOwnersFormData(prev => ({
+                              ...prev,
+                              portfolio_id: typeof value === 'string' ? value : String(value)
+                            }))}
+                            size="sm"
+                            className="text-xs"
+                          />
                         </div>
                         
                         <div>
@@ -2546,31 +2546,35 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                         <td className="px-6 py-2 whitespace-nowrap text-center">
                           {isEditingFunds && account && !account.template_generation_id ? (
                             <div className="flex items-center justify-center space-x-2">
-                              <input
-                                type="number"
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    e.currentTarget.blur();
-                                  }
-                                }}
-                                value={holding.target_weighting || ''}
-                                onChange={(e) => {
-                                  const newWeighting = parseFloat(e.target.value) || 0;
-                                  // Update the holding in the local state
-                                  setHoldings(prev => prev.map(h => 
-                                    h.id === holding.id 
-                                      ? { ...h, target_weighting: newWeighting.toString() }
-                                      : h
-                                  ));
-                                }}
-                                className="w-20 px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                min="0"
-                                max="100"
-                                step="0.01"
-                                placeholder="0.00"
-                              />
-                              <span className="text-sm text-gray-500">%</span>
+                              <div className="relative">
+                                <input
+                                  type="number"
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      e.currentTarget.blur();
+                                    }
+                                  }}
+                                  value={holding.target_weighting || ''}
+                                  onChange={(e) => {
+                                    const newWeighting = parseFloat(e.target.value) || 0;
+                                    // Update the holding in the local state
+                                    setHoldings(prev => prev.map(h => 
+                                      h.id === holding.id 
+                                        ? { ...h, target_weighting: newWeighting.toString() }
+                                        : h
+                                    ));
+                                  }}
+                                  className="w-20 pl-2 pr-6 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                  min="0"
+                                  max="100"
+                                  step="0.01"
+                                  placeholder="0.00"
+                                />
+                                <div className="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none">
+                                  <span className="text-gray-500 text-xs">%</span>
+                                </div>
+                              </div>
                             </div>
                           ) : (
                             <span className="text-sm font-medium text-gray-900">
