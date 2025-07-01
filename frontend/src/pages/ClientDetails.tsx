@@ -3,7 +3,16 @@ import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNavigationRefresh } from '../hooks/useNavigationRefresh';
 import { getProviderColor } from '../services/providerColors';
-import { EditButton, ActionButton, LapseButton, DeleteButton, AddButton } from '../components/ui';
+import { 
+  EditButton, 
+  ActionButton, 
+  LapseButton, 
+  DeleteButton, 
+  AddButton,
+  BaseInput,
+  NumberInput,
+  BaseDropdown
+} from '../components/ui';
 import api, { getClientGroupProductOwners, calculateStandardizedMultipleFundsIRR, getProductOwners, addClientGroupProductOwner, removeClientGroupProductOwner } from '../services/api';
 import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
 
@@ -267,6 +276,7 @@ const ClientHeader = ({
     type?: 'text' | 'select'; 
     options?: { value: string; label: string }[] 
   }) => {
+    // If not editing, show display-only version
     if (!isEditing) {
       return (
         <div className="flex items-center">
@@ -278,21 +288,19 @@ const ClientHeader = ({
       );
     }
 
+    // If it's a select field with options, render BaseDropdown
     if (type === 'select' && options) {
       return (
         <div className="flex items-center">
           <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2 min-w-fit">{label}:</span>
-          <select
+          <BaseDropdown
+            options={options}
             value={value || ''}
-            onChange={(e) => onFieldChange(field, e.target.value)}
-            className="text-sm font-semibold text-gray-900 bg-white border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 min-w-0"
-          >
-            {options.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            onChange={(selectedValue) => onFieldChange(field, typeof selectedValue === 'string' ? selectedValue : String(selectedValue))}
+            size="sm"
+            fullWidth={false}
+            className="text-sm font-semibold text-gray-900 min-w-32 w-32"
+          />
         </div>
       );
     }
@@ -300,12 +308,12 @@ const ClientHeader = ({
     return (
       <div className="flex items-center">
         <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2 min-w-fit">{label}:</span>
-        <input
-          type="text"
+        <BaseInput
           value={value || ''}
           onChange={(e) => onFieldChange(field, e.target.value)}
-          className="text-sm font-semibold text-gray-900 bg-white border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 min-w-0"
           placeholder={field === 'advisor' ? 'Enter advisor name' : `Enter ${label.toLowerCase()}`}
+          size="sm"
+          className="text-sm font-semibold text-gray-900 min-w-0"
         />
       </div>
     );
@@ -334,24 +342,29 @@ const ClientHeader = ({
     return (
       <div className="flex items-center">
         <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2 min-w-fit">Status:</span>
-        <select
+        <BaseDropdown
+          options={[
+            { value: 'active', label: 'Active' },
+            { value: 'dormant', label: 'Dormant' }
+          ]}
           value={editData.status}
-          onChange={(e) => onFieldChange('status', e.target.value)}
-          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+          onChange={(selectedValue) => onFieldChange('status', typeof selectedValue === 'string' ? selectedValue : String(selectedValue))}
+          size="sm"
+          fullWidth={false}
+          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border min-w-32 w-32 ${
             editData.status === 'active' 
               ? 'bg-green-100 text-green-800 border-green-200' 
               : 'bg-gray-100 text-gray-800 border-gray-200'
           }`}
-        >
-          <option value="active">Active</option>
-          <option value="dormant">Dormant</option>
-        </select>
+        />
       </div>
     );
   };
 
   return (
-    <div className="mb-6 bg-white shadow-sm rounded-xl border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-md">
+    <div className={`mb-6 bg-white shadow-sm rounded-xl border border-gray-100 transition-all duration-300 hover:shadow-md ${
+      isEditing ? 'overflow-visible' : 'overflow-hidden'
+    }`}>
       {/* Main Header Section */}
       <div className="px-6 py-5">
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
@@ -389,9 +402,11 @@ const ClientHeader = ({
 
             {/* Client Information Banner */}
             <div className="w-full lg:w-11/12">
-              <div className="bg-gray-50 rounded-lg px-5 py-3 border border-gray-200">
+              <div className={`bg-gray-50 rounded-lg px-5 border border-gray-200 transition-all duration-300 ${
+                isEditing ? 'py-3 pb-6' : 'py-3'
+              }`}>
                 <div className="flex flex-wrap items-center justify-between gap-6">
-                  <div className="flex flex-wrap items-center gap-6">
+                  <div className={`flex flex-wrap items-center gap-6 ${isEditing ? 'w-full' : ''}`}>
                     <EditableField 
                       label="Type" 
                       value={isEditing ? editData.type : client.type} 
@@ -416,6 +431,31 @@ const ClientHeader = ({
                      <div className="flex items-center">
                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2">Product Owners:</span>
                        <div className="flex items-center space-x-2">
+                         {isEditing && availableProductOwners.length > 0 && (
+                           <div className="relative z-50 mt-3">
+                             <BaseDropdown
+                               options={[
+                                 { value: '', label: '+ Add Owner' },
+                                 ...availableProductOwners.map((owner) => ({
+                                   value: owner.id.toString(),
+                                   label: getProductOwnerDisplayName(owner)
+                                 }))
+                               ]}
+                               value=""
+                               onChange={(selectedValue) => {
+                                 if (selectedValue && selectedValue !== '') {
+                                   const valueStr = typeof selectedValue === 'string' ? selectedValue : String(selectedValue);
+                                   onAddProductOwner(parseInt(valueStr));
+                                 }
+                               }}
+                               size="sm"
+                               fullWidth={false}
+                               className="text-xs bg-white min-w-max w-56"
+                               placeholder="+ Add Owner"
+                             />
+                           </div>
+                         )}
+                         
                          {client.product_owners && client.product_owners.length > 0 ? (
                            <div className="flex flex-wrap gap-1">
                              {client.product_owners.map((owner) => (
@@ -440,29 +480,26 @@ const ClientHeader = ({
                          ) : (
                            <span className="text-sm text-gray-500">None assigned</span>
                          )}
-                         
-                         {isEditing && availableProductOwners.length > 0 && (
-                           <select
-                             onChange={(e) => {
-                               if (e.target.value) {
-                                 onAddProductOwner(parseInt(e.target.value));
-                                 e.target.value = ''; // Reset selection
-                               }
-                             }}
-                             className="text-xs bg-white border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                           >
-                             <option value="">+ Add Owner</option>
-                             {availableProductOwners.map((owner) => (
-                               <option key={owner.id} value={owner.id}>
-                                 {getProductOwnerDisplayName(owner)}
-                               </option>
-                             ))}
-                           </select>
-                         )}
                        </div>
                      </div>
                     
-                    <div className="flex items-center">
+                    {/* Member Since - Only show inline when NOT editing */}
+                    {!isEditing && (
+                      <div className="flex items-center">
+                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2">Member Since:</span>
+                        <div className="flex items-center text-sm font-semibold text-gray-900">
+                          <svg className="w-3 h-3 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          {formatDate(client.created_at)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Member Since - Show on new line when editing */}
+                  {isEditing && (
+                    <div className="flex items-center w-full mt-4">
                       <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2">Member Since:</span>
                       <div className="flex items-center text-sm font-semibold text-gray-900">
                         <svg className="w-3 h-3 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -471,7 +508,7 @@ const ClientHeader = ({
                         {formatDate(client.created_at)}
                       </div>
                     </div>
-                  </div>
+                  )}
 
 
                   {/* Action Buttons */}
@@ -2058,35 +2095,38 @@ const RevenueAssignmentModal: React.FC<{
                        </div>
                      </td>
                      <td className="px-4 py-2 whitespace-nowrap text-right">
-                       <input
-                         type="number"
-                         value={productData.fixed_cost}
-                         onChange={(e) => handleInputChange(account.id, 'fixed_cost', e.target.value)}
+                       <NumberInput
+                         value={parseFloat(productData.fixed_cost) || 0}
+                         onChange={(value) => handleInputChange(account.id, 'fixed_cost', String(value))}
                          placeholder="0.00"
-                         min="0"
-                         step="0.01"
-                         className="w-20 text-xs text-right border border-gray-300 rounded px-1 py-1 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                         min={0}
+                         decimalPlaces={2}
+                         format="currency"
+                         currency="£"
+                         size="sm"
+                         className="w-20 text-xs text-right"
                        />
                      </td>
                      <td className="px-4 py-2 whitespace-nowrap text-right">
-                       <input
-                         type="number"
-                         value={productData.percentage_fee}
-                         onChange={(e) => handleInputChange(account.id, 'percentage_fee', e.target.value)}
+                       <NumberInput
+                         value={parseFloat(productData.percentage_fee) || 0}
+                         onChange={(value) => handleInputChange(account.id, 'percentage_fee', String(value))}
                          placeholder="0.00"
-                         min="0"
-                         step="0.01"
-                         className="w-20 text-xs text-right border border-gray-300 rounded px-1 py-1 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                         min={0}
+                         decimalPlaces={2}
+                         format="percentage"
+                         size="sm"
+                         className="w-20 text-xs text-right"
                        />
                      </td>
                      <td className="px-4 py-2 whitespace-nowrap text-right text-xs font-medium text-gray-900">
                        {totalValue > 0 ? formatCurrency(totalValue) : 'No valuation'}
                      </td>
                      <td className="px-4 py-2 whitespace-nowrap text-right text-xs">
-                       {typeof percentageRevenue === 'number' ? (
-                         <span className="font-medium text-green-600">{formatCurrency(percentageRevenue)}</span>
+                       {productData.percentage_fee && parseFloat(productData.percentage_fee) > 0 ? (
+                         <span className="font-medium text-green-600">{parseFloat(productData.percentage_fee).toFixed(2)}%</span>
                        ) : (
-                         <span className="text-orange-600">{percentageRevenue}</span>
+                         <span className="text-gray-400">0.00%</span>
                        )}
                      </td>
                      <td className="px-4 py-2 whitespace-nowrap text-right text-xs">
@@ -2117,7 +2157,10 @@ const RevenueAssignmentModal: React.FC<{
                    {formatCurrency(totals.totalValue)}
                  </td>
                  <td className="px-4 py-2 whitespace-nowrap text-right text-xs font-bold text-green-600">
-                   {formatCurrency(totals.percentageRevenue)}
+                   {totals.totalValue > 0 
+                     ? `${((totals.percentageRevenue / totals.totalValue) * 100).toFixed(2)}%`
+                     : '0.00%'
+                   }
                  </td>
                  <td className="px-4 py-2 whitespace-nowrap text-right text-xs font-bold text-green-600">
                    {formatCurrency(totals.totalRevenue)}
@@ -2129,33 +2172,16 @@ const RevenueAssignmentModal: React.FC<{
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end space-x-3">
-          <button
+          <ActionButton
+            variant="cancel"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
+          />
+          <ActionButton
+            variant="save"
+            context="Revenue Changes"
+            loading={isSaving}
             onClick={handleSave}
-            disabled={isSaving}
-            className={`px-4 py-2 text-sm font-medium text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors ${
-              isSaving 
-                ? 'bg-primary-400 cursor-not-allowed' 
-                : 'bg-primary-600 hover:bg-primary-700'
-            }`}
-          >
-            {isSaving ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Saving...
-              </>
-            ) : (
-              'Save Changes'
-            )}
-          </button>
+          />
         </div>
       </div>
     </div>
