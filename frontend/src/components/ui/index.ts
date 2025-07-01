@@ -85,7 +85,7 @@ export { default as DataTable } from './data-displays/DataTable';
 export { Skeleton, StatBoxSkeleton, ChartSkeleton, TableSkeleton } from './feedback/Skeleton';
 export { default as ProfileAvatar } from './ProfileAvatar';
 export { default as SearchableDropdown, MultiSelectSearchableDropdown } from './dropdowns/SearchableDropdown';
-export { default as UpcomingTransactions } from './UpcomingMeetings';
+export { default as UpcomingMeetings } from './UpcomingMeetings';
 export { default as RiskDifferences } from './RiskDifferences';
 export { default as FilterDropdown } from './dropdowns/FilterDropdown';
 export { EmptyState } from './feedback/EmptyState';
