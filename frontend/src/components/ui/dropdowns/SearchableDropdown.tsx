@@ -70,10 +70,11 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     setFocusedIndex(-1);
   }, [searchTerm]);
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside - improved reliability
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (event: Event) => {
+      const target = event.target as Node;
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         setIsOpen(false);
       }
     };
@@ -86,10 +87,16 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
       }
     };
     
-    document.addEventListener('mousedown', handleClickOutside);
+    if (isOpen) {
+      // Use capture phase to ensure this fires before other handlers
+      document.addEventListener('click', handleClickOutside, true);
+      document.addEventListener('mousedown', handleClickOutside, true);
+    }
     document.addEventListener('keydown', handleGlobalKeyDown);
+    
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('click', handleClickOutside, true);
+      document.removeEventListener('mousedown', handleClickOutside, true);
       document.removeEventListener('keydown', handleGlobalKeyDown);
     };
   }, [isOpen]);
@@ -307,10 +314,11 @@ export const MultiSelectSearchableDropdown: React.FC<MultiSelectSearchableDropdo
     setFocusedIndex(-1);
   }, [searchTerm]);
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside - improved reliability
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (event: Event) => {
+      const target = event.target as Node;
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         setIsOpen(false);
       }
     };
@@ -323,10 +331,16 @@ export const MultiSelectSearchableDropdown: React.FC<MultiSelectSearchableDropdo
       }
     };
     
-    document.addEventListener('mousedown', handleClickOutside);
+    if (isOpen) {
+      // Use capture phase to ensure this fires before other handlers
+      document.addEventListener('click', handleClickOutside, true);
+      document.addEventListener('mousedown', handleClickOutside, true);
+    }
     document.addEventListener('keydown', handleGlobalKeyDown);
+    
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('click', handleClickOutside, true);
+      document.removeEventListener('mousedown', handleClickOutside, true);
       document.removeEventListener('keydown', handleGlobalKeyDown);
     };
   }, [isOpen]);
@@ -422,7 +436,7 @@ export const MultiSelectSearchableDropdown: React.FC<MultiSelectSearchableDropdo
       <button
         type="button"
         id={id}
-        className={`flex justify-between items-center w-full px-3 py-2.5 text-left border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all ${
+        className={`flex justify-between items-center w-full px-3 py-2.5 text-left border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-3 focus:ring-primary-500 focus:border-primary-500 transition-all ${
           disabled ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'hover:border-primary-400'
         }`}
         onClick={toggleDropdown}
@@ -457,7 +471,7 @@ export const MultiSelectSearchableDropdown: React.FC<MultiSelectSearchableDropdo
             <input
               ref={searchInputRef}
               type="text"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-3 focus:ring-primary-500 focus:border-primary-500"
               placeholder="Search..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}

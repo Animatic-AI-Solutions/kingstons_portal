@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { calculateStandardizedMultipleFundsIRR, getLatestFundIRRs } from '../services/api';
 import { createIRRDataService } from '../services/irrDataService';
 import historicalIRRService from '../services/historicalIRRService';
-import BaseInput from '../components/ui/BaseInput';
+import BaseInput from '../components/ui/inputs/BaseInput';
 import { ArrowLeftIcon, PrinterIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { useReactToPrint } from 'react-to-print';
 import { formatDateFallback, formatCurrencyFallback, formatPercentageFallback } from '../components/reports/shared/ReportFormatters';

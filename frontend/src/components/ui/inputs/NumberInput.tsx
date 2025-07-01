@@ -206,7 +206,7 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(({
   };
   
   // Base classes
-  const baseClasses = 'block border rounded-md shadow-sm transition-all duration-150 ease-in-out focus:outline-none focus:ring-3 focus:ring-offset-2';
+  const baseClasses = 'block border rounded-md shadow-sm transition-all duration-150 ease-in-out focus:outline-none focus:ring-4 focus:ring-offset-2';
   
   // Size classes - consistent with Group 1 heights (32px, 40px, 48px)
   const sizeClasses = {
@@ -251,7 +251,7 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(({
     ${widthClasses}
     ${paddingClasses}
     ${className}
-    text-left
+    text-right
   `.trim().replace(/\s+/g, ' ');
 
   return (
