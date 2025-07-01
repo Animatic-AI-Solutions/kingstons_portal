@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 
 // Define types for our data
@@ -46,88 +46,60 @@ interface DashboardAllResponse {
   };
 }
 
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
-
+// Refactored hook using React Query
 export const useDashboardData = () => {
   const { api } = useAuth();
-  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
-  const [funds, setFunds] = useState<Fund[]>([]);
-  const [providers, setProviders] = useState<Provider[]>([]);
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [lastFetched, setLastFetched] = useState<number>(0);
-  const [performanceStats, setPerformanceStats] = useState<any>(null);
 
-  const fetchData = useCallback(async (forceRefresh = false) => {
-    const now = Date.now();
-    
-    // Use cached data if available and not forcing a refresh
-    if (
-      !forceRefresh && 
-      metrics && 
-      lastFetched > 0 && 
-      now - lastFetched < CACHE_DURATION
-    ) {
-      return;
+  // Define the async fetch function
+  const fetchDashboardData = async (): Promise<DashboardAllResponse> => {
+    console.log('Fetching dashboard data with React Query...');
+    const { data } = await api.get<DashboardAllResponse>('/analytics/dashboard_all', {
+      params: {
+        fund_limit: 10,
+        provider_limit: 10,
+        template_limit: 10,
+      },
+    });
+
+    if (data.performance?.optimization_stats) {
+      const stats = data.performance.optimization_stats;
+      console.log(`🚀 Dashboard optimized! ${stats.total_db_queries} queries (was 50+), processed ${stats.total_portfolio_funds} funds with ${stats.valuations_used} valuations`);
     }
-    
-    try {
-      setLoading(true);
-      
-      // SINGLE OPTIMIZED API CALL instead of 4+ separate calls
-      console.log('Fetching dashboard data with optimized single endpoint...');
-      
-      const response = await api.get<DashboardAllResponse>('/analytics/dashboard_all', {
-        params: {
-          fund_limit: 10,
-          provider_limit: 10,
-          template_limit: 10
-        }
-      });
-      
-      // Set all data from the single response
-      setMetrics(response.data.metrics);
-      setFunds(response.data.funds || []);
-      setProviders(response.data.providers || []);
-      setTemplates(response.data.templates || []);
-      setPerformanceStats(response.data.performance?.optimization_stats);
-      
-      // Update last fetched timestamp
-      setLastFetched(now);
-      setError(null);
-      
-      // Log performance improvement
-      if (response.data.performance?.optimization_stats) {
-        const stats = response.data.performance.optimization_stats;
-        console.log(`🚀 Dashboard optimized! ${stats.total_db_queries} queries (was 50+), processed ${stats.total_portfolio_funds} funds with ${stats.valuations_used} valuations`);
-      }
-      
-    } catch (err: any) {
-      setError(
-        new Error(err.response?.data?.detail || 'Failed to load dashboard data')
-      );
-      console.error('Error fetching dashboard data:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [api]);
 
-  // Fetch data on component mount
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    return data;
+  };
 
+  // Use the useQuery hook to manage the data fetching
+  const { 
+    data, 
+    error, 
+    isLoading, 
+    refetch,
+    isFetching,
+    isSuccess,
+   } = useQuery({
+    queryKey: ['dashboardData'],
+    queryFn: fetchDashboardData,
+    // staleTime is already set globally in App.tsx, but can be overridden here
+    // staleTime: 5 * 60 * 1000, 
+  });
+  
+  // Log any errors
+  if (error) {
+    console.error('Error fetching dashboard data via React Query:', error);
+  }
+
+  // Return data in a structured way that matches the previous hook's API
   return {
-    metrics,
-    funds,
-    providers,
-    templates,
-    loading,
+    metrics: data?.metrics,
+    funds: data?.funds || [],
+    providers: data?.providers || [],
+    templates: data?.templates || [],
+    performanceStats: data?.performance?.optimization_stats,
+    loading: isLoading || isFetching,
     error,
-    refetch: () => fetchData(true),
-    lastFetched,
-    performanceStats // Expose performance stats for debugging
+    isSuccess,
+    refetch,
   };
 };
 

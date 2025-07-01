@@ -75,11 +75,89 @@ class CustomJSONEncoder(json.JSONEncoder):
             return obj.isoformat()
         return super().default(obj)
 
-# Create FastAPI application instance with metadata
+# Create FastAPI application instance with comprehensive metadata
 app = FastAPI(
-    title="Wealth Management System API",
-    description="API for the Wealth Management System",
-    version="0.1.0"
+    title="Kingston's Portal - Wealth Management System API",
+    description="""
+    ## Kingston's Portal API
+
+    A comprehensive wealth management system API that provides endpoints for managing:
+    
+    * **Authentication & Authorization** - JWT-based user authentication
+    * **Client Management** - Client groups, individual clients, and relationships
+    * **Product Management** - Investment products, portfolios, and fund management
+    * **Provider Management** - Investment providers and switching capabilities
+    * **Analytics & Reporting** - Performance metrics, IRR calculations, and reporting
+    * **Holdings & Valuations** - Portfolio holdings, activities, and valuations
+    
+    ### Key Features
+    
+    - **RESTful API Design** with consistent endpoint patterns
+    - **Comprehensive Data Models** using Pydantic for validation
+    - **Real-time Analytics** with IRR calculations and performance metrics
+    - **Secure Authentication** with JWT tokens and role-based access
+    - **Bulk Operations** for efficient data management
+    - **Advanced Search** across all entity types
+    
+    ### Getting Started
+    
+    1. **Authentication**: Use `/api/auth/login` to obtain an access token
+    2. **Explore**: Browse the available endpoints using this interactive documentation
+    3. **Test**: Use the "Try it out" feature to test endpoints directly
+    
+    ### Support
+    
+    For technical support or questions about the API, please refer to the project documentation.
+    """,
+    version="1.0.0",
+    terms_of_service="https://example.com/terms/",
+    contact={
+        "name": "Kingston's Portal Support",
+        "url": "https://example.com/contact/",
+        "email": "support@kingstons-portal.com",
+    },
+    license_info={
+        "name": "Proprietary",
+        "url": "https://example.com/license/",
+    },
+    openapi_tags=[
+        {
+            "name": "Authentication",
+            "description": "User authentication and authorization endpoints. Includes login, logout, password reset, and user registration.",
+        },
+        {
+            "name": "Client Groups",
+            "description": "Manage client groups and organizational structures. Client groups represent collections of related clients.",
+        },
+        {
+            "name": "Products",
+            "description": "Investment product management including creation, updates, and portfolio assignments.",
+        },
+        {
+            "name": "Funds",
+            "description": "Fund management endpoints for creating, updating, and tracking investment funds.",
+        },
+        {
+            "name": "Portfolios",
+            "description": "Portfolio management including templates, generations, and fund assignments.",
+        },
+        {
+            "name": "Providers",
+            "description": "Investment provider management including available providers and switching capabilities.",
+        },
+        {
+            "name": "Analytics",
+            "description": "Performance analytics, IRR calculations, and reporting endpoints.",
+        },
+        {
+            "name": "Holdings",
+            "description": "Portfolio holdings management including activities, valuations, and historical data.",
+        },
+        {
+            "name": "Search",
+            "description": "Global search capabilities across all entity types in the system.",
+        },
+    ],
 )
 
 # Override default JSONResponse to use custom encoder for proper date handling
@@ -134,24 +212,24 @@ app.include_router(client_groups.router, prefix="/api", tags=["Client Groups"])
 app.include_router(products.router, prefix="/api", tags=["Products"])
 app.include_router(funds.router, prefix="/api", tags=["Funds"])
 app.include_router(portfolios.router, prefix="/api", tags=["Portfolios"])
-app.include_router(available_providers.router, prefix="/api", tags=["Available Providers"])
+app.include_router(available_providers.router, prefix="/api", tags=["Providers"])
 app.include_router(providers.router, prefix="/api", tags=["Providers"])
-app.include_router(available_portfolios.router, prefix="/api", tags=["Available Portfolios"])
-app.include_router(product_funds.router, prefix="/api", tags=["Product Funds"])
-app.include_router(portfolio_funds.router, prefix="/api", tags=["Portfolio Funds"])
-app.include_router(client_products.router, prefix="/api", tags=["Client products"])
-app.include_router(product_holdings.router, prefix="/api", tags=["product Holdings"])
-app.include_router(holding_activity_logs.router, prefix="/api", tags=["Holding Activity Logs"])
+app.include_router(available_portfolios.router, prefix="/api", tags=["Portfolios"])
+app.include_router(product_funds.router, prefix="/api", tags=["Products"])
+app.include_router(portfolio_funds.router, prefix="/api", tags=["Portfolios"])
+app.include_router(client_products.router, prefix="/api", tags=["Products"])
+app.include_router(product_holdings.router, prefix="/api", tags=["Holdings"])
+app.include_router(holding_activity_logs.router, prefix="/api", tags=["Holdings"])
 app.include_router(analytics.router, prefix="/api", tags=["Analytics"])
-app.include_router(product_portfolio_assignments.router, prefix="/api", tags=["Portfolio Assignments"])
-app.include_router(fund_valuations.router, prefix="/api", tags=["Fund Valuations"])
-app.include_router(product_owners.router, prefix="/api", tags=["Product Owners"])
-app.include_router(client_group_product_owners.router, prefix="/api", tags=["Client Group Product Owners"])
-app.include_router(provider_switch_log.router, prefix="/api", tags=["Provider Switch Log"])
+app.include_router(product_portfolio_assignments.router, prefix="/api", tags=["Portfolios"])
+app.include_router(fund_valuations.router, prefix="/api", tags=["Holdings"])
+app.include_router(product_owners.router, prefix="/api", tags=["Client Groups"])
+app.include_router(client_group_product_owners.router, prefix="/api", tags=["Client Groups"])
+app.include_router(provider_switch_log.router, prefix="/api", tags=["Providers"])
 app.include_router(search.router, prefix="/api", tags=["Search"])
-app.include_router(portfolio_valuations.router, prefix="/api", tags=["Portfolio Valuations"])
-app.include_router(portfolio_irr_values.router, prefix="/api", tags=["Portfolio IRR Values"])
-app.include_router(historical_irr.router, prefix="/api/historical-irr", tags=["Historical IRR"])
+app.include_router(portfolio_valuations.router, prefix="/api", tags=["Holdings"])
+app.include_router(portfolio_irr_values.router, prefix="/api", tags=["Analytics"])
+app.include_router(historical_irr.router, prefix="/api/historical-irr", tags=["Analytics"])
 
 @app.get("/api")
 async def api_root():
@@ -166,9 +244,93 @@ async def api_root():
     Expected output: A JSON object with welcome message and docs link
     """
     return {
-        "message": "Welcome to the Wealth Management System API",
-        "docs": "/docs"
+        "message": "Welcome to Kingston's Portal - Wealth Management System API",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "redoc": "/redoc",
+        "openapi": "/openapi.json",
+        "status": "operational",
+        "features": [
+            "Authentication & Authorization",
+            "Client Management",
+            "Product Management", 
+            "Provider Management",
+            "Analytics & Reporting",
+            "Holdings & Valuations"
+        ]
     }
+
+@app.get("/api/docs/export")
+async def export_api_docs():
+    """
+    Export API documentation in JSON format.
+    
+    What it does: Provides the complete OpenAPI specification as downloadable JSON.
+    Why it's needed: Allows developers to export API documentation for external tools.
+    How it works:
+        1. Returns the complete OpenAPI specification
+        2. Includes all endpoints, models, and metadata
+    Expected output: Complete OpenAPI 3.0 specification in JSON format
+    """
+    from fastapi.openapi.utils import get_openapi
+    
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+        tags=app.openapi_tags
+    )
+    
+    return openapi_schema
+
+@app.get("/api/health")
+async def health_check():
+    """
+    Health check endpoint for monitoring and load balancers.
+    
+    What it does: Provides system health status and basic metrics.
+    Why it's needed: Essential for monitoring, alerting, and load balancer health checks.
+    How it works:
+        1. Checks API availability
+        2. Returns basic system information
+        3. Can be extended to check database connectivity
+    Expected output: Health status and system information
+    """
+    import psutil
+    import platform
+    from datetime import datetime
+    
+    try:
+        # Basic system information
+        health_data = {
+            "status": "healthy",
+            "timestamp": datetime.utcnow().isoformat(),
+            "version": app.version,
+            "system": {
+                "platform": platform.system(),
+                "python_version": platform.python_version(),
+                "cpu_count": psutil.cpu_count(),
+                "memory_total_gb": round(psutil.virtual_memory().total / (1024**3), 2),
+                "memory_available_gb": round(psutil.virtual_memory().available / (1024**3), 2),
+                "memory_percent": psutil.virtual_memory().percent
+            },
+            "api": {
+                "total_routes": len(app.routes),
+                "docs_url": "/docs",
+                "redoc_url": "/redoc"
+            }
+        }
+        
+        return health_data
+        
+    except Exception as e:
+        return {
+            "status": "degraded",
+            "timestamp": datetime.utcnow().isoformat(),
+            "version": app.version,
+            "error": str(e)
+        }
 
 # Serve the static frontend assets - for Docker deployment
 # Check if static_frontend directory exists before mounting

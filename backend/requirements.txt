@@ -23,6 +23,9 @@ pytest==7.4.3
 pytest-asyncio==0.21.1
 requests
 
+# System monitoring for health checks
+psutil==5.9.6
+
 # Note: Removed unused dependencies:
 # - asyncpg (using Supabase client instead)
 # - pyxirr (using numpy-financial instead)
