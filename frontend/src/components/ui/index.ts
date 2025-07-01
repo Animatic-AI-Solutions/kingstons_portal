@@ -40,8 +40,8 @@ export { default as ComboDropdown } from './dropdowns/ComboDropdown';
 export type { ComboDropdownProps } from './dropdowns/ComboDropdown';
 
 // Group 4: Action Button Family Components
-export { default as ActionButton } from './ActionButton';
-export type { ActionButtonProps } from './ActionButton';
+export { default as ActionButton } from './buttons/ActionButton';
+export type { ActionButtonProps } from './buttons/ActionButton';
 
 export { default as EditButton } from './buttons/EditButton';
 export type { EditButtonProps } from './buttons/EditButton';
@@ -65,21 +65,20 @@ export type { TableSortProps, SortDirection, SortType } from './table-controls/T
 export { default as InputLabel } from './inputs/InputLabel';
 export type { InputLabelProps } from './inputs/InputLabel';
 
-export { default as InputError } from './InputError';
-export type { InputErrorProps } from './InputError';
+export { default as InputError } from './inputs/InputError';
+export type { InputErrorProps } from './inputs/InputError';
 
 export { default as InputGroup, InputWithButton, InputWithAddon, InputRow, InputColumn } from './inputs/InputGroup';
 export type { InputGroupProps } from './inputs/InputGroup';
 
 // Demo Components (Development Only)
-export { default as InputDemo } from './InputDemo';
 export { default as SearchInputDemo } from './SearchInputDemo';
 
 // Existing UI Components
 export { default as Button } from './buttons/Button';
 export { default as Card } from './card/Card';
 export { default as StatCard } from './card/StatCard';
-export { default as StatBox } from './StatBox';
+export { default as StatBox } from './card/StatBox';
 export { default as ChangeIndicator } from './card/ChangeIndicator';
 export { default as FundDistributionChart } from './data-displays/FundDistributionChart';
 export { default as DataTable } from './data-displays/DataTable';

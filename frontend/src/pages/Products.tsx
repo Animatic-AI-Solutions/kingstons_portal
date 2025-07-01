@@ -5,8 +5,9 @@ import api, { getActiveTemplatePortfolioGenerations } from '../services/api';
 import { getProviderColor } from '../services/providerColors';
 import FilterDropdown from '../components/ui/dropdowns/FilterDropdown';
 import { FilterSearch } from '../components/ui';
-import ActionButton from '../components/ui/ActionButton';
+import { ActionButton } from '../components/ui';
 import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
+import { StatCard, StatBox, Skeleton } from '../components/ui';
 
 interface Product {
   id: number;
