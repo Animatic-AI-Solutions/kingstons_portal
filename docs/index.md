@@ -1,102 +1,41 @@
-# Kingstons Portal - Architectural Documentation
+# Kingston's Portal Documentation
 
-## Introduction
+Welcome to the official documentation for the Kingston's Portal project. This site contains all the information you need to understand, run, develop, and contribute to the project.
 
-This repository contains comprehensive architectural documentation for the Kingstons Portal system. The documentation provides a detailed analysis of the current architecture, component relationships, API boundaries, and recommendations for future enhancements.
+Whether you are a new developer getting started or an experienced team member looking for specific architectural details, this documentation is your single source of truth.
 
-## Documentation Structure
+## Documentation Sections
 
-The architectural documentation is organized into the following documents:
+This documentation is organized into six main sections, designed to be read sequentially if you are new to the project.
 
-| Document | Description |
-|----------|-------------|
-| [Executive Summary](executive_summary.md) | High-level overview of the architectural analysis and key findings |
-| [Architecture Overview](architecture.md) | Comprehensive documentation of the current system architecture |
-| [Component Diagram](component_diagram.md) | Detailed visualization of system components and their interactions |
-| [API Boundaries](api_boundaries.md) | Specification of the interfaces between frontend and backend |
-| [Architectural Recommendations](architectural_recommendations.md) | Strategic recommendations for system enhancement |
+### 1. Introduction
+*   [**01: Project Goals**](./1_introduction/01_project_goals.md) - Understand the "why" behind the project, including its functional, UX, and technical objectives.
+*   [**02: Project Strengths and Limitations**](./1_introduction/02_project_strengths_and_limitations.md) - Get a realistic overview of the project's current state, including its key advantages and areas for future improvement.
 
-## Quick Start
+### 2. Getting Started
+*   [**01: Setup and Installation**](./2_getting_started/01_setup_and_installation.md) - A step-by-step guide to get the project running on your local machine.
+*   [**02: Running the Application**](./2_getting_started/02_running_the_application.md) - Instructions for starting the frontend, backend, and running tests.
 
-For a high-level understanding of the architecture, start with the [Executive Summary](executive_summary.md). This document provides an overview of the system, key architectural components, strengths, and recommendations.
+### 3. Architecture
+*   [**01: System Architecture Overview**](./3_architecture/01_system_architecture_overview.md) - A high-level view of the technology stack and system design.
+*   [**02: Architecture Diagrams**](./3_architecture/02_architecture_diagrams.md) - Visual diagrams of the system, database, and data flows.
+*   [**03: Database Schema**](./3_architecture/03_database_schema.md) - A detailed breakdown of the PostgreSQL database schema, tables, and views.
+*   [**04: API Design**](./3_architecture/04_api_design.md) - An explanation of the FastAPI backend's structure, conventions, and key patterns.
 
-For more detailed information, refer to the specific documents:
+### 4. Development Standards
+*   [**01: Coding Principles**](./4_development_standards/01_coding_principles.md) - The core principles (SPARC, SOLID, DRY) that guide our development.
+*   [**02: Naming Conventions**](./4_development_standards/02_naming_conventions.md) - A reference for consistent naming across the codebase.
+*   [**03: Testing Strategy**](./4_development_standards/03_testing_strategy.md) - Our approach to testing, including tools and methodologies.
+*   [**04: Contribution Guidelines**](./4_development_standards/04_contribution_guidelines.md) - The process for branching, committing, and submitting pull requests.
 
-- **Understanding the current architecture**: [Architecture Overview](architecture.md)
-- **Visualizing component relationships**: [Component Diagram](component_diagram.md)
-- **API contract between frontend and backend**: [API Boundaries](api_boundaries.md)
-- **Future architectural enhancements**: [Architectural Recommendations](architectural_recommendations.md)
+### 5. Frontend Guide
+*   [**01: Design Philosophy**](./5_frontend_guide/01_design_philosophy.md) - The UX and visual design principles for the React frontend.
+*   [**02: State Management**](./5_frontend_guide/02_state_management.md) - How we handle server state with React Query and client state with built-in React hooks.
 
-## System Overview
-
-The Kingstons Portal is a wealth management platform designed for financial advisors and administrators to manage client information, accounts, and investments. The system tracks investment performance using IRR (Internal Rate of Return) and provider data, with a focus on readability, clarity, and simplicity for users potentially aged 50+.
-
-### Key Features
-
-- Client management
-- Account management
-- Investment tracking
-- Portfolio management
-- Performance reporting
-- Analytics
-
-### Technology Stack
-
-- **Frontend**: React (TypeScript), React Router, React Query, Tailwind CSS
-- **Backend**: Python with FastAPI
-- **Database**: PostgreSQL
-- **Authentication**: JWT tokens + HTTP-only cookies for session management
-
-## Architecture Diagram
-
-```mermaid
-graph TD
-    Client[Frontend Client] <--> API[Backend API]
-    API <--> DB[(Database)]
-    
-    classDef frontend fill:#f9f,stroke:#333,stroke-width:2px;
-    classDef backend fill:#bbf,stroke:#333,stroke-width:2px;
-    classDef database fill:#bfb,stroke:#333,stroke-width:2px;
-    
-    class Client frontend;
-    class API backend;
-    class DB database;
-```
-
-## Key Architectural Recommendations
-
-The following strategic recommendations have been identified to enhance the system:
-
-1. **API Gateway Implementation**
-2. **Microservices Architecture Evolution**
-3. **Event-Driven Architecture for Analytics**
-4. **Enhanced Caching Strategy**
-5. **Comprehensive Observability**
-
-For detailed information on these recommendations, refer to the [Architectural Recommendations](architectural_recommendations.md) document.
-
-## Implementation Roadmap
-
-The recommendations are organized into a phased implementation roadmap:
-
-### Phase 1: Foundation (3-4 months)
-- Enhanced Caching Strategy
-- Comprehensive Observability
-- Database Optimization
-
-### Phase 2: Architecture Evolution (6-8 months)
-- API Gateway Implementation
-- Event-Driven Architecture for Analytics
-- Enhanced Frontend Architecture
-
-### Phase 3: Advanced Capabilities (6-8 months)
-- Security Enhancements
-- Containerization and Orchestration
-- Microservices Architecture Evolution
-- Progressive Web App Implementation
-
-## Conclusion
-
-The Kingstons Portal has a solid architectural foundation with clear separation of concerns, a comprehensive data model, and robust authentication. The recommended enhancements will further improve the system's scalability, maintainability, security, and performance while preserving existing functionality.
-
-By following the proposed implementation roadmap, the system can evolve incrementally without disrupting current operations, ultimately providing a better experience for both users and developers.
+### 6. Advanced
+*   [**01: Security Considerations**](./6_advanced/01_security_considerations.md) - An overview of the security measures implemented in the application.
+*   [**02: Performance Optimizations**](./6_advanced/02_performance_optimizations.md) - A look at the techniques we use to keep the application fast and responsive.
+*   [**03: Deployment Process**](./6_advanced/03_deployment_process.md) - How to build and deploy the application to a production environment.
+*   [**04: Database Migration Strategy**](./6_advanced/04_database_migration_strategy.md) - Planned migration from Supabase to in-house PostgreSQL for enhanced security and compliance.
+---
+For AI Assistants: Please refer to the [**MAINTENANCE_GUIDE.md**](./MAINTENANCE_GUIDE.md) for instructions on how to keep this documentation up to date. 
