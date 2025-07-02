@@ -1,5 +1,5 @@
 import React, { Suspense, useState } from 'react';
-import { StatBox, FundDistributionChart, DataTable, StatBoxSkeleton, ChartSkeleton, TableSkeleton, UpcomingTransactions as UpcomingMeetings, RiskDifferences } from '../components/ui';
+import { StatBox, FundDistributionChart, DataTable, StatBoxSkeleton, ChartSkeleton, TableSkeleton, UpcomingMeetings, RiskDifferences } from '../components/ui';
 import useDashboardData from '../hooks/useDashboardData';
 
 // Icons for the stats boxes
