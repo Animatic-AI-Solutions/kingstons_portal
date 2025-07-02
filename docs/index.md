@@ -21,6 +21,7 @@ This documentation is organized into six main sections, designed to be read sequ
 *   [**02: Architecture Diagrams**](./3_architecture/02_architecture_diagrams.md) - Visual diagrams of the system, database, and data flows.
 *   [**03: Database Schema**](./3_architecture/03_database_schema.md) - A detailed breakdown of the PostgreSQL database schema, tables, and views.
 *   [**04: API Design**](./3_architecture/04_api_design.md) - An explanation of the FastAPI backend's structure, conventions, and key patterns.
+*   [**05: Shared Modules Pattern**](./3_architecture/05_shared_modules_pattern.md) - Documentation of the shared modules architecture pattern for code reusability and maintainability.
 
 ### 4. Development Standards
 *   [**01: Coding Principles**](./4_development_standards/01_coding_principles.md) - The core principles (SPARC, SOLID, DRY) that guide our development.

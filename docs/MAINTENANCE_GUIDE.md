@@ -58,6 +58,26 @@ When a file or concept is modified, the corresponding documentation file(s) shou
 
 ---
 
+### **Trigger: Shared Modules (`frontend/src/types/`, `frontend/src/utils/` shared modules)**
+*If shared modules are added, modified, or extended:*
+
+1.  **`docs/3_architecture/05_shared_modules_pattern.md`**
+    - **Action:** Update module descriptions, usage examples, and test coverage information.
+2.  **`docs/3_architecture/01_system_architecture_overview.md`**
+    - **Action:** Update the shared modules architecture section with new module information.
+3.  **`docs/4_development_standards/03_testing_strategy.md`**
+    - **Action:** Update test coverage information for new shared module tests.
+
+---
+
+### **Trigger: UI/UX Improvements (auto-save patterns, simplified messaging, etc.)**
+*If user interface patterns or user experience improvements are implemented:*
+
+1.  **`docs/5_frontend_guide/01_design_philosophy.md`**
+    - **Action:** Update the auto-save patterns, user feedback, or interaction design sections to reflect new UX patterns.
+
+---
+
 ### **Trigger: Project Dependencies (`package.json` or `requirements.txt`)**
 *If a major new dependency is added:*
 

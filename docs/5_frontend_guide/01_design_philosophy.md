@@ -40,7 +40,19 @@ This document outlines the core design and user experience (UX) principles for t
 - **Visual Feedback:** The UI provides immediate feedback for user actions, such as hover states, click effects, and loading indicators for asynchronous operations.
 - **Clear Calls-to-Action (CTAs):** Primary actions on any given page (e.g., `Save`, `Add Client`) are prominently displayed and clearly labelled.
 
-## 4. Accessibility
+## 4. Auto-Save Patterns and User Feedback
+
+### Auto-Save Implementation
+- **Seamless Experience:** Critical user inputs (such as notes and form data) automatically save without requiring manual intervention, reducing the risk of data loss and cognitive overhead.
+- **Immediate Feedback:** Users receive subtle visual confirmation when data is being saved (e.g., "Saving..." indicators) without intrusive notifications.
+- **Reduced Friction:** By eliminating manual save requirements, users can focus on their primary tasks rather than data management concerns.
+
+### Simplified User Messaging
+- **Concise Warnings:** Error and warning messages focus on essential information, avoiding verbose details that may overwhelm users.
+- **Actionable Feedback:** Messages provide clear guidance on what action (if any) the user needs to take.
+- **Progressive Disclosure:** Complex information is revealed progressively, with summary information presented first and details available on demand.
+
+## 5. Accessibility
 
 Accessibility is a core requirement, not an afterthought.
 - **WCAG 2.1 AA:** Our target for compliance.
@@ -48,7 +60,7 @@ Accessibility is a core requirement, not an afterthought.
 - **Keyboard Navigability:** All interactive elements are reachable and operable via the keyboard.
 - **Alternative Text:** All meaningful images and icons have descriptive alt text.
 
-## 5. UI Components
+## 6. UI Components
 
 We leverage a rich library of over 30 reusable UI components to ensure consistency and speed up development. Key components in `frontend/src/components/ui/` include:
 - **Data Display:** `DataTable`, `StatBox`, `FundDistributionChart`

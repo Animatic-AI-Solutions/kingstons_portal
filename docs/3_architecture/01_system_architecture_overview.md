@@ -50,8 +50,20 @@ src/
 ├── hooks/ (custom React hooks)
 ├── services/ (API communication)
 ├── context/ (React context providers)
-└── utils/ (utility functions)
+├── types/ (shared TypeScript interfaces)
+├── utils/ (utility functions and shared modules)
+└── tests/ (comprehensive test suites)
 ```
+
+### Shared Modules Architecture
+To promote code reusability and maintainability, the frontend implements a shared modules pattern:
+
+- **Shared Types (`types/reportTypes.ts`):** Centralized TypeScript interfaces for consistent data structures across components
+- **Shared Formatters (`utils/reportFormatters.ts`):** Reusable formatting functions for currency, percentages, and data presentation
+- **Shared Constants (`utils/reportConstants.ts`):** Application-wide constants and configuration values
+- **Comprehensive Testing:** Over 39 tests covering shared modules ensure reliability and prevent regressions
+
+This architecture eliminates code duplication, improves maintainability, and ensures consistent behavior across the application.
 
 ### Key Pages by Function
 
@@ -60,6 +72,13 @@ src/
 - **Analytics & Reporting (8 pages):** Performance dashboards, revenue tracking, custom report builder.
 
 For more details on the frontend design and state management, see the [**Frontend Guide**](../5_frontend_guide/01_design_philosophy.md).
+
+### Code Quality Achievements
+Recent refactoring efforts have significantly improved code organization:
+- **File Size Optimization:** Moving toward the ≤500 lines per file standard
+- **DRY Principles:** Eliminated substantial code duplication through shared modules
+- **Test Coverage:** Comprehensive test suites for all shared functionality
+- **Maintainability:** Modular architecture supports easier future enhancements
 
 ## 5. Visual Architecture
 

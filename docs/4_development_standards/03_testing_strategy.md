@@ -41,7 +41,17 @@ For instructions on running backend tests, see the [Running the Application](../
 - **Types of Tests:**
     - **Component Tests (Unit/Integration):** Test individual React components or small compositions of components.
     - **Hook Tests:** Custom hooks are tested in isolation.
+    - **Shared Module Tests:** Comprehensive testing of utility functions, formatters, and constants.
     - **API Mocking:** We use `jest.mock` to mock API calls within our tests.
+
+### Shared Modules Test Coverage
+Our shared modules have comprehensive test coverage to ensure reliability:
+
+- **Report Formatters (`reportFormatters.test.ts`):** 26 tests covering all formatting functions including currency formatting, percentage handling, and data transformation utilities.
+- **Report Constants (`reportConstants.test.ts`):** 13 tests ensuring consistent behavior of configuration constants and normalization functions.
+- **Test Quality:** All 39 shared module tests pass, providing a solid foundation for application reliability.
+
+This comprehensive testing approach prevents regressions and ensures consistent behavior across the application when shared utilities are modified.
 
 ### Running Frontend Tests
 For instructions on running frontend tests, see the [Running the Application](../2_getting_started/02_running_the_application.md#frontend-tests) guide.
