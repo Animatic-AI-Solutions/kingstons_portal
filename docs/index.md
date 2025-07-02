@@ -39,4 +39,11 @@ This documentation is organized into six main sections, designed to be read sequ
 *   [**03: Deployment Process**](./6_advanced/03_deployment_process.md) - How to build and deploy the application to a production environment.
 *   [**04: Database Migration Strategy**](./6_advanced/04_database_migration_strategy.md) - Planned migration from Supabase to in-house PostgreSQL for enhanced security and compliance.
 ---
-For AI Assistants: Please refer to the [**MAINTENANCE_GUIDE.md**](./MAINTENANCE_GUIDE.md) for instructions on how to keep this documentation up to date. 
+
+## Documentation Governance
+
+For effective use of this documentation system:
+* [**DOCUMENTATION_USAGE_GUIDE.md**](./DOCUMENTATION_USAGE_GUIDE.md) - Rules and guidelines for creating, maintaining, and using documentation
+* [**MAINTENANCE_GUIDE.md**](./MAINTENANCE_GUIDE.md) - Instructions on keeping documentation synchronized with code changes
+
+For AI Assistants: Please refer to the **DOCUMENTATION_USAGE_GUIDE.md** for rules on when to create documentation and how to use existing docs effectively. 
