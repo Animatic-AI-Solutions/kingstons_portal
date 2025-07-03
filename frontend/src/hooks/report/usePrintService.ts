@@ -8,6 +8,7 @@
 
 import { useMemo, useCallback, useState } from 'react';
 import * as React from 'react';
+import { useReactToPrint } from 'react-to-print';
 import { createPrintService } from '../../services/report/PrintService';
 import type { 
   UsePrintService, 
@@ -37,23 +38,12 @@ export const usePrintService = (
     service.updateOptions(newOptions);
   }, [service]);
 
-  // Memoized print functions with error handling and loading states
-  const printReport = useCallback(async (
+  // Simple function to get print configuration for use with components' own useReactToPrint
+  const getPrintConfiguration = useCallback((
     contentRef: React.RefObject<HTMLElement>,
     options?: PrintOptions
-  ): Promise<void> => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      await service.printReport(contentRef, options);
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error(String(err));
-      setError(error);
-      console.error('Error printing report:', error);
-      throw error; // Re-throw for caller handling
-    } finally {
-      setIsLoading(false);
-    }
+  ) => {
+    return service.getPrintConfiguration(contentRef, options);
   }, [service]);
 
   const prepareForPrint = useCallback(async (
@@ -103,6 +93,24 @@ export const usePrintService = (
     service.setIRRHistoryLoader(loader);
   }, [service]);
 
+  // Page numbering methods
+  const setPageNumbering = useCallback((
+    enabled: boolean = true,
+    position: 'bottom-left' | 'bottom-center' | 'bottom-right' | 'top-left' | 'top-center' | 'top-right' = 'bottom-right',
+    format: 'page-only' | 'page-total' | 'custom' = 'page-only',
+    customFormat?: string
+  ): void => {
+    service.setPageNumbering(enabled, position, format, customFormat);
+  }, [service]);
+
+  const disablePageNumbers = useCallback((): void => {
+    service.disablePageNumbers();
+  }, [service]);
+
+  const enablePageNumbers = useCallback((): void => {
+    service.enablePageNumbers();
+  }, [service]);
+
   // Current options getter
   const getCurrentOptions = useCallback((): PrintOptions => {
     return service.getDefaultOptions();
@@ -110,7 +118,7 @@ export const usePrintService = (
 
   return {
     // Core methods
-    printReport,
+    getPrintConfiguration,
     prepareForPrint,
     
     // State
@@ -120,6 +128,11 @@ export const usePrintService = (
     
     // Configuration
     updateOptions,
+    
+    // Page numbering
+    setPageNumbering,
+    disablePageNumbers,
+    enablePageNumbers,
     
     // Utility methods
     generatePrintStyles,

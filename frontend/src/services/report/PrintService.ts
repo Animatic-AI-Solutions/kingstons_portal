@@ -33,6 +33,13 @@ export class PrintService implements IPrintService {
       },
       ensureIRRHistory: true,
       preserveColors: true,
+      pageNumbers: {
+        enabled: true,
+        position: 'bottom-right',
+        format: 'page-only',
+        fontSize: '10px',
+        color: '#666'
+      },
       ...initialOptions
     };
   }
@@ -65,45 +72,34 @@ export class PrintService implements IPrintService {
   // =============================================================================
 
   /**
-   * Print the report using react-to-print
-   * Extracted from ReportDisplay handlePrint function
+   * Get print configuration for use with useReactToPrint hook
+   * The actual printing must be done in a React component using useReactToPrint
    */
-  async printReport(
+  getPrintConfiguration(
     contentRef: React.RefObject<HTMLElement>, 
     options?: PrintOptions
-  ): Promise<void> {
+  ): {
+    contentRef: React.RefObject<HTMLElement>;
+    documentTitle: string;
+    pageStyle: string;
+    onBeforePrint?: () => Promise<void>;
+  } {
     const finalOptions = { ...this.options, ...options };
     const documentTitle = finalOptions.documentTitle || 'Report_Export.pdf';
     
-    return new Promise((resolve, reject) => {
-      try {
-        const printFunction = useReactToPrint({
-          contentRef,
-          documentTitle,
-          onBeforePrint: async () => {
-            if (finalOptions.ensureIRRHistory && this.irrHistoryLoader) {
-              try {
-                await this.irrHistoryLoader();
-              } catch (error) {
-                console.warn('Failed to load IRR history before printing:', error);
-              }
-            }
-          },
-          onAfterPrint: () => {
-            resolve();
-          },
-          onPrintError: (errorLocation, error) => {
-            console.error('Print error at', errorLocation, ':', error);
-            reject(new Error(`Print failed: ${error.message}`));
-          },
-          pageStyle: this.generatePrintStyles(finalOptions)
-        });
-
-        printFunction();
-      } catch (error) {
-        reject(error instanceof Error ? error : new Error(String(error)));
-      }
-    });
+    return {
+      contentRef,
+      documentTitle,
+      pageStyle: this.generatePrintStyles(finalOptions),
+      onBeforePrint: finalOptions.ensureIRRHistory && this.irrHistoryLoader ? 
+        async () => {
+          try {
+            await this.irrHistoryLoader!();
+          } catch (error) {
+            console.warn('Failed to load IRR history before printing:', error);
+          }
+        } : undefined
+    };
   }
 
   /**
@@ -190,6 +186,7 @@ export class PrintService implements IPrintService {
         ${preserveColors ? this.getColorPreservationCSS() : ''}
         ${this.getTableOptimizationCSS()}
         ${this.getLayoutOptimizationCSS()}
+        ${this.getPageNumberingCSS(finalOptions)}
         ${customStyles || ''}
       }
     `;
@@ -409,6 +406,84 @@ export class PrintService implements IPrintService {
     `;
   }
 
+  /**
+   * Get CSS for page numbering based on options
+   */
+  private getPageNumberingCSS(options: PrintOptions): string {
+    const pageOptions = options.pageNumbers;
+    
+    // If page numbers are disabled, return empty CSS
+    if (!pageOptions?.enabled) {
+      return '';
+    }
+    
+    const position = pageOptions.position || 'bottom-right';
+    const format = pageOptions.format || 'page-only';
+    const fontSize = pageOptions.fontSize || '10px';
+    const color = pageOptions.color || '#666';
+    const customFormat = pageOptions.customFormat || 'Page {page}';
+    
+    // Generate content based on format
+    let content = '"Page " counter(page)';
+    if (format === 'page-total') {
+      content = '"Page " counter(page) " of " counter(pages)';
+    } else if (format === 'custom' && customFormat) {
+      content = `"${customFormat.replace('{page}', '" counter(page) "').replace('{total}', '" counter(pages) "')}"`;
+    }
+    
+    // Generate position-specific CSS
+    const positionMap = {
+      'top-left': '@top-left',
+      'top-center': '@top-center', 
+      'top-right': '@top-right',
+      'bottom-left': '@bottom-left',
+      'bottom-center': '@bottom-center',
+      'bottom-right': '@bottom-right'
+    };
+    
+    const cssPosition = positionMap[position];
+    
+    return `
+      /* Initialize page counter */
+      body {
+        counter-reset: page;
+      }
+      
+      @page {
+        counter-increment: page;
+        
+        /* Page numbers positioned at ${position} */
+        ${cssPosition} {
+          content: ${content};
+          font-size: ${fontSize};
+          font-family: Arial, sans-serif;
+          color: ${color};
+          margin: 0.1in 0.25in;
+        }
+      }
+      
+      /* Alternative page numbering for browsers that don't support @page margin boxes */
+      .page-number-fallback {
+        position: fixed;
+        ${position.includes('bottom') ? 'bottom: 0.3in;' : 'top: 0.3in;'}
+        ${position.includes('left') ? 'left: 0.3in;' : position.includes('right') ? 'right: 0.3in;' : 'left: 50%; transform: translateX(-50%);'}
+        font-size: ${fontSize};
+        font-family: Arial, sans-serif;
+        color: ${color};
+        background: white;
+        padding: 2px 4px;
+        border-radius: 2px;
+        z-index: 1000;
+        display: none; /* Hidden by default, shown via JavaScript if needed */
+      }
+      
+      /* Ensure content doesn't overlap with page numbers */
+      .report-content {
+        ${position.includes('bottom') ? 'padding-bottom: 0.6in;' : 'padding-top: 0.6in;'}
+      }
+    `;
+  }
+
   // =============================================================================
   // UTILITY METHODS
   // =============================================================================
@@ -422,6 +497,51 @@ export class PrintService implements IPrintService {
     }
     
     return `Report_${reportData.timePeriod.replace(/\s+/g, '_')}.pdf`;
+  }
+
+  /**
+   * Configure page numbering options
+   */
+  setPageNumbering(
+    enabled: boolean = true,
+    position: 'bottom-left' | 'bottom-center' | 'bottom-right' | 'top-left' | 'top-center' | 'top-right' = 'bottom-right',
+    format: 'page-only' | 'page-total' | 'custom' = 'page-only',
+    customFormat?: string
+  ): void {
+    this.options.pageNumbers = {
+      enabled,
+      position,
+      format,
+      customFormat,
+      fontSize: this.options.pageNumbers?.fontSize || '10px',
+      color: this.options.pageNumbers?.color || '#666'
+    };
+  }
+
+  /**
+   * Disable page numbering
+   */
+  disablePageNumbers(): void {
+    if (this.options.pageNumbers) {
+      this.options.pageNumbers.enabled = false;
+    }
+  }
+
+  /**
+   * Enable page numbering with default settings
+   */
+  enablePageNumbers(): void {
+    if (!this.options.pageNumbers) {
+      this.options.pageNumbers = {
+        enabled: true,
+        position: 'bottom-right',
+        format: 'page-only',
+        fontSize: '10px',
+        color: '#666'
+      };
+    } else {
+      this.options.pageNumbers.enabled = true;
+    }
   }
 
   /**

@@ -131,8 +131,9 @@ export class IRRCalculationService implements IIRRCalculationService {
       
       this.log(`Product ${productId} maps to portfolio ${portfolioId}`);
       
-      // Now fetch the latest IRR for this portfolio using existing service
-      const irrValue = await this.irrDataService.getStoredPortfolioIRR(portfolioId);
+      // Now fetch the latest IRR for this portfolio
+      const response = await this.api.get(`/api/portfolios/${portfolioId}/latest_irr`);
+      const irrValue = response.data?.irr_result || response.data?.irr_value || null;
       
       this.log(`Product ${productId} (portfolio ${portfolioId}) IRR:`, irrValue);
       return { productId, irr: irrValue };

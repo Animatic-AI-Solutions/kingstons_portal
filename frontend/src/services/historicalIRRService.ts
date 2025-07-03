@@ -53,8 +53,8 @@ class HistoricalIRRService {
   private baseUrl: string;
 
   constructor() {
-    // Jest-compatible environment variable access
-    this.baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+    // Empty base URL to work with Vite's proxy configuration
+    this.baseUrl = '';
   }
 
   /**

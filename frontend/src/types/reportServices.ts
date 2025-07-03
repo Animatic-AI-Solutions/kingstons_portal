@@ -240,6 +240,21 @@ export interface PrintOptions {
   customStyles?: string;
   /** Whether to preserve provider theme colors in print */
   preserveColors?: boolean;
+  /** Page numbering options */
+  pageNumbers?: {
+    /** Whether to show page numbers - defaults to true */
+    enabled?: boolean;
+    /** Position of page numbers - defaults to bottom-right */
+    position?: 'bottom-left' | 'bottom-center' | 'bottom-right' | 'top-left' | 'top-center' | 'top-right';
+    /** Format of page numbers - defaults to "Page X" */
+    format?: 'page-only' | 'page-total' | 'custom';
+    /** Custom format string (use {page} and {total} placeholders) */
+    customFormat?: string;
+    /** Font size for page numbers - defaults to 10px */
+    fontSize?: string;
+    /** Font color for page numbers - defaults to #666 */
+    color?: string;
+  };
 }
 
 /**
@@ -256,9 +271,17 @@ export interface PrintPreparationResult {
  */
 export interface IPrintService {
   /**
-   * Print the report with specified options
+   * Get print configuration for use with useReactToPrint hook
    */
-  printReport(contentRef: React.RefObject<HTMLElement>, options?: PrintOptions): Promise<void>;
+  getPrintConfiguration(
+    contentRef: React.RefObject<HTMLElement>, 
+    options?: PrintOptions
+  ): {
+    contentRef: React.RefObject<HTMLElement>;
+    documentTitle: string;
+    pageStyle: string;
+    onBeforePrint?: () => Promise<void>;
+  };
   
   /**
    * Prepare report for printing (load required data)
@@ -279,14 +302,39 @@ export interface IPrintService {
    * Update print options
    */
   updateOptions(newOptions: PrintOptions): void;
+  
+  /**
+   * Configure page numbering options
+   */
+  setPageNumbering(
+    enabled?: boolean,
+    position?: 'bottom-left' | 'bottom-center' | 'bottom-right' | 'top-left' | 'top-center' | 'top-right',
+    format?: 'page-only' | 'page-total' | 'custom',
+    customFormat?: string
+  ): void;
+  
+  /**
+   * Disable page numbering
+   */
+  disablePageNumbers(): void;
+  
+  /**
+   * Enable page numbering with default settings
+   */
+  enablePageNumbers(): void;
 }
 
 /**
  * React hook interface for PrintService
  */
 export interface UsePrintService {
-  /** Print the report */
-  printReport: (contentRef: React.RefObject<HTMLElement>, options?: PrintOptions) => Promise<void>;
+  /** Get print configuration for use with useReactToPrint */
+  getPrintConfiguration: (contentRef: React.RefObject<HTMLElement>, options?: PrintOptions) => {
+    contentRef: React.RefObject<HTMLElement>;
+    documentTitle: string;
+    pageStyle: string;
+    onBeforePrint?: () => Promise<void>;
+  };
   
   /** Prepare report for printing */
   prepareForPrint: (reportData: ReportData, options?: PrintOptions) => Promise<PrintPreparationResult>;
@@ -302,6 +350,20 @@ export interface UsePrintService {
   
   /** Update options */
   updateOptions: (newOptions: PrintOptions) => void;
+  
+  /** Configure page numbering options */
+  setPageNumbering: (
+    enabled?: boolean,
+    position?: 'bottom-left' | 'bottom-center' | 'bottom-right' | 'top-left' | 'top-center' | 'top-right',
+    format?: 'page-only' | 'page-total' | 'custom',
+    customFormat?: string
+  ) => void;
+  
+  /** Disable page numbering */
+  disablePageNumbers: () => void;
+  
+  /** Enable page numbering with default settings */
+  enablePageNumbers: () => void;
   
   /** Generate print styles */
   generatePrintStyles: (options?: PrintOptions) => string;

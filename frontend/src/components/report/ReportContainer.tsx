@@ -11,9 +11,10 @@
 
 import React, { useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useReactToPrint } from 'react-to-print';
 import { ArrowLeftIcon, PrinterIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { useReportStateManager } from '../../hooks/report/useReportStateManager';
-import { usePrintService } from '../../hooks/report/usePrintService';
+import { usePrintServiceReadOnly } from '../../hooks/report/usePrintService';
 import { REPORT_TABS, type ReportTab } from '../../utils/reportConstants';
 import type { ReportData } from '../../types/reportTypes';
 import ProductTitleModal from './ProductTitleModal';
@@ -45,14 +46,107 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
     }
   } = useReportStateManager();
 
-  // Print service from Phase 1
-  const { printReport, isLoading: isPrinting } = usePrintService();
-
   // PERFORMANCE OPTIMIZATION: Memoized computed values
   const reportTitle = useMemo(() => 
     `Report_${reportData.timePeriod?.replace(/\s+/g, '_') || 'Export'}.pdf`,
     [reportData.timePeriod]
   );
+
+  // Print service for styling only
+  const { generatePrintStyles } = usePrintServiceReadOnly({
+    orientation: 'landscape',
+    preserveColors: true
+  });
+
+  // React-to-print configuration with proper error handling
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: reportTitle,
+    pageStyle: `
+      @media print {
+        @page {
+          size: landscape;
+          margin: 0.5in;
+        }
+        
+        body {
+          -webkit-print-color-adjust: exact !important;
+          color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        
+        .print-hide {
+          display: none !important;
+        }
+        
+        .print-clean {
+          box-shadow: none !important;
+          border-radius: 0 !important;
+        }
+        
+        .product-card {
+          page-break-inside: avoid;
+          break-inside: avoid;
+          margin-bottom: 20px;
+        }
+        
+        .product-table table {
+          page-break-inside: auto;
+          break-inside: auto;
+        }
+        
+        .product-table tr {
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+        
+        .landscape-table {
+          width: 100% !important;
+          font-size: 8px !important;
+        }
+        
+        .portfolio-performance-grid {
+          display: grid !important;
+          grid-template-columns: repeat(3, 1fr) !important;
+          gap: 1rem !important;
+        }
+        
+        .portfolio-performance-card {
+          background: #f8f9fa !important;
+          border: 1px solid #dee2e6 !important;
+          padding: 0.75rem !important;
+        }
+        
+        /* Preserve theme colors */
+        .bg-purple-50 { background-color: #faf5ff !important; }
+        .bg-green-50 { background-color: #f0fdf4 !important; }
+        .bg-blue-50 { background-color: #eff6ff !important; }
+        .bg-purple-100 { background-color: #e9d5ff !important; }
+        .bg-green-100 { background-color: #dcfce7 !important; }
+        .bg-blue-100 { background-color: #dbeafe !important; }
+        
+        /* Text colors */
+        .text-purple-700 { color: #7c3aed !important; }
+        .text-green-700 { color: #15803d !important; }
+        .text-blue-700 { color: #1d4ed8 !important; }
+        .text-green-600 { color: #16a34a !important; }
+        .text-red-600 { color: #dc2626 !important; }
+        .text-purple-600 { color: #9333ea !important; }
+        .text-blue-600 { color: #2563eb !important; }
+        .text-primary-700 { color: #1d4ed8 !important; }
+      }
+    `,
+    onBeforePrint: () => {
+      console.log('🖨️ Starting print process...');
+      return Promise.resolve();
+    },
+    onAfterPrint: () => {
+      console.log('✅ Print process completed');
+    },
+    onPrintError: (errorLocation, error) => {
+      console.error('❌ Print error at', errorLocation, ':', error);
+    }
+  });
 
   const productOwnerDisplay = useMemo(() => 
     reportData.productOwnerNames.length > 0 ? reportData.productOwnerNames.join(', ') : '',
@@ -68,17 +162,7 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
     setActiveTab(tab);
   }, [setActiveTab]);
 
-  const handlePrint = useCallback(async () => {
-    if (printRef.current) {
-      try {
-        await printReport(printRef, {
-          documentTitle: reportTitle
-        });
-      } catch (error) {
-        console.error('Print failed:', error);
-      }
-    }
-  }, [printReport, reportTitle]);
+
 
   const toggleVisualSigning = useCallback(() => {
     setVisualSigning(!visualSigning);
@@ -139,11 +223,10 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
               </button>
               <button
                 onClick={handlePrint}
-                disabled={isPrinting}
-                className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors disabled:opacity-50"
+                className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
               >
                 <PrinterIcon className="h-4 w-4 mr-2" />
-                {isPrinting ? 'Printing...' : 'Print Report'}
+                Print Report
               </button>
             </div>
           </div>
