@@ -12,9 +12,9 @@
 import React, { useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useReactToPrint } from 'react-to-print';
-import { ArrowLeftIcon, PrinterIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { PrinterIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { useReportStateManager } from '../../hooks/report/useReportStateManager';
-import { usePrintServiceReadOnly } from '../../hooks/report/usePrintService';
+import { PrintService } from '../../services/report/PrintService';
 import { REPORT_TABS, type ReportTab } from '../../utils/reportConstants';
 import type { ReportData } from '../../types/reportTypes';
 import ProductTitleModal from './ProductTitleModal';
@@ -37,12 +37,17 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
       activeTab,
       hideZeros,
       visualSigning,
-      customTitles
+      customTitles,
+      loading,
+      realTimeTotalIRR,
+      irrHistoryData
     },
     actions: {
       setActiveTab,
       setHideZeros,
-      setVisualSigning
+      setVisualSigning,
+      setShowTitleModal,
+      setIrrHistoryData
     }
   } = useReportStateManager();
 
@@ -52,99 +57,90 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
     [reportData.timePeriod]
   );
 
-  // Print service for styling only
-  const { generatePrintStyles } = usePrintServiceReadOnly({
-    orientation: 'landscape',
-    preserveColors: true
-  });
+  // Initialize print service with comprehensive options
+  const printService = useMemo(() => {
+    const service = new PrintService({
+      orientation: 'landscape',
+      margins: {
+        top: '0.2in',
+        right: '0.05in',
+        bottom: '0.2in',
+        left: '0.05in'
+      },
+      preserveColors: true,
+      customStyles: `
+        /* Print-only Company Logo Header */
+        .print-logo-header {
+          display: none;
+        }
+        
+        @media print {
+          .print-logo-header {
+            display: block !important;
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #1f2937;
+          }
+          
+          .print-logo-header h1 {
+            font-size: 24px !important;
+            font-weight: bold;
+            color: #1f2937 !important;
+            margin: 0 !important;
+          }
+          
+          .print-logo-header p {
+            font-size: 14px !important;
+            color: #6b7280 !important;
+            margin: 0.5rem 0 0 0 !important;
+          }
+        }
+      `
+    });
+    
+    return service;
+  }, []);
 
-  // React-to-print configuration with proper error handling
+  // React-to-print configuration with comprehensive print service
   const handlePrint = useReactToPrint({
     contentRef: printRef,
     documentTitle: reportTitle,
-    pageStyle: `
-      @media print {
-        @page {
-          size: landscape;
-          margin: 0.5in;
-        }
-        
-        body {
-          -webkit-print-color-adjust: exact !important;
-          color-adjust: exact !important;
-          print-color-adjust: exact !important;
-        }
-        
-        .print-hide {
-          display: none !important;
-        }
-        
-        .print-clean {
-          box-shadow: none !important;
-          border-radius: 0 !important;
-        }
-        
-        .product-card {
-          page-break-inside: avoid;
-          break-inside: avoid;
-          margin-bottom: 20px;
-        }
-        
-        .product-table table {
-          page-break-inside: auto;
-          break-inside: auto;
-        }
-        
-        .product-table tr {
-          page-break-inside: avoid;
-          break-inside: avoid;
-        }
-        
-        .landscape-table {
-          width: 100% !important;
-          font-size: 8px !important;
-        }
-        
-        .portfolio-performance-grid {
-          display: grid !important;
-          grid-template-columns: repeat(3, 1fr) !important;
-          gap: 1rem !important;
-        }
-        
-        .portfolio-performance-card {
-          background: #f8f9fa !important;
-          border: 1px solid #dee2e6 !important;
-          padding: 0.75rem !important;
-        }
-        
-        /* Preserve theme colors */
-        .bg-purple-50 { background-color: #faf5ff !important; }
-        .bg-green-50 { background-color: #f0fdf4 !important; }
-        .bg-blue-50 { background-color: #eff6ff !important; }
-        .bg-purple-100 { background-color: #e9d5ff !important; }
-        .bg-green-100 { background-color: #dcfce7 !important; }
-        .bg-blue-100 { background-color: #dbeafe !important; }
-        
-        /* Text colors */
-        .text-purple-700 { color: #7c3aed !important; }
-        .text-green-700 { color: #15803d !important; }
-        .text-blue-700 { color: #1d4ed8 !important; }
-        .text-green-600 { color: #16a34a !important; }
-        .text-red-600 { color: #dc2626 !important; }
-        .text-purple-600 { color: #9333ea !important; }
-        .text-blue-600 { color: #2563eb !important; }
-        .text-primary-700 { color: #1d4ed8 !important; }
+    pageStyle: printService.generatePrintStyles(),
+    onBeforePrint: async () => {
+      console.log('🖨️ [PRINT] Starting print process...');
+      
+      // Debug: Check product card styles before printing
+      const productCards = printRef.current?.querySelectorAll('.product-card');
+      if (productCards) {
+        console.log('🔍 [PRINT DEBUG] Found', productCards.length, 'product cards');
+        productCards.forEach((card, index) => {
+          const element = card as HTMLElement;
+          const style = element.getAttribute('style');
+          const computedStyle = window.getComputedStyle(element);
+          console.log(`🔍 [PRINT DEBUG] Card ${index + 1}:`, {
+            hasInlineStyle: !!style,
+            inlineStyle: style,
+            computedBorderLeft: computedStyle.borderLeft,
+            computedBorderColor: computedStyle.borderColor,
+          });
+        });
       }
-    `,
-    onBeforePrint: () => {
-      console.log('🖨️ Starting print process...');
+      
+      // Note: IRR history loading is handled by individual components
+      if (irrHistoryData && irrHistoryData.length > 0) {
+        console.log('✅ [PRINT] IRR history data available for printing');
+      } else {
+        console.log('ℹ️ [PRINT] No IRR history data available, printing summary only');
+      }
+      
       return Promise.resolve();
     },
     onAfterPrint: () => {
-      console.log('✅ Print process completed');
+      console.log('✅ [PRINT] Print process completed');
     },
     onPrintError: (errorLocation, error) => {
-      console.error('❌ Print error at', errorLocation, ':', error);
+      console.error('❌ [PRINT] Print error at', errorLocation, ':', error);
     }
   });
 
@@ -162,8 +158,6 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
     setActiveTab(tab);
   }, [setActiveTab]);
 
-
-
   const toggleVisualSigning = useCallback(() => {
     setVisualSigning(!visualSigning);
   }, [visualSigning, setVisualSigning]);
@@ -171,6 +165,10 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
   const toggleHideZeros = useCallback(() => {
     setHideZeros(!hideZeros);
   }, [hideZeros, setHideZeros]);
+
+  const openTitleModal = useCallback(() => {
+    setShowTitleModal(true);
+  }, [setShowTitleModal]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -181,29 +179,72 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <button
-                onClick={handleBackToGenerator}
-                className="flex items-center text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 rounded-md px-2 py-1"
-                aria-label="Go back to report generator"
-              >
-                <ArrowLeftIcon className="h-5 w-5 mr-2" aria-hidden="true" />
-                Back to Report Generator
-              </button>
-            </div>
+                      <div className="flex items-center">
+            {/* Breadcrumb Navigation */}
+            <nav aria-label="Breadcrumb">
+              <ol className="inline-flex items-center space-x-1 md:space-x-3">
+                <li className="inline-flex items-center">
+                  <button
+                    onClick={() => navigate('/home')}
+                    className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 rounded-md px-2 py-1"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
+                    </svg>
+                    Home
+                  </button>
+                </li>
+                <li>
+                  <div className="flex items-center">
+                    <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
+                    </svg>
+                    <button
+                      onClick={() => navigate('/analytics')}
+                      className="ml-1 text-sm font-medium text-gray-500 hover:text-primary-700 md:ml-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 rounded-md px-2 py-1"
+                    >
+                      Analytics
+                    </button>
+                  </div>
+                </li>
+                <li>
+                  <div className="flex items-center">
+                    <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
+                    </svg>
+                    <button
+                      onClick={handleBackToGenerator}
+                      className="ml-1 text-sm font-medium text-gray-500 hover:text-primary-700 md:ml-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 rounded-md px-2 py-1"
+                    >
+                      Report Generator
+                    </button>
+                  </div>
+                </li>
+                <li aria-current="page">
+                  <div className="flex items-center">
+                    <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
+                    </svg>
+                    <span className="ml-1 text-sm font-medium text-primary-700 md:ml-2">Report Display</span>
+                  </div>
+                </li>
+              </ol>
+            </nav>
+          </div>
             <div className="flex items-center space-x-4">
               <button
                 onClick={toggleVisualSigning}
-                className={`flex items-center px-4 py-2 rounded-md transition-colors ${
+                className={`flex items-center px-4 py-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${
                   visualSigning 
                     ? 'bg-blue-600 text-white hover:bg-blue-700' 
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
+                aria-label={`${visualSigning ? 'Disable' : 'Enable'} visual signing`}
               >
                 {visualSigning ? (
-                  <EyeSlashIcon className="h-4 w-4 mr-2" />
+                  <EyeSlashIcon className="h-4 w-4 mr-2" aria-hidden="true" />
                 ) : (
-                  <EyeIcon className="h-4 w-4 mr-2" />
+                  <EyeIcon className="h-4 w-4 mr-2" aria-hidden="true" />
                 )}
                 <span className="text-sm font-medium">
                   {visualSigning ? 'Normal View' : 'Visual Signing'}
@@ -211,11 +252,12 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
               </button>
               <button
                 onClick={toggleHideZeros}
-                className={`flex items-center px-4 py-2 rounded-md transition-colors ${
+                className={`flex items-center px-4 py-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${
                   hideZeros 
                     ? 'bg-orange-600 text-white hover:bg-orange-700' 
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
+                aria-label={`${hideZeros ? 'Show' : 'Hide'} zero values`}
               >
                 <span className="text-sm font-medium">
                   {hideZeros ? 'Show Zeros' : 'Hide Zeros'}
@@ -223,9 +265,10 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
               </button>
               <button
                 onClick={handlePrint}
-                className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
+                className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                aria-label="Print report"
               >
-                <PrinterIcon className="h-4 w-4 mr-2" />
+                <PrinterIcon className="h-4 w-4 mr-2" aria-hidden="true" />
                 Print Report
               </button>
             </div>
@@ -263,27 +306,54 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
           )}
         </div>
 
+        {/* Edit Titles Button */}
+        <div className="mb-6 print-hide">
+          <div className="flex justify-center">
+            <button
+              onClick={openTitleModal}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              aria-label="Edit product titles"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Edit Product Titles
+              {customTitles.size > 0 && (
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  {customTitles.size} custom
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
         {/* Tab Navigation */}
-        <div className="mb-8 print-hide">
+        <div className="mb-8 print-hide tab-navigation">
           <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+            <nav className="-mb-px flex space-x-8" aria-label="Report tabs" role="tablist">
               <button
                 onClick={() => handleTabChange(REPORT_TABS.SUMMARY)}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${
                   activeTab === REPORT_TABS.SUMMARY
                     ? 'border-primary-500 text-primary-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
+                role="tab"
+                aria-selected={activeTab === REPORT_TABS.SUMMARY}
+                aria-controls="summary-tab-panel"
               >
                 Investment Summary
               </button>
               <button
                 onClick={() => handleTabChange(REPORT_TABS.IRR_HISTORY)}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${
                   activeTab === REPORT_TABS.IRR_HISTORY
                     ? 'border-primary-500 text-primary-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
+                role="tab"
+                aria-selected={activeTab === REPORT_TABS.IRR_HISTORY}
+                aria-controls="irr-history-tab-panel"
               >
                 IRR History
               </button>
@@ -292,7 +362,9 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
         </div>
 
         {/* Tab Content */}
-        {children}
+        <div className="tab-content print:block">
+          {children}
+        </div>
       </div>
 
       {/* Product Title Modal */}
@@ -300,5 +372,7 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
     </div>
   );
 });
+
+ReportContainer.displayName = 'ReportContainer';
 
 export default ReportContainer; 

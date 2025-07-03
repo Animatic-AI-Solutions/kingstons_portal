@@ -153,6 +153,9 @@ export class PrintService implements IPrintService {
           size: ${pageSize};
         }
         
+        /* CRITICAL: Color preservation must come first */
+        ${preserveColors ? this.getColorPreservationCSS() : ''}
+        
         /* Hide interactive elements */
         .print-hide {
           display: none !important;
@@ -168,7 +171,10 @@ export class PrintService implements IPrintService {
         .product-card {
           page-break-inside: avoid;
           break-inside: avoid;
-          margin-bottom: 1rem;
+          margin-bottom: 1.5rem !important;
+          border-radius: 0.5rem !important;
+          background-color: white !important;
+          padding: 1.5rem !important;
         }
         
         /* Prevent table breaks */
@@ -183,10 +189,10 @@ export class PrintService implements IPrintService {
           box-shadow: none !important;
         }
         
-        ${preserveColors ? this.getColorPreservationCSS() : ''}
         ${this.getTableOptimizationCSS()}
         ${this.getLayoutOptimizationCSS()}
         ${this.getPageNumberingCSS(finalOptions)}
+        ${this.getPrintVisibilityCSS()}
         ${customStyles || ''}
       }
     `;
@@ -197,20 +203,28 @@ export class PrintService implements IPrintService {
    */
   private getColorPreservationCSS(): string {
     return `
-      /* Preserve provider theme color borders in print */
-      .print-clean[style*="border"] {
-        /* Don't override inline border styles that contain provider colors */
+      /* Critical: Force browsers to preserve all colors and backgrounds in print */
+      *, *::before, *::after {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
       }
       
-      /* Default border for elements without provider theme colors */
-      .print-clean:not([style*="border"]) {
-        border: 1px solid #e5e7eb !important;
+      /* Extra emphasis for key elements */
+      html, body {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
       
-      /* Optimize for landscape layout */
-      body {
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
+      /* Ensure all divs preserve their styling */
+      div, span, section, article {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      
+      /* Critical: Do not override any inline styles on product cards */
+      .product-card[style] {
+        /* This selector targets cards WITH inline styles - preserve them exactly */
       }
     `;
   }
@@ -368,40 +382,227 @@ export class PrintService implements IPrintService {
         display: grid !important;
         grid-template-columns: 1fr 1fr 1fr !important;
         gap: 1rem !important;
+        margin-bottom: 1.5rem !important;
       }
       
       .portfolio-performance-card {
-        page-break-inside: avoid;
-        break-inside: avoid;
+        background-color: inherit !important;
+        border-radius: 0.5rem !important;
+        padding: 0.75rem !important;
+        text-align: center !important;
+        height: 6rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
       }
       
-      /* Product card styling optimizations */
-      .product-card.print-clean {
+      .portfolio-performance-card div:first-child {
+        font-size: 0.875rem !important;
+        font-weight: 500 !important;
+        margin-bottom: 0.5rem !important;
+      }
+      
+      .portfolio-performance-card div:last-child {
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        color: black !important;
+      }
+      
+      /* Remove gap completely between ALL titles and tables */
+      h1, h2, h3, h4, h5, h6 {
+        margin-bottom: 0 !important;
+        margin-top: 0 !important;
+      }
+      
+      /* Product card spacing */
+      .product-card {
         margin-bottom: 1.5rem !important;
-        border-radius: 0 !important;
       }
       
-      .product-card.print-clean:not([style*="border"]),
-      .product-card.print-clean:not([style*="border"]) .border {
-        border: 1px solid #d1d5db !important;
+      /* Force all product titles to have no margin */
+      .product-card h3,
+      .product-card .text-xl,
+      .product-card .font-semibold {
+        margin-bottom: 0 !important;
+        margin-top: 0 !important;
       }
       
-      /* Preserve provider theme color borders and ensure colors are printed */
-      .product-card.print-clean[style*="border"] {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-        color-adjust: exact !important;
+      /* Remove gaps for all table containers */
+      .product-table,
+      .overflow-x-auto,
+      .overflow-x-auto table,
+      table {
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+      }
+      
+      /* IRR History section - more specific targeting */
+      .irr-history-section h2,
+      .irr-history-section .text-2xl,
+      .irr-history-section .font-bold {
+        margin-bottom: 0 !important;
+        margin-top: 0 !important;
+      }
+      
+      .irr-history-section .product-card h3,
+      .irr-history-section .product-card .text-xl,
+      .irr-history-section .product-card .font-semibold {
+        margin-bottom: 0 !important;
+        margin-top: 0 !important;
+      }
+      
+      /* Force gap removal on div containers */
+      .mb-4, .mb-6, .mb-8 {
+        margin-bottom: 0.5rem !important;
+      }
+      
+      /* Specific targeting for headings in cards */
+      .bg-white h2,
+      .bg-white h3,
+      .shadow-sm h2,
+      .shadow-sm h3 {
+        margin-bottom: 0 !important;
+      }
+      
+      /* Reduce section spacing - make everything more compact */
+      .product-card.print-clean {
+        margin-bottom: 0.5rem !important;
+        padding: 0.75rem !important;
+      }
+      
+      /* Reduce spacing between main sections */
+      .mb-8.product-card {
+        margin-bottom: 0.5rem !important;
+      }
+      
+      /* Compact the main report content container */
+      .w-full.mx-auto.px-4 {
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+      }
+      
+      /* Reduce spacing in IRR History section */
+      .irr-history-section .product-card {
+        margin-bottom: 0.5rem !important;
+        padding: 0.75rem !important;
+      }
+      
+      /* Make Portfolio Performance section more compact */
+      .portfolio-performance-grid {
+        margin-bottom: 0.5rem !important;
+      }
+      
+      /* Clean up styling for print - remove shadows but preserve all borders */
+      .product-card.print-clean,
+      .bg-white.shadow-sm,
+      .border.border-gray-200,
+      .shadow-sm.rounded-lg {
+        box-shadow: none !important;
+        background: white !important;
+        /* Explicitly do NOT override border properties - inline styles must take precedence */
       }
       
       /* Right-align most number columns in print, but center colored columns */
-      .landscape-table td:not(.text-center):not(.colored-cell) {
+      .landscape-table th:not(:first-child):not(.bg-green-100):not(.bg-blue-100):not(.bg-purple-100),
+      .landscape-table td:not(:first-child):not(.bg-green-50):not(.bg-blue-50):not(.bg-purple-50):not(.bg-green-100):not(.bg-blue-100):not(.bg-purple-100) {
         text-align: right !important;
       }
       
       /* Center colored columns in print */
-      .landscape-table td.colored-cell,
-      .landscape-table td.text-center {
+      .landscape-table th.bg-green-100,
+      .landscape-table th.bg-blue-100, 
+      .landscape-table th.bg-purple-100,
+      .landscape-table td.bg-green-50,
+      .landscape-table td.bg-blue-50,
+      .landscape-table td.bg-purple-50,
+      .landscape-table td.bg-green-100,
+      .landscape-table td.bg-blue-100,
+      .landscape-table td.bg-purple-100 {
         text-align: center !important;
+      }
+      
+      /* Keep Fund Name column left-aligned */
+      .landscape-table th:first-child,
+      .landscape-table td:first-child {
+        text-align: left !important;
+      }
+      
+      /* Portfolio Summary Table Styling */
+      .portfolio-summary-table {
+        width: 100% !important;
+        table-layout: fixed !important;
+      }
+      
+      .portfolio-summary-table colgroup col:nth-child(1) { width: 28% !important; }
+      .portfolio-summary-table colgroup col:nth-child(2) { width: 7% !important; }
+      .portfolio-summary-table colgroup col:nth-child(3) { width: 7% !important; }
+      .portfolio-summary-table colgroup col:nth-child(4) { width: 7% !important; }
+      .portfolio-summary-table colgroup col:nth-child(5) { width: 7% !important; }
+      .portfolio-summary-table colgroup col:nth-child(6) { width: 7% !important; }
+      .portfolio-summary-table colgroup col:nth-child(7) { width: 7% !important; }
+      .portfolio-summary-table colgroup col:nth-child(8) { width: 8% !important; }
+      .portfolio-summary-table colgroup col:nth-child(9) { width: 8% !important; }
+      .portfolio-summary-table colgroup col:nth-child(10) { width: 9% !important; }
+      .portfolio-summary-table colgroup col:nth-child(11) { width: 5% !important; }
+      
+      /* IRR History Section Styling */
+      .irr-history-section {
+        margin-top: 2rem !important;
+      }
+      
+      .irr-history-section h2 {
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        color: #1f2937 !important;
+        margin-bottom: 1.5rem !important;
+      }
+      
+      /* Provider Color Dot Styling */
+      .product-card .w-4.h-4.rounded-full {
+        width: 1rem !important;
+        height: 1rem !important;
+        border-radius: 50% !important;
+        flex-shrink: 0 !important;
+      }
+      
+      /* Table Header Background Colors */
+      .bg-green-100 {
+        background-color: #dcfce7 !important;
+      }
+      
+      .bg-blue-100 {
+        background-color: #dbeafe !important;
+      }
+      
+      .bg-purple-100 {
+        background-color: #f3e8ff !important;
+      }
+      
+      .bg-green-50 {
+        background-color: #f0fdf4 !important;
+      }
+      
+      .bg-blue-50 {
+        background-color: #eff6ff !important;
+      }
+      
+      .bg-purple-50 {
+        background-color: #faf5ff !important;
+      }
+      
+      /* Product Name Cell Styling */
+      .product-name-cell {
+        padding: 0.5rem 0.25rem !important;
+        vertical-align: top !important;
+      }
+      
+      .product-name-cell .w-2\.5.h-2\.5.rounded-full {
+        width: 0.625rem !important;
+        height: 0.625rem !important;
+        border-radius: 50% !important;
+        margin-top: 0.125rem !important;
+        flex-shrink: 0 !important;
       }
     `;
   }
@@ -412,36 +613,54 @@ export class PrintService implements IPrintService {
   private getPageNumberingCSS(options: PrintOptions): string {
     const pageOptions = options.pageNumbers;
     
-    // If page numbers are disabled, return empty CSS
-    if (!pageOptions?.enabled) {
-      return '';
+    // Generate current date string
+    const currentDate = new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    
+    let pageNumberCSS = '';
+    
+    // If page numbers are enabled, add page number styling
+    if (pageOptions?.enabled) {
+      const position = pageOptions.position || 'bottom-right';
+      const format = pageOptions.format || 'page-only';
+      const fontSize = pageOptions.fontSize || '10px';
+      const color = pageOptions.color || '#666';
+      const customFormat = pageOptions.customFormat || 'Page {page}';
+      
+      // Generate content based on format
+      let content = '"Page " counter(page)';
+      if (format === 'page-total') {
+        content = '"Page " counter(page) " of " counter(pages)';
+      } else if (format === 'custom' && customFormat) {
+        content = `"${customFormat.replace('{page}', '" counter(page) "').replace('{total}', '" counter(pages) "')}"`;
+      }
+      
+      // Generate position-specific CSS
+      const positionMap = {
+        'top-left': '@top-left',
+        'top-center': '@top-center', 
+        'top-right': '@top-right',
+        'bottom-left': '@bottom-left',
+        'bottom-center': '@bottom-center',
+        'bottom-right': '@bottom-right'
+      };
+      
+      const cssPosition = positionMap[position];
+      
+      pageNumberCSS = `
+        /* Page numbers positioned at ${position} */
+        ${cssPosition} {
+          content: ${content};
+          font-size: ${fontSize};
+          font-family: Arial, sans-serif;
+          color: ${color};
+          margin: 0.1in 0.25in;
+        }
+      `;
     }
-    
-    const position = pageOptions.position || 'bottom-right';
-    const format = pageOptions.format || 'page-only';
-    const fontSize = pageOptions.fontSize || '10px';
-    const color = pageOptions.color || '#666';
-    const customFormat = pageOptions.customFormat || 'Page {page}';
-    
-    // Generate content based on format
-    let content = '"Page " counter(page)';
-    if (format === 'page-total') {
-      content = '"Page " counter(page) " of " counter(pages)';
-    } else if (format === 'custom' && customFormat) {
-      content = `"${customFormat.replace('{page}', '" counter(page) "').replace('{total}', '" counter(pages) "')}"`;
-    }
-    
-    // Generate position-specific CSS
-    const positionMap = {
-      'top-left': '@top-left',
-      'top-center': '@top-center', 
-      'top-right': '@top-right',
-      'bottom-left': '@bottom-left',
-      'bottom-center': '@bottom-center',
-      'bottom-right': '@bottom-right'
-    };
-    
-    const cssPosition = positionMap[position];
     
     return `
       /* Initialize page counter */
@@ -452,34 +671,87 @@ export class PrintService implements IPrintService {
       @page {
         counter-increment: page;
         
-        /* Page numbers positioned at ${position} */
-        ${cssPosition} {
-          content: ${content};
-          font-size: ${fontSize};
+        /* Current date on bottom left of each page */
+        @bottom-left {
+          content: "${currentDate}";
+          font-size: 10px;
           font-family: Arial, sans-serif;
-          color: ${color};
+          color: #666;
           margin: 0.1in 0.25in;
         }
+        
+        ${pageNumberCSS}
       }
       
-      /* Alternative page numbering for browsers that don't support @page margin boxes */
-      .page-number-fallback {
-        position: fixed;
-        ${position.includes('bottom') ? 'bottom: 0.3in;' : 'top: 0.3in;'}
-        ${position.includes('left') ? 'left: 0.3in;' : position.includes('right') ? 'right: 0.3in;' : 'left: 50%; transform: translateX(-50%);'}
-        font-size: ${fontSize};
-        font-family: Arial, sans-serif;
-        color: ${color};
-        background: white;
-        padding: 2px 4px;
-        border-radius: 2px;
-        z-index: 1000;
-        display: none; /* Hidden by default, shown via JavaScript if needed */
-      }
-      
-      /* Ensure content doesn't overlap with page numbers */
+      /* Ensure content doesn't overlap with page footer */
       .report-content {
-        ${position.includes('bottom') ? 'padding-bottom: 0.6in;' : 'padding-top: 0.6in;'}
+        padding-bottom: 0.6in;
+      }
+    `;
+  }
+
+  /**
+   * Get CSS for print-specific visibility and layout
+   */
+  private getPrintVisibilityCSS(): string {
+    return `
+      /* Print both tabs regardless of active state */
+      @media print {
+        /* Hide tab navigation during print */
+        .tab-navigation {
+          display: none !important;
+        }
+        
+        /* Show both tab contents during print */
+        .tab-content {
+          display: block !important;
+        }
+        
+        /* Hide print button and other controls */
+        .print-hide {
+          display: none !important;
+        }
+        
+        /* Force both tabs to be visible during print */
+        #summary-tab-panel {
+          display: block !important;
+          page-break-after: page;
+        }
+        
+        #irr-history-tab-panel {
+          display: block !important;
+          page-break-before: page;
+        }
+        
+        /* Ensure IRR History section is visible */
+        .irr-history-section {
+          display: block !important;
+        }
+        
+        /* Hide chart controls during print */
+        .chart-controls {
+          display: none !important;
+        }
+        
+        /* Hide product selection grid during print */
+        .product-selection-grid {
+          display: none !important;
+        }
+        
+        /* Show table view for IRR History during print */
+        .irr-history-table {
+          display: block !important;
+        }
+        
+        /* Hide chart view during print */
+        .irr-history-chart {
+          display: none !important;
+        }
+        
+        /* Ensure proper spacing between sections */
+        .report-section {
+          margin-bottom: 2rem !important;
+        }
       }
     `;
   }

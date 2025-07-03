@@ -3,7 +3,7 @@
  * Integrates the old data loading logic with new refactored components
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { createIRRDataService } from '../services/irrDataService';
@@ -41,8 +41,14 @@ const ReportDisplayPage: React.FC = () => {
     calculateRealTimeTotalIRR
   } = useIRRCalculationService(api);
 
-  // Initialize report data from location state (same as old ReportDisplay)
+  // Flag to track if data has been initialized
+  const hasInitialized = useRef(false);
+
+  // Initialize report data from location state (fixed to prevent infinite loop)
   useEffect(() => {
+    // Prevent multiple initializations
+    if (hasInitialized.current) return;
+
     const initializeReportData = async () => {
       console.log('🔍 [REPORT DISPLAY DEBUG] Initializing report data...');
       
@@ -58,6 +64,7 @@ const ReportDisplayPage: React.FC = () => {
       setReportData(data);
       setStateReportData(data);
       setIsInitialLoading(false);
+      hasInitialized.current = true;
       
       // Initialize IRR data loading (background processes)
       if (data.productSummaries?.length > 0) {
@@ -69,6 +76,10 @@ const ReportDisplayPage: React.FC = () => {
           // Process historical IRR data if available
           const historicalIrrData = await processHistoricalIRRData(data);
           setIrrHistoryData(historicalIrrData);
+          console.log('🔍 [IRR HISTORY DEBUG] Processed historical IRR data:', {
+            length: historicalIrrData.length,
+            sample: historicalIrrData[0]
+          });
           
           // Calculate real-time total IRR
           const totalIrrResult = await calculateRealTimeTotalIRR(data);
@@ -82,7 +93,7 @@ const ReportDisplayPage: React.FC = () => {
     };
 
     initializeReportData();
-  }, [location.state, navigate, setStateReportData, fetchPortfolioIrrValues, processHistoricalIRRData, calculateRealTimeTotalIRR]);
+  }, [location.state, navigate]); // Using ref to prevent multiple initialization, so function dependencies not needed
 
   // Authentication check
   useEffect(() => {
@@ -124,12 +135,15 @@ const ReportDisplayPage: React.FC = () => {
   return (
     <ReportErrorBoundary>
       <ReportContainer reportData={reportData}>
-        {activeTab === REPORT_TABS.SUMMARY && (
+        {/* Summary Tab - Always rendered for print, conditionally displayed for screen */}
+        <div className={`${activeTab === REPORT_TABS.SUMMARY ? '' : 'hidden print:block'}`}>
           <SummaryTab reportData={reportData} />
-        )}
-        {activeTab === REPORT_TABS.IRR_HISTORY && (
+        </div>
+        
+        {/* IRR History Tab - Always rendered for print, conditionally displayed for screen */}
+        <div className={`${activeTab === REPORT_TABS.IRR_HISTORY ? '' : 'hidden print:block'}`}>
           <IRRHistoryTab reportData={reportData} />
-        )}
+        </div>
       </ReportContainer>
     </ReportErrorBoundary>
   );
