@@ -10,7 +10,7 @@ export interface ColumnConfig {
   alignment?: 'left' | 'right';
   width?: 'auto' | 'fixed' | number;
   control?: 'filter' | 'sort' | 'none' | 'auto';
-  format?: (value: any) => string;
+  format?: (value: any, row?: any) => string | React.ReactNode;
 }
 
 export interface TableSort {
@@ -98,8 +98,8 @@ const detectDataType = (data: any[], columnKey: string): {
 };
 
 // Formatting utilities
-const formatValue = (value: any, dataType: ColumnConfig['dataType'], customFormat?: (value: any) => string, rowData?: any): React.ReactNode => {
-  if (customFormat) return customFormat(value);
+const formatValue = (value: any, dataType: ColumnConfig['dataType'], customFormat?: (value: any, row?: any) => string | React.ReactNode, rowData?: any): React.ReactNode => {
+  if (customFormat) return customFormat(value, rowData);
   if (value == null) return '';
   
   switch (dataType) {
@@ -171,7 +171,7 @@ const formatValue = (value: any, dataType: ColumnConfig['dataType'], customForma
           return colors[Math.abs(hash) % colors.length];
         };
         
-        const providerColor = rowData.theme_color || getProviderColor(rowData.name || value.toString());
+        const providerColor = rowData.provider_theme_color || getProviderColor(rowData.name || value.toString());
         
         return React.createElement('div', {
           className: 'flex items-center'
@@ -396,30 +396,30 @@ const StandardTable: React.FC<StandardTableProps> = ({
       if (containerWidth >= targetTableWidth) {
         return {
           fontSize: '13px',
-          padding: '8px',
+          padding: '6px',
           needsScroll: false,
-          paddingClass: 'px-2 py-2'
+          paddingClass: 'px-2 py-1'
         };
       } else if (containerWidth >= minTableWidth) {
         return {
           fontSize: '12px',
-          padding: '6px',
+          padding: '4px',
           needsScroll: false,
-          paddingClass: 'px-2 py-1.5'
+          paddingClass: 'px-2 py-1'
         };
       } else if (containerWidth >= minTableWidth * 0.8) {
         return {
           fontSize: '11px',
-          padding: '4px',
+          padding: '3px',
           needsScroll: false,
-          paddingClass: 'px-1.5 py-1'
+          paddingClass: 'px-1.5 py-0.5'
         };
       } else {
         return {
           fontSize: '10px',
-          padding: '4px',
+          padding: '3px',
           needsScroll: true,
-          paddingClass: 'px-1.5 py-1'
+          paddingClass: 'px-1.5 py-0.5'
         };
       }
     } else if (columnCount >= 6) {
@@ -427,30 +427,30 @@ const StandardTable: React.FC<StandardTableProps> = ({
       if (containerWidth >= targetTableWidth) {
         return {
           fontSize: '14px',
-          padding: '12px',
+          padding: '8px',
           needsScroll: false,
-          paddingClass: 'px-4 py-2'
+          paddingClass: 'px-3 py-1.5'
         };
       } else if (containerWidth >= minTableWidth) {
         return {
           fontSize: '13px',
-          padding: '8px',
+          padding: '6px',
           needsScroll: false,
-          paddingClass: 'px-3 py-2'
+          paddingClass: 'px-2 py-1'
         };
       } else if (containerWidth >= minTableWidth * 0.8) {
         return {
           fontSize: '12px',
-          padding: '6px',
+          padding: '4px',
           needsScroll: false,
-          paddingClass: 'px-2 py-1.5'
+          paddingClass: 'px-2 py-1'
         };
       } else {
         return {
           fontSize: '11px',
-          padding: '4px',
+          padding: '3px',
           needsScroll: true,
-          paddingClass: 'px-2 py-1'
+          paddingClass: 'px-2 py-0.5'
         };
       }
     } else {
@@ -458,23 +458,23 @@ const StandardTable: React.FC<StandardTableProps> = ({
       if (containerWidth >= targetTableWidth) {
         return {
           fontSize: '14px',
-          padding: '16px',
-          needsScroll: false,
-          paddingClass: 'px-6 py-3'
-        };
-      } else if (containerWidth >= minTableWidth) {
-        return {
-          fontSize: '13px',
           padding: '12px',
           needsScroll: false,
           paddingClass: 'px-4 py-2'
         };
+      } else if (containerWidth >= minTableWidth) {
+        return {
+          fontSize: '13px',
+          padding: '8px',
+          needsScroll: false,
+          paddingClass: 'px-3 py-1.5'
+        };
       } else {
         return {
           fontSize: '12px',
-          padding: '8px',
+          padding: '6px',
           needsScroll: true,
-          paddingClass: 'px-3 py-2'
+          paddingClass: 'px-2 py-1'
         };
       }
     }
@@ -523,14 +523,14 @@ const StandardTable: React.FC<StandardTableProps> = ({
       return value && value.toString().length > 50;
     });
     
-    if (hasLongContent) return '56px'; // xl
+    if (hasLongContent) return '40px'; // reduced from 56px
     
     const hasModerateContent = processedColumns.some(col => {
       const value = rowData[col.key];
       return value && value.toString().length > 25;
     });
     
-    return hasModerateContent ? '48px' : '40px'; // lg : md
+    return hasModerateContent ? '32px' : '28px'; // reduced from 48px and 40px
   };
 
   // Get column text styling to match client groups table with responsive sizing
@@ -575,7 +575,7 @@ const StandardTable: React.FC<StandardTableProps> = ({
             {processedColumns.map((column, index) => (
               <th
                 key={column.key}
-                className={`${responsiveStyle.paddingClass} text-left ${processedColumns.length >= 8 ? 'text-xs' : 'text-sm'} font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300`}
+                className={`px-2 py-1 text-left ${processedColumns.length >= 8 ? 'text-xs' : 'text-sm'} font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300`}
                 style={{ 
                   width: `${100 / processedColumns.length}%`,
                   fontSize: responsiveStyle.fontSize
@@ -621,19 +621,27 @@ const StandardTable: React.FC<StandardTableProps> = ({
               {processedColumns.map((column, colIndex) => (
                 <td
                   key={column.key}
-                  className={`${responsiveStyle.paddingClass} whitespace-nowrap`}
+                  className={`${responsiveStyle.paddingClass} whitespace-nowrap align-top`}
                 >
                   {colIndex === 0 ? (
                     // First column: align left to match header label position
-                    <div className={`truncate ${getColumnTextStyle(column.dataType, true)}`}>
-                      {formatValue(row[column.key], column.dataType, column.format, row)}
-                    </div>
+                    column.format ? (
+                      formatValue(row[column.key], column.dataType, column.format, row)
+                    ) : (
+                      <div className={`truncate ${getColumnTextStyle(column.dataType, true)}`}>
+                        {formatValue(row[column.key], column.dataType, column.format, row)}
+                      </div>
+                    )
                   ) : (
                     // Other columns: use flex layout to align with header structure
                     <div className="flex items-center gap-2">
-                                          <div className={`truncate ${getColumnTextStyle(column.dataType, false)}`}>
-                      {formatValue(row[column.key], column.dataType, column.format, row)}
-                    </div>
+                      {column.format ? (
+                        formatValue(row[column.key], column.dataType, column.format, row)
+                      ) : (
+                        <div className={`truncate ${getColumnTextStyle(column.dataType, false)}`}>
+                          {formatValue(row[column.key], column.dataType, column.format, row)}
+                        </div>
+                      )}
                       {/* Spacer to align with control area in header */}
                       <div className="flex items-center gap-1 flex-shrink-0" style={{ 
                         width: processedColumns.length >= 8 ? '28px' : processedColumns.length >= 6 ? '36px' : '44px' 
