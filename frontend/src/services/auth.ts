@@ -267,10 +267,23 @@ export const createAuthenticatedApi = () => {
           }
         }
         
-        // Check if error is due to token expiration (401 Unauthorized)
+        // Handle server errors (500) - these are usually not authentication issues
+        if (error.response?.status === 500) {
+          console.error('Server error - this is likely a backend issue, not authentication');
+          // Don't treat 500 errors as authentication failures
+        }
+        
+        // Only handle authentication errors specifically
         if (error.response?.status === 401) {
           console.warn('Authentication token may be expired or invalid');
-          // Here you could trigger a token refresh or redirect to login
+          // Clear invalid token on actual authentication failures
+          if (error.config?.url?.includes('/auth/') || 
+              (error.response?.data?.detail && 
+               error.response.data.detail.toLowerCase().includes('authentication'))) {
+            localStorage.removeItem('token');
+            // Only redirect to login for actual authentication errors
+            window.location.href = '/login';
+          }
         }
         
         return Promise.reject(error);

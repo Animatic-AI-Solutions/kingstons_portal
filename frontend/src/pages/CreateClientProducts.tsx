@@ -182,6 +182,10 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   const isFormValid = React.useMemo(() => {
     if (!selectedClientId || products.length === 0) return false;
     
+    // Verify that the selected client actually exists in our client list
+    const selectedClient = clients.find(client => client.id === selectedClientId);
+    if (!selectedClient) return false;
+    
     // Check if any product lacks required fields
     return products.every(product => {
       // Check required fields
@@ -200,11 +204,17 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       
       return hasProvider && hasProductType && hasStartDate && hasProductOwners && hasValidPortfolio;
     });
-  }, [selectedClientId, products]);
+  }, [selectedClientId, clients, products]);
   
   // Helper function to get missing required fields for validation message
   const getMissingFields = React.useMemo(() => {
     if (!selectedClientId || products.length === 0) return [];
+    
+    // Check if selected client exists
+    const selectedClient = clients.find(client => client.id === selectedClientId);
+    if (!selectedClient) {
+      return ['Valid client selection required'];
+    }
     
     const missing: string[] = [];
     products.forEach((product, index) => {
@@ -242,7 +252,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     });
     
     return missing;
-  }, [selectedClientId, products]);
+  }, [selectedClientId, clients, products]);
   
   // Keyboard shortcuts
   useEffect(() => {
@@ -304,6 +314,14 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [products, isSaving, selectedClientId, showCreateProductOwnerModal, isAddFundModalOpen]);
   
+  // Debug useEffect to monitor selectedClientId changes
+  useEffect(() => {
+    if (selectedClientId) {
+      const client = clients.find(c => c.id === selectedClientId);
+      console.log(`Client selected: ${client?.name} (ID: ${selectedClientId})`);
+    }
+  }, [selectedClientId, clients]);
+
   // Add useEffect to determine return path based on where user came from
   useEffect(() => {
     // Check URL parameters first for explicit return path
@@ -415,10 +433,10 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           portfoliosRes,
           productOwnersRes
         ] = await Promise.all([
-          api.get('/client_groups'),
-          api.get('/available_providers'),
-          api.get('/funds'),
-          api.get('/available_portfolios'),
+          api.get('/api/client_groups'),
+          api.get('/api/available_providers'),
+          api.get('/api/funds'),
+          api.get('/api/available_portfolios'),
           api.get('/api/product_owners')
         ]);
         
@@ -428,15 +446,39 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         setAvailableTemplates(portfoliosRes.data);
         setProductOwners(productOwnersRes.data);
         
-        // Set defaults only if no URL client parameter is provided
-        if (!urlClientId && clientsRes.data.length > 0) {
+        // Validate URL client ID if provided
+        if (urlClientId) {
+          const clientExists = clientsRes.data.some((client: Client) => client.id === parseInt(urlClientId));
+          if (!clientExists) {
+            showError(`Client with ID ${urlClientId} not found. Please select a valid client.`);
+            setSelectedClientId(null);
+          } else {
+            setSelectedClientId(parseInt(urlClientId));
+          }
+        } else if (clientsRes.data.length > 0) {
+          // Set default only if no URL client parameter is provided
           setSelectedClientId(clientsRes.data[0].id);
         }
         
         console.log("Data fetched successfully for CreateClientProducts");
       } catch (err: any) {
         console.error('Error fetching data:', err);
-        showError(err.response?.data?.detail || 'Failed to fetch data');
+        
+        // Provide more specific error messages based on the error type
+        let errorMessage = 'Failed to fetch data';
+        if (err.response?.status === 404) {
+          errorMessage = 'Required data not found. Please check your permissions or contact support.';
+        } else if (err.response?.status === 401) {
+          errorMessage = 'Authentication required. Please log in again.';
+        } else if (err.response?.status === 403) {
+          errorMessage = 'You do not have permission to access this data.';
+        } else if (err.response?.data?.detail) {
+          errorMessage = err.response.data.detail;
+        } else if (err.message) {
+          errorMessage = err.message;
+        }
+        
+        showError(errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -471,6 +513,16 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   };
 
   const handleClientChange = (clientId: number) => {
+    console.log(`handleClientChange called with clientId: ${clientId}`);
+    
+    // Verify the client exists before setting
+    const client = clients.find(c => c.id === clientId);
+    if (!client) {
+      console.error(`Client with ID ${clientId} not found in clients list`);
+      return;
+    }
+    
+    console.log(`Setting selectedClientId to: ${clientId} (${client.name})`);
     setSelectedClientId(clientId);
     
     // Reset products when client changes
@@ -496,12 +548,32 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   // Handle client selection from AutocompleteSearch
   const handleClientSelect = (option: AutocompleteOption) => {
     const clientId = parseInt(option.value);
+    
+    // Validate that the selected client exists in our client list
+    const selectedClient = clients.find(client => client.id === clientId);
+    if (!selectedClient) {
+      showError('Selected client does not exist. Please select a valid client from the list.');
+      return;
+    }
+    
+    // Clear any previous error messages since we now have a valid selection
+    // This ensures the UI updates properly when a valid client is selected
+    console.log(`Valid client selected: ${selectedClient.name} (ID: ${clientId})`);
+    
     handleClientChange(clientId);
   };
 
   const handleAddProduct = () => {
     if (!selectedClientId) {
       showError('Please select a client first');
+      return;
+    }
+    
+    // Double-check that the selected client actually exists
+    const selectedClient = clients.find(client => client.id === selectedClientId);
+    if (!selectedClient) {
+      showError('Selected client does not exist. Please select a valid client from the list.');
+      setSelectedClientId(null);
       return;
     }
     
@@ -933,7 +1005,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       setProducts(updatedProducts);
 
       // Fetch generations for this template
-      const generationsResponse = await api.get(`/available_portfolios/${templateId}/generations`);
+      const generationsResponse = await api.get(`/api/available_portfolios/${templateId}/generations`);
       const generationsData = generationsResponse.data;
       
       // Store the generations for this template
@@ -970,7 +1042,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       }
 
       // Fetch template details with specific generation ID
-      const response = await api.get(`/available_portfolios/${product.portfolio.templateId}?generation_id=${generationId}`);
+      const response = await api.get(`/api/available_portfolios/${product.portfolio.templateId}?generation_id=${generationId}`);
       const templateData = response.data;
       
       // Get funds in the template generation
@@ -1035,7 +1107,23 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     const newWeightingErrors: Record<string, Record<string, string>> = {};
 
     if (!selectedClientId) {
-      showError('Please select a client');
+      showError('Please select a client from the dropdown list');
+      return false;
+    }
+
+    // Validate that the selected client actually exists in our client list
+    const selectedClient = clients.find(client => client.id === selectedClientId);
+    if (!selectedClient) {
+      showError('Selected client does not exist. Please select a valid client from the dropdown list.');
+      setSelectedClientId(null);
+      return false;
+    }
+
+    // Extra validation: ensure the selectedClientId exists in the clientOptions
+    const clientOption = clientOptions.find(option => parseInt(option.value) === selectedClientId);
+    if (!clientOption) {
+      showError('Invalid client selection. Please select a client from the dropdown list.');
+      setSelectedClientId(null);
       return false;
     }
 
@@ -1234,7 +1322,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         // First, create the portfolio if needed
         if (product.portfolio.type === 'template' && product.portfolio.templateId && product.portfolio.generationId) {
           // Create portfolio from template generation
-          const templateResponse = await api.post('/portfolios/from_template', {
+          const templateResponse = await api.post('/api/portfolios/from_template', {
             template_id: product.portfolio.templateId,
             generation_id: product.portfolio.generationId, // Send the generation ID to the API
             portfolio_name: finalPortfolioName,
@@ -1245,7 +1333,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           console.log(`Created portfolio from template generation with ID: ${portfolioId}`);
         } else if (product.portfolio.type === 'bespoke') {
           // Create a bespoke portfolio
-          const portfolioResponse = await api.post('/portfolios', {
+          const portfolioResponse = await api.post('/api/portfolios', {
             portfolio_name: finalPortfolioName,
             status: 'active',
             start_date: formattedStartDate
@@ -1271,7 +1359,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                 };
                 
                 console.log(`Adding fund ${fundId} to portfolio ${portfolioId} with data:`, fundData);
-                await api.post('/portfolio_funds', fundData);
+                await api.post('/api/portfolio_funds', fundData);
                 console.log(`Added fund ${fundId} to portfolio ${portfolioId}`);
               } catch (err: any) {
                 console.error(`Error adding fund ${fundId} to portfolio:`, err);
@@ -1294,7 +1382,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                   const cashWeightingValue = parseFloat(cashWeighting);
                   
                   // Get the automatically created Cash fund entry to update it
-                  const portfolioFundsResponse = await api.get(`/portfolio_funds`, {
+                  const portfolioFundsResponse = await api.get(`/api/portfolio_funds`, {
                     params: { portfolio_id: portfolioId }
                   });
                   
@@ -1304,7 +1392,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                   
                   if (cashFundEntry) {
                     // Update the existing Cash fund entry
-                    await api.patch(`/portfolio_funds/${cashFundEntry.id}`, {
+                    await api.patch(`/api/portfolio_funds/${cashFundEntry.id}`, {
                       target_weighting: cashWeightingValue // Keep as percentage, don't convert to decimal
                     });
                     console.log(`Updated Cash fund weighting to ${cashWeightingValue}% for portfolio ${portfolioId}`);
@@ -1329,7 +1417,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               targetRisk = calculateTargetRiskFromFunds(product);
             }
             
-            const clientProductResponse = await api.post('/client_products', {
+            const clientProductResponse = await api.post('/api/client_products', {
               client_id: selectedClientId,
               provider_id: product.provider_id,
               product_type: product.product_type,
@@ -1352,11 +1440,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               try {
                 // Create associations one by one
                 for (const ownerId of product.product_owner_ids) {
-                  await api.post('/api/product_owner_products', null, {
-                    params: {
-                      product_owner_id: ownerId,
-                      product_id: createdProductId
-                    }
+                  await api.post('/api/product_owner_products', {
+                    product_owner_id: ownerId,
+                    product_id: createdProductId
                   });
                 }
                 console.log(`Created associations between product ${createdProductId} and product owners ${product.product_owner_ids.join(', ')}`);
@@ -1379,10 +1465,16 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       }
       
       // Successful completion
-      alert('Successfully created client products and portfolios');
+      console.log('✅ All operations completed successfully');
+      alert(`Successfully created ${products.length} client product(s) and portfolio(s) for client ID: ${selectedClientId}`);
 
-      // Navigate to client details page
-      navigate(`/clients/${selectedClientId}`);
+      // Navigate to client details page - only if we have a valid client ID
+      if (selectedClientId && selectedClientId > 0) {
+        navigate(`/clients/${selectedClientId}`);
+      } else {
+        console.error('❌ Invalid selectedClientId:', selectedClientId);
+        navigate('/clients'); // Fallback to clients list
+      }
 
     } catch (err: any) { // Type the error as any
       console.error('Error in form submission:', err);
@@ -2007,6 +2099,27 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                       size="md"
                       fullWidth={true}
                       helperText={`${clients.length} clients available`}
+                      onChange={(e) => {
+                        const typedValue = e.target.value.trim();
+                        
+                        // If user is typing, check if current selectedClientId still matches
+                        if (selectedClientId && typedValue) {
+                          const selectedClient = clients.find(c => c.id === selectedClientId);
+                          const typedMatches = selectedClient?.name?.toLowerCase() === typedValue.toLowerCase();
+                          
+                          // If the typed value doesn't exactly match the selected client, clear the selection
+                          if (!typedMatches) {
+                            console.log(`Typed "${typedValue}" doesn't exactly match selected client "${selectedClient?.name}" - clearing selection`);
+                            setSelectedClientId(null);
+                          }
+                        }
+                        
+                        // If they've cleared the input, also clear the selection
+                        if (!typedValue && selectedClientId) {
+                          console.log('Input cleared - clearing client selection');
+                          setSelectedClientId(null);
+                        }
+                      }}
                     />
                   ) : (
                       <div className="text-gray-500 text-sm bg-gray-100 p-2 rounded">

@@ -1,30 +1,25 @@
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import date, datetime
 from typing import Optional
-from decimal import Decimal
-from pydantic.functional_validators import AfterValidator
-from typing_extensions import Annotated
 
-def validate_decimal_places(value: Decimal) -> Decimal:
+def validate_float_precision(value: float) -> float:
+    """Validate float precision to 4 decimal places for monetary values."""
     if value is None:
         return None
-    return Decimal(str(round(value, 4)))
-
-DecimalWithPrecision = Annotated[Decimal, AfterValidator(validate_decimal_places)]
+    return round(float(value), 4)
 
 class PortfolioFundBase(BaseModel):
     portfolio_id: int
     available_funds_id: int
-    target_weighting: Optional[DecimalWithPrecision] = 0  # Set default to 0 instead of None
+    target_weighting: Optional[float] = 0  # Use float instead of Decimal
     start_date: date
     end_date: Optional[date] = None
-    amount_invested: Optional[float] = 0  # Also set default to 0 instead of None
-    status: Optional[str] = 'active'  # Add status field with default 'active'
+    amount_invested: Optional[float] = 0
+    status: Optional[str] = 'active'
     
     model_config = ConfigDict(
         json_encoders={
-            date: lambda d: d.isoformat(),
-            Decimal: lambda d: float(d) if d is not None else None
+            date: lambda d: d.isoformat()
         },
         from_attributes=True
     )
@@ -35,16 +30,15 @@ class PortfolioFundCreate(PortfolioFundBase):
 class PortfolioFundUpdate(BaseModel):
     portfolio_id: Optional[int] = None
     available_funds_id: Optional[int] = None
-    target_weighting: Optional[DecimalWithPrecision] = None  # matches numeric(5,2)
+    target_weighting: Optional[float] = None  # Use float instead of Decimal
     start_date: Optional[date] = None
     end_date: Optional[date] = None
-    amount_invested: Optional[float] = None  # matches double precision
-    status: Optional[str] = None  # Add status field to allow updates
+    amount_invested: Optional[float] = None
+    status: Optional[str] = None
     
     model_config = ConfigDict(
         json_encoders={
-            date: lambda d: d.isoformat(),
-            Decimal: lambda d: float(d) if d is not None else None
+            date: lambda d: d.isoformat()
         },
         from_attributes=True
     )
@@ -56,8 +50,7 @@ class PortfolioFundInDB(PortfolioFundBase):
     model_config = ConfigDict(
         json_encoders={
             date: lambda d: d.isoformat(),
-            datetime: lambda dt: dt.isoformat(),
-            Decimal: lambda d: float(d) if d is not None else None
+            datetime: lambda dt: dt.isoformat()
         },
         from_attributes=True
     )

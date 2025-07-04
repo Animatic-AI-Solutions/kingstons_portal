@@ -434,9 +434,25 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
         raise
 
 def to_serializable(val):
-    if isinstance(val, Decimal):
+    """Convert database values to JSON serializable types."""
+    if val is None:
+        return None
+    elif isinstance(val, Decimal):
         return float(val)
-    return val
+    elif isinstance(val, (date, datetime)):
+        return val.isoformat()
+    elif isinstance(val, (list, tuple)):
+        return [to_serializable(item) for item in val]
+    elif isinstance(val, dict):
+        return {k: to_serializable(v) for k, v in val.items()}
+    elif isinstance(val, (int, float, str, bool)):
+        return val
+    else:
+        # For any other type, try to convert to string as fallback
+        try:
+            return str(val)
+        except Exception:
+            return None
 
 router = APIRouter()
 
@@ -652,11 +668,16 @@ async def update_portfolio_fund(portfolio_fund_id: int, portfolio_fund_update: P
         Updated portfolio fund details
     """
     try:
-        # Convert update model to dict, excluding None values
-        update_data = {k: v for k, v in portfolio_fund_update.dict().items() if v is not None}
+        # Convert update model to dict, excluding None values and ensuring JSON serializable
+        raw_update_data = {k: v for k, v in portfolio_fund_update.dict().items() if v is not None}
         
-        if not update_data:
+        if not raw_update_data:
             raise HTTPException(status_code=422, detail="No valid update data provided")
+        
+        # Ensure all update data is JSON serializable (convert Decimals to floats)
+        update_data = {}
+        for key, value in raw_update_data.items():
+            update_data[key] = to_serializable(value)
         
         # Check if the portfolio fund exists
         fund_response = db.table("portfolio_funds").select("*").eq("id", portfolio_fund_id).execute()
@@ -664,6 +685,7 @@ async def update_portfolio_fund(portfolio_fund_id: int, portfolio_fund_update: P
             raise HTTPException(status_code=404, detail=f"Portfolio fund with id {portfolio_fund_id} not found")
         
         # Update the portfolio fund
+        logger.info(f"Updating portfolio fund {portfolio_fund_id} with data: {update_data}")
         response = db.table("portfolio_funds").update(update_data).eq("id", portfolio_fund_id).execute()
         
         if not response.data:
@@ -673,7 +695,36 @@ async def update_portfolio_fund(portfolio_fund_id: int, portfolio_fund_update: P
         await _irr_cache.invalidate_portfolio_funds([portfolio_fund_id])
         logger.info(f"🔄 Invalidated IRR cache for updated fund {portfolio_fund_id}")
         
-        return response.data[0]
+        # Convert Decimal objects to float for JSON serialization with comprehensive handling
+        updated_fund = response.data[0]
+        logger.info(f"Raw response data: {updated_fund}")
+        
+        try:
+            # Deep conversion of all values to ensure JSON serialization
+            serialized_fund = {}
+            for key, value in updated_fund.items():
+                serialized_fund[key] = to_serializable(value)
+            
+            logger.info(f"Serialized fund data: {serialized_fund}")
+            
+            # Use Pydantic model for final validation and serialization
+            return PortfolioFund(**serialized_fund)
+            
+        except Exception as serialization_error:
+            logger.error(f"Error serializing portfolio fund data: {str(serialization_error)}")
+            logger.error(f"Problematic data: {updated_fund}")
+            
+            # Fallback: return basic response without Pydantic validation
+            return {
+                "id": updated_fund.get("id"),
+                "portfolio_id": updated_fund.get("portfolio_id"),
+                "available_funds_id": updated_fund.get("available_funds_id"),
+                "target_weighting": float(updated_fund.get("target_weighting", 0)) if updated_fund.get("target_weighting") is not None else None,
+                "amount_invested": float(updated_fund.get("amount_invested", 0)) if updated_fund.get("amount_invested") is not None else None,
+                "status": updated_fund.get("status", "active"),
+                "start_date": updated_fund.get("start_date"),
+                "end_date": updated_fund.get("end_date")
+            }
         
     except HTTPException:
         raise
