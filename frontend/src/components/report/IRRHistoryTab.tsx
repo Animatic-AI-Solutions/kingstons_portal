@@ -38,6 +38,13 @@ import {
   formatWeightedRisk,
   formatCurrencyWithTruncation
 } from '../../utils/reportFormatters';
+
+// Local function to format fund IRRs to whole numbers (0 decimal places)
+const formatFundIrr = (irr: number | null | undefined): string => {
+  if (irr === null || irr === undefined) return '-';
+  // Round to 0 decimal places for fund IRRs (as per original logic)
+  return `${Math.round(irr)}%`;
+};
 import { normalizeProductType, PRODUCT_TYPE_ORDER } from '../../utils/reportConstants';
 import { useIRRCalculationService } from '../../hooks/report/useIRRCalculationService';
 import api from '../../services/api';
@@ -83,30 +90,34 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
   const loadingIrrHistory = loading.irrHistory;
 
   // Formatting services from Phase 1
-  const { formatFundIrr } = useReportFormatter();
+  const { formatCurrencyWithZeroToggle } = useReportFormatter();
 
   // Generate product title (simple function to avoid useCallback complexity)
-  const generateProductTitle = (product: ProductPeriodSummary, customTitle?: string): string => {
+  const generateProductTitle = (product: ProductPeriodSummary | undefined, customTitle?: string): string => {
     if (customTitle && customTitle.trim()) {
       return customTitle.trim();
     }
     
-    let title = product.product_name || 'Unnamed Product';
-    
-    // Extract plan number if present
-    const extractPlanNumber = (product: ProductPeriodSummary): string | null => {
-      const fullName = product.product_name || '';
-      const match = fullName.match(/Plan (\d+)/i);
-      return match ? match[1] : null;
-    };
-    
-    const planNumber = extractPlanNumber(product);
-    if (planNumber) {
-      const provider = product.provider_name || 'Unknown Provider';
-      title = `${provider} Plan ${planNumber}`;
+    if (!product) {
+      return 'Unknown Product';
     }
     
-    return title;
+    // Standard format: Product Type - Provider - Product Owner (like original displaypage.tsx)
+    const parts = [];
+    
+    if (product.product_type) {
+      parts.push(product.product_type);
+    }
+    
+    if (product.provider_name) {
+      parts.push(product.provider_name);
+    }
+    
+    if (product.product_owner_name) {
+      parts.push(product.product_owner_name);
+    }
+    
+    return parts.length > 0 ? parts.join(' - ') : 'Unknown Product';
   };
 
   // Process chart data for visualization
@@ -170,10 +181,22 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
         if (customTitle && customTitle.trim()) {
           productKey = customTitle.trim();
         } else {
-          productKey = `${product.provider_name || 'Unknown Provider'}`;
+          // Standard format: Product Type - Provider - Product Owner (like original displaypage.tsx)
+          const parts = [];
+          
           if (product.product_type) {
-            productKey += ` - ${product.product_type}`;
+            parts.push(product.product_type);
           }
+          
+          if (product.provider_name) {
+            parts.push(product.provider_name);
+          }
+          
+          if (product.product_owner_name) {
+            parts.push(product.product_owner_name);
+          }
+          
+          productKey = parts.length > 0 ? parts.join(' - ') : 'Unknown Product';
         }
         
         if (productHistory?.portfolio_historical_irr) {
@@ -235,11 +258,22 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       if (customTitle && customTitle.trim()) {
         return customTitle.trim();
       }
-      let title = `${product.provider_name || 'Unknown Provider'}`;
+      // Standard format: Product Type - Provider - Product Owner (like original displaypage.tsx)
+      const parts = [];
+      
       if (product.product_type) {
-        title += ` - ${product.product_type}`;
+        parts.push(product.product_type);
       }
-      return title;
+      
+      if (product.provider_name) {
+        parts.push(product.provider_name);
+      }
+      
+      if (product.product_owner_name) {
+        parts.push(product.product_owner_name);
+      }
+      
+      return parts.length > 0 ? parts.join(' - ') : 'Unknown Product';
     });
     setSelectedProducts(new Set(allProductTitles));
   }, [productsForChart, stableCustomTitles]);
@@ -293,14 +327,25 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
     // Create CSV headers (inline title generation)
     const headers = ['Date', ...organizedProducts.map(product => {
       const customTitle = stableCustomTitles.get(product.id);
-    if (customTitle && customTitle.trim()) {
-      return customTitle.trim();
-    }
-    let title = `${product.provider_name || 'Unknown Provider'}`;
-    if (product.product_type) {
-      title += ` - ${product.product_type}`;
-    }
-      return title;
+      if (customTitle && customTitle.trim()) {
+        return customTitle.trim();
+      }
+      // Standard format: Product Type - Provider - Product Owner (like original displaypage.tsx)
+      const parts = [];
+      
+      if (product.product_type) {
+        parts.push(product.product_type);
+      }
+      
+      if (product.provider_name) {
+        parts.push(product.provider_name);
+      }
+      
+      if (product.product_owner_name) {
+        parts.push(product.product_owner_name);
+      }
+      
+      return parts.length > 0 ? parts.join(' - ') : 'Unknown Product';
     })];
 
     // Create CSV data
@@ -313,7 +358,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
         
         if (productHistory?.portfolio_historical_irr) {
           const record = productHistory.portfolio_historical_irr.find((r: any) => r.irr_date === date);
-          row.push(record ? formatIrrWithPrecision(parseFloat(record.irr_result)) : 'N/A');
+                          row.push(record ? formatIrrWithPrecision(parseFloat(record.irr_result)) : 'N/A');
         } else {
           row.push('N/A');
         }
@@ -357,7 +402,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
           <p className="font-semibold text-gray-900 mb-2">{label}</p>
                      {payload.map((entry: any, index: number) => (
              <p key={index} className="text-sm" style={{ color: entry.color }}>
-               {entry.dataKey}: {entry.value ? formatIrrWithPrecision(entry.value) : 'N/A'}
+                               {entry.dataKey}: {entry.value ? formatIrrWithPrecision(entry.value) : 'N/A'}
              </p>
            ))}
         </div>
@@ -705,7 +750,23 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       {/* Table View */}
       <div className={`space-y-8 irr-history-table ${viewMode === 'table' ? '' : 'hidden print:block'}`}>
         {(() => {
-          return irrHistoryData.map((productHistory: any, index: number) => {
+          // Filter historical data to only include products that exist in the current report
+          const filteredHistoryData = irrHistoryData.filter((productHistory: any) => {
+            const productExists = reportData.productSummaries.some(p => p.id === productHistory.product_id);
+            if (!productExists) {
+              console.log(`⚠️ [IRR HISTORY DEBUG] Skipping product ${productHistory.product_id} (${productHistory.product_name}) - not in current report`);
+            }
+            return productExists;
+          });
+          
+          console.log(`🔍 [IRR HISTORY DEBUG] Filtered products:`, {
+            originalCount: irrHistoryData.length,
+            filteredCount: filteredHistoryData.length,
+            reportProductIds: reportData.productSummaries.map(p => p.id),
+            historyProductIds: irrHistoryData.map((ph: any) => ph.product_id)
+          });
+          
+          return filteredHistoryData.map((productHistory: any, index: number) => {
             const originalIndex = reportData.productSummaries.findIndex(p => p.id === productHistory.product_id);
             const product = reportData.productSummaries[originalIndex];
             
@@ -713,12 +774,18 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
               productId: productHistory.product_id,
               productName: productHistory.product_name,
               originalIndex,
+              hasProduct: !!product,
               hasProductHistory: !!productHistory,
               productHistoryStructure: productHistory ? Object.keys(productHistory) : 'N/A'
             });
             
             if (!productHistory) {
               console.log(`⚠️ [IRR HISTORY DEBUG] No product history for product ${productHistory.product_id} at index ${originalIndex}`);
+              return null;
+            }
+            
+            if (!product) {
+              console.log(`⚠️ [IRR HISTORY DEBUG] Product ${productHistory.product_id} not found in reportData.productSummaries at originalIndex ${originalIndex}`);
               return null;
             }
 
@@ -746,8 +813,25 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
             // Sort dates in descending order (most recent first)
             const allSortedDates = Array.from(allDates).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
             
-            // Keep only historical dates (excluding the current/latest IRR)
-            const sortedDates = allSortedDates.slice(1, 13); // Skip first (current) and take next 12 historical dates
+            // Use the report's selected dates for this product, or all available dates if no specific selection
+            let sortedDates: string[] = [];
+            if (reportData.selectedHistoricalIRRDates && reportData.selectedHistoricalIRRDates[productHistory.product_id]) {
+              // Use the specifically selected dates for this product from the report
+              const selectedDatesForProduct = reportData.selectedHistoricalIRRDates[productHistory.product_id];
+              sortedDates = selectedDatesForProduct.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+              console.log(`🎯 [SELECTED DATES] Product ${productHistory.product_id} using report's selected dates:`, {
+                selectedCount: selectedDatesForProduct.length,
+                selectedDates: selectedDatesForProduct,
+                sortedDates: sortedDates
+              });
+            } else {
+              // Fallback: show all available dates (not limited to 12)
+              sortedDates = allSortedDates;
+              console.log(`📅 [ALL DATES] Product ${productHistory.product_id} using all available dates:`, {
+                allCount: allSortedDates.length,
+                allDates: allSortedDates
+              });
+            }
             
             console.log(`🔍 [IRR HISTORY DEBUG] Product ${productHistory.product_id} date processing:`, {
               allDatesCount: allDates.size,
@@ -765,13 +849,26 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
               });
             }
             
+            // Build fund-level IRR maps from portfolio_fund_irr_values table data
             const fundIrrMaps = new Map();
             if (productHistory.funds_historical_irr) {
               productHistory.funds_historical_irr.forEach((fund: any) => {
                 const fundMap = new Map();
                 if (fund.historical_irr) {
+                  // Store ALL historical IRR data for this fund (table contains all dates)
                   fund.historical_irr.forEach((record: any) => {
                     fundMap.set(record.irr_date, record.irr_result);
+                  });
+                  
+                  console.log(`💰 [FUND IRR DEBUG] Fund ${fund.fund_name} (ID: ${fund.portfolio_fund_id}):`, {
+                    totalRecords: fund.historical_irr.length,
+                    selectedDatesCount: sortedDates.length,
+                    recordsForSelectedDates: sortedDates.map(date => ({
+                      date: date,
+                      irr: fundMap.get(date),
+                      hasData: fundMap.has(date)
+                    })),
+                    dataSource: 'portfolio_fund_irr_values table'
                   });
                 }
                 fundIrrMaps.set(fund.portfolio_fund_id, fundMap);
@@ -1287,7 +1384,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                             }
                           }
                           
-                          return processedFunds.map((fund: any, fundIndex: number) => {
+                          const fundRows = processedFunds.map((fund: any, fundIndex: number) => {
                             // For Previous Funds, use previousFundsIRRData state; for regular funds, use fundIrrMaps
                             let fundIrrMap: Map<string, number>;
                             if (fund.isVirtual && fund.fund_name === 'Previous Funds') {
@@ -1322,7 +1419,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                       if (existingPreviousFunds && existingPreviousFunds.irr !== null && existingPreviousFunds.irr !== undefined) {
                                         return (
                                           <span className={existingPreviousFunds.irr >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
-                                            {formatIrrWithPrecision(existingPreviousFunds.irr)}
+                                            {formatFundIrr(existingPreviousFunds.irr)}
                                           </span>
                                         );
                                       }
@@ -1336,7 +1433,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                         if (previousFundsFromSummary && previousFundsFromSummary.irr !== null && previousFundsFromSummary.irr !== undefined) {
                                           return (
                                             <span className={previousFundsFromSummary.irr >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
-                                              {formatIrrWithPrecision(previousFundsFromSummary.irr)}
+                                              {formatFundIrr(previousFundsFromSummary.irr)}
                                             </span>
                                           );
                                         }
@@ -1352,7 +1449,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                       if (currentFund && currentFund.irr !== null && currentFund.irr !== undefined) {
                                         return (
                                           <span className={currentFund.irr >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
-                                            {formatIrrWithPrecision(currentFund.irr)}
+                                            {formatFundIrr(currentFund.irr)}
                                           </span>
                                         );
                                       }
@@ -1367,7 +1464,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                       if (irrValue !== null && irrValue !== undefined) {
                                         return (
                                           <span className={irrValue >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
-                                            {formatIrrWithPrecision(irrValue)}
+                                            {formatFundIrr(irrValue)}
                                           </span>
                                         );
                                       }
@@ -1378,6 +1475,261 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                           </tr>
                             );
                           });
+
+                          // Add product total row
+                          const productForTotal = reportData.productSummaries.find(p => p.id === productHistory.product_id);
+                          const productIrr = productForTotal?.irr;
+                          
+                                    // Calculate total weighted risk including Previous Funds
+          let totalWeightedRisk: number | undefined = undefined;
+          if (productForTotal && productForTotal.funds && productForTotal.funds.length > 0) {
+            let totalValue = 0;
+            let weightedRiskSum = 0;
+            
+            productForTotal.funds.forEach(fund => {
+              const fundValue = fund.current_valuation || 0;
+              const fundRisk = fund.risk_factor;
+              
+              // For Previous Funds (virtual funds), use total_investment as weight since current_valuation is 0
+              if (fund.isVirtual && fund.fund_name === 'Previous Funds') {
+                const previousFundsWeight = fund.total_investment || 0;
+                if (previousFundsWeight > 0 && fundRisk !== undefined && fundRisk !== null) {
+                  totalValue += previousFundsWeight;
+                  weightedRiskSum += (previousFundsWeight * fundRisk);
+                }
+              } else {
+                // For active funds, use current_valuation as weight
+                if (fundValue > 0 && fundRisk !== undefined && fundRisk !== null) {
+                  totalValue += fundValue;
+                  weightedRiskSum += (fundValue * fundRisk);
+                }
+              }
+            });
+            
+            if (totalValue > 0) {
+              totalWeightedRisk = weightedRiskSum / totalValue;
+              
+              console.log(`🔍 [RISK DEBUG] Product ${productHistory.product_id} total risk calculation:`, {
+                originalProductRisk: productForTotal?.weighted_risk,
+                calculatedTotalRisk: totalWeightedRisk,
+                fundCount: productForTotal.funds.length,
+                totalValue,
+                fundsIncluded: productForTotal.funds.map(f => ({
+                  name: f.fund_name,
+                  value: f.current_valuation,
+                  risk: f.risk_factor,
+                  isVirtual: f.isVirtual,
+                  weight: f.isVirtual ? f.total_investment : f.current_valuation
+                }))
+              });
+            }
+          }
+                          
+                          // Fallback to product weighted risk if calculation fails
+                          const productWeightedRisk = totalWeightedRisk !== undefined ? totalWeightedRisk : productForTotal?.weighted_risk;
+                          
+                          // Get historical IRR data for the product - ONLY for selected dates
+                          // Data comes from portfolio_irr_values table via portfolio_historical_irr
+                          
+                          // Normalize selected dates to YYYY-MM-DD format for comparison
+                          const normalizedSelectedDates = sortedDates.map(date => {
+                            if (date.includes('T')) {
+                              return date.split('T')[0];
+                            } else if (date.includes(' ')) {
+                              return date.split(' ')[0];
+                            }
+                            return date;
+                          });
+                          
+                          const productHistoricalIrrMap = new Map<string, number>();
+                          if (productHistory?.portfolio_historical_irr) {
+                            console.log(`🔍 [PRODUCT IRR DEBUG] Product ${productHistory.product_id} - Raw historical IRR data:`, {
+                              productId: productHistory.product_id,
+                              selectedDatesFromReport: sortedDates,
+                              normalizedSelectedDates: normalizedSelectedDates,
+                              rawRecordCount: productHistory.portfolio_historical_irr.length,
+                              rawRecords: productHistory.portfolio_historical_irr.map((r: any) => ({
+                                date: r.irr_date,
+                                irr: r.irr_result,
+                                dataSource: 'portfolio_irr_values table'
+                              })),
+                              // DETAILED RAW DATA DEBUG
+                              rawRecordsWithTypes: productHistory.portfolio_historical_irr.map((r: any) => ({
+                                date: r.irr_date,
+                                dateType: typeof r.irr_date,
+                                irr: r.irr_result,
+                                irrType: typeof r.irr_result,
+                                irrParsed: parseFloat(r.irr_result),
+                                originalRecord: r
+                              })),
+                              uniqueRawIrrValues: [...new Set(productHistory.portfolio_historical_irr.map((r: any) => r.irr_result))],
+                              hasVariedRawData: new Set(productHistory.portfolio_historical_irr.map((r: any) => r.irr_result)).size > 1,
+                              // EXACT IRR VALUES BY DATE
+                              exactIrrsByDate: productHistory.portfolio_historical_irr.reduce((acc: any, record: any) => {
+                                let normalizedDate = record.irr_date;
+                                if (normalizedDate.includes('T')) {
+                                  normalizedDate = normalizedDate.split('T')[0];
+                                } else if (normalizedDate.includes(' ')) {
+                                  normalizedDate = normalizedDate.split(' ')[0];
+                                }
+                                acc[normalizedDate] = {
+                                  rawIrr: record.irr_result,
+                                  parsedIrr: parseFloat(record.irr_result),
+                                  rawDate: record.irr_date
+                                };
+                                return acc;
+                              }, {})
+                            });
+                            
+                            // 🚨 CRITICAL DEBUG: Check if all IRR values are actually the same
+                            const allIrrValues = productHistory.portfolio_historical_irr.map((r: any) => parseFloat(r.irr_result));
+                            const uniqueIrrValues = [...new Set(allIrrValues)];
+                            if (uniqueIrrValues.length === 1) {
+                              console.warn(`🚨 [DATA QUALITY WARNING] Product ${productHistory.product_id} has IDENTICAL IRR values for ALL dates:`, {
+                                repeatedIrrValue: uniqueIrrValues[0],
+                                dateCount: productHistory.portfolio_historical_irr.length,
+                                allDatesWithSameIrr: productHistory.portfolio_historical_irr.map((r: any) => ({
+                                  date: r.irr_date,
+                                  irr: r.irr_result
+                                })),
+                                possibleIssues: [
+                                  'Backend is not calculating historical IRRs correctly',
+                                  'Database contains duplicate/static IRR values', 
+                                  'IRR calculation service is returning current IRR for all historical dates'
+                                ]
+                              });
+                            } else {
+                              console.log(`✅ [DATA QUALITY CHECK] Product ${productHistory.product_id} has VARIED IRR values:`, {
+                                uniqueIrrValues,
+                                totalRecords: allIrrValues.length,
+                                irrRange: {
+                                  min: Math.min(...allIrrValues),
+                                  max: Math.max(...allIrrValues)
+                                }
+                              });
+                            }
+                            
+                            // ONLY store IRR data for the selected dates (not all historical data)
+                            productHistory.portfolio_historical_irr.forEach((record: any) => {
+                              // Normalize the database date format to YYYY-MM-DD
+                              // Handle both formats: '2024-12-01T00:00:00' and '2024-12-01 00:00:00'
+                              let normalizedDbDate = record.irr_date;
+                              if (normalizedDbDate.includes('T')) {
+                                normalizedDbDate = normalizedDbDate.split('T')[0];
+                              } else if (normalizedDbDate.includes(' ')) {
+                                normalizedDbDate = normalizedDbDate.split(' ')[0];
+                              }
+                              
+                              // ONLY include if this date is in the normalized selected dates
+                              if (normalizedSelectedDates.includes(normalizedDbDate)) {
+                                const irrValue = parseFloat(record.irr_result);
+                                // Store using the normalized date for consistency
+                                productHistoricalIrrMap.set(normalizedDbDate, irrValue);
+                              }
+                            });
+                            
+                            // Debug: Show what we actually found for selected dates
+                            console.log(`🔍 [PRODUCT IRR DEBUG] Product ${productHistory.product_id} - Filtered for selected dates:`, {
+                              originalSelectedDates: sortedDates,
+                              normalizedSelectedDates: normalizedSelectedDates,
+                              foundDates: Array.from(productHistoricalIrrMap.keys()),
+                              missingDates: normalizedSelectedDates.filter(date => !productHistoricalIrrMap.has(date)),
+                              selectedDateIRRs: normalizedSelectedDates.map(date => ({
+                                date: date,
+                                irr: productHistoricalIrrMap.get(date),
+                                found: productHistoricalIrrMap.has(date)
+                              })),
+                              dataSource: 'portfolio_irr_values table - filtered',
+                              // DETAILED IRR VALUES DEBUG
+                              allIrrValues: Array.from(productHistoricalIrrMap.entries()).map(([date, irr]) => ({
+                                date,
+                                irr,
+                                irrType: typeof irr
+                              })),
+                              uniqueIrrValues: [...new Set(Array.from(productHistoricalIrrMap.values()))],
+                              hasDifferentIrrValues: new Set(Array.from(productHistoricalIrrMap.values())).size > 1
+                            });
+                            
+                            // Check for date mismatches and available vs selected dates
+                            if (productHistory.portfolio_historical_irr.length > 0) {
+                              const availableDates = productHistory.portfolio_historical_irr.map((r: any) => {
+                                let normalizedDate = r.irr_date;
+                                if (normalizedDate.includes('T')) {
+                                  normalizedDate = normalizedDate.split('T')[0];
+                                } else if (normalizedDate.includes(' ')) {
+                                  normalizedDate = normalizedDate.split(' ')[0];
+                                }
+                                return normalizedDate;
+                              });
+                              
+                              const missingSelectedDates = normalizedSelectedDates.filter((date: string) => !availableDates.includes(date));
+                              const availableButNotSelected = availableDates.filter((date: string) => !normalizedSelectedDates.includes(date));
+                              
+                              console.log(`🔍 [DATE ANALYSIS] Product ${productHistory.product_id} date comparison:`, {
+                                selectedDates: normalizedSelectedDates,
+                                availableDates: availableDates,
+                                missingSelectedDates,
+                                availableButNotSelected,
+                                hasDateMismatch: missingSelectedDates.length > 0 || availableButNotSelected.length > 0
+                              });
+                              
+                              if (missingSelectedDates.length > 0) {
+                                console.warn(`⚠️ [DATE MISMATCH WARNING] Product ${productHistory.product_id} selected dates not found in database:`, {
+                                  missingSelectedDates,
+                                  availableDatesInDatabase: availableDates,
+                                  selectedDatesFromReport: normalizedSelectedDates,
+                                  availableButNotSelected,
+                                  suggestion: availableButNotSelected.length > 0 ? `Consider using these available dates: ${availableButNotSelected.join(', ')}` : 'No alternative dates available'
+                                });
+                              }
+                            }
+                            
+                            if (productHistoricalIrrMap.size === 0) {
+                              console.warn(`⚠️ [PRODUCT IRR WARNING] Product ${productHistory.product_id} has no IRR data for any selected dates. 
+Original selected dates: ${sortedDates.join(', ')}
+Normalized selected dates: ${normalizedSelectedDates.join(', ')}
+Available database dates: ${productHistory.portfolio_historical_irr.map((r: any) => r.irr_date).join(', ')}`);
+                            }
+                          }
+
+                          const productTotalRow = (
+                            <tr key="product-total" className="bg-gray-50 border-t-2 border-gray-300">
+                              <td className="px-2 py-2 text-xs font-bold text-black text-left">
+                                TOTAL for {productForTotal ? generateProductTitle(productForTotal, stableCustomTitles.get(productHistory.product_id)) : `Product ${productHistory.product_id}`}
+                              </td>
+                              <td className="px-2 py-2 text-xs font-bold text-right text-black">
+                                {productWeightedRisk !== undefined && productWeightedRisk !== null ? (
+                                  formatWeightedRisk(productWeightedRisk)
+                                ) : (
+                                  'N/A'
+                                )}
+                              </td>
+                              <td className="px-2 py-2 text-xs font-bold text-right bg-purple-100 text-black">
+                                {productIrr !== null && productIrr !== undefined ? (
+                                  formatIrrWithPrecision(productIrr)
+                                ) : (
+                                  'N/A'
+                                )}
+                              </td>
+                              {sortedDates.map((date, index) => {
+                                // Get the corresponding normalized date for lookup
+                                const normalizedDate = normalizedSelectedDates[index];
+                                return (
+                                  <td key={date} className="px-2 py-2 text-xs font-bold text-right text-black">
+                                    {(() => {
+                                      const historicalIrr = productHistoricalIrrMap.get(normalizedDate);
+                                      if (historicalIrr !== null && historicalIrr !== undefined) {
+                                        return formatIrrWithPrecision(historicalIrr);
+                                      }
+                                      return '-';
+                                    })()}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          );
+
+                          return [...fundRows, productTotalRow];
                         })()
                       ) : (
                         <tr>

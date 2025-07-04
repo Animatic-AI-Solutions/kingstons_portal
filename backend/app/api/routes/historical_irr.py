@@ -33,6 +33,11 @@ async def get_portfolio_historical_irr(
         if response.data:
             logger.info(f"Found {len(response.data)} portfolio IRR records for product {product_id}")
             
+            # 🔍 DEBUG: Log raw database response
+            logger.info(f"🔍 [DATABASE DEBUG] Raw portfolio IRR data for product {product_id}:")
+            for i, record in enumerate(response.data):
+                logger.info(f"  Record {i+1}: Date={record.get('irr_date')}, IRR={record.get('irr_result')}, Portfolio={record.get('portfolio_id')}")
+            
             # Format the response
             historical_irrs = []
             for record in response.data:
