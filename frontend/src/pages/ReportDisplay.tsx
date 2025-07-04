@@ -937,17 +937,28 @@ const ReportDisplay: React.FC = () => {
   const extractPlanNumber = (product: ProductPeriodSummary): string | null => {
     // First, check if plan_number field exists
     if (product.plan_number) {
+      console.log(`🔍 Plan number from field for product ${product.id}: ${product.plan_number}`);
       return product.plan_number;
     }
     
     // Fallback: try to extract from product_name if it contains plan-like patterns
     if (product.product_name) {
-      const planMatch = product.product_name.match(/plan[:\s]+([A-Z0-9\-]+)/i);
-      if (planMatch) {
-        return planMatch[1];
+      const patterns = [
+        /Plan Number[:\s]*([A-Z0-9\-\/]+)/i,
+        /Plan[:\s]*([A-Z0-9\-\/]+)/i,
+        /Policy[:\s]*([A-Z0-9\-\/]+)/i,
+      ];
+      
+      for (const pattern of patterns) {
+        const match = product.product_name.match(pattern);
+        if (match) {
+          console.log(`🔍 Plan number from regex for product ${product.id}: ${match[1].trim()}`);
+          return match[1].trim();
+        }
       }
     }
     
+    console.log(`🔍 No plan number found for product ${product.id}. Fields: plan_number=${product.plan_number}, product_name=${product.product_name}`);
     return null;
   };
 
@@ -955,34 +966,29 @@ const ReportDisplay: React.FC = () => {
     // If custom title exists, use it
     if (customTitle) return customTitle;
     
-    // 1. Handle Bond naming - check if product_type contains "bond"
-    let productType = product.product_type;
-    if (productType?.toLowerCase().includes('bond')) {
-      productType = 'Bond';
+    // Standard format: Provider - Product Type - Product Owner Name [Plan Number]
+    let title = `${product.provider_name || 'Unknown Provider'}`;
+    
+    if (product.product_type) {
+      // Simplify bond types to just "Bond"
+      const simplifiedType = product.product_type.toLowerCase().includes('bond') ? 'Bond' : product.product_type;
+      title += ` - ${simplifiedType}`;
     }
     
-    // 2. Handle multiple product owners
-    let ownerDisplay = '';
     if (product.product_owner_name) {
       // Check if the product_owner_name contains multiple names (comma-separated or other delimiters)
-      const ownerNames = product.product_owner_name.split(/[,&]/).map(name => name.trim());
-      if (ownerNames.length > 1) {
-        ownerDisplay = 'Joint';
-      } else {
-        ownerDisplay = product.product_owner_name;
-      }
+      const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
+      const ownerDisplay = ownerNames.length > 1 ? 'Joint' : product.product_owner_name;
+      title += ` - ${ownerDisplay}`;
     }
     
-    // 3. Add plan number if available
-    let planNumberSuffix = '';
+    // Add plan number if available
     const planNumber = extractPlanNumber(product);
     if (planNumber) {
-      planNumberSuffix = ` - ${planNumber}`;
+      title += ` [${planNumber}]`;
     }
     
-    // 4. Construct final title
-    const parts = [productType, product.provider_name, ownerDisplay].filter(Boolean);
-    return parts.join(' - ') + planNumberSuffix;
+    return title;
   };
 
   // Modal management functions
