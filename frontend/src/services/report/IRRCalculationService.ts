@@ -170,9 +170,11 @@ export class IRRCalculationService implements IIRRCalculationService {
       this.log('Available dates:', reportData.availableHistoricalIRRDates);
       
       // Create the IRR history data structure that matches what the table expects
-      const irrHistoryResults = reportData.productSummaries.map(product => {
+      const irrHistoryPromises = reportData.productSummaries.map(product => {
         return this.processProductHistoricalIRR(product, reportData.selectedHistoricalIRRDates!);
       });
+      
+      const irrHistoryResults = await Promise.all(irrHistoryPromises);
       
       this.log('Final processed historical IRR data:', irrHistoryResults);
       return irrHistoryResults;
@@ -187,22 +189,71 @@ export class IRRCalculationService implements IIRRCalculationService {
    * Process historical IRR data for a single product
    * Helper method extracted from the product loop in fetchIrrHistory
    */
-  private processProductHistoricalIRR(
+  private async processProductHistoricalIRR(
     product: ProductPeriodSummary, 
     selectedHistoricalIRRDates: Record<number, string[]>
-  ): IRRHistoryData {
+  ): Promise<IRRHistoryData> {
     const selectedDates = selectedHistoricalIRRDates[product.id] || [];
     this.log(`Product ${product.id} (${product.product_name}) selected dates:`, selectedDates);
     
-    // Create portfolio historical IRR data (if available)
-    const portfolioHistoricalIrr = selectedDates.map(dateStr => {
-      // Convert YYYY-MM format to YYYY-MM-DD format for consistency
-      const fullDate = dateStr.length === 7 ? `${dateStr}-01` : dateStr;
-      return {
-        irr_date: fullDate,
-        irr_result: product.irr // Use current product IRR - this would ideally come from historical data
-      };
-    });
+    // Fetch actual historical IRR data from the API
+    let portfolioHistoricalIrr: any[] = [];
+    
+    try {
+      // Fetch historical IRR data for this product from the API
+      const historicalResponse = await historicalIRRService.getPortfolioHistoricalIRR(product.id, 24); // Get more records to cover selected dates
+      
+      if (historicalResponse && historicalResponse.portfolio_historical_irr) {
+        this.log(`Fetched ${historicalResponse.portfolio_historical_irr.length} historical IRR records for product ${product.id}`);
+        
+        // Create portfolio historical IRR data based on actual historical values
+        portfolioHistoricalIrr = selectedDates.map(dateStr => {
+          // Convert YYYY-MM format to YYYY-MM-DD format for comparison
+          const targetMonth = dateStr.length === 7 ? dateStr : dateStr.substring(0, 7);
+          
+          // Find the closest historical IRR record for this month
+          const matchingRecord = historicalResponse.portfolio_historical_irr.find((record: any) => {
+            const recordMonth = record.irr_date.substring(0, 7); // Extract YYYY-MM from the date
+            return recordMonth === targetMonth;
+          });
+          
+          const fullDate = dateStr.length === 7 ? `${dateStr}-01` : dateStr;
+          
+          return {
+            irr_id: matchingRecord?.irr_id || null,
+            portfolio_id: matchingRecord?.portfolio_id || null,
+            irr_date: fullDate,
+            irr_result: matchingRecord && matchingRecord.irr_result !== null ? parseFloat(String(matchingRecord.irr_result)) : null,
+            portfolio_valuation_id: matchingRecord?.portfolio_valuation_id || null,
+            portfolio_name: matchingRecord?.portfolio_name || null,
+            product_name: matchingRecord?.product_name || product.product_name,
+            provider_name: matchingRecord?.provider_name || null
+          };
+        });
+        
+        this.log(`Created ${portfolioHistoricalIrr.length} portfolio historical IRR records for product ${product.id}:`, portfolioHistoricalIrr);
+      } else {
+        this.log(`No historical IRR data found for product ${product.id}, using current IRR as fallback`);
+        // Fallback to current IRR if no historical data available
+        portfolioHistoricalIrr = selectedDates.map(dateStr => {
+          const fullDate = dateStr.length === 7 ? `${dateStr}-01` : dateStr;
+          return {
+            irr_date: fullDate,
+            irr_result: product.irr
+          };
+        });
+      }
+    } catch (error) {
+      console.error(`Error fetching historical IRR for product ${product.id}:`, error);
+      // Fallback to current IRR if error occurs
+      portfolioHistoricalIrr = selectedDates.map(dateStr => {
+        const fullDate = dateStr.length === 7 ? `${dateStr}-01` : dateStr;
+        return {
+          irr_date: fullDate,
+          irr_result: product.irr
+        };
+      });
+    }
     
     // Create funds historical IRR data using the fund's historical_irr and historical_dates arrays
     const fundsHistoricalIrr = product.funds?.map(fund => {

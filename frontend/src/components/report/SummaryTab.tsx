@@ -723,7 +723,7 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
                           {/* Product Total Row */}
                           <tr className="bg-gray-50 border-t-2 border-gray-300">
                             <td className="px-2 py-2 text-xs font-bold text-black text-left">
-                              TOTAL for {generateProductTitle(product, customTitles.get(product.id))}
+                              Total
                             </td>
                             <td className="px-2 py-2 text-xs font-bold text-right text-black">
                               {formatCurrencyWithTruncation((product.total_investment || 0) + (product.total_regular_investment || 0))}

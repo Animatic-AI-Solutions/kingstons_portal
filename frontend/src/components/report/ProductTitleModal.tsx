@@ -10,7 +10,7 @@
 
 import React, { useEffect } from 'react';
 import { useReportStateManager } from '../../hooks/report/useReportStateManager';
-import BaseInput from '../ui/BaseInput';
+import BaseInput from '../ui/inputs/BaseInput';
 import type { ReportData } from '../../types/reportTypes';
 
 interface ProductTitleModalProps {

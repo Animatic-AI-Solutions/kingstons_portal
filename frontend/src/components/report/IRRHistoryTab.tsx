@@ -1695,7 +1695,7 @@ Available database dates: ${productHistory.portfolio_historical_irr.map((r: any)
                           const productTotalRow = (
                             <tr key="product-total" className="bg-gray-50 border-t-2 border-gray-300">
                               <td className="px-2 py-2 text-xs font-bold text-black text-left">
-                                TOTAL for {productForTotal ? generateProductTitle(productForTotal, stableCustomTitles.get(productHistory.product_id)) : `Product ${productHistory.product_id}`}
+                                Total
                               </td>
                               <td className="px-2 py-2 text-xs font-bold text-right text-black">
                                 {productWeightedRisk !== undefined && productWeightedRisk !== null ? (
