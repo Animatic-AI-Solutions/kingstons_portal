@@ -92,6 +92,37 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
   // Formatting services from Phase 1
   const { formatCurrencyWithZeroToggle } = useReportFormatter();
 
+  // Extract plan number from product name
+  const extractPlanNumber = (product: ProductPeriodSummary | undefined): string | null => {
+    if (!product) return null;
+    
+    // First, check if plan_number field exists
+    if (product.plan_number) {
+      console.log(`🔍 Plan number from field for product ${product.id}: ${product.plan_number}`);
+      return product.plan_number;
+    }
+    
+    // Fallback: try to extract from product_name if it contains plan-like patterns
+    if (product.product_name) {
+      const patterns = [
+        /Plan Number[:\s]*([A-Z0-9\-\/]+)/i,
+        /Plan[:\s]*([A-Z0-9\-\/]+)/i,
+        /Policy[:\s]*([A-Z0-9\-\/]+)/i,
+      ];
+      
+      for (const pattern of patterns) {
+        const match = product.product_name.match(pattern);
+        if (match) {
+          console.log(`🔍 Plan number from regex for product ${product.id}: ${match[1].trim()}`);
+          return match[1].trim();
+        }
+      }
+    }
+    
+    console.log(`🔍 No plan number found for product ${product.id}. Fields: plan_number=${product.plan_number}, product_name=${product.product_name}`);
+    return null;
+  };
+
   // Generate product title (simple function to avoid useCallback complexity)
   const generateProductTitle = (product: ProductPeriodSummary | undefined, customTitle?: string): string => {
     if (customTitle && customTitle.trim()) {
@@ -102,22 +133,35 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       return 'Unknown Product';
     }
     
-    // Standard format: Product Type - Provider - Product Owner (like original displaypage.tsx)
+    // Standard format: Provider - Product Type - Product Owner Name [Plan Number]
     const parts = [];
-    
-    if (product.product_type) {
-      parts.push(product.product_type);
-    }
     
     if (product.provider_name) {
       parts.push(product.provider_name);
     }
     
-    if (product.product_owner_name) {
-      parts.push(product.product_owner_name);
+    if (product.product_type) {
+      // Simplify bond types to just "Bond"
+      const simplifiedType = product.product_type.toLowerCase().includes('bond') ? 'Bond' : product.product_type;
+      parts.push(simplifiedType);
     }
     
-    return parts.length > 0 ? parts.join(' - ') : 'Unknown Product';
+    if (product.product_owner_name) {
+      // Check if the product_owner_name contains multiple names (comma-separated or other delimiters)
+      const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
+      const ownerDisplay = ownerNames.length > 1 ? 'Joint' : product.product_owner_name;
+      parts.push(ownerDisplay);
+    }
+    
+    let title = parts.length > 0 ? parts.join(' - ') : 'Unknown Product';
+    
+    // Add plan number if available
+    const planNumber = extractPlanNumber(product);
+    if (planNumber) {
+      title += ` [${planNumber}]`;
+    }
+    
+    return title;
   };
 
   // Process chart data for visualization
@@ -181,22 +225,33 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
         if (customTitle && customTitle.trim()) {
           productKey = customTitle.trim();
         } else {
-          // Standard format: Product Type - Provider - Product Owner (like original displaypage.tsx)
+          // Standard format: Provider - Product Type - Product Owner Name (consistent with SummaryTab)
           const parts = [];
-          
-          if (product.product_type) {
-            parts.push(product.product_type);
-          }
           
           if (product.provider_name) {
             parts.push(product.provider_name);
           }
           
+          if (product.product_type) {
+            // Simplify bond types to just "Bond"
+            const simplifiedType = product.product_type.toLowerCase().includes('bond') ? 'Bond' : product.product_type;
+            parts.push(simplifiedType);
+          }
+          
           if (product.product_owner_name) {
-            parts.push(product.product_owner_name);
+            // Check if the product_owner_name contains multiple names (comma-separated or other delimiters)
+            const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
+            const ownerDisplay = ownerNames.length > 1 ? 'Joint' : product.product_owner_name;
+            parts.push(ownerDisplay);
           }
           
           productKey = parts.length > 0 ? parts.join(' - ') : 'Unknown Product';
+          
+          // Add plan number if available
+          const planNumber = extractPlanNumber(product);
+          if (planNumber) {
+            productKey += ` [${planNumber}]`;
+          }
         }
         
         if (productHistory?.portfolio_historical_irr) {
@@ -258,22 +313,35 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       if (customTitle && customTitle.trim()) {
         return customTitle.trim();
       }
-      // Standard format: Product Type - Provider - Product Owner (like original displaypage.tsx)
+      // Standard format: Provider - Product Type - Product Owner Name [Plan Number]
       const parts = [];
-      
-      if (product.product_type) {
-        parts.push(product.product_type);
-      }
       
       if (product.provider_name) {
         parts.push(product.provider_name);
       }
       
-      if (product.product_owner_name) {
-        parts.push(product.product_owner_name);
+      if (product.product_type) {
+        // Simplify bond types to just "Bond"
+        const simplifiedType = product.product_type.toLowerCase().includes('bond') ? 'Bond' : product.product_type;
+        parts.push(simplifiedType);
       }
       
-      return parts.length > 0 ? parts.join(' - ') : 'Unknown Product';
+      if (product.product_owner_name) {
+        // Check if the product_owner_name contains multiple names (comma-separated or other delimiters)
+        const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
+        const ownerDisplay = ownerNames.length > 1 ? 'Joint' : product.product_owner_name;
+        parts.push(ownerDisplay);
+      }
+      
+      let title = parts.length > 0 ? parts.join(' - ') : 'Unknown Product';
+      
+      // Add plan number if available
+      const planNumber = extractPlanNumber(product);
+      if (planNumber) {
+        title += ` [${planNumber}]`;
+      }
+      
+      return title;
     });
     setSelectedProducts(new Set(allProductTitles));
   }, [productsForChart, stableCustomTitles]);
@@ -330,22 +398,35 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       if (customTitle && customTitle.trim()) {
         return customTitle.trim();
       }
-      // Standard format: Product Type - Provider - Product Owner (like original displaypage.tsx)
+      // Standard format: Provider - Product Type - Product Owner Name [Plan Number]
       const parts = [];
-      
-      if (product.product_type) {
-        parts.push(product.product_type);
-      }
       
       if (product.provider_name) {
         parts.push(product.provider_name);
       }
       
-      if (product.product_owner_name) {
-        parts.push(product.product_owner_name);
+      if (product.product_type) {
+        // Simplify bond types to just "Bond"
+        const simplifiedType = product.product_type.toLowerCase().includes('bond') ? 'Bond' : product.product_type;
+        parts.push(simplifiedType);
       }
       
-      return parts.length > 0 ? parts.join(' - ') : 'Unknown Product';
+      if (product.product_owner_name) {
+        // Check if the product_owner_name contains multiple names (comma-separated or other delimiters)
+        const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
+        const ownerDisplay = ownerNames.length > 1 ? 'Joint' : product.product_owner_name;
+        parts.push(ownerDisplay);
+      }
+      
+      let title = parts.length > 0 ? parts.join(' - ') : 'Unknown Product';
+      
+      // Add plan number if available
+      const planNumber = extractPlanNumber(product);
+      if (planNumber) {
+        title += ` [${planNumber}]`;
+      }
+      
+      return title;
     })];
 
     // Create CSV data
@@ -750,44 +831,88 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       {/* Table View */}
       <div className={`space-y-8 irr-history-table ${viewMode === 'table' ? '' : 'hidden print:block'}`}>
         {(() => {
-          // Filter historical data to only include products that exist in the current report
-          const filteredHistoryData = irrHistoryData.filter((productHistory: any) => {
-            const productExists = reportData.productSummaries.some(p => p.id === productHistory.product_id);
-            if (!productExists) {
-              console.log(`⚠️ [IRR HISTORY DEBUG] Skipping product ${productHistory.product_id} (${productHistory.product_name}) - not in current report`);
-            }
-            return productExists;
-          });
-          
-          console.log(`🔍 [IRR HISTORY DEBUG] Filtered products:`, {
-            originalCount: irrHistoryData.length,
-            filteredCount: filteredHistoryData.length,
-            reportProductIds: reportData.productSummaries.map(p => p.id),
-            historyProductIds: irrHistoryData.map((ph: any) => ph.product_id)
-          });
-          
-          return filteredHistoryData.map((productHistory: any, index: number) => {
-            const originalIndex = reportData.productSummaries.findIndex(p => p.id === productHistory.product_id);
-            const product = reportData.productSummaries[originalIndex];
+          // Organize products by type (same order as SummaryTab)
+          const organizeProductsByType = (products: ProductPeriodSummary[]) => {
+            // Group products by normalized type
+            const groupedProducts: { [key: string]: ProductPeriodSummary[] } = {};
             
-            console.log(`🔍 [IRR HISTORY DEBUG] Processing product ${index}:`, {
-              productId: productHistory.product_id,
-              productName: productHistory.product_name,
-              originalIndex,
-              hasProduct: !!product,
-              hasProductHistory: !!productHistory,
-              productHistoryStructure: productHistory ? Object.keys(productHistory) : 'N/A'
+            products.forEach(product => {
+              const normalizedType = normalizeProductType(product.product_type);
+              if (!groupedProducts[normalizedType]) {
+                groupedProducts[normalizedType] = [];
+              }
+              groupedProducts[normalizedType].push(product);
             });
+
+            // Sort products within each type by provider name, with special ordering for ISAs
+            Object.keys(groupedProducts).forEach(type => {
+              if (type === 'ISAs') {
+                // Special sorting for ISAs: ISA products first, then JISA products, then by provider
+                groupedProducts[type].sort((a, b) => {
+                  const typeA = a.product_type?.toLowerCase().trim() || '';
+                  const typeB = b.product_type?.toLowerCase().trim() || '';
+                  
+                  // Check if products are JISA
+                  const isJISA_A = typeA === 'jisa';
+                  const isJISA_B = typeB === 'jisa';
+                  
+                  // If one is JISA and the other is not, non-JISA comes first
+                  if (isJISA_A && !isJISA_B) return 1;
+                  if (!isJISA_A && isJISA_B) return -1;
+                  
+                  // If both are same type (both JISA or both ISA), sort by provider
+                  const providerA = a.provider_name || '';
+                  const providerB = b.provider_name || '';
+                  return providerA.localeCompare(providerB);
+                });
+              } else {
+                // Standard sorting by provider name for other product types
+                groupedProducts[type].sort((a, b) => {
+                  const providerA = a.provider_name || '';
+                  const providerB = b.provider_name || '';
+                  return providerA.localeCompare(providerB);
+                });
+              }
+            });
+
+            // Return products in the specified order
+            const orderedProducts: ProductPeriodSummary[] = [];
             
-            if (!productHistory) {
-              console.log(`⚠️ [IRR HISTORY DEBUG] No product history for product ${productHistory.product_id} at index ${originalIndex}`);
-              return null;
-            }
-            
-            if (!product) {
-              console.log(`⚠️ [IRR HISTORY DEBUG] Product ${productHistory.product_id} not found in reportData.productSummaries at originalIndex ${originalIndex}`);
-              return null;
-            }
+            PRODUCT_TYPE_ORDER.forEach(type => {
+              if (groupedProducts[type]) {
+                orderedProducts.push(...groupedProducts[type]);
+              }
+            });
+
+            return orderedProducts;
+          };
+          
+          // Use the same organization as SummaryTab
+          const organizedProducts = organizeProductsByType(reportData.productSummaries);
+          
+          console.log(`🔍 [IRR HISTORY DEBUG] Organized products:`, {
+            originalCount: reportData.productSummaries.length,
+            organizedCount: organizedProducts.length,
+            originalIds: reportData.productSummaries.map(p => p.id),
+            organizedIds: organizedProducts.map(p => p.id)
+          });
+          
+                     return organizedProducts.map((product: ProductPeriodSummary, index: number) => {
+             // Find the corresponding IRR history data for this product
+             const productHistory = irrHistoryData.find((ph: any) => ph.product_id === product.id);
+             
+             console.log(`🔍 [IRR HISTORY DEBUG] Processing product ${index}:`, {
+               productId: product.id,
+               productName: product.product_name,
+               hasProduct: !!product,
+               hasProductHistory: !!productHistory,
+               productHistoryStructure: productHistory ? Object.keys(productHistory) : 'N/A'
+             });
+             
+             if (!productHistory) {
+               console.log(`⚠️ [IRR HISTORY DEBUG] No product history for product ${product.id}`);
+               return null;
+             }
 
             // Get all unique dates from both portfolio and fund IRR history
             const allDates = new Set<string>();
@@ -818,18 +943,24 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
             if (reportData.selectedHistoricalIRRDates && reportData.selectedHistoricalIRRDates[productHistory.product_id]) {
               // Use the specifically selected dates for this product from the report
               const selectedDatesForProduct = reportData.selectedHistoricalIRRDates[productHistory.product_id];
-              sortedDates = selectedDatesForProduct.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-              console.log(`🎯 [SELECTED DATES] Product ${productHistory.product_id} using report's selected dates:`, {
+              // Sort and exclude the current date (most recent) from historical dates
+              const sortedSelectedDates = selectedDatesForProduct.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+              sortedDates = sortedSelectedDates.slice(1); // Skip first (current) date from selected dates
+              console.log(`🎯 [SELECTED DATES] Product ${productHistory.product_id} using report's selected dates (excluding current):`, {
                 selectedCount: selectedDatesForProduct.length,
                 selectedDates: selectedDatesForProduct,
-                sortedDates: sortedDates
+                sortedDates: sortedDates,
+                excludedCurrentDate: sortedSelectedDates[0]
               });
             } else {
-              // Fallback: show all available dates (not limited to 12)
-              sortedDates = allSortedDates;
-              console.log(`📅 [ALL DATES] Product ${productHistory.product_id} using all available dates:`, {
+              // Fallback: show historical dates only (excluding current date)
+              sortedDates = allSortedDates.slice(1, 13); // Skip first (current) and take next 12 historical dates
+              console.log(`📅 [HISTORICAL DATES] Product ${productHistory.product_id} using historical dates only:`, {
                 allCount: allSortedDates.length,
-                allDates: allSortedDates
+                allDates: allSortedDates,
+                historicalDatesCount: sortedDates.length,
+                historicalDates: sortedDates,
+                excludedCurrentDate: allSortedDates[0]
               });
             }
             

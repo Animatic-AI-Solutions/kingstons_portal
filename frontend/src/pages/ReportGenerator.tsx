@@ -8,6 +8,7 @@ import { createIRRDataService } from '../services/irrDataService';
 import { createValuationDataService } from '../services/valuationDataService';
 import { createPortfolioFundsService } from '../services/portfolioFundsService';
 import { formatDateFallback, formatCurrencyFallback, formatPercentageFallback } from '../components/reports/shared/ReportFormatters';
+import { formatWeightedRisk } from '../utils/reportFormatters';
 import historicalIRRService from '../services/historicalIRRService';
 
 // Interfaces for data types
@@ -342,6 +343,13 @@ const ReportGenerator: React.FC = () => {
   const formatWithdrawalAmount = (amount: number | null | undefined): string => {
     if (amount === null || amount === undefined) return '-';
     return formatCurrencyWithTruncation(amount);
+  };
+
+  // Local function to format fund IRRs to whole numbers (0 decimal places)
+  const formatFundIrr = (irr: number | null | undefined): string => {
+    if (irr === null || irr === undefined) return '-';
+    // Round to 0 decimal places for fund IRRs (as per original logic)
+    return `${Math.round(irr)}%`;
   };
 
   // Calculate net fund switches (switch in - switch out)
@@ -1007,6 +1015,63 @@ const ReportGenerator: React.FC = () => {
     return fundHistoricalIRRMap;
   };
 
+  // Function to find the latest common date among all selected IRR dates
+  const findLatestCommonIRRDate = (selectedDates: ProductIRRSelections, productIds: number[]): string | null => {
+    if (productIds.length === 0) return null;
+    
+    // Get all dates for the first product
+    const firstProductDates = selectedDates[productIds[0]] || [];
+    if (firstProductDates.length === 0) return null;
+    
+    // Find dates that are common to all products
+    const commonDates = firstProductDates.filter(date => 
+      productIds.every(productId => {
+        const productDates = selectedDates[productId] || [];
+        return productDates.includes(date);
+      })
+    );
+    
+    // If no common dates, return null
+    if (commonDates.length === 0) return null;
+    
+    // Sort common dates in descending order (latest first) and return the latest
+    return commonDates.sort((a, b) => b.localeCompare(a))[0];
+  };
+
+  // Function to check if the end valuation date validation would fail
+  const hasEndValuationDateError = useMemo(() => {
+    if (!hasEffectiveProductSelection) return false;
+    
+    // Get all product IDs that will be included in the report
+    const productIdsForReport = new Set<number>();
+    if (selectedProductIds.length > 0) {
+      selectedProductIds
+        .filter(p => !excludedProductIds.has(Number(p)))
+        .forEach(p => productIdsForReport.add(Number(p)));
+    }
+    if (selectedClientGroupIds.length > 0) {
+      const clientGroupAttachedProducts = relatedProducts.filter(p => !excludedProductIds.has(p.id));
+      clientGroupAttachedProducts.forEach(p => productIdsForReport.add(p.id));
+    }
+    
+    const reportProductIds = Array.from(productIdsForReport);
+    
+    // Check if end valuation date matches the latest common IRR date
+    if (reportProductIds.length > 0 && Object.keys(selectedIRRDates).length > 0 && selectedValuationDate) {
+      const latestCommonDate = findLatestCommonIRRDate(selectedIRRDates, reportProductIds);
+      
+      if (latestCommonDate) {
+        // Convert both dates to YYYY-MM format for comparison
+        const endValuationYearMonth = selectedValuationDate.substring(0, 7);
+        const latestCommonYearMonth = latestCommonDate.substring(0, 7);
+        
+        return endValuationYearMonth !== latestCommonYearMonth;
+      }
+    }
+    
+    return false;
+  }, [hasEffectiveProductSelection, selectedProductIds, excludedProductIds, selectedClientGroupIds, relatedProducts, selectedIRRDates, selectedValuationDate]);
+
   const generateReport = async () => {
     // Check if any products are effectively selected (accounting for exclusions)
     if (!hasEffectiveProductSelection) {
@@ -1031,6 +1096,20 @@ const ReportGenerator: React.FC = () => {
       setDataError('Please select an end valuation date for the IRR calculation.');
       return;
     }
+    
+    // Get all product IDs that will be included in the report
+    const productIdsForReport = new Set<number>();
+    if (selectedProductIds.length > 0) {
+      selectedProductIds
+        .filter(p => !excludedProductIds.has(Number(p)))
+        .forEach(p => productIdsForReport.add(Number(p)));
+    }
+    if (selectedClientGroupIds.length > 0) {
+      const clientGroupAttachedProducts = relatedProducts.filter(p => !excludedProductIds.has(p.id));
+      clientGroupAttachedProducts.forEach(p => productIdsForReport.add(p.id));
+    }
+    
+    const reportProductIds = Array.from(productIdsForReport);
     
     setIsCalculating(true);
     setDataError(null);
@@ -1063,6 +1142,23 @@ const ReportGenerator: React.FC = () => {
       }
       
       const uniqueProductIds = Array.from(productIdsForReport);
+      
+      // Check if end valuation date matches the latest common IRR date
+      if (uniqueProductIds.length > 0 && Object.keys(selectedIRRDates).length > 0) {
+        const latestCommonDate = findLatestCommonIRRDate(selectedIRRDates, uniqueProductIds);
+        
+        if (latestCommonDate && selectedValuationDate) {
+          // Convert both dates to YYYY-MM format for comparison
+          const endValuationYearMonth = selectedValuationDate.substring(0, 7); // YYYY-MM-DD -> YYYY-MM
+          const latestCommonYearMonth = latestCommonDate.substring(0, 7); // YYYY-MM-DD -> YYYY-MM
+          
+          if (endValuationYearMonth !== latestCommonYearMonth) {
+            setDataError(`The end valuation date must be the same as the latest common date selected among the historical IRR dates. Latest common date: ${latestCommonDate.substring(0, 7)}, End valuation date: ${endValuationYearMonth}.`);
+            setIsCalculating(false);
+            return;
+          }
+        }
+      }
       
       if (uniqueProductIds.length === 0) {
         setDataError('No products found for your selection to generate the report.');
@@ -2147,13 +2243,32 @@ Please select a different valuation date or ensure all active funds have valuati
               totalValuation: overallValuation,
               earliestTransactionDate: earliestDate,
               selectedValuationDate: selectedValuationDate,
-              productOwnerNames: Array.from(
-                new Set(
-                  productSummaryResults
-                    .map(product => product.product_owner_name)
-                    .filter(name => name && name.trim() !== '')
-                )
-              ).sort(),
+              productOwnerNames: (() => {
+                console.log('🔍 [PRODUCT OWNER DEBUG] Raw product owner names:', productSummaryResults.map(p => ({ 
+                  id: p.id, 
+                  name: p.product_name, 
+                  owner: p.product_owner_name,
+                  ownerType: typeof p.product_owner_name 
+                })));
+                
+                const allNames = productSummaryResults
+                  .map(product => product.product_owner_name)
+                  .filter(name => name && name.trim() !== '');
+                
+                console.log('🔍 [PRODUCT OWNER DEBUG] Filtered names:', allNames);
+                
+                const splitNames = allNames
+                  .flatMap(name => name ? name.split(/[,&]/).map(n => n.trim()) : [])
+                  .filter(name => name !== '');
+                
+                console.log('🔍 [PRODUCT OWNER DEBUG] After splitting:', splitNames);
+                
+                const uniqueNames = Array.from(new Set(splitNames)).sort();
+                
+                console.log('🔍 [PRODUCT OWNER DEBUG] Final unique names:', uniqueNames);
+                
+                return uniqueNames;
+              })(),
               timePeriod: (() => {
                 if (earliestDate && selectedValuationDate) {
                   const startDate = formatDateFallback(earliestDate);
@@ -2188,13 +2303,32 @@ Please select a different valuation date or ensure all active funds have valuati
         totalValuation: overallValuation,
         earliestTransactionDate: earliestDate,
         selectedValuationDate: selectedValuationDate,
-        productOwnerNames: Array.from(
-          new Set(
-            productSummaryResults
-              .map(product => product.product_owner_name)
-              .filter(name => name && name.trim() !== '')
-          )
-        ).sort(),
+        productOwnerNames: (() => {
+          console.log('🔍 [FINAL PRODUCT OWNER DEBUG] Raw product owner names:', productSummaryResults.map(p => ({ 
+            id: p.id, 
+            name: p.product_name, 
+            owner: p.product_owner_name,
+            ownerType: typeof p.product_owner_name 
+          })));
+          
+          const allNames = productSummaryResults
+            .map(product => product.product_owner_name)
+            .filter(name => name && name.trim() !== '');
+          
+          console.log('🔍 [FINAL PRODUCT OWNER DEBUG] Filtered names:', allNames);
+          
+          const splitNames = allNames
+            .flatMap(name => name ? name.split(/[,&]/).map(n => n.trim()) : [])
+            .filter(name => name !== '');
+          
+          console.log('🔍 [FINAL PRODUCT OWNER DEBUG] After splitting:', splitNames);
+          
+          const uniqueNames = Array.from(new Set(splitNames)).sort();
+          
+          console.log('🔍 [FINAL PRODUCT OWNER DEBUG] Final unique names:', uniqueNames);
+          
+          return uniqueNames;
+        })(),
         timePeriod: (() => {
           if (earliestDate && selectedValuationDate) {
             const startDate = formatDateFallback(earliestDate);
@@ -2314,13 +2448,32 @@ Please select a different valuation date or ensure all active funds have valuati
     })();
 
     // Get unique product owner names from the generated report
-    const productOwnerNames = Array.from(
-      new Set(
-        productSummaries
-          .map(product => product.product_owner_name)
-          .filter(name => name && name.trim() !== '')
-      )
-    ).sort();
+    const productOwnerNames = (() => {
+      console.log('🔍 [TITLE INFO PRODUCT OWNER DEBUG] Raw product owner names:', productSummaries.map(p => ({ 
+        id: p.id, 
+        name: p.product_name, 
+        owner: p.product_owner_name,
+        ownerType: typeof p.product_owner_name 
+      })));
+      
+      const allNames = productSummaries
+        .map(product => product.product_owner_name)
+        .filter(name => name && name.trim() !== '');
+      
+      console.log('🔍 [TITLE INFO PRODUCT OWNER DEBUG] Filtered names:', allNames);
+      
+      const splitNames = allNames
+        .flatMap(name => name ? name.split(/[,&]/).map(n => n.trim()) : [])
+        .filter(name => name !== '');
+      
+      console.log('🔍 [TITLE INFO PRODUCT OWNER DEBUG] After splitting:', splitNames);
+      
+      const uniqueNames = Array.from(new Set(splitNames)).sort();
+      
+      console.log('🔍 [TITLE INFO PRODUCT OWNER DEBUG] Final unique names:', uniqueNames);
+      
+      return uniqueNames;
+    })();
 
     return {
       timePeriod,
@@ -2671,11 +2824,12 @@ Please select a different valuation date or ensure all active funds have valuati
             <div className="mt-6">
               <button
                 onClick={generateReport}
-                disabled={isCalculating || isLoading || !hasEffectiveProductSelection}
+                disabled={isCalculating || isLoading || !hasEffectiveProductSelection || hasEndValuationDateError}
                 title={
                   isCalculating ? "Report is being calculated..." :
                   isLoading ? "Data is loading..." :
                   !hasEffectiveProductSelection ? "Select at least one product to generate a report" :
+                  hasEndValuationDateError ? "The end valuation date must match the latest common historical IRR date selection" :
                   "Generate Report"
                 }
                 className="w-full flex justify-center items-center px-6 py-3 text-base font-medium text-white bg-primary-700 hover:bg-primary-800 rounded-md shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -2701,6 +2855,12 @@ Please select a different valuation date or ensure all active funds have valuati
               {!hasEffectiveProductSelection && !isCalculating && !isLoading && (
                 <p className="mt-2 text-sm text-gray-500 text-center">
                   Select at least one product to generate a report
+                </p>
+              )}
+              
+              {hasEffectiveProductSelection && hasEndValuationDateError && !isCalculating && !isLoading && (
+                <p className="mt-2 text-sm text-orange-600 text-center">
+                  End valuation date must match the latest common historical IRR date selection
                 </p>
               )}
             </div>
@@ -3022,7 +3182,7 @@ Please select a different valuation date or ensure all active funds have valuati
                               <span className="text-gray-500">-</span>
                             ) : fund.irr !== null ? (
                               <span className={fund.irr >= 0 ? 'text-green-600' : 'text-red-600'}>
-                                {formatIrrWithPrecision(fund.irr)}
+                                {formatFundIrr(fund.irr)}
                               </span>
                             ) : (
                               <span className="text-gray-400">-</span>
@@ -3101,7 +3261,7 @@ Please select a different valuation date or ensure all active funds have valuati
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-700 bg-purple-50">
                                 {inactiveFund.irr !== null ? (
                                   <span className={inactiveFund.irr >= 0 ? 'text-green-600' : 'text-red-600'}>
-                                    {formatIrrWithPrecision(inactiveFund.irr)}
+                                    {formatFundIrr(inactiveFund.irr)}
                                   </span>
                                 ) : (
                                   <span className="text-gray-500">-</span>
@@ -3172,7 +3332,7 @@ Please select a different valuation date or ensure all active funds have valuati
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
                         {product.weighted_risk !== undefined && product.weighted_risk !== null ? (
                           <span className="text-xs font-medium">
-                            {product.weighted_risk.toFixed(1)}
+                            {formatWeightedRisk(product.weighted_risk)}
                           </span>
                         ) : (
                           <span className="text-gray-500">-</span>
@@ -3321,7 +3481,7 @@ Please select a different valuation date or ensure all active funds have valuati
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
                         {totalWeightedValue > 0 ? (
                           <span className="px-2 py-1 text-xs font-medium rounded bg-gray-100">
-                            {weightedRisk.toFixed(1)}
+                            {formatWeightedRisk(weightedRisk)}
                           </span>
                         ) : (
                           <span className="text-gray-400">-</span>
@@ -3404,7 +3564,7 @@ Please select a different valuation date or ensure all active funds have valuati
                           const finalWeightedRisk = portfolioWeightedRisk / portfolioTotalValueWithRisk;
                           return (
                             <span className="px-2 py-1 text-xs font-medium rounded bg-gray-200">
-                              {finalWeightedRisk.toFixed(1)}
+                              {formatWeightedRisk(finalWeightedRisk)}
                             </span>
                           );
                         }

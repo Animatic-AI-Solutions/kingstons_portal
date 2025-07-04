@@ -86,12 +86,20 @@ export const formatFundRisk = (risk: number | undefined): string => {
   return Math.round(risk).toString();
 };
 
-// Product and portfolio weighted risk formatting (1 decimal place)
+// Product and portfolio weighted risk formatting (smart decimal places)
 export const formatWeightedRisk = (risk: number | undefined): string => {
   if (risk === undefined || risk === null) return '-';
   
-  // Round to 1 decimal place for product/portfolio weighted risk
-  return risk.toFixed(1);
+  // Round to 1 decimal place first
+  const rounded = Math.round(risk * 10) / 10;
+  
+  // If it's a whole number, display without decimal places
+  if (rounded === Math.floor(rounded)) {
+    return rounded.toString();
+  }
+  
+  // Otherwise, display with 1 decimal place
+  return rounded.toFixed(1);
 };
 
 // Helper functions for visual signing

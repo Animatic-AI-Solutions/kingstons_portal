@@ -117,22 +117,30 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
 
   // Extract plan number from product
   const extractPlanNumber = (product: ProductPeriodSummary): string | null => {
-    const productName = product.product_name || '';
+    // First, check if plan_number field exists
+    if (product.plan_number) {
+      console.log(`🔍 Plan number from field for product ${product.id}: ${product.plan_number}`);
+      return product.plan_number;
+    }
     
-    // Try to match plan number patterns
-    const patterns = [
-      /Plan Number[:\s]*([A-Z0-9\-\/]+)/i,
-      /Plan[:\s]*([A-Z0-9\-\/]+)/i,
-      /Policy[:\s]*([A-Z0-9\-\/]+)/i,
-    ];
-    
-    for (const pattern of patterns) {
-      const match = productName.match(pattern);
-      if (match) {
-        return match[1].trim();
+    // Fallback: try to extract from product_name if it contains plan-like patterns
+    if (product.product_name) {
+      const patterns = [
+        /Plan Number[:\s]*([A-Z0-9\-\/]+)/i,
+        /Plan[:\s]*([A-Z0-9\-\/]+)/i,
+        /Policy[:\s]*([A-Z0-9\-\/]+)/i,
+      ];
+      
+      for (const pattern of patterns) {
+        const match = product.product_name.match(pattern);
+        if (match) {
+          console.log(`🔍 Plan number from regex for product ${product.id}: ${match[1].trim()}`);
+          return match[1].trim();
+        }
       }
     }
     
+    console.log(`🔍 No plan number found for product ${product.id}. Fields: plan_number=${product.plan_number}, product_name=${product.product_name}`);
     return null;
   };
 
@@ -142,19 +150,36 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
       return customTitle.trim();
     }
 
-    // Standard format: Provider - Product Type [Plan Number if available]
+    // Standard format: Provider - Product Type - Product Owner Name [Plan Number]
     let title = `${product.provider_name || 'Unknown Provider'}`;
     
     if (product.product_type) {
-      title += ` - ${product.product_type}`;
+      // Simplify bond types to just "Bond"
+      const simplifiedType = product.product_type.toLowerCase().includes('bond') ? 'Bond' : product.product_type;
+      title += ` - ${simplifiedType}`;
     }
     
+    if (product.product_owner_name) {
+      // Check if the product_owner_name contains multiple names (comma-separated or other delimiters)
+      const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
+      const ownerDisplay = ownerNames.length > 1 ? 'Joint' : product.product_owner_name;
+      title += ` - ${ownerDisplay}`;
+    }
+    
+    // Add plan number if available
     const planNumber = extractPlanNumber(product);
     if (planNumber) {
       title += ` [${planNumber}]`;
     }
     
     return title;
+  };
+
+  // Local function to format fund IRRs to whole numbers (0 decimal places)
+  const formatFundIrr = (irr: number | null | undefined): string => {
+    if (irr === null || irr === undefined) return '-';
+    // Round to 0 decimal places for fund IRRs (as per original logic)
+    return `${Math.round(irr)}%`;
   };
 
   // Format currency with visual signing wrapper
@@ -392,9 +417,7 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
                         </td>
                         <td className="px-2 py-2 whitespace-nowrap text-xs text-right">
                           {product.weighted_risk !== undefined && product.weighted_risk !== null ? (
-                            <span className="text-xs">
-                              {formatWeightedRisk(product.weighted_risk)}
-                            </span>
+                            formatWeightedRisk(product.weighted_risk)
                           ) : (
                             <span className="text-gray-400">N/A</span>
                           )}
@@ -702,7 +725,7 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
                                     <td className="px-2 py-2 text-xs text-right bg-purple-50">
                                       {fund.irr !== null && fund.irr !== undefined ? (
                                         <span className={fund.irr >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
-                                          {formatIrrWithPrecision(fund.irr)}
+                                          {formatFundIrr(fund.irr)}
                                         </span>
                                       ) : (
                                         <span className="text-black font-bold">N/A</span>

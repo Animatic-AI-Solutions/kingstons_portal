@@ -123,9 +123,11 @@ describe('Risk Formatting', () => {
   });
 
   describe('formatWeightedRisk', () => {
-    it('should format weighted risk with 1 decimal place', () => {
+    it('should format weighted risk with smart decimal places', () => {
       expect(formatWeightedRisk(3.45)).toBe('3.5');
-      expect(formatWeightedRisk(5)).toBe('5.0');
+      expect(formatWeightedRisk(5)).toBe('5');
+      expect(formatWeightedRisk(3.0)).toBe('3');
+      expect(formatWeightedRisk(2.75)).toBe('2.8');
     });
 
     it('should handle undefined and null values', () => {
