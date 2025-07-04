@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import FilterDropdown from '../components/ui/dropdowns/FilterDropdown';
+import StandardTable, { ColumnConfig } from '../components/StandardTable';
 
 interface Portfolio {
   id: number;
@@ -75,10 +76,6 @@ const FundDetails: React.FC = () => {
   const [formData, setFormData] = useState<Partial<Fund>>({});
   const [originalFormData, setOriginalFormData] = useState<Partial<Fund>>({});
   const [portfolioName, setPortfolioName] = useState<string>('');
-  
-  // Filter states
-  const [selectedOwners, setSelectedOwners] = useState<(string | number)[]>([]);
-  const [selectedTypes, setSelectedTypes] = useState<(string | number)[]>([]);
 
   const fetchFundDetails = async () => {
     try {
@@ -178,7 +175,7 @@ const FundDetails: React.FC = () => {
           product_status: item.status,
           product_owner_name: item.product_owner_name || 'No Owner',
           portfolio_name: item.portfolio_name,
-          weighting: item.weighting || 0,
+          weighting: item.target_weighting || 0,
           start_date: item.start_date,
         }));
         setProductsWithOwners(transformedData);
@@ -202,19 +199,52 @@ const FundDetails: React.FC = () => {
     }
   }, [id, portfolios]);
 
-  // Generate filter options
-  const ownerOptions = Array.from(new Set(productsWithOwners.map(p => p.product_owner_name)))
-    .map(owner => ({ value: owner, label: owner }));
-  
-  const typeOptions = Array.from(new Set(productsWithOwners.map(p => p.product_type)))
-    .map(type => ({ value: type, label: type }));
-
-  // Filter products based on selected filters
-  const filteredProducts = productsWithOwners.filter(product => {
-    const ownerMatch = selectedOwners.length === 0 || selectedOwners.includes(product.product_owner_name);
-    const typeMatch = selectedTypes.length === 0 || selectedTypes.includes(product.product_type);
-    return ownerMatch && typeMatch;
-  });
+  // Column configuration for StandardTable
+  const columns: ColumnConfig[] = [
+    {
+      key: 'product_name',
+      label: 'Product',
+      dataType: 'text',
+      alignment: 'left',
+      control: 'sort'
+    },
+    {
+      key: 'product_owner_name',
+      label: 'Owners',
+      dataType: 'text',
+      alignment: 'left',
+      control: 'filter'
+    },
+    {
+      key: 'product_type',
+      label: 'Type',
+      dataType: 'category',
+      alignment: 'left',
+      control: 'filter'
+    },
+    {
+      key: 'weighting',
+      label: 'Weighting',
+      dataType: 'percentage',
+      alignment: 'left',
+      control: 'sort',
+      format: (value) => `${value}%`
+    },
+    {
+      key: 'start_date',
+      label: 'Start Date',
+      dataType: 'date',
+      alignment: 'left',
+      control: 'sort'
+    },
+    {
+      key: 'product_status',
+      label: 'Status',
+      dataType: 'category',
+      alignment: 'left',
+      control: 'filter'
+    }
+  ];
 
   useEffect(() => {
     if (fund && portfolios.length > 0 && fund.portfolio_id) {
@@ -335,7 +365,7 @@ const FundDetails: React.FC = () => {
       }));
   };
 
-  // CSV Export function
+  // CSV Export function - exports all data (StandardTable filtering is for display only)
   const exportToCSV = () => {
     if (productsWithOwners.length === 0) {
       alert('No data to export');
@@ -354,7 +384,7 @@ const FundDetails: React.FC = () => {
     ];
 
     // Convert data to CSV format
-    const csvData = filteredProducts.map(product => [
+    const csvData = productsWithOwners.map(product => [
       product.product_name,
       product.product_owner_name,
       product.portfolio_name,
@@ -673,7 +703,7 @@ const FundDetails: React.FC = () => {
           <div className="bg-white shadow-sm rounded-lg border border-gray-100">
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-lg font-semibold text-gray-900">Products Using This Fund</h2>
-              {filteredProducts.length > 0 && (
+              {productsWithOwners.length > 0 && (
                 <button
                   onClick={exportToCSV}
                   className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
@@ -685,97 +715,19 @@ const FundDetails: React.FC = () => {
                 </button>
               )}
             </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      Product
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      <div className="flex flex-col gap-2">
-                        <span>Owners</span>
-                        <FilterDropdown
-                          id="owner-filter"
-                          options={ownerOptions}
-                          value={selectedOwners}
-                          onChange={setSelectedOwners}
-                          placeholder="All Owners"
-                          className="w-full"
-                        />
-                      </div>
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      <div className="flex flex-col gap-2">
-                        <span>Type</span>
-                        <FilterDropdown
-                          id="type-filter"
-                          options={typeOptions}
-                          value={selectedTypes}
-                          onChange={setSelectedTypes}
-                          placeholder="All Types"
-                          className="w-full"
-                        />
-                      </div>
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      Weighting
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      Start Date
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredProducts.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="p-6">
-                        <div className="text-center text-sm text-gray-500 italic">
-                          {productsWithOwners.length === 0 
-                            ? "No products are currently using this fund"
-                            : "No products match the selected filters"
-                          }
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredProducts.map((product) => (
-                      <tr key={product.product_id} className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100">
-                        <td className="px-6 py-3 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{product.product_name}</div>
-                        </td>
-                        <td className="px-6 py-3 whitespace-nowrap">
-                          <span className="text-sm text-gray-600 font-sans">{product.product_owner_name}</span>
-                        </td>
-                        <td className="px-6 py-3 whitespace-nowrap">
-                          <span className="text-sm text-gray-600 font-sans">{product.product_type}</span>
-                        </td>
-                        <td className="px-6 py-3 whitespace-nowrap">
-                          <div className="text-sm text-gray-600 font-sans">{product.weighting}%</div>
-                        </td>
-                        <td className="px-6 py-3 whitespace-nowrap">
-                          <div className="text-sm text-gray-600 font-sans">
-                            {new Date(product.start_date).toLocaleDateString()}
-                          </div>
-                        </td>
-                        <td className="px-6 py-3 whitespace-nowrap">
-                          <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            product.product_status === 'active' 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {product.product_status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+            {productsWithOwners.length === 0 ? (
+              <div className="p-6">
+                <div className="text-center text-sm text-gray-500 italic">
+                  No products are currently using this fund
+                </div>
+              </div>
+            ) : (
+              <StandardTable
+                data={productsWithOwners}
+                columns={columns}
+                className="cursor-pointer"
+              />
+            )}
           </div>
 
           {/* Created At Info */}

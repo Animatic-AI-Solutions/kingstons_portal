@@ -13,17 +13,14 @@ import {
   getFundRiskLevel 
 } from '../utils/definitionsShared';
 import api from '../services/api';
+import StandardTable, { ColumnConfig } from '../components/StandardTable';
 
 const DefinitionsFunds: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   
-  // State management
+  // State management - removed manual sorting/filtering state
   const [searchQuery, setSearchQuery] = useState('');
-  const [fundSortField, setFundSortField] = useState<FundSortField>('fund_name');
-  const [fundSortOrder, setFundSortOrder] = useState<SortOrder>('asc');
-  const [fundStatusFilters, setFundStatusFilters] = useState<(string | number)[]>([]);
-  const [riskLevelFilters, setRiskLevelFilters] = useState<(string | number)[]>([]);
 
   // Data fetching
   const fetchFunds = useCallback(async () => {
@@ -37,111 +34,66 @@ const DefinitionsFunds: React.FC = () => {
     error: fundsError 
   } = useEntityData<Fund>(fetchFunds, []);
 
-  // Filter options
-  const fundStatusOptions: Array<{ value: string | number; label: string }> = useMemo(() => [
-    { value: 'active', label: 'Active' },
-    { value: 'inactive', label: 'Inactive' }
-  ], []);
-
-  const riskFactorFilterOptions = useMemo(() => {
-    const uniqueRiskFactors = new Set<number | string>();
-    funds.forEach(fund => {
-      if (fund.risk_factor !== null && fund.risk_factor !== undefined) {
-        uniqueRiskFactors.add(fund.risk_factor);
-      } else {
-        uniqueRiskFactors.add('Unrated');
-      }
-    });
-    
-    const sortedRiskFactors = Array.from(uniqueRiskFactors)
-      .filter(factor => typeof factor === 'number')
-      .sort((a, b) => (a as number) - (b as number));
-    
-    const options: Array<{ value: string | number; label: string }> = sortedRiskFactors.map(factor => ({
-      value: factor,
-      label: `${factor}`
-    }));
-    
-    if (uniqueRiskFactors.has('Unrated')) {
-      options.push({ value: 'Unrated', label: 'Unrated' });
-    }
-    
-    return options;
-  }, [funds]);
-
   // Event handlers
-  const handleItemClick = useCallback((fundId: number) => {
-    navigate(`/definitions/funds/${fundId}`);
+  const handleItemClick = useCallback((fund: Fund) => {
+    navigate(`/definitions/funds/${fund.id}`);
   }, [navigate]);
 
   const handleAddNew = useCallback(() => {
     navigate('/definitions/funds/add');
   }, [navigate]);
 
-  const handleFundSortChange = useCallback((field: FundSortField) => {
-    if (field === fundSortField) {
-      setFundSortOrder(fundSortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setFundSortField(field);
-      setFundSortOrder('asc');
-    }
-  }, [fundSortField, fundSortOrder]);
-
-  // Filter and sort funds
-  const filteredAndSortedFunds = useMemo(() => {
-    return funds
-      .filter(fund => 
+  // Apply search filtering only - StandardTable will handle column filtering and sorting
+  const searchFilteredFunds = useMemo(() => {
+    return funds.filter(fund => 
         fund.status === 'active' &&
         ((fund.fund_name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
          (fund.isin_number?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
          (fund.provider_name && (fund.provider_name.toLowerCase() || '').includes(searchQuery.toLowerCase())))
-      )
-      .filter(fund => 
-        fundStatusFilters.length === 0 || 
-        (fund.status && fundStatusFilters.includes(fund.status))  
-      )
-      .filter(fund => {
-        if (riskLevelFilters.length === 0) return true;
-        
-        const unratedSelected = riskLevelFilters.includes('Unrated');
-        if (unratedSelected && (fund.risk_factor === null || fund.risk_factor === undefined)) {
-          return true;
-        }
-        
-        if (fund.risk_factor !== null && fund.risk_factor !== undefined) {
-          return riskLevelFilters.includes(fund.risk_factor);
-        }
-        
-        return false;
-      })
-      .sort((a, b) => {
-        if (fundSortField === 'risk_factor' || fundSortField === 'fund_cost') {
-          const aField = fundSortField === 'risk_factor' ? (a.risk_factor || 0) : (a.fund_cost || 0);
-          const bField = fundSortField === 'risk_factor' ? (b.risk_factor || 0) : (b.fund_cost || 0);
-          
-          return fundSortOrder === 'asc' 
-            ? aField - bField
-            : bField - aField;
-        } else if (fundSortField === 'fund_name' || fundSortField === 'isin_number') {
-          const aValue = fundSortField === 'fund_name' 
-            ? (a.fund_name || '').toLowerCase() 
-            : (a.isin_number || '').toLowerCase();
-          const bValue = fundSortField === 'fund_name' 
-            ? (b.fund_name || '').toLowerCase() 
-            : (b.isin_number || '').toLowerCase();
-            
-          return fundSortOrder === 'asc' 
-            ? aValue.localeCompare(bValue)
-            : bValue.localeCompare(aValue);
-        } else {
-          const aValue = String(a.created_at).toLowerCase();
-          const bValue = String(b.created_at).toLowerCase();
-          return fundSortOrder === 'asc' 
-            ? aValue.localeCompare(bValue)
-            : bValue.localeCompare(aValue);
-        }
-      });
-  }, [funds, searchQuery, fundSortField, fundSortOrder, fundStatusFilters, riskLevelFilters]);
+    );
+  }, [funds, searchQuery]);
+
+  // Column configuration for StandardTable
+  const columns: ColumnConfig[] = [
+    {
+      key: 'fund_name',
+      label: 'Fund Name',
+      dataType: 'text',
+      alignment: 'left',
+      control: 'sort'
+    },
+    {
+      key: 'isin_number',
+      label: 'ISIN',
+      dataType: 'text',
+      alignment: 'left',
+      control: 'sort',
+      format: (value) => value || 'N/A'
+    },
+    {
+      key: 'risk_factor',
+      label: 'Risk Factor',
+      dataType: 'number',
+      alignment: 'left',
+      control: 'filter',
+      format: (value) => value !== null ? value.toString() : 'N/A'
+    },
+    {
+      key: 'fund_cost',
+      label: 'Fund Cost',
+      dataType: 'percentage',
+      alignment: 'left',
+      control: 'sort',
+      format: (value) => value !== null ? `${value.toFixed(1)}%` : 'N/A'
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      dataType: 'category',
+      alignment: 'left',
+      control: 'filter'
+    }
+  ];
 
   if (!user) return null;
 
@@ -194,129 +146,17 @@ const DefinitionsFunds: React.FC = () => {
           <div className="p-6">
             <ErrorDisplay message={fundsError} />
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th 
-                    className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5 cursor-pointer hover:bg-blue-50"
-                    onClick={() => handleFundSortChange('fund_name')}
-                  >
-                    <div className="flex items-center">
-                      <span>Fund Name</span>
-                      {fundSortField === 'fund_name' && (
-                        <span className="ml-1">
-                          {fundSortOrder === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5 cursor-pointer hover:bg-blue-50"
-                    onClick={() => handleFundSortChange('isin_number')}
-                  >
-                    <div className="flex items-center">
-                      <span>ISIN</span>
-                      {fundSortField === 'isin_number' && (
-                        <span className="ml-1">
-                          {fundSortOrder === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5">
-                    <div className="flex flex-col items-start gap-1">
-                      <div 
-                        className="flex items-center cursor-pointer hover:bg-blue-50"
-                        onClick={() => handleFundSortChange('risk_factor')}
-                      >
-                        <span>Risk Factor</span>
-                        {fundSortField === 'risk_factor' && (
-                          <span className="ml-1">
-                            {fundSortOrder === 'asc' ? '↑' : '↓'}
-                          </span>
-                        )}
-                      </div>
-                      <FilterDropdown
-                        id="risk-level-filter"
-                        options={riskFactorFilterOptions} 
-                        value={riskLevelFilters}
-                        onChange={setRiskLevelFilters}
-                        placeholder="All Risk Factors" 
-                        className="mt-1"
-                      />
-                    </div>
-                  </th>
-                  <th 
-                    className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5 cursor-pointer hover:bg-blue-50"
-                    onClick={() => handleFundSortChange('fund_cost')}
-                  >
-                    <div className="flex items-center">
-                      <span>Fund Cost</span>
-                      {fundSortField === 'fund_cost' && (
-                        <span className="ml-1">
-                          {fundSortOrder === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/5">
-                    <div className="flex flex-col items-start gap-1">
-                      <span>Status</span>
-                      <FilterDropdown
-                        id="fund-status-filter"
-                        options={fundStatusOptions}
-                        value={fundStatusFilters}
-                        onChange={setFundStatusFilters}
-                        placeholder="All Statuses"
-                        className="mt-1"
-                      />
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredAndSortedFunds.length > 0 ? (
-                  filteredAndSortedFunds.map(fund => (
-                    <tr 
-                      key={fund.id} 
-                      className="hover:bg-blue-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
-                      onClick={() => handleItemClick(fund.id)}
-                    >
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{fund.fund_name}</div>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm text-gray-600 font-sans">{fund.isin_number || 'N/A'}</div>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm text-gray-600 font-sans">{fund.risk_factor !== null ? fund.risk_factor : 'N/A'}</div>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm text-gray-600 font-sans">
-                          {fund.fund_cost !== null ? `${fund.fund_cost.toFixed(1)}%` : 'N/A'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          fund.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {fund.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="p-6">
+        ) : searchFilteredFunds.length === 0 ? (
+          <div className="p-6">
                       <EmptyState message="No funds found" />
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
           </div>
+        ) : (
+          <StandardTable
+            data={searchFilteredFunds}
+            columns={columns}
+            className="cursor-pointer"
+            onRowClick={handleItemClick}
+          />
         )}
       </div>
     </div>

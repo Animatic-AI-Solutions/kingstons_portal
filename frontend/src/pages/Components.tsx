@@ -26,6 +26,7 @@ import {
 } from '../components/ui';
 import TableFilter from '../components/ui/table-controls/TableFilter';
 import TableSort from '../components/ui/table-controls/TableSort';
+import StandardTable from '../components/StandardTable';
 import { 
   UserIcon, 
   EnvelopeIcon, 
@@ -172,6 +173,110 @@ const Components: React.FC = () => {
     { id: 3, client: 'Tech Solutions Inc', value: 156750, status: 'active', lastUpdated: '2024-01-18' },
     { id: 4, client: 'Financial Holdings', value: 45200, status: 'completed', lastUpdated: '2024-01-10' },
     { id: 5, client: 'Property Partners', value: 203400, status: 'on-hold', lastUpdated: '2024-01-14' }
+  ], []);
+
+  // StandardTable mock data - comprehensive test data
+  const standardTableData = useMemo(() => [
+    {
+      clientName: "Smith Family Trust",
+      type: "Family",
+      status: "Active",
+      aum: 2450000,
+      fundCount: 5,
+      lastReview: "2024-01-15",
+      riskLevel: "Conservative",
+      advisor: "John Davidson",
+      performanceYTD: 0.125
+    },
+    {
+      clientName: "Global Tech Industries Ltd",
+      type: "Corporate",
+      status: "Active",
+      aum: 5200000,
+      fundCount: 12,
+      lastReview: "2024-01-20",
+      riskLevel: "Aggressive",
+      advisor: "Sarah Mitchell",
+      performanceYTD: 0.186
+    },
+    {
+      clientName: "Johnson Pension Scheme",
+      type: "Pension",
+      status: "Pending",
+      aum: 1850000,
+      fundCount: 8,
+      lastReview: "2024-01-10",
+      riskLevel: "Moderate",
+      advisor: "David Wilson",
+      performanceYTD: 0.092
+    },
+    {
+      clientName: "Williams Investment Trust",
+      type: "Trust",
+      status: "Active",
+      aum: 3750000,
+      fundCount: 7,
+      lastReview: "2024-01-25",
+      riskLevel: "Balanced",
+      advisor: "Emma Thompson",
+      performanceYTD: 0.154
+    },
+    {
+      clientName: "Brown Holdings Ltd",
+      type: "Corporate",
+      status: "Inactive",
+      aum: 890000,
+      fundCount: 3,
+      lastReview: "2023-12-15",
+      riskLevel: "Conservative",
+      advisor: "Michael Clark",
+      performanceYTD: 0.067
+    },
+    {
+      clientName: "Davis Charitable Foundation",
+      type: "Foundation",
+      status: "Active",
+      aum: 6200000,
+      fundCount: 15,
+      lastReview: "2024-01-22",
+      riskLevel: "Balanced",
+      advisor: "Laura Anderson",
+      performanceYTD: 0.143
+    },
+    {
+      clientName: "Miller Retirement Fund",
+      type: "Pension",
+      status: "Active",
+      aum: 4100000,
+      fundCount: 9,
+      lastReview: "2024-01-18",
+      riskLevel: "Moderate",
+      advisor: "Robert Taylor",
+      performanceYTD: 0.118
+    },
+    {
+      clientName: "Wilson Family Office",
+      type: "Family",
+      status: "Pending",
+      aum: 8500000,
+      fundCount: 20,
+      lastReview: "2024-01-12",
+      riskLevel: "Aggressive",
+      advisor: "Jennifer White",
+      performanceYTD: 0.201
+    }
+  ], []);
+
+  const standardTableColumns = useMemo(() => [
+    { key: 'clientName', label: 'Client Name', dataType: 'text' as const, control: 'auto' as const },
+    { key: 'type', label: 'Type', dataType: 'category' as const, control: 'auto' as const },
+    { key: 'status', label: 'Status', dataType: 'category' as const, control: 'auto' as const },
+    { key: 'aum', label: 'AUM', dataType: 'currency' as const, control: 'auto' as const },
+    { key: 'fundCount', label: 'Funds', dataType: 'number' as const, control: 'auto' as const },
+    { key: 'lastReview', label: 'Last Review', dataType: 'date' as const, control: 'auto' as const },
+    { key: 'riskLevel', label: 'Risk Level', dataType: 'category' as const, control: 'auto' as const },
+    { key: 'advisor', label: 'Advisor', dataType: 'text' as const, control: 'auto' as const },
+    { key: 'performanceYTD', label: 'YTD Performance', dataType: 'percentage' as const, control: 'auto' as const }
   ], []);
 
   // Memoized callback functions to prevent re-renders
@@ -1237,6 +1342,142 @@ const Components: React.FC = () => {
             </div>
           </div>
         </motion.div>
+
+        {/* StandardTable Demo */}
+        <ComponentSection
+          title="StandardTable - Intelligent Adaptive Table"
+          description="Auto-detecting table component that intelligently chooses filters or sorts based on data types with responsive behavior"
+        >
+          <div className="col-span-full">
+            <ExampleCard
+              title="Smart Column Detection"
+              description="Automatically detects data types and applies appropriate controls (filter for categories, sort for text/numbers/dates)"
+            >
+              <div className="space-y-4">
+                <StandardTable
+                  data={standardTableData}
+                  columns={standardTableColumns}
+                  className="border border-gray-200 rounded-lg"
+                />
+                
+                <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <h5 className="text-sm font-medium text-blue-900 mb-2">Auto-Detection Features:</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm text-blue-800">
+                    <div>
+                      <strong>Client Name:</strong> Text → Sort (A-Z)
+                    </div>
+                    <div>
+                      <strong>Type:</strong> Category → Filter (Multi-select)
+                    </div>
+                    <div>
+                      <strong>Status:</strong> Category → Filter (Multi-select)
+                    </div>
+                    <div>
+                      <strong>AUM:</strong> Currency → Sort (Low-High)
+                    </div>
+                    <div>
+                      <strong>Fund Count:</strong> Number → Sort (Numerical)
+                    </div>
+                    <div>
+                      <strong>Last Review:</strong> Date → Sort (Date)
+                    </div>
+                    <div>
+                      <strong>Risk Level:</strong> Category → Filter (Multi-select)
+                    </div>
+                    <div>
+                      <strong>Advisor:</strong> Text → Sort (A-Z)
+                    </div>
+                    <div>
+                      <strong>YTD Performance:</strong> Percentage → Sort (Numerical)
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </ExampleCard>
+          </div>
+
+          <div className="col-span-full">
+            <ExampleCard
+              title="Column Alignment & Layout"
+              description="First column left-aligned, all others right-aligned with even spacing and adaptive row heights"
+            >
+              <div className="space-y-4">
+                <div className="text-sm text-gray-600 p-3 bg-gray-50 rounded">
+                  <strong>Layout Features:</strong>
+                  <ul className="mt-2 space-y-1 ml-4 list-disc">
+                    <li>First column (Client Name) is left-aligned</li>
+                    <li>All other columns are right-aligned</li>
+                    <li>Controls positioned on right side of column headers</li>
+                    <li>Even column spacing with responsive font sizing</li>
+                    <li>Adaptive row heights based on content length</li>
+                  </ul>
+                </div>
+              </div>
+            </ExampleCard>
+          </div>
+
+          <div className="col-span-full">
+            <ExampleCard
+              title="Responsive Behavior"
+              description="Progressive compression with font and padding adjustments before horizontal scroll"
+            >
+              <div className="space-y-4">
+                <div className="text-sm text-gray-600 p-3 bg-gray-50 rounded">
+                  <strong>Responsive Strategy:</strong>
+                  <ul className="mt-2 space-y-1 ml-4 list-disc">
+                    <li>Large screens: 14px font, 16px padding</li>
+                    <li>Medium compression: 13px font, 12px padding</li>
+                    <li>Small compression: 12px font, 8px padding</li>
+                    <li>Horizontal scroll only when absolutely necessary</li>
+                    <li>Maintains readability at all screen sizes</li>
+                  </ul>
+                </div>
+                
+                <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
+                  <p className="text-sm text-yellow-800">
+                    <strong>Try resizing your browser window</strong> to see the responsive behavior in action!
+                  </p>
+                </div>
+              </div>
+            </ExampleCard>
+          </div>
+
+          <div className="col-span-full">
+            <ExampleCard
+              title="Data Type Support"
+              description="Handles all common data types with appropriate formatting and intelligent control selection"
+            >
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                  <div className="p-3 bg-green-50 border border-green-200 rounded">
+                    <strong className="text-green-800">Currency Data</strong>
+                    <p className="text-green-700 mt-1">Auto-formats as £2,450,000 with numerical sorting</p>
+                  </div>
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+                    <strong className="text-blue-800">Percentage Data</strong>
+                    <p className="text-blue-700 mt-1">Displays as 12.5% with numerical sorting</p>
+                  </div>
+                  <div className="p-3 bg-purple-50 border border-purple-200 rounded">
+                    <strong className="text-purple-800">Date Data</strong>
+                    <p className="text-purple-700 mt-1">Formats as DD/MM/YYYY with date sorting</p>
+                  </div>
+                  <div className="p-3 bg-orange-50 border border-orange-200 rounded">
+                    <strong className="text-orange-800">Category Data</strong>
+                    <p className="text-orange-700 mt-1">Multi-select filters for discrete values</p>
+                  </div>
+                  <div className="p-3 bg-gray-50 border border-gray-200 rounded">
+                    <strong className="text-gray-800">Text Data</strong>
+                    <p className="text-gray-700 mt-1">Alphabetical sorting for names/descriptions</p>
+                  </div>
+                  <div className="p-3 bg-red-50 border border-red-200 rounded">
+                    <strong className="text-red-800">Number Data</strong>
+                    <p className="text-red-700 mt-1">Thousand separators with numerical sorting</p>
+                  </div>
+                </div>
+              </div>
+            </ExampleCard>
+          </div>
+        </ComponentSection>
 
         {/* Size Examples */}
         <ComponentSection
