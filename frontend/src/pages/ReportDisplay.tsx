@@ -10,85 +10,28 @@ import { useReactToPrint } from 'react-to-print';
 import { formatDateFallback, formatCurrencyFallback, formatPercentageFallback } from '../components/reports/shared/ReportFormatters';
 import api from '../services/api';
 
-// Interfaces for data types (copied from ReportGenerator)
-interface ProductPeriodSummary {
-  id: number;
-  product_name: string;
-  product_type?: string;
-  product_owner_name?: string;
-  start_date: string | null;
-  total_investment: number;
-  total_regular_investment: number;
-  total_tax_uplift: number;
-  total_product_switch_in: number;
-  total_product_switch_out: number;
-  total_fund_switch_in: number;
-  total_fund_switch_out: number;
-  total_withdrawal: number;
-  net_flow: number;
-  current_valuation: number;
-  irr: number | null;
-  provider_name?: string;
-  provider_theme_color?: string;
-  funds?: FundSummary[];
-  weighted_risk?: number;
-  status?: string;
-  plan_number?: string;
-}
-
-interface FundSummary {
-  id: number;
-  available_funds_id: number;
-  fund_name: string;
-  total_investment: number;
-  total_regular_investment: number;
-  total_tax_uplift: number;
-  total_product_switch_in: number;
-  total_product_switch_out: number;
-  total_fund_switch_in: number;
-  total_fund_switch_out: number;
-  total_withdrawal: number;
-  net_flow: number;
-  current_valuation: number;
-  irr: number | null;
-  isin_number?: string;
-  status: string;
-  isVirtual?: boolean;
-  inactiveFundCount?: number;
-  risk_factor?: number;
-  inactiveFunds?: FundSummary[];
-  historical_irr?: number[];
-  historical_dates?: string[];
-}
-
-interface SelectedIRRDate {
-  date: string; // YYYY-MM-DD format
-  label: string; // "Jan 2024" format
-  productIds: number[]; // Which products have data for this date
-}
-
-interface ProductIRRSelections {
-  [productId: number]: string[]; // Array of selected date strings for each product
-}
-
-interface ReportData {
-  productSummaries: ProductPeriodSummary[];
-  totalIRR: number | null;
-  totalValuation: number | null;
-  earliestTransactionDate: string | null;
-  selectedValuationDate: string | null;
-  productOwnerNames: string[];
-  timePeriod: string;
-  // Report settings
-  truncateAmounts?: boolean;
-  roundIrrToOne?: boolean;
-  formatWithdrawalsAsNegative?: boolean;
-  showInactiveProducts: boolean;
-  showPreviousFunds: boolean;
-  showInactiveProductDetails?: number[]; // Array of product IDs that should show detailed cards
-  selectedHistoricalIRRDates?: ProductIRRSelections; // Per-product selected dates
-  availableHistoricalIRRDates?: SelectedIRRDate[]; // All available dates with metadata
-}
+// Import shared types and utilities
+import type {
+  ProductPeriodSummary,
+  FundSummary,
+  SelectedIRRDate,
+  ProductIRRSelections,
+  ReportData
+} from '../types/reportTypes';
+import {
+  formatCurrencyWithTruncation,
+  formatCurrencyWithZeroToggle,
+  formatIrrWithPrecision,
+  formatWithdrawalAmount,
+  formatRiskFallback,
+  formatFundRisk,
+  formatWeightedRisk,
+  formatCurrencyWithVisualSigning,
+  isOutflowActivity,
+  isInflowActivity,
+  type ActivityType
+} from '../utils/reportFormatters';
+import { normalizeProductType, PRODUCT_TYPE_ORDER, REPORT_TABS, type ReportTab } from '../utils/reportConstants';
 
 const ReportDisplay: React.FC = () => {
   const location = useLocation();
@@ -97,7 +40,7 @@ const ReportDisplay: React.FC = () => {
   
   // Create IRR data service instance
   const irrDataService = useMemo(() => createIRRDataService(api), []);
-  const [activeTab, setActiveTab] = useState<'summary' | 'irr-history'>('summary');
+  const [activeTab, setActiveTab] = useState<ReportTab>(REPORT_TABS.SUMMARY);
   const [irrHistoryData, setIrrHistoryData] = useState<any>(null);
   const [loadingIrrHistory, setLoadingIrrHistory] = useState(false);
 
@@ -129,39 +72,6 @@ const ReportDisplay: React.FC = () => {
 
   // Function to organize products by type in the specified order
   const organizeProductsByType = (products: ProductPeriodSummary[]) => {
-    const productTypeOrder = [
-      'ISAs',
-      'GIAs', 
-      'Onshore Bonds',
-      'Offshore Bonds',
-      'Pensions',
-      'Other'
-    ];
-
-    // Normalize product type for consistent comparison
-    const normalizeProductType = (type: string | undefined): string => {
-      if (!type) return 'Other';
-      
-      const normalized = type.toLowerCase().trim();
-      
-      // ISA variations
-      if (normalized.includes('isa')) return 'ISAs';
-      
-      // GIA variations
-      if (normalized.includes('gia') || normalized === 'general investment account') return 'GIAs';
-      
-      // Bond variations
-      if (normalized.includes('onshore') && normalized.includes('bond')) return 'Onshore Bonds';
-      if (normalized.includes('offshore') && normalized.includes('bond')) return 'Offshore Bonds';
-      if (normalized.includes('bond') && !normalized.includes('onshore') && !normalized.includes('offshore')) {
-        return 'Onshore Bonds'; // Default bonds to onshore
-      }
-      
-      // Pension variations
-      if (normalized.includes('pension') || normalized.includes('sipp') || normalized.includes('ssas')) return 'Pensions';
-      
-      return 'Other';
-    };
 
     // Group products by normalized type
     const groupedProducts: { [key: string]: ProductPeriodSummary[] } = {};
@@ -208,7 +118,7 @@ const ReportDisplay: React.FC = () => {
     // Return products in the specified order
     const orderedProducts: ProductPeriodSummary[] = [];
     
-    productTypeOrder.forEach(type => {
+    PRODUCT_TYPE_ORDER.forEach(type => {
       if (groupedProducts[type]) {
         orderedProducts.push(...groupedProducts[type]);
       }
@@ -947,7 +857,7 @@ const ReportDisplay: React.FC = () => {
     }
   };
 
-  const handleTabChange = (tab: 'summary' | 'irr-history') => {
+  const handleTabChange = (tab: ReportTab) => {
     setActiveTab(tab);
     // IRR history is now fetched automatically on page load, no need for conditional fetching
   };
@@ -989,168 +899,22 @@ const ReportDisplay: React.FC = () => {
     );
   }
 
-  // Formatting functions based on report settings
-  const formatCurrencyWithTruncation = (amount: number | null | undefined): string => {
-    if (amount === null || amount === undefined) return '£0';
-    
-    // Always round to nearest whole number
-    const roundedAmount = Math.round(amount);
-    
-    // Handle negative values to display as -£XXXX
-    if (roundedAmount < 0) {
-      return `-£${Math.abs(roundedAmount).toLocaleString()}`;
-    }
-    
-    return `£${roundedAmount.toLocaleString()}`;
+  // Wrapper function for formatCurrencyWithZeroToggle that uses component state
+  const formatCurrencyWithZeroToggleWrapper = (amount: number | null | undefined): string => {
+    return formatCurrencyWithZeroToggle(amount, hideZeros);
   };
 
-  const formatCurrencyWithZeroToggle = (amount: number | null | undefined): string => {
-    if (amount === null || amount === undefined) return hideZeros ? '-' : '£0';
-    
-    const roundedAmount = Math.round(amount);
-    if (hideZeros && roundedAmount === 0) return '-';
-    
-    // Handle negative values to display as -£XXXX
-    if (roundedAmount < 0) {
-      return `-£${Math.abs(roundedAmount).toLocaleString()}`;
-    }
-    
-    return `£${roundedAmount.toLocaleString()}`;
+  // Wrapper function for formatWithdrawalAmount that uses component state
+  const formatWithdrawalAmountWrapper = (amount: number | null | undefined): string => {
+    return formatWithdrawalAmount(amount, reportData?.formatWithdrawalsAsNegative || false);
   };
 
-  const formatIrrWithPrecision = (irr: number | null | undefined): string => {
-    if (irr === null || irr === undefined) return '-';
-    
-    // Always round to 1 decimal place for product/total IRRs
-      return `${irr.toFixed(1)}%`;
-  };
-
-  const formatWithdrawalAmount = (amount: number | null | undefined): string => {
-    if (amount === null || amount === undefined) return '-';
-    if (amount === 0) return formatCurrencyWithTruncation(amount);
-    const displayAmount = reportData.formatWithdrawalsAsNegative ? -Math.abs(amount) : amount;
-    return formatCurrencyWithTruncation(displayAmount);
-  };
-
-  const formatRiskFallback = (risk: number | undefined): string => {
-    if (risk === undefined) return '-';
-    
-    // Always round to 1 decimal place
-    return risk.toFixed(1);
-  };
-
-  // Individual fund risk formatting - whole numbers only (1-7)
-  const formatFundRisk = (risk: number | undefined): string => {
-    if (risk === undefined || risk === null) return '-';
-    
-    // Round to whole number (no decimal places)
-    return Math.round(risk).toString();
-  };
-
-  // Product and portfolio risk formatting - 1 decimal place
-  const formatWeightedRisk = (risk: number | undefined): string => {
-    if (risk === undefined || risk === null) return '-';
-    // Round to 1 decimal place for product/portfolio weighted risk
-    return risk.toFixed(1);
-  };
-
-  // Visual signing helper functions
-  const isOutflowActivity = (activityType: 'investment' | 'tax_uplift' | 'product_switch_in' | 'product_switch_out' | 'withdrawal' | 'fund_switch'): boolean => {
-    return activityType === 'withdrawal' || activityType === 'product_switch_out';
-  };
-
-  const isInflowActivity = (activityType: 'investment' | 'tax_uplift' | 'product_switch_in' | 'product_switch_out' | 'withdrawal' | 'fund_switch'): boolean => {
-return activityType === 'investment' || activityType === 'tax_uplift' || activityType === 'product_switch_in';
-};
-
-  const formatCurrencyWithVisualSigning = (
-amount: number | null | undefined, 
-activityType: 'investment' | 'tax_uplift' | 'product_switch_in' | 'product_switch_out' | 'withdrawal' | 'fund_switch'
-): { value: string; className: string } => {
-    if (!visualSigning) {
-      // In normal view, show outflows as negative values
-      if (amount === null || amount === undefined) {
-      return {
-          value: hideZeros ? '-' : '£0',
-          className: ''
-        };
-      }
-
-      const roundedAmount = Math.round(amount);
-      if (hideZeros && roundedAmount === 0) {
-        return {
-          value: '-',
-          className: ''
-        };
-      }
-
-      // For outflows (withdrawals, product switch out, fund switch out) - show as negative
-      if (isOutflowActivity(activityType) || (activityType === 'fund_switch' && roundedAmount < 0)) {
-        return {
-          value: `-£${Math.abs(roundedAmount).toLocaleString()}`,
-          className: ''
-        };
-      }
-
-      // For all other values, show as positive
-      return {
-        value: `£${Math.abs(roundedAmount).toLocaleString()}`,
-        className: ''
-      };
-    }
-
-    if (amount === null || amount === undefined) {
-      return {
-        value: hideZeros ? '-' : '£0',
-        className: ''
-      };
-    }
-
-    const roundedAmount = Math.round(amount);
-    if (hideZeros && roundedAmount === 0) {
-      return {
-        value: '-',
-        className: ''
-      };
-    }
-
-    // If amount is zero, always show black (no color)
-    if (roundedAmount === 0) {
-      return {
-        value: '£0',
-        className: ''
-      };
-    }
-
-    // Special handling for fund switches - show as total activity (neutral black)
-    if (activityType === 'fund_switch') {
-      return {
-        value: `£${Math.abs(roundedAmount).toLocaleString()}`,
-        className: 'text-gray-900'
-      };
-    }
-
-    // For outflows (withdrawals, product switch out) - show as red negative
-    if (isOutflowActivity(activityType)) {
-      return {
-        value: `-£${Math.abs(roundedAmount).toLocaleString()}`,
-        className: 'text-red-600'
-      };
-    }
-
-    // For inflows (investments, gov uplift, product switch in) - show as green positive
-    if (isInflowActivity(activityType)) {
-      return {
-        value: `£${Math.abs(roundedAmount).toLocaleString()}`,
-        className: 'text-green-600'
-      };
-    }
-
-    // Default case
-    return {
-      value: `£${Math.abs(roundedAmount).toLocaleString()}`,
-      className: ''
-    };
+  // Wrapper function for formatCurrencyWithVisualSigning that uses component state
+  const formatCurrencyWithVisualSigningWrapper = (
+    amount: number | null | undefined, 
+    activityType: ActivityType
+  ) => {
+    return formatCurrencyWithVisualSigning(amount, activityType, visualSigning, hideZeros);
   };
 
   const toggleInactiveProductDetails = (productId: number) => {
@@ -1574,9 +1338,9 @@ activityType: 'investment' | 'tax_uplift' | 'product_switch_in' | 'product_switc
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8" aria-label="Tabs">
               <button
-                onClick={() => handleTabChange('summary')}
+                onClick={() => handleTabChange(REPORT_TABS.SUMMARY)}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'summary'
+                  activeTab === REPORT_TABS.SUMMARY
                     ? 'border-primary-500 text-primary-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
@@ -1584,9 +1348,9 @@ activityType: 'investment' | 'tax_uplift' | 'product_switch_in' | 'product_switc
                 Investment Summary
               </button>
               <button
-                onClick={() => handleTabChange('irr-history')}
+                onClick={() => handleTabChange(REPORT_TABS.IRR_HISTORY)}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'irr-history'
+                  activeTab === REPORT_TABS.IRR_HISTORY
                     ? 'border-primary-500 text-primary-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
@@ -1599,7 +1363,7 @@ activityType: 'investment' | 'tax_uplift' | 'product_switch_in' | 'product_switc
 
         {/* Tab Content */}
         {/* Report Summary Section - Always visible in print */}
-        <div className={`${activeTab === 'summary' ? '' : 'hidden'} print:block`}>
+                  <div className={`${activeTab === REPORT_TABS.SUMMARY ? '' : 'hidden'} print:block`}>
           {/* Portfolio Total Average Returns */}
           <div className="mb-6 bg-white shadow-sm rounded-lg border border-gray-200 p-4 product-card print-clean">
                           <h2 className="text-lg font-semibold text-gray-900 mb-3">Investment Performance</h2>
@@ -1751,37 +1515,37 @@ activityType: 'investment' | 'tax_uplift' | 'product_switch_in' | 'product_switc
                             </td>
                             <td className="px-2 py-2 whitespace-nowrap text-xs text-right">
                               {(() => {
-                                const formatted = formatCurrencyWithVisualSigning(product.total_investment + product.total_regular_investment, 'investment');
+                                const formatted = formatCurrencyWithVisualSigningWrapper(product.total_investment + product.total_regular_investment, 'investment');
                                 return <span className={formatted.className}>{formatted.value}</span>;
                               })()}
                             </td>
                             <td className="px-2 py-2 whitespace-nowrap text-xs text-right">
                               {(() => {
-                                const formatted = formatCurrencyWithVisualSigning(product.total_tax_uplift, 'tax_uplift');
+                                const formatted = formatCurrencyWithVisualSigningWrapper(product.total_tax_uplift, 'tax_uplift');
                                 return <span className={formatted.className}>{formatted.value}</span>;
                               })()}
                             </td>
                             <td className="px-2 py-2 whitespace-nowrap text-xs text-right">
                               {(() => {
-                                const formatted = formatCurrencyWithVisualSigning(product.total_product_switch_in, 'product_switch_in');
+                                const formatted = formatCurrencyWithVisualSigningWrapper(product.total_product_switch_in, 'product_switch_in');
                                 return <span className={formatted.className}>{formatted.value}</span>;
                               })()}
                             </td>
                             <td className="px-2 py-2 whitespace-nowrap text-xs text-right">
                               {(() => {
-                                const formatted = formatCurrencyWithVisualSigning(product.total_fund_switch_in + product.total_fund_switch_out, 'fund_switch');
+                                const formatted = formatCurrencyWithVisualSigningWrapper(product.total_fund_switch_in + product.total_fund_switch_out, 'fund_switch');
                                 return <span className={formatted.className}>{formatted.value}</span>;
                               })()}
                             </td>
                             <td className="px-2 py-2 whitespace-nowrap text-xs text-right">
                               {(() => {
-                                const formatted = formatCurrencyWithVisualSigning(product.total_product_switch_out, 'product_switch_out');
+                                const formatted = formatCurrencyWithVisualSigningWrapper(product.total_product_switch_out, 'product_switch_out');
                                 return <span className={formatted.className}>{formatted.value}</span>;
                               })()}
                             </td>
                             <td className="px-2 py-2 whitespace-nowrap text-xs text-right">
                               {(() => {
-                                const formatted = formatCurrencyWithVisualSigning(product.total_withdrawal, 'withdrawal');
+                                const formatted = formatCurrencyWithVisualSigningWrapper(product.total_withdrawal, 'withdrawal');
                                 return <span className={formatted.className}>{formatted.value}</span>;
                               })()}
                             </td>
@@ -1831,7 +1595,7 @@ activityType: 'investment' | 'tax_uplift' | 'product_switch_in' | 'product_switc
                           const totalAmount = reportData.productSummaries.reduce((sum, product) => 
                             sum + product.total_investment + product.total_regular_investment, 0
                           );
-                          const formatted = formatCurrencyWithVisualSigning(totalAmount, 'investment');
+                          const formatted = formatCurrencyWithVisualSigningWrapper(totalAmount, 'investment');
                           return <span className="text-black font-bold">{formatted.value}</span>;
                         })()}
                       </td>
@@ -1840,7 +1604,7 @@ activityType: 'investment' | 'tax_uplift' | 'product_switch_in' | 'product_switc
                           const totalAmount = reportData.productSummaries.reduce((sum, product) => 
                             sum + product.total_tax_uplift, 0
                           );
-                                                      const formatted = formatCurrencyWithVisualSigning(totalAmount, 'tax_uplift');
+                                                      const formatted = formatCurrencyWithVisualSigningWrapper(totalAmount, 'tax_uplift');
                           return <span className="text-black font-bold">{formatted.value}</span>;
                         })()}
                       </td>
@@ -1849,7 +1613,7 @@ activityType: 'investment' | 'tax_uplift' | 'product_switch_in' | 'product_switc
                           const totalAmount = reportData.productSummaries.reduce((sum, product) => 
                             sum + product.total_product_switch_in, 0
                           );
-                          const formatted = formatCurrencyWithVisualSigning(totalAmount, 'product_switch_in');
+                          const formatted = formatCurrencyWithVisualSigningWrapper(totalAmount, 'product_switch_in');
                           return <span className="text-black font-bold">{formatted.value}</span>;
                         })()}
                       </td>
@@ -1858,7 +1622,7 @@ activityType: 'investment' | 'tax_uplift' | 'product_switch_in' | 'product_switc
                           const totalAmount = reportData.productSummaries.reduce((sum, product) => 
                             sum + product.total_fund_switch_in + product.total_fund_switch_out, 0
                           );
-                          const formatted = formatCurrencyWithVisualSigning(totalAmount, 'fund_switch');
+                          const formatted = formatCurrencyWithVisualSigningWrapper(totalAmount, 'fund_switch');
                           return <span className="text-black font-bold">{formatted.value}</span>;
                         })()}
                       </td>
@@ -1867,7 +1631,7 @@ activityType: 'investment' | 'tax_uplift' | 'product_switch_in' | 'product_switc
                           const totalAmount = reportData.productSummaries.reduce((sum, product) => 
                             sum + product.total_product_switch_out, 0
                           );
-                          const formatted = formatCurrencyWithVisualSigning(totalAmount, 'product_switch_out');
+                          const formatted = formatCurrencyWithVisualSigningWrapper(totalAmount, 'product_switch_out');
                           return <span className="text-black font-bold">{formatted.value}</span>;
                         })()}
                       </td>
@@ -1876,7 +1640,7 @@ activityType: 'investment' | 'tax_uplift' | 'product_switch_in' | 'product_switc
                           const totalAmount = reportData.productSummaries.reduce((sum, product) => 
                             sum + product.total_withdrawal, 0
                           );
-                          const formatted = formatCurrencyWithVisualSigning(totalAmount, 'withdrawal');
+                          const formatted = formatCurrencyWithVisualSigningWrapper(totalAmount, 'withdrawal');
                           return <span className="text-black font-bold">{formatted.value}</span>;
                         })()}
                       </td>
@@ -2079,42 +1843,42 @@ activityType: 'investment' | 'tax_uplift' | 'product_switch_in' | 'product_switc
                                   </td>
                                   <td className="px-2 py-2 text-xs text-right">
                                     {(() => {
-                                      const formatted = formatCurrencyWithVisualSigning(fund.total_investment + fund.total_regular_investment, 'investment');
+                                      const formatted = formatCurrencyWithVisualSigningWrapper(fund.total_investment + fund.total_regular_investment, 'investment');
                                       return <span className={formatted.className}>{formatted.value}</span>;
                                     })()}
                                   </td>
                                   <td className="px-2 py-2 text-xs text-right">
                                     {(() => {
-                                      const formatted = formatCurrencyWithVisualSigning(fund.total_tax_uplift, 'tax_uplift');
+                                      const formatted = formatCurrencyWithVisualSigningWrapper(fund.total_tax_uplift, 'tax_uplift');
                                       return <span className={formatted.className}>{formatted.value}</span>;
                                     })()}
                                   </td>
                                   <td className="px-2 py-2 text-xs text-right">
                                     {(() => {
-                                      const formatted = formatCurrencyWithVisualSigning(fund.total_product_switch_in, 'product_switch_in');
+                                      const formatted = formatCurrencyWithVisualSigningWrapper(fund.total_product_switch_in, 'product_switch_in');
                                       return <span className={formatted.className}>{formatted.value}</span>;
                                     })()}
                                   </td>
                                   <td className="px-2 py-2 text-xs text-right">
                                     {(() => {
-                                      const formatted = formatCurrencyWithVisualSigning(fund.total_fund_switch_in + fund.total_fund_switch_out, 'fund_switch');
+                                      const formatted = formatCurrencyWithVisualSigningWrapper(fund.total_fund_switch_in + fund.total_fund_switch_out, 'fund_switch');
                                       return <span className={formatted.className}>{formatted.value}</span>;
                                     })()}
                                   </td>
                                   <td className="px-2 py-2 text-xs text-right">
                                     {(() => {
-                                      const formatted = formatCurrencyWithVisualSigning(fund.total_product_switch_out, 'product_switch_out');
+                                      const formatted = formatCurrencyWithVisualSigningWrapper(fund.total_product_switch_out, 'product_switch_out');
                                       return <span className={formatted.className}>{formatted.value}</span>;
                                     })()}
                                   </td>
                                   <td className="px-2 py-2 text-xs text-right">
                                     {(() => {
-                                      const formatted = formatCurrencyWithVisualSigning(fund.total_withdrawal, 'withdrawal');
+                                      const formatted = formatCurrencyWithVisualSigningWrapper(fund.total_withdrawal, 'withdrawal');
                                       return <span className={formatted.className}>{formatted.value}</span>;
                                     })()}
                                   </td>
                                   <td className="px-2 py-2 text-xs font-semibold text-primary-700 text-right bg-green-50">
-                                    {formatCurrencyWithZeroToggle(fund.current_valuation)}
+                                    {formatCurrencyWithZeroToggleWrapper(fund.current_valuation)}
                                   </td>
                                   <td className="px-2 py-2 text-xs text-right bg-blue-50">
                                     {(() => {
@@ -2123,7 +1887,7 @@ activityType: 'investment' | 'tax_uplift' | 'product_switch_in' | 'product_switc
                                       const profit = gains - costs;
                                       return (
                                         <span className={profit >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
-                                          {formatCurrencyWithZeroToggle(profit)}
+                                          {formatCurrencyWithZeroToggleWrapper(profit)}
                                         </span>
                                       );
                                     })()}
@@ -2160,54 +1924,54 @@ activityType: 'investment' | 'tax_uplift' | 'product_switch_in' | 'product_switc
                               <td className="px-2 py-2 text-xs font-bold text-right text-black">
                                 {(() => {
                                   const totalAmount = product.funds.reduce((sum, fund) => sum + fund.total_investment + fund.total_regular_investment, 0);
-                                  const formatted = formatCurrencyWithVisualSigning(totalAmount, 'investment');
+                                  const formatted = formatCurrencyWithVisualSigningWrapper(totalAmount, 'investment');
                                   return <span className="text-black font-bold">{formatted.value}</span>;
                                 })()}
                               </td>
                               <td className="px-2 py-2 text-xs font-bold text-right text-black">
                                 {(() => {
                                   const totalAmount = product.funds.reduce((sum, fund) => sum + fund.total_tax_uplift, 0);
-                                  const formatted = formatCurrencyWithVisualSigning(totalAmount, 'tax_uplift');
+                                  const formatted = formatCurrencyWithVisualSigningWrapper(totalAmount, 'tax_uplift');
                                   return <span className="text-black font-bold">{formatted.value}</span>;
                                 })()}
                               </td>
                               <td className="px-2 py-2 text-xs font-bold text-right text-black">
                                 {(() => {
                                   const totalAmount = product.funds.reduce((sum, fund) => sum + fund.total_product_switch_in, 0);
-                                  const formatted = formatCurrencyWithVisualSigning(totalAmount, 'product_switch_in');
+                                  const formatted = formatCurrencyWithVisualSigningWrapper(totalAmount, 'product_switch_in');
                                   return <span className="text-black font-bold">{formatted.value}</span>;
                                 })()}
                               </td>
                               <td className="px-2 py-2 text-xs font-bold text-right text-black">
                                 {(() => {
                                   const totalAmount = product.funds.reduce((sum, fund) => sum + fund.total_fund_switch_in + fund.total_fund_switch_out, 0);
-                                  const formatted = formatCurrencyWithVisualSigning(totalAmount, 'fund_switch');
+                                  const formatted = formatCurrencyWithVisualSigningWrapper(totalAmount, 'fund_switch');
                                   return <span className="text-black font-bold">{formatted.value}</span>;
                                 })()}
                               </td>
                               <td className="px-2 py-2 text-xs font-bold text-right text-black">
                                 {(() => {
                                   const totalAmount = product.funds.reduce((sum, fund) => sum + fund.total_product_switch_out, 0);
-                                  const formatted = formatCurrencyWithVisualSigning(totalAmount, 'product_switch_out');
+                                  const formatted = formatCurrencyWithVisualSigningWrapper(totalAmount, 'product_switch_out');
                                   return <span className="text-black font-bold">{formatted.value}</span>;
                                 })()}
                               </td>
                               <td className="px-2 py-2 text-xs font-bold text-right text-black">
                                 {(() => {
                                   const totalAmount = product.funds.reduce((sum, fund) => sum + fund.total_withdrawal, 0);
-                                  const formatted = formatCurrencyWithVisualSigning(totalAmount, 'withdrawal');
+                                  const formatted = formatCurrencyWithVisualSigningWrapper(totalAmount, 'withdrawal');
                                   return <span className="text-black font-bold">{formatted.value}</span>;
                                 })()}
                               </td>
                               <td className="px-2 py-2 text-xs font-bold text-right bg-green-100 text-black">
-                                {formatCurrencyWithZeroToggle(product.funds.reduce((sum, fund) => sum + fund.current_valuation, 0))}
+                                {formatCurrencyWithZeroToggleWrapper(product.funds.reduce((sum, fund) => sum + fund.current_valuation, 0))}
                               </td>
                               <td className="px-2 py-2 text-xs font-bold text-right bg-blue-100 text-black">
                                 {(() => {
                                   const totalGains = product.funds.reduce((sum, fund) => sum + fund.current_valuation + fund.total_withdrawal + fund.total_product_switch_out + fund.total_fund_switch_out, 0);
                                   const totalCosts = product.funds.reduce((sum, fund) => sum + fund.total_investment + fund.total_regular_investment + fund.total_tax_uplift + fund.total_product_switch_in + fund.total_fund_switch_in, 0);
                                   const totalProfit = totalGains - totalCosts;
-                                  const formatted = formatCurrencyWithVisualSigning(totalProfit, totalProfit >= 0 ? 'investment' : 'withdrawal');
+                                  const formatted = formatCurrencyWithVisualSigningWrapper(totalProfit, totalProfit >= 0 ? 'investment' : 'withdrawal');
                                   return <span className="text-black font-bold">{formatted.value}</span>;
                                 })()}
                               </td>
@@ -2269,7 +2033,7 @@ activityType: 'investment' | 'tax_uplift' | 'product_switch_in' | 'product_switc
         </div>
 
         {/* IRR History Section - Always visible in print, force page break before */}
-        <div className={`irr-history-section ${activeTab === 'irr-history' ? '' : 'hidden'} print:block print:mt-8`}>
+        <div className={`irr-history-section ${activeTab === REPORT_TABS.IRR_HISTORY ? '' : 'hidden'} print:block print:mt-8`}>
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900">IRR History</h2>
           </div>

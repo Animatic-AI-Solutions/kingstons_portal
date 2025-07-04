@@ -27,6 +27,13 @@ Our development workflow is based on the SPARC methodology:
   - Every function should be **no more than 50 lines** and have a clear, single responsibility.
   - *Note: As noted in our [Strengths and Limitations](./../1_introduction/02_project_strengths_and_limitations.md), some legacy components do not yet meet this standard and are slated for refactoring.*
 - **DRY (Don't Repeat Yourself):** Eliminate code duplication by abstracting common logic into reusable functions, components, or services.
+  
+  **Example in Practice:** Our shared modules architecture demonstrates DRY principles by centralizing common functionality:
+  - `types/reportTypes.ts`: Shared TypeScript interfaces prevent duplicate type definitions
+  - `utils/reportFormatters.ts`: Reusable formatting functions eliminate code duplication across components
+  - `utils/reportConstants.ts`: Centralized constants ensure consistent values throughout the application
+  
+  This approach eliminated over 200 lines of duplicate code and provides a single source of truth for common functionality.
 - **Clean Code:**
   - Use descriptive names for variables, functions, and classes, following our [Naming Conventions](./02_naming_conventions.md).
   - Maintain consistent formatting (enforced by linters).

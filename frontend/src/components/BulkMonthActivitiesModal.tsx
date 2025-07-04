@@ -651,7 +651,7 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
       
       // Only show warning if both have values and they don't match within tolerance
       if ((fundSwitchOutTotal > 0 || fundSwitchInTotal > 0) && difference > tolerance) {
-        warnings.push(`Fund Switch activities are unbalanced. FundSwitchOut: ${formatCurrency(fundSwitchOutTotal)}, FundSwitchIn: ${formatCurrency(fundSwitchInTotal)}. Difference: ${formatCurrency(difference)}`);
+        warnings.push(`Fund Switch activities are unbalanced. Difference: ${formatCurrency(difference)}`);
       }
     }
     

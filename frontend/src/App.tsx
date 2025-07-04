@@ -10,7 +10,7 @@ import Terms from './pages/Terms';
 import Cookies from './pages/Cookies';
 import Profile from './pages/Profile';
 import ReportGenerator from './pages/ReportGenerator';
-import ReportDisplay from './pages/ReportDisplay';
+import ReportDisplayPage from './pages/ReportDisplayPage';
 
 // Auth Components - User authentication related components
 import LoginForm from './components/auth/LoginForm';
@@ -133,7 +133,7 @@ const AppContent: React.FC = () => {
           <Route path="/analytics" element={<AppLayout><Analytics /></AppLayout>} />
           <Route path="/revenue" element={<AppLayout><Revenue /></AppLayout>} />
           <Route path="/report-generator" element={<AppLayout><ReportGenerator /></AppLayout>} />
-          <Route path="/report-display" element={<AppLayout><ReportDisplay /></AppLayout>} />
+          <Route path="/report-display" element={<AppLayout><ReportDisplayPage /></AppLayout>} />
           
           {/* Component Testing - UI/UX design finalization */}
           <Route path="/components" element={<AppLayout><Components /></AppLayout>} />

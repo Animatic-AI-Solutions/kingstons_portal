@@ -53,7 +53,8 @@ class HistoricalIRRService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000';
+    // Empty base URL to work with Vite's proxy configuration
+    this.baseUrl = '';
   }
 
   /**

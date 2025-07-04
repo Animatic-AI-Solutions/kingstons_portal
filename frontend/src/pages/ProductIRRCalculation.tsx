@@ -209,6 +209,135 @@ const filterInactiveHoldings = (holdings: Holding[]): Holding[] => {
   return inactiveHoldings;
 };
 
+// Helper function to detect non-common valuation dates
+const detectNonCommonValuationDates = (holdings: Holding[]): {
+  hasNonCommonDates: boolean;
+  nonCommonFunds: Array<{ fund_name: string; valuation_date: string }>;
+  commonDates: string[];
+} => {
+  // Filter to only active holdings (ignore inactive ones)
+  const activeHoldings = filterActiveHoldings(holdings);
+  
+  console.log('🔍 Valuation Date Detection Debug:', {
+    totalHoldings: holdings.length,
+    activeHoldings: activeHoldings.length,
+    holdingsData: activeHoldings.map(h => ({
+      id: h.id,
+      fund_name: h.fund_name,
+      valuation_date: h.valuation_date,
+      market_value: h.market_value,
+      status: h.status
+    }))
+  });
+  
+  if (activeHoldings.length === 0) {
+    console.log('🔍 No active holdings found');
+    return { hasNonCommonDates: false, nonCommonFunds: [], commonDates: [] };
+  }
+  
+  // Separate funds with and without meaningful valuations
+  // A meaningful valuation requires both a valuation_date AND a non-zero market_value
+  const fundsWithValuations = activeHoldings.filter(holding => 
+    holding.valuation_date && holding.market_value !== null && holding.market_value !== undefined && holding.market_value > 0
+  );
+  const fundsWithoutValuations = activeHoldings.filter(holding => 
+    !holding.valuation_date || holding.market_value === null || holding.market_value === undefined || holding.market_value <= 0
+  );
+  
+  console.log('🔍 Valuation separation:', {
+    fundsWithValuations: fundsWithValuations.length,
+    fundsWithoutValuations: fundsWithoutValuations.length,
+    withValuations: fundsWithValuations.map(h => ({ fund_name: h.fund_name, valuation_date: h.valuation_date, market_value: h.market_value })),
+    withoutValuations: fundsWithoutValuations.map(h => ({ fund_name: h.fund_name, valuation_date: h.valuation_date, market_value: h.market_value }))
+  });
+  
+  // If no funds have valuations, no issue
+  if (fundsWithValuations.length === 0) {
+    console.log('🔍 No funds have valuations');
+    return { hasNonCommonDates: false, nonCommonFunds: [], commonDates: [] };
+  }
+  
+  // Calculate common dates among funds that DO have valuations
+  const valuationDates = fundsWithValuations.map(holding => holding.valuation_date as string);
+  
+  // Count frequency of each date
+  const dateFrequency: Record<string, number> = {};
+  valuationDates.forEach(date => {
+    dateFrequency[date] = (dateFrequency[date] || 0) + 1;
+  });
+  
+  console.log('🔍 Date frequency analysis:', dateFrequency);
+  
+  // Find dates that ALL funds with valuations have (intersection)
+  // These are dates where count equals the number of funds with valuations
+  const totalFundsWithValuations = fundsWithValuations.length;
+  const commonDates = Object.entries(dateFrequency)
+    .filter(([, count]) => count === totalFundsWithValuations)
+    .map(([date]) => date)
+    .sort((a, b) => b.localeCompare(a)); // Sort descending (most recent first)
+  
+  console.log('🔍 Common valuation dates analysis:', {
+    totalFundsWithValuations,
+    allDates: Object.keys(dateFrequency),
+    commonDates: commonDates,
+    commonDatesCount: commonDates.length
+  });
+  
+  // If some funds have valuations and others don't, that's non-common
+  if (fundsWithoutValuations.length > 0) {
+    const nonCommonFunds = fundsWithoutValuations.map(holding => {
+      // Determine the appropriate display text based on the issue type
+      let displayText = 'No valuation date';
+      if (holding.valuation_date) {
+        if (holding.market_value === null || holding.market_value === undefined) {
+          displayText = 'No valuation amount';
+        } else if (holding.market_value <= 0) {
+          displayText = 'Zero/missing valuation';
+        }
+      }
+      
+      return {
+        fund_name: holding.fund_name || 'Unknown Fund',
+        valuation_date: displayText
+      };
+    });
+    
+    console.log('🔍 Mixed valuation scenario detected - some funds have meaningful valuations, others don\'t');
+    return {
+      hasNonCommonDates: true,
+      nonCommonFunds,
+      commonDates // Include the common dates among funds that do have valuations
+    };
+  }
+  
+  // All funds have valuations - check if they're all the same date
+  if (Object.keys(dateFrequency).length === 1) {
+    console.log('🔍 All funds have same valuation date:', commonDates[0]);
+    return { hasNonCommonDates: false, nonCommonFunds: [], commonDates };
+  }
+  
+  // Multiple different valuation dates exist among all funds
+  // Find funds with non-common dates (dates that aren't the most frequent)
+  const nonCommonFunds = fundsWithValuations
+    .filter(holding => holding.valuation_date && !commonDates.includes(holding.valuation_date))
+    .map(holding => ({
+      fund_name: holding.fund_name || 'Unknown Fund',
+      valuation_date: holding.valuation_date as string
+    }));
+  
+  console.log('🔍 Multiple valuation dates detected:', {
+    commonDates,
+    nonCommonFunds: nonCommonFunds.length,
+    hasNonCommonDates: nonCommonFunds.length > 0
+  });
+  
+  return {
+    hasNonCommonDates: nonCommonFunds.length > 0,
+    nonCommonFunds,
+    commonDates
+  };
+};
+
 // Create a virtual "Previous Funds" entry that aggregates all inactive funds
 const createPreviousFundsEntry = (inactiveHoldings: Holding[], activityLogs: ActivityLog[]): Holding | null => {
   console.log("Creating Previous Funds entry with", inactiveHoldings.length, "inactive holdings");
@@ -712,9 +841,18 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
   // Manual IRR recalculation state
   const [isRecalculatingAllIRRs, setIsRecalculatingAllIRRs] = useState(false);
 
+  // Valuation date indicator tooltip state
+  const [showValuationTooltip, setShowValuationTooltip] = useState(false);
+
   // Memoize inactiveHoldings to prevent unnecessary recalculations and re-renders
   const inactiveHoldings = useMemo(() => 
     filterInactiveHoldings(holdings), 
+    [holdings]
+  );
+
+  // Memoize non-common valuation dates detection
+  const valuationDateInfo = useMemo(() => 
+    detectNonCommonValuationDates(holdings), 
     [holdings]
   );
 
@@ -842,6 +980,24 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       }
     }
   }, [account?.id]);
+
+  // Handle clicking outside tooltip to close it
+  useEffect(() => {
+    const handleClickOutside = (event: Event) => {
+      const target = event.target as Element;
+      if (showValuationTooltip && !target.closest('.valuation-tooltip-container')) {
+        setShowValuationTooltip(false);
+      }
+    };
+
+    if (showValuationTooltip) {
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [showValuationTooltip]);
 
   // Save notes to localStorage when tab becomes hidden (but no beforeunload warning)
   useEffect(() => {
@@ -1580,19 +1736,6 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-800">Notes</h3>
               <div className="flex items-center space-x-2">
-                {hasUnsavedNotes && !isSavingNotes && (
-                  <>
-                    <span className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
-                      Unsaved changes
-                    </span>
-                    <button
-                      onClick={handleManualSave}
-                      className="text-xs px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      Save Now
-                    </button>
-                  </>
-                )}
                 {isSavingNotes && (
                   <span className="text-xs text-gray-500">Saving...</span>
                 )}
@@ -1617,6 +1760,65 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center">
                 <h2 className="text-xl font-semibold text-gray-900">Period Overview (All Time)</h2>
+                {/* Valuation Date Indicator */}
+                {valuationDateInfo.hasNonCommonDates && (
+                  <div className="ml-3 flex items-center valuation-tooltip-container">
+                    <div className="flex items-center space-x-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                      <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.314 18.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                      <div className="text-sm">
+                        <span className="font-medium text-amber-800">Valuation Date Alert</span>
+                        <div className="text-amber-700">
+                          {valuationDateInfo.nonCommonFunds.length} fund{valuationDateInfo.nonCommonFunds.length > 1 ? 's have' : ' has'} missing valuation dates
+                        </div>
+                      </div>
+                      <div className="relative">
+                        <button
+                          type="button"
+                          className="text-amber-600 hover:text-amber-800 focus:outline-none"
+                          title="View details"
+                          onClick={() => setShowValuationTooltip(!showValuationTooltip)}
+                          onBlur={() => setTimeout(() => setShowValuationTooltip(false), 150)}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </button>
+                        {showValuationTooltip && (
+                          <div className="absolute z-10 w-80 p-4 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg right-0">
+                            <div className="text-sm text-gray-800">
+                              {/* First show common valuation dates */}
+                              {valuationDateInfo.commonDates.length > 0 && (
+                                <div className="mb-3 pb-2 border-b border-gray-200">
+                                  <div className="font-medium mb-1">Common valuation dates across portfolio:</div>
+                                  <div className="text-green-700 text-xs">
+                                    {valuationDateInfo.commonDates.map(date => formatDateMonthYear(date)).join(', ')}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Then show funds with issues */}
+                              <div className="font-medium mb-2">
+                                {valuationDateInfo.nonCommonFunds.some(f => f.valuation_date === 'No valuation date') 
+                                  ? 'Portfolio funds missing valuation dates:' 
+                                  : 'Portfolio funds with different valuation dates:'}
+                              </div>
+                              {valuationDateInfo.nonCommonFunds.map((fund, index) => (
+                                <div key={index} className="flex justify-between items-center py-1 border-b border-gray-100 last:border-b-0">
+                                  <span className="text-gray-900 font-medium">{fund.fund_name}</span>
+                                  <span className={`text-xs font-medium ${fund.valuation_date === 'No valuation date' ? 'text-red-600' : 'text-amber-600'}`}>
+                                    {fund.valuation_date === 'No valuation date' ? fund.valuation_date : formatDateMonthYear(fund.valuation_date)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="flex items-center space-x-3">
                 {!isBulkDeactivationMode ? (
