@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { SearchableDropdown, FilterSearch } from '../components/ui';
 import FilterDropdown from '../components/ui/dropdowns/FilterDropdown';
 import { useClientData } from '../hooks/useClientData';
+import StandardTable, { ColumnConfig } from '../components/StandardTable';
 
 interface Client {
   id: string;
@@ -16,56 +17,15 @@ interface Client {
   fum?: number;
 }
 
-type SortField = 'name' | 'fum' | 'type' | 'status' | 'advisor';
-type SortOrder = 'asc' | 'desc';
-
 const Clients: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] = useState<SortField>('name');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
-  const [showDormant, setShowDormant] = useState(false);
-  const [advisorFilter, setAdvisorFilter] = useState<string[]>([]);
-  const [showAdvisorFilter, setShowAdvisorFilter] = useState(false);
-  const advisorFilterRef = useRef<HTMLDivElement>(null);
   
   // Use React Query hook for optimized client data fetching
   const { data: bulkClientData, isLoading, error: queryError, refetch, forceRefresh } = useClientData();
   
-  // Refs for positioning dropdown menus
-  const [advisorDropdownPosition, setAdvisorDropdownPosition] = useState({ top: 0, left: 0 });
-  
-  // Add typeFilter state in the component state declarations
-  const [typeFilter, setTypeFilter] = useState<string[]>([]);
-  const [statusFilter, setStatusFilter] = useState<string[]>([]);
-  
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  
-  // Function to calculate and set dropdown positions
-  const updateAdvisorDropdownPosition = () => {
-    if (advisorFilterRef.current) {
-      const rect = advisorFilterRef.current.getBoundingClientRect();
-      setAdvisorDropdownPosition({
-        top: rect.bottom + window.scrollY,
-        left: rect.left + window.scrollX
-      });
-    }
-  };
-  
-  // Update positions when dropdown opens
-  useEffect(() => {
-    if (showAdvisorFilter) {
-      updateAdvisorDropdownPosition();
-      window.addEventListener('scroll', updateAdvisorDropdownPosition);
-      window.addEventListener('resize', updateAdvisorDropdownPosition);
-    }
-    
-    return () => {
-      window.removeEventListener('scroll', updateAdvisorDropdownPosition);
-      window.removeEventListener('resize', updateAdvisorDropdownPosition);
-    };
-  }, [showAdvisorFilter]);
 
   useEffect(() => {
     // Check for success message in location state
@@ -103,18 +63,7 @@ const Clients: React.FC = () => {
     };
   }, [refetch, bulkClientData]);
 
-  // Handle click outside to close the filter dropdowns
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (advisorFilterRef.current && !advisorFilterRef.current.contains(event.target as Node)) {
-        setShowAdvisorFilter(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+
 
   // Transform React Query data to match component expectations
   const clients: Client[] = bulkClientData?.client_groups.map((client) => ({
@@ -130,15 +79,6 @@ const Clients: React.FC = () => {
 
   // Convert React Query error to string for component compatibility
   const error = queryError ? (queryError as any).response?.data?.detail || 'Failed to fetch client groups' : null;
-
-  const handleSortFieldChange = (field: SortField) => {
-    if (field === sortField) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortOrder('asc');
-    }
-  };
 
   const handleAddClient = () => {
     navigate('/client_groups/add');
@@ -158,46 +98,51 @@ const Clients: React.FC = () => {
     }).format(amount);
   };
 
-  // Update the filteredAndSortedClients to include filtering by type
-  const filteredAndSortedClients = clients
-    .filter(client => 
+  // Apply search filtering only - StandardTable will handle column filtering and sorting
+  const searchFilteredClients = clients.filter(client => 
+    searchQuery === '' || 
       (client.name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
       (client.type?.toLowerCase() || '').includes(searchQuery.toLowerCase())
-    )
-    .filter(client => 
-      advisorFilter.length === 0 ||
-      (client.advisor && advisorFilter.includes(client.advisor))
-    )
-    .filter(client => 
-      typeFilter.length === 0 ||
-      (client.type && typeFilter.includes(client.type))
-    )
-    .filter(client =>
-      statusFilter.length === 0 ||
-      (client.status && statusFilter.includes(client.status))
-    )
-    .sort((a, b) => {
-      if (sortField === 'fum') {
-        const aValue = a.fum || 0;
-        const bValue = b.fum || 0;
-        return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
-      } else {
-        // Sort by the selected field
-          const aValue = String(a[sortField] || '').toLowerCase();
-          const bValue = String(b[sortField] || '').toLowerCase();
-          return sortOrder === 'asc' 
-            ? aValue.localeCompare(bValue)
-            : bValue.localeCompare(aValue);
-      }
-    });
+  );
 
-  // Extract unique advisor names
-  const advisors = [...new Set(clients
-    .map(client => client.advisor)
-    .filter(advisor => advisor !== null))] as string[];
-
-  const types = ['Family', 'Business', 'Trust'];
-  const statuses = [{value: 'active', label: 'Active'}, {value: 'dormant', label: 'Dormant'}];
+  // Column configuration for StandardTable
+  const columns: ColumnConfig[] = [
+    {
+      key: 'name',
+      label: 'Name',
+      dataType: 'text',
+      alignment: 'left',
+      control: 'sort'
+    },
+    {
+      key: 'type', 
+      label: 'Type',
+      dataType: 'category',
+      alignment: 'left',
+      control: 'filter'
+    },
+    {
+      key: 'fum',
+      label: 'FUM', 
+      dataType: 'currency',
+      alignment: 'left',
+      control: 'sort'
+    },
+    {
+      key: 'advisor',
+      label: 'Advisor',
+      dataType: 'category', 
+      alignment: 'left',
+      control: 'filter'
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      dataType: 'category',
+      alignment: 'left', 
+      control: 'filter'
+    }
+  ];
 
   return (
     <div className="container mx-auto px-4 py-3">
@@ -243,7 +188,7 @@ const Clients: React.FC = () => {
               placeholder="Filter client groups by name or type..."
               onFilter={setSearchQuery}
               showResultCount={true}
-              resultCount={filteredAndSortedClients.length}
+              resultCount={searchFilteredClients.length}
               filterLabel="Client Group"
               size="md"
               fullWidth={true}
@@ -261,194 +206,15 @@ const Clients: React.FC = () => {
             </div>
           ) : error ? (
             <div className="text-red-600 text-center py-4">{error}</div>
-          ) : filteredAndSortedClients.length === 0 ? (
+          ) : searchFilteredClients.length === 0 ? (
             <div className="text-gray-500 text-center py-4">No client groups found</div>
           ) : (
-            <div className="overflow-x-auto overflow-visible">
-              <table className="min-w-full table-fixed divide-y divide-gray-200">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="w-[25%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('name')} title="Click to sort by Name">
-                        Name
-                        <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                          {sortField === 'name' ? (
-                            sortOrder === 'asc' ? (
-                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
-                            ) : (
-                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                              </svg>
-                            )
-                          ) : (
-                            <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
-                            </svg>
-                          )}
-                        </span>
-                      </div>
-                    </th>
-                    <th className="w-[15%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      <div className="flex flex-col items-start">
-                        <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('type')}>
-                          Type
-                          <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                            {sortField === 'type' ? (
-                              sortOrder === 'asc' ? (
-                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                </svg>
-                              ) : (
-                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                              )
-                            ) : (
-                              <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
-                              </svg>
-                            )}
-                          </span>
-                        </span>
-                        <FilterDropdown
-                          id="type-filter"
-                          options={types.map(t => ({ value: t, label: t }))}
-                          value={typeFilter}
-                          onChange={(vals) => setTypeFilter(vals.filter(v => typeof v === 'string'))}
-                          placeholder="All Types"
-                          className="min-w-[140px] mt-1"
-                        />
-                      </div>
-                    </th>
-                    <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('fum')} title="Click to sort by FUM">
-                        FUM
-                        <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                          {sortField === 'fum' ? (
-                            sortOrder === 'asc' ? (
-                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
-                            ) : (
-                              <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                              </svg>
-                            )
-                          ) : (
-                            <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
-                            </svg>
-                          )}
-                        </span>
-                      </div>
-                    </th>
-                    <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      <div className="flex flex-col items-start">
-                        <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('advisor')}>
-                          Advisor
-                          <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                            {sortField === 'advisor' ? (
-                              sortOrder === 'asc' ? (
-                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                </svg>
-                              ) : (
-                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                              )
-                            ) : (
-                              <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
-                              </svg>
-                            )}
-                          </span>
-                        </span>
-                        <FilterDropdown
-                          id="advisor-filter"
-                          options={advisors.map(a => ({ value: a, label: a }))}
-                          value={advisorFilter}
-                          onChange={(vals) => setAdvisorFilter(vals.filter(v => typeof v === 'string'))}
-                          placeholder="All Advisors"
-                          className="min-w-[140px] mt-1"
-                        />
-                      </div>
-                    </th>
-                    <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      <div className="flex flex-col items-start">
-                        <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('status')}>
-                          Status
-                          <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                            {sortField === 'status' ? (
-                              sortOrder === 'asc' ? (
-                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                </svg>
-                              ) : (
-                                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                              )
-                            ) : (
-                              <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
-                              </svg>
-                            )}
-                          </span>
-                        </span>
-                        <FilterDropdown
-                          id="status-filter"
-                          options={statuses}
-                          value={statusFilter}
-                          onChange={(vals) => setStatusFilter(vals.filter(v => typeof v === 'string'))}
-                          placeholder="All Statuses"
-                          className="min-w-[140px] mt-1"
-                        />
-                      </div>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredAndSortedClients.map((client) => (
-                    <tr 
-                      key={client.id} 
-                        className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
-                      onClick={() => handleClientClick(client.id)}
-                    >
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{client.name || 'N/A'}</div>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800`}>
-                          {client.type || 'Family'}
-                        </span>
-                        </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                          {client.fum ? (
-                            <div className="text-sm font-medium text-indigo-600">
-                            {formatCurrency(client.fum)}
-                            </div>
-                          ) : (
-                          <div className="text-sm text-gray-500">£0</div>
-                          )}
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm text-gray-600">{client.advisor || '-'}</div>
-                        </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          client.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {client.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <StandardTable
+              data={searchFilteredClients}
+              columns={columns}
+              className="cursor-pointer"
+              onRowClick={(client) => handleClientClick(client.id)}
+            />
           )}
         </div>
       </div>

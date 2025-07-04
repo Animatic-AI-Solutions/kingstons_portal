@@ -1,19 +1,17 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import FilterDropdown from '../components/ui/dropdowns/FilterDropdown';
 import { TableSkeleton } from '../components/ui/feedback/TableSkeleton';
 import { EmptyState } from '../components/ui/feedback/EmptyState';
 import { ErrorDisplay } from '../components/ui/feedback/ErrorDisplay';
 import { useEntityData } from '../hooks/useEntityData';
 import { 
   Portfolio, 
-  PortfolioSortField, 
-  SortOrder, 
   calculateAverageRisk,
   getRiskRange 
 } from '../utils/definitionsShared';
 import api from '../services/api';
+import StandardTable, { ColumnConfig } from '../components/StandardTable';
 
 const PortfolioTemplates: React.FC = () => {
   const { user } = useAuth();
@@ -21,10 +19,6 @@ const PortfolioTemplates: React.FC = () => {
   
   // State management
   const [searchQuery, setSearchQuery] = useState('');
-  const [portfolioSortField, setPortfolioSortField] = useState<PortfolioSortField>('name');
-  const [portfolioSortOrder, setPortfolioSortOrder] = useState<SortOrder>('asc');
-  const [riskRangeFilters, setRiskRangeFilters] = useState<(string | number)[]>([]);
-  const [portfolioTypeFilters, setPortfolioTypeFilters] = useState<(string | number)[]>([]);
 
   // Data fetching
   const fetchPortfolios = useCallback(async (params: { signal?: AbortSignal } = {}) => {
@@ -36,7 +30,49 @@ const PortfolioTemplates: React.FC = () => {
       console.log(`Successfully received ${response.data.length} portfolio templates`);
       console.log('Sample portfolio data:', response.data[0]);
       
-      return response.data;
+      // For each template, fetch its generations and count portfolios using them
+      const templatesWithCounts = await Promise.all(
+        response.data.map(async (template: any) => {
+          try {
+            // Get all generations for this template
+            const generationsResponse = await api.get(`/available_portfolios/${template.id}/generations`, { signal: params.signal });
+            const generations = generationsResponse.data || [];
+            
+            // Count portfolios for each generation
+            let totalPortfolioCount = 0;
+            await Promise.all(
+              generations.map(async (generation: any) => {
+                try {
+                  const countResponse = await api.get('/portfolios', {
+                    params: {
+                      template_generation_id: generation.id,
+                      count_only: true
+                    },
+                    signal: params.signal
+                  });
+                  totalPortfolioCount += countResponse.data?.count || 0;
+                } catch (err) {
+                  console.warn(`Failed to count portfolios for generation ${generation.id}:`, err);
+                }
+              })
+            );
+            
+            return {
+              ...template,
+              portfolioCount: totalPortfolioCount
+            };
+          } catch (err) {
+            console.warn(`Failed to fetch data for template ${template.id}:`, err);
+            return {
+              ...template,
+              portfolioCount: 0
+            };
+          }
+        })
+      );
+      
+      console.log('Templates with portfolio counts:', templatesWithCounts);
+      return templatesWithCounts;
     } catch (err) {
       console.error('Error in fetchPortfolios:', err);
       throw err;
@@ -49,101 +85,21 @@ const PortfolioTemplates: React.FC = () => {
     error: portfoliosError 
   } = useEntityData<Portfolio>(fetchPortfolios, []);
 
-  // Filter options
-  const riskRangeOptions = useMemo(() => [
-    { value: 'Very Low', label: 'Very Low (0-2)' },
-    { value: 'Low', label: 'Low (2-3)' },
-    { value: 'Medium', label: 'Medium (3-5)' },
-    { value: 'High', label: 'High (5-7)' },
-    { value: 'Very High', label: 'Very High (7+)' },
-    { value: 'N/A', label: 'N/A' }
-  ], []);
 
-  const portfolioTypeOptions = useMemo(() => {
-    const uniqueTypes = new Set<string>();
-    portfolios.forEach(portfolio => {
-      if (portfolio.type) {
-        uniqueTypes.add(portfolio.type);
-      }
-    });
-    return Array.from(uniqueTypes).map(type => ({ value: type, label: type }));
-  }, [portfolios]);
 
   // Event handlers
-  const handleItemClick = useCallback((portfolioId: number) => {
-    navigate(`/definitions/portfolio-templates/${portfolioId}`);
+  const handleItemClick = useCallback((portfolio: Portfolio) => {
+    navigate(`/definitions/portfolio-templates/${portfolio.id}`);
   }, [navigate]);
 
   const handleAddNew = useCallback(() => {
     navigate('/definitions/portfolio-templates/add');
   }, [navigate]);
 
-  const handlePortfolioSortChange = useCallback((field: PortfolioSortField) => {
-    if (field === portfolioSortField) {
-      setPortfolioSortOrder(portfolioSortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setPortfolioSortField(field);
-      setPortfolioSortOrder('asc');
-    }
-  }, [portfolioSortField, portfolioSortOrder]);
 
-  // Function to get color based on risk value (1-7 scale) - green to red gradient
-  const getRiskColor = useCallback((riskValue: number): string => {
-    if (riskValue <= 0) return 'text-gray-500'; // N/A case
-    
-    // Clamp the value between 1 and 7
-    const clampedRisk = Math.max(1, Math.min(7, riskValue));
-    
-    // Calculate color intensity based on position between 1 and 7
-    // 1 = green, 7 = red, smooth gradient in between
-    const normalizedRisk = (clampedRisk - 1) / 6; // 0 to 1 scale
-    
-    if (normalizedRisk <= 0.16) {
-      // Risk 1.0-2.0: Green
-      return 'text-green-600 font-medium';
-    } else if (normalizedRisk <= 0.33) {
-      // Risk 2.0-3.0: Yellow-green
-      return 'text-lime-600 font-medium';
-    } else if (normalizedRisk <= 0.5) {
-      // Risk 3.0-4.0: Yellow
-      return 'text-yellow-600 font-medium';
-    } else if (normalizedRisk <= 0.66) {
-      // Risk 4.0-5.0: Orange
-      return 'text-orange-600 font-medium';
-    } else if (normalizedRisk <= 0.83) {
-      // Risk 5.0-6.0: Red-orange
-      return 'text-red-500 font-medium';
-    } else {
-      // Risk 6.0-7.0: Red
-      return 'text-red-600 font-semibold';
-    }
-  }, []);
 
-  // Display weighted risk with proper formatting and color coding
-  const displayWeightedRisk = useCallback((portfolio: Portfolio) => {
-    console.log('displayWeightedRisk called for portfolio:', {
-      id: portfolio.id,
-      name: portfolio.name,
-      weighted_risk: portfolio.weighted_risk,
-      has_funds: portfolio.funds?.length || 0
-    });
-    
-    const averageRisk = calculateAverageRisk(portfolio);
-    const colorClass = getRiskColor(averageRisk);
-    
-    console.log('Calculated values:', { averageRisk, colorClass });
-    
-    return (
-      <div className="text-sm font-sans">
-        <div className={`${colorClass} transition-colors duration-200`}>
-          {averageRisk > 0 ? averageRisk.toFixed(1) : 'N/A'}
-        </div>
-      </div>
-    );
-  }, [getRiskColor]);
-
-  // Filter and sort portfolios
-  const filteredAndSortedPortfolios = useMemo(() => {
+  // Apply search filtering only - StandardTable will handle column filtering and sorting
+  const searchFilteredPortfolios = useMemo(() => {
     console.log('Processing portfolios data:', portfolios.length, 'portfolios');
     console.log('Sample portfolio:', portfolios[0]);
     
@@ -157,21 +113,6 @@ const PortfolioTemplates: React.FC = () => {
       );
     }
     
-    // Apply portfolio type filter
-    if (portfolioTypeFilters.length > 0) {
-      filtered = filtered.filter(portfolio => 
-        portfolio.type && portfolioTypeFilters.includes(portfolio.type)
-      );
-    }
-    
-    // Apply risk range filter
-    if (riskRangeFilters.length > 0) {
-      filtered = filtered.filter(portfolio => {
-        const riskRange = getRiskRange(portfolio);
-        return riskRangeFilters.includes(riskRange);
-      });
-    }
-    
     // Apply status filter - only show active templates
     const portfoliosWithStatus = portfolios.filter(p => 'status' in p && p.status);
     if (portfoliosWithStatus.length > 0) {
@@ -180,43 +121,39 @@ const PortfolioTemplates: React.FC = () => {
     
     console.log('Filtered portfolios:', filtered.length);
     
-    // Sort the filtered results
-    return filtered.sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
-      
-      switch (portfolioSortField) {
-        case 'name':
-          aValue = a.name?.toLowerCase() || '';
-          bValue = b.name?.toLowerCase() || '';
-          break;
-        case 'weighted_risk':
-        case 'averageRisk':
-          aValue = calculateAverageRisk(a);
-          bValue = calculateAverageRisk(b);
-          break;
-        case 'portfolioCount':
-          aValue = a.portfolioCount || 0;
-          bValue = b.portfolioCount || 0;
-          break;
-        case 'created_at':
-        default:
-          aValue = a.created_at;
-          bValue = b.created_at;
-          break;
-      }
-      
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return portfolioSortOrder === 'asc' 
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
-      } else {
-        return portfolioSortOrder === 'asc' 
-          ? aValue - bValue
-          : bValue - aValue;
-      }
-    });
-  }, [portfolios, searchQuery, portfolioTypeFilters, riskRangeFilters, portfolioSortField, portfolioSortOrder]);
+    // Add computed values for StandardTable
+    return filtered.map(portfolio => ({
+      ...portfolio,
+      weighted_risk_value: calculateAverageRisk(portfolio),
+      risk_range: getRiskRange(portfolio)
+    }));
+  }, [portfolios, searchQuery]);
+
+  // Column configuration for StandardTable
+  const columns: ColumnConfig[] = [
+    {
+      key: 'name',
+      label: 'Name',
+      dataType: 'text',
+      alignment: 'left',
+      control: 'sort'
+    },
+    {
+      key: 'weighted_risk_value',
+      label: 'Weighted Risk',
+      dataType: 'risk',
+      alignment: 'left',
+      control: 'sort'
+    },
+    {
+      key: 'portfolioCount',
+      label: 'Portfolio Count',
+      dataType: 'number',
+      alignment: 'left',
+      control: 'sort',
+      format: (value) => (value || 0).toString()
+    }
+  ];
 
   if (!user) return null;
 
@@ -269,91 +206,17 @@ const PortfolioTemplates: React.FC = () => {
           <div className="p-6">
             <ErrorDisplay message={portfoliosError} />
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th 
-                    className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/3 cursor-pointer hover:bg-teal-50"
-                    onClick={() => handlePortfolioSortChange('name')}
-                  >
-                    <div className="flex items-center">
-                      <span>Name</span>
-                      {portfolioSortField === 'name' && (
-                        <span className="ml-1">
-                          {portfolioSortOrder === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/3">
-                    <div className="flex flex-col items-start gap-1">
-                      <div 
-                        className="flex items-center cursor-pointer hover:bg-teal-50"
-                        onClick={() => handlePortfolioSortChange('weighted_risk')}
-                      >
-                        <span>Weighted Risk</span>
-                        {portfolioSortField === 'weighted_risk' && (
-                          <span className="ml-1">
-                            {portfolioSortOrder === 'asc' ? '↑' : '↓'}
-                          </span>
-                        )}
-                      </div>
-                      <FilterDropdown
-                        id="risk-range-filter"
-                        options={riskRangeOptions}
-                        value={riskRangeFilters}
-                        onChange={setRiskRangeFilters}
-                        placeholder="All Risk Ranges"
-                        className="mt-1"
-                      />
-                    </div>
-                  </th>
-                  <th 
-                    className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/3 cursor-pointer hover:bg-teal-50"
-                    onClick={() => handlePortfolioSortChange('portfolioCount')}
-                  >
-                    <div className="flex items-center">
-                      <span>Portfolio Count</span>
-                      {portfolioSortField === 'portfolioCount' && (
-                        <span className="ml-1">
-                          {portfolioSortOrder === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredAndSortedPortfolios.length > 0 ? (
-                  filteredAndSortedPortfolios.map(portfolio => (
-                    <tr 
-                      key={portfolio.id} 
-                      className="hover:bg-teal-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
-                      onClick={() => handleItemClick(portfolio.id)}
-                    >
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{portfolio.name}</div>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        {displayWeightedRisk(portfolio)}
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm text-gray-600 font-sans">{portfolio.portfolioCount || 0}</div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={3} className="p-6">
-                      <EmptyState message="No portfolio templates found" />
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+        ) : searchFilteredPortfolios.length === 0 ? (
+          <div className="p-6">
+            <EmptyState message="No portfolio templates found" />
           </div>
+        ) : (
+          <StandardTable
+            data={searchFilteredPortfolios}
+            columns={columns}
+            className="cursor-pointer"
+            onRowClick={handleItemClick}
+          />
         )}
       </div>
     </div>

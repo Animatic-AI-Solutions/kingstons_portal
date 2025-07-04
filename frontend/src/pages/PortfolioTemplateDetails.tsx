@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import StandardTable, { ColumnConfig } from '../components/StandardTable';
 
 interface PortfolioTemplate {
   id: number;
@@ -333,10 +334,7 @@ const PortfolioTemplateDetails: React.FC = () => {
     }
   };
 
-  const formatPercentage = (value: number | null) => {
-    if (value === null || value === undefined) return 'N/A';
-    return `${value.toFixed(2)}%`;
-  };
+
 
   const handleGenerationSelect = (generation: Generation) => {
     setSelectedGeneration(generation);
@@ -590,6 +588,47 @@ const PortfolioTemplateDetails: React.FC = () => {
       setGenerationToDelete(null);
     }
   };
+
+  // Column configuration for StandardTable
+  const fundsColumns: ColumnConfig[] = [
+    {
+      key: 'fund_name',
+      label: 'Fund Name',
+      dataType: 'text',
+      alignment: 'left',
+      control: 'sort'
+    },
+    {
+      key: 'isin_number',
+      label: 'ISIN',
+      dataType: 'text',
+      alignment: 'left',
+      control: 'sort'
+    },
+    {
+      key: 'target_weighting',
+      label: 'Target %',
+      dataType: 'percentage',
+      alignment: 'left',
+      control: 'sort'
+    },
+    {
+      key: 'risk_factor',
+      label: 'Risk',
+      dataType: 'number',
+      alignment: 'left',
+      control: 'sort'
+    }
+  ];
+
+  // Transform funds data for StandardTable
+  const transformedFundsData = template?.funds ? template.funds.map(fund => ({
+    id: fund.id,
+    fund_name: fund.available_funds?.fund_name || `Fund ID: ${fund.fund_id}`,
+    isin_number: fund.available_funds?.isin_number || 'N/A',
+    target_weighting: fund.target_weighting / 100, // Convert to decimal for percentage formatting
+    risk_factor: fund.available_funds?.risk_factor || 0
+  })) : [];
 
   if (isLoading) {
     return (
@@ -1159,53 +1198,12 @@ const PortfolioTemplateDetails: React.FC = () => {
                 {/* Funds Table */}
                 <div className="mt-3">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Funds</h3>
-                  {template?.funds && template.funds.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-100">
-                          <tr>
-                            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                              Fund Name
-                            </th>
-                            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                              ISIN
-                            </th>
-                            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                              Target %
-                            </th>
-                            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                              Risk
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {template.funds.slice().sort((a, b) => 
-                            (a.available_funds?.fund_name || '').localeCompare(b.available_funds?.fund_name || '')
-                          ).map((fund) => (
-                            <tr key={fund.id} className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100">
-                              <td className="px-6 py-3 whitespace-nowrap">
-                                {fund.available_funds ? (
-                                  <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">
-                                    {fund.available_funds.fund_name}
-                                  </div>
-                                ) : (
-                                  <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{`Fund ID: ${fund.fund_id}`}</div>
-                                )}
-                              </td>
-                              <td className="px-6 py-3 whitespace-nowrap">
-                                <div className="text-sm text-gray-600 font-sans">{fund.available_funds?.isin_number || 'N/A'}</div>
-                              </td>
-                              <td className="px-6 py-3 whitespace-nowrap">
-                                <div className="text-sm text-gray-600 font-sans">{formatPercentage(fund.target_weighting)}</div>
-                              </td>
-                              <td className="px-6 py-3 whitespace-nowrap">
-                                <div className="text-sm text-gray-600 font-sans">{fund.available_funds?.risk_factor || 'N/A'}</div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                  {transformedFundsData.length > 0 ? (
+                    <StandardTable
+                      data={transformedFundsData}
+                      columns={fundsColumns}
+                      className="cursor-pointer"
+                    />
                   ) : (
                     <div className="text-gray-500 text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
                       No funds in this template generation

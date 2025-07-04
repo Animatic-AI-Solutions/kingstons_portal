@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getAvailableColors } from '../services/api';
 import { EditButton, DeleteButton, ActionButton } from '../components/ui';
+import StandardTable, { ColumnConfig } from '../components/StandardTable';
 
 interface Provider {
   id: number;
@@ -254,6 +255,59 @@ const ProviderDetails: React.FC = () => {
       setIsDeleting(false);
     }
   };
+
+  // Handle product row click
+  const handleProductClick = (product: Product) => {
+    navigate(`/products/${product.id}`, {
+      state: {
+        from: {
+          pathname: `/definitions/providers/${providerId}`,
+          label: provider?.name || 'Provider Details'
+        }
+      }
+    });
+  };
+
+  // Column configuration for products table
+  const productColumns: ColumnConfig[] = [
+    {
+      key: 'product_name',
+      label: 'Product Name',
+      dataType: 'text',
+      alignment: 'left',
+      control: 'sort'
+    },
+    {
+      key: 'product_type',
+      label: 'Type',
+      dataType: 'category',
+      alignment: 'left',
+      control: 'filter',
+      format: (value) => value || 'N/A'
+    },
+    {
+      key: 'client_name',
+      label: 'Client Group',
+      dataType: 'text',
+      alignment: 'left',
+      control: 'sort',
+      format: (value) => value || 'Unknown'
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      dataType: 'category',
+      alignment: 'left',
+      control: 'filter'
+    },
+    {
+      key: 'created_at',
+      label: 'Created',
+      dataType: 'date',
+      alignment: 'left',
+      control: 'sort'
+    }
+  ];
 
 
 
@@ -531,73 +585,12 @@ const ProviderDetails: React.FC = () => {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      Product Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      Type
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      Client Group
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                      Created
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {products.map((product) => (
-                    <tr 
-                      key={product.id} 
-                      className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
-                      onClick={() => navigate(`/products/${product.id}`, {
-                        state: {
-                          from: {
-                            pathname: `/definitions/providers/${providerId}`,
-                            label: provider?.name || 'Provider Details'
-                          }
-                        }
-                      })}
-                    >
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{product.product_name}</div>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm text-gray-600 font-sans">{product.product_type || "N/A"}</div>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm text-gray-600 font-sans">{product.client_name || "Unknown"}</div>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          product.status === 'active' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {product.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm text-gray-600 font-sans">
-                          {new Date(product.created_at).toLocaleDateString('en-GB', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <StandardTable
+              data={products}
+              columns={productColumns}
+              className="cursor-pointer"
+              onRowClick={handleProductClick}
+            />
           )}
         </div>
       </div>

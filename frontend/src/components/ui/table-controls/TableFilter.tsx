@@ -51,7 +51,21 @@ const TableFilter = forwardRef<HTMLButtonElement, TableFilterProps>(({
     if (dropdownRef.current) {
       const rect = dropdownRef.current.getBoundingClientRect();
       const dropdownWidth = 256; // w-64
-      const dropdownHeight = 240; // max-h-60
+      
+      // Calculate dynamic height for position calculation
+      const optionCount = filteredOptions.length;
+      const optionHeight = 40;
+      const headerHeight = 80;
+      const footerHeight = selectedOptions.length > 0 ? 40 : 0;
+      const padding = 8;
+      const idealListHeight = Math.min(
+        optionCount * optionHeight,
+        Math.max(160, Math.min(400, window.innerHeight * 0.4))
+      );
+      const dropdownHeight = Math.min(
+        headerHeight + idealListHeight + footerHeight + padding,
+        window.innerHeight * 0.6
+      );
       
       let top = rect.bottom + 4;
       let left = rect.right - dropdownWidth;
@@ -146,6 +160,30 @@ const TableFilter = forwardRef<HTMLButtonElement, TableFilterProps>(({
   
   const isActive = selectedOptions.length > 0;
 
+  // Calculate dynamic height based on number of options
+  const calculateDropdownHeight = () => {
+    const optionCount = filteredOptions.length;
+    const optionHeight = 40; // Each option is roughly 40px tall
+    const headerHeight = 80; // Header section with search
+    const footerHeight = selectedOptions.length > 0 ? 40 : 0; // Footer if items selected
+    const padding = 8; // Some padding
+    
+    // Calculate ideal height for options list
+    const idealListHeight = Math.min(
+      optionCount * optionHeight, // Height needed for all options
+      Math.max(160, Math.min(400, window.innerHeight * 0.4)) // Min 160px, max 400px or 40% of screen
+    );
+    
+    const totalHeight = headerHeight + idealListHeight + footerHeight + padding;
+    
+    return {
+      containerMaxHeight: Math.min(totalHeight, window.innerHeight * 0.6), // Max 60% of screen height
+      listMaxHeight: idealListHeight
+    };
+  };
+
+  const dropdownHeights = calculateDropdownHeight();
+
   return (
     <div ref={dropdownRef} className={`relative inline-block ${className}`}>
       <button
@@ -173,15 +211,18 @@ const TableFilter = forwardRef<HTMLButtonElement, TableFilterProps>(({
           ≡
         </div>
         {isActive && (
-          <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 bg-primary-600 rounded-full"></span>
+          <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 bg-primary-600 text-white text-xs font-medium rounded-full flex items-center justify-center leading-none">
+            {selectedOptions.length}
+          </span>
         )}
       </button>
       
       {isOpen && (
-        <div className="fixed z-[9999] w-64 bg-white border border-gray-300 rounded-md shadow-xl max-h-60 overflow-hidden"
+        <div className="fixed z-[9999] w-64 bg-white border border-gray-300 rounded-md shadow-xl overflow-hidden"
              style={{
                top: dropdownPosition.top,
                left: dropdownPosition.left,
+               maxHeight: `${dropdownHeights.containerMaxHeight}px`
              }}>
           <div className="p-2 border-b border-gray-100 bg-gray-50">
             <div className="flex items-center justify-between mb-2">
@@ -215,7 +256,7 @@ const TableFilter = forwardRef<HTMLButtonElement, TableFilterProps>(({
             </div>
           </div>
           
-          <div className="max-h-40 overflow-y-auto">
+          <div className="overflow-y-auto" style={{ maxHeight: `${dropdownHeights.listMaxHeight}px` }}>
             <ul ref={listRef} role="listbox" className="py-1">
               {filteredOptions.length > 0 ? (
                 filteredOptions.map((option, index) => {

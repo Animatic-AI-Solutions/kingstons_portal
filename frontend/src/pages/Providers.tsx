@@ -13,6 +13,7 @@ import {
   getProviderColor 
 } from '../utils/definitionsShared';
 import api from '../services/api';
+import StandardTable, { ColumnConfig } from '../components/StandardTable';
 
 const DefinitionsProviders: React.FC = () => {
   const { user } = useAuth();
@@ -20,9 +21,6 @@ const DefinitionsProviders: React.FC = () => {
   
   // State management
   const [searchQuery, setSearchQuery] = useState('');
-  const [providerSortField, setProviderSortField] = useState<ProviderSortField>('name');
-  const [providerSortOrder, setProviderSortOrder] = useState<SortOrder>('asc');
-  const [providerStatusFilters, setProviderStatusFilters] = useState<(string | number)[]>([]);
 
   // Data fetching
   const fetchProviders = useCallback(async () => {
@@ -59,59 +57,50 @@ const DefinitionsProviders: React.FC = () => {
     error: providersError 
   } = useEntityData<Provider>(fetchProviders, []);
 
-  // Filter options
-  const providerStatusOptions = useMemo(() => [
-    { value: 'active', label: 'Active' },
-    { value: 'inactive', label: 'Inactive' }
-  ], []);
-
   // Event handlers
-  const handleItemClick = useCallback((providerId: number) => {
-    navigate(`/definitions/providers/${providerId}`);
+  const handleItemClick = useCallback((provider: Provider) => {
+    navigate(`/definitions/providers/${provider.id}`);
   }, [navigate]);
 
   const handleAddNew = useCallback(() => {
     navigate('/definitions/providers/add');
   }, [navigate]);
 
-  const handleProviderSortChange = useCallback((field: ProviderSortField) => {
-    if (field === providerSortField) {
-      setProviderSortOrder(providerSortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setProviderSortField(field);
-      setProviderSortOrder('asc');
-    }
-  }, [providerSortField, providerSortOrder]);
+  // Apply search filtering only - StandardTable will handle column filtering and sorting
+  const searchFilteredProviders = useMemo(() => {
+    return providers.filter(provider => 
+      provider.status === 'active' &&
+      (provider.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+       provider.status?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+       (provider.type && provider.type?.toLowerCase().includes(searchQuery.toLowerCase())))
+    );
+  }, [providers, searchQuery]);
 
-  // Filter and sort providers
-  const filteredAndSortedProviders = useMemo(() => {
-    return providers
-      .filter(provider => 
-        provider.status === 'active' &&
-        (provider.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-         provider.status?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-         (provider.type && provider.type?.toLowerCase().includes(searchQuery.toLowerCase())))
-      )
-      .filter(provider => 
-        providerStatusFilters.length === 0 || 
-        (provider.status && providerStatusFilters.includes(provider.status))
-      )
-      .sort((a, b) => {
-        let aValue: any = a[providerSortField];
-        let bValue: any = b[providerSortField];
-        
-        // Handle string comparisons
-        if (typeof aValue === 'string' && typeof bValue === 'string') {
-          aValue = aValue.toLowerCase();
-          bValue = bValue.toLowerCase();
-        }
-        
-        // Compare values
-        if (aValue < bValue) return providerSortOrder === 'asc' ? -1 : 1;
-        if (aValue > bValue) return providerSortOrder === 'asc' ? 1 : -1;
-        return 0;
-      });
-  }, [providers, searchQuery, providerSortField, providerSortOrder, providerStatusFilters]);
+  // Column configuration for StandardTable
+  const columns: ColumnConfig[] = [
+    {
+      key: 'name',
+      label: 'Provider',
+      dataType: 'provider',
+      alignment: 'left',
+      control: 'sort'
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      dataType: 'category',
+      alignment: 'left',
+      control: 'filter'
+    },
+    {
+      key: 'product_count',
+      label: 'Products',
+      dataType: 'number',
+      alignment: 'left',
+      control: 'sort',
+      format: (value) => value !== undefined ? value.toString() : '0'
+    }
+  ];
 
   if (!user) return null;
 
@@ -164,94 +153,17 @@ const DefinitionsProviders: React.FC = () => {
           <div className="p-6">
             <ErrorDisplay message={providersError} />
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th 
-                    className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/3 cursor-pointer hover:bg-pink-50"
-                    onClick={() => handleProviderSortChange('name')}
-                  >
-                    <div className="flex items-center">
-                      <span>Provider</span>
-                      {providerSortField === 'name' && (
-                        <span className="ml-1">
-                          {providerSortOrder === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/3">
-                    <div className="flex flex-col items-start gap-1">
-                      <span>Status</span>
-                      <FilterDropdown
-                        id="provider-status-filter"
-                        options={providerStatusOptions}
-                        value={providerStatusFilters}
-                        onChange={setProviderStatusFilters}
-                        placeholder="All Statuses"
-                        className="mt-1"
-                      />
-                    </div>
-                  </th>
-                  <th 
-                    className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300 w-1/3 cursor-pointer hover:bg-pink-50"
-                    onClick={() => handleProviderSortChange('product_count')}
-                  >
-                    <div className="flex items-center">
-                      <span>Products</span>
-                      {providerSortField === 'product_count' && (
-                        <span className="ml-1">
-                          {providerSortOrder === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredAndSortedProviders.length > 0 ? (
-                  filteredAndSortedProviders.map(provider => (
-                    <tr 
-                      key={provider.id} 
-                      className="hover:bg-pink-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
-                      onClick={() => handleItemClick(provider.id)}
-                    >
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div 
-                            className="h-3 w-3 rounded-full mr-2 flex-shrink-0" 
-                            style={{ backgroundColor: provider.theme_color || getProviderColor(provider.name) }}
-                            aria-hidden="true"
-                          ></div>
-                          <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">{provider.name}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          provider.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {provider.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="text-sm text-gray-600">
-                          {provider.product_count !== undefined ? provider.product_count : 0}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={3} className="p-6">
-                      <EmptyState message="No providers found" />
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+        ) : searchFilteredProviders.length === 0 ? (
+          <div className="p-6">
+            <EmptyState message="No providers found" />
           </div>
+        ) : (
+          <StandardTable
+            data={searchFilteredProviders}
+            columns={columns}
+            className="cursor-pointer"
+            onRowClick={handleItemClick}
+          />
         )}
       </div>
     </div>

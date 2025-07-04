@@ -7,6 +7,7 @@ import { getProductOwnerDisplayName, ProductOwner } from '../utils/productOwnerU
 import FilterSearch from '../components/ui/search/FilterSearch';
 import FilterDropdown from '../components/ui/dropdowns/FilterDropdown';
 import { BaseInput, MultiSelectDropdown, ActionButton } from '../components/ui';
+import StandardTable, { ColumnConfig } from '../components/StandardTable';
 
 interface Product {
   id: number;
@@ -14,9 +15,6 @@ interface Product {
   client_id: number;
   status: string;
 }
-
-type SortField = 'firstname' | 'surname' | 'known_as' | 'status';
-type SortOrder = 'asc' | 'desc';
 
 const ProductOwners: React.FC = () => {
   const navigate = useNavigate();
@@ -26,9 +24,6 @@ const ProductOwners: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] = useState<SortField>('firstname');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
-  const [statusFilter, setStatusFilter] = useState<string[]>([]);
 
   // Create modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -64,15 +59,6 @@ const ProductOwners: React.FC = () => {
 
   const handleRowClick = (productOwner: ProductOwner) => {
     navigate(`/product_owners/${productOwner.id}`);
-  };
-
-  const handleSortFieldChange = (field: SortField) => {
-    if (field === sortField) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortOrder('asc');
-    }
   };
 
   const handleCreateProductOwner = async () => {
@@ -156,23 +142,45 @@ const ProductOwners: React.FC = () => {
 
 
 
-  const filteredAndSortedProductOwners = productOwners
-    .filter(po => 
+  // Apply search filtering only - StandardTable will handle column filtering and sorting
+  const searchFilteredProductOwners = productOwners.filter(po => 
+    searchQuery === '' || 
         (po.firstname?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
         (po.surname?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
         (po.known_as?.toLowerCase() || '').includes(searchQuery.toLowerCase())
-    )
-    .filter(po =>
-      statusFilter.length === 0 ||
-      (po.status && statusFilter.includes(po.status))
-    )
-    .sort((a, b) => {
-      const aValue = String(a[sortField] || '').toLowerCase();
-      const bValue = String(b[sortField] || '').toLowerCase();
-      return sortOrder === 'asc' 
-        ? aValue.localeCompare(bValue)
-        : bValue.localeCompare(aValue);
-    });
+  );
+
+  // Column configuration for StandardTable
+  const columns: ColumnConfig[] = [
+    {
+      key: 'firstname',
+      label: 'First Name',
+      dataType: 'text',
+      alignment: 'left',
+      control: 'sort'
+    },
+    {
+      key: 'surname',
+      label: 'Surname',
+      dataType: 'text',
+      alignment: 'left',
+      control: 'sort'
+    },
+    {
+      key: 'known_as',
+      label: 'Known As',
+      dataType: 'text',
+      alignment: 'left',
+      control: 'sort'
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      dataType: 'category',
+      alignment: 'left',
+      control: 'filter'
+    }
+  ];
 
 
 
@@ -200,152 +208,27 @@ const ProductOwners: React.FC = () => {
               placeholder="Filter by name..."
               onFilter={setSearchQuery}
               showResultCount={true}
-              resultCount={filteredAndSortedProductOwners.length}
+              resultCount={searchFilteredProductOwners.length}
               filterLabel="Product Owner"
             />
           </div>
         </div>
-        <div className="overflow-x-auto overflow-visible">
-          <table className="min-w-full table-fixed divide-y divide-gray-200">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="w-[25%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                  <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('firstname')} title="Click to sort by First Name">
-                    First Name
-                    <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                      {sortField === 'firstname' ? (
-                        sortOrder === 'asc' ? (
-                          <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                          </svg>
-                        ) : (
-                          <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        )
-                      ) : (
-                        <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
-                        </svg>
-                      )}
-                    </span>
+        {isLoading ? (
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
                   </div>
-                </th>
-                <th className="w-[25%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                  <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('surname')} title="Click to sort by Surname">
-                    Surname
-                    <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                      {sortField === 'surname' ? (
-                        sortOrder === 'asc' ? (
-                          <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                          </svg>
-                        ) : (
-                          <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        )
-                      ) : (
-                        <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
-                        </svg>
-                      )}
-                    </span>
-                  </div>
-                </th>
-                <th className="w-[30%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                  <div className="flex items-center group cursor-pointer hover:bg-indigo-50 rounded py-1 px-1 transition-colors duration-150" onClick={() => handleSortFieldChange('known_as')} title="Click to sort by Known As">
-                    Known As
-                    <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                      {sortField === 'known_as' ? (
-                        sortOrder === 'asc' ? (
-                          <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                          </svg>
-                        ) : (
-                          <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        )
-                      ) : (
-                        <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
-                        </svg>
-                      )}
-                    </span>
-                  </div>
-                </th>
-                <th className="w-[20%] px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                  <div className="flex flex-col items-start">
-                    <span className="flex items-center group cursor-pointer" onClick={() => handleSortFieldChange('status')}>
-                      Status
-                      <span className="ml-1 text-gray-400 group-hover:text-indigo-500">
-                        {sortField === 'status' ? (
-                          sortOrder === 'asc' ? (
-                            <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                            </svg>
-                          ) : (
-                            <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          )
-                        ) : (
-                          <svg className="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4" />
-                          </svg>
-                        )}
-                      </span>
-                    </span>
-                    <FilterDropdown
-                      id="status-filter"
-                      options={[
-                        { value: 'active', label: 'Active' },
-                        { value: 'inactive', label: 'Inactive' }
-                      ]}
-                      value={statusFilter}
-                      onChange={(vals) => setStatusFilter(vals.filter(v => typeof v === 'string'))}
-                      placeholder="All Statuses"
-                      className="min-w-[140px] mt-1"
-                    />
-                  </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {isLoading ? (
-                <tr><td colSpan={4} className="text-center py-4">Loading...</td></tr>
-              ) : error ? (
-                <tr><td colSpan={4} className="text-center py-4 text-red-500">{error}</td></tr>
-              ) : (
-                filteredAndSortedProductOwners.map(po => (
-                  <tr 
-                    key={po.id} 
-                    onClick={() => handleRowClick(po)} 
-                    className="hover:bg-indigo-50 transition-colors duration-150 cursor-pointer border-b border-gray-100"
-                  >
-                    <td className="px-6 py-3 whitespace-nowrap">
-                      <div className="text-sm font-semibold text-gray-800 font-sans tracking-tight">{po.firstname || '-'}</div>
-                    </td>
-                    <td className="px-6 py-3 whitespace-nowrap">
-                      <div className="text-sm font-semibold text-gray-800 font-sans tracking-tight">{po.surname || '-'}</div>
-                    </td>
-                    <td className="px-6 py-3 whitespace-nowrap">
-                      <div className="text-sm text-gray-600 font-sans tracking-tight">{po.known_as || '-'}</div>
-                    </td>
-                    <td className="px-6 py-3 whitespace-nowrap">
-                      <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        po.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {po.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        ) : error ? (
+          <div className="text-red-600 text-center py-4">{error}</div>
+        ) : searchFilteredProductOwners.length === 0 ? (
+          <div className="text-gray-500 text-center py-4">No product owners found</div>
+        ) : (
+          <StandardTable
+            data={searchFilteredProductOwners}
+            columns={columns}
+            className="cursor-pointer"
+            onRowClick={(productOwner) => handleRowClick(productOwner)}
+          />
+        )}
       </div>
 
       {/* Create Product Owner Modal */}
