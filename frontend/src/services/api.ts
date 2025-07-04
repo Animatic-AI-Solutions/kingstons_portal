@@ -753,4 +753,104 @@ export const refreshRevenueRateCache = async () => {
   return api.post('revenue-rate-analytics/refresh');
 };
 
+// ⚡ PHASE 1 OPTIMIZATION: Analytics Dashboard Service
+export const getOptimizedAnalyticsDashboard = async (
+  fundLimit: number = 10,
+  providerLimit: number = 10,
+  templateLimit: number = 10
+) => {
+  const startTime = Date.now();
+  
+  try {
+    console.log('🚀 Phase 1: Fetching optimized analytics dashboard...');
+    
+    // Single aggregated call using database views
+    const response = await api.get('/analytics/dashboard-fast', {
+      params: { 
+        fund_limit: fundLimit, 
+        provider_limit: providerLimit, 
+        template_limit: templateLimit 
+      }
+    });
+
+    const endTime = Date.now();
+    const loadTime = (endTime - startTime) / 1000;
+    
+    console.log(`✅ Phase 1 optimization completed in ${loadTime.toFixed(2)}s`);
+    console.log('📊 Optimized data structure:', {
+      metrics: response.data.metrics,
+      distributions: {
+        funds: response.data.distributions?.funds?.length || 0,
+        providers: response.data.distributions?.providers?.length || 0,
+        templates: response.data.distributions?.templates?.length || 0
+      },
+      performance: {
+        topPerformers: response.data.performance?.topPerformers?.length || 0,
+        clientRisks: response.data.performance?.clientRisks?.length || 0
+      },
+      revenue: response.data.revenue ? 'Available' : 'Not Available',
+      optimized: response.data.optimized,
+      phase: response.data.phase
+    });
+
+    return {
+      data: response.data,
+      loadTime,
+      optimized: true
+    };
+  } catch (error) {
+    const endTime = Date.now();
+    const loadTime = (endTime - startTime) / 1000;
+    
+    console.error(`❌ Phase 1 optimization failed after ${loadTime.toFixed(2)}s:`, error);
+    throw error;
+  }
+};
+
+// Fallback function for original analytics endpoints
+export const getFallbackAnalyticsDashboard = async (
+  fundLimit: number = 10,
+  providerLimit: number = 10,
+  templateLimit: number = 10
+) => {
+  console.log('🔄 Using fallback analytics endpoints...');
+  
+  const [
+    dashboardResponse,
+    performanceResponse,
+    clientRisksResponse
+  ] = await Promise.all([
+    api.get('/analytics/dashboard_all', {
+      params: { fund_limit: fundLimit, provider_limit: providerLimit, template_limit: templateLimit }
+    }),
+    api.get('/analytics/performance_data', {
+      params: { entity_type: 'overview', sort_order: 'highest', limit: 10 }
+    }).catch(err => {
+      console.warn('Performance data failed, continuing without it:', err);
+      return { data: { performanceData: [] } };
+    }),
+    api.get('/analytics/client_risks')
+  ]);
+
+  return {
+    data: {
+      metrics: dashboardResponse.data.metrics,
+      distributions: {
+        funds: dashboardResponse.data.funds || [],
+        providers: dashboardResponse.data.providers || [],
+        templates: dashboardResponse.data.templates || []
+      },
+      performance: {
+        topPerformers: performanceResponse.data.performanceData || [],
+        clientRisks: clientRisksResponse.data || []
+      },
+      revenue: null,
+      optimized: false,
+      phase: 'Fallback - Original Endpoints'
+    },
+    loadTime: 0,
+    optimized: false
+  };
+};
+
 export default api; 
