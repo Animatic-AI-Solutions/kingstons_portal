@@ -14,6 +14,7 @@ import {
 } from '../utils/definitionsShared';
 import api from '../services/api';
 import StandardTable, { ColumnConfig } from '../components/StandardTable';
+import AddFundModal from '../components/AddFundModal';
 
 const DefinitionsFunds: React.FC = () => {
   const { user } = useAuth();
@@ -21,6 +22,7 @@ const DefinitionsFunds: React.FC = () => {
   
   // State management - removed manual sorting/filtering state
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAddFundModal, setShowAddFundModal] = useState(false);
 
   // Data fetching
   const fetchFunds = useCallback(async () => {
@@ -31,7 +33,8 @@ const DefinitionsFunds: React.FC = () => {
   const { 
     data: funds, 
     loading: fundsLoading, 
-    error: fundsError 
+    error: fundsError,
+    refresh: refreshFunds
   } = useEntityData<Fund>(fetchFunds, []);
 
   // Event handlers
@@ -40,8 +43,13 @@ const DefinitionsFunds: React.FC = () => {
   }, [navigate]);
 
   const handleAddNew = useCallback(() => {
-    navigate('/definitions/funds/add');
-  }, [navigate]);
+    setShowAddFundModal(true);
+  }, []);
+
+  const handleAddFundSuccess = useCallback((newFund: any) => {
+    // Refresh the funds list to include the new fund
+    refreshFunds();
+  }, [refreshFunds]);
 
   // Apply search filtering only - StandardTable will handle column filtering and sorting
   const searchFilteredFunds = useMemo(() => {
@@ -98,13 +106,13 @@ const DefinitionsFunds: React.FC = () => {
   if (!user) return null;
 
   return (
-    <div className="container mx-auto px-2 py-1 bg-blue-100/70">
+    <div className="container mx-auto px-2 py-1">
       <div className="flex justify-between items-center mb-3">
         <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Funds</h1>
         <div className="flex items-center gap-4">
           <button
             onClick={handleAddNew}
-            className="bg-blue-600 text-white px-4 py-1.5 rounded-xl font-medium hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-sm flex items-center gap-1"
+            className="bg-primary-600 text-white px-4 py-1.5 rounded-xl font-medium hover:bg-primary-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 shadow-sm flex items-center gap-1"
             aria-label="Add new fund"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -159,6 +167,13 @@ const DefinitionsFunds: React.FC = () => {
           />
         )}
       </div>
+
+      {/* Add Fund Modal */}
+      <AddFundModal
+        isOpen={showAddFundModal}
+        onClose={() => setShowAddFundModal(false)}
+        onSuccess={handleAddFundSuccess}
+      />
     </div>
   );
 };

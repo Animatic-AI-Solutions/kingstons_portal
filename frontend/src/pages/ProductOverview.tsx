@@ -15,6 +15,7 @@ import {
 } from '../components/ui';
 import { isCashFund } from '../utils/fundUtils';
 import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
+import { useSmartNavigation } from '../hooks/useSmartNavigation';
 
 
 
@@ -132,6 +133,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   const accountId = propAccountId || paramAccountId;
   const navigate = useNavigate();
   const { api } = useAuth();
+  const { navigateBack } = useSmartNavigation();
   const [account, setAccount] = useState<Account | null>(null);
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1233,31 +1235,15 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       await api.delete(`/api/client_products/${accountId}`);
       console.log('Product deleted successfully');
       
-      // Navigate back to client details (breadcrumb parent) with success message
-      if (account?.client_id) {
-        navigate(`/client_groups/${account.client_id}`, { 
-          state: { 
-            notification: {
-              type: 'success',
-              message: account?.portfolio_id 
-                ? `Product and associated portfolio #${account.portfolio_id} deleted successfully` 
-                : 'Product deleted successfully'
-            }
-          }
-        });
-      } else {
-        // Fallback to products list if client_id is not available
-        navigate('/products', { 
-          state: { 
-            notification: {
-              type: 'success',
-              message: account?.portfolio_id 
-                ? `Product and associated portfolio #${account.portfolio_id} deleted successfully` 
-                : 'Product deleted successfully'
-            }
-          }
-        });
-      }
+      // Navigate back using smart breadcrumb-aware navigation
+      const successMessage = account?.portfolio_id 
+        ? `Product and associated portfolio #${account.portfolio_id} deleted successfully` 
+        : 'Product deleted successfully';
+      
+      navigateBack({
+        type: 'success',
+        message: successMessage
+      }, account?.client_id);
     } catch (err: any) {
       console.error('Error deleting product:', err);
       
@@ -1292,27 +1278,11 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       const response = await lapseProduct(parseInt(accountId));
       console.log('Product lapsed successfully');
       
-      // Navigate back to client details (breadcrumb parent) with success message
-      if (account?.client_id) {
-        navigate(`/client_groups/${account.client_id}`, { 
-          state: { 
-            notification: {
-              type: 'success',
-              message: 'Product successfully lapsed'
-            }
-          }
-        });
-      } else {
-        // Fallback to products list if client_id is not available
-        navigate('/products', { 
-          state: { 
-            notification: {
-              type: 'success',
-              message: 'Product successfully lapsed'
-            }
-          }
-        });
-      }
+      // Navigate back using smart breadcrumb-aware navigation
+      navigateBack({
+        type: 'success',
+        message: 'Product successfully lapsed'
+      }, account?.client_id);
     } catch (err: any) {
       console.error('Error lapsing product:', err);
       
@@ -1337,27 +1307,11 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       const response = await reactivateProduct(parseInt(accountId));
       console.log('Product reactivated successfully');
       
-      // Navigate back to client details (breadcrumb parent) with success message
-      if (account?.client_id) {
-        navigate(`/client_groups/${account.client_id}`, { 
-          state: { 
-            notification: {
-              type: 'success',
-              message: 'Product successfully reactivated'
-            }
-          }
-        });
-      } else {
-        // Fallback to products list if client_id is not available
-        navigate('/products', { 
-          state: { 
-            notification: {
-              type: 'success',
-              message: 'Product successfully reactivated'
-            }
-          }
-        });
-      }
+      // Navigate back using smart breadcrumb-aware navigation
+      navigateBack({
+        type: 'success',
+        message: 'Product successfully reactivated'
+      }, account?.client_id);
     } catch (err: any) {
       console.error('Error reactivating product:', err);
       
