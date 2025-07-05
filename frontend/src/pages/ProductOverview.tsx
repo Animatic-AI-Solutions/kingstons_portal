@@ -191,6 +191,9 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   const [fundError, setFundError] = useState<string | null>(null);
   const [fundSearchTerm, setFundSearchTerm] = useState('');
   const [availableFunds, setAvailableFunds] = useState<Fund[]>([]);
+  
+  // Backup state for target weightings when entering edit mode
+  const [originalTargetWeightings, setOriginalTargetWeightings] = useState<Map<number, string>>(new Map());
 
   // Add caching state for template data to prevent duplicate calls
   const [templateDataCache, setTemplateDataCache] = useState<Map<number, {
@@ -1164,12 +1167,48 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       }
       setIsEditingFunds(false);
       setFundError(null);
+      
+      // Clear the backup since changes were saved successfully
+      setOriginalTargetWeightings(new Map());
+      
     } catch (err: any) {
       console.error('Error saving fund weightings:', err);
       setFundError(err.response?.data?.message || err.response?.data?.detail || 'Failed to save fund weightings');
     } finally {
       setIsSavingFunds(false);
     }
+  };
+
+  // Function to start editing funds with backup
+  const handleStartEditingFunds = () => {
+    // Create backup of current target weightings
+    const backup = new Map<number, string>();
+    holdings.forEach(holding => {
+      if (holding.id && holding.target_weighting) {
+        backup.set(holding.id, holding.target_weighting);
+      }
+    });
+    setOriginalTargetWeightings(backup);
+    setIsEditingFunds(true);
+  };
+
+  // Function to cancel editing and restore original values
+  const handleCancelEditingFunds = () => {
+    // Restore original target weightings
+    setHoldings(prevHoldings => 
+      prevHoldings.map(holding => {
+        const originalWeighting = originalTargetWeightings.get(holding.id);
+        if (originalWeighting !== undefined) {
+          return { ...holding, target_weighting: originalWeighting };
+        }
+        return holding;
+      })
+    );
+    
+    // Clear backup and exit edit mode
+    setOriginalTargetWeightings(new Map());
+    setIsEditingFunds(false);
+    setFundError(null);
   };
 
   // Add function to handle account deletion
@@ -2327,7 +2366,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                     <ActionButton
                       variant="cancel"
                       size="md"
-                      onClick={() => setIsEditingFunds(false)}
+                      onClick={handleCancelEditingFunds}
                       disabled={isSavingFunds}
                     />
                     <ActionButton
@@ -2346,7 +2385,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                     size="md"
                     context="Product Funds"
                     design="descriptive"
-                    onClick={() => setIsEditingFunds(true)}
+                    onClick={handleStartEditingFunds}
                   />
                 )}
               </div>
@@ -2593,7 +2632,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             <span className="text-gray-500">-</span>
                           )}
                         </td>
-                        {isEditingFunds && account && !account.template_generation_id && (
+                        {isEditingFunds && account && !account.template_generation_id && !isCashFund({ fund_name: holding.fund_name, isin_number: holding.isin_number } as any) && (
                           <td className="px-6 py-2 whitespace-nowrap text-center">
                             <ActionButton
                               variant="delete"
@@ -2627,7 +2666,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                       size="md"
                       context="Funds"
                       design="descriptive"
-                      onClick={() => setIsEditingFunds(true)}
+                      onClick={handleStartEditingFunds}
                     />
                   </div>
                 )}

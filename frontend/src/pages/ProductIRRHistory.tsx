@@ -447,10 +447,14 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
     });
   };
 
-  // Format percentage value
-  const formatPercentage = (value: number | undefined): string => {
+  // Format percentage value with smart decimal places (removes unnecessary zeros)
+  const formatPercentage = (value: number | undefined, maxDecimalPlaces: number = 2): string => {
     if (value === undefined || value === null) return 'N/A';
-    return `${value.toFixed(2)}%`;
+    
+    // Format to the maximum decimal places, then remove trailing zeros
+    const formatted = value.toFixed(maxDecimalPlaces);
+    const withoutTrailingZeros = parseFloat(formatted).toString();
+    return `${withoutTrailingZeros}%`;
   };
 
   // Format activity type for display - convert camelCase or snake_case to spaces
@@ -657,7 +661,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
                       return (
                         <td key={`portfolio-${monthYear}`} className="px-6 py-4 whitespace-nowrap text-sm">
                           <span className={irrClass}>
-                            {formatPercentage(portfolioIrrValue)}
+                            {formatPercentage(portfolioIrrValue, 1)}
                           </span>
                         </td>
                       );

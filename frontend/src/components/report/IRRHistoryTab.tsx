@@ -39,11 +39,21 @@ import {
   formatCurrencyWithTruncation
 } from '../../utils/reportFormatters';
 
-// Local function to format fund IRRs to whole numbers (0 decimal places)
+// Local function to format fund IRRs with smart decimal places (removes unnecessary zeros)
 const formatFundIrr = (irr: number | null | undefined): string => {
   if (irr === null || irr === undefined) return '-';
-  // Round to 0 decimal places for fund IRRs (as per original logic)
-  return `${Math.round(irr)}%`;
+  
+  // Format to 2 decimal places, then remove trailing zeros
+  const formatted = irr.toFixed(2);
+  const withoutTrailingZeros = parseFloat(formatted).toString();
+  return `${withoutTrailingZeros}%`;
+};
+
+// Helper function for chart tick formatting (1 decimal place, smart)
+const formatChartTick = (value: number): string => {
+  const formatted = value.toFixed(1);
+  const withoutTrailingZeros = parseFloat(formatted).toString();
+  return `${withoutTrailingZeros}%`;
 };
 import { normalizeProductType, PRODUCT_TYPE_ORDER } from '../../utils/reportConstants';
 import { useIRRCalculationService } from '../../hooks/report/useIRRCalculationService';
@@ -774,7 +784,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                     />
                     <YAxis 
                       tick={{ fontSize: 12 }}
-                      tickFormatter={(value) => `${value.toFixed(1)}%`}
+                      tickFormatter={formatChartTick}
                     />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend />
@@ -800,7 +810,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                     />
                     <YAxis 
                       tick={{ fontSize: 12 }}
-                      tickFormatter={(value) => `${value.toFixed(1)}%`}
+                      tickFormatter={formatChartTick}
                     />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend />

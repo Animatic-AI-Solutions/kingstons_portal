@@ -235,13 +235,13 @@ const detectNonCommonValuationDates = (holdings: Holding[]): {
     return { hasNonCommonDates: false, nonCommonFunds: [], commonDates: [] };
   }
   
-  // Separate funds with and without meaningful valuations
-  // A meaningful valuation requires both a valuation_date AND a non-zero market_value
+  // Separate funds with and without valid valuations
+  // A valid valuation requires both a valuation_date AND a market_value (including zero)
   const fundsWithValuations = activeHoldings.filter(holding => 
-    holding.valuation_date && holding.market_value !== null && holding.market_value !== undefined && holding.market_value > 0
+    holding.valuation_date && holding.market_value !== null && holding.market_value !== undefined
   );
   const fundsWithoutValuations = activeHoldings.filter(holding => 
-    !holding.valuation_date || holding.market_value === null || holding.market_value === undefined || holding.market_value <= 0
+    !holding.valuation_date || holding.market_value === null || holding.market_value === undefined
   );
   
   console.log('🔍 Valuation separation:', {
@@ -291,9 +291,8 @@ const detectNonCommonValuationDates = (holdings: Holding[]): {
       if (holding.valuation_date) {
         if (holding.market_value === null || holding.market_value === undefined) {
           displayText = 'No valuation amount';
-        } else if (holding.market_value <= 0) {
-          displayText = 'Zero/missing valuation';
         }
+        // Note: Zero valuations are valid and should not appear in this list
       }
       
       return {
@@ -302,7 +301,7 @@ const detectNonCommonValuationDates = (holdings: Holding[]): {
       };
     });
     
-    console.log('🔍 Mixed valuation scenario detected - some funds have meaningful valuations, others don\'t');
+    console.log('🔍 Mixed valuation scenario detected - some funds have valid valuations, others don\'t');
     return {
       hasNonCommonDates: true,
       nonCommonFunds,
