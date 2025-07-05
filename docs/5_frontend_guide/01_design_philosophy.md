@@ -52,6 +52,21 @@ This document outlines the core design and user experience (UX) principles for t
 - **Actionable Feedback:** Messages provide clear guidance on what action (if any) the user needs to take.
 - **Progressive Disclosure:** Complex information is revealed progressively, with summary information presented first and details available on demand.
 
+### Smart Data Formatting
+- **Intelligent Precision:** Financial data displays with smart decimal formatting that removes unnecessary trailing zeros while maintaining required precision (e.g., "5%" instead of "5.00%", "5.1%" instead of "5.10%").
+- **Context-Appropriate Precision:** Different data types use appropriate decimal places (fund IRRs: up to 2 decimal places, portfolio total IRRs: up to 1 decimal place) while removing unnecessary zeros.
+- **Clean Display:** Numbers are presented in their most readable form without sacrificing accuracy or professional appearance.
+
+### Proactive Input Validation
+- **Real-Time Filtering:** Input fields proactively prevent invalid characters from being entered, providing immediate feedback rather than post-submission validation.
+- **Clear Guidance:** Helper text and placeholders inform users about input restrictions before they encounter errors (e.g., "letters, spaces, hyphens, and apostrophes only").
+- **Contextual Restrictions:** Input validation is tailored to the specific data type (e.g., name fields restrict numbers and special characters, maintaining data quality while supporting common name formats like "O'Connor" and "Anne-Marie").
+
+### Context-Aware Form Behavior
+- **Intelligent Auto-Population:** Forms intelligently pre-populate fields based on navigation context, auto-filling data only when it logically supports the user's workflow.
+- **Navigation-Based Logic:** The system recognizes where users came from and adapts form behavior accordingly (e.g., client selection auto-populates only when navigating from client details, not from general navigation).
+- **Security-Conscious:** Auto-population includes validation checks to prevent URL manipulation and ensure data integrity.
+
 ## 5. Accessibility
 
 Accessibility is a core requirement, not an afterthought.

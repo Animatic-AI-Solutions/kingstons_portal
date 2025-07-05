@@ -60,15 +60,21 @@ Centralizes TypeScript interface definitions used across multiple components:
 ### Shared Formatters (`utils/reportFormatters.ts`)
 Provides consistent formatting functions for data presentation:
 - `formatCurrencyWithTruncation()`: Currency formatting with large number truncation
-- `formatIrrWithPrecision()`: IRR percentage formatting with precision control
+- `formatIrrWithPrecision()`: IRR percentage formatting with smart precision control (removes unnecessary trailing zeros)
 - `formatWithdrawalAmount()`: Withdrawal amount formatting with visual indicators
 - `formatCurrencyWithVisualSigning()`: Currency formatting with visual plus/minus indicators
 - `calculateNetFundSwitches()`: Business logic for fund switch calculations
+
+**Smart Formatting Features:**
+- **Intelligent Decimal Handling**: Automatically removes unnecessary trailing zeros (e.g., "5.00%" becomes "5%", "5.10%" becomes "5.1%")
+- **Context-Aware Precision**: Different formatting functions use appropriate maximum decimal places while maintaining clean display
+- **Consistent Behavior**: All percentage formatters across the application use the same smart formatting logic
 
 **Benefits:**
 - Consistent data presentation across all components
 - Centralized formatting logic reduces bugs
 - Easy to modify formatting rules application-wide
+- Professional, clean display of financial data without unnecessary precision
 
 ### Shared Constants (`utils/reportConstants.ts`)
 Centralizes application-wide constants and configuration:
@@ -146,7 +152,11 @@ const processReportData = (data: ReportData): ProductPeriodSummary[] => {
 import { formatCurrencyWithTruncation, formatIrrWithPrecision } from '../utils/reportFormatters';
 
 const displayValue = formatCurrencyWithTruncation(1250000, true); // "£1.25M"
-const displayIRR = formatIrrWithPrecision(0.0875, 2); // "8.75%"
+
+// Smart formatting automatically removes unnecessary decimals
+const displayIRR1 = formatIrrWithPrecision(8.75); // "8.75%" (keeps necessary decimals)
+const displayIRR2 = formatIrrWithPrecision(8.0);  // "8%" (removes unnecessary .0)
+const displayIRR3 = formatIrrWithPrecision(8.10); // "8.1%" (removes trailing zero)
 ```
 
 ### Using Shared Constants
