@@ -2330,9 +2330,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                     <div>
                                       <BaseInput
                                         label="Product Name"
-                                        helperText="(optional)"
+                                        helperText={`(optional) ${product.product_name.length}/30 characters`}
                                         value={product.product_name}
-
+                                        maxLength={30}
                                         onChange={(e) => handleProductChange(product.id, 'product_name', e.target.value)}
                                         className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm border-gray-300 rounded-md h-8"
                                         placeholder="e.g. Smoothed Savings Pension Fund"
@@ -2561,7 +2561,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           setIsAddFundModalOpen(false);
           setAddFundForProductId(null);
         }}
-        onFundAdded={handleFundAdded}
+        onSuccess={(newFund: any) => handleFundAdded(newFund as Fund)}
       />
       )}
     </div>

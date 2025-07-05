@@ -44,13 +44,13 @@ const Clients: React.FC = () => {
       
       return () => clearTimeout(timer);
     }
-  }, [location, forceRefresh]);
+  }, [location]); // Removed forceRefresh from dependencies to prevent infinite loop
 
   // Add page visibility listener to refresh data when page becomes visible
   useEffect(() => {
     const handleVisibilityChange = () => {
-      // Only refresh if page becomes visible and we have data
-      if (!document.hidden && bulkClientData) {
+      // Only refresh if page becomes visible (don't check for existing data)
+      if (!document.hidden) {
         console.log('Page became visible, checking for fresh data...');
         refetch();
       }
@@ -61,7 +61,7 @@ const Clients: React.FC = () => {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [refetch, bulkClientData]);
+  }, [refetch]);
 
 
 

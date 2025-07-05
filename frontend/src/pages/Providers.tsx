@@ -5,6 +5,7 @@ import FilterDropdown from '../components/ui/dropdowns/FilterDropdown';
 import { TableSkeleton } from '../components/ui/feedback/TableSkeleton';
 import { EmptyState } from '../components/ui/feedback/EmptyState';
 import { ErrorDisplay } from '../components/ui/feedback/ErrorDisplay';
+import AddProviderModal from '../components/AddProviderModal';
 import { useEntityData } from '../hooks/useEntityData';
 import { 
   Provider, 
@@ -21,6 +22,7 @@ const DefinitionsProviders: React.FC = () => {
   
   // State management
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAddProviderModal, setShowAddProviderModal] = useState(false);
 
   // Data fetching
   const fetchProviders = useCallback(async () => {
@@ -54,7 +56,8 @@ const DefinitionsProviders: React.FC = () => {
   const { 
     data: providers, 
     loading: providersLoading, 
-    error: providersError 
+    error: providersError,
+    refresh: refreshProviders
   } = useEntityData<Provider>(fetchProviders, []);
 
   // Event handlers
@@ -63,8 +66,13 @@ const DefinitionsProviders: React.FC = () => {
   }, [navigate]);
 
   const handleAddNew = useCallback(() => {
-    navigate('/definitions/providers/add');
-  }, [navigate]);
+    setShowAddProviderModal(true);
+  }, []);
+
+  const handleAddProviderSuccess = useCallback((newProvider: any) => {
+    // Refresh the providers list to include the new provider
+    refreshProviders();
+  }, [refreshProviders]);
 
   // Apply search filtering only - StandardTable will handle column filtering and sorting
   const searchFilteredProviders = useMemo(() => {
@@ -105,13 +113,13 @@ const DefinitionsProviders: React.FC = () => {
   if (!user) return null;
 
   return (
-    <div className="container mx-auto px-2 py-1 bg-pink-100/50">
+    <div className="container mx-auto px-2 py-1">
       <div className="flex justify-between items-center mb-3">
         <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Providers</h1>
         <div className="flex items-center gap-4">
           <button
             onClick={handleAddNew}
-            className="bg-rose-600 text-white px-4 py-1.5 rounded-xl font-medium hover:bg-rose-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 shadow-sm flex items-center gap-1"
+            className="bg-primary-600 text-white px-4 py-1.5 rounded-xl font-medium hover:bg-primary-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 shadow-sm flex items-center gap-1"
             aria-label="Add new provider"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -131,7 +139,7 @@ const DefinitionsProviders: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search providers..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors duration-200"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200"
               aria-label="Search providers"
             />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -166,6 +174,13 @@ const DefinitionsProviders: React.FC = () => {
           />
         )}
       </div>
+
+      {/* Add Provider Modal */}
+      <AddProviderModal
+        isOpen={showAddProviderModal}
+        onClose={() => setShowAddProviderModal(false)}
+        onSuccess={handleAddProviderSuccess}
+      />
     </div>
   );
 };

@@ -129,11 +129,14 @@ const ProductDetails: React.FC = () => {
   }, []); // Empty dependency array - only run once on mount
   
   useEffect(() => {
-    // Redirect to overview by default, preserving any query parameters
+    // Redirect to overview by default, preserving any query parameters and state
     if (window.location.pathname === `/products/${productId}`) {
-      navigate(`/products/${productId}/overview${location.search}`, { replace: true });
+      navigate(`/products/${productId}/overview${location.search}`, { 
+        replace: true,
+        state: location.state // Preserve the navigation state from the previous page
+      });
     }
-  }, [productId, navigate, location.search]);
+  }, [productId, navigate, location.search, location.state]);
 
   // Fetch product data for the title
   useEffect(() => {
@@ -213,6 +216,7 @@ const ProductDetails: React.FC = () => {
         <nav className="flex space-x-2 px-2 py-2 bg-gray-50 rounded-lg">
           <NavLink
             to={`/products/${productId}/overview${location.search}`}
+            state={location.state}
             className={({ isActive }: { isActive: boolean }) =>
               isActive
                 ? 'bg-primary-700 text-white shadow-sm rounded-lg px-2 py-2 font-medium text-base transition-all duration-200 ease-in-out'
@@ -223,6 +227,7 @@ const ProductDetails: React.FC = () => {
           </NavLink>
           <NavLink
             to={`/products/${productId}/irr-calculation${location.search}`}
+            state={location.state}
             className={({ isActive }: { isActive: boolean }) =>
               isActive
                 ? 'bg-primary-700 text-white shadow-sm rounded-lg px-2 py-2 font-medium text-base transition-all duration-200 ease-in-out'
@@ -233,6 +238,7 @@ const ProductDetails: React.FC = () => {
           </NavLink>
           <NavLink
             to={`/products/${productId}/irr-history${location.search}`}
+            state={location.state}
             className={({ isActive }: { isActive: boolean }) =>
               isActive
                 ? 'bg-primary-700 text-white shadow-sm rounded-lg px-2 py-2 font-medium text-base transition-all duration-200 ease-in-out'

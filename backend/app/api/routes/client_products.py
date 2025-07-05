@@ -765,8 +765,17 @@ async def update_client_product(client_product_id: int, client_product_update: C
         6. Returns the updated client product information
     Expected output: A JSON object containing the updated client product's details
     """
-    # Remove None values from the update data
-    update_data = {k: v for k, v in client_product_update.model_dump().items() if v is not None}
+    # Remove None values from the update data, except for nullable revenue fields
+    nullable_fields = {'fixed_cost', 'percentage_fee'}
+    all_data = client_product_update.model_dump()
+    update_data = {}
+    
+    for k, v in all_data.items():
+        # Include the field if:
+        # 1. It's not None, OR
+        # 2. It's None but it's a nullable field (meaning we want to set it to NULL)
+        if v is not None or k in nullable_fields:
+            update_data[k] = v
     
     if not update_data:
         raise HTTPException(status_code=400, detail="No valid update data provided")
