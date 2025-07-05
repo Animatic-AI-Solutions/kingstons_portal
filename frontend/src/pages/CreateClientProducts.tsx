@@ -321,7 +321,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       console.log(`Client selected: ${client?.name} (ID: ${selectedClientId})`);
     }
   }, [selectedClientId, clients]);
-
+  
   // Add useEffect to determine return path based on where user came from
   useEffect(() => {
     // Check URL parameters first for explicit return path
@@ -1441,8 +1441,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                 // Create associations one by one
                 for (const ownerId of product.product_owner_ids) {
                   await api.post('/api/product_owner_products', {
-                    product_owner_id: ownerId,
-                    product_id: createdProductId
+                      product_owner_id: ownerId,
+                      product_id: createdProductId
                   });
                 }
                 console.log(`Created associations between product ${createdProductId} and product owners ${product.product_owner_ids.join(', ')}`);
@@ -1470,10 +1470,10 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
 
       // Navigate to client details page - only if we have a valid client ID
       if (selectedClientId && selectedClientId > 0) {
-        navigate(`/clients/${selectedClientId}`);
+      navigate(`/client_groups/${selectedClientId}`);
       } else {
         console.error('❌ Invalid selectedClientId:', selectedClientId);
-        navigate('/clients'); // Fallback to clients list
+        navigate('/client_groups'); // Fallback to clients list
       }
 
     } catch (err: any) { // Type the error as any
