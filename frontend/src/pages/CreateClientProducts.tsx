@@ -1162,6 +1162,15 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       if (!product.start_date) {
         productErrors.start_date = 'Start date is required';
         hasErrors = true;
+      } else {
+        // Check if start date is in the future
+        const today = dayjs().startOf('day');
+        const startDate = dayjs(product.start_date).startOf('day');
+        
+        if (startDate.isAfter(today)) {
+          productErrors.start_date = 'Start date cannot be in the future';
+          hasErrors = true;
+        }
       }
 
       // Product owner validation - at least one must be assigned
@@ -1193,7 +1202,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           hasErrors = true;
         }
         
-        // Flexible weighting validation: Allow no weightings OR weightings that don't exceed 100%
+        // Strict weighting validation: Allow either 0% (no weightings) OR exactly 100%
         const hasAnyWeightings = product.portfolio.selectedFunds.some(fundId => {
           const weighting = product.portfolio.fundWeightings[fundId.toString()];
           return weighting && weighting.trim() !== '';
@@ -1203,13 +1212,17 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         const cashFund = findCashFund(funds);
         const hasCashWeighting = cashFund && product.portfolio.fundWeightings[cashFund.id.toString()]?.trim();
         
-        // If user has entered any weightings, validate them
-        if (hasAnyWeightings || hasCashWeighting) {
+        // Calculate total weighting
         const totalWeighting = calculateTotalFundWeighting(product);
-          
-          // Allow under 100% but prevent over 100%
-          if (totalWeighting > 100) {
-            productErrors.weightings = `Fund weightings cannot exceed 100%. Current total: ${totalWeighting.toFixed(1)}%`;
+        
+        // If user has entered any weightings, they must add up to exactly 100%
+        if (hasAnyWeightings || hasCashWeighting) {
+          if (totalWeighting !== 100) {
+            if (totalWeighting === 0) {
+              productErrors.weightings = 'Please enter fund weightings that add up to 100%';
+            } else {
+              productErrors.weightings = `Fund weightings must add up to exactly 100%. Current total: ${totalWeighting.toFixed(1)}%`;
+            }
             hasErrors = true;
           }
         
