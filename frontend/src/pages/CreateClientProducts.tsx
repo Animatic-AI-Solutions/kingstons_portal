@@ -138,9 +138,31 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   // Get client info from URL parameters
   const urlClientId = searchParams.get('client_id');
   const clientName = searchParams.get('client_name');
+  const returnTo = searchParams.get('returnTo');
   
-  // Form state
-  const [selectedClientId, setSelectedClientId] = useState<number | null>(urlClientId ? parseInt(urlClientId) : null);
+  // Helper function to determine if navigation came from client details page
+  const isFromClientDetailsPage = (): boolean => {
+    // Only auto-populate if:
+    // 1. There's a client_id parameter
+    // 2. There's a returnTo parameter that points to a client details page (/client_groups/{id})
+    if (!urlClientId || !returnTo) {
+      console.log(`🔍 Navigation check: Missing client_id (${!!urlClientId}) or returnTo (${!!returnTo})`);
+      return false;
+    }
+    
+    const decodedReturnTo = decodeURIComponent(returnTo);
+    const clientDetailsPattern = /^\/client_groups\/\d+$/;
+    const isFromClientDetails = clientDetailsPattern.test(decodedReturnTo);
+    
+    console.log(`🔍 Navigation check: returnTo="${decodedReturnTo}", isFromClientDetails=${isFromClientDetails}`);
+    
+    return isFromClientDetails;
+  };
+  
+  // Form state - only auto-populate client if coming from client details page
+  const [selectedClientId, setSelectedClientId] = useState<number | null>(
+    (urlClientId && isFromClientDetailsPage()) ? parseInt(urlClientId) : null
+  );
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [providerProducts, setProviderProducts] = useState<Record<number, any>>({});
@@ -446,19 +468,24 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         setAvailableTemplates(portfoliosRes.data);
         setProductOwners(productOwnersRes.data);
         
-        // Validate URL client ID if provided
-        if (urlClientId) {
+        // Validate URL client ID if provided and coming from client details page
+        if (urlClientId && isFromClientDetailsPage()) {
           const clientExists = clientsRes.data.some((client: Client) => client.id === parseInt(urlClientId));
           if (!clientExists) {
             showError(`Client with ID ${urlClientId} not found. Please select a valid client.`);
             setSelectedClientId(null);
           } else {
+            const client = clientsRes.data.find((c: Client) => c.id === parseInt(urlClientId));
+            console.log(`✅ Auto-populating client from client details page: ${client?.name} (ID: ${urlClientId})`);
             setSelectedClientId(parseInt(urlClientId));
           }
-        } else if (clientsRes.data.length > 0) {
-          // Set default only if no URL client parameter is provided
-          setSelectedClientId(clientsRes.data[0].id);
+        } else if (urlClientId) {
+          // URL has client_id but not from client details page - don't auto-populate
+          console.log(`❌ Client ID ${urlClientId} found in URL but not from client details page. Not auto-populating.`);
+        } else {
+          console.log(`ℹ️ No client ID in URL. Client field will start empty.`);
         }
+        // Note: Removed automatic selection of first client to ensure client field starts empty when not from client details
         
         console.log("Data fetched successfully for CreateClientProducts");
       } catch (err: any) {

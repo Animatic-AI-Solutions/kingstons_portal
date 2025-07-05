@@ -50,12 +50,14 @@ export const formatCurrencyWithZeroToggle = (
   return `£${roundedAmount.toLocaleString()}`;
 };
 
-// IRR formatter with consistent precision
+// IRR formatter with smart precision (removes unnecessary zeros)
 export const formatIrrWithPrecision = (irr: number | null | undefined): string => {
   if (irr === null || irr === undefined) return '-';
   
-  // Always round to 1 decimal place for product/total IRRs
-  return `${irr.toFixed(1)}%`;
+  // Format to 1 decimal place, then remove trailing zeros
+  const formatted = irr.toFixed(1);
+  const withoutTrailingZeros = parseFloat(formatted).toString();
+  return `${withoutTrailingZeros}%`;
 };
 
 // Withdrawal amount formatter

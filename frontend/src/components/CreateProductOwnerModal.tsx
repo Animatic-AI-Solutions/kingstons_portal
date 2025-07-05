@@ -88,11 +88,37 @@ const CreateProductOwnerModal: React.FC<CreateProductOwnerModalProps> = ({
     }
   };
 
+  // Helper function to filter out numbers and special characters, allowing only letters, spaces, hyphens, and apostrophes
+  const filterNameInput = (value: string): string => {
+    // Only allow letters (a-z, A-Z), spaces, hyphens, and apostrophes (for names like O'Connor, Anne-Marie)
+    return value.replace(/[^a-zA-Z\s\-']/g, '');
+  };
+
+  // Helper function to prevent restricted characters from being typed
+  const handleNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Allow control keys (backspace, delete, arrow keys, etc.)
+    if (e.ctrlKey || e.metaKey || e.altKey || 
+        ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Tab', 'Escape', 'Enter'].includes(e.key)) {
+      return;
+    }
+    
+    // Allow letters, spaces, hyphens, and apostrophes
+    const allowedChars = /^[a-zA-Z\s\-']$/;
+    if (!allowedChars.test(e.key)) {
+      e.preventDefault();
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    
+    // Filter input for name fields
+    const nameFields = ['firstname', 'surname', 'known_as'];
+    const filteredValue = nameFields.includes(name) ? filterNameInput(value) : value;
+    
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: filteredValue
     }));
     
     // Clear field error when user starts typing
@@ -240,9 +266,11 @@ const CreateProductOwnerModal: React.FC<CreateProductOwnerModalProps> = ({
               placeholder="Enter preferred name or nickname"
               value={formData.known_as}
               onChange={handleInputChange}
+              onKeyDown={handleNameKeyDown}
+              maxLength={50}
               required
               error={fieldErrors.known_as}
-              helperText="This will be the primary display name for the product owner"
+              helperText="This will be the primary display name for the product owner (letters, spaces, hyphens, and apostrophes only)"
               leftIcon={
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -261,8 +289,10 @@ const CreateProductOwnerModal: React.FC<CreateProductOwnerModalProps> = ({
                 placeholder="Enter first name (optional)"
                 value={formData.firstname}
                 onChange={handleInputChange}
+                onKeyDown={handleNameKeyDown}
+                maxLength={50}
                 error={fieldErrors.firstname}
-                helperText="Optional: Used for formal display when both first and last names are provided"
+                helperText="Optional: Used for formal display when both first and last names are provided (letters, spaces, hyphens, and apostrophes only)"
                 leftIcon={
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -279,8 +309,10 @@ const CreateProductOwnerModal: React.FC<CreateProductOwnerModalProps> = ({
                 placeholder="Enter surname (optional)"
                 value={formData.surname}
                 onChange={handleInputChange}
+                onKeyDown={handleNameKeyDown}
+                maxLength={50}
                 error={fieldErrors.surname}
-                helperText="Optional: Used for formal display when both first and last names are provided"
+                helperText="Optional: Used for formal display when both first and last names are provided (letters, spaces, hyphens, and apostrophes only)"
                 leftIcon={
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />

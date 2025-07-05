@@ -108,7 +108,10 @@ const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(({
   const effectiveSize = getEffectiveSize();
   const IconComponent = iconMap[variant];
   const buttonText = getButtonText();
-  const showText = !iconOnly && buttonText;
+  
+  // Force icon-only for 'icon' size - moved this logic up
+  const isIconOnlyMode = iconOnly || effectiveSize === 'icon';
+  const showText = !isIconOnlyMode && buttonText;
 
   // Base classes with sleek modern styling
   const baseClasses = 'inline-flex items-center justify-center font-medium rounded-md focus:outline-none focus:ring-3 focus:ring-offset-1 transition-all duration-150 ease-out active:scale-[0.98] relative';
@@ -168,8 +171,7 @@ const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(({
   // Width classes
   const widthClasses = fullWidth ? 'w-full' : '';
 
-  // Force icon-only for 'icon' size
-  const isIconOnly = iconOnly || effectiveSize === 'icon';
+  // Use the consolidated isIconOnlyMode variable defined earlier
 
   const buttonClasses = `
     ${baseClasses}
