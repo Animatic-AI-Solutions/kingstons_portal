@@ -95,7 +95,7 @@ const ACTIVITY_TYPES = [
 
 // Utility function to throttle expensive operations
 const throttle = (func: Function, delay: number) => {
-  let timeoutId: NodeJS.Timeout | null = null;
+  let timeoutId: number | null = null;
   let lastExecTime = 0;
   
   return function (...args: any[]) {
@@ -108,7 +108,7 @@ const throttle = (func: Function, delay: number) => {
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
-      timeoutId = setTimeout(() => {
+      timeoutId = window.setTimeout(() => {
         func(...args);
         lastExecTime = Date.now();
       }, delay);
@@ -968,6 +968,10 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         
         // Check if the result is a valid number
         if (typeof result === 'number' && !isNaN(result) && isFinite(result)) {
+          // Prevent negative results from mathematical expressions
+          if (result < 0) {
+            return expression; // Return the original expression instead of evaluating to negative
+          }
           // Return the result as a string (formatting happens on blur)
           return result.toString();
         }
@@ -1000,6 +1004,15 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       if (processedValue && processedValue.trim() !== '') {
         const num = parseFloat(processedValue);
         if (!isNaN(num) && isFinite(num)) {
+          // Final check: prevent negative amounts
+          if (num < 0) {
+            // Remove the pending edit if it evaluates to negative
+            const updatedEdits = pendingEdits.filter(edit => 
+              !(edit.fundId === fundId && edit.month === month && edit.activityType === activityType)
+            );
+            setPendingEdits(updatedEdits);
+            return;
+          }
           processedValue = num.toFixed(2);
         }
       }
@@ -1056,6 +1069,21 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
     // Allow necessary characters for math expressions and ensure zeros are handled correctly
     const sanitizedValue = value === "0" ? "0" : (value.trim() === '' ? '' : value);
+    
+    // Validate against negative amounts
+    if (sanitizedValue !== '') {
+      // Try to parse the value to check if it's negative
+      const numericValue = parseFloat(sanitizedValue);
+      if (!isNaN(numericValue) && numericValue < 0) {
+        // Show a brief error message and prevent the negative value
+        setError('Negative amounts are not allowed');
+        // Clear the error after 3 seconds
+        setTimeout(() => {
+          setError(null);
+        }, 3000);
+        return;
+      }
+    }
     
     // Get the original value from the database (not from pending edits)
     let originalValue = '';

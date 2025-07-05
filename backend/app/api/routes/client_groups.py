@@ -559,16 +559,16 @@ async def delete_client_group_products(
             deleted_counts["portfolio_funds"] = len(portfolio_funds_delete_result.data) if portfolio_funds_delete_result.data else 0
             logger.info(f"Deleted {deleted_counts['portfolio_funds']} portfolio funds")
         
-        # Step 9: Delete portfolios
+        # Step 9: Delete client products (must be BEFORE portfolios due to foreign key constraint)
+        products_delete_result = db.table('client_products').delete().eq('client_id', client_group_id).execute()
+        deleted_counts["products"] = len(products_delete_result.data) if products_delete_result.data else 0
+        logger.info(f"Deleted {deleted_counts['products']} client products")
+        
+        # Step 10: Delete portfolios (now safe since client_products no longer reference them)
         if portfolio_ids:
             portfolios_result = db.table('portfolios').delete().in_('id', portfolio_ids).execute()
             deleted_counts["portfolios"] = len(portfolios_result.data) if portfolios_result.data else 0
             logger.info(f"Deleted {deleted_counts['portfolios']} portfolios")
-        
-        # Step 10: Delete client products
-        products_delete_result = db.table('client_products').delete().eq('client_id', client_group_id).execute()
-        deleted_counts["products"] = len(products_delete_result.data) if products_delete_result.data else 0
-        logger.info(f"Deleted {deleted_counts['products']} client products")
         
         total_deleted = sum(deleted_counts.values()) + client_owner_associations_count
         

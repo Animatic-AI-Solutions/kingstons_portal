@@ -142,6 +142,16 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   
+  // Product type options
+  const productTypeOptions = [
+    { value: 'ISA', label: 'ISA' },
+    { value: 'GIA', label: 'GIA' },
+    { value: 'Onshore Bond', label: 'Onshore Bond' },
+    { value: 'Offshore Bond', label: 'Offshore Bond' },
+    { value: 'Pension', label: 'Pension' },
+    { value: 'Other', label: 'Other' }
+  ];
+  
   // Lapse state
   const [isLapseModalOpen, setIsLapseModalOpen] = useState(false);
   const [isLapsing, setIsLapsing] = useState(false);
@@ -175,8 +185,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     product_type: '',
     target_risk: '',
     start_date: null as Dayjs | null,
-    fixed_cost: '',
-    percentage_fee: ''
+    fixed_cost: '' as string,
+    percentage_fee: '' as string
   });
   const [editOwnersFormData, setEditOwnersFormData] = useState({
     portfolio_id: '',
@@ -610,6 +620,14 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       year: 'numeric',
       month: 'short',
       day: 'numeric'
+    });
+  };
+
+  const formatDateMonthYear = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', {
+      year: 'numeric',
+      month: 'short'
     });
   };
 
@@ -1499,8 +1517,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         product_type: account.product_type || '',
         target_risk: account.target_risk?.toString() || '',
         start_date: account.start_date ? dayjs(account.start_date) : null,
-        fixed_cost: account.fixed_cost?.toString() || '',
-        percentage_fee: account.percentage_fee?.toString() || ''
+        fixed_cost: account.fixed_cost?.toString() ?? '',
+        percentage_fee: account.percentage_fee?.toString() ?? ''
       });
     } else {
       // Exiting edit mode - clear any errors
@@ -1583,6 +1601,28 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     setFormError(null);
 
     try {
+      // Validate start date is not in the future
+      if (editFormData.start_date) {
+        const today = dayjs().startOf('day');
+        const selectedDate = editFormData.start_date.startOf('day');
+        
+        if (selectedDate.isAfter(today)) {
+          setFormError('Start date cannot be in the future');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // Validate percentage fee is not over 100%
+      if (editFormData.percentage_fee && editFormData.percentage_fee.trim() !== '') {
+        const percentageValue = parseFloat(editFormData.percentage_fee);
+        if (percentageValue > 100) {
+          setFormError('Percentage fee cannot exceed 100%');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       const updateData: any = {
         product_name: editFormData.product_name,
         product_type: editFormData.product_type || null
@@ -1603,14 +1643,14 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         updateData.start_date = editFormData.start_date.format('YYYY-MM-DD');
       }
 
-      // Include revenue fields if provided
-      if (editFormData.fixed_cost) {
-        updateData.fixed_cost = parseFloat(editFormData.fixed_cost);
-      }
+      // Include revenue fields - set to null if empty/undefined, otherwise parse as float
+      updateData.fixed_cost = editFormData.fixed_cost && editFormData.fixed_cost.trim() !== '' 
+        ? parseFloat(editFormData.fixed_cost) 
+        : null;
       
-      if (editFormData.percentage_fee) {
-        updateData.percentage_fee = parseFloat(editFormData.percentage_fee);
-      }
+      updateData.percentage_fee = editFormData.percentage_fee && editFormData.percentage_fee.trim() !== '' 
+        ? parseFloat(editFormData.percentage_fee) 
+        : null;
 
       await api.patch(`/api/client_products/${accountId}`, updateData);
       
@@ -1658,12 +1698,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       const ownersToRemove = currentOwnerIds.filter(id => !newOwnerIds.includes(id));
       for (const ownerId of ownersToRemove) {
         try {
-          await api.delete(`/client_group_product_owners`, {
-            data: {
-              client_group_id: account.client_id,
-              product_owner_id: ownerId
-            }
-          });
+          await api.delete(`/api/product_owner_products/${ownerId}/${accountId}`);
         } catch (err) {
           console.error(`Error removing product owner ${ownerId}:`, err);
         }
@@ -1673,9 +1708,9 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       const ownersToAdd = newOwnerIds.filter(id => !currentOwnerIds.includes(id));
       for (const ownerId of ownersToAdd) {
         try {
-          await api.post('/client_group_product_owners', {
-            client_group_id: account.client_id,
-            product_owner_id: ownerId
+          await api.post('/api/product_owner_products', {
+            product_owner_id: ownerId,
+            product_id: parseInt(accountId)
           });
         } catch (err) {
           console.error(`Error adding product owner ${ownerId}:`, err);
@@ -1859,12 +1894,12 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                   {/* Product Type - Inline Editable */}
                   <div>
                     {isEditMode ? (
-                      <BaseInput
+                      <BaseDropdown
                         label="Product Type"
-                        name="product_type"
                         value={editFormData.product_type}
-                        onChange={handleBaseInputChange('product_type')}
-                        placeholder="Enter product type"
+                        onChange={handleDropdownChange('product_type')}
+                        options={productTypeOptions}
+                        placeholder="Select product type"
                         size="sm"
                       />
                     ) : (
@@ -1938,7 +1973,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           <>
                             <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Fixed Cost (£)</div>
                             <div className="text-sm font-medium text-gray-900">
-                              {account.fixed_cost ? formatCurrency(account.fixed_cost) : 'Not set'}
+                              {account.fixed_cost !== null && account.fixed_cost !== undefined ? formatCurrency(account.fixed_cost) : 'Not set'}
                             </div>
                           </>
                         )}
@@ -1970,7 +2005,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           <>
                             <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Percentage Fee (%)</div>
                             <div className="text-sm font-medium text-gray-900">
-                              {account.percentage_fee ? `${account.percentage_fee}%` : 'Not set'}
+                              {account.percentage_fee !== null && account.percentage_fee !== undefined ? `${account.percentage_fee}%` : 'Not set'}
                             </div>
                           </>
                         )}
@@ -2478,7 +2513,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                         <div>IRR</div>
                         {findCommonValuationDate(holdings.filter(h => !h.isVirtual && h.status === 'active')) && (
                           <div className="text-xs text-gray-400 font-normal normal-case mt-1">
-                            {formatDate(findCommonValuationDate(holdings.filter(h => !h.isVirtual && h.status === 'active'))!)}
+                            {formatDateMonthYear(findCommonValuationDate(holdings.filter(h => !h.isVirtual && h.status === 'active'))!)}
                           </div>
                         )}
                       </th>

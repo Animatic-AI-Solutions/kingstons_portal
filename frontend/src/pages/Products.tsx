@@ -155,14 +155,6 @@ const Products: React.FC = () => {
       }
     },
     {
-      key: 'portfolio_type_display',
-      label: 'Port.',
-      dataType: 'category',
-      alignment: 'left',
-      control: 'filter',
-      width: 'fixed'
-    },
-    {
       key: 'total_value',
       label: 'Value',
       dataType: 'currency',
