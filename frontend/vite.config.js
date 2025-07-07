@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { splitVendorChunkPlugin } from 'vite';
+import { resolve } from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -9,40 +10,20 @@ export default defineConfig({
     splitVendorChunkPlugin(),  // Split vendor chunks
   ],
   build: {
-    outDir: 'build',
+    outDir: 'C:\\inetpub\\wwwroot\\OfficeIntranet', // Absolute Windows path
     sourcemap: true,
     // Optimize chunks
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          // Create separate chunks for big libraries
-          if (id.includes('node_modules')) {
-            if (id.includes('@tanstack/react-query')) {
-              return 'vendor-react-query';
-            }
-            if (id.includes('react') || id.includes('react-dom')) {
-              return 'vendor-react';
-            }
-            if (id.includes('tailwind') || id.includes('headless')) {
-              return 'vendor-ui';
-            }
-            return 'vendor'; // All other dependencies
-          }
-        },
+        manualChunks: undefined, // Disable manual chunking to fix React initialization
       },
     },
     // Increase warning limit for large chunks
     chunkSizeWarningLimit: 1000,
     // Enable brotli compression for better performance
     reportCompressedSize: true,
-    // Enable minification for production
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-      },
-    },
+    // Temporarily disable minification to debug the issue
+    minify: false,
   },
   server: {
     port: 3000,
