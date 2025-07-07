@@ -829,20 +829,14 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     
     let total = 0;
     
-    // Add weightings from selected funds
+    // Add weightings from selected funds (Cash fund is already included in selectedFunds)
     total += product.portfolio.selectedFunds.reduce((sum, fundId) => {
       const weighting = product.portfolio.fundWeightings[fundId.toString()];
       const numValue = weighting ? parseFloat(weighting) : 0;
       return sum + (isNaN(numValue) ? 0 : numValue);
     }, 0);
     
-    // For bespoke portfolios, also include Cash fund weighting if it's not in selectedFunds
-    const cashFund = findCashFund(funds);
-    if (cashFund && !product.portfolio.selectedFunds.includes(cashFund.id)) {
-      const cashWeighting = product.portfolio.fundWeightings[cashFund.id.toString()];
-      const cashValue = cashWeighting ? parseFloat(cashWeighting) : 0;
-      total += isNaN(cashValue) ? 0 : cashValue;
-    }
+    // Note: Cash fund is now always included in selectedFunds, so no need to check separately
     
     return total;
   };
@@ -856,7 +850,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     let totalWeightedRisk = 0;
     let totalWeight = 0;
 
-    // Calculate from selected funds
+    // Calculate from selected funds (Cash fund is already included in selectedFunds)
     for (const fundId of product.portfolio.selectedFunds) {
       const fund = funds.find(f => f.id === fundId);
       const weighting = product.portfolio.fundWeightings[fundId.toString()];
@@ -868,17 +862,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       }
     }
     
-    // For bespoke portfolios, also include Cash fund if it's not in selectedFunds
-    const cashFund = findCashFund(funds);
-    if (cashFund && !product.portfolio.selectedFunds.includes(cashFund.id)) {
-      const cashWeighting = product.portfolio.fundWeightings[cashFund.id.toString()];
-      const cashWeightValue = cashWeighting ? parseFloat(cashWeighting) : 0;
-      
-      if (!isNaN(cashWeightValue) && cashWeightValue > 0) {
-        totalWeightedRisk += cashFund.risk_factor * cashWeightValue;
-        totalWeight += cashWeightValue;
-      }
-    }
+    // Note: Cash fund is now always included in selectedFunds, so no need to check separately
 
     return totalWeight > 0 ? totalWeightedRisk / totalWeight : null;
   };
@@ -983,12 +967,17 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
 
           // If there are already selected funds, merge them with Cash fund
           if (product.portfolio.selectedFunds.length > 0) {
-            // Add existing funds if they're not Cash (to avoid duplicates)
+            // Add existing funds, ensuring no duplicates (including Cash fund)
             product.portfolio.selectedFunds.forEach(fundId => {
               const fund = funds.find(f => f.id === fundId);
-              if (fund && !isCashFund(fund) && !updatedPortfolio.selectedFunds.includes(fundId)) {
+              if (fund && !updatedPortfolio.selectedFunds.includes(fundId)) {
                 updatedPortfolio.selectedFunds.push(fundId);
-                updatedPortfolio.fundWeightings[fundId.toString()] = '';
+                // Set appropriate default weighting based on fund type
+                if (isCashFund(fund)) {
+                  updatedPortfolio.fundWeightings[fundId.toString()] = '0';
+                } else {
+                  updatedPortfolio.fundWeightings[fundId.toString()] = '';
+                }
               }
             });
           }
@@ -1074,7 +1063,16 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       
       // Get funds in the template generation
       const templateFunds = templateData.funds || [];
-      const fundIds = templateFunds.map((fund: any) => fund.fund_id);
+      const fundIds: number[] = templateFunds.map((fund: any) => fund.fund_id);
+      
+      // Ensure Cash fund is included and deduplicated
+      const cashFund = findCashFund(funds);
+      const deduplicatedFundIds: number[] = [...new Set(fundIds)]; // Remove any duplicates from API
+      
+      // Ensure Cash fund is included if it exists and isn't already in the list
+      if (cashFund && !deduplicatedFundIds.includes(cashFund.id)) {
+        deduplicatedFundIds.push(cashFund.id);
+      }
       
       // Update the product's portfolio with generation information
       const updatedProducts = products.map(p => {
@@ -1086,7 +1084,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               generationId: parseInt(generationId),
               // Update name if it hasn't been customized
               name: p.portfolio.name || `${templateData.name || `Template ${p.portfolio.templateId}`} for ${p.product_name}`,
-              selectedFunds: fundIds,
+              selectedFunds: deduplicatedFundIds,
               fundWeightings: {}
             }
           };
@@ -1383,8 +1381,15 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           
           // Add funds for bespoke portfolio
           if (portfolioId) {
-            // Only add the explicitly selected funds (not Cash fund)
-            const fundPromises = product.portfolio.selectedFunds.map(async (fundId) => {
+            // Filter out Cash fund since backend automatically adds it
+            const nonCashFunds = product.portfolio.selectedFunds.filter(fundId => {
+              const fund = funds.find(f => f.id === fundId);
+              return fund && !isCashFund(fund);
+            });
+            
+            console.log(`Adding ${nonCashFunds.length} non-cash funds to portfolio ${portfolioId}`);
+            
+            const fundPromises = nonCashFunds.map(async (fundId) => {
               try {
                 // Get the weighting for this fund
                 const weighting = product.portfolio.fundWeightings[fundId.toString()];
@@ -1417,25 +1422,30 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             if (cashFund) {
               const cashWeighting = product.portfolio.fundWeightings[cashFund.id.toString()];
               
-              if (cashWeighting && cashWeighting.trim() !== '') {
+              if (cashWeighting && cashWeighting.trim() !== '' && cashWeighting !== '0') {
                 try {
                   const cashWeightingValue = parseFloat(cashWeighting);
                   
-                  // Get the automatically created Cash fund entry to update it
-                  const portfolioFundsResponse = await api.get(`/api/portfolio_funds`, {
-                    params: { portfolio_id: portfolioId }
-                  });
-                  
-                  const cashFundEntry = portfolioFundsResponse.data.find((pf: any) => 
-                    pf.available_funds_id === cashFund.id
-                  );
-                  
-                  if (cashFundEntry) {
-                    // Update the existing Cash fund entry
-                    await api.patch(`/api/portfolio_funds/${cashFundEntry.id}`, {
-                      target_weighting: cashWeightingValue // Keep as percentage, don't convert to decimal
+                  // Only update if it's a valid number and not the default 0%
+                  if (!isNaN(cashWeightingValue) && cashWeightingValue !== 0) {
+                    // Get the automatically created Cash fund entry to update it
+                    const portfolioFundsResponse = await api.get(`/api/portfolio_funds`, {
+                      params: { portfolio_id: portfolioId }
                     });
-                    console.log(`Updated Cash fund weighting to ${cashWeightingValue}% for portfolio ${portfolioId}`);
+                    
+                    const cashFundEntry = portfolioFundsResponse.data.find((pf: any) => 
+                      pf.available_funds_id === cashFund.id
+                    );
+                    
+                    if (cashFundEntry) {
+                      // Update the existing Cash fund entry
+                      await api.patch(`/api/portfolio_funds/${cashFundEntry.id}`, {
+                        target_weighting: cashWeightingValue // Keep as percentage, don't convert to decimal
+                      });
+                      console.log(`Updated Cash fund weighting to ${cashWeightingValue}% for portfolio ${portfolioId}`);
+                    } else {
+                      console.warn(`Cash fund entry not found in portfolio ${portfolioId} - backend may not have created it automatically`);
+                    }
                   }
                 } catch (err: any) {
                   console.error(`Error updating Cash fund weighting:`, err);
