@@ -13,7 +13,7 @@ import {
   NumberInput,
   BaseDropdown
 } from '../components/ui';
-import api, { getClientGroupProductOwners, calculateStandardizedMultipleFundsIRR, getProductOwners, addClientGroupProductOwner, removeClientGroupProductOwner } from '../services/api';
+import api, { getClientGroupProductOwners, calculateStandardizedMultipleFundsIRR, getProductOwners, addClientGroupProductOwner, removeClientGroupProductOwner, getProductOwnersForProducts } from '../services/api';
 import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
 
 // Enhanced TypeScript interfaces
@@ -1147,44 +1147,14 @@ const ClientDetails: React.FC = () => {
   };
 
   // Function to fetch product owners for the client group
-  const fetchProductOwners = async () => {
+  const fetchAvailableProductOwners = async () => {
     try {
-      if (!clientId) return;
-
-      // Fetch client group's product owners
-      const clientProductOwnersResponse = await getClientGroupProductOwners(parseInt(clientId));
-      console.log('Client product owners response:', clientProductOwnersResponse.data);
-      
       // Fetch all available product owners for the dropdown
       const allProductOwnersResponse = await getProductOwners();
       console.log('All product owners response:', allProductOwnersResponse.data);
       
-      // Process client's current product owners
-      const currentProductOwners: ClientProductOwner[] = [];
-      if (clientProductOwnersResponse.data && Array.isArray(clientProductOwnersResponse.data)) {
-        for (const association of clientProductOwnersResponse.data) {
-          if (association.product_owner_id) {
-            // Find the product owner details
-            const productOwner = allProductOwnersResponse.data.find(
-              (owner: any) => owner.id === association.product_owner_id
-            );
-            if (productOwner) {
-              currentProductOwners.push({
-                id: productOwner.id,
-                firstname: productOwner.firstname,
-                surname: productOwner.surname,
-                known_as: productOwner.known_as,
-                status: productOwner.status,
-                created_at: productOwner.created_at,
-                association_id: association.id // Store the association ID for deletion
-              });
-            }
-          }
-        }
-      }
-
-      // Update client with product owners
-      setClient(prev => prev ? { ...prev, product_owners: currentProductOwners } : null);
+      // Get current client's product owners to exclude them from available list
+      const currentProductOwners = client?.product_owners || [];
       
       // Set available product owners (excluding already assigned ones)
       const availableOwners = allProductOwnersResponse.data
@@ -1202,7 +1172,7 @@ const ClientDetails: React.FC = () => {
       setAvailableProductOwners(availableOwners);
       
     } catch (err: any) {
-      console.error('Error fetching product owners:', err);
+      console.error('Error fetching available product owners:', err);
     }
   };
 
@@ -1249,10 +1219,71 @@ const ClientDetails: React.FC = () => {
         inactive_fund_count: product.inactive_fund_count,
         template_generation_id: product.template_generation_id,
         template_info: product.template_info,
-        product_owners: [], // TODO: Add product owners if needed
+        product_owners: [], // Will be populated after fetching product owners
         fixed_cost: product.fixed_cost,
         percentage_fee: product.percentage_fee
       }));
+      
+      // Step 2.5: Fetch product owners for all products
+      try {
+        if (processedProducts.length > 0) {
+          console.log(`Fetching product owners for client ${clientId}`);
+          const productOwnersResponse = await getProductOwnersForProducts(parseInt(clientId));
+          
+          // Create a map of product ID to product owners from the API response
+          const productOwnersMap: { [key: number]: ProductOwner[] } = {};
+          
+          if (productOwnersResponse?.data) {
+            productOwnersResponse.data.forEach((product: any) => {
+              if (product.product_owners && product.product_owners.length > 0) {
+                productOwnersMap[product.id] = product.product_owners;
+              }
+            });
+          }
+          
+          // Update processed products with their product owners
+          processedProducts.forEach((product: any) => {
+            if (productOwnersMap[product.id]) {
+              product.product_owners = productOwnersMap[product.id];
+            }
+          });
+          
+          console.log(`Added product owners to ${Object.keys(productOwnersMap).length} products`);
+          
+          // Aggregate all unique product owners across all products for the client header
+          const allProductOwners: ProductOwner[] = [];
+          const ownerIds = new Set<number>();
+          
+          processedProducts.forEach((product: any) => {
+            if (product.product_owners && product.product_owners.length > 0) {
+              product.product_owners.forEach((owner: ProductOwner) => {
+                if (!ownerIds.has(owner.id)) {
+                  ownerIds.add(owner.id);
+                  allProductOwners.push(owner);
+                }
+              });
+            }
+          });
+          
+          console.log(`Found ${allProductOwners.length} unique product owners across all products`);
+          
+          // Update client data with aggregated product owners for the header section
+          setClient(prev => prev ? { 
+            ...prev, 
+            product_owners: allProductOwners.map(owner => ({
+              id: owner.id,
+              firstname: owner.firstname,
+              surname: owner.surname,
+              known_as: owner.known_as,
+              status: owner.status,
+              created_at: owner.created_at
+            }))
+          } : null);
+        }
+      } catch (error) {
+        console.warn('Error fetching product owners:', error);
+        // Continue without product owners if fetch fails
+      }
       
       setClientAccounts(processedProducts);
       
@@ -1326,8 +1357,8 @@ const ClientDetails: React.FC = () => {
       console.log(`Optimized loading complete: ${processedProducts.length} products, ${Object.keys(fundDataMap).length} products with fund data`);
       console.log(`Total Value: ${totalValue}, Standardized Total IRR: ${totalIRR}%`);
       
-      // Fetch product owners after setting the client
-      await fetchProductOwners();
+      // Fetch available product owners for the dropdown
+      await fetchAvailableProductOwners();
       
       setError(null);
     } catch (err: any) {
@@ -1532,7 +1563,7 @@ const ClientDetails: React.FC = () => {
       if (!clientId) return;
       
       await addClientGroupProductOwner(parseInt(clientId), productOwnerId);
-      await fetchProductOwners(); // Refresh product owners
+      await fetchClientData(); // Refresh client data to update product owners
       console.log('Product owner added successfully');
     } catch (err: any) {
       console.error('Error adding product owner:', err);
@@ -1543,7 +1574,7 @@ const ClientDetails: React.FC = () => {
   const handleRemoveProductOwner = async (associationId: number) => {
     try {
       await removeClientGroupProductOwner(associationId);
-      await fetchProductOwners(); // Refresh product owners
+      await fetchClientData(); // Refresh client data to update product owners
       console.log('Product owner removed successfully');
     } catch (err: any) {
       console.error('Error removing product owner:', err);

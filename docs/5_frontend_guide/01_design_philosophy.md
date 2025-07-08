@@ -56,6 +56,12 @@ This document outlines the core design and user experience (UX) principles for t
 - **Intelligent Precision:** Financial data displays with smart decimal formatting that removes unnecessary trailing zeros while maintaining required precision (e.g., "5%" instead of "5.00%", "5.1%" instead of "5.10%").
 - **Context-Appropriate Precision:** Different data types use appropriate decimal places (fund IRRs: up to 2 decimal places, portfolio total IRRs: up to 1 decimal place) while removing unnecessary zeros.
 - **Clean Display:** Numbers are presented in their most readable form without sacrificing accuracy or professional appearance.
+- **Consistent Date Formatting:** Standardized date formatting across report tables ensures visual consistency (e.g., valuation and IRR column headers both use "Month YYYY" format rather than mixing full dates with abbreviated formats).
+
+### Enhanced Relationship Visibility
+- **Product Owner Context:** Product cards display associated product owners directly on the card for immediate relationship recognition without requiring additional navigation.
+- **Aggregate Relationship Views:** Client detail pages automatically aggregate and display all unique product owners across all client products, providing comprehensive relationship overview.
+- **Real-Time Data Synchronization:** Product owner relationships update automatically when products are modified, ensuring relationship data remains current and accurate.
 
 ### Proactive Input Validation
 - **Real-Time Filtering:** Input fields proactively prevent invalid characters from being entered, providing immediate feedback rather than post-submission validation.

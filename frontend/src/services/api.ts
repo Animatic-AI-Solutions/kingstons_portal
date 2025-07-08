@@ -723,6 +723,12 @@ export const removeClientGroupProductOwner = async (associationId: number) => {
   return api.delete(`client_group_product_owners/${associationId}`);
 };
 
+export const getProductOwnersForProducts = async (clientId: number) => {
+  // Get all client products with their associated product owners
+  const associations = await api.get(`client_products_with_owners?client_id=${clientId}`);
+  return associations;
+};
+
 /**
  * REVENUE ANALYTICS API ENDPOINTS
  * 
