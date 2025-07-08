@@ -2499,7 +2499,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                         <div>Valuation</div>
                         {findCommonValuationDate(holdings.filter(h => !h.isVirtual && h.status === 'active')) && (
                           <div className="text-xs text-gray-400 font-normal normal-case mt-1">
-                            {formatDate(findCommonValuationDate(holdings.filter(h => !h.isVirtual && h.status === 'active'))!)}
+                            {formatDateMonthYear(findCommonValuationDate(holdings.filter(h => !h.isVirtual && h.status === 'active'))!)}
                           </div>
                         )}
                       </th>
