@@ -1067,7 +1067,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       
       // Ensure Cash fund is included and deduplicated
       const cashFund = findCashFund(funds);
-      const deduplicatedFundIds: number[] = [...new Set(fundIds)]; // Remove any duplicates from API
+      const deduplicatedFundIds: number[] = Array.from(new Set(fundIds)); // Remove any duplicates from API
       
       // Ensure Cash fund is included if it exists and isn't already in the list
       if (cashFund && !deduplicatedFundIds.includes(cashFund.id)) {
