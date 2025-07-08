@@ -31,7 +31,7 @@ export const authService = {
   login: async (email: string, password: string) => {
     try {
       const response = await axios.post(
-        `/api/auth/login`, 
+        `${getApiBaseUrl()}/api/auth/login`, 
         { email, password },
         { withCredentials: true } // Include this option to allow cookies to be set
       );
@@ -63,7 +63,7 @@ export const authService = {
       };
       
       // Make the logout request - this will clear the session cookie on the server
-      await axios.post(`/api/auth/logout`, {}, config);
+      await axios.post(`${getApiBaseUrl()}/api/auth/logout`, {}, config);
       
       // Remove the token from localStorage
       localStorage.removeItem('token');
@@ -81,7 +81,7 @@ export const authService = {
    */
   requestPasswordReset: async (email: string) => {
     try {
-      const response = await axios.post(`/api/auth/forgot-password`, { email });
+      const response = await axios.post(`${getApiBaseUrl()}/api/auth/forgot-password`, { email });
       return response.data;
     } catch (error) {
       throw error;
@@ -96,7 +96,7 @@ export const authService = {
    */
   verifyResetToken: async (token: string) => {
     try {
-      const response = await axios.post(`/api/auth/verify-reset-token`, { token });
+      const response = await axios.post(`${getApiBaseUrl()}/api/auth/verify-reset-token`, { token });
       return response.data;
     } catch (error) {
       throw error;
@@ -112,7 +112,7 @@ export const authService = {
    */
   resetPassword: async (token: string, newPassword: string) => {
     try {
-      const response = await axios.post(`/api/auth/reset-password`, {
+      const response = await axios.post(`${getApiBaseUrl()}/api/auth/reset-password`, {
         token,
         new_password: newPassword
       });
@@ -134,7 +134,7 @@ export const authService = {
         throw new Error('No authentication token found');
       }
       
-      const response = await axios.get(`/api/auth/me`, {
+      const response = await axios.get(`${getApiBaseUrl()}/api/auth/me`, {
         headers: {
           Authorization: `Bearer ${token}`
         },
@@ -174,7 +174,7 @@ export const authService = {
    */
   confirmPasswordReset: async (token: string, password: string) => {
     try {
-      const response = await axios.post(`/api/auth/reset-password`, { 
+      const response = await axios.post(`${getApiBaseUrl()}/api/auth/reset-password`, { 
         token, 
         new_password: password 
       });
@@ -183,6 +183,22 @@ export const authService = {
       throw error;
     }
   }
+};
+
+// Environment-based API configuration (same as api.ts)
+const getApiBaseUrl = () => {
+  // Check if we're in development mode (localhost or Vite dev server)
+  const isDevelopment = window.location.hostname === 'localhost' || 
+                       window.location.hostname === '127.0.0.1' ||
+                       window.location.port === '3000';
+  
+  // In development (Vite dev server), use proxy (empty baseURL)
+  if (isDevelopment) {
+    return '';  // Vite proxy handles /api requests
+  }
+  
+  // In production (built app), use direct API server
+  return 'http://intranet.kingston.local:8001';
 };
 
 /**
@@ -194,7 +210,7 @@ export const authService = {
 export const createAuthenticatedApi = () => {
   try {
     const api = axios.create({
-      baseURL: '',  // Empty baseURL to work with Vite's proxy
+      baseURL: getApiBaseUrl(),  // Use environment-based baseURL
       withCredentials: true
     });
   

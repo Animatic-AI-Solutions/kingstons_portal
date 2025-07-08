@@ -8,9 +8,25 @@ import axios from 'axios';
  * It handles URL formatting, error handling, and request/response interceptors.
  */
 
-// Create axios instance with the correct baseURL that works with Vite's proxy
+// Environment-based API configuration
+const getApiBaseUrl = () => {
+  // Check if we're in development mode (localhost or Vite dev server)
+  const isDevelopment = window.location.hostname === 'localhost' || 
+                       window.location.hostname === '127.0.0.1' ||
+                       window.location.port === '3000';
+  
+  // In development (Vite dev server), use proxy (empty baseURL)
+  if (isDevelopment) {
+    return '';  // Vite proxy handles /api requests
+  }
+  
+  // In production (built app), use direct API server
+  return 'http://intranet.kingston.local:8001';
+};
+
+// Create axios instance with environment-appropriate baseURL
 const api = axios.create({
-  baseURL: '',  // Empty base URL since we're using Vite's proxy configuration
+  baseURL: getApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
@@ -357,7 +373,7 @@ export const getProviderThemeColors = async () => {
     // Use the /api/available_providers endpoint which we know is working
     const response = await axios({
       method: 'get',
-      url: 'http://localhost:8000/api/available_providers',
+      url: `${getApiBaseUrl()}/api/available_providers`,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
@@ -400,7 +416,7 @@ export const initializeProviderThemeColors = () => {
   // Use axios directly without any interceptors
   return axios({
     method: 'post',
-    url: 'http://localhost:8000/api/available_providers/update-theme-colors',
+    url: `${getApiBaseUrl()}/api/available_providers/update-theme-colors`,
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json'

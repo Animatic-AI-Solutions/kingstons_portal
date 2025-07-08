@@ -168,25 +168,18 @@ app.json_encoder = CustomJSONEncoder
 app.add_middleware(
     CORSMiddleware,
     # List of allowed frontend origins that can access this API
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost",           # Local development
+        "http://localhost:3000",      # React dev server
+        "http://127.0.0.1",          # Local development alternate
+        "http://127.0.0.1:3000",     # React dev server alternate
+        "http://intranet.kingston.local",  # Production IIS server
+    ],
     allow_credentials=True,
     # HTTP methods that are allowed for CORS requests
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     # HTTP headers that are allowed in CORS requests
-    allow_headers=[
-        "Content-Type",
-        "Authorization",
-        "Accept",
-        "Origin",
-        "X-Requested-With",
-        "Access-Control-Request-Method",
-        "Access-Control-Request-Headers",
-        "Access-Control-Allow-Origin",
-        "Access-Control-Allow-Credentials",
-        "Access-Control-Allow-Methods",
-        "Access-Control-Allow-Headers",
-        "Access-Control-Expose-Headers"
-    ],
+    allow_headers=["*"],
     # Headers that browsers are allowed to access
     expose_headers=["*"],
     # How long browsers should cache CORS response (in seconds)

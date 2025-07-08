@@ -33,7 +33,7 @@ export default defineConfig({
     // Add proxy configuration to forward API requests to the backend
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8001',
         changeOrigin: true,
         secure: false,
       },
