@@ -83,11 +83,7 @@ const Login: React.FC = () => {
             </button>
           </div>
         </form>
-        <div className="text-center">
-          <Link to="/signup" className="text-indigo-600 hover:text-indigo-800">
-            Don't have an account? Sign up
-          </Link>
-        </div>
+
       </div>
     </div>
   );

@@ -14,7 +14,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
  * @property {boolean} isLoading - Loading state for authentication operations
  * @property {Function} login - Function to authenticate a user
  * @property {Function} logout - Function to end the user's session
- * @property {Function} signup - Function to register a new user
  * @property {Function} resetPassword - Function to request a password reset
  * @property {Function} confirmPasswordReset - Function to set a new password
  * @property {AxiosInstance} api - Axios instance with authentication headers
@@ -25,7 +24,6 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  signup: (firstName: string, lastName: string, email: string, password: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   confirmPasswordReset: (token: string, password: string) => Promise<void>;
   api: AxiosInstance;
@@ -38,7 +36,6 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   login: async () => {},
   logout: async () => {},
-  signup: async () => {},
   resetPassword: async () => {},
   confirmPasswordReset: async () => {},
   api: axios.create({ baseURL: '' }),
@@ -167,28 +164,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   /**
-   * User registration function
-   * Creates a new user account
-   * 
-   * @param {string} firstName - User's first name
-   * @param {string} lastName - User's last name
-   * @param {string} email - User's email
-   * @param {string} password - User's chosen password
-   * @returns {Promise<any>} Signup response
-   */
-  const signup = async (firstName: string, lastName: string, email: string, password: string) => {
-    try {
-      setIsLoading(true);
-      const response = await authService.signup(firstName, lastName, email, password);
-      return response;
-    } catch (error) {
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  /**
    * Password reset request function
    * Initiates the password reset process by sending a reset link
    * 
@@ -234,7 +209,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isLoading,
     login,
     logout,
-    signup,
     resetPassword,
     confirmPasswordReset,
     api,

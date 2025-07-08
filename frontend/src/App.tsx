@@ -14,7 +14,6 @@ import ReportDisplayPage from './pages/ReportDisplayPage';
 
 // Auth Components - User authentication related components
 import LoginForm from './components/auth/LoginForm';
-import SignupForm from './components/auth/SignupForm';
 import ResetPasswordForm from './components/auth/ResetPasswordForm';
 import SetNewPasswordForm from './components/auth/SetNewPasswordForm';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -75,7 +74,6 @@ const AppContent: React.FC = () => {
       <Routes>
         {/* Authentication Routes - Public routes for user authentication */}
         <Route path="/login" element={<LoginForm />} />
-        <Route path="/signup" element={<SignupForm />} />
         <Route path="/forgot-password" element={<ResetPasswordForm />} />
         <Route path="/reset-password" element={<SetNewPasswordForm />} />
         

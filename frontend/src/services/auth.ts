@@ -9,14 +9,13 @@ export const API_URL = '';  // Empty base URL to work with Vite's proxy
  * Handles all authentication-related operations:
  * - Login
  * - Logout
- * - Signup
  * - Password reset
  * - Token management
  * 
  * API URL Structure:
  * All API endpoints follow the pattern: /api/{resource}/{action}
  * For authentication endpoints: /api/auth/{action}
- * Example: /api/auth/login, /api/auth/signup
+ * Example: /api/auth/login
  * 
  * The createAuthenticatedApi() function below ensures all API calls
  * follow this URL structure by adding the /api prefix when needed.
@@ -41,29 +40,6 @@ export const authService = {
         localStorage.setItem('token', response.data.access_token);
       }
       
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  /**
-   * Register a new user
-   * 
-   * @param firstName - User's first name
-   * @param lastName - User's last name
-   * @param email - User's email address
-   * @param password - User's password
-   * @returns Success message
-   */
-  signup: async (firstName: string, lastName: string, email: string, password: string) => {
-    try {
-      const response = await axios.post(`/api/auth/signup`, {
-        first_name: firstName,
-        last_name: lastName,
-        email,
-        password
-      });
       return response.data;
     } catch (error) {
       throw error;

@@ -192,10 +192,7 @@ const LoginForm: React.FC = () => {
           ) : 'Sign In'}
         </motion.button>
         
-        <div className="text-center mt-6">
-          <span className="text-gray-600">Don't have an account? </span>
-          <Link to="/signup" className="text-primary font-medium hover:underline">Sign Up</Link>
-        </div>
+
       </form>
     </motion.div>
   );
