@@ -162,8 +162,15 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
     if (product.product_owner_name) {
       // Check if the product_owner_name contains multiple names (comma-separated or other delimiters)
       const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
-      const ownerDisplay = ownerNames.length > 1 ? 'Joint' : product.product_owner_name;
-      title += ` - ${ownerDisplay}`;
+      if (ownerNames.length > 1) {
+        // For multiple owners, show "Joint"
+        title += ` - Joint`;
+      } else {
+        // For single owner, extract just the nickname (first word)
+        const nameParts = product.product_owner_name.trim().split(' ');
+        const nickname = nameParts[0]; // Take first part (nickname)
+        title += ` - ${nickname}`;
+      }
     }
     
     // Add plan number if available
@@ -206,7 +213,7 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
   return (
     <div className="print:block report-section" id="summary-tab-panel" role="tabpanel" aria-labelledby="summary-tab">
       {/* Portfolio Performance Cards */}
-      <div className="mb-6 bg-white shadow-sm rounded-lg border border-gray-200 p-4 product-card print-clean">
+      <div className="mb-2 bg-white px-2 py-2 product-card print-clean investment-performance-container">
         <h2 className="text-lg font-semibold text-gray-900 mb-3">Investment Performance</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 portfolio-performance-grid">
           
@@ -259,9 +266,9 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
       </div>
 
       {/* Investment Summary Table - Detailed overview */}
-      <div className="mb-8 product-card print-clean">
-        <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-4">
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">Investment Summary</h2>
+      <div className="mb-4 product-card print-clean">
+        <div className="bg-white px-2 py-2">
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Investment Summary</h2>
           <div className="overflow-x-auto product-table">
             <table className="w-full table-fixed divide-y divide-gray-300 landscape-table portfolio-summary-table">
               <colgroup>
@@ -279,50 +286,50 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
               </colgroup>
               <thead className="bg-gray-100">
                 <tr>
-                  <th scope="col" className="px-1 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                  <th scope="col" className="px-1 py-2 text-left text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                     Product
                   </th>
-                  <th scope="col" className="px-1 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                  <th scope="col" className="px-1 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                     Investment
                   </th>
-                  <th scope="col" className="px-1 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                  <th scope="col" className="px-1 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                     <div className="leading-tight">
                       Tax<br />Uplift
                     </div>
                   </th>
-                  <th scope="col" className="px-1 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                  <th scope="col" className="px-1 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                     <div className="leading-tight">
                       Product<br />Switch In
                     </div>
                   </th>
-                  <th scope="col" className="px-1 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                  <th scope="col" className="px-1 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                     <div className="leading-tight">
                       Fund<br />Switches
                     </div>
                   </th>
-                  <th scope="col" className="px-1 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                  <th scope="col" className="px-1 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                     <div className="leading-tight">
                       Product<br />Switch Out
                     </div>
                   </th>
-                  <th scope="col" className="px-1 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                  <th scope="col" className="px-1 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                     Withdrawal
                   </th>
-                  <th scope="col" className="px-1 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide bg-green-100">
+                  <th scope="col" className="px-1 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide bg-green-100">
                     Valuation
                   </th>
-                  <th scope="col" className="px-1 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide bg-blue-100">
+                  <th scope="col" className="px-1 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide bg-blue-100">
                     <div className="leading-tight">
                       Profit<br />Made
                     </div>
                   </th>
-                  <th scope="col" className="px-1 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide bg-purple-100">
+                  <th scope="col" className="px-1 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide bg-purple-100">
                     <div className="leading-tight">
                       Average Returns<br />p.a.
                     </div>
                   </th>
-                  <th scope="col" className="px-1 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                    Risk
+                  <th scope="col" className="px-1 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
+                    Current Risk
                   </th>
                 </tr>
               </thead>
@@ -339,7 +346,7 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
                     
                     return (
                       <tr key={product.id} className={`hover:bg-blue-50 ${product.status === 'inactive' ? 'opacity-50 bg-gray-50' : ''}`}>
-                        <td className={`product-name-cell text-left ${product.status === 'inactive' ? 'text-gray-500' : 'text-gray-800'}`}>
+                        <td className={`product-name-cell text-left px-1 py-2 ${product.status === 'inactive' ? 'text-gray-500' : 'text-gray-800'}`}>
                           <div className="flex items-start gap-1.5">
                             {product.provider_theme_color && (
                               <div 
@@ -357,47 +364,47 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
                             </div>
                           </div>
                         </td>
-                        <td className="px-2 py-2 whitespace-nowrap text-xs text-right">
+                        <td className="px-2 py-2 whitespace-nowrap text-sm text-right">
                           {(() => {
                             const formatted = formatCurrencyWithVisualSigningWrapper((product.total_investment || 0) + (product.total_regular_investment || 0), 'investment');
                             return <span className={formatted.className}>{formatted.value}</span>;
                           })()}
                         </td>
-                        <td className="px-2 py-2 whitespace-nowrap text-xs text-right">
+                        <td className="px-2 py-2 whitespace-nowrap text-sm text-right">
                           {(() => {
                             const formatted = formatCurrencyWithVisualSigningWrapper(product.total_tax_uplift || 0, 'tax_uplift');
                             return <span className={formatted.className}>{formatted.value}</span>;
                           })()}
                         </td>
-                        <td className="px-2 py-2 whitespace-nowrap text-xs text-right">
+                        <td className="px-2 py-2 whitespace-nowrap text-sm text-right">
                           {(() => {
                             const formatted = formatCurrencyWithVisualSigningWrapper(product.total_product_switch_in || 0, 'product_switch_in');
                             return <span className={formatted.className}>{formatted.value}</span>;
                           })()}
                         </td>
-                        <td className="px-2 py-2 whitespace-nowrap text-xs text-right">
+                        <td className="px-2 py-2 whitespace-nowrap text-sm text-right">
                           {(() => {
                             const netSwitches = (product.total_fund_switch_in || 0) + (product.total_fund_switch_out || 0);
                             const formatted = formatCurrencyWithVisualSigningWrapper(netSwitches, 'fund_switch');
                             return <span className={formatted.className}>{formatted.value}</span>;
                           })()}
                         </td>
-                        <td className="px-2 py-2 whitespace-nowrap text-xs text-right">
+                        <td className="px-2 py-2 whitespace-nowrap text-sm text-right">
                           {(() => {
                             const formatted = formatCurrencyWithVisualSigningWrapper(product.total_product_switch_out || 0, 'product_switch_out');
                             return <span className={formatted.className}>{formatted.value}</span>;
                           })()}
                         </td>
-                        <td className="px-2 py-2 whitespace-nowrap text-xs text-right">
+                        <td className="px-2 py-2 whitespace-nowrap text-sm text-right">
                           {(() => {
                             const formatted = formatCurrencyWithVisualSigningWrapper(product.total_withdrawal || 0, 'withdrawal');
                             return <span className={formatted.className}>{formatted.value}</span>;
                           })()}
                         </td>
-                        <td className="px-2 py-2 text-xs font-semibold text-primary-700 text-right bg-green-50">
+                        <td className="px-2 py-2 text-sm font-semibold text-primary-700 text-right bg-green-50">
                           {formatCurrencyWithTruncation(product.current_valuation || 0)}
                         </td>
-                        <td className="px-2 py-2 text-xs text-right bg-blue-50">
+                        <td className="px-2 py-2 text-sm text-right bg-blue-50">
                           <span className={profit >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
                             {formatCurrencyWithTruncation(profit)}
                           </span>
@@ -426,14 +433,12 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
                     );
                   })}
                 
-                {/* Portfolio Totals Row */}
-                <tr className="bg-gray-100 font-semibold border-t-2 border-gray-400">
-                  <td className="px-2 py-2 text-xs text-left text-gray-800">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold">PORTFOLIO TOTALS</span>
-                    </div>
+                {/* Investment Totals Row - Matches Product Card Style */}
+                <tr className="bg-gray-50 border-t-2 border-gray-300">
+                  <td className="px-1 py-2 text-xs font-bold text-black text-left">
+                    Investment Totals
                   </td>
-                  <td className="px-2 py-2 text-xs font-bold text-right text-black">
+                  <td className="px-2 py-2 text-sm font-bold text-right text-black">
                     {(() => {
                       const totalAmount = reportData.productSummaries.reduce((sum, product) => 
                         sum + (product.total_investment || 0) + (product.total_regular_investment || 0), 0
@@ -441,7 +446,7 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
                       return formatCurrencyWithTruncation(totalAmount);
                     })()}
                   </td>
-                  <td className="px-2 py-2 text-xs font-bold text-right text-black">
+                  <td className="px-2 py-2 text-sm font-bold text-right text-black">
                     {(() => {
                       const totalAmount = reportData.productSummaries.reduce((sum, product) => 
                         sum + (product.total_tax_uplift || 0), 0
@@ -449,7 +454,7 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
                       return formatCurrencyWithTruncation(totalAmount);
                     })()}
                   </td>
-                  <td className="px-2 py-2 text-xs font-bold text-right text-black">
+                  <td className="px-2 py-2 text-sm font-bold text-right text-black">
                     {(() => {
                       const totalAmount = reportData.productSummaries.reduce((sum, product) => 
                         sum + (product.total_product_switch_in || 0), 0
@@ -457,7 +462,7 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
                       return formatCurrencyWithTruncation(totalAmount);
                     })()}
                   </td>
-                  <td className="px-2 py-2 text-xs font-bold text-right text-black">
+                  <td className="px-2 py-2 text-sm font-bold text-right text-black">
                     {(() => {
                       const totalAmount = reportData.productSummaries.reduce((sum, product) => 
                         sum + (product.total_fund_switch_in || 0) + (product.total_fund_switch_out || 0), 0
@@ -465,7 +470,7 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
                       return formatCurrencyWithTruncation(totalAmount);
                     })()}
                   </td>
-                  <td className="px-2 py-2 text-xs font-bold text-right text-black">
+                  <td className="px-2 py-2 text-sm font-bold text-right text-black">
                     {(() => {
                       const totalAmount = reportData.productSummaries.reduce((sum, product) => 
                         sum + (product.total_product_switch_out || 0), 0
@@ -473,7 +478,7 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
                       return formatCurrencyWithTruncation(totalAmount);
                     })()}
                   </td>
-                  <td className="px-2 py-2 text-xs font-bold text-right text-black">
+                  <td className="px-2 py-2 text-sm font-bold text-right text-black">
                     {(() => {
                       const totalAmount = reportData.productSummaries.reduce((sum, product) => 
                         sum + (product.total_withdrawal || 0), 0
@@ -481,14 +486,14 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
                       return formatCurrencyWithTruncation(totalAmount);
                     })()}
                   </td>
-                  <td className="px-2 py-2 text-xs font-bold text-right bg-green-100 text-black">
+                  <td className="px-2 py-2 text-sm font-bold text-right bg-green-100 text-black">
                     {formatCurrencyWithTruncation(
                       reportData.productSummaries.reduce((sum, product) => 
                         sum + (product.current_valuation || 0), 0
                       )
                     )}
                   </td>
-                  <td className="px-2 py-2 text-xs font-bold text-right bg-blue-100 text-black">
+                  <td className="px-2 py-2 text-sm font-bold text-right bg-blue-100 text-black">
                     {(() => {
                       const totalGains = reportData.productSummaries.reduce((sum, product) => 
                         sum + (product.current_valuation || 0) + (product.total_withdrawal || 0) + (product.total_product_switch_out || 0) + (product.total_fund_switch_out || 0), 0
@@ -598,45 +603,45 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
                     </colgroup>
                     <thead className="bg-gray-100">
                       <tr>
-                        <th scope="col" className="px-2 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                        <th scope="col" className="px-2 py-2 text-left text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                           Fund Name
                         </th>
-                        <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                        <th scope="col" className="px-2 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                           Investment
                         </th>
-                        <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                        <th scope="col" className="px-2 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                           <div className="leading-tight">
                             Tax<br />Uplift
                           </div>
                         </th>
-                        <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                        <th scope="col" className="px-2 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                           <div className="leading-tight">
                             Product<br />Switch In
                           </div>
                         </th>
-                        <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                        <th scope="col" className="px-2 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                           <div className="leading-tight">
                             Fund<br />Switches
                           </div>
                         </th>
-                        <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                        <th scope="col" className="px-2 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                           <div className="leading-tight">
                             Product<br />Switch Out
                           </div>
                         </th>
-                        <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                        <th scope="col" className="px-2 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                           Withdrawal
                         </th>
-                        <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide bg-green-100">
+                        <th scope="col" className="px-2 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide bg-green-100">
                           Valuation
                         </th>
-                        <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide bg-blue-100">
+                        <th scope="col" className="px-2 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide bg-blue-100">
                           Profit Made
                         </th>
-                        <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide bg-purple-100">
+                        <th scope="col" className="px-2 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide bg-purple-100">
                           Average Returns p.a.
                         </th>
-                        <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                        <th scope="col" className="px-2 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                           Risk
                         </th>
                       </tr>

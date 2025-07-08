@@ -2068,20 +2068,8 @@ const ReportGenerator: React.FC = () => {
           }
         }
         
-        // Extract product owner name from product_owners array
-        let productOwnerName: string | undefined = undefined;
-        if (productDetails.product_owners && Array.isArray(productDetails.product_owners) && productDetails.product_owners.length > 0) {
-          if (productDetails.product_owners.length === 1) {
-            // Single owner - use known_as only for reports
-            const owner = productDetails.product_owners[0];
-            productOwnerName = owner.known_as && owner.known_as.trim() ? owner.known_as.trim() : 'Unknown';
-          } else {
-            // Multiple owners - join with commas, using known_as only for reports
-            productOwnerName = productDetails.product_owners.map((owner: any) => 
-              owner.known_as && owner.known_as.trim() ? owner.known_as.trim() : 'Unknown'
-            ).join(', ');
-          }
-        }
+        // Use product_owner_name directly from API response (contains nickname + surname)
+        let productOwnerName: string | undefined = productDetails.product_owner_name;
 
         // Calculate product totals by summing all fund summaries (including inactive funds)
         // This ensures consistency between fund-level and product-level totals

@@ -7,4 +7,5 @@ export { default as ReportContainer } from './ReportContainer';
 export { default as SummaryTab } from './SummaryTab';
 export { default as IRRHistoryTab } from './IRRHistoryTab';
 export { default as ProductTitleModal } from './ProductTitleModal';
+export { default as ProductOwnerModal } from './ProductOwnerModal';
 export { default as ReportErrorBoundary } from './ReportErrorBoundary'; 

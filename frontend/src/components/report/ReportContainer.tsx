@@ -18,6 +18,7 @@ import { PrintService } from '../../services/report/PrintService';
 import { REPORT_TABS, type ReportTab } from '../../utils/reportConstants';
 import type { ReportData } from '../../types/reportTypes';
 import ProductTitleModal from './ProductTitleModal';
+import ProductOwnerModal from './ProductOwnerModal';
 
 interface ReportContainerProps {
   reportData: ReportData;
@@ -38,6 +39,7 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
       hideZeros,
       visualSigning,
       customTitles,
+      customProductOwnerNames,
       loading,
       realTimeTotalIRR,
       irrHistoryData
@@ -47,6 +49,7 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
       setHideZeros,
       setVisualSigning,
       setShowTitleModal,
+      setShowProductOwnerModal,
       setIrrHistoryData
     }
   } = useReportStateManager();
@@ -144,10 +147,34 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
     }
   });
 
-  const productOwnerDisplay = useMemo(() => 
-    reportData.productOwnerNames.length > 0 ? reportData.productOwnerNames.join(', ') : '',
-    [reportData.productOwnerNames]
-  );
+  const productOwnerDisplay = useMemo(() => {
+    // Use custom names if they exist, otherwise use default format
+    if (customProductOwnerNames) {
+      return customProductOwnerNames;
+    }
+    
+    // Helper function to capitalize first letter
+    const capitalizeFirstLetter = (str: string): string => {
+      return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    };
+    
+    // Auto-format to nickname + lastname with "&" separator and capitalized names
+    const formatToNicknameLast = (fullName: string): string => {
+      const parts = fullName.trim().split(' ');
+      if (parts.length === 1) {
+        return capitalizeFirstLetter(parts[0]);
+      }
+      
+      // For multiple parts, use first name (nickname) + last name, both capitalized
+      const firstname = capitalizeFirstLetter(parts[0]);
+      const lastname = capitalizeFirstLetter(parts[parts.length - 1]);
+      return `${firstname} ${lastname}`;
+    };
+
+    return reportData.productOwnerNames.length > 0 
+      ? reportData.productOwnerNames.map(name => formatToNicknameLast(name)).join(' & ')
+      : '';
+  }, [reportData.productOwnerNames, customProductOwnerNames]);
 
   // PERFORMANCE OPTIMIZATION: Memoized event handlers
   const handleBackToGenerator = useCallback(() => {
@@ -169,6 +196,10 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
   const openTitleModal = useCallback(() => {
     setShowTitleModal(true);
   }, [setShowTitleModal]);
+
+  const openProductOwnerModal = useCallback(() => {
+    setShowProductOwnerModal(true);
+  }, [setShowProductOwnerModal]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -268,35 +299,35 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
       <div ref={printRef} className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         {/* Print-only Company Logo Header */}
-        <div className="hidden print:block mb-8 text-center">
+        <div className="hidden print:block mb-12 text-center">
           <img 
             src="/images/Company logo.svg" 
             alt="Kingstons Logo" 
-            className="mx-auto h-16 w-auto mb-6"
+            className="mx-auto h-16 w-auto mb-8"
           />
         </div>
 
         {/* Report Header */}
         <div className="text-center mb-6">
           <div className="relative inline-block">
-            <h1 className="text-4xl font-light text-slate-800 mb-1 tracking-wide">
+            <h1 className="text-3xl font-light text-slate-800 mb-1 tracking-wide roboto-title-large">
               Investment Summary
             </h1>
             <div className="w-full h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 mb-4"></div>
           </div>
-          <div className="text-lg font-light text-slate-700 mb-2 tracking-wide">
+          <div className="text-lg font-medium text-slate-700 mb-2 tracking-wide roboto-title-medium">
             {reportData.timePeriod}
           </div>
           {productOwnerDisplay && (
-            <div className="text-base text-slate-500 font-normal">
+            <div className="text-base text-slate-700 font-light roboto-title-small">
               {productOwnerDisplay}
             </div>
           )}
         </div>
 
-        {/* Edit Titles Button */}
+        {/* Edit Controls */}
         <div className="mb-6 print-hide">
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-4">
             <button
               onClick={openTitleModal}
               className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
@@ -309,6 +340,22 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
               {customTitles.size > 0 && (
                 <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                   {customTitles.size} custom
+                </span>
+              )}
+            </button>
+            
+            <button
+              onClick={openProductOwnerModal}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+              aria-label="Edit product owner names"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              Edit Product Owners
+              {customProductOwnerNames && (
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  custom
                 </span>
               )}
             </button>
@@ -357,6 +404,9 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
 
       {/* Product Title Modal */}
       <ProductTitleModal reportData={reportData} />
+      
+      {/* Product Owner Modal */}
+      <ProductOwnerModal reportData={reportData} />
     </div>
   );
 });

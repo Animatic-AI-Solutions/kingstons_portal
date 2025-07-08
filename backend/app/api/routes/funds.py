@@ -287,11 +287,20 @@ async def get_fund_products_with_owners(
             owner_ids = product_owner_map.get(product_id, [])
             owners = [owner_map.get(owner_id) for owner_id in owner_ids if owner_id in owner_map]
             
-            # For reports, use known_as only, not firstname/surname combination
+            # For reports, use known_as (nickname) + surname combination
             product_owner_name = "No Owner"
             if owners:
                 owner = owners[0]
-                product_owner_name = owner.get('known_as') or "No Owner"
+                nickname = owner.get('known_as') or owner.get('firstname') or ""
+                surname = owner.get('surname') or ""
+                if nickname and surname:
+                    product_owner_name = f"{nickname} {surname}"
+                elif nickname:
+                    product_owner_name = nickname
+                elif surname:
+                    product_owner_name = surname
+                else:
+                    product_owner_name = "No Owner"
             
             # Build product entry
             product_entry = {

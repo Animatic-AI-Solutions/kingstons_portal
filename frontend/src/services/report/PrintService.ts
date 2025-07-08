@@ -177,6 +177,11 @@ export class PrintService implements IPrintService {
           padding: 1.5rem !important;
         }
         
+        /* Override spacing specifically for IRR History cards */
+        .irr-history-section .product-card {
+          margin-bottom: 0.125rem !important;
+        }
+        
         /* Prevent table breaks */
         .product-table {
           page-break-inside: avoid;
@@ -457,6 +462,11 @@ export class PrintService implements IPrintService {
         margin-bottom: 0.5rem !important;
       }
       
+      /* Override for IRR History section - tighter spacing */
+      .irr-history-section .mb-8 {
+        margin-bottom: 0.125rem !important;
+      }
+      
       /* Specific targeting for headings in cards */
       .bg-white h2,
       .bg-white h3,
@@ -476,15 +486,21 @@ export class PrintService implements IPrintService {
         margin-bottom: 0.5rem !important;
       }
       
+      /* Super tight spacing for IRR History cards */
+      .irr-history-section .product-card.print-clean,
+      .irr-history-section .mb-8.product-card {
+        margin-bottom: 0.125rem !important;
+      }
+      
       /* Compact the main report content container */
       .w-full.mx-auto.px-4 {
         padding-top: 1rem !important;
         padding-bottom: 1rem !important;
       }
       
-      /* Reduce spacing in IRR History section */
+      /* Reduce spacing in IRR History section for maximum density */
       .irr-history-section .product-card {
-        margin-bottom: 0.5rem !important;
+        margin-bottom: 0.125rem !important;
         padding: 0.75rem !important;
       }
       
