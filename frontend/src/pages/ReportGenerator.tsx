@@ -2975,8 +2975,15 @@ Please select a different valuation date or ensure all active funds have valuati
                               <span 
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  const newExcludedProducts = new Set(excludedProductIds);
+                                  if (isExcluded) {
+                                    newExcludedProducts.delete(product.id);
+                                  } else {
+                                    newExcludedProducts.add(product.id);
+                                  }
+                                  setExcludedProductIds(newExcludedProducts);
                                 }}
-                                className={`ml-1.5 ${isExcluded ? 'text-gray-400 hover:text-gray-600' : 'text-green-400 hover:text-green-600'} focus:outline-none`}
+                                className={`ml-1.5 ${isExcluded ? 'text-gray-400 hover:text-gray-600' : 'text-green-400 hover:text-green-600'} focus:outline-none cursor-pointer`}
                                 aria-label={isExcluded ? `Include ${product.product_name}` : `Exclude ${product.product_name}`}
                                 title={isExcluded ? "Include product" : "Exclude product"}
                               >

@@ -367,22 +367,24 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         const key = `${fund.id}-${month}`;
         let total = 0;
         
-        ACTIVITY_TYPES.forEach(activityType => {
-          const cellKey = `${fund.id}-${month}-${activityType}`;
-          const cellValue = cellValuesCache.get(cellKey) || '';
-          const numericValue = parseFloat(cellValue) || 0;
-          
-          if (numericValue !== 0) {
-            const signType = activityTypeSignMap.get(activityType);
-            if (signType === 'inflow') {
-              total -= numericValue; // Negative for inflows
-            } else if (signType === 'outflow') {
-              total += numericValue; // Positive for outflows
-            } else if (signType === 'neutral' && activityType === 'Current Value') {
-              total += numericValue; // Positive for current value
+        ACTIVITY_TYPES
+          .filter(activityType => activityType !== 'Current Value') // Exclude valuations from monthly totals
+          .forEach(activityType => {
+            const cellKey = `${fund.id}-${month}-${activityType}`;
+            const cellValue = cellValuesCache.get(cellKey) || '';
+            const numericValue = parseFloat(cellValue) || 0;
+            
+            if (numericValue !== 0) {
+              const signType = activityTypeSignMap.get(activityType);
+              if (signType === 'inflow') {
+                total -= numericValue; // Negative for inflows
+              } else if (signType === 'outflow') {
+                total += numericValue; // Positive for outflows
+              } else if (signType === 'neutral' && activityType === 'Current Value') {
+                total += numericValue; // Positive for current value
+              }
             }
-          }
-        });
+          });
         
         results.fundMonthTotals.set(key, total);
         results.fundTotals.set(key, total); // Same calculation for fundTotals
@@ -2335,12 +2337,20 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       ACTIVITY_TYPES.forEach((activityType, activityIndex) => {
                         rows.push(
                           <tr key={`${fund.id}-${activityType}${fund.isInactiveBreakdown ? '-breakdown' : ''}`} 
-                              className={`${fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-white'} border-t border-gray-100`}>
+                              className={`${
+                                fund.isInactiveBreakdown ? 'bg-gray-50' : 
+                                activityType === 'Current Value' ? 'bg-blue-50' : 
+                                'bg-white'
+                              } ${
+                                activityType === 'Current Value' ? 'border-t border-blue-200' : 'border-t border-gray-100'
+                              }`}>
                             {/* Activity type column */}
-                            <td className={`px-1 py-0 font-medium text-sm text-gray-500 sticky left-0 z-10 pl-4 ${
+                            <td className={`px-1 py-0 font-medium text-sm sticky left-0 z-10 pl-4 ${
                               fund.isActive === false 
                                 ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
-                                : 'bg-white'
+                                : activityType === 'Current Value' ? 'bg-blue-50' : 'bg-white'
+                            } ${
+                              activityType === 'Current Value' ? 'text-blue-700' : 'text-gray-500'
                             }`}>
                             {fund.isInactiveBreakdown && 
                               <span className="text-gray-400 mr-2">→</span>
@@ -2461,8 +2471,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       if (!fund.isInactiveBreakdown) {
                         rows.push(
                           <tr key={`total-${fund.id}`} className="bg-gray-100 border-t border-gray-200">
-                            <td className="px-1 py-0 font-semibold text-red-600 sticky left-0 z-10 bg-gray-100 pl-4">
-                        Total
+                            <td className="px-1 py-0 font-semibold text-sm text-red-600 sticky left-0 z-10 bg-gray-100 pl-4">
+                        Monthly Total
                       </td>
                       {months.map(month => {
                         const total = calculateFundMonthTotal(fund.id, month);

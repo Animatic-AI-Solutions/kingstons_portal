@@ -39,6 +39,7 @@ This document outlines the core design and user experience (UX) principles for t
 - **Clear Affordances:** Interactive elements are clearly identifiable. Buttons look like buttons, and links are clearly distinguished.
 - **Visual Feedback:** The UI provides immediate feedback for user actions, such as hover states, click effects, and loading indicators for asynchronous operations.
 - **Clear Calls-to-Action (CTAs):** Primary actions on any given page (e.g., `Save`, `Add Client`) are prominently displayed and clearly labelled.
+- **Expanded Interaction Areas:** When feasible, entire rows or sections are made clickable rather than restricting interaction to small UI elements (e.g., clicking anywhere on a data row to toggle selection, not just the checkbox).
 
 ## 4. Auto-Save Patterns and User Feedback
 
@@ -72,6 +73,11 @@ This document outlines the core design and user experience (UX) principles for t
 - **Intelligent Auto-Population:** Forms intelligently pre-populate fields based on navigation context, auto-filling data only when it logically supports the user's workflow.
 - **Navigation-Based Logic:** The system recognizes where users came from and adapts form behavior accordingly (e.g., client selection auto-populates only when navigating from client details, not from general navigation).
 - **Security-Conscious:** Auto-population includes validation checks to prevent URL manipulation and ensure data integrity.
+
+### Intelligent Workflow Assistance
+- **Historical Data Inheritance:** Forms automatically inherit relevant data from previous workflows to reduce repetitive data entry (e.g., portfolio generation creation auto-selects funds and weightings from the most recent generation).
+- **Contextual Defaults:** When creating new instances of existing patterns, the system provides intelligent defaults based on the latest successful configuration.
+- **Progressive Enhancement:** Users can immediately see inherited configurations and modify them as needed, rather than starting from scratch.
 
 ## 5. Accessibility
 

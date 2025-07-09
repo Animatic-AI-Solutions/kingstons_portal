@@ -6,6 +6,7 @@ tags: ["documentation", "maintenance", "governance"]
 # Documentation Maintenance Guide
 
 > **Recent Updates (January 2025)**: 
+> - **UX Pattern Updates**: Updated design philosophy document to include new UX patterns: Intelligent Workflow Assistance (auto-selection of previous generation funds) and Expanded Interaction Areas (clickable rows for improved usability).
 > - **IRR Calculation Fix**: Fixed client details page to use proper standardized multiple portfolio fund IRR calculation instead of mathematically incorrect weighted averages. Client IRR now uses `/analytics/client/{client_id}/irr` endpoint for accurate cash flow-based calculations.
 > - **Port Standardization**: Corrected backend default port from 8000 to 8001 to maintain consistency with frontend proxy configuration and production environment.
 > 
