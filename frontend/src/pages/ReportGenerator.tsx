@@ -147,6 +147,8 @@ interface IRRDateSelectionGridProps {
   onSelectAllForProduct: (productId: number) => void;
   onClearAllForProduct: (productId: number) => void;
   onSelectRecentForProduct: (productId: number, count: number) => void;
+  onSelectAllForAllProducts: () => void;
+  onClearAllForAllProducts: () => void;
 }
 
 const IRRDateSelectionGrid: React.FC<IRRDateSelectionGridProps> = ({
@@ -157,7 +159,9 @@ const IRRDateSelectionGrid: React.FC<IRRDateSelectionGridProps> = ({
   onSelectionChange,
   onSelectAllForProduct,
   onClearAllForProduct,
-  onSelectRecentForProduct
+  onSelectRecentForProduct,
+  onSelectAllForAllProducts,
+  onClearAllForAllProducts
 }) => {
   const handleDateToggle = (productId: number, dateStr: string, isGreyedOut: boolean) => {
     if (isGreyedOut) return; // Don't allow selection of greyed out dates
@@ -185,6 +189,29 @@ const IRRDateSelectionGrid: React.FC<IRRDateSelectionGridProps> = ({
       <p className="text-xs text-gray-500 mb-4">
         Select which historical IRR dates to include in the report. Dates after your selected end valuation date are greyed out and cannot be selected.
       </p>
+
+      {/* Global Action Buttons */}
+      <div className="flex gap-2 mb-4 p-3 bg-white rounded-lg border">
+        <div className="flex-1">
+          <h5 className="text-sm font-medium text-gray-700 mb-2">Apply to All Products:</h5>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onSelectAllForAllProducts}
+              className="px-3 py-2 text-sm bg-blue-600 text-white border border-blue-600 rounded hover:bg-blue-700 font-medium"
+            >
+              Select All Dates for All Products
+            </button>
+            <button
+              type="button"
+              onClick={onClearAllForAllProducts}
+              className="px-3 py-2 text-sm bg-white text-red-600 border border-red-300 rounded hover:bg-red-50 font-medium"
+            >
+              Clear All Products
+            </button>
+          </div>
+        </div>
+      </div>
 
       {products.filter(product => !excludedProductIds.has(product.id)).map(product => {
         const productDates = getFilteredDatesForProduct(product.id);
@@ -227,13 +254,6 @@ const IRRDateSelectionGrid: React.FC<IRRDateSelectionGridProps> = ({
                 className="px-2 py-1 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50"
               >
                 Latest Only
-              </button>
-              <button
-                type="button"
-                onClick={() => onSelectRecentForProduct(product.id, 3)}
-                className="px-2 py-1 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50"
-              >
-                3 Recent
               </button>
               <button
                 type="button"
@@ -1431,12 +1451,18 @@ const ReportGenerator: React.FC = () => {
           }
         });
         
+        // If no start date found from activity logs, use the selected valuation date as fallback
+        if (!productStartDate && selectedValuationDate) {
+          productStartDate = selectedValuationDate;
+        }
+        
         console.log(`Product ${productDetails.product_name} activity totals:`, {
           totalInvestment,
           totalWithdrawal,
           totalSwitchIn,
           totalSwitchOut,
-          productStartDate
+          productStartDate,
+          activityLogsCount: allActivityLogs.length
         });
         
         // Calculate current valuation (from active funds, or all funds for inactive products)
@@ -2172,6 +2198,7 @@ Please select a different valuation date or ensure all active funds have valuati
           earliestDate = product.start_date;
         }
       }
+      
       setEarliestTransactionDate(earliestDate);
       
       // Calculate overall IRR using the standardized multiple funds IRR endpoint
@@ -2258,12 +2285,16 @@ Please select a different valuation date or ensure all active funds have valuati
                 return uniqueNames;
               })(),
               timePeriod: (() => {
-                if (earliestDate && selectedValuationDate) {
+                // Always use the selected valuation date if available
+                if (selectedValuationDate) {
+                  if (earliestDate) {
                   const startDate = formatDateFallback(earliestDate);
                   const endDate = formatDateFallback(selectedValuationDate);
                   return `${startDate} to ${endDate}`;
-                } else if (selectedValuationDate) {
+                  } else {
+                    // If no earliest date found, show period ending with the selected date
                   return `Period ending ${formatDateFallback(selectedValuationDate)}`;
+                  }
                 } else {
                   return 'Current Period';
                 }
@@ -2318,12 +2349,16 @@ Please select a different valuation date or ensure all active funds have valuati
           return uniqueNames;
         })(),
         timePeriod: (() => {
-          if (earliestDate && selectedValuationDate) {
+          // Always use the selected valuation date if available
+          if (selectedValuationDate) {
+            if (earliestDate) {
             const startDate = formatDateFallback(earliestDate);
             const endDate = formatDateFallback(selectedValuationDate);
             return `${startDate} to ${endDate}`;
-          } else if (selectedValuationDate) {
+            } else {
+              // If no earliest date found, show period ending with the selected date
             return `Period ending ${formatDateFallback(selectedValuationDate)}`;
+            }
           } else {
             return 'Current Period';
           }
@@ -2525,8 +2560,26 @@ Please select a different valuation date or ensure all active funds have valuati
     relatedProducts
       .filter(product => !excludedProductIds.has(product.id))
       .forEach(product => {
-        const availableDates = getAvailableDatesForProduct(product.id).map(option => option.value);
+        const availableDates = getAvailableDatesForProduct(product.id)
+          .map(option => option.value)
+          .filter((dateStr: string) => {
+            // Only select dates that are not greyed out
+            const date = availableIRRDates.find(d => d.date === dateStr);
+            return !date?.isGreyedOut;
+          });
         newSelections[product.id] = availableDates;
+      });
+    
+    setSelectedIRRDates(newSelections);
+  };
+
+  const clearAllDatesForAll = () => {
+    const newSelections: ProductIRRSelections = {};
+    
+    relatedProducts
+      .filter(product => !excludedProductIds.has(product.id))
+      .forEach(product => {
+        newSelections[product.id] = [];
       });
     
     setSelectedIRRDates(newSelections);
@@ -2733,6 +2786,8 @@ Please select a different valuation date or ensure all active funds have valuati
                     onSelectAllForProduct={handleSelectAllForProduct}
                     onClearAllForProduct={handleClearAllForProduct}
                     onSelectRecentForProduct={handleSelectRecentForProduct}
+                    onSelectAllForAllProducts={selectAllDatesForAll}
+                    onClearAllForAllProducts={clearAllDatesForAll}
                   />
                 )}
                 
