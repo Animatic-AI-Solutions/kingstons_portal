@@ -30,6 +30,8 @@ export class ReportStateManager implements IReportStateManager {
       showTitleModal: false,
       modalTitles: new Map<number, string>(),
       modalHasChanges: false,
+      customProductOwnerNames: null,
+      showProductOwnerModal: false,
       loading: {
         reportData: false,
         irrHistory: false,
@@ -91,6 +93,14 @@ export class ReportStateManager implements IReportStateManager {
     return this.state.modalHasChanges;
   }
 
+  getCustomProductOwnerNames(): string | null {
+    return this.state.customProductOwnerNames;
+  }
+
+  getShowProductOwnerModal(): boolean {
+    return this.state.showProductOwnerModal;
+  }
+
   getLoadingStates(): LoadingStates {
     return { ...this.state.loading };
   }
@@ -141,6 +151,14 @@ export class ReportStateManager implements IReportStateManager {
 
   setModalHasChanges(hasChanges: boolean): void {
     this.updateState('modalHasChanges', hasChanges);
+  }
+
+  setCustomProductOwnerNames(names: string | null): void {
+    this.updateState('customProductOwnerNames', names);
+  }
+
+  setShowProductOwnerModal(show: boolean): void {
+    this.updateState('showProductOwnerModal', show);
   }
 
   setLoading(key: keyof LoadingStates, loading: boolean): void {

@@ -47,6 +47,10 @@ export interface ReportState {
   modalTitles: Map<number, string>;
   modalHasChanges: boolean;
   
+  // Product Owner Management
+  customProductOwnerNames: string | null;
+  showProductOwnerModal: boolean;
+  
   // Loading States
   loading: LoadingStates;
 }
@@ -65,6 +69,8 @@ export interface StateUpdateActions {
   setShowTitleModal: (show: boolean) => void;
   setModalTitles: (titles: Map<number, string>) => void;
   setModalHasChanges: (hasChanges: boolean) => void;
+  setCustomProductOwnerNames: (names: string | null) => void;
+  setShowProductOwnerModal: (show: boolean) => void;
   setLoading: (key: keyof LoadingStates, loading: boolean) => void;
 }
 
@@ -84,6 +90,8 @@ export interface IReportStateManager extends StateUpdateActions {
   getShowTitleModal(): boolean;
   getModalTitles(): Map<number, string>;
   getModalHasChanges(): boolean;
+  getCustomProductOwnerNames(): string | null;
+  getShowProductOwnerModal(): boolean;
   getLoadingStates(): LoadingStates;
   
   // Utility Methods

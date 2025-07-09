@@ -1,13 +1,21 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import List, Optional, Dict, Any
+from pydantic import BaseModel
 import logging
 from datetime import datetime
 from app.db.database import get_db
+from app.api.routes.portfolio_funds import calculate_multiple_portfolio_funds_irr
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# Pydantic models for IRR history summary
+class IRRHistorySummaryRequest(BaseModel):
+    product_ids: List[int]
+    selected_dates: List[str]  # YYYY-MM-DD format
+    client_group_ids: Optional[List[int]] = None
 
 @router.get("/portfolio/{product_id}")
 async def get_portfolio_historical_irr(
@@ -140,6 +148,213 @@ async def get_funds_historical_irr(
     except Exception as e:
         logger.error(f"Error fetching funds historical IRR for product {product_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch funds historical IRR: {str(e)}")
+
+@router.post("/summary")
+async def get_irr_history_summary(
+    request: IRRHistorySummaryRequest,
+    db = Depends(get_db)
+):
+    """
+    Get IRR history summary table data for multiple products across selected dates.
+    Returns product-level IRR values for each date plus portfolio totals.
+    """
+    try:
+        logger.info(f"Fetching IRR history summary for products {request.product_ids} and dates {request.selected_dates}")
+        logger.info(f"Database client type: {type(db)}")
+        
+        # Validate input
+        if not request.product_ids or not request.selected_dates:
+            logger.warning("Empty product IDs or selected dates")
+            return {
+                "success": True,
+                "data": {
+                    "product_irr_history": [],
+                    "portfolio_irr_history": []
+                }
+            }
+        
+        product_irr_history = []
+        portfolio_irr_history = []
+        
+        # Get product details with provider information using Supabase client
+        logger.info(f"Querying products for IDs: {request.product_ids}")
+        product_response = db.table("client_products") \
+            .select("id, product_name, provider_id, available_providers(name, theme_color)") \
+            .in_("id", request.product_ids) \
+            .execute()
+        
+        logger.info(f"Product response: {product_response}")
+        logger.info(f"Found {len(product_response.data)} products")
+        
+        # Create a map of product info for easy lookup
+        product_info_map = {}
+        for product in product_response.data:
+            provider_info = product.get("available_providers", {}) or {}
+            product_info_map[product["id"]] = {
+                "product_name": product["product_name"],
+                "provider_name": provider_info.get("name", "Unknown Provider"),
+                "provider_theme_color": provider_info.get("theme_color", "#6B7280")
+            }
+        
+        # Fetch IRR data for each product
+        for product_id in request.product_ids:
+            try:
+                if product_id not in product_info_map:
+                    logger.warning(f"Product {product_id} not found")
+                    continue
+                
+                product_info = product_info_map[product_id]
+                
+                # Get historical IRR data for this product
+                irr_data = []
+                for date_str in request.selected_dates:
+                    # Query portfolio_historical_irr view for specific date and product
+                    logger.info(f"Querying IRR for product {product_id} on date {date_str}")
+                    irr_response = db.table("portfolio_historical_irr") \
+                        .select("irr_result, irr_date") \
+                        .eq("product_id", product_id) \
+                        .gte("irr_date", date_str) \
+                        .lt("irr_date", f"{date_str[:10]}T23:59:59") \
+                        .order("irr_date", desc=True) \
+                        .limit(1) \
+                        .execute()
+                    
+                    logger.info(f"IRR response for product {product_id}, date {date_str}: {len(irr_response.data)} records")
+                    
+                    irr_value = None
+                    if irr_response.data and len(irr_response.data) > 0:
+                        irr_result = irr_response.data[0]["irr_result"]
+                        if irr_result is not None:
+                            irr_value = float(irr_result)
+                    
+                    irr_data.append({
+                        "date": date_str,
+                        "irr_value": irr_value
+                    })
+                
+                product_irr_history.append({
+                    "product_id": product_id,
+                    "product_name": product_info["product_name"],
+                    "provider_name": product_info["provider_name"],
+                    "provider_theme_color": product_info["provider_theme_color"],
+                    "irr_data": irr_data
+                })
+                
+            except Exception as product_error:
+                logger.error(f"Error processing product {product_id}: {str(product_error)}")
+                continue
+        
+        # Calculate portfolio totals for each date using proper portfolio IRR calculation
+        for date_str in request.selected_dates:
+            try:
+                # Normalize date format to YYYY-MM-DD (remove time component if present)
+                normalized_date = date_str.split('T')[0] if 'T' in date_str else date_str
+                logger.info(f"📅 Processing date: {date_str} -> normalized: {normalized_date}")
+                
+                # Get all portfolio fund IDs for the selected products
+                # First get all portfolio IDs for the selected products
+                portfolio_ids_response = db.table("client_products") \
+                    .select("portfolio_id") \
+                    .in_("id", request.product_ids) \
+                    .not_.is_("portfolio_id", "null") \
+                    .execute()
+                
+                portfolio_ids = [row["portfolio_id"] for row in portfolio_ids_response.data if row["portfolio_id"]]
+                
+                if not portfolio_ids:
+                    logger.warning(f"No portfolio IDs found for products {request.product_ids}")
+                    portfolio_irr_history.append({
+                        "date": date_str,
+                        "portfolio_irr": None
+                    })
+                    continue
+                
+                # Get all portfolio fund IDs from these portfolios
+                portfolio_funds_response = db.table("portfolio_funds") \
+                    .select("id") \
+                    .in_("portfolio_id", portfolio_ids) \
+                    .execute()
+                
+                portfolio_fund_ids = [row["id"] for row in portfolio_funds_response.data]
+                
+                if not portfolio_fund_ids:
+                    logger.warning(f"No portfolio fund IDs found for portfolios {portfolio_ids} on date {date_str}")
+                    portfolio_irr_history.append({
+                        "date": date_str,
+                        "portfolio_irr": None
+                    })
+                    continue
+                
+                logger.info(f"Calculating proper portfolio IRR for date {date_str} with {len(portfolio_fund_ids)} funds")
+                
+                # Use the proper portfolio IRR calculation function
+                try:
+                    portfolio_irr_result = await calculate_multiple_portfolio_funds_irr(
+                        portfolio_fund_ids=portfolio_fund_ids,
+                        irr_date=normalized_date,
+                        db=db
+                    )
+                    
+                    portfolio_irr = None
+                    if portfolio_irr_result and portfolio_irr_result.get("success"):
+                        portfolio_irr = portfolio_irr_result.get("irr_percentage")
+                        logger.info(f"✅ Calculated portfolio IRR for {date_str}: {portfolio_irr}%")
+                    else:
+                        logger.warning(f"⚠️ Portfolio IRR calculation returned unsuccessful result for {date_str}: {portfolio_irr_result}")
+                        
+                except Exception as portfolio_error:
+                    logger.error(f"💥 Exception in calculate_multiple_portfolio_funds_irr for {date_str}: {str(portfolio_error)}")
+                    logger.error(f"💥 Portfolio fund IDs: {portfolio_fund_ids}")
+                    logger.error(f"💥 Exception type: {type(portfolio_error)}")
+                    import traceback
+                    logger.error(f"💥 Full traceback: {traceback.format_exc()}")
+                    portfolio_irr = None
+                
+                # Fallback: If portfolio IRR calculation failed, use simple average of individual product IRRs
+                if portfolio_irr is None:
+                    logger.info(f"🔄 Falling back to simple average for date {date_str}")
+                    try:
+                        portfolio_irr_response = db.table("portfolio_historical_irr") \
+                            .select("irr_result, portfolio_valuation_id") \
+                            .in_("product_id", request.product_ids) \
+                            .gte("irr_date", normalized_date) \
+                            .lt("irr_date", f"{normalized_date}T23:59:59") \
+                            .execute()
+                        
+                        if portfolio_irr_response.data and len(portfolio_irr_response.data) > 0:
+                            irr_values = [float(row["irr_result"]) for row in portfolio_irr_response.data if row["irr_result"] is not None]
+                            portfolio_irr = sum(irr_values) / len(irr_values) if irr_values else None
+                            if portfolio_irr is not None:
+                                logger.info(f"📊 Fallback average IRR for {date_str}: {portfolio_irr}%")
+                    except Exception as fallback_error:
+                        logger.error(f"❌ Fallback calculation also failed for {date_str}: {str(fallback_error)}")
+                        portfolio_irr = None
+                
+                portfolio_irr_history.append({
+                    "date": date_str,
+                    "portfolio_irr": portfolio_irr
+                })
+                
+            except Exception as date_error:
+                logger.error(f"Error calculating portfolio IRR for date {date_str}: {str(date_error)}")
+                portfolio_irr_history.append({
+                    "date": date_str,
+                    "portfolio_irr": None
+                })
+        
+        logger.info(f"Successfully fetched IRR history summary: {len(product_irr_history)} products, {len(portfolio_irr_history)} dates")
+        
+        return {
+            "success": True,
+            "data": {
+                "product_irr_history": product_irr_history,
+                "portfolio_irr_history": portfolio_irr_history
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching IRR history summary: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch IRR history summary: {str(e)}")
 
 @router.get("/combined/{product_id}")
 async def get_combined_historical_irr(

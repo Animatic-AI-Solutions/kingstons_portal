@@ -49,6 +49,8 @@ export const useReportStateManager = (): UseReportStateManager => {
     setShowTitleModal: stateManager.setShowTitleModal.bind(stateManager),
     setModalTitles: stateManager.setModalTitles.bind(stateManager),
     setModalHasChanges: stateManager.setModalHasChanges.bind(stateManager),
+    setCustomProductOwnerNames: stateManager.setCustomProductOwnerNames.bind(stateManager),
+    setShowProductOwnerModal: stateManager.setShowProductOwnerModal.bind(stateManager),
     setLoading: stateManager.setLoading.bind(stateManager),
   };
 
@@ -120,6 +122,8 @@ export const useReportStateActions = (): StateUpdateActions & {
     setShowTitleModal: stateManager.setShowTitleModal.bind(stateManager),
     setModalTitles: stateManager.setModalTitles.bind(stateManager),
     setModalHasChanges: stateManager.setModalHasChanges.bind(stateManager),
+    setCustomProductOwnerNames: stateManager.setCustomProductOwnerNames.bind(stateManager),
+    setShowProductOwnerModal: stateManager.setShowProductOwnerModal.bind(stateManager),
     setLoading: stateManager.setLoading.bind(stateManager),
     
     // Utility functions

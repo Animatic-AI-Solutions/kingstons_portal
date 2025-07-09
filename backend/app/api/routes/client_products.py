@@ -198,9 +198,18 @@ async def get_client_products_with_owners(
                         }
                         product_owners.append(enhanced_owner)
                         
-                        # For reports, use known_as only, not firstname/surname combination
+                        # For reports, use known_as (nickname) + surname combination
                         if product_owner_name is None:
-                            product_owner_name = owner.get('known_as') or "No Owner"
+                            nickname = owner.get('known_as') or owner.get('firstname') or ""
+                            surname = owner.get('surname') or ""
+                            if nickname and surname:
+                                product_owner_name = f"{nickname} {surname}"
+                            elif nickname:
+                                product_owner_name = nickname
+                            elif surname:
+                                product_owner_name = surname
+                            else:
+                                product_owner_name = "No Owner"
             
             enhanced_product["product_owners"] = product_owners
             enhanced_product["product_owner_name"] = product_owner_name or "No Owner"  # Add this for report compatibility
@@ -528,9 +537,18 @@ async def get_client_products(
                         }
                         product_owners.append(enhanced_owner)
                         
-                        # For reports, use known_as only, not firstname/surname combination
+                        # For reports, use known_as (nickname) + surname combination
                         if product_owner_name is None:
-                            product_owner_name = owner.get('known_as') or "No Owner"
+                            nickname = owner.get('known_as') or owner.get('firstname') or ""
+                            surname = owner.get('surname') or ""
+                            if nickname and surname:
+                                product_owner_name = f"{nickname} {surname}"
+                            elif nickname:
+                                product_owner_name = nickname
+                            elif surname:
+                                product_owner_name = surname
+                            else:
+                                product_owner_name = "No Owner"
             
             product["product_owners"] = product_owners
             product["product_owner_name"] = product_owner_name or "No Owner"  # Add this for report compatibility

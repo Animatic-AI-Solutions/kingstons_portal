@@ -10,6 +10,7 @@
  */
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import IRRHistorySummaryTable from './IRRHistorySummaryTable';
 import {
   LineChart,
   Line,
@@ -97,6 +98,104 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [showAllFunds, setShowAllFunds] = useState(false);
 
+  // Add CSS for IRR history table column alignment and widths
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      /* IRR History Tables - Fixed column widths for vertical alignment */
+      .irr-history-table {
+        table-layout: fixed !important;
+        width: 100% !important;
+      }
+      
+      .irr-history-table th,
+      .irr-history-table td {
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+      }
+      
+      /* Fund Name column - 25% width for ~40 characters */
+      .irr-history-table th:nth-child(1) {
+        width: 25% !important;
+        text-align: left !important;
+        max-width: 0 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      
+      .irr-history-table td:nth-child(1) {
+        width: 25% !important;
+        text-align: left !important;
+        max-width: 0 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      
+      /* Risk column - 5% width (thinner) */
+      .irr-history-table th:nth-child(2) {
+        width: 5% !important;
+        text-align: right !important;
+      }
+      
+      .irr-history-table td:nth-child(2) {
+        width: 5% !important;
+        text-align: right !important;
+      }
+      
+      /* Current Average Return column - 8% width */
+      .irr-history-table th:nth-child(3) {
+        width: 8% !important;
+        text-align: right !important;
+      }
+      
+      .irr-history-table td:nth-child(3) {
+        width: 8% !important;
+        text-align: right !important;
+      }
+      
+      /* Historical IRR columns - distribute remaining 62% evenly */
+      .irr-history-table th:nth-child(n+4) {
+        width: 6.2% !important;
+        text-align: right !important;
+        padding-right: 8px !important;
+      }
+      
+      .irr-history-table td:nth-child(n+4) {
+        width: 6.2% !important;
+        text-align: right !important;
+        padding-right: 8px !important;
+      }
+      
+      /* Print-specific styles */
+      @media print {
+        .irr-history-table {
+          font-size: 9px !important;
+        }
+        
+        .irr-history-table th,
+        .irr-history-table td {
+          font-size: 8px !important;
+          line-height: 1.0 !important;
+          padding: 1px 2px !important;
+        }
+        
+        /* Ensure Fund Name column wraps properly in print */
+        .irr-history-table th:nth-child(1),
+        .irr-history-table td:nth-child(1) {
+          white-space: normal !important;
+          overflow: visible !important;
+          text-overflow: clip !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   const loadingIrrHistory = loading.irrHistory;
 
   // Formatting services from Phase 1
@@ -159,8 +258,15 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
     if (product.product_owner_name) {
       // Check if the product_owner_name contains multiple names (comma-separated or other delimiters)
       const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
-      const ownerDisplay = ownerNames.length > 1 ? 'Joint' : product.product_owner_name;
-      parts.push(ownerDisplay);
+      if (ownerNames.length > 1) {
+        // For multiple owners, show "Joint"
+        parts.push('Joint');
+      } else {
+        // For single owner, extract just the nickname (first word)
+        const nameParts = product.product_owner_name.trim().split(' ');
+        const nickname = nameParts[0]; // Take first part (nickname)
+        parts.push(nickname);
+      }
     }
     
     let title = parts.length > 0 ? parts.join(' - ') : 'Unknown Product';
@@ -251,8 +357,15 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
           if (product.product_owner_name) {
             // Check if the product_owner_name contains multiple names (comma-separated or other delimiters)
             const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
-            const ownerDisplay = ownerNames.length > 1 ? 'Joint' : product.product_owner_name;
-            parts.push(ownerDisplay);
+            if (ownerNames.length > 1) {
+              // For multiple owners, show "Joint"
+              parts.push('Joint');
+            } else {
+              // For single owner, extract just the nickname (first word)
+              const nameParts = product.product_owner_name.trim().split(' ');
+              const nickname = nameParts[0]; // Take first part (nickname)
+              parts.push(nickname);
+            }
           }
           
           productKey = parts.length > 0 ? parts.join(' - ') : 'Unknown Product';
@@ -339,8 +452,15 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       if (product.product_owner_name) {
         // Check if the product_owner_name contains multiple names (comma-separated or other delimiters)
         const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
-        const ownerDisplay = ownerNames.length > 1 ? 'Joint' : product.product_owner_name;
-        parts.push(ownerDisplay);
+        if (ownerNames.length > 1) {
+          // For multiple owners, show "Joint"
+          parts.push('Joint');
+        } else {
+          // For single owner, extract just the nickname (first word)
+          const nameParts = product.product_owner_name.trim().split(' ');
+          const nickname = nameParts[0]; // Take first part (nickname)
+          parts.push(nickname);
+        }
       }
       
       let title = parts.length > 0 ? parts.join(' - ') : 'Unknown Product';
@@ -424,8 +544,15 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       if (product.product_owner_name) {
         // Check if the product_owner_name contains multiple names (comma-separated or other delimiters)
         const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
-        const ownerDisplay = ownerNames.length > 1 ? 'Joint' : product.product_owner_name;
-        parts.push(ownerDisplay);
+        if (ownerNames.length > 1) {
+          // For multiple owners, show "Joint"
+          parts.push('Joint');
+        } else {
+          // For single owner, extract just the nickname (first word)
+          const nameParts = product.product_owner_name.trim().split(' ');
+          const nickname = nameParts[0]; // Take first part (nickname)
+          parts.push(nickname);
+        }
       }
       
       let title = parts.length > 0 ? parts.join(' - ') : 'Unknown Product';
@@ -907,30 +1034,15 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
             organizedIds: organizedProducts.map(p => p.id)
           });
           
-                     return organizedProducts.map((product: ProductPeriodSummary, index: number) => {
-             // Find the corresponding IRR history data for this product
-             const productHistory = irrHistoryData.find((ph: any) => ph.product_id === product.id);
-             
-             console.log(`🔍 [IRR HISTORY DEBUG] Processing product ${index}:`, {
-               productId: product.id,
-               productName: product.product_name,
-               hasProduct: !!product,
-               hasProductHistory: !!productHistory,
-               productHistoryStructure: productHistory ? Object.keys(productHistory) : 'N/A'
-             });
-             
-             if (!productHistory) {
-               console.log(`⚠️ [IRR HISTORY DEBUG] No product history for product ${product.id}`);
-               return null;
-             }
-
-            // Get all unique dates from both portfolio and fund IRR history
-            const allDates = new Set<string>();
-            
+          // ✅ GLOBAL DATE CALCULATION - Calculate dates across ALL products first
+          const globalAllDates = new Set<string>();
+          
+          // Collect ALL dates from ALL products
+          irrHistoryData.forEach((productHistory) => {
             // Add portfolio IRR dates
             if (productHistory.portfolio_historical_irr) {
               productHistory.portfolio_historical_irr.forEach((record: any) => {
-                allDates.add(record.irr_date);
+                globalAllDates.add(record.irr_date);
               });
             }
             
@@ -939,47 +1051,51 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
               productHistory.funds_historical_irr.forEach((fund: any) => {
                 if (fund.historical_irr) {
                   fund.historical_irr.forEach((record: any) => {
-                    allDates.add(record.irr_date);
+                    globalAllDates.add(record.irr_date);
                   });
                 }
               });
             }
+          });
+          
+          // Sort all global dates (most recent first for display)
+          const globalSortedDates = Array.from(globalAllDates).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+          
+          // Get the global set of historical dates (excluding current which is first)
+          // Take at least 8 columns with most recent dates first
+          const globalHistoricalDates = globalSortedDates.slice(1, Math.max(9, globalSortedDates.length)); // Skip first (current) and take next dates
+          
+          console.log(`🌍 [GLOBAL DATES DEBUG] Calculated global historical dates:`, {
+            totalGlobalDates: globalAllDates.size,
+            allGlobalDatesArray: Array.from(globalAllDates),
+            globalHistoricalDates,
+            historicalDateCount: globalHistoricalDates.length
+          });
+          
+          return organizedProducts.map((product: ProductPeriodSummary, index: number) => {
+            // Find the corresponding IRR history data for this product
+            const productHistory = irrHistoryData.find((ph: any) => ph.product_id === product.id);
             
-            // Sort dates in descending order (most recent first)
-            const allSortedDates = Array.from(allDates).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+            console.log(`🔍 [IRR HISTORY DEBUG] Processing product ${index}:`, {
+              productId: product.id,
+              productName: product.product_name,
+              hasProduct: !!product,
+              hasProductHistory: !!productHistory,
+              productHistoryStructure: productHistory ? Object.keys(productHistory) : 'N/A'
+            });
             
-            // Use the report's selected dates for this product, or all available dates if no specific selection
-            let sortedDates: string[] = [];
-            if (reportData.selectedHistoricalIRRDates && reportData.selectedHistoricalIRRDates[productHistory.product_id]) {
-              // Use the specifically selected dates for this product from the report
-              const selectedDatesForProduct = reportData.selectedHistoricalIRRDates[productHistory.product_id];
-              // Sort and exclude the current date (most recent) from historical dates
-              const sortedSelectedDates = selectedDatesForProduct.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-              sortedDates = sortedSelectedDates.slice(1); // Skip first (current) date from selected dates
-              console.log(`🎯 [SELECTED DATES] Product ${productHistory.product_id} using report's selected dates (excluding current):`, {
-                selectedCount: selectedDatesForProduct.length,
-                selectedDates: selectedDatesForProduct,
-                sortedDates: sortedDates,
-                excludedCurrentDate: sortedSelectedDates[0]
-              });
-            } else {
-              // Fallback: show historical dates only (excluding current date)
-              sortedDates = allSortedDates.slice(1, 13); // Skip first (current) and take next 12 historical dates
-              console.log(`📅 [HISTORICAL DATES] Product ${productHistory.product_id} using historical dates only:`, {
-                allCount: allSortedDates.length,
-                allDates: allSortedDates,
-                historicalDatesCount: sortedDates.length,
-                historicalDates: sortedDates,
-                excludedCurrentDate: allSortedDates[0]
-              });
+            if (!productHistory) {
+              console.log(`⚠️ [IRR HISTORY DEBUG] No product history for product ${product.id}`);
+              return null;
             }
+
+            // ✅ USE GLOBAL DATES for all products (not per-product calculation)
+            const sortedDates = globalHistoricalDates;
             
-            console.log(`🔍 [IRR HISTORY DEBUG] Product ${productHistory.product_id} date processing:`, {
-              allDatesCount: allDates.size,
-              allSortedDatesCount: allSortedDates.length,
-              sortedDatesCount: sortedDates.length,
-              allSortedDates: allSortedDates.slice(0, 5), // First 5 dates
-              sortedDates: sortedDates.slice(0, 3) // First 3 historical dates
+            console.log(`🔍 [IRR HISTORY DEBUG] Product ${productHistory.product_id} using GLOBAL dates:`, {
+              productId: productHistory.product_id,
+              globalHistoricalDates: sortedDates,
+              globalDateCount: sortedDates.length
             });
             
             // Create lookup maps for quick access
@@ -1019,7 +1135,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
             return (
               <div 
                 key={index} 
-                className={`product-card bg-white shadow-sm rounded-lg border border-gray-200 p-6 w-full print-clean ${product?.status === 'inactive' ? 'opacity-60 bg-gray-50' : ''}`}
+                className={`product-card bg-white shadow-sm rounded-lg border border-gray-200 p-4 w-full print-clean ${product?.status === 'inactive' ? 'opacity-60 bg-gray-50' : ''}`}
                 style={{
                   borderLeft: product?.provider_theme_color ? `4px solid ${product.provider_theme_color}` : '4px solid #e5e7eb',
                   borderTop: product?.provider_theme_color ? `1px solid ${product.provider_theme_color}` : undefined,
@@ -1027,7 +1143,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                   borderBottom: product?.provider_theme_color ? `1px solid ${product.provider_theme_color}` : undefined,
                 }}
               >
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-3 mb-2">
                   {product?.provider_theme_color && (
                     <div 
                       className="w-4 h-4 rounded-full" 
@@ -1043,20 +1159,23 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                 </div>
 
                 <div className="overflow-x-auto product-table">
-                  <table className="w-full table-auto divide-y divide-gray-300 landscape-table">
+                  <table className="w-full table-fixed divide-y divide-gray-300 landscape-table irr-history-table">
                     <thead className="bg-gray-100">
                       <tr>
-                        <th scope="col" className="px-2 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                        <th scope="col" className="px-2 py-2 text-left text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                           Fund Name
                         </th>
-                        <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                        <th scope="col" className="px-2 py-2 text-center text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                           Current "Risk" 1-7 scale, (7 High)
                         </th>
-                        <th scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide bg-purple-100">
-                          Current Average Return p.a.
+                        <th scope="col" className="px-2 py-2 text-center text-[10px] font-semibold text-gray-700 uppercase tracking-wide bg-purple-100">
+                          <div className="leading-tight">
+                            Current Average<br />
+                            Return p.a.
+                          </div>
                         </th>
                         {sortedDates.map((date) => (
-                          <th key={date} scope="col" className="px-2 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                          <th key={date} scope="col" className="px-2 py-2 text-left text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                             {(() => {
                               const dateObj = new Date(date);
                               const year = dateObj.getFullYear();
@@ -1842,21 +1961,21 @@ Available database dates: ${productHistory.portfolio_historical_irr.map((r: any)
                                 {productWeightedRisk !== undefined && productWeightedRisk !== null ? (
                                   formatWeightedRisk(productWeightedRisk)
                                 ) : (
-                                  'N/A'
+                                  '-'
                                 )}
                               </td>
                               <td className="px-2 py-2 text-xs font-bold text-right bg-purple-100 text-black">
                                 {productIrr !== null && productIrr !== undefined ? (
                                   formatIrrWithPrecision(productIrr)
                                 ) : (
-                                  'N/A'
+                                  '-'
                                 )}
                               </td>
                               {sortedDates.map((date, index) => {
                                 // Get the corresponding normalized date for lookup
                                 const normalizedDate = normalizedSelectedDates[index];
                                 return (
-                                  <td key={date} className="px-2 py-2 text-xs font-bold text-right text-black">
+                                  <td key={date} className="px-2 py-2 text-xs font-bold text-left text-black">
                                     {(() => {
                                       const historicalIrr = productHistoricalIrrMap.get(normalizedDate);
                                       if (historicalIrr !== null && historicalIrr !== undefined) {
@@ -1886,6 +2005,16 @@ Available database dates: ${productHistory.portfolio_historical_irr.map((r: any)
             );
           }).filter(Boolean);
         })()}
+        
+        {/* IRR History Summary Table */}
+        <IRRHistorySummaryTable
+          productIds={reportData?.productSummaries?.map(p => p.id) || []}
+          selectedDates={reportData?.availableHistoricalIRRDates?.map(d => d.date) || []}
+          clientGroupIds={undefined}
+          realTimeTotalIRR={reportData?.totalIRR}
+          reportData={reportData}
+          className="mt-8"
+        />
       </div>
     </div>
   );
