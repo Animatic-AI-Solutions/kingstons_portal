@@ -57,7 +57,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=1440
 # Optional Development Settings
 DEBUG=true
 API_HOST=127.0.0.1
-API_PORT=8000
+API_PORT=8001
 ```
 
 #### Environment Variable Details

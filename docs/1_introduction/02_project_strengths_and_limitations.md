@@ -32,6 +32,10 @@ This document provides a high-level overview of the project's key strengths and 
   - **Contextual Product Owner Display:** Product cards now display associated product owners for better relationship visibility
   - **Consistent Column Headers:** Standardized date formatting across report tables for improved readability
   - **Intelligent Data Relationships:** Automatic aggregation of product owners across client portfolios with proper deduplication
+- **Accurate Financial Calculations:** Mathematically sound IRR calculations using proper cash flow analysis:
+  - **Client-Level IRR Accuracy:** Fixed client total IRR calculation to use standardized multiple portfolio fund IRR methodology instead of incorrect weighted averages
+  - **Standardized IRR Endpoints:** Utilizes the analytics endpoints that perform proper cash flow-based IRR calculations across all portfolio funds
+  - **Consistent Methodology:** Ensures IRR calculations use the same mathematical approach across individual funds, portfolios, and client aggregations
 
 ## 2. Limitations & Technical Debt
 

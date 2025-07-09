@@ -5,7 +5,11 @@ tags: ["documentation", "maintenance", "governance"]
 
 # Documentation Maintenance Guide
 
-> **Recent Updates (December 2024)**: Documentation has been updated to reflect the new production architecture with Kingston03 server hosting, environment-based API configuration, and direct FastAPI service communication. See deployment process documentation for details.
+> **Recent Updates (January 2025)**: 
+> - **IRR Calculation Fix**: Fixed client details page to use proper standardized multiple portfolio fund IRR calculation instead of mathematically incorrect weighted averages. Client IRR now uses `/analytics/client/{client_id}/irr` endpoint for accurate cash flow-based calculations.
+> - **Port Standardization**: Corrected backend default port from 8000 to 8001 to maintain consistency with frontend proxy configuration and production environment.
+> 
+> **Previous Updates (December 2024)**: Documentation has been updated to reflect the new production architecture with Kingston03 server hosting, environment-based API configuration, and direct FastAPI service communication. See deployment process documentation for details.
 
 ## Overview
 
