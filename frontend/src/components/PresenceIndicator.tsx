@@ -11,8 +11,13 @@ const PresenceIndicator: React.FC<PresenceIndicatorProps> = ({
   className = '' 
 }) => {
   const { users, isConnected, error } = usePresence({ pageIdentifier });
+  
+  // Debug logging
+  console.log('🎭 PresenceIndicator: Render with props:', { pageIdentifier, className });
+  console.log('🎭 PresenceIndicator: Hook state:', { users, isConnected, error, userCount: users?.length });
 
   if (error) {
+    console.log('🎭 PresenceIndicator: Rendering error state:', error);
     return (
       <div className={`text-red-500 text-sm ${className}`}>
         <span className="flex items-center">
@@ -26,6 +31,7 @@ const PresenceIndicator: React.FC<PresenceIndicatorProps> = ({
   }
 
   if (!isConnected) {
+    console.log('🎭 PresenceIndicator: Rendering connecting state');
     return (
       <div className={`text-gray-500 text-sm ${className}`}>
         <span className="flex items-center">
@@ -40,8 +46,19 @@ const PresenceIndicator: React.FC<PresenceIndicatorProps> = ({
   }
 
   if (users.length === 0) {
-    return null; // No other users, don't show indicator
+    console.log('🎭 PresenceIndicator: No other users, showing debug indicator');
+    // During debugging, show a small indicator even when no users
+    return (
+      <div className={`text-xs text-gray-400 ${className}`}>
+        <span className="flex items-center">
+          <div className="w-2 h-2 bg-gray-300 rounded-full mr-1"></div>
+          Only you here
+        </span>
+      </div>
+    );
   }
+
+  console.log('🎭 PresenceIndicator: Rendering presence for users:', users);
 
   return (
     <div className={`flex items-center space-x-3 ${className}`}>
