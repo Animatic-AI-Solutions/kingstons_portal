@@ -59,11 +59,29 @@ const AddPortfolioGeneration: React.FC = () => {
   }, [portfolioId]);
 
   useEffect(() => {
-    // When latestGenerationId is available, fetch the funds from that generation
-    if (latestGenerationId) {
+    // When both availableFunds and latestGenerationId are available, fetch the funds from that generation
+    if (latestGenerationId && availableFunds.length > 0) {
       fetchLatestGenerationFunds(latestGenerationId);
     }
-  }, [latestGenerationId]);
+  }, [latestGenerationId, availableFunds]);
+
+  // Separate effect to handle fallback cash fund selection when no latest generation exists
+  useEffect(() => {
+    // Only auto-select cash fund if:
+    // 1. We have available funds
+    // 2. We confirmed there's no latest generation (latestGenerationId is explicitly null, not undefined)
+    // 3. No funds are currently selected
+    // 4. We're not currently loading latest funds
+    if (availableFunds.length > 0 && latestGenerationId === null && selectedFunds.length === 0 && !isLoadingLatestFunds) {
+      const cashFund = findCashFund(availableFunds);
+      if (cashFund) {
+        setSelectedFunds([cashFund.id]);
+        setFundWeightings({
+          [cashFund.id.toString()]: '0'
+        });
+      }
+    }
+  }, [availableFunds, latestGenerationId, selectedFunds, isLoadingLatestFunds]);
 
   const fetchPortfolioDetails = async () => {
     try {
@@ -71,9 +89,15 @@ const AddPortfolioGeneration: React.FC = () => {
       const response = await api.get(`/available_portfolios/${portfolioId}`);
       setPortfolio(response.data);
       
-      // If there's a current generation, store its ID for fund loading
-      if (response.data.generation_id) {
-        setLatestGenerationId(response.data.generation_id);
+      // Fetch the most recent generation for this portfolio
+      const generationsResponse = await api.get(`/available_portfolios/${portfolioId}/generations`);
+      if (generationsResponse.data && generationsResponse.data.length > 0) {
+        // The API returns generations ordered by version_number desc, so first one is the latest
+        const latestGeneration = generationsResponse.data[0];
+        setLatestGenerationId(latestGeneration.id);
+      } else {
+        // Explicitly set to null if no generations exist (first generation)
+        setLatestGenerationId(null);
       }
       
     } catch (err: any) {
@@ -96,14 +120,9 @@ const AddPortfolioGeneration: React.FC = () => {
       );
       setAvailableFunds(sortedFunds);
       
-      // Automatically select cash fund if it exists and no other funds are selected yet
-      const cashFund = findCashFund(sortedFunds);
-      if (cashFund && selectedFunds.length === 0) {
-        setSelectedFunds([cashFund.id]);
-        setFundWeightings({
-          [cashFund.id.toString()]: '0'
-        });
-      }
+      // Don't automatically select cash fund here - let the latest generation's funds take precedence
+      // The latest generation funds will be loaded by the useEffect that depends on availableFunds
+      
     } catch (err: any) {
       setError('Failed to fetch funds');
       console.error('Error fetching funds:', err);
@@ -115,16 +134,14 @@ const AddPortfolioGeneration: React.FC = () => {
   const fetchLatestGenerationFunds = async (generationId: number) => {
     try {
       setIsLoadingLatestFunds(true);
-      const response = await api.get(`/available_portfolios/${portfolioId}`, {
-        params: { generation_id: generationId }
-      });
+      const response = await api.get(`/available_portfolios/available_portfolio_funds/generation/${generationId}`);
       
-      if (response.data && response.data.funds && response.data.funds.length > 0) {
+      if (response.data && response.data.length > 0) {
         // Process the funds to pre-populate selection and weightings
-        const fundIds = response.data.funds.map((fund: any) => fund.fund_id);
+        const fundIds = response.data.map((fund: any) => fund.fund_id);
         const weightings: Record<string, string> = {};
         
-        response.data.funds.forEach((fund: any) => {
+        response.data.forEach((fund: any) => {
           weightings[fund.fund_id.toString()] = fund.target_weighting.toString();
         });
         

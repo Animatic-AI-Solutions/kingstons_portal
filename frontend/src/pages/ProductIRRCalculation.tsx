@@ -1938,8 +1938,22 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                             }).map((holding) => (
                               <tr 
                                 key={holding.id} 
-                                className={holding.isVirtual ? "bg-gray-100 border-t border-gray-300 cursor-pointer hover:bg-gray-200" : ""}
-                                onClick={holding.isVirtual ? togglePreviousFundsExpansion : undefined}
+                                className={`${
+                                  holding.isVirtual ? "bg-gray-100 border-t border-gray-300 cursor-pointer hover:bg-gray-200" : 
+                                  isBulkDeactivationMode && !holding.isVirtual && holding.status !== 'inactive' ? "cursor-pointer hover:bg-gray-50" :
+                                  ""
+                                }`}
+                                onClick={(e) => {
+                                  if (holding.isVirtual) {
+                                    togglePreviousFundsExpansion();
+                                  } else if (isBulkDeactivationMode && !holding.isVirtual && holding.status !== 'inactive') {
+                                    // Only toggle if we didn't click on the checkbox itself
+                                    const target = e.target as HTMLElement;
+                                    if (!target.closest('input[type="checkbox"]')) {
+                                      toggleFundSelection(holding.id);
+                                    }
+                                  }
+                                }}
                               >
                                 {isBulkDeactivationMode && (
                                   <td className="px-1 py-1 whitespace-nowrap text-center">
@@ -1949,6 +1963,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                         className="rounded border-gray-300 text-red-600 shadow-sm focus:border-red-300 focus:ring focus:ring-red-200 focus:ring-opacity-50"
                                         checked={selectedFundsForDeactivation.has(holding.id)}
                                         onChange={() => toggleFundSelection(holding.id)}
+                                        onClick={(e) => e.stopPropagation()}
                                       />
                                     ) : (
                                       <span className="text-gray-400">—</span>
