@@ -374,6 +374,6 @@ if __name__ == "__main__":
     uvicorn.run(
         "main:app",
         host=os.getenv("API_HOST", "0.0.0.0"),
-        port=int(os.getenv("API_PORT", 8000)),
+        port=int(os.getenv("API_PORT", 8001)),
         reload=os.getenv("DEBUG", "False").lower() == "true"
     )

@@ -498,6 +498,11 @@ export const getClientGroupIRR = (clientGroupId: number) => {
   return api.get(`client_groups/${clientGroupId}/irr`);
 };
 
+// Add new standardized client IRR function
+export const getStandardizedClientIRR = (clientId: number) => {
+  return api.get(`analytics/client/${clientId}/irr`);
+};
+
 /**
  * Fetches funds under management for a specific product
  * @param {number} productId - Product ID

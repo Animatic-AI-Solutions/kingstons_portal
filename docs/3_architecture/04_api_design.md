@@ -78,6 +78,12 @@ To support the performance needs of the frontend dashboards, the API includes se
 - **Example:** `@router.get("/bulk_client_data")` in `client_groups.py`.
 - These endpoints are designed to fetch and aggregate large amounts of data in a single, efficient query, often leveraging the optimized views in the database. This minimizes the number of round-trips between the frontend and backend.
 
+### Analytics and IRR Calculations
+The analytics module (`analytics.py`) provides specialized endpoints for accurate financial calculations:
+- **Standardized IRR Calculations:** The `/analytics/client/{client_id}/irr` and `/analytics/product/{product_id}/irr` endpoints use proper cash flow-based IRR calculations rather than weighted averages.
+- **Multiple Portfolio Funds IRR:** Leverages the standardized multiple portfolio funds IRR calculation engine to aggregate IRR across all portfolio funds for accurate client-level and product-level IRR values.
+- **Mathematical Accuracy:** Ensures IRR calculations follow proper financial mathematics by analyzing actual cash flows and timing, providing accurate performance metrics for wealth management decision-making.
+
 ## 4. Authentication and Security
 
 - **Authentication:** Handled via JWT (JSON Web Tokens). The client receives a token upon successful login, which must be included in the `Authorization` header of subsequent requests.

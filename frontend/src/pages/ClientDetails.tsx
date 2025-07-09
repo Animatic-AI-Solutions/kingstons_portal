@@ -13,7 +13,7 @@ import {
   NumberInput,
   BaseDropdown
 } from '../components/ui';
-import api, { getClientGroupProductOwners, calculateStandardizedMultipleFundsIRR, getProductOwners, addClientGroupProductOwner, removeClientGroupProductOwner, getProductOwnersForProducts } from '../services/api';
+import api, { getClientGroupProductOwners, calculateStandardizedMultipleFundsIRR, getProductOwners, addClientGroupProductOwner, removeClientGroupProductOwner, getProductOwnersForProducts, getStandardizedClientIRR } from '../services/api';
 import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
 
 // Enhanced TypeScript interfaces
@@ -1337,16 +1337,18 @@ const ClientDetails: React.FC = () => {
       // Store calculated FUM value
       clientFUMFromView.current = totalValue;
       
-      // Fetch the true aggregated IRR using the standardized client group IRR endpoint
+      // Fetch the true aggregated IRR using the standardized multiple funds IRR calculation
       let totalIRR = 0;
       try {
-        console.log(`Fetching standardized IRR for client group ${clientId}`);
-        const irrResponse = await api.get(`/client_groups/${clientId}/irr`);
+        console.log(`Fetching standardized IRR for client group ${clientId} using multiple funds IRR calculation`);
+        const irrResponse = await getStandardizedClientIRR(parseInt(clientId));
         totalIRR = irrResponse.data.irr || 0;
         console.log(`Standardized client group IRR: ${totalIRR}%`);
         console.log('IRR calculation details:', irrResponse.data);
+        console.log(`Calculation method: ${irrResponse.data.calculation_method}`);
+        console.log(`Portfolio funds used: ${irrResponse.data.portfolio_fund_count}`);
       } catch (irrError) {
-        console.error('Error fetching client group IRR:', irrError);
+        console.error('Error fetching standardized client group IRR:', irrError);
         // Fallback to 0 if IRR calculation fails
         totalIRR = 0;
       }
@@ -1355,7 +1357,7 @@ const ClientDetails: React.FC = () => {
       clientIRRFromAPI.current = totalIRR;
       
       console.log(`Optimized loading complete: ${processedProducts.length} products, ${Object.keys(fundDataMap).length} products with fund data`);
-      console.log(`Total Value: ${totalValue}, Standardized Total IRR: ${totalIRR}%`);
+      console.log(`Total Value: ${totalValue}, Standardized Total IRR (using multiple funds IRR): ${totalIRR}%`);
       
       // Fetch available product owners for the dropdown
       await fetchAvailableProductOwners();
@@ -1404,7 +1406,7 @@ const ClientDetails: React.FC = () => {
     
     console.log("Optimized totals calculation:");
     console.log("Total funds from bulk endpoint:", totalFunds);
-    console.log("Total IRR from standardized endpoint:", finalIRR);
+    console.log("Total IRR from standardized multiple funds IRR calculation:", finalIRR);
     
     return {
       totalFundsUnderManagement: totalFunds,

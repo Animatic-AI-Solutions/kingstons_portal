@@ -32,14 +32,14 @@ Start the API server with:
 python main.py
 ```
 
-By default, the API will run on http://0.0.0.0:8000. You can configure the host and port in the `.env` file.
+By default, the API will run on http://0.0.0.0:8001. You can configure the host and port in the `.env` file.
 
 ## API Documentation
 
 Once running, you can access the interactive API documentation at:
 
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+- Swagger UI: http://localhost:8001/docs
+- ReDoc: http://localhost:8001/redoc
 
 For details on API URL structure and contribution guidelines, please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
