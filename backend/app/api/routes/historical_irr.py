@@ -179,12 +179,20 @@ async def get_irr_history_summary(
         # Get product details with provider information using Supabase client
         logger.info(f"Querying products for IDs: {request.product_ids}")
         product_response = db.table("client_products") \
-            .select("id, product_name, provider_id, available_providers(name, theme_color)") \
+            .select("id, product_name, provider_id, status, available_providers(name, theme_color)") \
             .in_("id", request.product_ids) \
             .execute()
         
         logger.info(f"Product response: {product_response}")
         logger.info(f"Found {len(product_response.data)} products")
+        
+        # 🔴 DEBUG: Show product details and statuses
+        logger.error(f"🔴 📋 PRODUCT DETAILS BREAKDOWN:")
+        for product in product_response.data:
+            provider_info = product.get("available_providers", {}) or {}
+            product_status = product.get("status", "unknown")
+            logger.error(f"🔴   Product {product['id']}: '{product['product_name']}' - Status: {product_status}")
+            logger.error(f"🔴     Provider: {provider_info.get('name', 'Unknown')}")
         
         # Create a map of product info for easy lookup
         product_info_map = {}
@@ -193,7 +201,8 @@ async def get_irr_history_summary(
             product_info_map[product["id"]] = {
                 "product_name": product["product_name"],
                 "provider_name": provider_info.get("name", "Unknown Provider"),
-                "provider_theme_color": provider_info.get("theme_color", "#6B7280")
+                "provider_theme_color": provider_info.get("theme_color", "#6B7280"),
+                "status": product.get("status", "unknown")
             }
         
         # Fetch IRR data for each product
@@ -237,6 +246,7 @@ async def get_irr_history_summary(
                     "product_name": product_info["product_name"],
                     "provider_name": product_info["provider_name"],
                     "provider_theme_color": product_info["provider_theme_color"],
+                    "status": product_info["status"],  # Add product status for frontend formatting
                     "irr_data": irr_data
                 })
                 
@@ -251,6 +261,10 @@ async def get_irr_history_summary(
                 normalized_date = date_str.split('T')[0] if 'T' in date_str else date_str
                 logger.info(f"📅 Processing date: {date_str} -> normalized: {normalized_date}")
                 
+                # 🔴 DEBUG: IRR HISTORY SUMMARY - START
+                logger.error(f"🔴 IRR HISTORY SUMMARY DEBUG - PROCESSING DATE: {normalized_date}")
+                logger.error(f"🔴 Selected Product IDs: {request.product_ids}")
+                
                 # Get all portfolio fund IDs for the selected products
                 # First get all portfolio IDs for the selected products
                 portfolio_ids_response = db.table("client_products") \
@@ -261,8 +275,12 @@ async def get_irr_history_summary(
                 
                 portfolio_ids = [row["portfolio_id"] for row in portfolio_ids_response.data if row["portfolio_id"]]
                 
+                # 🔴 DEBUG: Show portfolio IDs found
+                logger.error(f"🔴 Portfolio IDs found: {portfolio_ids}")
+                
                 if not portfolio_ids:
                     logger.warning(f"No portfolio IDs found for products {request.product_ids}")
+                    logger.error(f"🔴 ❌ NO PORTFOLIO IDs FOUND - Setting portfolio IRR to None")
                     portfolio_irr_history.append({
                         "date": date_str,
                         "portfolio_irr": None
@@ -277,8 +295,13 @@ async def get_irr_history_summary(
                 
                 portfolio_fund_ids = [row["id"] for row in portfolio_funds_response.data]
                 
+                # 🔴 DEBUG: Show portfolio fund IDs found
+                logger.error(f"🔴 Portfolio Fund IDs found: {portfolio_fund_ids}")
+                logger.error(f"🔴 Total Portfolio Funds: {len(portfolio_fund_ids)}")
+                
                 if not portfolio_fund_ids:
                     logger.warning(f"No portfolio fund IDs found for portfolios {portfolio_ids} on date {date_str}")
+                    logger.error(f"🔴 ❌ NO PORTFOLIO FUND IDs FOUND - Setting portfolio IRR to None")
                     portfolio_irr_history.append({
                         "date": date_str,
                         "portfolio_irr": None
@@ -286,6 +309,7 @@ async def get_irr_history_summary(
                     continue
                 
                 logger.info(f"Calculating proper portfolio IRR for date {date_str} with {len(portfolio_fund_ids)} funds")
+                logger.error(f"🔴 🧮 CALLING calculate_multiple_portfolio_funds_irr with {len(portfolio_fund_ids)} funds for date {normalized_date}")
                 
                 # Use the proper portfolio IRR calculation function
                 try:
@@ -295,12 +319,29 @@ async def get_irr_history_summary(
                         db=db
                     )
                     
+                    # 🔴 DEBUG: Show calculation result
+                    logger.error(f"🔴 📊 IRR CALCULATION RESULT: {portfolio_irr_result}")
+                    
                     portfolio_irr = None
                     if portfolio_irr_result and portfolio_irr_result.get("success"):
                         portfolio_irr = portfolio_irr_result.get("irr_percentage")
                         logger.info(f"✅ Calculated portfolio IRR for {date_str}: {portfolio_irr}%")
+                        logger.error(f"🔴 ✅ FINAL PORTFOLIO IRR: {portfolio_irr}%")
+                        
+                        # 🔴 DEBUG: Show detailed breakdown from result
+                        total_valuation = portfolio_irr_result.get("total_valuation", 0)
+                        fund_valuations = portfolio_irr_result.get("fund_valuations", {})
+                        cash_flows_count = portfolio_irr_result.get("cash_flows_count", 0)
+                        
+                        logger.error(f"🔴 💰 Total Valuation: £{total_valuation}")
+                        logger.error(f"🔴 📊 Cash Flows Count: {cash_flows_count}")
+                        logger.error(f"🔴 💼 Individual Fund Valuations:")
+                        for fund_id, valuation in fund_valuations.items():
+                            logger.error(f"🔴   Fund {fund_id}: £{valuation}")
+                        
                     else:
                         logger.warning(f"⚠️ Portfolio IRR calculation returned unsuccessful result for {date_str}: {portfolio_irr_result}")
+                        logger.error(f"🔴 ⚠️ UNSUCCESSFUL IRR CALCULATION - Result: {portfolio_irr_result}")
                         
                 except Exception as portfolio_error:
                     logger.error(f"💥 Exception in calculate_multiple_portfolio_funds_irr for {date_str}: {str(portfolio_error)}")

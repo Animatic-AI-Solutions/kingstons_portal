@@ -59,7 +59,7 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
     });
   }, [hideZeros, visualSigning, updateOptions]);
 
-  // Organize products by type in the specified order
+  // Organize products by type in the specified order, with inactive/lapsed products at the bottom
   const organizeProductsByType = (products: ProductPeriodSummary[]) => {
     // Group products by normalized type
     const groupedProducts: { [key: string]: ProductPeriodSummary[] } = {};
@@ -112,7 +112,17 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
       }
     });
 
-    return orderedProducts;
+    // Apply status-based sorting: active products first, then inactive/lapsed at the bottom
+    // while maintaining original relative order within each group
+    const activeProducts = orderedProducts.filter(product => 
+      product.status !== 'inactive' && product.status !== 'lapsed'
+    );
+    const inactiveProducts = orderedProducts.filter(product => 
+      product.status === 'inactive' || product.status === 'lapsed'
+    );
+    
+    // Return active products first, then inactive/lapsed products
+    return [...activeProducts, ...inactiveProducts];
   };
 
   // Extract plan number from product
@@ -335,18 +345,19 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {organizeProductsByType(reportData.productSummaries)
-                  .filter(product => {
-                    // Show all products that are in the report data
-                    return true;
-                  })
                   .map(product => {
                     const totalGains = (product.current_valuation || 0) + (product.total_withdrawal || 0) + (product.total_product_switch_out || 0) + (product.total_fund_switch_out || 0);
                     const totalCosts = (product.total_investment || 0) + (product.total_regular_investment || 0) + (product.total_tax_uplift || 0) + (product.total_product_switch_in || 0) + (product.total_fund_switch_in || 0);
                     const profit = totalGains - totalCosts;
                     
+                    // Determine if this inactive product should be greyed out
+                    const isInactiveAndNotDetailed = product.status === 'inactive' && 
+                      !reportData.showInactiveProducts && 
+                      !showInactiveProductDetails.has(product.id);
+                    
                     return (
-                      <tr key={product.id} className={`hover:bg-blue-50 ${product.status === 'inactive' ? 'opacity-50 bg-gray-50' : ''}`}>
-                        <td className={`product-name-cell text-left px-1 py-2 ${product.status === 'inactive' ? 'text-gray-500' : 'text-gray-800'}`}>
+                      <tr key={product.id} className={`hover:bg-blue-50 ${isInactiveAndNotDetailed ? 'opacity-50 bg-gray-50' : ''}`}>
+                        <td className={`product-name-cell text-left px-1 py-2 ${isInactiveAndNotDetailed ? 'text-gray-500' : 'text-gray-800'}`}>
                           <div className="flex items-start gap-1.5">
                             {product.provider_theme_color && (
                               <div 
@@ -358,7 +369,7 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
                               <div className="text-xs leading-tight">
                                 {generateProductTitle(product, customTitles.get(product.id))}
                                 {product.status === 'inactive' && (
-                                  <span className="block text-xs text-red-600 font-medium">(Inactive)</span>
+                                  <span className="ml-2 text-xs text-red-600 font-medium">(Inactive)</span>
                                 )}
                               </div>
                             </div>
@@ -543,22 +554,20 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
       {/* Individual Product Cards */}
       <div className="mb-8 print:break-before-page">
         {organizeProductsByType(reportData.productSummaries)
-          .filter(product => {
-            // For inactive products, only show detailed cards if the checkbox was checked
-            if (product.status === 'inactive') {
-              return reportData.showInactiveProducts || showInactiveProductDetails.has(product.id);
-            }
-            return true;
-          })
           .map((product, index) => {
             const totalGains = (product.current_valuation || 0) + (product.total_withdrawal || 0) + (product.total_product_switch_out || 0) + (product.total_fund_switch_out || 0);
             const totalCosts = (product.total_investment || 0) + (product.total_regular_investment || 0) + (product.total_tax_uplift || 0) + (product.total_product_switch_in || 0) + (product.total_fund_switch_in || 0);
             const profit = totalGains - totalCosts;
 
+            // Determine if this inactive product should be greyed out
+            const isInactiveAndNotDetailed = product.status === 'inactive' && 
+              !reportData.showInactiveProducts && 
+              !showInactiveProductDetails.has(product.id);
+
             return (
               <div
                 key={`${product.id}-${index}`}
-                className={`mb-8 bg-white shadow-sm rounded-lg border border-gray-200 p-6 w-full product-card print-clean ${product.status === 'inactive' ? 'opacity-60 bg-gray-50' : ''}`}
+                className={`mb-8 bg-white shadow-sm rounded-lg border border-gray-200 p-6 w-full product-card print-clean ${isInactiveAndNotDetailed ? 'opacity-60 bg-gray-50' : ''}`}
                 style={{
                   borderLeft: product.provider_theme_color ? `4px solid ${product.provider_theme_color}` : '4px solid #e5e7eb',
                   borderTop: product.provider_theme_color ? `1px solid ${product.provider_theme_color}` : undefined,
@@ -575,7 +584,7 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className={`text-xl font-semibold flex-1 min-w-0 ${product.status === 'inactive' ? 'text-gray-600' : 'text-gray-800'}`}>
+                      <h3 className={`text-xl font-semibold flex-1 min-w-0 ${isInactiveAndNotDetailed ? 'text-gray-600' : 'text-gray-800'}`}>
                         {generateProductTitle(product, customTitles.get(product.id))}
                       </h3>
                       {product.status === 'inactive' && (
@@ -781,7 +790,7 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
                               {(() => {
                                 const productIrr = portfolioIrrValues.get(product.id);
                                 if (productIrr !== null && productIrr !== undefined) {
-                                  return formatIrrWithPrecision(productIrr);
+                                  return `${productIrr.toFixed(1)}%`;
                                 }
                                 return 'N/A';
                               })()}

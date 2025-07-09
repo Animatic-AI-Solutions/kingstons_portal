@@ -2047,6 +2047,11 @@ async def calculate_multiple_portfolio_funds_irr(
     try:
         logger.info(f"Calculating aggregated IRR for {len(portfolio_fund_ids)} portfolio funds")
         
+        # 🔴 DEBUG: IRR CALCULATION - START
+        logger.error(f"🔴 🧮 MULTIPLE FUNDS IRR CALCULATION START")
+        logger.error(f"🔴 📋 Portfolio Fund IDs: {portfolio_fund_ids}")
+        logger.error(f"🔴 📅 IRR Date: {irr_date}")
+        
         # Check cache first to avoid redundant calculations
         cached_result = await _irr_cache.get(
             portfolio_fund_ids=portfolio_fund_ids,
@@ -2055,6 +2060,7 @@ async def calculate_multiple_portfolio_funds_irr(
         
         if cached_result is not None:
             logger.info(f"📊 Returning cached IRR result: {cached_result.get('irr_percentage', 'N/A')}%")
+            logger.error(f"🔴 💾 RETURNING CACHED RESULT: {cached_result.get('irr_percentage', 'N/A')}%")
             return cached_result
 
         # Parse the date string if provided
@@ -2118,6 +2124,17 @@ async def calculate_multiple_portfolio_funds_irr(
         
         logger.info(f"✅ Batch valuation optimization complete - Fund valuations: {fund_valuations}")
         
+        # 🔴 DEBUG: Show detailed fund valuations
+        logger.error(f"🔴 💰 FUND VALUATIONS BREAKDOWN:")
+        total_valuation_debug = 0
+        for fund_id, valuation in fund_valuations.items():
+            if valuation is not None:
+                total_valuation_debug += valuation
+                logger.error(f"🔴   Fund {fund_id}: £{valuation} ✅")
+            else:
+                logger.error(f"🔴   Fund {fund_id}: None ❌")
+        logger.error(f"🔴 💰 TOTAL VALUATION: £{total_valuation_debug}")
+        
         # Verify all portfolio funds exist
         funds_response = db.table("portfolio_funds").select("id").in_("id", portfolio_fund_ids).execute()
         found_fund_ids = [fund["id"] for fund in funds_response.data]
@@ -2130,6 +2147,24 @@ async def calculate_multiple_portfolio_funds_irr(
         activities_response = db.table("holding_activity_log").select("*").in_("portfolio_fund_id", portfolio_fund_ids).lte("activity_timestamp", irr_date_obj.isoformat()).order("activity_timestamp").execute()
         
         activities = activities_response.data
+        
+        # 🔴 DEBUG: Show activities found
+        logger.error(f"🔴 📊 ACTIVITIES FOUND: {len(activities)} activities")
+        logger.error(f"🔴 📊 ACTIVITIES BREAKDOWN BY FUND:")
+        activities_by_fund = {}
+        for activity in activities:
+            fund_id = activity["portfolio_fund_id"]
+            if fund_id not in activities_by_fund:
+                activities_by_fund[fund_id] = []
+            activities_by_fund[fund_id].append(activity)
+        
+        for fund_id in portfolio_fund_ids:
+            fund_activities = activities_by_fund.get(fund_id, [])
+            logger.error(f"🔴   Fund {fund_id}: {len(fund_activities)} activities")
+            for activity in fund_activities[:3]:  # Show first 3 activities per fund
+                logger.error(f"🔴     - {activity['activity_type']}: £{activity['amount']} on {activity['activity_timestamp'][:10]}")
+            if len(fund_activities) > 3:
+                logger.error(f"🔴     ... and {len(fund_activities) - 3} more activities")
         
         # Aggregate cash flows by month
         cash_flows = {}
@@ -2216,6 +2251,17 @@ async def calculate_multiple_portfolio_funds_irr(
         irr_decimal = irr_result.get('period_irr', 0)
         days_in_period = irr_result.get('days_in_period', 0)
         
+        # 🔴 DEBUG: Show final calculation details
+        logger.error(f"🔴 💰 FINAL CASH FLOWS SUMMARY:")
+        logger.error(f"🔴   Cash Flows by Month: {len(cash_flows)} months")
+        for month, amount in sorted(cash_flows.items()):
+            logger.error(f"🔴     {month.strftime('%Y-%m')}: £{amount:,.2f}")
+        logger.error(f"🔴 📊 IRR CALCULATION RESULT:")
+        logger.error(f"🔴   IRR Decimal: {irr_decimal}")
+        logger.error(f"🔴   IRR Percentage: {round(irr_decimal * 100, 1)}%")
+        logger.error(f"🔴   Days in Period: {days_in_period}")
+        logger.error(f"🔴   Total Valuation: £{total_valuation}")
+        
         # Prepare the result to return
         result = {
             "success": True,
@@ -2230,6 +2276,10 @@ async def calculate_multiple_portfolio_funds_irr(
             "period_end": max(cash_flows.keys()).isoformat(),
             "days_in_period": days_in_period
         }
+        
+        # 🔴 DEBUG: Final result
+        logger.error(f"🔴 ✅ MULTIPLE FUNDS IRR CALCULATION COMPLETE")
+        logger.error(f"🔴 🎯 FINAL RESULT: {result['irr_percentage']}%")
         
         # Cache the result for future use (include cash flows and fund valuations for uniqueness)
         cash_flow_values = [cash_flows[month] for month in sorted(cash_flows.keys())]

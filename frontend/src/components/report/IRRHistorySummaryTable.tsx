@@ -91,6 +91,20 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
     fetchSummaryData();
   }, [productIds, selectedDates, clientGroupIds]);
 
+  // Sort products to put inactive/lapsed products at the bottom while maintaining original relative order
+  const sortProductsByStatus = (products: ProductIRRHistory[]): ProductIRRHistory[] => {
+    // Separate active and inactive/lapsed products while preserving original order
+    const activeProducts = products.filter(product => 
+      product.status !== 'inactive' && product.status !== 'lapsed'
+    );
+    const inactiveProducts = products.filter(product => 
+      product.status === 'inactive' || product.status === 'lapsed'
+    );
+    
+    // Return active products first, then inactive/lapsed products
+    return [...activeProducts, ...inactiveProducts];
+  };
+
   // Get IRR value for a specific product and date
   const getIRRValueForProductAndDate = (product: ProductIRRHistory, date: string): number | null => {
     const irrData = product.irr_data.find(data => data.date === date);
@@ -295,7 +309,7 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
               {/* Table Body */}
               <tbody className="bg-white divide-y divide-gray-200">
                 {/* Product Rows */}
-                {tableData.productRows.map((product) => (
+                {sortProductsByStatus(tableData.productRows).map((product) => (
                   <tr key={product.product_id} className="hover:bg-blue-50">
                     {/* Product Name Cell */}
                     <td className="text-left px-2 py-2 text-gray-800">
@@ -332,6 +346,8 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
                       const irrValue = getIRRValueForProductAndDate(product, date);
                       // Check if this is the most recent (first) date since dates are sorted newest first
                       const isCurrentYear = index === 0;
+                      // Use 'total' format type for active products (1 decimal place), 'inactive' for inactive products (smart decimal places)
+                      const formatType = product.status === 'inactive' || product.status === 'lapsed' ? 'inactive' : 'total';
                       return (
                         <td
                           key={`${product.product_id}-${date}`}
@@ -341,7 +357,7 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
                         >
                           {irrValue !== null ? (
                             <span className={irrValue >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
-                              {IRRHistorySummaryService.formatIRRValue(irrValue)}
+                              {IRRHistorySummaryService.formatIRRValue(irrValue, formatType)}
                             </span>
                           ) : (
                             <span className="text-gray-400">-</span>
@@ -384,7 +400,7 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
                         }`}
                       >
                         {portfolioIRR !== null ? (
-                          IRRHistorySummaryService.formatIRRValue(portfolioIRR)
+                          IRRHistorySummaryService.formatIRRValue(portfolioIRR, 'total')
                         ) : (
                           '-'
                         )}

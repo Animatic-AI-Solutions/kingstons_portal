@@ -38,6 +38,7 @@ export interface ProductIRRHistory {
   product_name: string;
   provider_name: string;
   provider_theme_color: string;
+  status: string; // Product status (active, inactive, lapsed, etc.)
   irr_data: ProductIRRData[];
 }
 
@@ -101,13 +102,31 @@ export class IRRHistorySummaryService {
   }
 
   /**
-   * Format IRR value for display
+   * Format IRR value for display with different precision based on context
+   * @param irrValue - The IRR value to format
+   * @param formatType - Type of formatting: 'total' for portfolio totals, 'inactive' for inactive products, 'default' for individual products
    */
-  static formatIRRValue(irrValue: number | null): string {
+  static formatIRRValue(irrValue: number | null, formatType: 'total' | 'inactive' | 'default' = 'default'): string {
     if (irrValue === null || irrValue === undefined) {
       return '-';
     }
-    return `${irrValue.toFixed(2)}%`;
+    
+    switch (formatType) {
+      case 'total':
+        // Portfolio totals: 1 decimal place (e.g., "10.3%")
+        return `${irrValue.toFixed(1)}%`;
+        
+      case 'inactive':
+        // Inactive products: 0 decimal places if whole number, 1 decimal place otherwise
+        // Use the same smart logic as ReportGenerator.tsx formatRiskFallback
+        const rounded = Math.round(irrValue * 10) / 10;
+        return `${rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1)}%`;
+        
+      case 'default':
+      default:
+        // Individual products: 2 decimal places (existing behavior)
+        return `${irrValue.toFixed(2)}%`;
+    }
   }
 
   /**

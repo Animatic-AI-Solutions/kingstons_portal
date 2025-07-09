@@ -968,7 +968,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       {/* Table View */}
       <div className={`space-y-8 irr-history-table ${viewMode === 'table' ? '' : 'hidden print:block'}`}>
         {(() => {
-          // Organize products by type (same order as SummaryTab)
+          // Organize products by type (same order as SummaryTab), with inactive/lapsed products at the bottom
           const organizeProductsByType = (products: ProductPeriodSummary[]) => {
             // Group products by normalized type
             const groupedProducts: { [key: string]: ProductPeriodSummary[] } = {};
@@ -1021,7 +1021,17 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
               }
             });
 
-            return orderedProducts;
+            // Apply status-based sorting: active products first, then inactive/lapsed at the bottom
+            // while maintaining original relative order within each group
+            const activeProducts = orderedProducts.filter(product => 
+              product.status !== 'inactive' && product.status !== 'lapsed'
+            );
+            const inactiveProducts = orderedProducts.filter(product => 
+              product.status === 'inactive' || product.status === 'lapsed'
+            );
+            
+            // Return active products first, then inactive/lapsed products
+            return [...activeProducts, ...inactiveProducts];
           };
           
           // Use the same organization as SummaryTab
