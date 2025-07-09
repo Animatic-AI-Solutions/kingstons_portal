@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import EditableMonthlyActivitiesTable from '../components/EditableMonthlyActivitiesTable';
 import IRRCalculationModal from '../components/IRRCalculationModal';
+import PresenceIndicator from '../components/PresenceIndicator';
 import { calculatePortfolioIRRForDate, calculatePortfolioIRR, getLatestPortfolioIRR, calculateStandardizedMultipleFundsIRR, calculateStandardizedSingleFundIRR } from '../services/api';
 import { Dialog, Transition } from '@headlessui/react';
 import { formatCurrency, formatPercentage } from '../utils/formatters';
@@ -1722,7 +1723,13 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
   // Main return statement for the component
   return (
     <div className="container mx-auto px-4 py-8">
-      <h2 className="text-xl font-semibold mb-4">IRR Calculation</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold">IRR Calculation</h2>
+        <PresenceIndicator 
+          pageIdentifier={`irr-calculation:product-${accountId}`}
+          className="flex-shrink-0"
+        />
+      </div>
       
       {holdings.length === 0 ? (
         <div className="text-center py-8">

@@ -45,6 +45,8 @@ from typing import Any
 import json
 from datetime import date, datetime
 from dotenv import load_dotenv
+import asyncio
+from contextlib import asynccontextmanager
 
 logger.info("All modules imported successfully")
 
@@ -58,7 +60,7 @@ from app.api.routes import (
     client_products, holding_activity_logs, product_holdings,
     product_owners, client_group_product_owners,
     provider_switch_log, search, portfolio_valuations, portfolio_irr_values,
-    historical_irr
+    historical_irr, presence
 )
 
 # Load environment variables from .env file
@@ -157,6 +159,10 @@ app = FastAPI(
             "name": "Search",
             "description": "Global search capabilities across all entity types in the system.",
         },
+        {
+            "name": "Presence",
+            "description": "Real-time user presence tracking and WebSocket connections for collaborative awareness.",
+        },
     ],
 )
 
@@ -223,6 +229,24 @@ app.include_router(search.router, prefix="/api", tags=["Search"])
 app.include_router(portfolio_valuations.router, prefix="/api", tags=["Holdings"])
 app.include_router(portfolio_irr_values.router, prefix="/api", tags=["Analytics"])
 app.include_router(historical_irr.router, prefix="/api/historical-irr", tags=["Analytics"])
+app.include_router(presence.router, prefix="/api", tags=["Presence"])
+
+# Background task for cleaning up stale presence records
+async def periodic_cleanup():
+    """Run cleanup every 60 seconds to remove stale presence records"""
+    while True:
+        try:
+            await asyncio.sleep(60)  # Wait 60 seconds between cleanup runs
+            await presence.cleanup_stale_presence()
+        except Exception as e:
+            logger.error(f"Error in periodic cleanup: {str(e)}")
+
+# Start the periodic cleanup task
+@app.on_event("startup")
+async def startup_event():
+    """Start background tasks when the application starts"""
+    asyncio.create_task(periodic_cleanup())
+    logger.info("Started periodic presence cleanup task")
 
 @app.get("/api")
 async def api_root():
