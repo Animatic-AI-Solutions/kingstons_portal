@@ -130,31 +130,37 @@ Write-Host "SUCCESS: Production dependencies installed" -ForegroundColor Green
 
 # Step 7: Restart service
 Write-Host ""
-Write-Host "7. Restarting Kingston Portal API service..." -ForegroundColor Cyan
-$serviceName = "Kingston Portal API"
+Write-Host "7. Restarting OfficeFastAPIService..." -ForegroundColor Cyan
+$serviceName = "OfficeFastAPIService"
 
 # Check if service exists
 $service = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
 
 if ($service) {
-    Write-Host "Service found. Stopping service..." -ForegroundColor Yellow
+    Write-Host "Service found. Stopping $serviceName..." -ForegroundColor Yellow
     Stop-Service -Name $serviceName -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Seconds 3
-    
-    Write-Host "Starting service..." -ForegroundColor Yellow
-    Start-Service -Name $serviceName
     Start-Sleep -Seconds 5
+    
+    Write-Host "Starting $serviceName..." -ForegroundColor Yellow
+    Start-Service -Name $serviceName
+    Start-Sleep -Seconds 10
     
     # Check status
     $service = Get-Service -Name $serviceName
     if ($service.Status -eq "Running") {
-        Write-Host "SUCCESS: Service is running" -ForegroundColor Green
+        Write-Host "SUCCESS: $serviceName is running" -ForegroundColor Green
     } else {
-        Write-Host "WARNING: Service status is $($service.Status)" -ForegroundColor Yellow
+        Write-Host "WARNING: $serviceName status is $($service.Status)" -ForegroundColor Yellow
+        Write-Host "Attempting to start service again..." -ForegroundColor Yellow
+        Start-Service -Name $serviceName -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 5
+        $service = Get-Service -Name $serviceName
+        Write-Host "Final status: $($service.Status)" -ForegroundColor Yellow
     }
 } else {
-    Write-Host "WARNING: Service not found. You may need to set it up manually." -ForegroundColor Yellow
-    Write-Host "Run setup_service.ps1 to configure the Windows service." -ForegroundColor Yellow
+    Write-Host "WARNING: Service '$serviceName' not found." -ForegroundColor Yellow
+    Write-Host "Please ensure the NSSM service is properly configured." -ForegroundColor Yellow
+    Write-Host "You can check with: Get-Service -Name '$serviceName'" -ForegroundColor Yellow
 }
 
 # Step 8: IIS Reset
