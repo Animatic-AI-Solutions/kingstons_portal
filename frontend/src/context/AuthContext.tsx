@@ -3,6 +3,15 @@ import { authService, createAuthenticatedApi } from '../services/auth';
 import axios, { AxiosInstance } from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 
+// Environment detection function
+const getApiBaseUrl = () => {
+  const isDevelopment = window.location.hostname === 'localhost' || 
+                       window.location.hostname === '127.0.0.1' ||
+                       window.location.port === '3000';
+  
+  return isDevelopment ? '' : 'http://intranet.kingston.local:8001';
+};
+
 /**
  * Auth Context Type Definition
  * 
@@ -83,7 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         
         // Validate token by requesting user profile
-        const userResponse = await axios.get('http://localhost:8000/api/auth/me', {
+        const userResponse = await axios.get(`${getApiBaseUrl()}/api/auth/me`, {
           headers: {
             Authorization: `Bearer ${token}`
           },

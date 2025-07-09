@@ -1,12 +1,15 @@
 ---
 title: "Documentation Maintenance Guide"
-tags: ["meta", "maintenance", "documentation"]
+tags: ["documentation", "maintenance", "governance"]
 ---
+
 # Documentation Maintenance Guide
 
-**Audience: AI Assistant & Development Team**
+> **Recent Updates (December 2024)**: Documentation has been updated to reflect the new production architecture with Kingston03 server hosting, environment-based API configuration, and direct FastAPI service communication. See deployment process documentation for details.
 
-This document is a manifest designed to guide developers and AI assistants in keeping the project's documentation synchronized with its codebase. It maps key project files and concepts to their corresponding documentation files.
+## Overview
+
+This guide provides instructions for maintaining and updating the documentation system for Kingston's Portal. It ensures that documentation remains current, accurate, and useful as the codebase evolves.
 
 **Core Principle:** When you change the code, change the docs.
 

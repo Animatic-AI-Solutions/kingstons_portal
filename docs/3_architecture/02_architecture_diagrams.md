@@ -1,337 +1,284 @@
 ---
 title: "Architecture Diagrams"
-tags: ["architecture", "diagrams", "mermaid", "visuals"]
+tags: ["architecture", "diagrams", "system_design"]
 related_docs:
   - "./01_system_architecture_overview.md"
-  - "./03_database_schema.md"
-  - "./04_api_design.md"
+  - "../6_advanced/03_deployment_process.md"
 ---
-# Kingston's Portal - System Architecture Diagrams
 
-This document contains a series of [Mermaid](https://mermaid.js.org/) diagrams that visualize the system architecture, database relationships, and data flows. For a narrative explanation of these diagrams, please refer to the [System Architecture Overview](./01_system_architecture_overview.md).
+# Architecture Diagrams
 
-## System Overview
+This document provides visual representations of the system architecture for both development and production environments.
 
+## Production Architecture - Kingston03 Server
+
+### Overall System Architecture
 ```mermaid
 graph TB
-    subgraph "Frontend Layer"
-        UI[React + TypeScript<br/>35+ Pages, 30+ Components]
-        Router[React Router<br/>Protected Routes]
+    subgraph "Client Network"
+        CLIENT[Client Browser]
+        DNS[DNS Resolution<br/>intranet.kingston.local]
     end
     
-    subgraph "API Layer"
-        API[FastAPI Backend<br/>25+ Route Modules]
-        Auth[JWT Authentication]
-        CORS[CORS Middleware]
+    subgraph "Kingston03 Server (192.168.0.223)"
+        subgraph "Port 80 - IIS"
+            IIS[IIS Web Server<br/>Static Files]
+            REACT[React App<br/>Built Assets]
+            WEBC[web.config<br/>URL Rewrite]
+        end
+        
+        subgraph "Port 8001 - FastAPI Service"
+            FASTAPI[FastAPI Backend<br/>NSSM Service]
+            AUTH[Authentication]
+            APIEND[API Endpoints]
+        end
+        
+        subgraph "System Services"
+            DNSSERV[DNS Server<br/>kingston.local]
+            FIREWALL[Windows Firewall<br/>Port 8001 Rule]
+            NSSM[NSSM Service Manager]
+        end
     end
     
-    subgraph "Database Layer"
-        DB[(PostgreSQL<br/>5-Level Hierarchy)]
-        Views[Optimized Views<br/>Performance Aggregations]
+    subgraph "External Services"
+        SUPABASE[(Supabase<br/>PostgreSQL)]
     end
     
-    UI --> Router
-    Router --> API
-    API --> Auth
-    API --> CORS
-    API --> DB
-    DB --> Views
+    CLIENT --> DNS
+    DNS --> IIS
+    CLIENT --> |"Direct API Calls<br/>:8001/api/*"| FASTAPI
+    IIS --> REACT
+    REACT --> WEBC
+    FASTAPI --> AUTH
+    FASTAPI --> APIEND
+    FASTAPI --> SUPABASE
+    NSSM --> FASTAPI
+    FIREWALL --> FASTAPI
+    DNSSERV --> DNS
+    
+    style IIS fill:#e1f5fe
+    style FASTAPI fill:#f3e5f5
+    style SUPABASE fill:#e8f5e8
+    style DNSSERV fill:#fff3e0
 ```
 
-## Database Entity Relationships
-
-This diagram shows the primary relationships between the core entities. For a full breakdown of tables and columns, see the [Database Schema](./03_database_schema.md) document.
-
-```mermaid
-erDiagram
-    CLIENT_GROUPS {
-        bigint id PK
-        text name
-        text advisor
-        text status
-    }
-    
-    PRODUCT_OWNERS {
-        bigint id PK
-        text firstname
-        text surname
-        text known_as
-    }
-    
-    CLIENT_PRODUCTS {
-        bigint id PK
-        bigint client_id FK
-        text product_name
-        bigint provider_id FK
-        bigint portfolio_id FK
-    }
-    
-    PORTFOLIOS {
-        bigint id PK
-        text portfolio_name
-        bigint template_generation_id FK
-    }
-    
-    PORTFOLIO_FUNDS {
-        bigint id PK
-        bigint portfolio_id FK
-        bigint available_funds_id FK
-        numeric target_weighting
-    }
-    
-    AVAILABLE_FUNDS {
-        bigint id PK
-        varchar fund_name
-        text isin_number
-        smallint risk_factor
-    }
-    
-    CLIENT_GROUPS ||--o{ CLIENT_PRODUCTS : has
-    CLIENT_PRODUCTS ||--o{ PORTFOLIOS : contains
-    PORTFOLIOS ||--o{ PORTFOLIO_FUNDS : holds
-    AVAILABLE_FUNDS ||--o{ PORTFOLIO_FUNDS : allocated
-    PRODUCT_OWNERS ||--o{ CLIENT_PRODUCTS : owns
-```
-
-## Application Data Flow
-
-This diagram illustrates how data flows from the UI components, through the API layer, to the database.
-
-```mermaid
-flowchart TD
-    Dashboard[Dashboard<br/>Executive Overview]
-    Clients[Client Management<br/>7 Pages]
-    Products[Product Management<br/>12 Pages]
-    Analytics[Analytics & Reporting<br/>8 Pages]
-    
-    ClientAPI[Client API<br/>25+ Endpoints]
-    ProductAPI[Product API<br/>20+ Endpoints]
-    AnalyticsAPI[Analytics API<br/>10+ Endpoints]
-    
-    CoreDB[(Core Data<br/>Clients, Products)]
-    PerformanceDB[(Performance Data<br/>Valuations, IRR)]
-    
-    Dashboard --> ClientAPI
-    Dashboard --> AnalyticsAPI
-    Clients --> ClientAPI
-    Products --> ProductAPI
-    Analytics --> AnalyticsAPI
-    
-    ClientAPI --> CoreDB
-    ProductAPI --> CoreDB
-    AnalyticsAPI --> PerformanceDB
-```
-
-## Component Architecture
-
-This diagram shows the relationship between the major parts of the frontend architecture. See the [State Management](./../5_frontend_guide/02_state_management.md) guide for more details.
-
-```mermaid
-graph TB
-    subgraph "Page Components"
-        ClientPages[Client Management<br/>7 Pages]
-        ProductPages[Product Management<br/>12 Pages]
-        ReportPages[Analytics & Reporting<br/>8 Pages]
-    end
-    
-    subgraph "UI Components"
-        DataComponents[Data Display<br/>Tables, Charts, Stats]
-        FormComponents[Form Controls<br/>Inputs, Dropdowns]
-        ActionComponents[Actions<br/>Buttons, Controls]
-    end
-    
-    subgraph "Services & State"
-        APIServices[API Communication]
-        AuthServices[Authentication]
-        StateManagement[React Query Cache]
-    end
-    
-    ClientPages --> DataComponents
-    ProductPages --> FormComponents
-    ReportPages --> ActionComponents
-    
-    DataComponents --> APIServices
-    FormComponents --> AuthServices
-    ActionComponents --> StateManagement
-```
-
-## Security Architecture
-
-```mermaid
-graph TB
-    subgraph "Client Security"
-        HTTPS[HTTPS/TLS 1.3<br/>Encrypted Communication]
-        CSP[Content Security Policy<br/>XSS Protection]
-        CORS[CORS Headers<br/>Origin Validation]
-    end
-    
-    subgraph "Authentication Layer"
-        JWT[JWT Tokens<br/>Stateless Auth]
-        Session[Database Sessions<br/>Session Tracking]
-        Password[Password Hashing<br/>Secure Storage]
-    end
-    
-    subgraph "API Security"
-        Validation[Input Validation<br/>Pydantic Models]
-        Sanitization[Data Sanitization<br/>SQL Injection Prevention]
-        Logging[Security Logging<br/>Audit Trail]
-    end
-    
-    subgraph "Database Security"
-        Encryption[Data Encryption<br/>At Rest & Transit]
-        Access[Role-Based Access<br/>Principle of Least Privilege]
-        Backup[Encrypted Backups<br/>Point-in-time Recovery]
-        Audit[Audit Logging<br/>Change Tracking]
-    end
-    
-    HTTPS --> JWT
-    CSP --> Validation
-    CORS --> Validation
-    JWT --> Session
-    Session --> Password
-    Validation --> Sanitization
-    Sanitization --> Logging
-    Logging --> Encryption
-    Encryption --> Access
-    Access --> Backup
-    
-    style HTTPS fill:#ffebee
-    style JWT fill:#f3e5f5
-    style Validation fill:#e8f5e8
-    style Encryption fill:#fff3e0
-```
-
-## Performance Optimization Architecture
-
-```mermaid
-graph TB
-    subgraph "Frontend Optimization"
-        CodeSplit[Code Splitting<br/>Route-based Loading]
-        LazyLoad[Lazy Loading<br/>Component Loading]
-        Bundle[Bundle Optimization<br/>Tree Shaking]
-        Cache[Browser Caching<br/>Static Assets]
-    end
-    
-    subgraph "API Optimization"
-        BulkAPI[Bulk API Endpoints<br/>Single-query Data]
-        Pagination[Pagination<br/>Efficient Data Loading]
-        Compression[Response Compression<br/>Gzip/Brotli]
-        CDN[CDN Distribution<br/>Static Asset Delivery]
-    end
-    
-    subgraph "Database Optimization"
-        Indexes[50+ Indexes<br/>Query Optimization]
-        Views[Optimized Views<br/>Pre-computed Aggregations]
-        ConnectionPool[Connection Pooling<br/>Resource Management]
-    end
-    
-    subgraph "Caching Strategy"
-        ReactQuery[React Query<br/>5-minute Cache]
-        DBCache[Database Cache<br/>Query Result Cache]
-        StaticCache[Static Cache<br/>Asset Caching]
-        APICache[API Response Cache<br/>Conditional Requests]
-    end
-    
-    CodeSplit --> BulkAPI
-    LazyLoad --> Pagination
-    Bundle --> Compression
-    Cache --> CDN
-    
-    BulkAPI --> Indexes
-    Pagination --> Views
-    Compression --> ConnectionPool
-    
-    Indexes --> ReactQuery
-    Views --> DBCache
-    Cache --> StaticCache
-    ConnectionPool --> APICache
-    
-    style CodeSplit fill:#e8f5e8
-    style BulkAPI fill:#fff3e0
-    style Indexes fill:#f3e5f5
-    style ReactQuery fill:#e3f2fd
-```
-
-## Deployment Architecture
-
+### Environment-Based API Communication
 ```mermaid
 graph TB
     subgraph "Development Environment"
-        DevFE[React Dev Server<br/>Vite HMR]
-        DevBE[FastAPI Dev Server<br/>Auto-reload]
-        DevDB[Local PostgreSQL<br/>Development Data]
+        DEVBROWSER[Browser<br/>localhost:3000]
+        VITE[Vite Dev Server<br/>:3000]
+        PROXY[Vite Proxy<br/>API Calls]
+        DEVAPI[FastAPI Dev<br/>:8001]
     end
     
     subgraph "Production Environment"
-        ProdFE[Static Assets<br/>Nginx/CDN]
-        ProdBE[FastAPI + Uvicorn<br/>Docker Container]
-        ProdDB[PostgreSQL<br/>Production Database]
-        LoadBalancer[Load Balancer<br/>High Availability]
+        PRODBROWSER[Browser<br/>intranet.kingston.local]
+        PRODII[IIS Server<br/>:80]
+        PRODAPI[FastAPI Service<br/>:8001]
     end
     
-    subgraph "Infrastructure"
-        Docker[Docker Containers<br/>Containerization]
-        Monitoring[Monitoring<br/>Logs & Metrics]
-        Backup[Backup System<br/>Automated Backups]
-        SSL[SSL/TLS<br/>Security Certificates]
+    subgraph "API Configuration Logic"
+        ENVDETECT[Environment Detection<br/>getApiBaseUrl()]
+        DEVCONFIG[Development:<br/>baseURL = '']
+        PRODCONFIG[Production:<br/>baseURL = 'http://intranet.kingston.local:8001']
     end
     
-    DevFE --> ProdFE
-    DevBE --> ProdBE
-    DevDB --> ProdDB
+    DEVBROWSER --> VITE
+    VITE --> PROXY
+    PROXY --> DEVAPI
     
-    ProdFE --> LoadBalancer
-    ProdBE --> LoadBalancer
-    LoadBalancer --> ProdDB
+    PRODBROWSER --> PRODII
+    PRODBROWSER --> |"Direct API Calls"| PRODAPI
     
-    ProdFE --> Docker
-    ProdBE --> Docker
-    ProdDB --> Monitoring
-    Monitoring --> Backup
-    Backup --> SSL
+    ENVDETECT --> DEVCONFIG
+    ENVDETECT --> PRODCONFIG
     
-    style DevFE fill:#e8f5e8
-    style ProdFE fill:#fff3e0
-    style Docker fill:#e3f2fd
+    style DEVBROWSER fill:#e3f2fd
+    style PRODBROWSER fill:#f1f8e9
+    style ENVDETECT fill:#fff3e0
 ```
 
-## Integration Points
+## Development Architecture
+
+### Local Development Setup
+```mermaid
+graph TB
+    subgraph "Developer Machine"
+        subgraph "Terminal 1 - Backend"
+            BACKEND[FastAPI Backend<br/>uvicorn main:app<br/>--port 8001]
+            HOTRELOAD[Hot Reload<br/>--reload flag]
+        end
+        
+        subgraph "Terminal 2 - Frontend"
+            FRONTEND[Vite Dev Server<br/>npm start<br/>:3000]
+            HMR[Hot Module Replacement<br/>React Components]
+        end
+        
+        subgraph "Browser"
+            DEVAPP[Development App<br/>localhost:3000]
+            DEVTOOLS[Browser DevTools<br/>Network Debugging]
+        end
+    end
+    
+    subgraph "External Services"
+        SUPABASE[(Supabase<br/>PostgreSQL)]
+    end
+    
+    FRONTEND --> DEVAPP
+    DEVAPP --> |"API Proxy<br/>/api/* → :8001"| BACKEND
+    BACKEND --> SUPABASE
+    HOTRELOAD --> BACKEND
+    HMR --> FRONTEND
+    DEVTOOLS --> DEVAPP
+    
+    style BACKEND fill:#f3e5f5
+    style FRONTEND fill:#e1f5fe
+    style SUPABASE fill:#e8f5e8
+```
+
+## Data Flow Diagrams
+
+### Authentication Flow
+```mermaid
+sequenceDiagram
+    participant Client as Client Browser
+    participant IIS as IIS (Port 80)
+    participant FastAPI as FastAPI (Port 8001)
+    participant Supabase as Supabase DB
+    
+    Client->>IIS: GET /login (React App)
+    IIS->>Client: Return login page
+    Client->>FastAPI: POST /api/auth/login
+    FastAPI->>Supabase: Validate credentials
+    Supabase->>FastAPI: Return user data
+    FastAPI->>Client: Return JWT token
+    Client->>FastAPI: GET /api/auth/me (with token)
+    FastAPI->>Client: Return user profile
+```
+
+### API Request Flow
+```mermaid
+sequenceDiagram
+    participant Client as Client Browser
+    participant Env as Environment Detection
+    participant IIS as IIS (Port 80)
+    participant FastAPI as FastAPI (Port 8001)
+    participant Supabase as Supabase DB
+    
+    Client->>Env: getApiBaseUrl()
+    Env->>Client: Return base URL
+    Note over Client,Env: Development: ''<br/>Production: 'http://intranet.kingston.local:8001'
+    Client->>FastAPI: API Request to baseURL/api/endpoint
+    FastAPI->>Supabase: Database Query
+    Supabase->>FastAPI: Return data
+    FastAPI->>Client: Return JSON response
+    
+    Note over Client,FastAPI: Direct API calls bypass IIS<br/>for optimal performance
+```
+
+## CORS Configuration Diagram
 
 ```mermaid
-graph LR
-    subgraph "Internal System"
-        Core[Kingston's Portal<br/>Core System]
-        DB[(Database<br/>PostgreSQL)]
-        API[REST API<br/>FastAPI]
+graph TB
+    subgraph "FastAPI CORS Configuration"
+        CORSM[CORS Middleware]
+        ORIGINS[allow_origins:<br/>- http://intranet.kingston.local<br/>- http://localhost:3000<br/>- http://127.0.0.1:3000]
+        CREDENTIALS[allow_credentials: True]
+        METHODS[allow_methods:<br/>GET, POST, PUT, DELETE, OPTIONS, PATCH]
+        HEADERS[allow_headers: ["*"]]
     end
     
-    subgraph "External Integrations"
-        Providers[Investment Providers<br/>Data Feeds]
-        Reporting[Report Systems<br/>PDF/Excel Generation]
-        Email[Email Services<br/>Notifications]
-        Backup[Backup Services<br/>Cloud Storage]
+    subgraph "Request Sources"
+        PROD[Production Frontend<br/>intranet.kingston.local]
+        DEV[Development Frontend<br/>localhost:3000]
+        DEV2[Development Frontend<br/>127.0.0.1:3000]
     end
     
-    subgraph "Future Integrations"
-        Mobile[Mobile Apps<br/>Native iOS/Android]
-        ML[ML Services<br/>Performance Prediction]
-        ThirdParty[Third-party APIs<br/>Market Data]
-        Compliance[Compliance Systems<br/>Regulatory Reporting]
+    PROD --> CORSM
+    DEV --> CORSM
+    DEV2 --> CORSM
+    
+    CORSM --> ORIGINS
+    CORSM --> CREDENTIALS
+    CORSM --> METHODS
+    CORSM --> HEADERS
+    
+    style CORSM fill:#fff3e0
+    style ORIGINS fill:#e8f5e8
+    style CREDENTIALS fill:#fce4ec
+    style METHODS fill:#e3f2fd
+    style HEADERS fill:#f1f8e9
+```
+
+## Network Architecture
+
+### Kingston03 Server Network Configuration
+```mermaid
+graph TB
+    subgraph "Network Infrastructure"
+        ROUTER[Network Router<br/>192.168.0.1]
+        SWITCH[Network Switch]
     end
     
-    Core --> DB
-    Core --> API
-    API --> Providers
-    API --> Reporting
-    API --> Email
-    DB --> Backup
+    subgraph "Kingston03 Server (192.168.0.223)"
+        NIC[Network Interface Card]
+        DNS[DNS Server<br/>kingston.local zone]
+        FIREWALL[Windows Firewall<br/>Port 8001 Rule]
+        
+        subgraph "Services"
+            IIS[IIS Web Server<br/>Port 80]
+            FASTAPI[FastAPI Service<br/>Port 8001]
+        end
+    end
     
-    Core -.-> Mobile
-    API -.-> ML
-    API -.-> ThirdParty
-    API -.-> Compliance
+    subgraph "Client Machines"
+        CLIENT1[Client PC 1<br/>DNS: 192.168.0.223]
+        CLIENT2[Client PC 2<br/>DNS: 192.168.0.223]
+        CLIENT3[Client PC 3<br/>DNS: 192.168.0.223]
+    end
     
-    style Core fill:#e3f2fd
-    style Providers fill:#fff3e0
-    style Mobile fill:#f1f8e9
-``` 
+    ROUTER --> SWITCH
+    SWITCH --> NIC
+    NIC --> DNS
+    NIC --> FIREWALL
+    FIREWALL --> IIS
+    FIREWALL --> FASTAPI
+    
+    SWITCH --> CLIENT1
+    SWITCH --> CLIENT2
+    SWITCH --> CLIENT3
+    
+    CLIENT1 --> |"DNS Query<br/>intranet.kingston.local"| DNS
+    CLIENT2 --> |"DNS Query<br/>intranet.kingston.local"| DNS
+    CLIENT3 --> |"DNS Query<br/>intranet.kingston.local"| DNS
+    
+    style DNS fill:#fff3e0
+    style FIREWALL fill:#ffebee
+    style IIS fill:#e1f5fe
+    style FASTAPI fill:#f3e5f5
+```
+
+## Key Architectural Benefits
+
+### 1. **Performance Optimization**
+- **IIS**: Optimized for static file serving with caching
+- **FastAPI**: Direct API communication eliminates proxy overhead
+- **Separation of Concerns**: Clear boundaries between frontend and backend
+
+### 2. **Scalability**
+- **Horizontal Scaling**: Services can be scaled independently
+- **Load Balancing**: Future load balancers can be added easily
+- **Microservices Ready**: Architecture supports future service decomposition
+
+### 3. **Security**
+- **Firewall Protection**: Port-specific access control
+- **CORS Configuration**: Explicit origin whitelisting
+- **Service Isolation**: Frontend and backend run in separate contexts
+
+### 4. **Maintainability**
+- **Environment Detection**: Automatic configuration switching
+- **Service Management**: NSSM provides reliable service management
+- **Debugging**: Clear separation makes troubleshooting easier
+
+This architecture provides a robust, scalable foundation for the Kingston's Portal application while maintaining simplicity and performance. 

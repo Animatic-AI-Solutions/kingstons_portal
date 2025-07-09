@@ -1,255 +1,295 @@
 # Deployment Process
 
-This document provides an overview of the process for building and deploying the Kingston's Portal application to a production environment.
+This document provides a comprehensive overview of the Kingston's Portal deployment architecture and processes for both development and production environments.
 
-## 1. Deployment Architecture
+## 1. Production Architecture Overview
 
-### Production Environment (Windows Server + IIS)
+### Kingston03 Server Environment
 
-The production environment consists of three main components running on Windows Server:
+**Server Details:**
+- **Machine Name:** Kingston03 (Virtual Machine)
+- **IP Address:** 192.168.0.223
+- **Operating System:** Windows Server
+- **Primary Roles:** Internal DNS Server, Web Server (IIS), Application Server (FastAPI)
 
-1.  **Frontend (IIS):** Internet Information Services (IIS) serves the static, built assets of the React application.
-2.  **Backend (FastAPI):** The FastAPI application running on an ASGI server like Uvicorn, typically as a Windows service.
-3.  **Database (Supabase):** The PostgreSQL database hosted on Supabase (cloud-managed).
-4.  **Reverse Proxy (IIS):** IIS configured with URL Rewrite and Application Request Routing (ARR) to proxy API requests to the FastAPI backend.
+**DNS Configuration:**
+- **DNS Server:** 192.168.0.223 (self-hosted)
+- **Domain:** intranet.kingston.local → 192.168.0.223
+- **Client Configuration:** All network clients use 192.168.0.223 as primary DNS
 
-### Development Environment (Local Terminals)
+### Production Components
 
-For development, the application runs locally using two separate processes:
+#### 1. Frontend (React Static Files via IIS)
+- **Web Server:** Internet Information Services (IIS) 10.0
+- **Physical Path:** `C:\inetpub\wwwroot\OfficeIntranet`
+- **IIS Site Bindings:**
+  - Type: `http`
+  - IP Address: `*` (All Unassigned)
+  - Port: `80`
+  - Host Name: `intranet.kingston.local`
+- **Default Document:** `index.html`
 
-1.  **Frontend Development Server:** Vite development server running on port 3000
-2.  **Backend Development Server:** FastAPI with Uvicorn running on port 8000
-3.  **Database:** Supabase (cloud-managed) for consistency across environments
+#### 2. Backend (FastAPI Direct Service)
+- **Application:** Python FastAPI application
+- **Deployment Method:** Windows Service (via NSSM)
+- **Listening Address:** `0.0.0.0:8001`
+- **Service Configuration:**
+  - Environment Variables: `API_HOST=0.0.0.0`, `API_PORT=8001`
+  - Windows Firewall: Inbound TCP rule for port 8001
+- **Database:** PostgreSQL (Supabase cloud-hosted)
 
-## 2. Building the Application for Production
+#### 3. Client-Side API Communication
+- **Architecture:** Direct API calls to FastAPI (bypasses IIS proxy)
+- **Environment Detection:** Automatic development/production URL selection
+- **Production URL:** `http://intranet.kingston.local:8001/api/`
+- **Development URL:** Vite proxy to `localhost:8001`
 
-### Step 1: Build the Frontend
-The React/TypeScript frontend must be compiled into a set of static HTML, CSS, and JavaScript files for IIS deployment.
+## 2. Environment-Based Configuration
 
-1.  Navigate to the `frontend/` directory.
-2.  Run the build script:
-    ```bash
-    npm run build
-    ```
-3.  This command will create a `dist/` directory inside `frontend/` containing all the optimized static assets ready for IIS deployment.
+### Development Environment
+```javascript
+// Automatic environment detection
+const getApiBaseUrl = () => {
+  const isDevelopment = window.location.hostname === 'localhost' || 
+                       window.location.hostname === '127.0.0.1' ||
+                       window.location.port === '3000';
+  
+  return isDevelopment ? '' : 'http://intranet.kingston.local:8001';
+};
+```
 
-### Step 2: Prepare the Backend for Windows Server
-The backend needs to be prepared for deployment as a Windows service or console application.
+**Development Setup:**
+- **Frontend:** Vite dev server on port 3000
+- **Backend:** FastAPI on port 8001
+- **API Calls:** Proxied through Vite (empty baseURL)
+- **Database:** Supabase (shared with production)
 
-1.  **Install Python Dependencies:**
-    ```bash
-    cd backend
-    pip install -r requirements.txt
-    ```
+### Production Environment
+- **Frontend:** IIS static files on port 80
+- **Backend:** FastAPI Windows service on port 8001
+- **API Calls:** Direct to `http://intranet.kingston.local:8001`
+- **Database:** Supabase (cloud-managed PostgreSQL)
 
-2.  **Configure Environment Variables:**
-    - Create a production `.env` file with Supabase credentials
-    - Set up Windows environment variables or use a configuration management tool
+## 3. Building for Production
 
-3.  **Optional: Create Windows Service:**
-    - Use tools like `python-windows-service` or `NSSM` (Non-Sucking Service Manager) to run FastAPI as a Windows service
-
-## 3. IIS Configuration for Production
-
-### Frontend Configuration (IIS Website)
-
-1.  **Create IIS Website:**
-    - Create a new website in IIS Manager
-    - Point the physical path to the `frontend/dist/` directory
-    - Configure appropriate bindings (HTTP/HTTPS)
-
-2.  **Configure URL Rewrite for SPA:**
-    Install URL Rewrite module and add the following rule to `web.config`:
-    ```xml
-    <?xml version="1.0" encoding="UTF-8"?>
-    <configuration>
-        <system.webServer>
-            <rewrite>
-                <rules>
-                    <rule name="React Router" stopProcessing="true">
-                        <match url=".*" />
-                        <conditions logicalGrouping="MatchAll">
-                            <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
-                            <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
-                            <add input="{REQUEST_URI}" pattern="^/(api)" negate="true" />
-                        </conditions>
-                        <action type="Rewrite" url="/" />
-                    </rule>
-                </rules>
-            </rewrite>
-            <staticContent>
-                <mimeMap fileExtension=".json" mimeType="application/json" />
-            </staticContent>
-        </system.webServer>
-    </configuration>
-    ```
-
-### Backend Reverse Proxy Configuration (IIS ARR)
-
-1.  **Install Application Request Routing (ARR):**
-    - Download and install ARR module from Microsoft
-    - Enable proxy functionality in ARR
-
-2.  **Configure Reverse Proxy Rules:**
-    Add the following to the main website's `web.config`:
-    ```xml
-    <rule name="API Reverse Proxy" stopProcessing="true">
-        <match url="^api/(.*)" />
-        <action type="Rewrite" url="http://localhost:8000/api/{R:1}" />
-        <serverVariables>
-            <set name="HTTP_X_FORWARDED_FOR" value="{REMOTE_ADDR}" />
-            <set name="HTTP_X_FORWARDED_PROTO" value="https" />
-        </serverVariables>
-    </rule>
-    ```
-
-## 4. Deployment Workflows
-
-### Production Deployment Workflow (Windows Server + IIS)
-
-1.  **Build Frontend Assets:**
-    ```bash
-    cd frontend
-    npm install
-    npm run build
-    ```
-
-2.  **Deploy Frontend to IIS:**
-    - Copy contents of `frontend/dist/` to IIS website directory
-    - Ensure `web.config` is properly configured for SPA routing
-
-3.  **Deploy Backend:**
-    ```bash
-    cd backend
-    pip install -r requirements.txt
-    # Copy backend files to production server
-    # Configure environment variables
-    ```
-
-4.  **Start Backend Service:**
-    ```bash
-    # Option 1: Run as console application
-    uvicorn main:app --host 127.0.0.1 --port 8000
-
-    # Option 2: Run as Windows service (using NSSM)
-    nssm install "Kingston Portal API" python
-    nssm set "Kingston Portal API" AppParameters "path\to\backend\main.py"
-    nssm start "Kingston Portal API"
-    ```
-
-5.  **Configure IIS Reverse Proxy:**
-    - Install and configure ARR module
-    - Add reverse proxy rules to `web.config`
-    - Test API endpoints through IIS
-
-### Development Workflow (Local Terminals)
-
-1.  **Start Backend (Terminal 1):**
-    ```bash
-    cd backend
-    # Ensure environment variables are set
-    uvicorn main:app --host 127.0.0.1 --port 8000 --reload
-    ```
-
-2.  **Start Frontend (Terminal 2):**
-    ```bash
-    cd frontend
-    npm install  # First time only
-    npm start  # Starts Vite dev server on port 3000
-    ```
-
-3.  **Access Application:**
-    - Frontend: `http://localhost:3000`
-    - Backend API: `http://localhost:8000/api`
-    - API Documentation: `http://localhost:8000/docs`
-
-## 5. API Documentation & Monitoring
-
-The deployed application includes comprehensive API documentation and monitoring capabilities:
-
-### Interactive API Documentation
-- **Swagger UI**: Available at `/docs` - Interactive API exploration and testing
-- **ReDoc**: Available at `/redoc` - Clean, responsive API documentation
-- **OpenAPI Export**: Available at `/api/docs/export` - Download complete API specification
-
-### Health Monitoring
-- **Health Check**: Available at `/api/health` - System status and resource monitoring
-- **API Root**: Available at `/api` - Service overview and feature list
-
-### Production Monitoring
-- **IIS Logs**: Standard IIS request/response logging
-- **Windows Event Logs**: Application and system event monitoring
-- **Performance Counters**: Windows performance monitoring
-- **Application Insights**: Optional Azure Application Insights integration
-
-## 6. Environment Configuration
-
-- The production environment must have a `.env` file for the backend with production-level secrets (e.g., a strong JWT secret, production database credentials).
-- This file should be securely managed and provided to the backend container at runtime.
-
-### Required Environment Variables
+### Step 1: Build Frontend Assets
 ```bash
-# Database Configuration (Supabase)
+cd frontend
+npm install
+npm run build
+```
+
+**Build Configuration (vite.config.js):**
+```javascript
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8001',
+        changeOrigin: true,
+        secure: false,
+      }
+    }
+  },
+  build: {
+    outDir: 'dist',
+    rollupOptions: {
+      output: {
+        manualChunks: undefined, // Prevents React initialization issues
+      }
+    },
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+      mangle: {
+        safari10: true,
+      },
+    },
+  }
+});
+```
+
+### Step 2: Deploy Frontend to IIS
+1. **Copy Built Assets:**
+   ```bash
+   # Copy contents of frontend/dist/ to C:\inetpub\wwwroot\OfficeIntranet
+   ```
+
+2. **Configure IIS URL Rewrite (web.config):**
+   ```xml
+   <?xml version="1.0" encoding="UTF-8"?>
+   <configuration>
+       <system.webServer>
+           <rewrite>
+               <rules>
+                   <rule name="React_SPA_Fallback" stopProcessing="true">
+                       <match url=".*" />
+                       <conditions logicalGrouping="MatchAll">
+                           <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
+                           <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
+                       </conditions>
+                       <action type="Rewrite" url="/index.html" />
+                   </rule>
+               </rules>
+           </rewrite>
+           <staticContent>
+               <mimeMap fileExtension=".json" mimeType="application/json" />
+           </staticContent>
+           <defaultDocument>
+               <files>
+                   <add value="index.html" />
+               </files>
+           </defaultDocument>
+       </system.webServer>
+   </configuration>
+   ```
+
+### Step 3: Deploy Backend as Windows Service
+1. **Install Dependencies:**
+   ```bash
+   cd backend
+   pip install -r requirements.txt
+   ```
+
+2. **Configure NSSM Service:**
+   ```bash
+   # Install NSSM service
+   nssm install "Kingston Portal API" python
+   nssm set "Kingston Portal API" AppDirectory "C:\path\to\backend"
+   nssm set "Kingston Portal API" AppParameters "main.py"
+   nssm set "Kingston Portal API" AppEnvironmentExtra "API_HOST=0.0.0.0" "API_PORT=8001"
+   nssm start "Kingston Portal API"
+   ```
+
+3. **Configure Windows Firewall:**
+   ```powershell
+   # Allow inbound connections on port 8001
+   New-NetFirewallRule -DisplayName "Kingston Portal API" -Direction Inbound -Protocol TCP -LocalPort 8001 -Action Allow
+   ```
+
+## 4. CORS Configuration
+
+**Backend Configuration (main.py):**
+```python
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://intranet.kingston.local",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["*"],
+)
+```
+
+**Key CORS Requirements:**
+- **allow_origins:** Explicit list (no wildcards with credentials)
+- **allow_credentials:** `True` for authentication headers
+- **allow_headers:** `["*"]` (simplified, no response headers)
+
+## 5. Key Architectural Benefits
+
+### 1. **Simplified Routing**
+- No Application Request Routing (ARR) complications
+- Direct API calls eliminate proxy issues
+- Clear separation of concerns
+
+### 2. **Performance Optimization**
+- IIS optimized for static file serving
+- FastAPI handles API requests directly
+- Reduced latency from eliminated proxy layer
+
+### 3. **Environment Consistency**
+- Automatic environment detection
+- Consistent API base URL handling
+- Seamless development-to-production workflow
+
+### 4. **Security & Reliability**
+- Explicit CORS configuration
+- Windows Firewall protection
+- Service-based backend deployment
+
+## 6. Monitoring & Verification
+
+### Production Health Checks
+- **Frontend:** `http://intranet.kingston.local/` (React app)
+- **Backend API:** `http://intranet.kingston.local:8001/api/health`
+- **API Documentation:** `http://intranet.kingston.local:8001/docs`
+
+### Development Verification
+- **Frontend:** `http://localhost:3000` (Vite dev server)
+- **Backend API:** `http://localhost:8001/api/health`
+- **API Documentation:** `http://localhost:8001/docs`
+
+### Service Monitoring
+```powershell
+# Check Windows service status
+Get-Service -Name "Kingston Portal API"
+
+# Check port binding
+netstat -an | findstr :8001
+
+# Check firewall rules
+Get-NetFirewallRule -DisplayName "Kingston Portal API"
+```
+
+## 7. Environment Variables
+
+### Production Environment (.env)
+```bash
+# Database Configuration
 SUPABASE_URL=your_supabase_project_url
 SUPABASE_KEY=your_supabase_anon_key
-JWT_SECRET=your_jwt_secret
+JWT_SECRET=your_production_jwt_secret
+
+# Server Configuration
+API_HOST=0.0.0.0
+API_PORT=8001
 
 # Security Configuration
 ACCESS_TOKEN_EXPIRE_MINUTES=1440  # 24 hours for production
 ```
 
-## 7. Continuous Integration & Deployment (CI/CD)
+### Development Environment (.env)
+```bash
+# Database Configuration (shared with production)
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_KEY=your_supabase_anon_key
+JWT_SECRET=your_development_jwt_secret
 
-For a mature production setup, a CI/CD pipeline (e.g., using GitHub Actions or Azure DevOps) should be implemented to automate the deployment process. A typical pipeline would:
+# Server Configuration
+API_HOST=127.0.0.1
+API_PORT=8001
 
-### CI/CD Pipeline for Windows Server Deployment
+# Security Configuration
+ACCESS_TOKEN_EXPIRE_MINUTES=60  # 1 hour for development
+```
 
-1.  **Trigger:** On a push or merge to the `main` branch.
-2.  **Test:** Run all backend and frontend tests.
-3.  **Build:**
-    - Run `npm run build` for the frontend.
-    - Package backend application with dependencies.
-4.  **Deploy:**
-    - Copy frontend build artifacts to IIS website directory
-    - Deploy backend to Windows Server
-    - Restart backend service (if running as Windows service)
-    - Update IIS configuration if needed
+## 8. Troubleshooting
 
-### Example GitHub Actions Workflow
+### Common Issues
 
-```yaml
-name: Deploy to Windows Server
+#### Frontend Issues
+- **React Router not working:** Verify IIS URL rewrite rules are properly configured
+- **Static files not loading:** Check IIS MIME type configuration
+- **API calls failing:** Verify environment detection logic
 
-on:
-  push:
-    branches: [ main ]
+#### Backend Issues
+- **Service won't start:** Check NSSM configuration and Python path
+- **Port conflicts:** Verify no other services are using port 8001
+- **CORS errors:** Check allow_origins configuration matches frontend URL
 
-jobs:
-  deploy:
-    runs-on: windows-latest
-    
-    steps:
-    - uses: actions/checkout@v3
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-        
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-    
-    - name: Build Frontend
-      run: |
-        cd frontend
-        npm install
-        npm run build
-    
-    - name: Deploy to Windows Server
-      run: |
-        # Copy files to production server
-        # Restart services
-        # Update IIS configuration
-``` 
+#### Network Issues
+- **DNS resolution:** Verify intranet.kingston.local resolves to 192.168.0.223
+- **Firewall blocking:** Check Windows Firewall rules for port 8001
+- **Service connectivity:** Test direct API calls to verify FastAPI is running
+
+This deployment architecture provides a robust, scalable solution that leverages IIS for efficient static file serving while maintaining direct API communication for optimal performance. 
