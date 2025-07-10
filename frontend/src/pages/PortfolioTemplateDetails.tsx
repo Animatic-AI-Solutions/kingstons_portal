@@ -812,21 +812,21 @@ const PortfolioTemplateDetails: React.FC = () => {
       {/* Archived Generations Migration Checklist */}
       {getArchivedGenerations().length > 0 && (
         <div className="bg-white shadow-sm rounded-lg border border-gray-100 mb-4">
-          <div className="px-6 py-4 border-b border-gray-200">
+          <div className="px-3 py-2 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-                  <svg className="h-5 w-5 text-orange-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <h2 className="text-sm font-semibold text-gray-900 flex items-center">
+                  <svg className="h-3 w-3 text-orange-500 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
                   Migration Checklist - Archived Generations
                 </h2>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-xs text-gray-600 mt-0.5">
                   Products still using archived generations need to be migrated to the active generation for optimal fund composition
                 </p>
               </div>
-              <div className="flex items-center space-x-3">
-                <div className="text-sm text-gray-500">
+              <div className="flex items-center space-x-2">
+                <div className="text-xs text-gray-500">
                   {getArchivedGenerations().length} archived generation{getArchivedGenerations().length !== 1 ? 's' : ''}
                 </div>
                 <Button
@@ -849,21 +849,21 @@ const PortfolioTemplateDetails: React.FC = () => {
             </div>
           </div>
           
-          <div className="p-6 space-y-4">
+          <div className="p-3 space-y-2">
             {getArchivedGenerations().map((generation) => {
               const productsUsingGeneration = getProductsForGeneration(generation.id);
               const isExpanded = expandedArchivedGenerations.has(generation.id);
               
               return (
-                <div key={generation.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                <div key={generation.id} className="border border-gray-200 rounded-md overflow-hidden">
                   <div 
-                    className="bg-gray-50 px-4 py-3 cursor-pointer hover:bg-gray-100 transition-colors"
+                    className="bg-gray-50 px-2 py-1.5 cursor-pointer hover:bg-gray-100 transition-colors"
                     onClick={() => toggleArchivedGenerationExpansion(generation.id)}
                   >
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-1.5">
                         <svg 
-                          className={`h-5 w-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} 
+                          className={`h-3 w-3 text-gray-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} 
                           fill="none" 
                           viewBox="0 0 24 24" 
                           stroke="currentColor"
@@ -871,30 +871,30 @@ const PortfolioTemplateDetails: React.FC = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                         <div>
-                          <h3 className="text-base font-medium text-gray-900 flex items-center">
+                          <h3 className="text-xs font-medium text-gray-900 flex items-center">
                             {generation.generation_name || `Version ${generation.version_number}`}
-                            <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
+                            <span className={`ml-1.5 px-1 py-0.5 text-xs rounded-full ${
                               generation.status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
                             }`}>
                               {generation.status}
                             </span>
                           </h3>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-xs text-gray-500">
                             Created {formatDate(generation.created_at)}
                           </p>
                         </div>
                       </div>
                       
-                      <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2">
                         <div className="text-right">
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-xs font-medium text-gray-900">
                             {productsUsingGeneration.length} product{productsUsingGeneration.length !== 1 ? 's' : ''}
                           </div>
                           <div className="text-xs text-gray-500">
                             {productsUsingGeneration.length > 0 ? 'Need migration' : 'Fully migrated'}
                           </div>
                         </div>
-                        <div className={`h-3 w-3 rounded-full ${
+                        <div className={`h-1.5 w-1.5 rounded-full ${
                           productsUsingGeneration.length === 0 ? 'bg-green-500' : 'bg-orange-500'
                         }`}></div>
                       </div>
@@ -902,26 +902,26 @@ const PortfolioTemplateDetails: React.FC = () => {
                   </div>
                   
                   {isExpanded && productsUsingGeneration.length > 0 && (
-                    <div className="border-t border-gray-200 bg-white p-4">
-                      <div className="mb-3">
-                        <h4 className="text-sm font-medium text-gray-900 mb-2">
+                    <div className="border-t border-gray-200 bg-white p-2">
+                      <div className="mb-1.5">
+                        <h4 className="text-xs font-medium text-gray-900 mb-0.5">
                           Products requiring migration ({productsUsingGeneration.length})
                         </h4>
-                        <p className="text-xs text-gray-600 mb-3">
+                        <p className="text-xs text-gray-600 mb-1.5">
                           These products are still using the archived generation and should be migrated to maintain optimal fund composition.
                         </p>
                       </div>
                       
-                      <div className="space-y-3">
+                      <div className="space-y-1.5">
                         {productsUsingGeneration.map((product) => {
                           const priority = getMigrationPriority(product);
                           const priorityColor = getPriorityColor(priority);
                           
                           return (
-                            <div key={product.id} className="border border-gray-200 rounded-md p-3 bg-gray-50">
+                            <div key={product.id} className="border border-gray-200 rounded p-1.5 bg-gray-50">
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
-                                  <div className="flex items-center space-x-2 mb-2">
+                                  <div className="flex items-center space-x-1.5 mb-0.5">
                                     <Link
                                       to={`/products/${product.id}`}
                                       state={{
@@ -933,14 +933,14 @@ const PortfolioTemplateDetails: React.FC = () => {
                                           { name: template?.name || 'Template', path: `/definitions/portfolio-templates/${portfolioId}` }
                                         ]
                                       }}
-                                      className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                                      className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline"
                                     >
                                       {product.product_name}
                                     </Link>
-                                    <span className={`px-2 py-0.5 text-xs rounded-full border ${priorityColor}`}>
+                                    <span className={`px-1 py-0.5 text-xs rounded border ${priorityColor}`}>
                                       {priority} priority
                                     </span>
-                                    <span className={`px-2 py-0.5 text-xs rounded-full ${
+                                    <span className={`px-1 py-0.5 text-xs rounded ${
                                       product.status === 'active' 
                                         ? 'bg-green-100 text-green-800' 
                                         : 'bg-red-100 text-red-800'
@@ -949,7 +949,7 @@ const PortfolioTemplateDetails: React.FC = () => {
                                     </span>
                                   </div>
                                   
-                                  <div className="grid grid-cols-2 gap-4 text-xs text-gray-600 mb-2">
+                                  <div className="grid grid-cols-2 gap-1.5 text-xs text-gray-600 mb-1">
                                     <div>
                                       <span className="font-medium">Client:</span> {product.client_groups?.name || 'Unknown'}
                                     </div>
@@ -964,22 +964,22 @@ const PortfolioTemplateDetails: React.FC = () => {
                                     </div>
                                   </div>
                                   
-                                  <div className="mt-2">
-                                    <label htmlFor={`migration-note-${product.id}`} className="block text-xs font-medium text-gray-700 mb-1">
+                                  <div className="mt-0.5">
+                                    <label htmlFor={`migration-note-${product.id}`} className="block text-xs font-medium text-gray-700 mb-0.5">
                                       Migration Notes:
                                     </label>
                                     <textarea
                                       id={`migration-note-${product.id}`}
-                                      rows={2}
+                                      rows={1}
                                       value={migrationNotes[product.id] || ''}
                                       onChange={(e) => updateMigrationNote(product.id, e.target.value)}
                                       placeholder="Add notes about migration status, timeline, or issues..."
-                                      className="w-full text-xs border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                      className="w-full text-xs border border-gray-300 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                     />
                                   </div>
                                 </div>
                                 
-                                <div className="ml-4 flex flex-col space-y-1">
+                                <div className="ml-2 flex flex-col space-y-0.5">
                                   <Link
                                     to={`/products/${product.id}`}
                                     state={{
@@ -991,7 +991,7 @@ const PortfolioTemplateDetails: React.FC = () => {
                                         { name: template?.name || 'Template', path: `/definitions/portfolio-templates/${portfolioId}` }
                                       ]
                                     }}
-                                    className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-blue-600 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                                    className="inline-flex items-center px-1.5 py-0.5 border border-transparent text-xs font-medium rounded text-blue-600 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                                   >
                                     View
                                   </Link>
@@ -1000,7 +1000,7 @@ const PortfolioTemplateDetails: React.FC = () => {
                                       // This could open a migration wizard or navigate to edit product
                                       console.log(`Initiating migration for product ${product.id}`);
                                     }}
-                                    className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-green-600 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                                    className="inline-flex items-center px-1.5 py-0.5 border border-transparent text-xs font-medium rounded text-green-600 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
                                   >
                                     Migrate
                                   </button>
@@ -1012,13 +1012,13 @@ const PortfolioTemplateDetails: React.FC = () => {
                       </div>
                       
                       {productsUsingGeneration.length > 0 && (
-                        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                        <div className="mt-1.5 p-1.5 bg-blue-50 border border-blue-200 rounded">
                           <div className="flex items-start">
-                            <svg className="h-4 w-4 text-blue-500 mt-0.5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg className="h-2.5 w-2.5 text-blue-500 mt-0.5 mr-1.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <div className="text-xs text-blue-800">
-                              <p className="font-medium mb-1">Migration Recommendation:</p>
+                              <p className="font-medium mb-0.5">Migration Recommendation:</p>
                               <p>
                                 Review each product and migrate to the active generation to ensure optimal fund composition. 
                                 High priority products should be migrated first, especially those with active status.
@@ -1031,14 +1031,14 @@ const PortfolioTemplateDetails: React.FC = () => {
                   )}
                   
                   {isExpanded && productsUsingGeneration.length === 0 && (
-                    <div className="border-t border-gray-200 bg-white p-4">
-                      <div className="flex items-center justify-center py-4">
+                    <div className="border-t border-gray-200 bg-white p-2">
+                      <div className="flex items-center justify-center py-1">
                         <div className="text-center">
-                          <svg className="mx-auto h-8 w-8 text-green-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="mx-auto h-4 w-4 text-green-500 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
-                          <p className="text-sm font-medium text-green-800">Migration Complete</p>
-                          <p className="text-xs text-green-600 mt-1">
+                          <p className="text-xs font-medium text-green-800">Migration Complete</p>
+                          <p className="text-xs text-green-600 mt-0.5">
                             No products are using this archived generation
                           </p>
                         </div>
