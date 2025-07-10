@@ -14,6 +14,8 @@ import {
   BaseDropdown
 } from '../components/ui';
 import api, { getClientGroupProductOwners, calculateStandardizedMultipleFundsIRR, getProductOwners, addClientGroupProductOwner, removeClientGroupProductOwner, getProductOwnersForProducts, getStandardizedClientIRR } from '../services/api';
+import { useClientDetails } from '../hooks/useClientDetails';
+import { useClientMutations } from '../hooks/useClientMutations';
 import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
 
 // Enhanced TypeScript interfaces
@@ -111,6 +113,7 @@ const PreviousFundsIRRDisplay: React.FC<{ inactiveFundIds: number[] }> = ({ inac
   const [livePreviousFundsIRR, setLivePreviousFundsIRR] = useState<{irr: number, date: string} | null>(null);
   const [isLoadingLivePreviousFundsIRR, setIsLoadingLivePreviousFundsIRR] = useState<boolean>(false);
   const [livePreviousFundsIRRError, setLivePreviousFundsIRRError] = useState<string | null>(null);
+  const currentRequestRef = useRef<string | null>(null);
 
   const formatPercentage = (value: number): string => {
     return `${(value).toFixed(2)}%`;
@@ -125,12 +128,22 @@ const PreviousFundsIRRDisplay: React.FC<{ inactiveFundIds: number[] }> = ({ inac
     });
   };
 
+  // Memoize the fund IDs to prevent unnecessary re-renders
+  const memoizedFundIds = useMemo(() => {
+    return inactiveFundIds.sort((a, b) => a - b); // Sort for consistent comparison
+  }, [inactiveFundIds.join(',')]);
+
+  // Create a cache key for request deduplication
+  const cacheKey = useMemo(() => {
+    return memoizedFundIds.join(',');
+  }, [memoizedFundIds]);
+
   useEffect(() => {
     const calculateLivePreviousFundsIRR = async () => {
-      console.log('PreviousFundsIRRDisplay received inactiveFundIds:', inactiveFundIds);
+      console.log('PreviousFundsIRRDisplay received inactiveFundIds:', memoizedFundIds);
       
       // Only calculate if there are inactive fund IDs
-      if (inactiveFundIds.length === 0) {
+      if (memoizedFundIds.length === 0) {
         console.log('No inactive fund IDs provided, skipping IRR calculation');
         setLivePreviousFundsIRR(null);
         setLivePreviousFundsIRRError(null);
@@ -138,17 +151,24 @@ const PreviousFundsIRRDisplay: React.FC<{ inactiveFundIds: number[] }> = ({ inac
         return;
       }
 
+      // Skip if the same request is already in progress
+      if (currentRequestRef.current === cacheKey) {
+        console.log('Same IRR calculation already in progress, skipping duplicate request for:', cacheKey);
+        return;
+      }
+
+      currentRequestRef.current = cacheKey;
       setIsLoadingLivePreviousFundsIRR(true);
       setLivePreviousFundsIRRError(null);
 
       try {
-        console.log(`Calculating live Previous Funds IRR for ${inactiveFundIds.length} inactive funds`);
-        console.log('Inactive fund IDs for live calculation:', inactiveFundIds);
-        console.log('🔍 DEBUG: ClientDetails.tsx calling IRR with inactive fund IDs:', inactiveFundIds);
+        console.log(`Calculating live Previous Funds IRR for ${memoizedFundIds.length} inactive funds`);
+        console.log('Inactive fund IDs for live calculation:', memoizedFundIds);
+        console.log('🔍 DEBUG: ClientDetails.tsx calling IRR with cache key:', cacheKey);
         
         // Use the standardized multiple IRR endpoint with £0 valuation handling
         const response = await calculateStandardizedMultipleFundsIRR({
-          portfolioFundIds: inactiveFundIds
+          portfolioFundIds: memoizedFundIds
         });
         
         console.log('Live Previous Funds IRR response:', response.data);
@@ -169,23 +189,28 @@ const PreviousFundsIRRDisplay: React.FC<{ inactiveFundIds: number[] }> = ({ inac
         setLivePreviousFundsIRR(null);
         
         if (err.response?.status === 404) {
-          setLivePreviousFundsIRRError('No IRR data available');
+          setLivePreviousFundsIRRError('No activity data available for IRR calculation');
         } else {
           setLivePreviousFundsIRRError(err.response?.data?.detail || err.message || 'Error calculating IRR');
         }
       } finally {
         setIsLoadingLivePreviousFundsIRR(false);
+        currentRequestRef.current = null;
       }
     };
 
     calculateLivePreviousFundsIRR();
-  }, [inactiveFundIds]); // Recalculate when inactiveFundIds changes
+  }, [cacheKey, memoizedFundIds]); // Use memoized values in dependency array
 
   if (isLoadingLivePreviousFundsIRR) {
     return <span className="text-xs text-gray-500">Loading...</span>;
   }
 
   if (livePreviousFundsIRRError) {
+    // Show a more user-friendly message for no activity data
+    if (livePreviousFundsIRRError.includes('No activity data available')) {
+      return <span className="text-xs text-gray-500">No data</span>;
+    }
     return <span className="text-xs text-red-500" title={livePreviousFundsIRRError}>Error</span>;
   }
 
@@ -248,7 +273,7 @@ const ClientHeader = ({
       return 'N/A';
     }
     if (typeof value === 'string') {
-      return value; // Return string values as-is (like "-")
+      return value; // Return string values as-is (like "-" or "Loading...")
     }
     return `${(value).toFixed(2)}%`;
   };
@@ -1005,10 +1030,7 @@ const ProductCard: React.FC<{
                       <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.market_value || 0, true)}</td>
                       <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
                         {fund.is_virtual_entry ? (
-                          (() => {
-                            console.log('Previous Funds virtual entry:', fund);
-                            return <PreviousFundsIRRDisplay inactiveFundIds={fund.inactive_fund_ids || []} />;
-                          })()
+                          <PreviousFundsIRRDisplay inactiveFundIds={fund.inactive_fund_ids || []} />
                         ) : (
                           fund.irr !== undefined && fund.irr !== null ? (
                             typeof fund.irr === 'number' ? (
@@ -1088,12 +1110,82 @@ const ClientDetails: React.FC = () => {
   const navigate = useNavigate();
   const { api } = useAuth();
   const { navigateToClientGroups, navigateWithSuccessMessage } = useNavigationRefresh();
-  const [client, setClient] = useState<Client | null>(null);
-  const [clientAccounts, setClientAccounts] = useState<ClientAccount[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  
+  // React Query hooks for optimized data fetching
+  const { data: clientData, isLoading, error: queryError, invalidateClient } = useClientDetails(clientId);
+  const { 
+    updateClient, 
+    changeClientStatus, 
+    deleteClient, 
+    manageProductOwner,
+    isUpdating,
+    isDeleting,
+    isChangingStatus,
+    isManagingProductOwner
+  } = useClientMutations();
+  
+  // Transform data for component compatibility - the API returns { client_group: {...}, products: [...] }
+  const apiResponse = clientData as any;
+  const client = apiResponse?.client_group ? {
+    id: apiResponse.client_group.id,
+    name: apiResponse.client_group.name,
+    status: apiResponse.client_group.status,
+    advisor: apiResponse.client_group.advisor,
+    type: apiResponse.client_group.type,
+    created_at: apiResponse.client_group.created_at,
+    updated_at: apiResponse.client_group.updated_at,
+    age: apiResponse.client_group.age,
+    gender: apiResponse.client_group.gender,
+    product_owners: apiResponse.client_group.product_owners
+  } : null;
+  
+  // The API returns products directly, not as accounts
+  const clientAccounts = apiResponse?.products || [];
+  
+  // Calculate totals from the products data
+  const totalFundsUnderManagement = clientAccounts.reduce((sum: number, product: any) => {
+    return sum + (product.total_value || 0);
+  }, 0);
+  
+  // Debug logging for product owners
+  console.log('DEBUG: Client data:', {
+    client: client,
+    client_product_owners: client?.product_owners,
+    clientAccounts: clientAccounts,
+    first_account_owners: clientAccounts[0]?.product_owners,
+    apiResponse: apiResponse
+  });
+  
+  // State for standardized client IRR
+  const [standardizedClientIRR, setStandardizedClientIRR] = useState<number | null>(null);
+  const [isLoadingClientIRR, setIsLoadingClientIRR] = useState(false);
+
+  // Fetch standardized client IRR when client data is available
+  useEffect(() => {
+    const fetchStandardizedClientIRR = async () => {
+      if (!clientId || !apiResponse?.client_group) return;
+      
+      setIsLoadingClientIRR(true);
+      try {
+        const response = await getStandardizedClientIRR(Number(clientId));
+        setStandardizedClientIRR(response.data.irr);
+      } catch (error) {
+        console.error('Error fetching standardized client IRR:', error);
+        setStandardizedClientIRR(null);
+      } finally {
+        setIsLoadingClientIRR(false);
+      }
+    };
+
+    fetchStandardizedClientIRR();
+  }, [clientId, apiResponse?.client_group]);
+
+  // Use standardized IRR if available, show loading state, or fallback to 0
+  const totalIRR = isLoadingClientIRR ? "Loading..." : (standardizedClientIRR !== null ? standardizedClientIRR : 0);
+    
+  const error = queryError ? (queryError as any).response?.data?.detail || 'Failed to fetch client details' : null;
   const [isCorrecting, setIsCorrecting] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
   const [availableProductOwners, setAvailableProductOwners] = useState<ClientProductOwner[]>([]);
   const [isEditingProductOwners, setIsEditingProductOwners] = useState(false);
   const [versions, setVersions] = useState<any[]>([]);
@@ -1106,11 +1198,6 @@ const ClientDetails: React.FC = () => {
     advisor: null,
     type: null
   });
-  
-  // Create the ref to store FUM value from the database view
-  const clientFUMFromView = useRef<number | null>(null);
-  // Create a ref to store IRR value from the database calculation
-  const clientIRRFromAPI = useRef<number | null>(null);
   
   // State for expanded product cards
   const [expandedProducts, setExpandedProducts] = useState<number[]>([]);
@@ -1146,15 +1233,17 @@ const ClientDetails: React.FC = () => {
     }
   };
 
-  // Function to fetch product owners for the client group
+  // Function to fetch product owners for the client group (called on-demand)
   const fetchAvailableProductOwners = async () => {
+    if (!apiResponse?.client_group) return;
+    
     try {
       // Fetch all available product owners for the dropdown
-      const allProductOwnersResponse = await getProductOwners();
+      const allProductOwnersResponse = await api.get('/product_owners');
       console.log('All product owners response:', allProductOwnersResponse.data);
       
       // Get current client's product owners to exclude them from available list
-      const currentProductOwners = client?.product_owners || [];
+      const currentProductOwners = apiResponse.client_group.product_owners || [];
       
       // Set available product owners (excluding already assigned ones)
       const availableOwners = allProductOwnersResponse.data
@@ -1176,268 +1265,45 @@ const ClientDetails: React.FC = () => {
     }
   };
 
-  // Optimized data fetching using the new bulk endpoint
-  const fetchClientData = async (retryCount = 0) => {
-    // Safety check: Don't make API calls if clientId is invalid
-    if (!clientId || clientId === 'null' || clientId === 'undefined') {
-      console.warn('fetchClientData called with invalid clientId:', clientId);
-      setIsLoading(false);
-      return;
-    }
-    
-    try {
-      setIsLoading(true);
-      console.log(`Fetching complete client data for ID: ${clientId} using optimized bulk endpoint`);
-      
-      // Single API call to get all client group data
-      const completeResponse = await api.get(`/client_groups/${clientId}/complete`);
-      const completeData = completeResponse.data;
-      
-      console.log("Complete client data received:", completeData);
-      console.log("Performance stats:", completeData.performance_stats);
-      
-      // Set client data
-      setClient(completeData.client_group);
-      
-      // Process products data
-      const processedProducts = completeData.products.map((product: any) => ({
-        id: product.id,
-        client_id: parseInt(clientId),
-        product_name: product.product_name,
-        product_type: product.product_type,
-        status: product.status,
-        start_date: product.start_date,
-        end_date: product.end_date,
-        portfolio_id: product.portfolio_id,
-        portfolio_name: product.portfolio_name,
-        provider_id: product.provider_id,
-        provider_name: product.provider_name,
-        provider_theme_color: product.provider_theme_color,
-        total_value: product.total_value,
-        irr: product.irr,
-        active_fund_count: product.active_fund_count,
-        inactive_fund_count: product.inactive_fund_count,
-        template_generation_id: product.template_generation_id,
-        template_info: product.template_info,
-        product_owners: [], // Will be populated after fetching product owners
-        fixed_cost: product.fixed_cost,
-        percentage_fee: product.percentage_fee
-      }));
-      
-      // Step 2.5: Fetch product owners for all products
-      try {
-        if (processedProducts.length > 0) {
-          console.log(`Fetching product owners for client ${clientId}`);
-          const productOwnersResponse = await getProductOwnersForProducts(parseInt(clientId));
-          
-          // Create a map of product ID to product owners from the API response
-          const productOwnersMap: { [key: number]: ProductOwner[] } = {};
-          
-          if (productOwnersResponse?.data) {
-            productOwnersResponse.data.forEach((product: any) => {
-              if (product.product_owners && product.product_owners.length > 0) {
-                productOwnersMap[product.id] = product.product_owners;
-              }
-            });
-          }
-          
-          // Update processed products with their product owners
-          processedProducts.forEach((product: any) => {
-            if (productOwnersMap[product.id]) {
-              product.product_owners = productOwnersMap[product.id];
-            }
-          });
-          
-          console.log(`Added product owners to ${Object.keys(productOwnersMap).length} products`);
-          
-          // Aggregate all unique product owners across all products for the client header
-          const allProductOwners: ProductOwner[] = [];
-          const ownerIds = new Set<number>();
-          
-          processedProducts.forEach((product: any) => {
-            if (product.product_owners && product.product_owners.length > 0) {
-              product.product_owners.forEach((owner: ProductOwner) => {
-                if (!ownerIds.has(owner.id)) {
-                  ownerIds.add(owner.id);
-                  allProductOwners.push(owner);
-                }
-              });
-            }
-          });
-          
-          console.log(`Found ${allProductOwners.length} unique product owners across all products`);
-          
-          // Update client data with aggregated product owners for the header section
-          setClient(prev => prev ? { 
-            ...prev, 
-            product_owners: allProductOwners.map(owner => ({
-              id: owner.id,
-              firstname: owner.firstname,
-              surname: owner.surname,
-              known_as: owner.known_as,
-              status: owner.status,
-              created_at: owner.created_at
-            }))
-          } : null);
-        }
-      } catch (error) {
-        console.warn('Error fetching product owners:', error);
-        // Continue without product owners if fetch fails
-      }
-      
-      setClientAccounts(processedProducts);
-      
-      // Pre-populate fund data for all products to eliminate lazy loading
-      const fundDataMap: { [key: number]: ProductFund[] } = {};
-      completeData.products.forEach((product: any) => {
-        if (product.funds && product.funds.length > 0) {
-          const mappedFunds = product.funds.map((fund: any) => ({
-            id: fund.id,
-            fund_name: fund.fund_name,
-            isin_number: fund.isin_number,
-            risk_factor: fund.risk_factor,
-            amount_invested: fund.amount_invested,
-            market_value: fund.market_value,
-            investments: fund.investments,
-            withdrawals: fund.withdrawals,
-            fund_switch_in: fund.fund_switch_in,
-            fund_switch_out: fund.fund_switch_out,
-            product_switch_in: fund.product_switch_in,
-            product_switch_out: fund.product_switch_out,
-            irr: fund.irr,
-            status: fund.status,
-            is_virtual_entry: fund.is_virtual_entry,
-            inactive_fund_count: fund.inactive_fund_count,
-            inactive_fund_ids: fund.inactive_fund_ids // Add the missing field for Previous Funds IRR calculation
-          }));
-          
-          // Sort funds so that Cash fund always appears last
-          fundDataMap[product.id] = mappedFunds.sort((a: ProductFund, b: ProductFund) => {
-            const aIsCash = a.fund_name?.toLowerCase().includes('cash') || false;
-            const bIsCash = b.fund_name?.toLowerCase().includes('cash') || false;
-            
-            // If both are cash or both are not cash, maintain original order
-            if (aIsCash === bIsCash) {
-              return 0;
-            }
-            
-            // Cash fund goes to the end (return 1 means a comes after b)
-            return aIsCash ? 1 : -1;
-          });
-        }
-      });
-      
-      setExpandedProductFunds(fundDataMap);
-      
-      // Calculate total value from processed data
-      const totalValue = processedProducts.reduce((sum: number, product: any) => 
-        sum + (product.total_value || 0), 0
-      );
-      
-      // Store calculated FUM value
-      clientFUMFromView.current = totalValue;
-      
-      // Fetch the true aggregated IRR using the standardized multiple funds IRR calculation
-      let totalIRR = 0;
-      try {
-        console.log(`Fetching standardized IRR for client group ${clientId} using multiple funds IRR calculation`);
-        const irrResponse = await getStandardizedClientIRR(parseInt(clientId));
-        totalIRR = irrResponse.data.irr || 0;
-        console.log(`Standardized client group IRR: ${totalIRR}%`);
-        console.log('IRR calculation details:', irrResponse.data);
-        console.log(`Calculation method: ${irrResponse.data.calculation_method}`);
-        console.log(`Portfolio funds used: ${irrResponse.data.portfolio_fund_count}`);
-      } catch (irrError) {
-        console.error('Error fetching standardized client group IRR:', irrError);
-        // Fallback to 0 if IRR calculation fails
-        totalIRR = 0;
-      }
-      
-      // Store calculated IRR value
-      clientIRRFromAPI.current = totalIRR;
-      
-      console.log(`Optimized loading complete: ${processedProducts.length} products, ${Object.keys(fundDataMap).length} products with fund data`);
-      console.log(`Total Value: ${totalValue}, Standardized Total IRR (using multiple funds IRR): ${totalIRR}%`);
-      
-      // Fetch available product owners for the dropdown
-      await fetchAvailableProductOwners();
-      
-      setError(null);
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || 'Failed to fetch client data';
-      setError(errorMessage);
-      console.error('Error fetching client data:', err);
-      
-      // Implement retry logic for transient errors
-      if (retryCount < 2) {
-        console.log(`Retrying data fetch (attempt ${retryCount + 1})...`);
-        setTimeout(() => fetchClientData(retryCount + 1), 1000 * (retryCount + 1));
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // React Query handles data fetching automatically
+  // No manual fetchClientData function needed
 
-  // Data fetching with error retry
-  useEffect(() => {
-    // Only fetch data if clientId exists and is not null/undefined/string 'null'
-    if (clientId && clientId !== 'null' && clientId !== 'undefined') {
-      fetchClientData();
-    }
-  }, [clientId]);
+  // React Query automatically handles data fetching when clientId changes
+  // No useEffect needed for data fetching
 
-  // Set all products to be expanded when clientAccounts are updated
+  // Set all products to be expanded when clientAccounts are updated and populate funds data
   useEffect(() => {
     if (clientAccounts.length > 0) {
       // Get all account IDs
-      const allAccountIds = clientAccounts.map(account => account.id);
+      const allAccountIds = clientAccounts.map((account: any) => account.id);
       
       // Set expanded products state
       setExpandedProducts(allAccountIds);
+      
+      // Populate the funds data from the API response (funds are already nested in products)
+      const fundsData: Record<number, ProductFund[]> = {};
+      clientAccounts.forEach((product: any) => {
+        if (product.id && product.funds) {
+          fundsData[product.id] = product.funds;
+        }
+      });
+      setExpandedProductFunds(fundsData);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientAccounts]);
-
-  // Calculate totals with memoization for performance
-  const { totalFundsUnderManagement, totalIRR } = useMemo(() => {
-    // Use the values calculated from the bulk endpoint
-    const totalFunds = clientFUMFromView.current || 0;
-    const finalIRR = clientIRRFromAPI.current || 0;
-    
-    console.log("Optimized totals calculation:");
-    console.log("Total funds from bulk endpoint:", totalFunds);
-    console.log("Total IRR from standardized multiple funds IRR calculation:", finalIRR);
-    
-    return {
-      totalFundsUnderManagement: totalFunds,
-      totalIRR: finalIRR
-    };
-  }, [clientFUMFromView.current, clientIRRFromAPI.current]);
 
   const handleBack = () => {
     navigate('/client_groups');
   };
 
   const handleMakeDormant = async () => {
-    try {
-      await api.patch(`/client_groups/${clientId}/status`, { status: 'dormant' });
-      // Refresh client data
-      fetchClientData();
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to update client status');
-      console.error('Error updating client status:', err);
-    }
+    if (!clientId) return;
+    changeClientStatus.mutate({ clientId, status: 'dormant' });
   };
 
   const handleMakeActive = async () => {
-    try {
-      await api.patch(`/client_groups/${clientId}/status`, { status: 'active' });
-      // Refresh client data
-      fetchClientData();
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to update client status');
-      console.error('Error updating client status:', err);
-    }
+    if (!clientId) return;
+    changeClientStatus.mutate({ clientId, status: 'active' });
   };
 
   const startCorrection = () => {
@@ -1451,23 +1317,23 @@ const ClientDetails: React.FC = () => {
       type: client.type
     });
     
+    // Fetch product owners for the dropdown when editing starts
+    fetchAvailableProductOwners();
+    
     // Enter correction mode
     setIsCorrecting(true);
   };
 
   const handleCorrect = async () => {
-    if (!client || isSaving) return;
+    if (!client || !clientId || isUpdating) return;
 
-    try {
       // Validate required fields
       if (!formData.name?.trim()) {
-        setError('Client name is required');
+      setLocalError('Client name is required');
         return;
       }
 
-      // Set saving state
-      setIsSaving(true);
-      setError(null);
+    setLocalError(null);
 
       // Only send fields that have actually changed
       const changedFields: Partial<ClientFormData> = {};
@@ -1494,17 +1360,21 @@ const ClientDetails: React.FC = () => {
       
       // Only perform API call if there are changes
       if (Object.keys(changedFields).length > 0) {
-        await api.patch(`/client_groups/${clientId}`, changedFields);
-        await fetchClientData(); // Refresh client data to reflect changes
+      updateClient.mutate(
+        { id: clientId, updates: changedFields },
+        {
+          onSuccess: () => {
+            setIsCorrecting(false);
         console.log('Client updated successfully');
+          },
+          onError: (err: any) => {
+            setLocalError(err.response?.data?.detail || 'Failed to update client details');
+            console.error('Error updating client:', err);
       }
-      
+        }
+      );
+    } else {
       setIsCorrecting(false);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to update client details');
-      console.error('Error updating client:', err);
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -1528,18 +1398,20 @@ const ClientDetails: React.FC = () => {
   };
 
   const handleDelete = async () => {
-    try {
-      if (!client) return;
+    if (!client || !clientId) return;
       
-      await api.delete(`/client_groups/${clientId}`);
+    deleteClient.mutate(clientId, {
+      onSuccess: () => {
       navigateWithSuccessMessage(
         '/client_groups', 
         `Client group "${client.name}" and all associated data deleted successfully`
       );
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to delete client group');
+      },
+      onError: (err: any) => {
+        setLocalError(err.response?.data?.detail || 'Failed to delete client group');
       console.error('Error deleting client group:', err);
     }
+    });
   };
 
   const handleReactivateProduct = async (productId: number, productName: string) => {
@@ -1548,61 +1420,70 @@ const ClientDetails: React.FC = () => {
         const response = await api.patch(`client_products/${productId}/reactivate`);
         if (response.data) {
           // Refresh client data to show the reactivated product
-          await fetchClientData();
+          invalidateClient();
           // Show success notification (you may want to add a toast notification system)
           console.log('Product reactivated successfully');
         }
       }
     } catch (err: any) {
       console.error('Error reactivating product:', err);
-      alert(err.response?.data?.detail || 'Failed to reactivate product. Please try again.');
+      setLocalError(err.response?.data?.detail || 'Failed to reactivate product. Please try again.');
     }
   };
 
   // Product owner management functions
   const handleAddProductOwner = async (productOwnerId: number) => {
-    try {
       if (!clientId) return;
       
-      await addClientGroupProductOwner(parseInt(clientId), productOwnerId);
-      await fetchClientData(); // Refresh client data to update product owners
+    manageProductOwner.mutate({
+      clientId,
+      productOwnerId,
+      action: 'add'
+    }, {
+      onSuccess: () => {
       console.log('Product owner added successfully');
-    } catch (err: any) {
+      },
+      onError: (err: any) => {
       console.error('Error adding product owner:', err);
-      setError(err.response?.data?.detail || 'Failed to add product owner');
+        setLocalError(err.response?.data?.detail || 'Failed to add product owner');
     }
+    });
   };
 
   const handleRemoveProductOwner = async (associationId: number) => {
-    try {
-      await removeClientGroupProductOwner(associationId);
-      await fetchClientData(); // Refresh client data to update product owners
+    if (!clientId) return;
+    
+    manageProductOwner.mutate({
+      clientId,
+      productOwnerId: 0, // Not needed for remove action
+      action: 'remove',
+      associationId
+    }, {
+      onSuccess: () => {
       console.log('Product owner removed successfully');
-    } catch (err: any) {
+      },
+      onError: (err: any) => {
       console.error('Error removing product owner:', err);
-      setError(err.response?.data?.detail || 'Failed to remove product owner');
+        setLocalError(err.response?.data?.detail || 'Failed to remove product owner');
     }
+    });
   };
 
   // Handle revenue assignment save
   const handleRevenueAssignmentSave = async (updates: Record<number, { fixed_cost: number | null; percentage_fee: number | null }>) => {
     try {
-      setIsSaving(true);
-      
       // Call API to update products with revenue data
       for (const [productId, data] of Object.entries(updates)) {
         await api.patch(`/api/client_products/${productId}`, data);
       }
       
-      // Refresh client data to show updated values
-      await fetchClientData();
+      // Refresh client data to show updated values using React Query
+      invalidateClient();
       
       console.log('Revenue assignments saved successfully');
     } catch (error: any) {
       console.error('Error saving revenue assignments:', error);
-      alert('Failed to save revenue assignments. Please try again.');
-    } finally {
-      setIsSaving(false);
+      setLocalError('Failed to save revenue assignments. Please try again.');
     }
   };
 
@@ -1734,7 +1615,7 @@ const ClientDetails: React.FC = () => {
           onSave={handleCorrect}
           onCancel={() => setIsCorrecting(false)}
           onFieldChange={handleFieldChange}
-          isSaving={isSaving}
+          isSaving={updateClient.isPending}
           availableProductOwners={availableProductOwners}
           onAddProductOwner={handleAddProductOwner}
           onRemoveProductOwner={handleRemoveProductOwner}

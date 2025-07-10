@@ -398,12 +398,29 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         console.log('ProductOverview: Processed holdings:', processedHoldings);
         
         // Filter active and inactive holdings
+        // A fund is active if:
+        // 1. Status is explicitly 'active' (regardless of dates), OR
+        // 2. Status is not 'inactive' AND (no end_date OR end_date is in the future)
         const activeHoldings = processedHoldings.filter(
-          (h: Holding) => h.status !== 'inactive' && (!h.end_date || new Date(h.end_date) > new Date())
+          (h: Holding) => {
+            // If status is explicitly 'active', it's active regardless of dates
+            if (h.status === 'active') {
+              return true;
+            }
+            // Otherwise, use the original logic
+            return h.status !== 'inactive' && (!h.end_date || new Date(h.end_date) > new Date());
+          }
         );
         
         const inactiveHoldings = processedHoldings.filter(
-          (h: Holding) => h.status === 'inactive' || (h.end_date && new Date(h.end_date) <= new Date())
+          (h: Holding) => {
+            // If status is explicitly 'active', it's never inactive
+            if (h.status === 'active') {
+              return false;
+            }
+            // Otherwise, use the original logic
+            return h.status === 'inactive' || (h.end_date && new Date(h.end_date) <= new Date());
+          }
         );
         
         console.log(`After filtering: ${activeHoldings.length} active, ${inactiveHoldings.length} inactive`);
