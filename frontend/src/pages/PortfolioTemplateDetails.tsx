@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import StandardTable, { ColumnConfig } from '../components/StandardTable';
+import { Button, DeleteButton, ActionButton, AddButton } from '../components/ui';
 
 interface PortfolioTemplate {
   id: number;
@@ -657,12 +658,13 @@ const PortfolioTemplateDetails: React.FC = () => {
             </div>
           </div>
         </div>
-        <button
+        <Button
           onClick={handleBack}
-          className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+          variant="secondary"
+          size="md"
         >
           Back to Portfolios
-        </button>
+        </Button>
       </div>
     );
   }
@@ -682,12 +684,13 @@ const PortfolioTemplateDetails: React.FC = () => {
             </div>
           </div>
         </div>
-        <button
+        <Button
           onClick={handleBack}
-          className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+          variant="secondary"
+          size="md"
         >
           Back to Portfolios
-        </button>
+        </Button>
       </div>
     );
   }
@@ -754,18 +757,13 @@ const PortfolioTemplateDetails: React.FC = () => {
             </div>
             
             <div className="relative">
-              <button
+              <DeleteButton
                 onClick={handleDeleteClick}
                 disabled={hasProductsUsingTemplate || isCheckingProducts}
-                className={`px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                  hasProductsUsingTemplate || isCheckingProducts
-                    ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                    : 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500'
-                } transition-colors`}
-                title={hasProductsUsingTemplate ? 'Cannot delete template - products are using this template' : 'Delete Template'}
-              >
-                {isCheckingProducts ? 'Checking...' : 'Delete Template'}
-              </button>
+                context="Template"
+                size="md"
+                loading={isCheckingProducts}
+              />
             </div>
           </div>
         </div>
@@ -831,7 +829,7 @@ const PortfolioTemplateDetails: React.FC = () => {
                 <div className="text-sm text-gray-500">
                   {getArchivedGenerations().length} archived generation{getArchivedGenerations().length !== 1 ? 's' : ''}
                 </div>
-                <button
+                <Button
                   onClick={() => {
                     const archivedGenerations = getArchivedGenerations();
                     const allExpanded = archivedGenerations.every(gen => expandedArchivedGenerations.has(gen.id));
@@ -842,10 +840,11 @@ const PortfolioTemplateDetails: React.FC = () => {
                       setExpandedArchivedGenerations(new Set(archivedGenerations.map(gen => gen.id)));
                     }
                   }}
-                  className="inline-flex items-center px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                  variant="secondary"
+                  size="sm"
                 >
                   {getArchivedGenerations().every(gen => expandedArchivedGenerations.has(gen.id)) ? 'Collapse All' : 'Expand All'}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -1059,15 +1058,11 @@ const PortfolioTemplateDetails: React.FC = () => {
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold text-gray-900">Portfolio Generations</h2>
-              <Link
-                to={`/add-generation/${portfolioId}`}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-              >
-                <svg className="h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Add Generation
-              </Link>
+              <AddButton 
+                onClick={() => navigate(`/add-generation/${portfolioId}`)}
+                size="md"
+                context="Generation"
+              />
             </div>
           </div>
           
@@ -1130,38 +1125,22 @@ const PortfolioTemplateDetails: React.FC = () => {
                       </Link>
                       
                       {selectedGeneration.status === 'draft' && (
-                        <button
+                        <Button
                           onClick={() => handleActivateGeneration(selectedGeneration.id)}
-                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                          variant="primary"
+                          size="sm"
                         >
-                          <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
                           Activate
-                        </button>
+                        </Button>
                       )}
                       
-                      <button
+                      <DeleteButton
                         onClick={() => handleDeleteGenerationClick(selectedGeneration)}
                         disabled={isCheckingProducts || (generationProductCounts[selectedGeneration.id] || 0) > 0}
-                        className={`inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
-                          isCheckingProducts || (generationProductCounts[selectedGeneration.id] || 0) > 0
-                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                            : 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500'
-                        }`}
-                        title={
-                          isCheckingProducts 
-                            ? 'Checking for products using this generation...'
-                            : (generationProductCounts[selectedGeneration.id] || 0) > 0
-                            ? `Cannot delete - ${generationProductCounts[selectedGeneration.id]} product(s) are using this generation`
-                            : 'Delete Generation'
-                        }
-                      >
-                        <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                        Delete
-                      </button>
+                        context="Generation"
+                        size="sm"
+                        loading={isCheckingProducts}
+                      />
                     </div>
                   </div>
                   
@@ -1245,24 +1224,26 @@ const PortfolioTemplateDetails: React.FC = () => {
                 </div>
               </div>
               <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <button
+                <Button
                   type="button"
-                  className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm ${
-                    isDeleting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-700'
-                  } transition-colors`}
                   onClick={handleConfirmDelete}
                   disabled={isDeleting}
+                  variant="danger"
+                  size="sm"
+                  className="w-full sm:ml-3 sm:w-auto"
                 >
                   {isDeleting ? 'Deleting...' : 'Delete'}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors"
                   onClick={handleCancelDelete}
                   disabled={isDeleting}
+                  variant="secondary"
+                  size="sm"
+                  className="mt-3 w-full sm:mt-0 sm:ml-3 sm:w-auto"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -1296,24 +1277,26 @@ const PortfolioTemplateDetails: React.FC = () => {
                 </div>
               </div>
               <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <button
+                <Button
                   type="button"
-                  className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm ${
-                    isDeletingGeneration ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-700'
-                  } transition-colors`}
                   onClick={handleConfirmDeleteGeneration}
                   disabled={isDeletingGeneration}
+                  variant="danger"
+                  size="sm"
+                  className="w-full sm:ml-3 sm:w-auto"
                 >
                   {isDeletingGeneration ? 'Deleting...' : 'Delete'}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors"
                   onClick={handleCancelDeleteGeneration}
                   disabled={isDeletingGeneration}
+                  variant="secondary"
+                  size="sm"
+                  className="mt-3 w-full sm:mt-0 sm:ml-3 sm:w-auto"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
           </div>
