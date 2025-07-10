@@ -5,6 +5,7 @@ import FilterDropdown from '../components/ui/dropdowns/FilterDropdown';
 import { TableSkeleton } from '../components/ui/feedback/TableSkeleton';
 import { EmptyState } from '../components/ui/feedback/EmptyState';
 import { ErrorDisplay } from '../components/ui/feedback/ErrorDisplay';
+import { AddButton, SearchInput } from '../components/ui';
 import AddProviderModal from '../components/AddProviderModal';
 import { useEntityData } from '../hooks/useEntityData';
 import { 
@@ -117,38 +118,24 @@ const DefinitionsProviders: React.FC = () => {
       <div className="flex justify-between items-center mb-3">
         <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Providers</h1>
         <div className="flex items-center gap-4">
-          <button
+          <AddButton 
+            context="Provider"
+            design="balanced"
+            size="md"
             onClick={handleAddNew}
-            className="bg-primary-600 text-white px-4 py-1.5 rounded-xl font-medium hover:bg-primary-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 shadow-sm flex items-center gap-1"
-            aria-label="Add new provider"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            Add Provider
-          </button>
+          />
         </div>
       </div>
 
       {/* Search Controls */}
       <div className="flex flex-col sm:flex-row gap-3 mb-3">
-        <div className="flex-1">
-          <div className="relative">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search providers..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200"
-              aria-label="Search providers"
-            />
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-          </div>
-        </div>
+        <SearchInput
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search providers..."
+          size="md"
+          className="flex-1"
+        />
       </div>
 
       {/* Providers Table */}

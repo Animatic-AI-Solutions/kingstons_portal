@@ -84,7 +84,7 @@ async def create_portfolio(portfolio: PortfolioCreate, db = Depends(get_db)):
     How it works:
         1. Validates the portfolio data using the PortfolioCreate model
         2. Inserts the validated data into the 'portfolios' table
-        3. Adds the Cash fund (name 'Cash', ISIN 'N/A') with 0% weighting by default
+        3. Adds the Cash fund (name 'Cash', ISIN 'N/A') with null weighting (no weighting set initially)
         4. Returns the newly created portfolio with its generated ID
     Expected output: A JSON object containing the created portfolio with all fields including ID and created_at timestamp
     """
@@ -121,11 +121,11 @@ async def create_portfolio(portfolio: PortfolioCreate, db = Depends(get_db)):
                 # Get the same start date as the portfolio
                 portfolio_start_date = data_dict['start_date']
                 
-                # Add Cash fund with 0% weighting
+                # Add Cash fund with null weighting (no weighting set initially)
                 cash_fund_data = {
                     "portfolio_id": new_portfolio["id"],
                     "available_funds_id": cash_fund["id"],
-                    "target_weighting": 0,  # 0% weighting
+                    "target_weighting": None,  # null weighting for flexible system
                     "start_date": portfolio_start_date,
                     "amount_invested": 0  # No initial investment
                 }
@@ -456,11 +456,11 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
                 cash_fund = cash_fund_result.data[0]
                 logger.info(f"Found Cash fund with ID {cash_fund['id']}")
                 
-                # Add Cash fund with 0% weighting
+                # Add Cash fund with null weighting (no weighting set initially)
                 cash_fund_data = {
                     "portfolio_id": new_portfolio["id"],
                     "available_funds_id": cash_fund["id"],
-                    "target_weighting": 0,  # 0% weighting
+                    "target_weighting": None,  # null weighting for flexible system
                     "start_date": date.today().isoformat(),
                     "amount_invested": 0  # No initial investment
                 }

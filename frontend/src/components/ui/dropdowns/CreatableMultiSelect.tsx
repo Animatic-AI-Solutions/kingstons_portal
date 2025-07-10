@@ -54,6 +54,9 @@ const CreatableMultiSelect = React.forwardRef<HTMLDivElement, CreatableMultiSele
   const [isCreating, setIsCreating] = useState(false);
   
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const tagsContainerRef = useRef<HTMLDivElement>(null);
+  const inputContainerRef = useRef<HTMLDivElement>(null);
+  const dropdownMenuRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   
@@ -84,11 +87,20 @@ const CreatableMultiSelect = React.forwardRef<HTMLDivElement, CreatableMultiSele
   // Calculate total options for keyboard navigation
   const totalOptions = filteredOptions.length + (showCreateOption ? 1 : 0);
   
-  // Close dropdown when clicking outside - improved reliability
+  // Improved click-outside detection - more granular
   useEffect(() => {
     const handleClickOutside = (event: Event) => {
-      const target = event.target as Node;
-      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
+      const target = event.target as HTMLElement;
+      
+      // Check if click is on specific interactive elements
+      const isClickOnTag = tagsContainerRef.current?.contains(target) && 
+                          (target.closest('[data-tag-item]') || target.closest('button'));
+      const isClickOnInput = inputContainerRef.current?.contains(target);
+      const isClickOnDropdown = dropdownMenuRef.current?.contains(target);
+      const isClickOnLabel = target.closest(`[for="${dropdownId}"]`);
+      
+      // If click is not on any of these specific elements, close the dropdown
+      if (!isClickOnTag && !isClickOnInput && !isClickOnDropdown && !isClickOnLabel) {
         setIsOpen(false);
         setSearchTerm('');
         setFocusedIndex(-1);
@@ -105,7 +117,7 @@ const CreatableMultiSelect = React.forwardRef<HTMLDivElement, CreatableMultiSele
       document.removeEventListener('click', handleClickOutside, true);
       document.removeEventListener('mousedown', handleClickOutside, true);
     };
-  }, [isOpen]);
+  }, [isOpen, dropdownId]);
   
   // Reset focused index when filtered options change
   useEffect(() => {
@@ -287,7 +299,18 @@ const CreatableMultiSelect = React.forwardRef<HTMLDivElement, CreatableMultiSele
       
       {/* Dropdown Container */}
       <div
-        ref={ref}
+        ref={(element) => {
+          // Forward the ref to the parent component
+          if (typeof ref === 'function') {
+            ref(element);
+          } else if (ref) {
+            ref.current = element;
+          }
+          // Also set our internal ref for click-outside detection
+          if (inputContainerRef) {
+            inputContainerRef.current = element;
+          }
+        }}
         id={dropdownId}
         onClick={handleToggle}
         onKeyDown={handleKeyDown}
@@ -304,13 +327,14 @@ const CreatableMultiSelect = React.forwardRef<HTMLDivElement, CreatableMultiSele
         {...props}
       >
         {/* Selected Items / Placeholder */}
-        <div className="flex-1 flex items-center flex-wrap gap-1 min-w-0">
+        <div ref={tagsContainerRef} className="flex-1 flex items-center flex-wrap gap-1 min-w-0">
           {selectedOptions.length > 0 ? (
             <>
               {displayedOptions.map((option) => (
                 <div
                   key={option.value}
                   className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-700 text-white"
+                  data-tag-item
                 >
                   <span className="truncate max-w-24">{option.label}</span>
                   <button
@@ -363,7 +387,7 @@ const CreatableMultiSelect = React.forwardRef<HTMLDivElement, CreatableMultiSele
       
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+        <div ref={dropdownMenuRef} className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
           {/* Search Input */}
           {searchable && (
             <div className="p-2 border-b border-gray-200">

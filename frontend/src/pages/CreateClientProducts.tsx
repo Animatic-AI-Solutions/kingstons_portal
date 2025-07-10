@@ -67,7 +67,7 @@ interface ProductItem {
     type: 'template' | 'bespoke';
     templateId?: number;
     generationId?: number; // Added field to store the selected generation ID
-    fundWeightings: Record<string, string>;
+    fundWeightings: Record<string, string | null>;
   };
 }
 
@@ -610,7 +610,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     // Find cash fund to preselect it
     const cashFund = findCashFund(funds);
     const initialSelectedFunds = cashFund ? [cashFund.id] : [];
-    const initialFundWeightings = cashFund ? { [cashFund.id.toString()]: '0' } : {};
+    const initialFundWeightings = cashFund ? { [cashFund.id.toString()]: null } : {};
     
     const newProduct: ProductItem = {
       id: productId,
@@ -726,10 +726,12 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           // Don't allow removal of Cash fund, but allow adding it if not already selected
           if (!isSelected) {
             updatedFunds = [...selectedFunds, fundId];
-            // Add default weighting for Cash fund (0%)
-            if (product.portfolio.type === 'bespoke') {
-              updatedWeightings[fundId.toString()] = '0';
-            }
+            // Check if we're in "weighting mode" (any existing weightings)
+            const hasExistingWeightings = Object.values(updatedWeightings).some(w => 
+              w !== null && w !== undefined && w.trim() !== ''
+            );
+            // Add default weighting for Cash fund based on current mode
+            updatedWeightings[fundId.toString()] = hasExistingWeightings ? '0' : null;
           } else {
             // Trying to remove Cash fund - show message and return unchanged
             showToastMessage('Cash fund cannot be removed from portfolios.');
@@ -744,10 +746,12 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           } else {
             // Add fund
             updatedFunds = [...selectedFunds, fundId];
-            // Add default weighting for bespoke portfolios
-            if (product.portfolio.type === 'bespoke') {
-              updatedWeightings[fundId.toString()] = '';
-            }
+            // Check if we're in "weighting mode" (any existing weightings)
+            const hasExistingWeightings = Object.values(updatedWeightings).some(w => 
+              w !== null && w !== undefined && w.trim() !== ''
+            );
+            // Add default weighting based on current mode
+            updatedWeightings[fundId.toString()] = hasExistingWeightings ? '0' : null;
           }
         }
         
@@ -758,12 +762,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           updatedWeightings = {};
           updatedFunds.forEach(id => {
             const fundForWeighting = funds.find(f => f.id === id);
-            // Initialize weighting for all funds, including Cash fund (default to 0)
-            if (fundForWeighting?.fund_name === 'Cash' && fundForWeighting?.isin_number === 'N/A') {
-              updatedWeightings[id.toString()] = '0';
-            } else {
-              updatedWeightings[id.toString()] = '';
-            }
+            // Initialize all weightings as null when converting from template
+            updatedWeightings[id.toString()] = null;
           });
           // Show a toast notification instead of an error
           showToastMessage(`Template portfolio has been converted to bespoke because you modified the fund selection.`);
@@ -789,14 +789,40 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   const handleWeightingChange = (productId: string, fundId: number, weighting: string) => {
     setProducts(prevProducts => prevProducts.map(product => {
       if (product.id === productId) {
+        const newWeightings = { ...product.portfolio.fundWeightings };
+        
+        // Set the new weighting (empty string becomes null)
+        newWeightings[fundId.toString()] = weighting.trim() === '' ? null : weighting;
+        
+        // Check if this is the first weighting being entered (any non-null, non-empty value)
+        const hasAnyNonNullWeightings = Object.values(newWeightings).some(w => 
+          w !== null && w !== undefined && w.trim() !== ''
+        );
+        
+        // If we now have at least one weighting, convert all undefined/null values to "0"
+        if (hasAnyNonNullWeightings) {
+          product.portfolio.selectedFunds.forEach(selectedFundId => {
+            const key = selectedFundId.toString();
+            if (newWeightings[key] === null || newWeightings[key] === undefined) {
+              newWeightings[key] = "0";
+            }
+          });
+          
+          // Also handle cash fund if it exists and is selected
+          const cashFund = findCashFund(funds);
+          if (cashFund && product.portfolio.selectedFunds.includes(cashFund.id)) {
+            const cashKey = cashFund.id.toString();
+            if (newWeightings[cashKey] === null || newWeightings[cashKey] === undefined) {
+              newWeightings[cashKey] = "0";
+            }
+          }
+        }
+        
         return {
           ...product,
           portfolio: {
             ...product.portfolio,
-            fundWeightings: {
-              ...product.portfolio.fundWeightings,
-              [fundId.toString()]: weighting
-            }
+            fundWeightings: newWeightings
           }
         };
       }
@@ -829,14 +855,16 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     
     let total = 0;
     
-    // Add weightings from selected funds (Cash fund is already included in selectedFunds)
+    // Add weightings from selected funds, ignoring null values
     total += product.portfolio.selectedFunds.reduce((sum, fundId) => {
       const weighting = product.portfolio.fundWeightings[fundId.toString()];
-      const numValue = weighting ? parseFloat(weighting) : 0;
+      // Only include non-null, non-undefined weightings that have actual values
+      if (weighting === null || weighting === undefined || weighting.trim() === '') {
+        return sum; // Skip null/empty weightings
+      }
+      const numValue = parseFloat(weighting);
       return sum + (isNaN(numValue) ? 0 : numValue);
     }, 0);
-    
-    // Note: Cash fund is now always included in selectedFunds, so no need to check separately
     
     return total;
   };
@@ -850,20 +878,25 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     let totalWeightedRisk = 0;
     let totalWeight = 0;
 
-    // Calculate from selected funds (Cash fund is already included in selectedFunds)
+    // Only calculate from funds that have actual weightings set (not null)
     for (const fundId of product.portfolio.selectedFunds) {
       const fund = funds.find(f => f.id === fundId);
       const weighting = product.portfolio.fundWeightings[fundId.toString()];
-      const weightValue = weighting ? parseFloat(weighting) : 0;
+      
+      // Skip null, undefined, or empty weightings
+      if (weighting === null || weighting === undefined || weighting.trim() === '') {
+        continue;
+      }
+      
+      const weightValue = parseFloat(weighting);
 
-      if (fund && !isNaN(weightValue) && weightValue > 0) {
+      if (fund && !isNaN(weightValue) && weightValue >= 0) {
         totalWeightedRisk += fund.risk_factor * weightValue;
         totalWeight += weightValue;
       }
     }
-    
-    // Note: Cash fund is now always included in selectedFunds, so no need to check separately
 
+    // Return null if no weightings are configured or total weight is 0
     return totalWeight > 0 ? totalWeightedRisk / totalWeight : null;
   };
 
@@ -954,7 +987,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           type,
           templateId: undefined,
           selectedFunds: [] as number[],
-          fundWeightings: {} as Record<string, string>
+          fundWeightings: {} as Record<string, string | null>
         };
 
         // If switching to bespoke, automatically include Cash fund
@@ -962,7 +995,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           const cashFund = findCashFund(funds);
           if (cashFund) {
             updatedPortfolio.selectedFunds = [cashFund.id];
-            updatedPortfolio.fundWeightings[cashFund.id.toString()] = '0';
+            // Initialize Cash fund weighting as null (no weighting set initially)
+            updatedPortfolio.fundWeightings[cashFund.id.toString()] = null;
           }
 
           // If there are already selected funds, merge them with Cash fund
@@ -972,12 +1006,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               const fund = funds.find(f => f.id === fundId);
               if (fund && !updatedPortfolio.selectedFunds.includes(fundId)) {
                 updatedPortfolio.selectedFunds.push(fundId);
-                // Set appropriate default weighting based on fund type
-                if (isCashFund(fund)) {
-                  updatedPortfolio.fundWeightings[fundId.toString()] = '0';
-                } else {
-                  updatedPortfolio.fundWeightings[fundId.toString()] = '';
-                }
+                // Initialize all weightings as null (no weighting set initially)
+                updatedPortfolio.fundWeightings[fundId.toString()] = null;
               }
             });
           }
@@ -1227,35 +1257,38 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           hasErrors = true;
         }
         
-        // Strict weighting validation: Allow either 0% (no weightings) OR exactly 100%
+        // Flexible weighting validation: Allow either no weightings OR exactly 100%
         const hasAnyWeightings = product.portfolio.selectedFunds.some(fundId => {
           const weighting = product.portfolio.fundWeightings[fundId.toString()];
-          return weighting && weighting.trim() !== '';
+          return weighting !== null && weighting !== undefined && weighting.trim() !== '';
         });
         
-        // Check Cash fund weighting too
+        // Also check Cash fund weighting
         const cashFund = findCashFund(funds);
         const hasCashWeighting = cashFund && product.portfolio.fundWeightings[cashFund.id.toString()]?.trim();
+        const hasAnyCashWeighting = hasCashWeighting && product.portfolio.fundWeightings[cashFund.id.toString()] !== null;
         
-        // Calculate total weighting
-        const totalWeighting = calculateTotalFundWeighting(product);
-        
-        // If user has entered any weightings, they must add up to exactly 100%
-        if (hasAnyWeightings || hasCashWeighting) {
+        // If NO weightings are set anywhere, this is valid (products can be created without weightings)
+        if (!hasAnyWeightings && !hasAnyCashWeighting) {
+          // This is valid - skip weighting validation entirely
+        } else {
+          // If ANY weightings are set, they must add up to exactly 100%
+          const totalWeighting = calculateTotalFundWeighting(product);
+          
           if (totalWeighting !== 100) {
             if (totalWeighting === 0) {
-              productErrors.weightings = 'Please enter fund weightings that add up to 100%';
+              productErrors.weightings = 'Please enter fund weightings that add up to 100%, or leave all weightings blank';
             } else {
               productErrors.weightings = `Fund weightings must add up to exactly 100%. Current total: ${totalWeighting.toFixed(1)}%`;
             }
             hasErrors = true;
           }
         
-          // Validate individual weighting values
-        for (const fundId of product.portfolio.selectedFunds) {
-          const weighting = product.portfolio.fundWeightings[fundId.toString()];
+          // Validate individual weighting values for non-null entries
+          for (const fundId of product.portfolio.selectedFunds) {
+            const weighting = product.portfolio.fundWeightings[fundId.toString()];
             
-            if (weighting && weighting.trim() !== '') {
+            if (weighting !== null && weighting !== undefined && weighting.trim() !== '') {
               const weightValue = parseFloat(weighting);
               if (isNaN(weightValue) || weightValue < 0 || weightValue > 100) {
                 productWeightingErrors[fundId.toString()] = 'Must be between 0 and 100';
@@ -1264,13 +1297,15 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             }
           }
           
-          // Validate Cash fund weighting if provided
-          if (cashFund && hasCashWeighting) {
-          const cashWeighting = product.portfolio.fundWeightings[cashFund.id.toString()];
-            const cashWeightValue = parseFloat(cashWeighting);
-            if (isNaN(cashWeightValue) || cashWeightValue < 0 || cashWeightValue > 100) {
-              productErrors.cashWeighting = 'Cash fund weighting must be between 0 and 100%';
-              hasErrors = true;
+          // Validate Cash fund weighting if provided and not null
+          if (cashFund && hasAnyCashWeighting) {
+            const cashWeighting = product.portfolio.fundWeightings[cashFund.id.toString()];
+            if (cashWeighting !== null && cashWeighting !== undefined) {
+              const cashWeightValue = parseFloat(cashWeighting);
+              if (isNaN(cashWeightValue) || cashWeightValue < 0 || cashWeightValue > 100) {
+                productErrors.cashWeighting = 'Cash fund weighting must be between 0 and 100%';
+                hasErrors = true;
+              }
             }
           }
         }
@@ -1393,12 +1428,17 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               try {
                 // Get the weighting for this fund
                 const weighting = product.portfolio.fundWeightings[fundId.toString()];
-                const weightingValue = weighting ? parseFloat(weighting) : 0;
+                
+                // Handle null/undefined weightings - send null instead of 0
+                let weightingValue = null;
+                if (weighting !== null && weighting !== undefined && weighting.trim() !== '') {
+                  weightingValue = parseFloat(weighting);
+                }
                 
                 const fundData = {
                   portfolio_id: portfolioId,
                   available_funds_id: fundId,
-                  target_weighting: weightingValue, // Keep as percentage, don't convert to decimal
+                  target_weighting: weightingValue, // Send null for unset weightings
                   status: 'active',
                   start_date: formattedStartDate
                 };
@@ -1422,12 +1462,13 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             if (cashFund) {
               const cashWeighting = product.portfolio.fundWeightings[cashFund.id.toString()];
               
-              if (cashWeighting && cashWeighting.trim() !== '' && cashWeighting !== '0') {
+              // Only update if user has explicitly set a weighting value (not null/undefined/empty)
+              if (cashWeighting !== null && cashWeighting !== undefined && cashWeighting.trim() !== '') {
                 try {
                   const cashWeightingValue = parseFloat(cashWeighting);
                   
-                  // Only update if it's a valid number and not the default 0%
-                  if (!isNaN(cashWeightingValue) && cashWeightingValue !== 0) {
+                  // Only update if it's a valid number (can be 0 if user explicitly set it)
+                  if (!isNaN(cashWeightingValue)) {
                     // Get the automatically created Cash fund entry to update it
                     const portfolioFundsResponse = await api.get(`/api/portfolio_funds`, {
                       params: { portfolio_id: portfolioId }
@@ -1440,7 +1481,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                     if (cashFundEntry) {
                       // Update the existing Cash fund entry
                       await api.patch(`/api/portfolio_funds/${cashFundEntry.id}`, {
-                        target_weighting: cashWeightingValue // Keep as percentage, don't convert to decimal
+                        target_weighting: cashWeightingValue // Send the actual value (could be 0 if user set it)
                       });
                       console.log(`Updated Cash fund weighting to ${cashWeightingValue}% for portfolio ${portfolioId}`);
                     } else {
@@ -1451,6 +1492,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                   console.error(`Error updating Cash fund weighting:`, err);
                   // Don't throw here as this is not critical
                 }
+              } else {
+                console.log(`Cash fund weighting not set or empty - leaving as null/default`);
               }
             } else {
               console.log(`No cash fund found in funds list`);
@@ -1730,7 +1773,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                             <div className="flex items-center space-x-1 flex-shrink-0">
                               <input
                                 type="text"
-                                value={product.portfolio.fundWeightings[cashFund.id.toString()] || '0'}
+                                value={product.portfolio.fundWeightings[cashFund.id.toString()] || ''}
                                 onChange={(e) => handleWeightingChange(product.id, cashFund.id, e.target.value)}
                                 className="w-12 text-xs text-center border border-blue-300 rounded px-1 py-0.5 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
                                 placeholder="0"

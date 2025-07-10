@@ -47,6 +47,9 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
   const [focusedIndex, setFocusedIndex] = useState(-1);
   
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const tagsContainerRef = useRef<HTMLDivElement>(null);
+  const inputContainerRef = useRef<HTMLDivElement>(null);
+  const dropdownMenuRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   
@@ -66,11 +69,20 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
       )
     : options.filter(option => !option.disabled);
   
-  // Close dropdown when clicking outside - improved reliability
+  // Improved click-outside detection - more granular
   useEffect(() => {
     const handleClickOutside = (event: Event) => {
-      const target = event.target as Node;
-      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
+      const target = event.target as HTMLElement;
+      
+      // Check if click is on specific interactive elements
+      const isClickOnTag = tagsContainerRef.current?.contains(target) && 
+                          (target.closest('[data-tag-item]') || target.closest('button'));
+      const isClickOnInput = inputContainerRef.current?.contains(target);
+      const isClickOnDropdown = dropdownMenuRef.current?.contains(target);
+      const isClickOnLabel = target.closest(`[for="${dropdownId}"]`);
+      
+      // If click is not on any of these specific elements, close the dropdown
+      if (!isClickOnTag && !isClickOnInput && !isClickOnDropdown && !isClickOnLabel) {
         setIsOpen(false);
         setSearchTerm('');
         setFocusedIndex(-1);
@@ -87,7 +99,7 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
       document.removeEventListener('click', handleClickOutside, true);
       document.removeEventListener('mousedown', handleClickOutside, true);
     };
-  }, [isOpen]);
+  }, [isOpen, dropdownId]);
   
   // Reset focused index when filtered options change
   useEffect(() => {
@@ -263,11 +275,12 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
 
       {/* Selected Options Tags */}
       {selectedOptions.length > 0 && (
-        <div className="inline-flex flex-wrap gap-1.5 mb-2">
+        <div ref={tagsContainerRef} className="inline-flex flex-wrap gap-1.5 mb-2">
           {selectedOptions.map((option) => (
             <div
               key={option.value}
               className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800 border border-primary-300 shadow-sm"
+              data-tag-item
             >
               <span>{option.label}</span>
               <button
@@ -289,7 +302,7 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
       )}
       
       {/* Input Container */}
-      <div className="relative">
+      <div ref={inputContainerRef} className="relative">
         {/* Search Icon */}
         {searchable && (
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -334,7 +347,7 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
       
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+        <div ref={dropdownMenuRef} className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
           {/* Options List */}
           <ul ref={listRef} role="listbox" className="py-1" aria-multiselectable="true">
             {filteredOptions.length > 0 ? (

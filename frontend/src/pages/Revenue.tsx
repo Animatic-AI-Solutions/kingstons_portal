@@ -44,14 +44,16 @@ const SummaryCard: React.FC<{
   title: string;
   value: string | number;
   subtitle?: string;
-  color?: 'green' | 'blue' | 'purple' | 'orange' | 'red';
+  color?: 'green' | 'blue' | 'purple' | 'orange' | 'teal' | 'indigo' | 'cyan';
 }> = ({ title, value, subtitle, color = 'blue' }) => {
   const colorClasses = {
     green: 'text-green-600',
     blue: 'text-blue-600',
     purple: 'text-purple-600',
     orange: 'text-orange-600',
-    red: 'text-red-600'
+    teal: 'text-teal-600',
+    indigo: 'text-indigo-600',
+    cyan: 'text-cyan-600'
   };
 
   return (
@@ -132,11 +134,11 @@ const Revenue: React.FC = () => {
   };
 
   // Get revenue rate color based on performance thresholds
-  const getRevenueRateColor = (rate?: number): 'green' | 'orange' | 'red' => {
-    if (!rate) return 'red';
+  const getRevenueRateColor = (rate?: number): 'green' | 'orange' | 'teal' => {
+    if (!rate) return 'teal';
     if (rate >= 1.0) return 'green';
     if (rate >= 0.5) return 'orange';
-    return 'red';
+    return 'teal';
   };
 
   // Fetch revenue data
@@ -331,7 +333,7 @@ const Revenue: React.FC = () => {
       ) : (
         <>
           {/* Compact Revenue Summary */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
             <SummaryCard 
               title="Total Revenue" 
               value={revenueData ? formatCurrency(revenueData.total_annual_revenue) : '£0'}
@@ -341,12 +343,20 @@ const Revenue: React.FC = () => {
               title="Active Products" 
               value={revenueData?.active_products || 0}
               subtitle={`${revenueData?.revenue_generating_products || 0} with revenue`}
-              color="blue"
+              color="indigo"
             />
             <SummaryCard 
               title="Avg per Product" 
               value={revenueData ? formatCurrency(revenueData.avg_revenue_per_product || 0) : '£0'}
               color="purple"
+            />
+            <SummaryCard 
+              title="Avg per Client" 
+              value={revenueData && clientRevenueData.length > 0 
+                ? formatCurrency(revenueData.total_annual_revenue / clientRevenueData.length) 
+                : '£0'}
+              subtitle={`${clientRevenueData.length} product owners`}
+              color="cyan"
             />
             <SummaryCard 
               title="% Fee Achieved" 
