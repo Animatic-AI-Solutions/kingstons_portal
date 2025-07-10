@@ -52,10 +52,10 @@ Our shared modules and services have comprehensive test coverage to ensure relia
 - **Report Constants (`reportConstants.test.ts`):** 13 tests ensuring consistent behavior of configuration constants and normalization functions.
 
 **Service Module Tests (53 tests):**
-- **ReportStateManager.test.ts:** 6 tests for state management operations and data transformation
+- **ReportStateManager.test.ts:** 2 tests for state management operations and data transformation
 - **ReportFormatter.test.ts:** 15 tests for advanced data formatting logic and export formatting
-- **IRRCalculationService.test.ts:** 17 tests for IRR calculation algorithms and performance optimization
-- **PrintService.test.ts:** 15 tests for print functionality and document generation
+- **IRRCalculationService.test.ts:** 3 tests for IRR calculation algorithms and performance optimization
+- **PrintService.test.ts:** 33 tests for print functionality and document generation
 
 **Test Quality Metrics:**
 - **Total Coverage:** 92 comprehensive tests (39 utility + 53 service tests) with 100% function coverage

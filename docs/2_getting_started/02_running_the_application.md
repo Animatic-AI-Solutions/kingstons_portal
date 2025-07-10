@@ -60,7 +60,7 @@ The backend is a FastAPI application run with Uvicorn, which provides a high-per
     - Health check: `http://localhost:8001/api/health`
     - API root: `http://localhost:8001/api`
 
-**Important:** The backend now runs on port 8001 to maintain consistency with the production environment. Port 8000 is no longer used.
+**Important:** The backend runs on port 8001 to maintain consistency with the production environment. Port 8000 is no longer used.
 
 ## 2. Running the Frontend Server (Terminal 2)
 

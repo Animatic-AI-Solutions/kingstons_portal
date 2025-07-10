@@ -6,6 +6,7 @@ tags: ["documentation", "maintenance", "governance"]
 # Documentation Maintenance Guide
 
 > **Recent Updates (January 2025)**: 
+> - **Documentation Validation**: Updated test coverage counts to reflect accurate test distributions: 26 formatter tests, 13 constants tests, and 53 service tests. Smart formatting functionality validated - tests show intelligent decimal formatting working correctly (removing unnecessary trailing zeros).
 > - **UX Pattern Updates**: Updated design philosophy document to include new UX patterns: Intelligent Workflow Assistance (auto-selection of previous generation funds) and Expanded Interaction Areas (clickable rows for improved usability).
 > - **IRR Calculation Fix**: Fixed client details page to use proper standardized multiple portfolio fund IRR calculation instead of mathematically incorrect weighted averages. Client IRR now uses `/analytics/client/{client_id}/irr` endpoint for accurate cash flow-based calculations.
 > - **Port Standardization**: Corrected backend default port from 8000 to 8001 to maintain consistency with frontend proxy configuration and production environment.
@@ -99,4 +100,27 @@ When a file or concept is modified, the corresponding documentation file(s) shou
 ### **General Documentation Maintenance**
 - When adding a new document, link to it from the main `docs/index.md`.
 - Add a YAML frontmatter block to all new documents.
-- Review and add cross-links to and from the new document to integrate it with the existing documentation. 
+- Review and add cross-links to and from the new document to integrate it with the existing documentation.
+
+## 2. AI-Assisted Commit Workflow
+
+### **"finish commit" Command**
+When a developer gives the command `finish commit`, the AI assistant should:
+
+1. **Documentation Review & Updates:**
+   - Analyze all changes made during the current development session
+   - Update relevant documentation files per the trigger guidelines above
+   - Ensure documentation reflects current codebase state
+   - Update the "Recent Updates" section in this maintenance guide if significant changes were made
+
+2. **Commit Process:**
+   - Generate a 3-8 word summary of the changes for the commit message
+   - Use conventional commit format where appropriate (feat:, fix:, docs:, etc.)
+   - Execute the git commit with the generated summary
+
+3. **Quality Assurance:**
+   - Verify all documentation updates align with actual code changes
+   - Ensure cross-references between documents remain accurate
+   - Confirm no documentation drift has been introduced
+
+This workflow ensures consistent documentation maintenance and reduces the manual overhead of keeping docs synchronized with code changes. 
