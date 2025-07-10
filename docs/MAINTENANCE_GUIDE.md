@@ -117,6 +117,7 @@ When a developer gives the command `finish commit`, the AI assistant should:
    - Generate a 3-8 word summary of the changes for the commit message
    - Use conventional commit format where appropriate (feat:, fix:, docs:, etc.)
    - Execute the git commit with the generated summary
+   - Push changes to the remote branch with `git push`
 
 3. **Quality Assurance:**
    - Verify all documentation updates align with actual code changes
