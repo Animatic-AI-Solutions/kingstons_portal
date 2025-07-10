@@ -507,7 +507,7 @@ const AddPortfolioTemplate: React.FC = () => {
                                 const isCash = isCashFund(fund);
                                 
                                 return (
-                                  <div key={fundId} className={`border rounded-md p-2 transition-colors ${
+                                  <div key={`selected-${fundId}`} className={`border rounded-md p-2 transition-colors ${
                                     isCash 
                                       ? 'bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200 hover:from-blue-100 hover:to-blue-150' 
                                       : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
@@ -664,7 +664,7 @@ const AddPortfolioTemplate: React.FC = () => {
                             <div className="space-y-1">
                               {filteredFunds.map(fund => (
                                 <div 
-                                  key={fund.id} 
+                                  key={`available-${fund.id}`} 
                                   className={`flex items-center space-x-3 p-2 rounded cursor-pointer transition-colors ${
                                     selectedFunds.includes(fund.id)
                                       ? 'bg-primary-50 border border-primary-200'

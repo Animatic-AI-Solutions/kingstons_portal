@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import TableFilter, { FilterOption } from './ui/table-controls/TableFilter';
 import TableSort, { SortType, SortDirection } from './ui/table-controls/TableSort';
+import { getProviderColor } from '../utils/definitionsShared';
 
 // Types
 export interface ColumnConfig {
@@ -161,17 +162,7 @@ const formatValue = (value: any, dataType: ColumnConfig['dataType'], customForma
       // Provider name with color circle
       if (rowData) {
         // Get color from theme_color or generate default color
-        const getProviderColor = (name: string): string => {
-          // Simple color generation based on name hash
-          let hash = 0;
-          for (let i = 0; i < name.length; i++) {
-            hash = name.charCodeAt(i) + ((hash << 5) - hash);
-          }
-          const colors = ['#2563EB', '#DC2626', '#16A34A', '#8B5CF6', '#F97316', '#38BDF8', '#4ADE80', '#FDA4AF'];
-          return colors[Math.abs(hash) % colors.length];
-        };
-        
-        const providerColor = rowData.provider_theme_color || getProviderColor(rowData.name || value.toString());
+        const providerColor = rowData.theme_color || getProviderColor(rowData.name || value.toString());
         
         return React.createElement('div', {
           className: 'flex items-center'

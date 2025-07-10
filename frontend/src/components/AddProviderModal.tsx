@@ -161,7 +161,7 @@ const AddProviderModal: React.FC<AddProviderModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-40">
       <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-gray-200">
@@ -195,10 +195,10 @@ const AddProviderModal: React.FC<AddProviderModalProps> = ({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 overflow-visible">
             {/* Color picker - Left side */}
             <div className="md:col-span-5 order-2 md:order-1">
-              <div className="rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+              <div className="rounded-lg border border-gray-200 shadow-sm overflow-visible">
                 <div className="px-3 py-3 bg-gray-50 border-b border-gray-200 sm:px-4">
                   <h3 className="text-base font-medium text-gray-900">Theme Color</h3>
                 </div>
@@ -257,11 +257,11 @@ const AddProviderModal: React.FC<AddProviderModalProps> = ({
             
             {/* Provider details - Right side */}
             <div className="md:col-span-7 order-1 md:order-2 space-y-4">
-              <div className="rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+              <div className="rounded-lg border border-gray-200 shadow-sm overflow-visible">
                 <div className="px-3 py-3 bg-gray-50 border-b border-gray-200 sm:px-4">
                   <h3 className="text-base font-medium text-gray-900">Provider Details</h3>
                 </div>
-                <div className="p-4">
+                <div className="p-4 overflow-visible">
                   <div className="mb-4">
                     <BaseInput
                       label="Provider Name"
@@ -274,7 +274,7 @@ const AddProviderModal: React.FC<AddProviderModalProps> = ({
                     />
                   </div>
 
-                  <div>
+                  <div className="overflow-visible">
                     <BaseDropdown
                       label="Status"
                       options={[
