@@ -11,7 +11,7 @@ def validate_float_precision(value: float) -> float:
 class PortfolioFundBase(BaseModel):
     portfolio_id: int
     available_funds_id: int
-    target_weighting: Optional[float] = 0  # Use float instead of Decimal
+    target_weighting: Optional[float] = None  # Allow None for flexible weighting system
     start_date: date
     end_date: Optional[date] = None
     amount_invested: Optional[float] = 0

@@ -1117,6 +1117,13 @@ const ReportGenerator: React.FC = () => {
       return;
     }
     
+    // Check if there are any available valuation dates at all
+    if (availableValuationDates.length === 0 && !availableValuationDates.includes('inactive-products-valid')) {
+      setDataError('Cannot generate report: Products do not have common valuation dates. Please select products with overlapping valuation periods.');
+      setIsCalculating(false);
+      return;
+    }
+    
     // Get all product IDs that will be included in the report
     const productIdsForReport = new Set<number>();
     if (selectedProductIds.length > 0) {

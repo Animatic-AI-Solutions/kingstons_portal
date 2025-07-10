@@ -559,7 +559,7 @@ async def create_portfolio_fund(
         portfolio_fund_data = {
             "portfolio_id": portfolio_fund.portfolio_id,
             "available_funds_id": portfolio_fund.available_funds_id,
-            "target_weighting": to_serializable(0 if portfolio_fund.target_weighting is None else portfolio_fund.target_weighting),
+            "target_weighting": to_serializable(portfolio_fund.target_weighting),  # Allow None/NULL values
             "start_date": portfolio_fund.start_date.isoformat(),
             "end_date": portfolio_fund.end_date.isoformat() if portfolio_fund.end_date else None,
             "amount_invested": portfolio_fund.amount_invested,
