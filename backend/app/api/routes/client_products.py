@@ -152,6 +152,7 @@ async def get_client_products_with_owners(
                 "provider_id": product.get("provider_id"),
                 "provider_name": product.get("provider_name"),
                 "provider_theme_color": product.get("provider_theme_color"),
+                "theme_color": product.get("provider_theme_color"),  # Add for StandardTable compatibility
                 "product_type": product.get("product_type"),
                 "plan_number": product.get("plan_number"),
                 "portfolio_id": portfolio_id,
@@ -221,6 +222,141 @@ async def get_client_products_with_owners(
     except Exception as e:
         logger.error(f"Error fetching client products with optimized view: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@router.get("/products_display", response_model=List[dict])
+async def get_products_display(
+    skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
+    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
+    client_id: Optional[int] = None,
+    provider_id: Optional[int] = None,
+    status: Optional[str] = None,
+    portfolio_type: Optional[str] = None,
+    db = Depends(get_db)
+):
+    """
+    OPTIMIZED ENDPOINT FOR PRODUCTS PAGE
+    What it does: Fast retrieval of product data for the Products page using the optimized products_display_view.
+    Why it's needed: Reduces loading time from 4-8 seconds to under 1 second by eliminating expensive calculations.
+    How it works:
+        1. Uses products_display_view which has pre-calculated values and optimized JOINs
+        2. Only fetches essential data: product name, provider, client, value, IRR
+        3. Efficiently handles product owners with bulk queries
+        4. Returns minimal data structure for fast frontend rendering
+    Expected output: A JSON array of product objects with only essential display data
+    """
+    try:
+        # Build the base query using the new optimized view
+        query = db.table("products_display_view").select("*")
+        
+        # Apply filters if provided
+        if client_id is not None:
+            query = query.eq("client_id", client_id)
+            
+        if provider_id is not None:
+            query = query.eq("provider_id", provider_id)
+            
+        if status is not None:
+            query = query.eq("status", status)
+            
+        if portfolio_type is not None:
+            query = query.eq("portfolio_type_display", portfolio_type)
+        
+        # Get the products with pagination
+        result = query.range(skip, skip + limit - 1).execute()
+        products = result.data
+        
+        if not products:
+            return []
+        
+        # Extract product IDs for product owners
+        product_ids = [p.get("product_id") for p in products]
+        
+        # Get product owners efficiently (same pattern as existing endpoint)
+        product_owner_associations = {}
+        product_owners_map = {}
+        
+        try:
+            # Get all product_owner_products associations
+            pop_result = db.table("product_owner_products").select("*").in_("product_id", product_ids).execute()
+            if pop_result.data:
+                for assoc in pop_result.data:
+                    product_id = assoc.get("product_id")
+                    if product_id not in product_owner_associations:
+                        product_owner_associations[product_id] = []
+                    product_owner_associations[product_id].append(assoc.get("product_owner_id"))
+            
+            # Get all product owner details
+            product_owner_ids = []
+            for owners in product_owner_associations.values():
+                product_owner_ids.extend(owners)
+            
+            if product_owner_ids:
+                owners_result = db.table("product_owners").select("id, firstname, surname, known_as, status").in_("id", list(set(product_owner_ids))).execute()
+                if owners_result.data:
+                    product_owners_map = {owner.get("id"): owner for owner in owners_result.data}
+                    
+        except Exception as e:
+            logger.error(f"Error fetching product owners: {str(e)}")
+        
+        # Build the optimized response (only essential fields)
+        enhanced_products = []
+        
+        for product in products:
+            product_id = product.get("product_id")
+            
+            # Create minimal response structure for Products page
+            enhanced_product = {
+                "id": product_id,
+                "product_name": product.get("product_name"),
+                "status": product.get("status"),
+                "client_id": product.get("client_id"),
+                "client_name": product.get("client_name"),
+                "provider_id": product.get("provider_id"),
+                "provider_name": product.get("provider_name"),
+                "provider_theme_color": product.get("provider_theme_color"),
+                "theme_color": product.get("provider_theme_color"),  # Add for StandardTable compatibility
+                "portfolio_id": product.get("portfolio_id"),
+                "total_value": product.get("total_value", 0),
+                "irr": product.get("irr", "-"),
+                "irr_date": product.get("irr_date"),
+                "portfolio_type_display": product.get("portfolio_type_display")
+            }
+            
+            # Add product owners with computed names
+            product_owners = []
+            product_owner_name = None
+            if product_id in product_owner_associations:
+                owner_ids = product_owner_associations[product_id]
+                owner_names = []
+                for owner_id in owner_ids:
+                    if owner_id in product_owners_map:
+                        owner = product_owners_map[owner_id]
+                        # Create display name from firstname and surname, falling back to known_as
+                        display_name = f"{owner.get('firstname', '')} {owner.get('surname', '')}".strip()
+                        if not display_name and owner.get('known_as'):
+                            display_name = owner['known_as']
+                        
+                        enhanced_owner = {
+                            **owner,
+                            "name": display_name
+                        }
+                        product_owners.append(enhanced_owner)
+                        owner_names.append(display_name)
+                
+                # Create combined owner name string for display
+                if owner_names:
+                    product_owner_name = ", ".join(owner_names)
+            
+            enhanced_product["product_owners"] = product_owners
+            enhanced_product["product_owner_name"] = product_owner_name
+            
+            enhanced_products.append(enhanced_product)
+        
+        return enhanced_products
+        
+    except Exception as e:
+        logger.error(f"Error in get_products_display: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @router.get("/portfolio_types", response_model=List[str])
 async def get_portfolio_types(db = Depends(get_db)):

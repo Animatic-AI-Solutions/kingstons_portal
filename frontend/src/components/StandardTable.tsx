@@ -161,8 +161,8 @@ const formatValue = (value: any, dataType: ColumnConfig['dataType'], customForma
     case 'provider':
       // Provider name with color circle
       if (rowData) {
-        // Get color from theme_color or generate default color
-        const providerColor = rowData.theme_color || getProviderColor(rowData.name || value.toString());
+        // Get color from provider_theme_color, theme_color, or generate default color
+        const providerColor = rowData.provider_theme_color || rowData.theme_color || getProviderColor(rowData.name || value.toString());
         
         return React.createElement('div', {
           className: 'flex items-center'
@@ -360,6 +360,34 @@ const StandardTable: React.FC<StandardTableProps> = ({
       };
     });
   }, [columns, data]);
+
+  // Auto-sort first column alphabetically if it contains text/letters
+  useEffect(() => {
+    // Only set default sort if no sort is currently applied and we have data and columns
+    if (!sort && data.length > 0 && processedColumns.length > 0) {
+      const firstColumn = processedColumns[0];
+      
+      // Check if first column contains text/letters by examining the data
+      const firstColumnValues = data.map(row => row[firstColumn.key]).filter(v => v != null && v !== '');
+      
+      if (firstColumnValues.length > 0) {
+        // Check if values contain letters (not just numbers or dates)
+        const hasLetters = firstColumnValues.some(value => {
+          const str = value.toString();
+          return /[a-zA-Z]/.test(str);
+        });
+        
+        // If the first column has letters and is sortable, set default alphabetical sort
+        if (hasLetters && (firstColumn.dataType === 'text' || firstColumn.dataType === 'provider' || firstColumn.controlType === 'sort')) {
+          setSort({
+            columnKey: firstColumn.key,
+            type: 'alphabetical',
+            direction: 'asc'
+          });
+        }
+      }
+    }
+  }, [data, processedColumns, sort]);
 
   // Calculate responsive styling based on column count and available space
   const responsiveStyle = useMemo(() => {
