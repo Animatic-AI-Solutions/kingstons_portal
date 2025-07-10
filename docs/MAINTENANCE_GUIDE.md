@@ -5,7 +5,13 @@ tags: ["documentation", "maintenance", "governance"]
 
 # Documentation Maintenance Guide
 
-> **Recent Updates (January 2025)**: 
+> **Recent Updates (July 2025)**: 
+> - **Client Page Performance Fixes**: Fixed infinite loop in ClientDetails.tsx by removing IIFE wrapper from PreviousFundsIRRDisplay component, eliminating browser freezing and improving page stability.
+> - **Product Fund Visibility Fix**: Updated ProductOverview.tsx filtering logic to prioritize explicit database status over date-based inference, ensuring reactivated funds display correctly regardless of timing (fixed missing portfolio fund 715).
+> - **IRR Calculation Accuracy**: Enhanced client total IRR calculation using proper standardized endpoints with cash flow-based mathematics instead of incorrect weighted averages. Fixed IRR display synchronization between backend calculations and frontend presentation.
+> - **Product Owner Integration**: Updated client_groups.py backend endpoint to include product owners in API response, enabling complete product owner relationship visibility across client interfaces.
+> 
+> **Previous Updates (January 2025)**: 
 > - **Documentation Validation**: Updated test coverage counts to reflect accurate test distributions: 26 formatter tests, 13 constants tests, and 53 service tests. Smart formatting functionality validated - tests show intelligent decimal formatting working correctly (removing unnecessary trailing zeros).
 > - **UX Pattern Updates**: Updated design philosophy document to include new UX patterns: Intelligent Workflow Assistance (auto-selection of previous generation funds) and Expanded Interaction Areas (clickable rows for improved usability).
 > - **IRR Calculation Fix**: Fixed client details page to use proper standardized multiple portfolio fund IRR calculation instead of mathematically incorrect weighted averages. Client IRR now uses `/analytics/client/{client_id}/irr` endpoint for accurate cash flow-based calculations.
