@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { BaseInput, BaseDropdown, TextArea, ActionButton } from '../components/ui';
+import { BaseInput, BaseDropdown, TextArea, ActionButton, DateInput } from '../components/ui';
 import { findCashFund, isCashFund } from '../utils/fundUtils';
 
 interface Fund {
@@ -19,6 +19,7 @@ interface TemplatePortfolioFormData {
   status: string;
   generation_name: string;
   description: string;
+  created_at: string; // ISO date string for template creation date
 }
 
 interface PortfolioFund {
@@ -33,7 +34,8 @@ const AddPortfolioTemplate: React.FC = () => {
     name: '',
     status: 'active',
     generation_name: '',
-    description: ''
+    description: '',
+    created_at: '' // Initialize creation date to empty string
   });
   const [availableFunds, setAvailableFunds] = useState<Fund[]>([]);
   const [selectedFunds, setSelectedFunds] = useState<number[]>([]);
@@ -62,12 +64,24 @@ const AddPortfolioTemplate: React.FC = () => {
       
       // Auto-select Cash fund if it exists
       const cashFund = findCashFund(sortedFunds);
-      if (cashFund && !selectedFunds.includes(cashFund.id)) {
-        setSelectedFunds(prev => [...prev, cashFund.id]);
-        setFundWeightings(prev => ({
-          ...prev,
-          [cashFund.id.toString()]: '0'
-        }));
+      if (cashFund) {
+        setSelectedFunds(prev => {
+          // Check if cash fund is already selected to prevent duplicates
+          if (!prev.includes(cashFund.id)) {
+            return [...prev, cashFund.id];
+          }
+          return prev;
+        });
+        setFundWeightings(prev => {
+          // Only add weighting if it doesn't already exist
+          if (!prev[cashFund.id.toString()]) {
+            return {
+              ...prev,
+              [cashFund.id.toString()]: '0'
+            };
+          }
+          return prev;
+        });
       }
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to fetch funds');
@@ -113,6 +127,14 @@ const AddPortfolioTemplate: React.FC = () => {
     setFormData(prev => ({
       ...prev,
       status: String(value)
+    }));
+  };
+
+  // Handler for creation date change
+  const handleCreationDateChange = (date: Date | null, formatted: string) => {
+    setFormData(prev => ({
+      ...prev,
+      created_at: date ? date.toISOString() : ''
     }));
   };
 
@@ -204,6 +226,7 @@ const AddPortfolioTemplate: React.FC = () => {
           name: formData.name,
           generation_name: formData.generation_name,
           description: formData.description,
+          created_at: formData.created_at, // Include creation date for template and first generation
           funds: fundsData
         });
         
@@ -262,6 +285,22 @@ const AddPortfolioTemplate: React.FC = () => {
       return a + numValue;
     }, 0);
   }, [fundWeightings]);
+
+  // Sort selected funds: alphabetical order for non-cash funds, cash funds always last
+  const sortedSelectedFunds = useMemo(() => {
+    const selectedFundObjects = selectedFunds.map(fundId => 
+      availableFunds.find(f => f.id === fundId)
+    ).filter(Boolean) as Fund[];
+    
+    // Separate cash funds from non-cash funds
+    const cashFunds = selectedFundObjects.filter(fund => isCashFund(fund));
+    const nonCashFunds = selectedFundObjects
+      .filter(fund => !isCashFund(fund))
+      .sort((a, b) => a.fund_name.localeCompare(b.fund_name));
+    
+    // Return non-cash funds first (alphabetical), then cash funds
+    return [...nonCashFunds, ...cashFunds].map(fund => fund.id);
+  }, [selectedFunds, availableFunds]);
 
   // Determine progress bar color based on total
   const getProgressBarColor = () => {
@@ -388,8 +427,8 @@ const AddPortfolioTemplate: React.FC = () => {
                 </div>
               </div>
               
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="w-full md:w-1/2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="w-full">
                   <BaseInput
                     label="Generation Name"
                     placeholder="e.g., Initial Version 2024"
@@ -398,7 +437,19 @@ const AddPortfolioTemplate: React.FC = () => {
                     helperText="A name for this specific version of the template"
                   />
                 </div>
-                <div className="w-full md:w-1/2">
+                <div className="w-full">
+                  <DateInput
+                    label="Creation Date"
+                    id="created_at"
+                    name="created_at"
+                    value={formData.created_at}
+                    onChange={handleCreationDateChange}
+                    placeholder="Select creation date"
+                    helperText="Leave empty to use current date/time"
+                    required={false}
+                  />
+                </div>
+                <div className="w-full">
                   <TextArea
                     label="Description"
                     placeholder="Enter a detailed description of this portfolio template generation"
@@ -500,7 +551,7 @@ const AddPortfolioTemplate: React.FC = () => {
                             </div>
                           ) : (
                                                         <div className="p-1 space-y-1">
-                              {selectedFunds.map((fundId) => {
+                              {sortedSelectedFunds.map((fundId) => {
                                 const fund = availableFunds.find(f => f.id === fundId);
                                 if (!fund) return null;
                                 

@@ -1103,6 +1103,14 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         deduplicatedFundIds.push(cashFund.id);
       }
       
+      // Create weightings map from generation data
+      const generationWeightings: Record<string, string> = {};
+      templateFunds.forEach((fund: any) => {
+        if (fund.target_weighting && fund.target_weighting > 0) {
+          generationWeightings[fund.fund_id.toString()] = fund.target_weighting.toString();
+        }
+      });
+      
       // Update the product's portfolio with generation information
       const updatedProducts = products.map(p => {
         if (p.id === productId) {
@@ -1114,7 +1122,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               // Update name if it hasn't been customized
               name: p.portfolio.name || `${templateData.name || `Template ${p.portfolio.templateId}`} for ${p.product_name}`,
               selectedFunds: deduplicatedFundIds,
-              fundWeightings: {}
+              fundWeightings: generationWeightings
             }
           };
         }
@@ -1638,7 +1646,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                 <div className="bg-primary-100 text-primary-800 px-2 py-0.5 rounded-full text-xs font-medium" title="Number of selected funds">
                   Funds: {product.portfolio.selectedFunds.length}
                 </div>
-                {product.portfolio.type === 'bespoke' && (
+                {/* Show weightings for portfolios that have them */}
+                {(product.portfolio.type === 'bespoke' || (product.portfolio.type === 'template' && Object.keys(product.portfolio.fundWeightings).length > 0)) && (
                   <div className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                     (() => {
                       const totalWeight = calculateTotalFundWeighting(product);
@@ -1693,8 +1702,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                   {/* Other selected funds (non-cash) */}
                   {product.portfolio.selectedFunds.map((fundId) => {
                     const fund = funds.find(f => f.id === fundId);
-                    // Skip Cash fund as it's shown at the bottom for bespoke
-                    if (product.portfolio.type === 'bespoke' && fund && isCashFund(fund)) {
+                    // Skip Cash fund as it's shown at the bottom
+                    if (fund && isCashFund(fund)) {
                       return null;
                     }
                     
@@ -1732,6 +1741,11 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                 <span className="text-xs text-gray-500">%</span>
                               </>
                             )}
+                            {product.portfolio.type === 'template' && product.portfolio.fundWeightings[fundId.toString()] && (
+                              <div className="bg-blue-50 px-2 py-1 rounded text-xs text-blue-800 font-medium">
+                                {product.portfolio.fundWeightings[fundId.toString()]}%
+                              </div>
+                            )}
                             <button
                               type="button"
                               onClick={() => handleFundSelection(product.id, fundId)}
@@ -1755,8 +1769,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                     );
                   })}
                   
-                  {/* Cash fund for bespoke portfolios - always last */}
-                  {product.portfolio.type === 'bespoke' && (() => {
+                  {/* Cash fund - always last */}
+                  {(() => {
                     const cashFund = findCashFund(funds);
                     if (cashFund && product.portfolio.selectedFunds.includes(cashFund.id)) {
                       return (
@@ -1770,14 +1784,23 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                               </div>
                             </div>
                             <div className="flex items-center space-x-1 flex-shrink-0">
-                              <input
-                                type="text"
-                                value={product.portfolio.fundWeightings[cashFund.id.toString()] || ''}
-                                onChange={(e) => handleWeightingChange(product.id, cashFund.id, e.target.value)}
-                                className="w-12 text-xs text-center border border-blue-300 rounded px-1 py-0.5 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                                placeholder="0"
-                              />
-                              <span className="text-xs text-blue-700">%</span>
+                              {product.portfolio.type === 'bespoke' && (
+                                <>
+                                  <input
+                                    type="text"
+                                    value={product.portfolio.fundWeightings[cashFund.id.toString()] || ''}
+                                    onChange={(e) => handleWeightingChange(product.id, cashFund.id, e.target.value)}
+                                    className="w-12 text-xs text-center border border-blue-300 rounded px-1 py-0.5 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                    placeholder="0"
+                                  />
+                                  <span className="text-xs text-blue-700">%</span>
+                                </>
+                              )}
+                              {product.portfolio.type === 'template' && product.portfolio.fundWeightings[cashFund.id.toString()] && (
+                                <div className="bg-blue-100 px-2 py-1 rounded text-xs text-blue-800 font-medium">
+                                  {product.portfolio.fundWeightings[cashFund.id.toString()]}%
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>

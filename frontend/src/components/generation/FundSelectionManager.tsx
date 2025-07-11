@@ -24,6 +24,7 @@ interface FundSelectionManagerProps {
   onSearchChange: (query: string) => void;
   isLoading: boolean;
   error?: string;
+  onAddFund?: () => void;
 }
 
 const FundSelectionManager: React.FC<FundSelectionManagerProps> = ({
@@ -37,7 +38,8 @@ const FundSelectionManager: React.FC<FundSelectionManagerProps> = ({
   searchQuery,
   onSearchChange,
   isLoading,
-  error
+  error,
+  onAddFund
 }) => {
   // Calculate total weighting for progress display
   const totalWeighting = useMemo(() => {
@@ -130,6 +132,7 @@ const FundSelectionManager: React.FC<FundSelectionManagerProps> = ({
           searchQuery={searchQuery}
           onSearchChange={onSearchChange}
           isLoading={isLoading}
+          onAddFund={onAddFund}
         />
       </div>
     </div>

@@ -17,6 +17,7 @@ interface AvailableFundsPanelProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   isLoading: boolean;
+  onAddFund?: () => void;
 }
 
 const AvailableFundsPanel: React.FC<AvailableFundsPanelProps> = ({
@@ -25,7 +26,8 @@ const AvailableFundsPanel: React.FC<AvailableFundsPanelProps> = ({
   onFundSelect,
   searchQuery,
   onSearchChange,
-  isLoading
+  isLoading,
+  onAddFund
 }) => {
   // Function to get risk color indicator
   const getRiskColor = (riskFactor?: number) => {
@@ -45,8 +47,23 @@ const AvailableFundsPanel: React.FC<AvailableFundsPanelProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-medium text-gray-700">Available Funds</h4>
-        <div className="text-xs text-gray-500">
-          {availableFunds.length} fund{availableFunds.length !== 1 ? 's' : ''}
+        <div className="flex items-center gap-2">
+          {onAddFund && (
+            <button
+              type="button"
+              onClick={onAddFund}
+              className="bg-primary-600 text-white px-2 py-1 rounded text-xs hover:bg-primary-700 transition-colors duration-150 inline-flex items-center gap-1"
+              title="Add new fund"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Add
+            </button>
+          )}
+          <div className="text-xs text-gray-500">
+            {availableFunds.length} fund{availableFunds.length !== 1 ? 's' : ''}
+          </div>
         </div>
       </div>
       

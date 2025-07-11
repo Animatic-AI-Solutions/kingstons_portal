@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { findCashFund, isCashFund } from '../utils/fundUtils';
+import { DateInput } from '../components/ui';
 
 interface Fund {
   id: number;
@@ -16,6 +17,7 @@ interface Fund {
 interface GenerationFormData {
   generation_name: string;
   description: string;
+  created_at: string; // ISO date string for generation creation date
 }
 
 interface PortfolioFund {
@@ -45,7 +47,8 @@ const EditPortfolioGeneration: React.FC = () => {
   
   const [formData, setFormData] = useState<GenerationFormData>({
     generation_name: '',
-    description: ''
+    description: '',
+    created_at: '' // Initialize creation date to empty string
   });
   
   const [portfolio, setPortfolio] = useState<PortfolioTemplate | null>(null);
@@ -94,7 +97,8 @@ const EditPortfolioGeneration: React.FC = () => {
         setGeneration(currentGeneration);
         setFormData({
           generation_name: currentGeneration.generation_name || '',
-          description: currentGeneration.description || ''
+          description: currentGeneration.description || '',
+          created_at: currentGeneration.created_at || ''
         });
         
         // Fetch funds for this specific generation
@@ -167,6 +171,14 @@ const EditPortfolioGeneration: React.FC = () => {
     setFormData(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  // Handler for creation date change
+  const handleCreationDateChange = (date: Date | null, formatted: string) => {
+    setFormData(prev => ({
+      ...prev,
+      created_at: date ? date.toISOString() : ''
     }));
   };
 
@@ -254,6 +266,7 @@ const EditPortfolioGeneration: React.FC = () => {
         await api.patch(`/available_portfolios/${portfolioId}/generations/${generationId}`, {
           generation_name: formData.generation_name,
           description: formData.description,
+          created_at: formData.created_at, // Include creation date in update
           funds: fundsData
         });
         
@@ -455,8 +468,8 @@ const EditPortfolioGeneration: React.FC = () => {
         <form onSubmit={handleSubmit}>
           <div className="p-4 border-b border-gray-200 bg-gray-50">
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="w-full md:w-1/2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="w-full">
                   <label htmlFor="generation_name" className="block text-sm font-medium text-gray-700 mb-1">
                     Generation Name <span className="text-red-500">*</span>
                   </label>
@@ -471,7 +484,19 @@ const EditPortfolioGeneration: React.FC = () => {
                     placeholder="e.g., Q2 2023 Conservative Allocation"
                   />
                 </div>
-                <div className="w-full md:w-1/2">
+                <div className="w-full">
+                  <DateInput
+                    label="Creation Date"
+                    id="created_at"
+                    name="created_at"
+                    value={formData.created_at}
+                    onChange={handleCreationDateChange}
+                    placeholder="Select creation date"
+                    helperText="Leave empty to use current date/time"
+                    required={false}
+                  />
+                </div>
+                <div className="w-full">
                   <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
                     Description
                   </label>
