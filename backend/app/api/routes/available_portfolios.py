@@ -52,7 +52,6 @@ class PortfolioTemplateDetail(BaseModel):
     created_at: datetime
     name: str
     generation_id: Optional[int] = None
-    generation_version: Optional[int] = None
     generation_name: Optional[str] = None
     weighted_risk: Optional[float] = None
     funds: List[PortfolioFundDetail] = []
@@ -66,7 +65,6 @@ class PortfolioFromTemplate(BaseModel):
 
 class GenerationDetail(BaseModel):
     id: int
-    version_number: int
     generation_name: str
     description: Optional[str] = None
     status: str
@@ -81,6 +79,7 @@ class GenerationCreate(BaseModel):
     description: Optional[str] = None
     copy_from_generation_id: Optional[int] = None
     funds: Optional[List[PortfolioFund]] = None
+    created_at: Optional[datetime] = None  # Allow custom created_at date for backlogged generations
 
 class GenerationStatusUpdate(BaseModel):
     status: str  # 'active', 'draft', 'archived'
@@ -154,7 +153,7 @@ async def get_available_portfolios(db = Depends(get_db)):
                         .select("id, generation_name, status") \
                         .eq("available_portfolio_id", portfolio_id) \
                         .eq("status", "active") \
-                        .order("version_number", desc=True) \
+                        .order("created_at", desc=True) \
                         .limit(1) \
                         .execute()
                     
@@ -270,7 +269,7 @@ async def get_available_portfolio_details(request: Request, portfolio_id: int, g
                     .select("*") \
                     .eq("available_portfolio_id", portfolio_id) \
                     .eq("status", "active") \
-                    .order("version_number", desc=True) \
+                    .order("created_at", desc=True) \
                     .limit(1) \
                     .execute()
                 
@@ -374,7 +373,7 @@ async def get_available_portfolio_details(request: Request, portfolio_id: int, g
         # Add generation information if available
         if generation:
             response["generation_id"] = generation["id"]
-            response["generation_version"] = generation["version_number"]
+            # Version numbers are no longer used
             response["generation_name"] = generation["generation_name"]
         
         logger.info(f"Final response: {response}")
@@ -408,11 +407,10 @@ async def create_available_portfolio(portfolio_data: PortfolioCreate, db = Depen
         new_portfolio_id = portfolio_response.data[0]["id"]
         logger.info(f"Created portfolio template with ID: {new_portfolio_id}")
         
-        # Create the initial generation (version 1)
+        # Create the initial generation
         generation_data = {
             "available_portfolio_id": new_portfolio_id,
-            "version_number": 1,
-            "generation_name": portfolio_data.generation_name or f"Initial version of {portfolio_data.name}",
+            "generation_name": portfolio_data.generation_name or f"Initial generation of {portfolio_data.name}",
             "description": portfolio_data.description,
             "status": "active"
         }
@@ -483,7 +481,7 @@ async def create_portfolio_from_template(data: PortfolioFromTemplate, db = Depen
         .select('*')\
         .eq('available_portfolio_id', data.template_id)\
         .eq('status', 'active')\
-        .order('version_number', desc=True)\
+        .order('created_at', desc=True)\
         .limit(1)\
         .execute()
     
@@ -491,7 +489,7 @@ async def create_portfolio_from_template(data: PortfolioFromTemplate, db = Depen
         raise HTTPException(status_code=404, detail="No active generations found for this template")
     
     latest_generation = latest_generation_response.data[0]
-    logger.info(f"Using template generation: {latest_generation['id']} (version {latest_generation['version_number']})")
+    logger.info(f"Using template generation: {latest_generation['id']}")
     
     # Create portfolio from template
     portfolio_response = db.table('portfolios')\
@@ -683,11 +681,11 @@ async def get_portfolio_generations(portfolio_id: int, db = Depends(get_db)):
         if not template_response.data:
             raise HTTPException(status_code=404, detail="Portfolio template not found")
         
-        # Get all generations for this template, ordered by version number
+        # Get all generations for this template, ordered by creation date (newest first)
         generations_response = db.table('template_portfolio_generations')\
             .select('*')\
             .eq('available_portfolio_id', portfolio_id)\
-            .order('version_number', desc=True)\
+            .order('created_at', desc=True)\
             .execute()
         
         return generations_response.data or []
@@ -709,26 +707,17 @@ async def create_portfolio_generation(portfolio_id: int, generation_data: Genera
         if not portfolio_response.data:
             raise HTTPException(status_code=404, detail=f"Portfolio template with ID {portfolio_id} not found")
         
-        # Get the latest generation to determine the next version number
-        latest_generation_response = db.table('template_portfolio_generations')\
-            .select('version_number')\
-            .eq('available_portfolio_id', portfolio_id)\
-            .order('version_number', desc=True)\
-            .limit(1)\
-            .execute()
-        
-        next_version = 1
-        if latest_generation_response.data and len(latest_generation_response.data) > 0:
-            next_version = latest_generation_response.data[0]['version_number'] + 1
-        
         # Create new generation
         new_generation = {
             "available_portfolio_id": portfolio_id,
-            "version_number": next_version,
             "generation_name": generation_data.generation_name,
             "description": generation_data.description,
             "status": "draft"  # New generations start as drafts
         }
+        
+        # Use custom created_at date if provided (for backlogged generations)
+        if generation_data.created_at:
+            new_generation['created_at'] = generation_data.created_at.isoformat()
         
         generation_response = db.table('template_portfolio_generations')\
             .insert(new_generation)\
@@ -1073,7 +1062,7 @@ async def get_active_template_portfolio_generations(db = Depends(get_db)):
         
         # Get all template portfolio generations that are not inactive
         response = db.table('template_portfolio_generations')\
-            .select('id, generation_name, available_portfolio_id, status, version_number')\
+            .select('id, generation_name, available_portfolio_id, status')\
             .neq('status', 'inactive')\
             .order('generation_name')\
             .execute()

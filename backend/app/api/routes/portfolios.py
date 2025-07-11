@@ -344,14 +344,14 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
                 raise HTTPException(status_code=404, detail=f"Generation with ID {template_data.generation_id} not found")
             
             generation = generation_response.data[0]
-            logger.info(f"Using specified generation: {generation['id']} (version {generation['version_number']})")
+            logger.info(f"Using specified generation: {generation['id']}")
         else:
             # Get the latest active generation of this template
             latest_generation_response = db.table("template_portfolio_generations") \
                 .select("*") \
                 .eq("available_portfolio_id", template_data.template_id) \
                 .eq("status", "active") \
-                .order("version_number", desc=True) \
+                .order("created_at", desc=True) \
                 .limit(1) \
                 .execute()
                 
@@ -359,7 +359,7 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
                 raise HTTPException(status_code=404, detail="No active generations found for this template")
             
             generation = latest_generation_response.data[0]
-            logger.info(f"Using latest generation: {generation['id']} (version {generation['version_number']})")
+            logger.info(f"Using latest generation: {generation['id']}")
         
         # Create the portfolio with template reference
         portfolio_data = {

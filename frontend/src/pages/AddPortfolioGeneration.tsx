@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { findCashFund, isCashFund } from '../utils/fundUtils';
 import FundSelectionManager from '../components/generation/FundSelectionManager';
+import { DateInput } from '../components/ui';
 
 interface Fund {
   id: number;
@@ -17,6 +18,7 @@ interface Fund {
 interface GenerationFormData {
   generation_name: string;
   description: string;
+  created_at: string; // ISO date string for backlogged generations
 }
 
 interface PortfolioFund {
@@ -37,7 +39,8 @@ const AddPortfolioGeneration: React.FC = () => {
   
   const [formData, setFormData] = useState<GenerationFormData>({
     generation_name: '',
-    description: ''
+    description: '',
+    created_at: '' // Initialize created_at to empty string
   });
   
   const [portfolio, setPortfolio] = useState<PortfolioTemplate | null>(null);
@@ -96,7 +99,7 @@ const AddPortfolioGeneration: React.FC = () => {
       // Fetch the most recent generation for this portfolio
       const generationsResponse = await api.get(`/available_portfolios/${portfolioId}/generations`);
       if (generationsResponse.data && generationsResponse.data.length > 0) {
-        // The API returns generations ordered by version_number desc, so first one is the latest
+        // The API returns generations ordered by created_at desc, so first one is the latest
         const latestGeneration = generationsResponse.data[0];
         setLatestGenerationId(latestGeneration.id);
       } else {
@@ -312,12 +315,22 @@ const AddPortfolioGeneration: React.FC = () => {
           target_weighting: parseFloat(fundWeightings[fundId.toString()] || '0')
         }));
         
-        // Create the portfolio generation
-        await api.post(`/available_portfolios/${portfolioId}/generations`, {
+        // Prepare the payload
+        const payload: any = {
           generation_name: generationName,
           description: formData.description,
           funds: fundsData
-        });
+        };
+
+        // Include created_at only if a date is provided (for backlogged generations)
+        if (formData.created_at.trim()) {
+          // Convert date string to ISO datetime format for backend
+          const createdAtDate = new Date(formData.created_at);
+          payload.created_at = createdAtDate.toISOString();
+        }
+
+        // Create the portfolio generation
+        await api.post(`/available_portfolios/${portfolioId}/generations`, payload);
         
         // Navigate back to the template details page with refresh flag
         navigate(`/definitions/portfolio-templates/${portfolioId}`, {
@@ -341,6 +354,7 @@ const AddPortfolioGeneration: React.FC = () => {
       }
     }
     // Note: If validation fails, user's form state (selectedFunds, fundWeightings, formData) is preserved
+
   };
 
   // Calculate total weighting for the progress bar
@@ -401,22 +415,12 @@ const AddPortfolioGeneration: React.FC = () => {
       <nav className="mb-8 flex" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
           <li className="inline-flex items-center">
-            <Link to="/definitions" className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-primary-700">
+            <Link to="/definitions/portfolio-templates" className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-primary-700">
               <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
               </svg>
-              Definitions
+              Portfolio Templates
             </Link>
-          </li>
-          <li>
-            <div className="flex items-center">
-              <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
-              </svg>
-              <Link to="/definitions?tab=portfolios" className="ml-1 text-sm font-medium text-gray-500 hover:text-primary-700 md:ml-2">
-                Portfolios
-              </Link>
-            </div>
           </li>
           <li>
             <div className="flex items-center">
@@ -489,8 +493,8 @@ const AddPortfolioGeneration: React.FC = () => {
         <form onSubmit={handleSubmit}>
           <div className="p-4 border-b border-gray-200 bg-gray-50">
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="w-full md:w-1/2">
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="w-full lg:w-1/3">
                   <label htmlFor="generation_name" className="block text-sm font-medium text-gray-700 mb-1">
                     Generation Name <span className="text-gray-500 text-xs">(optional)</span>
                   </label>
@@ -509,7 +513,24 @@ const AddPortfolioGeneration: React.FC = () => {
                     </div>
                   )}
                 </div>
-                <div className="w-full md:w-1/2">
+                <div className="w-full lg:w-1/3">
+                  <DateInput
+                    label="Creation Date"
+                    id="created_at"
+                    name="created_at"
+                    value={formData.created_at}
+                    onChange={(date, formatted) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        created_at: formatted || ''
+                      }));
+                    }}
+                    placeholder="Select creation date"
+                    helperText="Leave empty to use current date/time"
+                    required={false}
+                  />
+                </div>
+                <div className="w-full lg:w-1/3">
                   <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
                     Description
                   </label>

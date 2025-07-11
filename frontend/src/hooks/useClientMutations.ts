@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { addClientGroupProductOwner, removeClientGroupProductOwner } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { ClientDetailsData } from './useClientDetails';
 import { BulkClientDataResponse } from './useOptimizedClientData';
 
@@ -33,6 +33,7 @@ export interface ProductOwnerUpdateData {
  */
 export const useClientMutations = () => {
   const queryClient = useQueryClient();
+  const { api } = useAuth(); // Use authenticated API instance
 
   // Update client mutation
   const updateClient = useMutation({
@@ -132,12 +133,19 @@ export const useClientMutations = () => {
       console.log(`🔄 ${data.action === 'add' ? 'Adding' : 'Removing'} product owner for client ${data.clientId}`);
       
       if (data.action === 'add') {
-        return await addClientGroupProductOwner(Number(data.clientId), data.productOwnerId);
+        // Add product owner using authenticated API
+        const response = await api.post('client_group_product_owners', {
+          client_group_id: Number(data.clientId),
+          product_owner_id: data.productOwnerId
+        });
+        return response.data;
       } else {
+        // Remove product owner using authenticated API
         if (!data.associationId) {
           throw new Error('Association ID is required for removing product owner');
         }
-        return await removeClientGroupProductOwner(data.associationId);
+        const response = await api.delete(`client_group_product_owners/${data.associationId}`);
+        return response.data;
       }
     },
     onSuccess: (data, variables) => {
