@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { findCashFund, isCashFund } from '../utils/fundUtils';
+import FundSelectionManager from '../components/generation/FundSelectionManager';
 
 interface Fund {
   id: number;
@@ -47,9 +48,10 @@ const AddPortfolioGeneration: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingFunds, setIsLoadingFunds] = useState(false);
   const [isLoadingPortfolio, setIsLoadingPortfolio] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [fundSearchTerm, setFundSearchTerm] = useState('');
   const [latestGenerationId, setLatestGenerationId] = useState<number | null>(null);
   const [isLoadingLatestFunds, setIsLoadingLatestFunds] = useState(false);
+  const [hasUserModifiedFunds, setHasUserModifiedFunds] = useState(false);
 
   useEffect(() => {
     if (portfolioId) {
@@ -60,10 +62,11 @@ const AddPortfolioGeneration: React.FC = () => {
 
   useEffect(() => {
     // When both availableFunds and latestGenerationId are available, fetch the funds from that generation
-    if (latestGenerationId && availableFunds.length > 0) {
+    // BUT only if the user hasn't made any modifications yet
+    if (latestGenerationId && availableFunds.length > 0 && !hasUserModifiedFunds) {
       fetchLatestGenerationFunds(latestGenerationId);
     }
-  }, [latestGenerationId, availableFunds]);
+  }, [latestGenerationId, availableFunds, hasUserModifiedFunds]);
 
   // Separate effect to handle fallback cash fund selection when no latest generation exists
   useEffect(() => {
@@ -72,7 +75,8 @@ const AddPortfolioGeneration: React.FC = () => {
     // 2. We confirmed there's no latest generation (latestGenerationId is explicitly null, not undefined)
     // 3. No funds are currently selected
     // 4. We're not currently loading latest funds
-    if (availableFunds.length > 0 && latestGenerationId === null && selectedFunds.length === 0 && !isLoadingLatestFunds) {
+    // 5. User hasn't made modifications
+    if (availableFunds.length > 0 && latestGenerationId === null && selectedFunds.length === 0 && !isLoadingLatestFunds && !hasUserModifiedFunds) {
       const cashFund = findCashFund(availableFunds);
       if (cashFund) {
         setSelectedFunds([cashFund.id]);
@@ -81,7 +85,7 @@ const AddPortfolioGeneration: React.FC = () => {
         });
       }
     }
-  }, [availableFunds, latestGenerationId, selectedFunds, isLoadingLatestFunds]);
+  }, [availableFunds, latestGenerationId, selectedFunds, isLoadingLatestFunds, hasUserModifiedFunds]);
 
   const fetchPortfolioDetails = async () => {
     try {
@@ -165,6 +169,10 @@ const AddPortfolioGeneration: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    // Clear errors when user makes changes
+    if (error) {
+      setError(null);
+    }
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -179,6 +187,14 @@ const AddPortfolioGeneration: React.FC = () => {
       // Show a brief message or just ignore the action
       return;
     }
+    
+    // Clear errors when user makes changes
+    if (error) {
+      setError(null);
+    }
+    
+    // Mark that user has modified funds
+    setHasUserModifiedFunds(true);
     
     setSelectedFunds(prev => {
       if (prev.includes(fundId)) {
@@ -200,6 +216,14 @@ const AddPortfolioGeneration: React.FC = () => {
   };
 
   const handleWeightingChange = (fundId: number, weighting: string) => {
+    // Clear errors when user makes changes
+    if (error) {
+      setError(null);
+    }
+    
+    // Mark that user has modified funds
+    setHasUserModifiedFunds(true);
+    
     // Allow empty string for clearing the field
     if (weighting === '') {
       setFundWeightings(prev => ({
@@ -237,53 +261,10 @@ const AddPortfolioGeneration: React.FC = () => {
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (validateForm()) {
-      try {
-        setIsSubmitting(true);
-        setError(null);
-        
-        // Use auto-generated name if field is empty
-        const generationName = formData.generation_name.trim() || generateGenerationName();
-        
-        // Prepare the funds data
-        const fundsData = selectedFunds.map(fundId => ({
-          fund_id: fundId,
-          target_weighting: parseFloat(fundWeightings[fundId.toString()] || '0')
-        }));
-        
-        // Create the portfolio generation
-        await api.post(`/available_portfolios/${portfolioId}/generations`, {
-          generation_name: generationName,
-          description: formData.description,
-          funds: fundsData
-        });
-        
-        // Navigate back to the template details page with refresh flag
-        navigate(`/definitions/portfolio-templates/${portfolioId}`, {
-          state: { refreshNeeded: true }
-        });
-      } catch (err: any) {
-        console.error('Error creating portfolio generation:', err);
-        if (err.response?.data?.detail) {
-          const detail = err.response.data.detail;
-          if (Array.isArray(detail)) {
-            setError(detail.map(item => item.msg || String(item)).join(', '));
-          } else {
-            setError(String(detail));
-          }
-        } else {
-          setError('Failed to create portfolio generation');
-        }
-      } finally {
-        setIsSubmitting(false);
-      }
-    }
-  };
-
   const validateForm = () => {
+    // Clear any previous errors before validation
+    setError(null);
+    
     // Auto-generate generation name if empty
     const generationName = formData.generation_name.trim() || generateGenerationName();
     
@@ -313,6 +294,55 @@ const AddPortfolioGeneration: React.FC = () => {
     return true;
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // IMPORTANT: Validation preserves all user input - no state reset on validation errors
+    if (validateForm()) {
+      try {
+        setIsSubmitting(true);
+        setError(null);
+        
+        // Use auto-generated name if field is empty
+        const generationName = formData.generation_name.trim() || generateGenerationName();
+        
+        // Prepare the funds data
+        const fundsData = selectedFunds.map(fundId => ({
+          fund_id: fundId,
+          target_weighting: parseFloat(fundWeightings[fundId.toString()] || '0')
+        }));
+        
+        // Create the portfolio generation
+        await api.post(`/available_portfolios/${portfolioId}/generations`, {
+          generation_name: generationName,
+          description: formData.description,
+          funds: fundsData
+        });
+        
+        // Navigate back to the template details page with refresh flag
+        navigate(`/definitions/portfolio-templates/${portfolioId}`, {
+          state: { refreshNeeded: true }
+        });
+      } catch (err: any) {
+        console.error('Error creating portfolio generation:', err);
+        // API errors also preserve user input - only error message is updated
+        if (err.response?.data?.detail) {
+          const detail = err.response.data.detail;
+          if (Array.isArray(detail)) {
+            setError(detail.map(item => item.msg || String(item)).join(', '));
+          } else {
+            setError(String(detail));
+          }
+        } else {
+          setError('Failed to create portfolio generation');
+        }
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+    // Note: If validation fails, user's form state (selectedFunds, fundWeightings, formData) is preserved
+  };
+
   // Calculate total weighting for the progress bar
   const totalWeighting = useMemo(() => {
     return Object.values(fundWeightings).reduce((a, b) => {
@@ -320,25 +350,6 @@ const AddPortfolioGeneration: React.FC = () => {
       return a + numValue;
     }, 0);
   }, [fundWeightings]);
-
-  // Determine progress bar color based on total
-  const getProgressBarColor = () => {
-    if (Math.abs(totalWeighting - 100) < 0.01) return 'bg-green-500'; // Perfect at 100%
-    if (totalWeighting > 100) return 'bg-red-500'; // Too high
-    if (totalWeighting > 90) return 'bg-yellow-500'; // Close to target
-    return 'bg-blue-500'; // Still collecting
-  };
-
-  // Filter funds based on search query
-  const filteredFunds = useMemo(() => {
-    if (!searchQuery.trim()) return availableFunds;
-    
-    const query = searchQuery.toLowerCase();
-    return availableFunds.filter(fund => 
-      (fund.fund_name && fund.fund_name.toLowerCase().includes(query)) || 
-      (fund.isin_number && fund.isin_number.toLowerCase().includes(query))
-    );
-  }, [availableFunds, searchQuery]);
 
   // Auto-generation function for generation name
   const generateGenerationName = () => {
@@ -354,6 +365,26 @@ const AddPortfolioGeneration: React.FC = () => {
     const year = now.getFullYear();
     
     return `${portfolio.name} ${month} ${year}`;
+  };
+
+  const handleClearAllFunds = () => {
+    // Clear errors when user makes changes
+    if (error) {
+      setError(null);
+    }
+    
+    // Mark that user has modified funds
+    setHasUserModifiedFunds(true);
+    
+    setSelectedFunds([]);
+    setFundWeightings({});
+    
+    // Re-add cash fund if it exists
+    const cashFund = findCashFund(availableFunds);
+    if (cashFund) {
+      setSelectedFunds([cashFund.id]);
+      setFundWeightings({ [cashFund.id.toString()]: '0' });
+    }
   };
 
   if (isLoadingPortfolio) {
@@ -518,31 +549,12 @@ const AddPortfolioGeneration: React.FC = () => {
           {/* Fund Selection Section */}
           <div className="p-5">
             <div className="rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 sm:px-6 flex justify-between items-center">
-                <h3 className="text-base font-medium text-gray-900">Select Funds</h3>
-                <div className="flex items-center">
-                  <span className="text-sm text-gray-500 mr-2">Allocation: </span>
-                  <div className="w-56 bg-gray-200 rounded-full h-2.5 flex-grow">
-                    <div 
-                      className={`h-2.5 rounded-full ${getProgressBarColor()}`} 
-                      style={{ width: `${Math.min(totalWeighting, 100)}%` }}
-                    ></div>
-                  </div>
-                  <span className={`ml-2 text-sm font-medium ${
-                    Math.abs(totalWeighting - 100) < 0.01 ? 'text-green-700' : 
-                    totalWeighting > 100 ? 'text-red-700' : 'text-gray-700'
-                  }`}>
-                    {totalWeighting.toFixed(1)}%
-                  </span>
-                </div>
+              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 sm:px-6">
+                <h3 className="text-base font-medium text-gray-900">Fund Selection</h3>
               </div>
               
               <div className="p-4">
-                {isLoadingFunds ? (
-                  <div className="flex justify-center items-center py-12">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-700"></div>
-                  </div>
-                ) : availableFunds.length === 0 ? (
+                {availableFunds.length === 0 ? (
                   <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
                     <div className="flex">
                       <div className="flex-shrink-0">
@@ -558,210 +570,66 @@ const AddPortfolioGeneration: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {/* Search Bar */}
-                    <div className="mb-2">
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          placeholder="Search funds by name or ISIN..."
-                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-700 focus:border-primary-700 transition-colors duration-200"
-                          aria-label="Search funds"
-                        />
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                          </svg>
-                        </div>
-                        {searchQuery && (
-                          <button
-                            type="button"
-                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                            onClick={() => setSearchQuery('')}
-                          >
-                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-100">
-                          <tr>
-                            <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                              Select
-                            </th>
-                            <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                              Fund Name
-                            </th>
-                            <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                              ISIN
-                            </th>
-                            <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                              Risk Factor
-                            </th>
-                            <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                              Status
-                            </th>
-                            <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                              Target Weighting (%)
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {filteredFunds.map((fund) => {
-                            const isCash = isCashFund(fund);
-                            const isSelected = selectedFunds.includes(fund.id);
-                            
-                            return (
-                            <tr 
-                              key={fund.id} 
-                                className={`transition-all duration-150 ${
-                                  isCash ? 'bg-blue-50 border-blue-200' : 
-                                  isSelected ? 'bg-blue-50 border-blue-200' : 
-                                  'hover:bg-gray-50 hover:border-gray-200 cursor-pointer'
-                                } border-b border-gray-100`}
-                                onClick={() => !isCash && handleFundSelection(fund.id)}
-                            >
-                              <td className="px-6 py-3 whitespace-nowrap">
-                                  <div className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                      checked={isSelected}
-                                      onChange={() => !isCash && handleFundSelection(fund.id)}
-                                      disabled={isCash}
-                                      className={`h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded ${
-                                        isCash ? 'cursor-not-allowed opacity-75' : 'pointer-events-none'
-                                      }`}
-                                    />
-                                    {isCash && (
-                                      <span className="ml-2 text-xs text-blue-600 font-medium">Required</span>
-                                    )}
-                                  </div>
-                              </td>
-                              <td className="px-6 py-3 whitespace-nowrap">
-                                  <div className={`text-sm font-medium font-sans tracking-tight ${
-                                    isCash ? 'text-blue-800' : 'text-gray-800'
-                                  }`}>
-                                    {fund.fund_name}
-                                    {isCash && <span className="ml-2 text-xs text-blue-600 font-normal">(Always included)</span>}
-                                  </div>
-                              </td>
-                              <td className="px-6 py-3 whitespace-nowrap">
-                                <div className="text-sm text-gray-600 font-sans">{fund.isin_number || 'N/A'}</div>
-                              </td>
-                              <td className="px-6 py-3 whitespace-nowrap">
-                                <div className="text-sm text-gray-600 font-sans">
-                                  {fund.risk_factor !== undefined && fund.risk_factor !== null ? (
-                                    <span className="flex items-center">
-                                      {fund.risk_factor}
-                                      <span className={`ml-1.5 w-2 h-2 rounded-full ${
-                                        fund.risk_factor <= 2 ? 'bg-green-500' : 
-                                        fund.risk_factor <= 4 ? 'bg-blue-500' : 
-                                        fund.risk_factor <= 6 ? 'bg-yellow-500' : 
-                                        'bg-red-500'
-                                      }`}></span>
-                                    </span>
-                                  ) : 'N/A'}
-                                </div>
-                              </td>
-                              <td className="px-6 py-3 whitespace-nowrap">
-                                <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                  fund.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                }`}>
-                                  {fund.status}
-                                </span>
-                              </td>
-                              <td className="px-6 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                                  {isSelected && (
-                                  <div className="flex items-center">
-                                    <input
-                                      type="text"
-                                      value={fundWeightings[fund.id.toString()] || ''}
-                                      onChange={(e) => handleWeightingChange(
-                                        fund.id,
-                                        e.target.value
-                                      )}
-                                      onKeyDown={(e) => {
-                                        // Prevent form submission when Enter is pressed
-                                        if (e.key === 'Enter') {
-                                          e.preventDefault();
-                                          // Optionally blur the field to simulate moving to next field
-                                          e.currentTarget.blur();
-                                        }
-                                      }}
-                                      placeholder="0.00"
-                                      className="w-20 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                                    />
-                                    <span className="ml-2 text-gray-500">%</span>
-                                  </div>
-                                )}
-                                  {!isSelected && (
-                                  <span className="text-gray-400 text-sm">Click to select</span>
-                                )}
-                              </td>
-                            </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                    
-                    <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg">
-                      <div className="text-sm text-gray-500">
-                        {selectedFunds.length} fund(s) selected
-                      </div>
-                      <div className={`text-sm ${
-                        Math.abs(totalWeighting - 100) < 0.01
-                          ? 'text-green-600 font-medium' 
-                          : totalWeighting > 100
-                            ? 'text-red-600 font-medium'
-                            : 'text-gray-600'
-                      }`}>
-                        Total weighting: {totalWeighting.toFixed(2)}%
-                        {selectedFunds.length > 0 && Math.abs(totalWeighting - 100) > 0.01 && 
-                          <span className="ml-2 text-sm">(Must equal 100%)</span>
-                        }
-                      </div>
-                    </div>
-                  </div>
+                  <FundSelectionManager
+                    availableFunds={availableFunds}
+                    selectedFunds={selectedFunds}
+                    fundWeightings={fundWeightings}
+                    onFundSelect={handleFundSelection}
+                    onFundDeselect={handleFundSelection}
+                    onWeightingChange={handleWeightingChange}
+                    onClearAll={handleClearAllFunds}
+                    searchQuery={fundSearchTerm}
+                    onSearchChange={setFundSearchTerm}
+                    isLoading={isLoadingFunds || isLoadingLatestFunds}
+                    error={error}
+                  />
                 )}
               </div>
             </div>
           </div>
 
           {/* Footer Actions */}
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
-            <Link
-              to={`/definitions/portfolio-templates/${portfolioId}`}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-            >
-              Cancel
-            </Link>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className={`bg-primary-700 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 shadow-sm transition-colors duration-200 ${
-                isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
-              }`}
-            >
-              {isSubmitting ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Creating...
-                </span>
-              ) : (
-                'Create Generation'
+          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+            <div className="flex-1">
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mr-4">
+                  <div className="flex items-center">
+                    <svg className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-sm text-red-700">{error}</p>
+                  </div>
+                </div>
               )}
-            </button>
+            </div>
+            
+            <div className="flex space-x-3">
+              <Link
+                to={`/definitions/portfolio-templates/${portfolioId}`}
+                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              >
+                Cancel
+              </Link>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className={`bg-primary-700 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 shadow-sm transition-colors duration-200 ${
+                  isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
+                }`}
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Creating...
+                  </span>
+                ) : (
+                  'Create Generation'
+                )}
+              </button>
+            </div>
           </div>
         </form>
       </div>
