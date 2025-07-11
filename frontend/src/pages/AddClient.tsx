@@ -6,28 +6,15 @@ import {
   BaseInput, 
   InputLabel, 
   InputError,
-  ActionButton,
-  AddButton
+  ActionButton
 } from '../components/ui';
-import SearchableDropdown from '../components/ui/dropdowns/SearchableDropdown';
-import { MultiSelectDropdown, CreatableDropdown, BaseDropdown } from '../components/ui';
-import CreateProductOwnerModal from '../components/CreateProductOwnerModal';
-import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
+import { CreatableDropdown, BaseDropdown } from '../components/ui';
 
 interface ClientFormData {
   name: string;
   status: string;
   advisor: string | null;
   type: string;
-}
-
-interface ProductOwner {
-  id: number;
-  firstname?: string;
-  surname?: string;
-  known_as?: string;
-  status: string;
-  created_at: string;
 }
 
 const AddClient: React.FC = () => {
@@ -40,21 +27,14 @@ const AddClient: React.FC = () => {
     advisor: null,
     type: 'Family'
   });
-  const [productOwners, setProductOwners] = useState<ProductOwner[]>([]);
-  const [selectedProductOwners, setSelectedProductOwners] = useState<number[]>([]);
-  const [showCreateProductOwnerModal, setShowCreateProductOwnerModal] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [advisors, setAdvisors] = useState<string[]>([]);
 
-  // Fetch existing product owners and advisors on component mount
+  // Fetch advisors on component mount
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch product owners
-        const productOwnersResponse = await api.get('/product_owners');
-        setProductOwners(productOwnersResponse.data);
-
         // Fetch existing client groups to get unique advisor names
         const clientGroupsResponse = await api.get('/client_groups');
         const uniqueAdvisors = [...new Set(
@@ -110,18 +90,6 @@ const AddClient: React.FC = () => {
     }
   };
 
-  const handleCreateProductOwner = async (newProductOwner: ProductOwner) => {
-    // Add to the list of product owners
-    setProductOwners(prevOwners => [...prevOwners, newProductOwner]);
-    
-    // Select the newly created product owner
-    setSelectedProductOwners(prevSelected => [...prevSelected, newProductOwner.id]);
-    
-    // Close the modal and reset
-    setShowCreateProductOwnerModal(false);
-    setError(null);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -131,26 +99,8 @@ const AddClient: React.FC = () => {
       console.log('Creating client with data:', formData);
       
       const response = await api.post('/client_groups', formData);
-      const newClientId = response.data.id;
       
       console.log('Client created successfully:', response.data);
-      
-      // Create product owner associations if any are selected
-      if (selectedProductOwners.length > 0) {
-        console.log('Creating product owner associations...');
-        for (const productOwnerId of selectedProductOwners) {
-          try {
-            await api.post('/client_group_product_owners', {
-              client_group_id: newClientId,
-              product_owner_id: productOwnerId
-            });
-            console.log(`Associated product owner ${productOwnerId} with client ${newClientId}`);
-          } catch (err: any) {
-            console.error(`Failed to associate product owner ${productOwnerId}:`, err);
-            // Continue with other associations even if one fails
-          }
-        }
-      }
       
       // Navigate back to clients list with success message and refresh data
       navigateWithSuccessMessage(
@@ -182,11 +132,6 @@ const AddClient: React.FC = () => {
     { value: 'inactive', label: 'Inactive' },
     { value: 'dormant', label: 'Dormant' }
   ];
-
-  const productOwnerOptions = productOwners.map(po => ({
-    value: po.id,
-    label: getProductOwnerDisplayName(po)
-  }));
 
   return (
     <div className="container mx-auto px-4 py-3">
@@ -284,38 +229,6 @@ const AddClient: React.FC = () => {
             </div>
           </div>
 
-          {/* Product Owners Section */}
-          <div className="border-t border-gray-200 pt-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Product Owners</h3>
-              <AddButton
-                context="Product Owner"
-                design="balanced"
-                size="md"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setShowCreateProductOwnerModal(true);
-                }}
-              />
-            </div>
-            
-            <div className="space-y-3">
-              <MultiSelectDropdown
-                label=""
-                options={productOwnerOptions}
-                values={selectedProductOwners}
-                onChange={(values: (string | number)[]) => {
-                  const numberValues = values.map((v: string | number) => typeof v === 'number' ? v : parseInt(v.toString()));
-                  setSelectedProductOwners(numberValues);
-                }}
-                placeholder="Search and select product owners"
-                searchable={true}
-                fullWidth={true}
-              />
-            </div>
-          </div>
-
           <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
             <ActionButton
               variant="save"
@@ -330,20 +243,6 @@ const AddClient: React.FC = () => {
           </div>
         </form>
       </div>
-
-      {/* Create Product Owner Modal */}
-      {showCreateProductOwnerModal && (
-        <CreateProductOwnerModal
-          isOpen={showCreateProductOwnerModal}
-          onClose={() => {
-            setShowCreateProductOwnerModal(false);
-            setError(null);
-          }}
-          onSuccess={handleCreateProductOwner}
-          includeProductSelection={false}
-          title="Create New Product Owner"
-        />
-      )}
     </div>
   );
 };

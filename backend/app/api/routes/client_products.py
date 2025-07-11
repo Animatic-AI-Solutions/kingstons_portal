@@ -164,9 +164,10 @@ async def get_client_products_with_owners(
                     "id": product.get("effective_template_generation_id"),
                     "generation_name": product.get("generation_name"),
                     "name": product.get("template_name"),
-                    "version_number": product.get("version_number"),
                     "description": product.get("template_description")
-                } if product.get("effective_template_generation_id") else None
+                } if product.get("effective_template_generation_id") else None,
+                "generation_name": product.get("generation_name"),
+                "weighted_risk": product.get("template_weighted_risk"),
             }
             
             # Add IRR data
