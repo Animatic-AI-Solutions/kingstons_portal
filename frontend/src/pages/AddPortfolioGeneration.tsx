@@ -369,14 +369,15 @@ const AddPortfolioGeneration: React.FC = () => {
   const generateGenerationName = () => {
     if (!portfolio) return '';
     
-    const now = new Date();
+    // Use the created_at field if provided, otherwise use current date
+    const date = formData.created_at ? new Date(formData.created_at) : new Date();
     const monthNames = [
       'January', 'February', 'March', 'April', 'May', 'June',
       'July', 'August', 'September', 'October', 'November', 'December'
     ];
     
-    const month = monthNames[now.getMonth()];
-    const year = now.getFullYear();
+    const month = monthNames[date.getMonth()];
+    const year = date.getFullYear();
     
     return `${portfolio.name} ${month} ${year}`;
   };
