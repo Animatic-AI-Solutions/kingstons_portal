@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { findCashFund, isCashFund } from '../utils/fundUtils';
+import { DateInput } from '../components/ui';
 
 interface Fund {
   id: number;
@@ -16,6 +17,7 @@ interface Fund {
 interface GenerationFormData {
   generation_name: string;
   description: string;
+  created_at: string; // ISO date string for backlogged generations
 }
 
 interface PortfolioFund {
@@ -36,7 +38,8 @@ const AddPortfolioGeneration: React.FC = () => {
   
   const [formData, setFormData] = useState<GenerationFormData>({
     generation_name: '',
-    description: ''
+    description: '',
+    created_at: '' // Initialize created_at to empty string
   });
   
   const [portfolio, setPortfolio] = useState<PortfolioTemplate | null>(null);
@@ -92,7 +95,7 @@ const AddPortfolioGeneration: React.FC = () => {
       // Fetch the most recent generation for this portfolio
       const generationsResponse = await api.get(`/available_portfolios/${portfolioId}/generations`);
       if (generationsResponse.data && generationsResponse.data.length > 0) {
-        // The API returns generations ordered by version_number desc, so first one is the latest
+        // The API returns generations ordered by created_at desc, so first one is the latest
         const latestGeneration = generationsResponse.data[0];
         setLatestGenerationId(latestGeneration.id);
       } else {
@@ -254,12 +257,22 @@ const AddPortfolioGeneration: React.FC = () => {
           target_weighting: parseFloat(fundWeightings[fundId.toString()] || '0')
         }));
         
-        // Create the portfolio generation
-        await api.post(`/available_portfolios/${portfolioId}/generations`, {
+        // Prepare the payload
+        const payload: any = {
           generation_name: generationName,
           description: formData.description,
           funds: fundsData
-        });
+        };
+
+        // Include created_at only if a date is provided (for backlogged generations)
+        if (formData.created_at.trim()) {
+          // Convert date string to ISO datetime format for backend
+          const createdAtDate = new Date(formData.created_at);
+          payload.created_at = createdAtDate.toISOString();
+        }
+
+        // Create the portfolio generation
+        await api.post(`/available_portfolios/${portfolioId}/generations`, payload);
         
         // Navigate back to the template details page with refresh flag
         navigate(`/definitions/portfolio-templates/${portfolioId}`, {
@@ -290,6 +303,26 @@ const AddPortfolioGeneration: React.FC = () => {
     if (!generationName) {
       setError('Unable to generate generation name');
       return false;
+    }
+    
+    // Validate creation date if provided
+    if (formData.created_at.trim()) {
+      const selectedDate = new Date(formData.created_at);
+      const today = new Date();
+      today.setHours(23, 59, 59, 999); // Set to end of today for comparison
+      
+      if (selectedDate > today) {
+        setError('Creation date cannot be in the future');
+        return false;
+      }
+      
+      // Check if date is too far in the past (more than 10 years)
+      const tenYearsAgo = new Date();
+      tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
+      if (selectedDate < tenYearsAgo) {
+        setError('Creation date cannot be more than 10 years in the past');
+        return false;
+      }
     }
     
     // Validate fund weightings
@@ -458,8 +491,8 @@ const AddPortfolioGeneration: React.FC = () => {
         <form onSubmit={handleSubmit}>
           <div className="p-4 border-b border-gray-200 bg-gray-50">
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="w-full md:w-1/2">
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="w-full lg:w-1/3">
                   <label htmlFor="generation_name" className="block text-sm font-medium text-gray-700 mb-1">
                     Generation Name <span className="text-gray-500 text-xs">(optional)</span>
                   </label>
@@ -478,7 +511,24 @@ const AddPortfolioGeneration: React.FC = () => {
                     </div>
                   )}
                 </div>
-                <div className="w-full md:w-1/2">
+                <div className="w-full lg:w-1/3">
+                  <DateInput
+                    label="Creation Date"
+                    id="created_at"
+                    name="created_at"
+                    value={formData.created_at}
+                    onChange={(date, formatted) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        created_at: formatted || ''
+                      }));
+                    }}
+                    placeholder="Select creation date"
+                    helperText="Leave empty to use current date/time"
+                    required={false}
+                  />
+                </div>
+                <div className="w-full lg:w-1/3">
                   <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
                     Description
                   </label>

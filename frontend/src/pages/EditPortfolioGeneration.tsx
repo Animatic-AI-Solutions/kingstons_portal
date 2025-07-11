@@ -31,7 +31,6 @@ interface PortfolioTemplate {
 
 interface Generation {
   id: number;
-  version_number: number;
   generation_name: string;
   description?: string;
   status: string;
@@ -430,10 +429,7 @@ const EditPortfolioGeneration: React.FC = () => {
             </svg>
           </div>
           <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">
-            Edit Generation: {generation.generation_name} 
-            <span className="ml-2 text-lg text-gray-500">
-              (Version {generation.version_number})
-            </span>
+            Edit Generation: {generation.generation_name}
           </h1>
         </div>
         <button

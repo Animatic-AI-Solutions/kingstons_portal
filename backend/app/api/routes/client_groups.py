@@ -22,9 +22,9 @@ async def get_bulk_client_data(db = Depends(get_db)):
         logger.info("Fetching bulk client data with FUM calculations")
         
         # Use the existing client_group_complete_data view for efficient data retrieval
+        # Fetch all client groups regardless of status (active, inactive, dormant)
         bulk_data_result = db.table("client_group_complete_data")\
             .select("*")\
-            .eq("client_group_status", "active")\
             .execute()
         
         if not bulk_data_result.data:
@@ -75,7 +75,7 @@ async def get_bulk_client_data(db = Depends(get_db)):
                 
                 client_group["products"].append(product_data)
                 
-                # Update client group totals
+                # Update client group totals (only count active products for FUM)
                 if row["product_status"] == "active":
                     client_group["active_products"] += 1
                     client_group["fum"] += product_data["product_total_value"]
@@ -85,7 +85,7 @@ async def get_bulk_client_data(db = Depends(get_db)):
         client_groups_list = list(client_groups_dict.values())
         client_groups_list.sort(key=lambda x: x["name"] or "")
         
-        logger.info(f"Successfully fetched bulk data for {len(client_groups_list)} client groups")
+        logger.info(f"Successfully fetched bulk data for {len(client_groups_list)} client groups (all statuses)")
         
         return {
             "client_groups": client_groups_list,
@@ -93,7 +93,8 @@ async def get_bulk_client_data(db = Depends(get_db)):
             "total_fum": sum(cg["fum"] for cg in client_groups_list),
             "metadata": {
                 "query_time": "bulk_optimized",
-                "cache_eligible": True
+                "cache_eligible": True,
+                "includes_all_statuses": True
             }
         }
         
@@ -652,7 +653,6 @@ async def get_client_group_products(
                     "id": product.get("effective_template_generation_id"),
                     "generation_name": product.get("generation_name"),
                     "name": product.get("template_name"),
-                    "version_number": product.get("version_number"),
                     "description": product.get("template_description")
                 } if product.get("effective_template_generation_id") else None
             })
@@ -984,7 +984,6 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                     "id": product.get("template_generation_id"),
                     "generation_name": product.get("template_generation_name"),
                     "name": product.get("template_name"),
-                    "version_number": product.get("template_version_number"),
                     "description": product.get("template_description")
                 } if product.get("template_generation_id") else None,
                 "fixed_cost": product.get("fixed_cost"),

@@ -32,7 +32,6 @@ interface PortfolioTemplateFund {
 
 interface Generation {
   id: number;
-  version_number: number;
   generation_name: string;
   description?: string;
   status: string;
@@ -535,7 +534,7 @@ const PortfolioTemplateDetails: React.FC = () => {
     const productCount = generationProductCounts[generation.id] || 0;
     
     if (productCount > 0) {
-      setError(`Cannot delete generation "${generation.generation_name || `Version ${generation.version_number}`}" - ${productCount} product${productCount === 1 ? '' : 's'} are using this generation.`);
+              setError(`Cannot delete generation "${generation.generation_name || 'Unnamed Generation'}" - ${productCount} product${productCount === 1 ? '' : 's'} are using this generation.`);
       return;
     }
     
@@ -872,7 +871,7 @@ const PortfolioTemplateDetails: React.FC = () => {
                         </svg>
                         <div>
                           <h3 className="text-xs font-medium text-gray-900 flex items-center">
-                            {generation.generation_name || `Version ${generation.version_number}`}
+                            {generation.generation_name || 'Unnamed Generation'}
                             <span className={`ml-1.5 px-1 py-0.5 text-xs rounded-full ${
                               generation.status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
                             }`}>
@@ -1080,7 +1079,7 @@ const PortfolioTemplateDetails: React.FC = () => {
                     } rounded-lg px-4 py-2 font-medium text-sm transition-all duration-200 ease-in-out`}
                     role="tab"
                   >
-                    {generation.generation_name || `Version ${generation.version_number}`}
+                    {generation.generation_name || 'Unnamed Generation'}
                     {generation.status !== 'active' && (
                       <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
                         generation.status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
@@ -1099,7 +1098,7 @@ const PortfolioTemplateDetails: React.FC = () => {
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-3">
                     <div>
                       <h3 className="text-lg font-medium text-gray-900 flex items-center">
-                        {selectedGeneration.generation_name || `Version ${selectedGeneration.version_number}`}
+                        {selectedGeneration.generation_name || 'Unnamed Generation'}
                         <span className={`ml-3 px-2 py-0.5 text-xs rounded-full ${
                           selectedGeneration.status === 'active' ? 'bg-green-100 text-green-800' :
                           selectedGeneration.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
@@ -1144,14 +1143,10 @@ const PortfolioTemplateDetails: React.FC = () => {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="bg-white p-3 rounded-md shadow-sm">
                       <p className="text-xs font-semibold text-gray-500 uppercase">Created</p>
                       <p className="text-sm text-gray-800 mt-1">{formatDate(selectedGeneration.created_at)}</p>
-                    </div>
-                    <div className="bg-white p-3 rounded-md shadow-sm">
-                      <p className="text-xs font-semibold text-gray-500 uppercase">Version</p>
-                      <p className="text-sm text-gray-800 mt-1">{selectedGeneration.version_number}</p>
                     </div>
                     <div className="bg-white p-3 rounded-md shadow-sm">
                       <p className="text-xs font-semibold text-gray-500 uppercase">Risk Level</p>
@@ -1270,7 +1265,7 @@ const PortfolioTemplateDetails: React.FC = () => {
                     <h3 className="text-lg leading-6 font-medium text-gray-900">Delete Generation</h3>
                     <div className="mt-2">
                       <p className="text-sm text-gray-500">
-                        Are you sure you want to delete generation "{generationToDelete.generation_name || `Version ${generationToDelete.version_number}`}"? This action cannot be undone.
+                        Are you sure you want to delete generation "{generationToDelete.generation_name || 'Unnamed Generation'}"? This action cannot be undone.
                       </p>
                     </div>
                   </div>

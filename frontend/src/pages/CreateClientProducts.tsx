@@ -79,7 +79,6 @@ interface PortfolioTemplate {
 
 interface PortfolioGeneration {
   id: number;
-  version_number: number;
   generation_name: string;
   description?: string;
   status: string;
@@ -1985,7 +1984,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               label="Select Generation"
               options={generations.map(g => ({ 
                 value: g.id.toString(), 
-                label: g.generation_name || `Version ${g.version_number}` 
+                label: g.generation_name || 'Unnamed Generation'
               }))}
               value={product.portfolio.generationId?.toString() ?? ''}
               onChange={(value) => handleGenerationSelection(product.id, String(value))}
