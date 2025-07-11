@@ -208,6 +208,104 @@ async def get_available_portfolios(db = Depends(get_db)):
         logger.error(f"Message: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.get("/bulk-with-counts", response_model=List[dict])
+async def get_portfolio_templates_with_counts(db = Depends(get_db)):
+    """Optimized endpoint to get portfolio templates with portfolio counts in a single query"""
+    try:
+        logger.info("=== Starting bulk portfolio templates with counts ===")
+        
+        # Get all portfolio templates
+        templates_response = db.table('available_portfolios').select('*').execute()
+        
+        if not templates_response.data:
+            return []
+        
+        # Get all generations in one query
+        generations_response = db.table("template_portfolio_generations") \
+            .select("id, available_portfolio_id, generation_name, status, created_at") \
+            .eq("status", "active") \
+            .execute()
+        
+        # Get all weighted risks in one query
+        if generations_response.data:
+            generation_ids = [g["id"] for g in generations_response.data]
+            weighted_risks_response = db.table("template_generation_weighted_risk") \
+                .select("generation_id, weighted_risk") \
+                .in_("generation_id", generation_ids) \
+                .execute()
+            
+            # Create lookup map for weighted risks
+            weighted_risks_map = {
+                wr["generation_id"]: float(wr["weighted_risk"]) 
+                for wr in weighted_risks_response.data or []
+                if wr.get("weighted_risk")
+            }
+        else:
+            weighted_risks_map = {}
+        
+        # Get portfolio counts for all generations in one query
+        if generations_response.data:
+            portfolio_counts_response = db.table("portfolios") \
+                .select("template_generation_id") \
+                .in_("template_generation_id", generation_ids) \
+                .execute()
+            
+            # Count portfolios per generation
+            portfolio_counts_map = {}
+            for portfolio in portfolio_counts_response.data or []:
+                gen_id = portfolio["template_generation_id"]
+                portfolio_counts_map[gen_id] = portfolio_counts_map.get(gen_id, 0) + 1
+        else:
+            portfolio_counts_map = {}
+        
+        # Create lookup map for generations by template
+        generations_map = {}
+        for gen in generations_response.data or []:
+            template_id = gen["available_portfolio_id"]
+            if template_id not in generations_map:
+                generations_map[template_id] = []
+            generations_map[template_id].append(gen)
+        
+        # Sort generations by created_at desc for each template
+        for template_id in generations_map:
+            generations_map[template_id].sort(key=lambda x: x["created_at"], reverse=True)
+        
+        # Build result
+        result = []
+        for template in templates_response.data:
+            template_id = template["id"]
+            template_generations = generations_map.get(template_id, [])
+            
+            # Get latest generation data
+            latest_generation = template_generations[0] if template_generations else None
+            
+            # Calculate total portfolio count for this template
+            total_portfolio_count = sum(
+                portfolio_counts_map.get(gen["id"], 0) 
+                for gen in template_generations
+            )
+            
+            template_data = {
+                "id": template_id,
+                "name": template.get("name"),
+                "created_at": template.get("created_at"),
+                "portfolioCount": total_portfolio_count,
+                "weighted_risk": weighted_risks_map.get(latest_generation["id"]) if latest_generation else None,
+                "generation_id": latest_generation["id"] if latest_generation else None,
+                "generation_name": latest_generation["generation_name"] if latest_generation else None,
+                "status": template.get("status", "active")
+            }
+            
+            result.append(template_data)
+        
+        logger.info(f"Successfully processed {len(result)} portfolio templates with counts")
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error in bulk portfolio templates with counts: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/{portfolio_id}", response_model=PortfolioTemplateDetail)
 async def get_available_portfolio_details(request: Request, portfolio_id: int, generation_id: Optional[int] = None, db: SupabaseClient = Depends(get_db)):
     """Get detailed information about a specific portfolio template including its funds"""

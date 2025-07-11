@@ -5,13 +5,12 @@ import { TableSkeleton } from '../components/ui/feedback/TableSkeleton';
 import { EmptyState } from '../components/ui/feedback/EmptyState';
 import { ErrorDisplay } from '../components/ui/feedback/ErrorDisplay';
 import { AddButton, SearchInput } from '../components/ui';
-import { useEntityData } from '../hooks/useEntityData';
+import { usePortfolioTemplates } from '../hooks/usePortfolioTemplates';
 import { 
   Portfolio, 
   calculateAverageRisk,
   getRiskRange 
 } from '../utils/definitionsShared';
-import api from '../services/api';
 import StandardTable, { ColumnConfig } from '../components/StandardTable';
 
 const PortfolioTemplates: React.FC = () => {
@@ -21,70 +20,13 @@ const PortfolioTemplates: React.FC = () => {
   // State management
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Data fetching
-  const fetchPortfolios = useCallback(async (params: { signal?: AbortSignal } = {}) => {
-    console.log("Fetching portfolio templates from /available_portfolios...");
-    
-    try {
-      // Get list of all portfolio templates
-      const response = await api.get('/available_portfolios', { signal: params.signal });
-      console.log(`Successfully received ${response.data.length} portfolio templates`);
-      console.log('Sample portfolio data:', response.data[0]);
-      
-      // For each template, fetch its generations and count portfolios using them
-      const templatesWithCounts = await Promise.all(
-        response.data.map(async (template: any) => {
-          try {
-            // Get all generations for this template
-            const generationsResponse = await api.get(`/available_portfolios/${template.id}/generations`, { signal: params.signal });
-            const generations = generationsResponse.data || [];
-            
-            // Count portfolios for each generation
-            let totalPortfolioCount = 0;
-            await Promise.all(
-              generations.map(async (generation: any) => {
-                try {
-                  const countResponse = await api.get('/portfolios', {
-                    params: {
-                      template_generation_id: generation.id,
-                      count_only: true
-                    },
-                    signal: params.signal
-                  });
-                  totalPortfolioCount += countResponse.data?.count || 0;
-                } catch (err) {
-                  console.warn(`Failed to count portfolios for generation ${generation.id}:`, err);
-                }
-              })
-            );
-            
-            return {
-              ...template,
-              portfolioCount: totalPortfolioCount
-            };
-          } catch (err) {
-            console.warn(`Failed to fetch data for template ${template.id}:`, err);
-            return {
-              ...template,
-              portfolioCount: 0
-            };
-          }
-        })
-      );
-      
-      console.log('Templates with portfolio counts:', templatesWithCounts);
-      return templatesWithCounts;
-    } catch (err) {
-      console.error('Error in fetchPortfolios:', err);
-      throw err;
-    }
-  }, []);
-
+  // Data fetching using optimized custom hook
   const { 
-    data: portfolios, 
+    portfolios, 
     loading: portfoliosLoading, 
-    error: portfoliosError 
-  } = useEntityData<Portfolio>(fetchPortfolios, []);
+    error: portfoliosError,
+    isRefetching
+  } = usePortfolioTemplates();
 
 
 
@@ -198,12 +140,19 @@ const PortfolioTemplates: React.FC = () => {
             <EmptyState message="No portfolio templates found" />
           </div>
         ) : (
-          <StandardTable
-            data={searchFilteredPortfolios}
-            columns={columns}
-            className="cursor-pointer"
-            onRowClick={handleItemClick}
-          />
+          <div className="relative">
+            {isRefetching && (
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gray-200 z-10">
+                <div className="h-full bg-primary-500 animate-pulse"></div>
+              </div>
+            )}
+            <StandardTable
+              data={searchFilteredPortfolios}
+              columns={columns}
+              className="cursor-pointer"
+              onRowClick={handleItemClick}
+            />
+          </div>
         )}
       </div>
     </div>

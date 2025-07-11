@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { usePortfolioTemplateDetails } from '../hooks/usePortfolioTemplates';
 import StandardTable, { ColumnConfig } from '../components/StandardTable';
 import { Button, DeleteButton, ActionButton, AddButton } from '../components/ui';
 
@@ -80,10 +81,22 @@ const PortfolioTemplateDetails: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { api } = useAuth();
-  const [template, setTemplate] = useState<PortfolioTemplate | null>(null);
-  const [generations, setGenerations] = useState<Generation[]>([]);
+  
+  // Use optimized custom hook for data fetching
+  const { 
+    data: portfolioData, 
+    isLoading, 
+    error: dataError,
+    refetch: refetchPortfolioData 
+  } = usePortfolioTemplateDetails(portfolioId);
+  
+  // Extract data from hook result
+  const template = portfolioData?.template || null;
+  const generations = portfolioData?.generations || [];
+  const linkedProducts = portfolioData?.linkedProducts || [];
+  
+  // Local state for UI interactions
   const [selectedGeneration, setSelectedGeneration] = useState<Generation | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -100,83 +113,23 @@ const PortfolioTemplateDetails: React.FC = () => {
   const [generationToDelete, setGenerationToDelete] = useState<Generation | null>(null);
   const [isDeletingGeneration, setIsDeletingGeneration] = useState(false);
   const [generationProductCounts, setGenerationProductCounts] = useState<Record<number, number>>({});
-  const [linkedProducts, setLinkedProducts] = useState<LinkedProduct[]>([]);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [migrationNotes, setMigrationNotes] = useState<Record<number, string>>({});
   const [expandedArchivedGenerations, setExpandedArchivedGenerations] = useState<Set<number>>(new Set<number>());
 
-  // Create a comprehensive refresh function
+  // Simplified refresh function using the custom hook
   const refreshAllData = useCallback(async () => {
     if (!portfolioId || portfolioId === 'undefined') return;
     
     try {
-      setIsRefreshing(true);
       setError(null);
-      
-      // Fetch all data in parallel
-      await Promise.all([
-        (async () => {
-    try {
-      setIsLoading(true);
-      console.log(`Fetching portfolio template with ID: ${portfolioId}`);
-      const response = await api.get(`/available_portfolios/${portfolioId}`);
-      console.log('Portfolio template data received:', response.data);
-      setTemplate(response.data);
-    } catch (err: any) {
-      console.error('Error fetching portfolio template:', err);
-      if (err.response?.data?.detail) {
-        const detail = err.response.data.detail;
-        if (Array.isArray(detail)) {
-          setError(detail.map(item => typeof item === 'object' ? 
-            (item.msg || JSON.stringify(item)) : String(item)).join(', '));
-        } else if (typeof detail === 'object') {
-          setError(JSON.stringify(detail));
-        } else {
-          setError(String(detail));
-        }
-      } else {
-        setError('Failed to fetch portfolio template');
-      }
-    } finally {
-      setIsLoading(false);
-    }
-        })(),
-        (async () => {
-    try {
-      const response = await api.get(`/available_portfolios/${portfolioId}/generations`);
-      console.log('Generations data received:', response.data);
-      
-      if (response.data && response.data.length > 0) {
-        setGenerations(response.data);
-        // Select the first generation by default
-        setSelectedGeneration(response.data[0]);
-      }
-    } catch (err: any) {
-      console.error('Error fetching generations:', err);
-    }
-        })(),
-        (async () => {
-          try {
-            console.log(`Fetching products linked to portfolio template ${portfolioId}`);
-            const response = await api.get(`/available_portfolios/${portfolioId}/linked-products`);
-            console.log('Linked products data received:', response.data);
-            
-            setLinkedProducts(response.data || []);
-          } catch (err: any) {
-            console.error('Error fetching linked products:', err);
-            // Don't set error state as this is not critical functionality
-            setLinkedProducts([]);
-          }
-        })()
-      ]);
-      
+      console.log('🔄 Refreshing portfolio template data...');
+      await refetchPortfolioData();
       console.log('✅ Portfolio template data refreshed successfully');
     } catch (error) {
       console.error('❌ Error refreshing portfolio template data:', error);
-    } finally {
-      setIsRefreshing(false);
+      setError('Failed to refresh data');
     }
-  }, [portfolioId, api]);
+  }, [portfolioId, refetchPortfolioData]);
 
   // Check for refresh needed when location state indicates return from edit
   useEffect(() => {
@@ -229,7 +182,6 @@ const PortfolioTemplateDetails: React.FC = () => {
       refreshAllData();
     } else {
       setError('No portfolio template ID provided');
-      setIsLoading(false);
     }
   }, [portfolioId, refreshAllData]);
 
@@ -261,7 +213,8 @@ const PortfolioTemplateDetails: React.FC = () => {
       console.log('Weighted risk in generation response:', response.data?.weighted_risk);
       
       if (response.data) {
-        setTemplate(response.data);
+        // Trigger a refetch to update the template data
+        await refetchPortfolioData();
         console.log('Template updated with generation data');
       }
     } catch (err: any) {
@@ -344,7 +297,6 @@ const PortfolioTemplateDetails: React.FC = () => {
     if (!generationId) return;
     
     try {
-      setIsLoading(true);
       setError(null);
       
       // Call the API to activate the generation
@@ -367,8 +319,6 @@ const PortfolioTemplateDetails: React.FC = () => {
       } else {
         setError('Failed to activate generation');
       }
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -742,15 +692,6 @@ const PortfolioTemplateDetails: React.FC = () => {
                 <h1 className="text-2xl font-semibold text-gray-900">
                   {template?.name || 'Unnamed Template'}
                 </h1>
-                  {isRefreshing && (
-                    <div className="flex items-center text-sm text-gray-500">
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Refreshing...
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
