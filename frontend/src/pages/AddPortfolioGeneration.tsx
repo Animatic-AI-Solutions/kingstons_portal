@@ -523,7 +523,7 @@ const AddPortfolioGeneration: React.FC = () => {
                     onChange={(date, formatted) => {
                       setFormData(prev => ({
                         ...prev,
-                        created_at: formatted || ''
+                        created_at: date ? date.toISOString() : ''
                       }));
                     }}
                     placeholder="Select creation date"
