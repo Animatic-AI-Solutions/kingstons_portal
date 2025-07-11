@@ -29,9 +29,11 @@ const SelectedFundsPanel: React.FC<SelectedFundsPanelProps> = ({
   totalWeighting,
   isLoading
 }) => {
-  // Separate cash funds from other funds
+  // Separate cash funds from other funds and sort non-cash funds alphabetically
   const cashFunds = selectedFunds.filter(fund => isCashFund(fund));
-  const nonCashFunds = selectedFunds.filter(fund => !isCashFund(fund));
+  const nonCashFunds = selectedFunds
+    .filter(fund => !isCashFund(fund))
+    .sort((a, b) => a.fund_name.localeCompare(b.fund_name));
 
   return (
     <div className="space-y-1">
