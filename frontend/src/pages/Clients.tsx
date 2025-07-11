@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { SearchableDropdown, FilterSearch } from '../components/ui';
 import FilterDropdown from '../components/ui/dropdowns/FilterDropdown';
-import { useClientData } from '../hooks/useClientData';
+import { useOptimizedClientData } from '../hooks/useOptimizedClientData';
 import StandardTable, { ColumnConfig } from '../components/StandardTable';
 
 interface Client {
@@ -23,7 +23,7 @@ const Clients: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   
   // Use React Query hook for optimized client data fetching
-  const { data: bulkClientData, isLoading, error: queryError, refetch, forceRefresh } = useClientData();
+  const { data: bulkClientData, isLoading, error: queryError, refetch, invalidateClients } = useOptimizedClientData();
   
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -35,7 +35,7 @@ const Clients: React.FC = () => {
       window.history.replaceState({}, document.title);
       
       // Force refresh data when there's a success message (likely from deletion or other actions)
-      forceRefresh();
+      invalidateClients();
       
       // Auto-hide the message after 5 seconds
       const timer = setTimeout(() => {
@@ -87,6 +87,8 @@ const Clients: React.FC = () => {
   const handleClientClick = (clientId: string) => {
     navigate(`/client_groups/${clientId}`);
   };
+
+
 
   // Format currency with commas and no decimal places
   const formatCurrency = (amount: number): string => {

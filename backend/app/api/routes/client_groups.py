@@ -811,8 +811,8 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
     What it does: Retrieves complete client group details with all products and fund data in a single optimized request.
     Why it's needed: Eliminates N+1 query problems by fetching all related data in bulk queries instead of individual API calls per fund.
     How it works:
-        1. Uses optimized database views to fetch all data in ~6 bulk queries instead of 50+ individual queries
-        2. Gets client group info, all products, portfolio funds, activity summaries, valuations, and IRR data
+        1. Uses optimized database views to fetch all data in ~7 bulk queries instead of 50+ individual queries
+        2. Gets client group info, all products, portfolio funds, activity summaries, valuations, IRR data, and product owners
         3. Processes and aggregates inactive funds into "Previous Funds" entries
         4. Returns complete nested data structure for immediate frontend consumption
     Expected output: A complete client group object with all products and their fund details nested within
@@ -843,11 +843,35 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                 }
             }
         
-        # Step 3: Get portfolio IDs to fetch all fund data in bulk
+        # Step 3: Get all product owners for all products in one query
+        product_ids = [p["product_id"] for p in products_result.data if p["product_id"]]
+        product_owners_data = {}
+        
+        if product_ids:
+            # Query product owners for all products
+            owners_result = db.table("product_owner_details").select("*").in_("product_id", product_ids).execute()
+            
+            # Group product owners by product_id
+            for owner in owners_result.data or []:
+                product_id = owner["product_id"]
+                if product_id not in product_owners_data:
+                    product_owners_data[product_id] = []
+                product_owners_data[product_id].append({
+                    "id": owner["product_owner_id"],
+                    "firstname": owner["product_owner_firstname"],
+                    "surname": owner["product_owner_surname"],
+                    "known_as": owner["product_owner_known_as"],
+                    "status": owner["product_owner_status"],
+                    "display_name": owner["product_owner_name"]
+                })
+            
+            logger.info(f"Fetched product owners for {len(product_ids)} products")
+        
+        # Step 4: Get portfolio IDs to fetch all fund data in bulk
         portfolio_ids = list(set([p["portfolio_id"] for p in products_result.data if p["portfolio_id"]]))
         logger.info(f"Found {len(portfolio_ids)} unique portfolios")
         
-        # Step 4: Fetch all fund data for all portfolios in one bulk query
+        # Step 5: Fetch all fund data for all portfolios in one bulk query
         funds_data = {}
         if portfolio_ids:
             funds_result = db.table("complete_fund_data").select("*").in_("portfolio_id", portfolio_ids).execute()
@@ -861,7 +885,7 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
             
             logger.info(f"Fetched {len(funds_result.data or [])} funds across {len(portfolio_ids)} portfolios")
         
-        # Step 5: Process products and organize fund data
+        # Step 6: Process products and organize fund data
         processed_products = []
         
         # Group products by product_id to avoid duplicates from the view
@@ -889,14 +913,13 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                     "risk_factor": fund["risk_factor"],
                     "amount_invested": fund["amount_invested"] or 0,
                     "market_value": fund["market_value"] or 0,
-                                    "investments": fund["total_investments"] or 0,
+                    "investments": fund["total_investments"] or 0,
                     "tax_uplift": fund["total_tax_uplift"] or 0,
-                "withdrawals": fund["total_withdrawals"] or 0,
-                "fund_switch_in": fund["total_fund_switch_in"] or 0,
-                "fund_switch_out": fund["total_fund_switch_out"] or 0,
-
-                "product_switch_in": fund["total_product_switch_in"] or 0,
-                "product_switch_out": fund["total_product_switch_out"] or 0,
+                    "withdrawals": fund["total_withdrawals"] or 0,
+                    "fund_switch_in": fund["total_fund_switch_in"] or 0,
+                    "fund_switch_out": fund["total_fund_switch_out"] or 0,
+                    "product_switch_in": fund["total_product_switch_in"] or 0,
+                    "product_switch_out": fund["total_product_switch_out"] or 0,
                     "irr": fund["irr"],
                     "valuation_date": fund["valuation_date"],
                     "status": "active"
@@ -966,6 +989,7 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                 } if product.get("template_generation_id") else None,
                 "fixed_cost": product.get("fixed_cost"),
                 "percentage_fee": product.get("percentage_fee"),
+                "product_owners": product_owners_data.get(product["product_id"], []),
                 "funds": processed_funds
             }
             
@@ -996,17 +1020,35 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
         
         logger.info(f"Processed {len(processed_products)} products with complete fund data")
         
-        # Step 6: Return complete response
+        # Step 7: Extract unique product owners for client-level display
+        all_product_owners = []
+        client_product_owner_ids = set()
+        
+        for product in processed_products:
+            for owner in product.get("product_owners", []):
+                if owner["id"] not in client_product_owner_ids:
+                    client_product_owner_ids.add(owner["id"])
+                    all_product_owners.append(owner)
+        
+        logger.info(f"Found {len(all_product_owners)} unique product owners across all products")
+        
+        # Update client_group with product owners
+        client_group_with_owners = {
+            **client_group,
+            "product_owners": all_product_owners
+        }
+        
+        # Step 8: Return complete response
         return {
-            "client_group": client_group,
+            "client_group": client_group_with_owners,
             "products": processed_products,
             "total_products": len(processed_products),
             "performance_stats": {
-                "queries_executed": 4,  # client_group + client_group_complete_data + complete_fund_data + verification
+                "queries_executed": 5,  # client_group + client_group_complete_data + product_owner_details + complete_fund_data + verification
                 "funds_processed": sum(len(p["funds"]) for p in processed_products),
                 "optimization_note": "Used bulk views - 92% query reduction vs individual calls",
                 "previous_approach_queries": f"Would have been ~{len(processed_products) * 10 + 15} queries",
-                "current_approach_queries": 4
+                "current_approach_queries": 5
             }
         }
         
