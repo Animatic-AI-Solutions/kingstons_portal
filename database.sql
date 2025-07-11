@@ -1133,6 +1133,71 @@ GROUP BY ap.id, ap.name, ap.theme_color
 ORDER BY total_annual_revenue DESC;
 
 -- =========================================================
+-- PRODUCTS DISPLAY VIEW - Optimized for Products Page
+-- =========================================================
+-- Purpose: Fast loading for Products page - only essential data
+-- What it includes: Product name, provider, client, portfolio value, IRR
+-- What it excludes: Revenue calculations, template data, unused fields
+
+CREATE OR REPLACE VIEW public.products_display_view AS
+SELECT 
+    -- Core product information
+    cp.id as product_id,
+    cp.product_name,
+    cp.status,
+    
+    -- Client information (for search)
+    cp.client_id,
+    COALESCE(NULLIF(cg.name, ''), 'Client Group ' || cp.client_id) as client_name,
+    
+    -- Provider information (displayed + for search)
+    cp.provider_id,
+    ap.name as provider_name,
+    ap.theme_color as provider_theme_color,
+    
+    -- Portfolio information (for value calculation)
+    cp.portfolio_id,
+    
+    -- Portfolio value (optimized with LEFT JOIN instead of subquery)
+    COALESCE(pv_agg.total_portfolio_value, 0) as total_value,
+    
+    -- IRR information (from existing optimized view)
+    lpiv.irr_result as irr,
+    lpiv.irr_date,
+    
+    -- Simple portfolio type for search (no complex template logic)
+    CASE 
+        WHEN cp.portfolio_id IS NOT NULL THEN 'Portfolio'
+        ELSE 'No Portfolio'
+    END as portfolio_type_display
+
+FROM 
+    client_products cp
+    
+    -- Client information
+    LEFT JOIN client_groups cg ON cg.id = cp.client_id
+    
+    -- Provider information  
+    LEFT JOIN available_providers ap ON ap.id = cp.provider_id
+    
+    -- Portfolio value aggregation (replaces expensive subquery)
+    LEFT JOIN (
+        SELECT 
+            pf.portfolio_id,
+            SUM(COALESCE(lfv.valuation, 0)) as total_portfolio_value
+        FROM portfolio_funds pf
+        LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id
+        WHERE pf.status = 'active'
+        GROUP BY pf.portfolio_id
+    ) pv_agg ON pv_agg.portfolio_id = cp.portfolio_id
+    
+    -- IRR data (from existing optimized view)
+    LEFT JOIN latest_portfolio_irr_values lpiv ON lpiv.portfolio_id = cp.portfolio_id
+
+-- Only include active client groups
+WHERE cg.status != 'inactive' OR cg.status IS NULL;
+
+-- =========================================================
 -- GLOBAL SEARCH FUNCTION
 -- =========================================================
 

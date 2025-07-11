@@ -64,7 +64,7 @@ const Products: React.FC = () => {
       setIsLoading(true);
       console.log("Fetching products data with optimized endpoint...");
       
-      const productsWithOwnersRes = await api.get('/client_products_with_owners');
+      const productsWithOwnersRes = await api.get('/products_display');
       
       // Set products directly from the optimized endpoint response
       const productsData = productsWithOwnersRes.data || [];
@@ -78,7 +78,10 @@ const Products: React.FC = () => {
           name: sampleProduct.product_name,
           client: sampleProduct.client_name,
           portfolioType: sampleProduct.portfolio_type_display,
-          ownerCount: sampleProduct.product_owners?.length || 0
+          ownerCount: sampleProduct.product_owners?.length || 0,
+          provider: sampleProduct.provider_name,
+          providerThemeColor: sampleProduct.provider_theme_color,
+          themeColor: sampleProduct.theme_color
         });
       }
       
