@@ -163,9 +163,18 @@ const AddFundModal: React.FC<AddFundModalProps> = ({
       errors.isin_number = 'ISIN number is required';
     }
     
-    // Validate risk factor is between 1 and 7
-    if (formData.risk_factor !== null && (formData.risk_factor < 1 || formData.risk_factor > 7)) {
+    // Risk factor is required and must be between 1 and 7
+    if (formData.risk_factor === null || formData.risk_factor === undefined) {
+      errors.risk_factor = 'Risk factor is required';
+    } else if (formData.risk_factor < 1 || formData.risk_factor > 7) {
       errors.risk_factor = 'Risk factor must be between 1 and 7';
+    }
+    
+    // Fund cost is required
+    if (formData.fund_cost === null || formData.fund_cost === undefined) {
+      errors.fund_cost = 'Fund cost is required';
+    } else if (formData.fund_cost < 0) {
+      errors.fund_cost = 'Fund cost cannot be negative';
     }
     
     setFieldErrors(errors);
@@ -183,7 +192,16 @@ const AddFundModal: React.FC<AddFundModalProps> = ({
     setError(null);
 
     try {
-      const response = await api.post('/funds', formData);
+      // Prepare data for submission, ensuring required fields are not null
+      const submitData = {
+        fund_name: formData.fund_name,
+        isin_number: formData.isin_number,
+        risk_factor: formData.risk_factor!,  // We've validated it's not null
+        fund_cost: formData.fund_cost!,      // We've validated it's not null
+        status: formData.status
+      };
+      
+      const response = await api.post('/funds', submitData);
       const newFund = response.data;
 
       // Call success callback
@@ -307,6 +325,7 @@ const AddFundModal: React.FC<AddFundModalProps> = ({
                 max={7}
                 step={1}
                 showSteppers={true}
+                required
                 error={fieldErrors.risk_factor}
                 helperText="1 = Conservative, 7 = Aggressive"
               />
@@ -319,6 +338,7 @@ const AddFundModal: React.FC<AddFundModalProps> = ({
                 min={0}
                 step={0.01}
                 decimalPlaces={2}
+                required
                 error={fieldErrors.fund_cost}
                 helperText="Enter as percentage, e.g., 0.75"
               />
