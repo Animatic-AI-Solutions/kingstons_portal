@@ -124,25 +124,65 @@ class HistoricalIRRService {
    */
   async getCombinedHistoricalIRR(productId: number, limit: number = 12): Promise<CombinedHistoricalIRRResponse> {
     try {
-      const response = await fetch(
-        `${this.baseUrl}/api/historical-irr/combined/${productId}?limit=${limit}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const url = `${this.baseUrl}/api/historical-irr/combined/${productId}?limit=${limit}`;
+      console.log(`📊 Attempting to fetch combined historical IRR from: ${url}`);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      // Check if response is HTML (error page) instead of JSON
+      const contentType = response.headers.get('content-type');
+      console.log(`📊 Response status: ${response.status}, Content-Type: ${contentType}`);
+      
+      if (contentType && contentType.includes('text/html')) {
+        console.warn(`⚠️ Received HTML response instead of JSON for product ${productId}. This likely means the backend endpoint is not available.`);
+        
+        // Try to get the HTML content for debugging
+        const htmlContent = await response.text();
+        console.error(`📋 HTML Response content (first 200 chars): ${htmlContent.substring(0, 200)}`);
+        
+        // Return empty response as fallback
+        return {
+          product_id: productId,
+          portfolio_historical_irr: [],
+          funds_historical_irr: [],
+          portfolio_count: 0,
+          funds_count: 0,
+          total_fund_records: 0
+        };
+      }
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`❌ HTTP error ${response.status}: ${errorText}`);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
 
       const data = await response.json();
-      console.log(`📊 Combined historical IRR fetched for product ${productId}:`, data);
+      console.log(`✅ Combined historical IRR fetched successfully for product ${productId}:`, data);
       return data;
     } catch (error) {
-      console.error(`Error fetching combined historical IRR for product ${productId}:`, error);
+      console.error(`❌ Error fetching combined historical IRR for product ${productId}:`, error);
+      
+      // Check if it's a JSON parsing error (common when receiving HTML)
+      if (error instanceof SyntaxError && error.message.includes('JSON')) {
+        console.warn(`⚠️ JSON parsing error for product ${productId} - likely received HTML instead of JSON. Returning empty response.`);
+        
+        // Return empty response as fallback
+        return {
+          product_id: productId,
+          portfolio_historical_irr: [],
+          funds_historical_irr: [],
+          portfolio_count: 0,
+          funds_count: 0,
+          total_fund_records: 0
+        };
+      }
+      
       throw error;
     }
   }

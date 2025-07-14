@@ -868,29 +868,67 @@ const ReportGenerator: React.FC = () => {
       
       // Fetch historical IRR data for each product (no limit to get all dates)
       for (const productId of productIds) {
-        const response = await historicalIRRService.getCombinedHistoricalIRR(productId, 1000); // Large limit to get all data
-        
-        if (response.funds_historical_irr && response.funds_historical_irr.length > 0) {
-          // Extract all unique dates from this product's IRR data
-          const productDates = new Set<string>();
+        try {
+          console.log(`📊 Fetching historical IRR data for product ${productId}`);
+          const response = await historicalIRRService.getCombinedHistoricalIRR(productId, 1000); // Large limit to get all data
           
-        response.funds_historical_irr.forEach((fund: any) => {
-          if (fund.historical_irr && fund.historical_irr.length > 0) {
-            fund.historical_irr.forEach((record: any) => {
-              if (record.irr_result !== null && record.irr_date) {
-                  productDates.add(record.irr_date);
+          console.log(`📊 Response for product ${productId}:`, {
+            portfolio_count: response.portfolio_count || 0,
+            funds_count: response.funds_count || 0,
+            total_fund_records: response.total_fund_records || 0
+          });
+          
+          // Check if we have funds historical IRR data
+          if (response.funds_historical_irr && response.funds_historical_irr.length > 0) {
+            // Extract all unique dates from this product's IRR data
+            const productDates = new Set<string>();
+            
+            response.funds_historical_irr.forEach((fund: any) => {
+              if (fund.historical_irr && fund.historical_irr.length > 0) {
+                fund.historical_irr.forEach((record: any) => {
+                  if (record.irr_result !== null && record.irr_date) {
+                      productDates.add(record.irr_date);
+                    }
+                  });
                 }
               });
+              
+              // Add this product's dates to the global map
+              productDates.forEach(date => {
+                if (!allDatesMap.has(date)) {
+                  allDatesMap.set(date, new Set());
+                }
+                allDatesMap.get(date)!.add(productId);
+              });
+              
+              console.log(`📊 Product ${productId} has ${productDates.size} unique IRR dates`);
+            } else {
+              console.log(`📊 Product ${productId} has no funds historical IRR data`);
             }
-          });
-          
-          // Add this product's dates to the global map
-          productDates.forEach(date => {
-            if (!allDatesMap.has(date)) {
-              allDatesMap.set(date, new Set());
+            
+            // Also check portfolio historical IRR data
+            if (response.portfolio_historical_irr && response.portfolio_historical_irr.length > 0) {
+              const portfolioProductDates = new Set<string>();
+              
+              response.portfolio_historical_irr.forEach((portfolio: any) => {
+                if (portfolio.irr_result !== null && portfolio.irr_date) {
+                  portfolioProductDates.add(portfolio.irr_date);
+                }
+              });
+              
+              // Add portfolio dates to the global map
+              portfolioProductDates.forEach(date => {
+                if (!allDatesMap.has(date)) {
+                  allDatesMap.set(date, new Set());
+                }
+                allDatesMap.get(date)!.add(productId);
+              });
+              
+              console.log(`📊 Product ${productId} has ${portfolioProductDates.size} unique portfolio IRR dates`);
             }
-            allDatesMap.get(date)!.add(productId);
-          });
+        } catch (productError) {
+          console.error(`❌ Error fetching IRR data for product ${productId}:`, productError);
+          // Continue with other products even if one fails
         }
       }
       
@@ -913,11 +951,14 @@ const ReportGenerator: React.FC = () => {
       // Sort by date (most recent first)
       availableDates.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       
-      console.log(`Found ${availableDates.length} unique IRR dates across all products`);
+      console.log(`✅ Found ${availableDates.length} unique IRR dates across all products`);
+      console.log(`📊 Available IRR dates summary:`, availableDates.map(d => `${d.label} (${d.productIds.length} products)`));
+      
       return availableDates;
       
     } catch (error) {
-      console.error('Error fetching available IRR dates:', error);
+      console.error('❌ Error fetching available IRR dates:', error);
+      // Return empty array instead of throwing to allow the report to continue
       return [];
     }
   };
