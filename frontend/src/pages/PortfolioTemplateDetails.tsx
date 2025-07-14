@@ -651,8 +651,8 @@ const PortfolioTemplateDetails: React.FC = () => {
   const weightedRisk = calculateWeightedRisk();
 
   return (
-    <div className="container mx-auto px-4 lg:px-8 py-4 border-l-8 border-teal-500 bg-gradient-to-r from-teal-50/30 to-transparent">
-      {/* Sidebar Color Strip implemented via left border and subtle background gradient */}
+    <div className="container mx-auto px-4 lg:px-8 py-4">
+      {/* Clean page layout without color strip */}
       
       {/* Breadcrumbs */}
       <nav className="mb-4 flex" aria-label="Breadcrumb">
@@ -660,7 +660,7 @@ const PortfolioTemplateDetails: React.FC = () => {
           <li className="inline-flex items-center">
             <button
               onClick={handleBack}
-              className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-teal-700 transition-colors"
+              className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
             >
               <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
@@ -673,20 +673,20 @@ const PortfolioTemplateDetails: React.FC = () => {
               <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                 <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
               </svg>
-              <span className="ml-1 text-sm font-medium text-teal-700 md:ml-2">{template ? template.name : 'Portfolio Template Details'}</span>
+              <span className="ml-1 text-sm font-medium text-gray-700 md:ml-2">{template ? template.name : 'Portfolio Template Details'}</span>
             </div>
           </li>
         </ol>
       </nav>
 
       {/* Header Card */}
-      <div className="bg-white shadow-sm rounded-lg border-2 border-teal-500 mb-4">
+      <div className="bg-white shadow-sm rounded-lg border border-gray-200 mb-4">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               {/* Portfolio Icon */}
-              <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg className="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>

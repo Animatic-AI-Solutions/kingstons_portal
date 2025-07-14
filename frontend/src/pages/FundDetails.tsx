@@ -335,7 +335,7 @@ const FundDetails: React.FC = () => {
     }
       }
 
-      const response = await api.put(`/funds/${fund?.id}`, formData);
+      const response = await api.patch(`/funds/${fund?.id}`, formData);
 
       if (response.data) {
         setFund(response.data);
