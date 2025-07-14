@@ -777,6 +777,8 @@ SELECT
     cg.name as client_group_name,
     cg.advisor,
     cg.status as client_group_status,
+    cg.type,
+    cg.created_at,
     cp.id as product_id,
     cp.product_name,
     cp.product_type,

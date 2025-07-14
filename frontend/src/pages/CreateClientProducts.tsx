@@ -58,8 +58,8 @@ interface ProductItem {
   start_date: dayjs.Dayjs; // Required field - each product has its own start date
   plan_number?: string; // Add plan number field
   product_owner_ids: number[]; // Changed from product_owner_id to product_owner_ids array
-  fixed_cost?: number; // Fixed annual cost for revenue calculation
-  percentage_fee?: number; // Percentage fee for revenue calculation
+  fixed_cost?: number; // Fixed annual cost for revenue calculation (required, user must enter value)
+  percentage_fee?: number; // Percentage fee for revenue calculation (required, user must enter value)
   portfolio: {
     id?: number; // Portfolio ID when created or selected
     name: string;
@@ -621,6 +621,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       start_date: dayjs().startOf('month'), // Default to first day of current month
       plan_number: '', // Initialize as empty string
       product_owner_ids: [],
+      // fixed_cost and percentage_fee left undefined - user must enter values
       portfolio: {
         name: '', // Will be generated when product details are filled
         selectedFunds: initialSelectedFunds,
@@ -1262,6 +1263,26 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         hasErrors = true;
       }
 
+      // Fee validation - both fields are required and must be explicitly entered by user
+      if (product.fixed_cost === undefined || product.fixed_cost === null) {
+        productErrors.fixed_cost = 'Please enter a fixed cost (enter 0 if no fixed cost)';
+        hasErrors = true;
+      } else if (product.fixed_cost < 0) {
+        productErrors.fixed_cost = 'Fixed cost cannot be negative';
+        hasErrors = true;
+      }
+
+      if (product.percentage_fee === undefined || product.percentage_fee === null) {
+        productErrors.percentage_fee = 'Please enter a percentage fee (enter 0 if no percentage fee)';
+        hasErrors = true;
+      } else if (product.percentage_fee < 0) {
+        productErrors.percentage_fee = 'Percentage fee cannot be negative';
+        hasErrors = true;
+      } else if (product.percentage_fee > 100) {
+        productErrors.percentage_fee = 'Percentage fee cannot exceed 100%';
+        hasErrors = true;
+      }
+
       // Portfolio name validation - use auto-generated name if empty
       const portfolioName = product.portfolio.name || generatePortfolioName(product);
       if (!portfolioName.trim()) {
@@ -1549,8 +1570,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               plan_number: product.plan_number || null,
               target_risk: targetRisk,
               template_generation_id: product.portfolio.type === 'template' ? product.portfolio.generationId : null,
-              fixed_cost: product.fixed_cost || null,
-              percentage_fee: product.percentage_fee || null
+              fixed_cost: product.fixed_cost ?? null,
+              percentage_fee: product.percentage_fee ?? null
             });
             
             const createdProductId = clientProductResponse.data.id;
@@ -2480,13 +2501,13 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                       <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                                       </svg>
-                                      Revenue Configuration (Optional)
+                                      Revenue Configuration (Required)
                                     </h5>
                                     <div className="grid grid-cols-2 gap-2">
                                       <div>
                                         <NumberInput
-                                          label="Fixed Cost (£)"
-                                          placeholder="e.g. 500"
+                                          label="Fixed Cost (£) *"
+                                          placeholder="Enter amount (0 for no fixed cost)"
                                           value={product.fixed_cost}
                                           onChange={(e) => {
                                             const value = e.target.value;
@@ -2496,18 +2517,20 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                           size="sm"
                                           fullWidth
                                           min={0}
+                                          required
+                                          error={validationErrors[product.id]?.fixed_cost}
                                           leftIcon={
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                                             </svg>
                                           }
-                                          helperText="Annual fixed fee"
+                                          helperText="Annual fixed fee (required)"
                                         />
                                       </div>
                                       <div>
                                         <NumberInput
-                                          label="Percentage Fee (%)"
-                                          placeholder="e.g. 1.5"
+                                          label="Percentage Fee (%) *"
+                                          placeholder="Enter percentage (0 for no percentage fee)"
                                           value={product.percentage_fee}
                                           onChange={(e) => {
                                             const value = e.target.value;
@@ -2519,12 +2542,14 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                           min={0}
                                           max={100}
                                           step={0.1}
+                                          required
+                                          error={validationErrors[product.id]?.percentage_fee}
                                           leftIcon={
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                                             </svg>
                                           }
-                                          helperText="% of portfolio value"
+                                          helperText="% of portfolio value (required)"
                                         />
                                       </div>
                                     </div>
