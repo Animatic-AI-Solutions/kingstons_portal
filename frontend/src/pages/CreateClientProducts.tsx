@@ -786,6 +786,10 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   
   // Add function to handle weighting changes
   const handleWeightingChange = (productId: string, fundId: number, weighting: string) => {
+    // Check if we need to show switch message
+    const currentProduct = products.find(p => p.id === productId);
+    const shouldShowSwitchMessage = currentProduct?.portfolio.type === 'template';
+
     setProducts(prevProducts => prevProducts.map(product => {
       if (product.id === productId) {
         const newWeightings = { ...product.portfolio.fundWeightings };
@@ -816,17 +820,34 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             }
           }
         }
+
+        // Auto-switch to bespoke if currently template and user is editing weightings
+        let newPortfolioType = product.portfolio.type;
+        if (product.portfolio.type === 'template') {
+          newPortfolioType = 'bespoke';
+        }
         
         return {
           ...product,
           portfolio: {
             ...product.portfolio,
-            fundWeightings: newWeightings
+            type: newPortfolioType,
+            fundWeightings: newWeightings,
+            // Clear template-specific fields when switching to bespoke
+            ...(newPortfolioType === 'bespoke' && product.portfolio.type === 'template' && {
+              templateId: undefined,
+              generationId: undefined
+            })
           }
         };
       }
       return product;
     }));
+
+    // Show notification if switched from template to bespoke
+    if (shouldShowSwitchMessage) {
+      showToastMessage('Portfolio switched to bespoke mode for custom weightings');
+    }
     
     // Clear validation errors for this specific field when user starts typing
     if (weightingErrors[productId]?.[fundId.toString()]) {
@@ -1725,7 +1746,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                           </div>
                           
                           <div className="flex items-center space-x-1 flex-shrink-0">
-                            {product.portfolio.type === 'bespoke' && (
+                            {/* Show editable weightings for both bespoke and template portfolios */}
+                            {(product.portfolio.type === 'bespoke' || (product.portfolio.type === 'template' && Object.keys(product.portfolio.fundWeightings).length > 0)) && (
                               <>
                                 <input
                                   type="text"
@@ -1737,14 +1759,10 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                     : 'border-gray-300'
                                   }`}
                                   placeholder="0"
+                                  title={product.portfolio.type === 'template' ? 'Editing will switch to bespoke mode' : undefined}
                                 />
                                 <span className="text-xs text-gray-500">%</span>
                               </>
-                            )}
-                            {product.portfolio.type === 'template' && product.portfolio.fundWeightings[fundId.toString()] && (
-                              <div className="bg-blue-50 px-2 py-1 rounded text-xs text-blue-800 font-medium">
-                                {product.portfolio.fundWeightings[fundId.toString()]}%
-                              </div>
                             )}
                             <button
                               type="button"
@@ -1784,7 +1802,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                               </div>
                             </div>
                             <div className="flex items-center space-x-1 flex-shrink-0">
-                              {product.portfolio.type === 'bespoke' && (
+                              {/* Show editable weightings for both bespoke and template portfolios */}
+                              {(product.portfolio.type === 'bespoke' || (product.portfolio.type === 'template' && Object.keys(product.portfolio.fundWeightings).length > 0)) && (
                                 <>
                                   <input
                                     type="text"
@@ -1792,14 +1811,10 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                     onChange={(e) => handleWeightingChange(product.id, cashFund.id, e.target.value)}
                                     className="w-12 text-xs text-center border border-blue-300 rounded px-1 py-0.5 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
                                     placeholder="0"
+                                    title={product.portfolio.type === 'template' ? 'Editing will switch to bespoke mode' : undefined}
                                   />
                                   <span className="text-xs text-blue-700">%</span>
                                 </>
-                              )}
-                              {product.portfolio.type === 'template' && product.portfolio.fundWeightings[cashFund.id.toString()] && (
-                                <div className="bg-blue-100 px-2 py-1 rounded text-xs text-blue-800 font-medium">
-                                  {product.portfolio.fundWeightings[cashFund.id.toString()]}%
-                                </div>
                               )}
                             </div>
                           </div>
