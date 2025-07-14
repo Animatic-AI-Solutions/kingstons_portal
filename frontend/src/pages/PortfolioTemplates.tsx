@@ -146,12 +146,12 @@ const PortfolioTemplates: React.FC = () => {
                 <div className="h-full bg-primary-500 animate-pulse"></div>
               </div>
             )}
-            <StandardTable
-              data={searchFilteredPortfolios}
-              columns={columns}
-              className="cursor-pointer"
-              onRowClick={handleItemClick}
-            />
+          <StandardTable
+            data={searchFilteredPortfolios}
+            columns={columns}
+            className="cursor-pointer"
+            onRowClick={handleItemClick}
+          />
           </div>
         )}
       </div>

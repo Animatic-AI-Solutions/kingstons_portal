@@ -61,8 +61,8 @@ const AvailableFundsPanel: React.FC<AvailableFundsPanelProps> = ({
               Add
             </button>
           )}
-          <div className="text-xs text-gray-500">
-            {availableFunds.length} fund{availableFunds.length !== 1 ? 's' : ''}
+        <div className="text-xs text-gray-500">
+          {availableFunds.length} fund{availableFunds.length !== 1 ? 's' : ''}
           </div>
         </div>
       </div>

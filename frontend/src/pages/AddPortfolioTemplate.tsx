@@ -76,8 +76,8 @@ const AddPortfolioTemplate: React.FC = () => {
           // Only add weighting if it doesn't already exist
           if (!prev[cashFund.id.toString()]) {
             return {
-              ...prev,
-              [cashFund.id.toString()]: '0'
+          ...prev,
+          [cashFund.id.toString()]: '0'
             };
           }
           return prev;

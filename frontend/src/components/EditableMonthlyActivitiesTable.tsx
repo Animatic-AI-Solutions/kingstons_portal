@@ -128,6 +128,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   portfolioId
 }) => {
   const [months, setMonths] = useState<string[]>([]);
+  const [allMonths, setAllMonths] = useState<string[]>([]); // Store all months for totals calculation
+  const [currentYear, setCurrentYear] = useState<number>(new Date().getFullYear());
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
   const [pendingEdits, setPendingEdits] = useState<CellEdit[]>([]);
   
   // Debug effect to track pendingEdits changes
@@ -273,7 +276,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     const cache = new Map<string, string>();
     
     funds.forEach(fund => {
-      months.forEach(month => {
+      allMonths.forEach(month => {
         ACTIVITY_TYPES.forEach(activityType => {
           const key = `${fund.id}-${month}-${activityType}`;
           
@@ -348,7 +351,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     });
     
     return cache;
-  }, [funds, months, activitiesState, fundValuations, pendingEditsMap, activitiesIndex, fundValuationsIndex]);
+  }, [funds, allMonths, activitiesState, fundValuations, pendingEditsMap, activitiesIndex, fundValuationsIndex]);
 
   // Memoized calculation results - pre-calculate all totals
   const calculationResults = useMemo(() => {
@@ -454,13 +457,18 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       results.monthTotals.set(month, total);
     });
 
-    // Calculate row totals
+    // Calculate row totals across months in selected year and before (not future years)
+    const monthsUpToSelectedYear = allMonths.filter(month => {
+      const monthYear = parseInt(month.split('-')[0]);
+      return monthYear <= currentYear;
+    });
+
     funds.forEach(fund => {
       ACTIVITY_TYPES.forEach(activityType => {
         const key = `${fund.id}-${activityType}`;
         let total = 0;
 
-        months.forEach(month => {
+        monthsUpToSelectedYear.forEach(month => {
           const cellKey = `${fund.id}-${month}-${activityType}`;
           const cellValue = cellValuesCache.get(cellKey) || '';
           const numericValue = parseFloat(cellValue) || 0;
@@ -481,13 +489,13 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       });
     });
 
-    // Calculate fund row totals
+    // Calculate fund row totals across months in selected year and before
     funds.forEach(fund => {
       let total = 0;
       
       ACTIVITY_TYPES.forEach(activityType => {
         if (activityType !== 'Current Value') {
-          months.forEach(month => {
+          monthsUpToSelectedYear.forEach(month => {
             const cellKey = `${fund.id}-${month}-${activityType}`;
             const cellValue = cellValuesCache.get(cellKey) || '';
             const numericValue = parseFloat(cellValue) || 0;
@@ -510,7 +518,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     });
 
     return results;
-  }, [funds, months, cellValuesCache, inactiveFundsForTotals, activitiesIndex, activityTypeSignMap]);
+  }, [funds, months, allMonths, cellValuesCache, inactiveFundsForTotals, activitiesIndex, activityTypeSignMap, currentYear]);
 
   // Color management for switch groups
   const SWITCH_COLORS = [
@@ -619,10 +627,25 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           
           if (cells && tableContainerRef.current) {
             const containerLeft = containerRect.left;
-            cells.forEach(cell => {
+            const scrollLeft = tableContainerRef.current.scrollLeft;
+            
+            cells.forEach((cell, index) => {
               const cellRect = cell.getBoundingClientRect();
+              let left = cellRect.left - containerLeft;
+              
+              // Activities column (index 0) is always at left: 0 in fixed mode
+              if (index === 0) {
+                left = 0;
+              }
+              // For month columns (index > 0), position them to the right of the Activities column
+              else if (index > 0 && index <= months.length) {
+                const activityColumnWidth = cells[0]?.getBoundingClientRect().width || 120;
+                // Position month columns starting from the Activities column width
+                left = activityColumnWidth + (index - 1) * 100;
+              }
+              
               positions.push({
-                left: cellRect.left - containerLeft,
+                left: left,
                 width: cellRect.width
               });
             });
@@ -664,6 +687,57 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       }
     };
   }, []);
+
+  // Recalculate column positions when months change (year pagination)
+  useEffect(() => {
+    const recalculatePositions = () => {
+      if (tableContainerRef.current && tableRef.current) {
+        const containerRect = tableContainerRef.current.getBoundingClientRect();
+        const shouldStick = containerRect.top <= 0 && containerRect.bottom > 0;
+        
+        if (shouldStick) {
+          // Get exact column positions from the actual table cells
+          const headerRow = tableRef.current.querySelector('thead tr');
+          const cells = headerRow?.querySelectorAll('th');
+          const positions: {left: number, width: number}[] = [];
+          
+          if (cells && tableContainerRef.current) {
+            const containerLeft = containerRect.left;
+            const scrollLeft = tableContainerRef.current.scrollLeft;
+            
+            cells.forEach((cell, index) => {
+              const cellRect = cell.getBoundingClientRect();
+              let left = cellRect.left - containerLeft;
+              
+              // Activities column (index 0) is always at left: 0 in fixed mode
+              if (index === 0) {
+                left = 0;
+              }
+              // For month columns (index > 0), position them to the right of the Activities column
+              else if (index > 0 && index <= months.length) {
+                const activityColumnWidth = cells[0]?.getBoundingClientRect().width || 120;
+                // Position month columns starting from the Activities column width
+                left = activityColumnWidth + (index - 1) * 100;
+              }
+              
+              positions.push({
+                left: left,
+                width: cellRect.width
+              });
+            });
+          }
+          
+          setColumnPositions(positions);
+          setTableWidth(tableRef.current.getBoundingClientRect().width);
+        }
+      }
+    };
+
+    // Use a small delay to ensure the DOM has updated after months change
+    const timeoutId = setTimeout(recalculatePositions, 50);
+    
+    return () => clearTimeout(timeoutId);
+  }, [months]); // Recalculate when months array changes
 
   // Synchronize scroll between top and bottom scroll bars
   useEffect(() => {
@@ -803,11 +877,11 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     };
   }, [pendingEdits, navigate]);
 
-  // Initialize all months from product start date to current month
+  // Initialize all months from product start date to current month and set up year pagination
   useEffect(() => {
     // Get current date for comparison
     const now = new Date();
-    const currentYear = now.getFullYear();
+    const currentYearValue = now.getFullYear();
     const currentMonth = now.getMonth(); // 0-11
     
     // Determine start date
@@ -816,27 +890,46 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       startDate = new Date(productStartDate);
     } else {
       // Default to beginning of current year if no product start date
-      startDate = new Date(currentYear, 0, 1);
+      startDate = new Date(currentYearValue, 0, 1);
     }
     
     // Start from the product start month/year
     let iterDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-    const endDate = new Date(currentYear, currentMonth, 1);
+    const endDate = new Date(currentYearValue, currentMonth, 1);
     
     // Generate all months from product start date to current month
-    const allMonths: string[] = [];
+    const allMonthsArray: string[] = [];
     while (iterDate <= endDate) {
       const monthStr = `${iterDate.getFullYear()}-${String(iterDate.getMonth() + 1).padStart(2, '0')}`;
-      allMonths.push(monthStr);
+      allMonthsArray.push(monthStr);
       
       // Move to next month
       iterDate.setMonth(iterDate.getMonth() + 1);
     }
     
-    // Sort months in ascending order (oldest first) and set directly
-    const sortedMonths = allMonths.sort();
-    setMonths(sortedMonths);
+    // Sort months in ascending order (oldest first)
+    const sortedMonths = allMonthsArray.sort();
+    setAllMonths(sortedMonths);
+    
+    // Extract available years
+    const years = [...new Set(sortedMonths.map(month => parseInt(month.split('-')[0])))].sort();
+    setAvailableYears(years);
+    
+    // Set initial year to the latest year with data
+    if (years.length > 0) {
+      setCurrentYear(years[years.length - 1]);
+    }
   }, [productStartDate]);
+
+  // Filter months by selected year
+  useEffect(() => {
+    if (allMonths.length > 0) {
+      const yearMonths = allMonths.filter(month => 
+        parseInt(month.split('-')[0]) === currentYear
+      );
+      setMonths(yearMonths);
+    }
+  }, [allMonths, currentYear]);
   
   // No longer auto-focusing the first cell to avoid disrupting user flow
   useEffect(() => {
@@ -1515,6 +1608,15 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         monthIndex: newMonthIndex
       });
       
+      // Auto-scroll to beginning if focusing on the leftmost month
+      if (newMonthIndex === 0) {
+        scrollToBeginning();
+      }
+      // Auto-scroll to end if focusing on the rightmost month
+      else if (newMonthIndex === months.length - 1) {
+        scrollToEnd();
+      }
+      
       // Focus the totals cell
       setTimeout(() => {
         const totalsCell = document.getElementById(
@@ -1535,6 +1637,15 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         activityType: ACTIVITY_TYPES[newActivityTypeIndex],
         monthIndex: newMonthIndex
       });
+      
+      // Auto-scroll to beginning if focusing on the leftmost month
+      if (newMonthIndex === 0) {
+        scrollToBeginning();
+      }
+      // Auto-scroll to end if focusing on the rightmost month
+      else if (newMonthIndex === months.length - 1) {
+        scrollToEnd();
+      }
       
       // Find and focus the input element
       setTimeout(() => {
@@ -1621,6 +1732,15 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           monthIndex: newMonthIndex
         });
         
+        // Auto-scroll to beginning if focusing on the leftmost month
+        if (newMonthIndex === 0) {
+          scrollToBeginning();
+        }
+        // Auto-scroll to end if focusing on the rightmost month
+        else if (newMonthIndex === months.length - 1) {
+          scrollToEnd();
+        }
+        
         setTimeout(() => {
           const cell = document.getElementById(
             `cell-${lastActiveFund.id}-${months[newMonthIndex]}-${ACTIVITY_TYPES[ACTIVITY_TYPES.length - 1]}`
@@ -1640,6 +1760,15 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         activityType: newRowType,
         monthIndex: newMonthIndex
       });
+      
+      // Auto-scroll to beginning if focusing on the leftmost month
+      if (newMonthIndex === 0) {
+        scrollToBeginning();
+      }
+      // Auto-scroll to end if focusing on the rightmost month
+      else if (newMonthIndex === months.length - 1) {
+        scrollToEnd();
+      }
       
       setTimeout(() => {
         const totalsCell = document.getElementById(
@@ -1890,7 +2019,95 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   };
 
   // Navigation functions for month pages
+  const scrollToBeginning = () => {
+    // Scroll both the top scroll bar and table container to the beginning
+    if (topScrollRef.current) {
+      topScrollRef.current.scrollLeft = 0;
+    }
+    if (tableContainerRef.current) {
+      tableContainerRef.current.scrollLeft = 0;
+    }
+  };
 
+  const scrollToEnd = () => {
+    // Scroll both the top scroll bar and table container to the end
+    if (topScrollRef.current) {
+      topScrollRef.current.scrollLeft = topScrollRef.current.scrollWidth;
+    }
+    if (tableContainerRef.current) {
+      tableContainerRef.current.scrollLeft = tableContainerRef.current.scrollWidth;
+    }
+  };
+
+  // Year Pagination Component
+  const YearPagination = ({ position = 'top' }: { position?: 'top' | 'bottom' }) => {
+    if (availableYears.length <= 1) return null;
+
+    const borderClass = position === 'top' 
+      ? 'border-l border-r border-t border-gray-200 rounded-t-lg' 
+      : 'border border-gray-200 rounded-b-lg';
+
+    return (
+      <div className={`flex justify-center items-center space-x-2 py-3 bg-gray-50 ${borderClass}`}>
+        <div className="flex items-center space-x-1">
+          {/* Previous button */}
+          <button
+            onClick={() => {
+              const currentIndex = availableYears.indexOf(currentYear);
+              if (currentIndex > 0) {
+                setCurrentYear(availableYears[currentIndex - 1]);
+                setTimeout(scrollToBeginning, 100);
+              }
+            }}
+            disabled={availableYears.indexOf(currentYear) === 0}
+            className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Previous year"
+          >
+            ‹ Previous
+          </button>
+
+          {/* Year buttons */}
+          <div className="flex">
+            {availableYears.map((year, index) => (
+              <button
+                key={year}
+                onClick={() => {
+                  setCurrentYear(year);
+                  setTimeout(scrollToBeginning, 100);
+                }}
+                className={`px-4 py-2 text-sm font-medium border-t border-b ${
+                  index === 0 ? '' : 'border-l-0'
+                } ${
+                  year === currentYear
+                    ? 'bg-blue-600 text-white border-blue-600 z-10 relative'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+                title={`Switch to ${year}`}
+              >
+                {year}
+              </button>
+            ))}
+          </div>
+
+          {/* Next button */}
+          <button
+            onClick={() => {
+              const currentIndex = availableYears.indexOf(currentYear);
+              if (currentIndex < availableYears.length - 1) {
+                setCurrentYear(availableYears[currentIndex + 1]);
+                setTimeout(scrollToBeginning, 100);
+              }
+            }}
+            disabled={availableYears.indexOf(currentYear) === availableYears.length - 1}
+            className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Next year"
+          >
+            Next ›
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <>
@@ -1899,6 +2116,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
               <h3 className="text-lg font-semibold text-gray-900">Monthly Activities</h3>
+              
               <button
                 onClick={() => setIsCompactView(!isCompactView)}
                 className={`px-3 py-1.5 text-sm font-medium rounded-md shadow-sm transition-colors ${
@@ -1911,6 +2129,18 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                 {isCompactView ? 'Detailed View' : 'Compact View'}
               </button>
             </div>
+            
+            {/* Row Total Info */}
+            {availableYears.length > 1 && (
+              <div className="text-sm text-gray-600">
+                <span className="inline-flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  Row totals include all activities from {availableYears[0]} through {currentYear}
+                </span>
+              </div>
+            )}
           </div>
             
 
@@ -1945,11 +2175,14 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
             </div>
           </div>
         )}
+
+        {/* Top Year Pagination */}
+        <YearPagination position="top" />
         
         {/* Top scroll bar */}
         <div 
           ref={topScrollRef}
-          className="overflow-x-auto border-t border-l border-r rounded-t-lg w-full bg-gray-50"
+          className="overflow-x-auto border-l border-r w-full bg-gray-50"
           style={{ height: '20px', paddingTop: '2px', paddingBottom: '2px' }}
         >
           <div 
@@ -1987,7 +2220,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                   top: headerTop !== null ? `${headerTop}px` : 0,
                   left: headerTop !== null ? `${headerLeft}px` : 'auto',
                   width: headerTop !== null ? `${tableWidth}px` : 'auto',
-                  zIndex: headerTop !== null ? 100 : 20,
+                  zIndex: headerTop !== null ? 100 : 40,
                   ...(headerTop !== null && { display: 'block' })
                 }}
               >
@@ -2006,7 +2239,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                     style={{
                       ...(headerTop !== null && columnPositions[0] ? {
                         position: 'absolute',
-                        left: `${columnPositions[0].left}px`,
+                        left: '0px', // Always position Activities column at left edge
                         width: `${columnPositions[0].width}px`,
                         height: '24px',
                         display: 'flex',
@@ -2025,7 +2258,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                     return (
                       <th 
                         key={month} 
-                        className="px-1 py-0 text-right font-medium text-gray-800 whitespace-nowrap bg-blue-50 border-b border-gray-300 relative group sticky top-0 z-20 cursor-pointer hover:bg-blue-100"
+                        className="px-1 py-0 text-right font-medium text-gray-800 whitespace-nowrap bg-blue-50 border-b border-gray-300 relative group sticky top-0 z-40 cursor-pointer hover:bg-blue-100"
                         onClick={() => handleMonthHeaderClick(month)}
                         title="Click to bulk edit activities for this month"
                         style={{
@@ -2036,7 +2269,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                             height: '24px',
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'center'
+                            justifyContent: 'center',
+                            zIndex: 40
                           } : {
                             width: 'auto'
                           })
@@ -2069,7 +2303,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                     );
                   })}
                   <th 
-                    className="px-1 py-0 text-right font-medium text-gray-800 whitespace-nowrap bg-blue-50 border-b border-gray-300 sticky top-0 z-20"
+                    className="px-1 py-0 text-right font-medium text-gray-800 whitespace-nowrap bg-blue-50 border-b border-gray-300 sticky top-0 z-40"
                   >
                     <span className="text-sm">Row Total</span>
                   </th>
@@ -2615,7 +2849,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
             </table>
           </div>
         </div>
-        
+
+        {/* Bottom Year Pagination */}
+        <YearPagination position="bottom" />
 
       </div>
       
