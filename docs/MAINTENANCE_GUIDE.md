@@ -6,6 +6,7 @@ tags: ["documentation", "maintenance", "governance"]
 # Documentation Maintenance Guide
 
 > **Recent Updates (December 2024)**: 
+> - **Revenue Configuration Made Compulsory**: Updated CreateClientProducts.tsx to make fixed fee and percentage fee fields required without default values. Users must now explicitly enter values (including 0 if no fees apply) before creating products. Enhanced validation messages and UI indicators to clearly communicate required nature of fee fields.
 > - **Portfolio Generation Refactor**: Removed version numbers from portfolio template generations system across backend and frontend. All generation ordering now uses `created_at` chronological order instead of version numbers, supporting proper backlogged generation creation and display.
 > - **Client Page Performance Fixes**: Fixed infinite loop in ClientDetails.tsx by removing IIFE wrapper from PreviousFundsIRRDisplay component, eliminating browser freezing and improving page stability.
 > - **Product Fund Visibility Fix**: Updated ProductOverview.tsx filtering logic to prioritize explicit database status over date-based inference, ensuring reactivated funds display correctly regardless of timing (fixed missing portfolio fund 715).
