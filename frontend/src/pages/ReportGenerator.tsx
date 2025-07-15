@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useReportStateManager } from '../hooks/report/useReportStateManager';
 import MultiSelectDropdown from '../components/ui/dropdowns/MultiSelectDropdown';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import { calculateStandardizedMultipleFundsIRR, getLatestFundIRRs } from '../services/api';
@@ -310,6 +311,9 @@ const ReportGenerator: React.FC = () => {
   const { api } = useAuth();
   const navigate = useNavigate();
   
+  // Get state manager actions to sync checkbox state
+  const { actions: stateManagerActions } = useReportStateManager();
+  
   // Initialize optimized services
   const irrDataService = useMemo(() => createIRRDataService(api), [api]);
   const valuationService = useMemo(() => createValuationDataService(api), [api]);
@@ -345,7 +349,94 @@ const ReportGenerator: React.FC = () => {
   // States for excluded items (items that won't be included in the report)
   const [excludedProductIds, setExcludedProductIds] = useState<Set<number>>(new Set());
 
-// Formatters now imported from shared components to eliminate duplication
+  // New state for product owner ordering
+  const [productOwnerOrder, setProductOwnerOrder] = useState<string[]>([]);
+
+  // Helper function to extract unique product owners from related products
+  const extractProductOwners = (products: Product[]): string[] => {
+    const ownerSet = new Set<string>();
+    
+    console.log('🔍 [PRODUCT OWNER EXTRACTION] Starting extraction from products:', products.length);
+    
+    products.forEach(product => {
+      console.log('🔍 [PRODUCT OWNER EXTRACTION] Processing product:', {
+        id: product.id,
+        name: product.product_name,
+        product_owner_name: product.product_owner_name,
+        product_owners: product.product_owners
+      });
+      
+      // Method 1: Extract from product_owner_name string (existing logic)
+      if (product.product_owner_name) {
+        console.log('🔍 [PRODUCT OWNER EXTRACTION] Found product_owner_name:', product.product_owner_name);
+        const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
+        console.log('🔍 [PRODUCT OWNER EXTRACTION] Split owner names:', ownerNames);
+        ownerNames.forEach(ownerName => {
+          const nameParts = ownerName.trim().split(' ');
+          const nickname = nameParts[0]; // Take first part (nickname)
+          if (nickname) {
+            console.log('🔍 [PRODUCT OWNER EXTRACTION] Adding nickname:', nickname);
+            ownerSet.add(nickname);
+          }
+        });
+      }
+      
+      // Method 2: Extract from product_owners array (for joint products)
+      if (product.product_owners && Array.isArray(product.product_owners)) {
+        console.log('🔍 [PRODUCT OWNER EXTRACTION] Found product_owners array:', product.product_owners);
+        product.product_owners.forEach(owner => {
+          console.log('🔍 [PRODUCT OWNER EXTRACTION] Processing owner object:', owner);
+          // Priority: known_as > firstname > id
+          let ownerName = '';
+          if (owner.known_as) {
+            ownerName = owner.known_as;
+          } else if (owner.firstname) {
+            ownerName = owner.firstname;
+          } else if (owner.id) {
+            ownerName = `Owner_${owner.id}`;
+          }
+          
+          if (ownerName) {
+            console.log('🔍 [PRODUCT OWNER EXTRACTION] Adding owner from array:', ownerName);
+            ownerSet.add(ownerName);
+          }
+        });
+      }
+    });
+    
+    const result = Array.from(ownerSet).sort();
+    console.log('🔍 [PRODUCT OWNER EXTRACTION] Final result:', result);
+    return result;
+  };
+
+  // Update product owner order when related products change
+  useEffect(() => {
+    const currentOwners = extractProductOwners(relatedProducts);
+    
+    // Only update if the owners have changed
+    const currentOwnerSet = new Set(currentOwners);
+    const existingOwnerSet = new Set(productOwnerOrder);
+    
+    if (currentOwnerSet.size !== existingOwnerSet.size || 
+        !Array.from(currentOwnerSet).every(owner => existingOwnerSet.has(owner))) {
+      
+      // Preserve existing order for owners that still exist, add new ones at the end
+      const newOrder = productOwnerOrder.filter(owner => currentOwnerSet.has(owner));
+      const newOwners = currentOwners.filter(owner => !new Set(productOwnerOrder).has(owner));
+      
+      setProductOwnerOrder([...newOrder, ...newOwners]);
+    }
+  }, [relatedProducts]);
+
+  // Function to move product owner in the order
+  const moveProductOwner = (fromIndex: number, toIndex: number) => {
+    const newOrder = [...productOwnerOrder];
+    const [moved] = newOrder.splice(fromIndex, 1);
+    newOrder.splice(toIndex, 0, moved);
+    setProductOwnerOrder(newOrder);
+  };
+
+  // Formatters now imported from shared components to eliminate duplication
 
   // Custom formatter for currency amounts
   const formatCurrencyWithTruncation = (amount: number | null | undefined): string => {
@@ -2370,6 +2461,7 @@ Please select a different valuation date or ensure all active funds have valuati
         totalValuation: overallValuation,
         earliestTransactionDate: earliestDate,
         selectedValuationDate: selectedValuationDate,
+        productOwnerOrder: productOwnerOrder, // Use custom order instead of alphabetical
         productOwnerNames: (() => {
           console.log('🔍 [FINAL PRODUCT OWNER DEBUG] Raw product owner names:', productSummaryResults.map(p => ({ 
             id: p.id, 
@@ -2492,13 +2584,27 @@ Please select a different valuation date or ensure all active funds have valuati
   };
 
   const toggleInactiveProductDetails = (productId: number) => {
+    console.log(`🔍 [CHECKBOX TOGGLE DEBUG] Toggling checkbox for product ${productId}:`, {
+      currentState: showInactiveProductDetails.has(productId),
+      currentSet: Array.from(showInactiveProductDetails)
+    });
+    
     setShowInactiveProductDetails(prev => {
       const newSet = new Set(prev);
       if (newSet.has(productId)) {
+        console.log(`🔍 [CHECKBOX TOGGLE DEBUG] Removing product ${productId} from set (unchecking)`);
         newSet.delete(productId);
       } else {
+        console.log(`🔍 [CHECKBOX TOGGLE DEBUG] Adding product ${productId} to set (checking)`);
         newSet.add(productId);
       }
+      
+      console.log(`🔍 [CHECKBOX TOGGLE DEBUG] New set after toggle:`, Array.from(newSet));
+      
+      // Sync with state manager
+      console.log(`🔍 [CHECKBOX TOGGLE DEBUG] Syncing with state manager:`, Array.from(newSet));
+      stateManagerActions.setShowInactiveProductDetails(newSet);
+      
       return newSet;
     });
   };
@@ -2731,6 +2837,12 @@ Please select a different valuation date or ensure all active funds have valuati
       updateSelectedDatesForNewEndDate(selectedValuationDate);
     }
   }, [selectedValuationDate]);
+
+  // Sync showInactiveProductDetails with state manager
+  useEffect(() => {
+    console.log(`🔍 [STATE SYNC DEBUG] Syncing showInactiveProductDetails with state manager:`, Array.from(showInactiveProductDetails));
+    stateManagerActions.setShowInactiveProductDetails(showInactiveProductDetails);
+  }, [showInactiveProductDetails, stateManagerActions]);
 
   return (
     <div className="mx-auto px-4 sm:px-6 lg:px-8 py-3">
@@ -3073,6 +3185,105 @@ Please select a different valuation date or ensure all active funds have valuati
                 <span className="ml-auto italic">Hover for details</span>
               </div>
             </div>
+            
+            {/* Product Owner Display Order - Compact Version */}
+            {relatedProducts.length > 0 && productOwnerOrder.length > 1 && (
+              <div className="mb-6">
+                <h3 className="text-sm font-medium text-gray-700 mb-2">Product Owner Display Order</h3>
+                <p className="text-xs text-gray-500 mb-3">
+                  Set the order in which product owners appear in the report. Drag to reorder or use arrows.
+                </p>
+                <div className="border rounded-lg p-3 bg-gray-50">
+                  <div className="space-y-2">
+                    {productOwnerOrder.map((owner, index) => (
+                      <div
+                        key={owner}
+                        className="flex items-center justify-between p-2 bg-white rounded border border-gray-200 hover:bg-gray-50 transition-colors cursor-move"
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData('text/plain', index.toString());
+                          e.dataTransfer.effectAllowed = 'move';
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = 'move';
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                          const toIndex = index;
+                          if (fromIndex !== toIndex) {
+                            moveProductOwner(fromIndex, toIndex);
+                          }
+                        }}
+                      >
+                        <div className="flex items-center flex-1">
+                          <div className="mr-2 text-gray-400">
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-gray-900">{owner}</span>
+                              <span className="text-xs text-gray-500">
+                                ({relatedProducts.filter(p => {
+                                  if (!p.product_owner_name) return false;
+                                  const ownerNames = p.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
+                                  return ownerNames.some(ownerName => {
+                                    const nameParts = ownerName.trim().split(' ');
+                                    const nickname = nameParts[0];
+                                    return nickname === owner;
+                                  });
+                                }).length} products)
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-1">
+                          <span className="text-xs text-gray-400">#{index + 1}</span>
+                          <div className="flex space-x-1">
+                            <button
+                              onClick={() => index > 0 && moveProductOwner(index, index - 1)}
+                              disabled={index === 0}
+                              className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Move up"
+                            >
+                              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => index < productOwnerOrder.length - 1 && moveProductOwner(index, index + 1)}
+                              disabled={index === productOwnerOrder.length - 1}
+                              className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Move down"
+                            >
+                              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="mt-3 flex justify-end">
+                    <button
+                      onClick={() => {
+                        const currentOwners = extractProductOwners(relatedProducts);
+                        setProductOwnerOrder(currentOwners.sort());
+                      }}
+                      className="px-3 py-1 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+                    >
+                      Reset to Alphabetical
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             
             {/* Common Valuation Dates Status */}
             <div className="mb-6">

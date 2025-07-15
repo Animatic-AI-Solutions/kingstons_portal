@@ -73,6 +73,7 @@ export interface ReportData {
   earliestTransactionDate: string | null;
   selectedValuationDate: string | null;
   productOwnerNames: string[];
+  productOwnerOrder?: string[]; // Custom order for product owners
   timePeriod: string;
   // Report settings
   truncateAmounts?: boolean;

@@ -50,14 +50,12 @@ export const formatCurrencyWithZeroToggle = (
   return `£${roundedAmount.toLocaleString()}`;
 };
 
-// IRR formatter with smart precision (removes unnecessary zeros)
+// IRR formatter with consistent 1 decimal place display
 export const formatIrrWithPrecision = (irr: number | null | undefined): string => {
   if (irr === null || irr === undefined) return '-';
   
-  // Format to 1 decimal place, then remove trailing zeros
-  const formatted = irr.toFixed(1);
-  const withoutTrailingZeros = parseFloat(formatted).toString();
-  return `${withoutTrailingZeros}%`;
+  // Always format to 1 decimal place for consistency
+  return `${irr.toFixed(1)}%`;
 };
 
 // Withdrawal amount formatter
@@ -102,6 +100,14 @@ export const formatWeightedRisk = (risk: number | undefined): string => {
   
   // Otherwise, display with 1 decimal place
   return rounded.toFixed(1);
+};
+
+// Product and portfolio weighted risk formatting (consistent 1 decimal place for totals)
+export const formatWeightedRiskConsistent = (risk: number | undefined): string => {
+  if (risk === undefined || risk === null) return '-';
+  
+  // Always format to 1 decimal place for consistency in totals
+  return risk.toFixed(1);
 };
 
 // Helper functions for visual signing
