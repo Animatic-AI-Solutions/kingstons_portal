@@ -37,28 +37,26 @@ import type { ReportData, ProductPeriodSummary } from '../../types/reportTypes';
 import {
   formatIrrWithPrecision,
   formatWeightedRisk,
+  formatWeightedRiskConsistent,
   formatCurrencyWithTruncation
 } from '../../utils/reportFormatters';
-
-// Local function to format fund IRRs with smart decimal places (removes unnecessary zeros)
-const formatFundIrr = (irr: number | null | undefined): string => {
-  if (irr === null || irr === undefined) return '-';
-  
-  // Format to 2 decimal places, then remove trailing zeros
-  const formatted = irr.toFixed(2);
-  const withoutTrailingZeros = parseFloat(formatted).toString();
-  return `${withoutTrailingZeros}%`;
-};
-
-// Helper function for chart tick formatting (1 decimal place, smart)
-const formatChartTick = (value: number): string => {
-  const formatted = value.toFixed(1);
-  const withoutTrailingZeros = parseFloat(formatted).toString();
-  return `${withoutTrailingZeros}%`;
-};
+import { generateEffectiveProductTitle, extractPlanNumber, sortProductsByOwnerOrder } from '../../utils/productTitleUtils';
 import { normalizeProductType, PRODUCT_TYPE_ORDER } from '../../utils/reportConstants';
 import { useIRRCalculationService } from '../../hooks/report/useIRRCalculationService';
 import api from '../../services/api';
+
+// Local function to format fund IRRs with consistent 1 decimal place display
+const formatFundIrr = (irr: number | null | undefined): string => {
+  if (irr === null || irr === undefined) return '-';
+  
+  // Always format to 1 decimal place for consistency
+  return `${irr.toFixed(1)}%`;
+};
+
+// Helper function for chart tick formatting (1 decimal place, consistent)
+const formatChartTick = (value: number): string => {
+  return `${value.toFixed(1)}%`;
+};
 
 interface IRRHistoryTabProps {
   reportData: ReportData;
@@ -73,7 +71,8 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       irrHistoryData,
       customTitles: stableCustomTitles,
       hideZeros,
-      loading
+      loading,
+      showInactiveProductDetails
     }
   } = useReportStateManager();
   
@@ -201,83 +200,15 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
   // Formatting services from Phase 1
   const { formatCurrencyWithZeroToggle } = useReportFormatter();
 
-  // Extract plan number from product name
-  const extractPlanNumber = (product: ProductPeriodSummary | undefined): string | null => {
-    if (!product) return null;
-    
-    // First, check if plan_number field exists
-    if (product.plan_number) {
-      console.log(`🔍 Plan number from field for product ${product.id}: ${product.plan_number}`);
-      return product.plan_number;
-    }
-    
-    // Fallback: try to extract from product_name if it contains plan-like patterns
-    if (product.product_name) {
-      const patterns = [
-        /Plan Number[:\s]*([A-Z0-9\-\/]+)/i,
-        /Plan[:\s]*([A-Z0-9\-\/]+)/i,
-        /Policy[:\s]*([A-Z0-9\-\/]+)/i,
-      ];
-      
-      for (const pattern of patterns) {
-        const match = product.product_name.match(pattern);
-        if (match) {
-          console.log(`🔍 Plan number from regex for product ${product.id}: ${match[1].trim()}`);
-          return match[1].trim();
-        }
-      }
-    }
-    
-    console.log(`🔍 No plan number found for product ${product.id}. Fields: plan_number=${product.plan_number}, product_name=${product.product_name}`);
-    return null;
-  };
+  // Get custom titles from state manager
+  const {
+    state: { customTitles }
+  } = useReportStateManager();
 
   // Generate product title (simple function to avoid useCallback complexity)
-  const generateProductTitle = (product: ProductPeriodSummary | undefined, customTitle?: string): string => {
-    if (customTitle && customTitle.trim()) {
-      return customTitle.trim();
-    }
-    
-    if (!product) {
-      return 'Unknown Product';
-    }
-    
-    // Standard format: Provider - Product Type - Product Owner Name [Plan Number]
-    const parts = [];
-    
-    if (product.provider_name) {
-      parts.push(product.provider_name);
-    }
-    
-    if (product.product_type) {
-      // Simplify bond types to just "Bond"
-      const simplifiedType = product.product_type.toLowerCase().includes('bond') ? 'Bond' : product.product_type;
-      parts.push(simplifiedType);
-    }
-    
-    if (product.product_owner_name) {
-      // Check if the product_owner_name contains multiple names (comma-separated or other delimiters)
-      const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
-      if (ownerNames.length > 1) {
-        // For multiple owners, show "Joint"
-        parts.push('Joint');
-      } else {
-        // For single owner, extract just the nickname (first word)
-        const nameParts = product.product_owner_name.trim().split(' ');
-        const nickname = nameParts[0]; // Take first part (nickname)
-        parts.push(nickname);
-      }
-    }
-    
-    let title = parts.length > 0 ? parts.join(' - ') : 'Unknown Product';
-    
-    // Add plan number if available
-    const planNumber = extractPlanNumber(product);
-    if (planNumber) {
-      title += ` [${planNumber}]`;
-    }
-    
-    return title;
+  const getProductTitle = (product: ProductPeriodSummary | undefined): string => {
+    if (!product) return 'Unknown Product';
+    return generateEffectiveProductTitle(product, customTitles);
   };
 
   // Process chart data for visualization
@@ -373,7 +304,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
           // Add plan number if available
           const planNumber = extractPlanNumber(product);
           if (planNumber) {
-            productKey += ` [${planNumber}]`;
+            productKey += ` - ${planNumber}`;
           }
         }
         
@@ -468,7 +399,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       // Add plan number if available
       const planNumber = extractPlanNumber(product);
       if (planNumber) {
-        title += ` [${planNumber}]`;
+        title += ` - ${planNumber}`;
       }
       
       return title;
@@ -560,7 +491,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       // Add plan number if available
       const planNumber = extractPlanNumber(product);
       if (planNumber) {
-        title += ` [${planNumber}]`;
+        title += ` - ${planNumber}`;
       }
       
       return title;
@@ -869,7 +800,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
             {/* Product Selection Grid */}
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 product-selection-grid">
               {productsForChart.map((product, index) => {
-                const productTitle = generateProductTitle(product, stableCustomTitles.get(product.id));
+                const productTitle = getProductTitle(product);
                 const isSelected = selectedProducts.has(productTitle);
                 return (
                   <label
@@ -968,7 +899,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       {/* Table View */}
       <div className={`space-y-8 irr-history-table ${viewMode === 'table' ? '' : 'hidden print:block'}`}>
         {(() => {
-          // Organize products by type (same order as SummaryTab), with inactive/lapsed products at the bottom
+          // Organize products by type in the specified order, with inactive/lapsed products at the bottom
           const organizeProductsByType = (products: ProductPeriodSummary[]) => {
             // Group products by normalized type
             const groupedProducts: { [key: string]: ProductPeriodSummary[] } = {};
@@ -981,10 +912,10 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
               groupedProducts[normalizedType].push(product);
             });
 
-            // Sort products within each type by provider name, with special ordering for ISAs
+            // Sort products within each type by custom product owner order, with special ordering for ISAs
             Object.keys(groupedProducts).forEach(type => {
               if (type === 'ISAs') {
-                // Special sorting for ISAs: ISA products first, then JISA products, then by provider
+                // Special sorting for ISAs: ISA products first, then JISA products, then by custom owner order
                 groupedProducts[type].sort((a, b) => {
                   const typeA = a.product_type?.toLowerCase().trim() || '';
                   const typeB = b.product_type?.toLowerCase().trim() || '';
@@ -997,18 +928,15 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                   if (isJISA_A && !isJISA_B) return 1;
                   if (!isJISA_A && isJISA_B) return -1;
                   
-                  // If both are same type (both JISA or both ISA), sort by provider
-                  const providerA = a.provider_name || '';
-                  const providerB = b.provider_name || '';
-                  return providerA.localeCompare(providerB);
+                  // If both are same type (both JISA or both ISA), sort by custom product owner order
+                  return 0; // Will be handled by the custom owner order sort below
                 });
+                
+                // Apply custom owner order after ISA/JISA sorting
+                groupedProducts[type] = sortProductsByOwnerOrder(groupedProducts[type], reportData.productOwnerOrder || []);
               } else {
-                // Standard sorting by provider name for other product types
-                groupedProducts[type].sort((a, b) => {
-                  const providerA = a.provider_name || '';
-                  const providerB = b.provider_name || '';
-                  return providerA.localeCompare(providerB);
-                });
+                // Standard sorting by custom product owner order for other product types
+                groupedProducts[type] = sortProductsByOwnerOrder(groupedProducts[type], reportData.productOwnerOrder || []);
               }
             });
 
@@ -1037,11 +965,37 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
           // Use the same organization as SummaryTab
           const organizedProducts = organizeProductsByType(reportData.productSummaries);
           
-          console.log(`🔍 [IRR HISTORY DEBUG] Organized products:`, {
-            originalCount: reportData.productSummaries.length,
-            organizedCount: organizedProducts.length,
-            originalIds: reportData.productSummaries.map(p => p.id),
-            organizedIds: organizedProducts.map(p => p.id)
+          // Filter out inactive products when checkbox is unchecked
+          const filteredProducts = organizedProducts.filter(product => {
+            if (product.status === 'inactive') {
+              // Only show inactive products if:
+              // 1. showInactiveProducts is true globally, OR
+              // 2. this specific product is checked in showInactiveProductDetails
+              const shouldShow = reportData.showInactiveProducts || showInactiveProductDetails.has(product.id);
+              
+              console.log(`🔍 [IRR HISTORY FILTER DEBUG] Product ${product.id} (${product.product_name}):`, {
+                status: product.status,
+                showInactiveProducts: reportData.showInactiveProducts,
+                hasInShowInactiveProductDetails: showInactiveProductDetails.has(product.id),
+                showInactiveProductDetailsSet: Array.from(showInactiveProductDetails),
+                shouldShow,
+                reportDataShowInactiveProductDetails: reportData.showInactiveProductDetails
+              });
+              
+              return shouldShow;
+            }
+            // Always show active products
+            return true;
+          });
+          
+          console.log(`📊 [IRR HISTORY DEBUG] Filtered products:`, {
+            totalProducts: organizedProducts.length,
+            filteredProducts: filteredProducts.length,
+            inactiveProducts: organizedProducts.filter(p => p.status === 'inactive').length,
+            showInactiveProducts: reportData.showInactiveProducts,
+            showInactiveProductDetails: Array.from(showInactiveProductDetails),
+            originalIds: organizedProducts.map(p => p.id),
+            filteredIds: filteredProducts.map(p => p.id)
           });
           
           // ✅ GLOBAL DATE CALCULATION - Calculate dates across ALL products first
@@ -1082,7 +1036,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
             historicalDateCount: globalHistoricalDates.length
           });
           
-          return organizedProducts.map((product: ProductPeriodSummary, index: number) => {
+          return filteredProducts.map((product: ProductPeriodSummary, index: number) => {
             // Find the corresponding IRR history data for this product
             const productHistory = irrHistoryData.find((ph: any) => ph.product_id === product.id);
             
@@ -1161,9 +1115,9 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                     />
                   )}
                   <h3 className={`text-xl font-semibold ${product?.status === 'inactive' ? 'text-gray-600' : 'text-gray-800'}`}>
-                    {generateProductTitle(product, stableCustomTitles.get(product?.id))}
+                    {getProductTitle(product)}
                     {product?.status === 'inactive' && (
-                      <span className="ml-2 text-sm text-red-600 font-medium">(Inactive)</span>
+                      <span className="ml-2 text-sm text-red-600 font-medium">(Lapsed)</span>
                     )}
                   </h3>
                 </div>
@@ -1355,7 +1309,11 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                 });
                                 
                                 // Mark calculation as complete
-                                setPreviousFundsCalculationComplete(prev => new Set(prev).add(productHistory.product_id));
+                                setPreviousFundsCalculationComplete(prev => {
+                                  const updated = new Set(prev);
+                                  updated.add(productHistory.product_id);
+                                  return updated;
+                                });
                                 
                                 console.log(`✅ [Previous Funds DEBUG] Completed aggregated IRR calculations for product ${productHistory.product_id}`);
                               };
@@ -1474,7 +1432,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                             if (inactiveFundsFromSummary.length > 0) {
                               portfolioFundIds = inactiveFundsFromSummary
                                 .map((fund: any) => fund.portfolio_fund_id || fund.id)
-                                .filter((id: any) => id !== null && id !== undefined);
+                                .filter((id: any) => id !== null && id !== undefined && id > 0);
                               console.log(`✅ [Previous Funds DEBUG] Found ${portfolioFundIds.length} portfolio fund IDs from inactive funds in summary`);
                             }
                             
@@ -1969,7 +1927,7 @@ Available database dates: ${productHistory.portfolio_historical_irr.map((r: any)
                               </td>
                               <td className="px-2 py-2 text-xs font-bold text-right text-black">
                                 {productWeightedRisk !== undefined && productWeightedRisk !== null ? (
-                                  formatWeightedRisk(productWeightedRisk)
+                                  formatWeightedRiskConsistent(productWeightedRisk)
                                 ) : (
                                   '-'
                                 )}

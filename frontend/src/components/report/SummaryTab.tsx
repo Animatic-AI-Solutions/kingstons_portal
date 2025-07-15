@@ -10,7 +10,7 @@
  * - Visual signing and zero hiding functionality
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useReportStateManager } from '../../hooks/report/useReportStateManager';
 import { useReportFormatter } from '../../hooks/report/useReportFormatter';
 import type { ReportData, ProductPeriodSummary } from '../../types/reportTypes';
@@ -18,14 +18,21 @@ import {
   formatCurrencyWithTruncation,
   formatIrrWithPrecision,
   formatWeightedRisk,
+  formatWeightedRiskConsistent,
 } from '../../utils/reportFormatters';
 import { normalizeProductType, PRODUCT_TYPE_ORDER } from '../../utils/reportConstants';
+import { generateEffectiveProductTitle, sortProductsByOwnerOrder } from '../../utils/productTitleUtils';
 
 interface SummaryTabProps {
   reportData: ReportData;
+  className?: string;
 }
 
-export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
+const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) => {
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [productExpansion, setProductExpansion] = useState<{ [key: string]: boolean }>({});
+
   // State management from Phase 1 services
   const {
     state: {
@@ -72,10 +79,10 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
       groupedProducts[normalizedType].push(product);
     });
 
-    // Sort products within each type by provider name, with special ordering for ISAs
+    // Sort products within each type by custom product owner order, with special ordering for ISAs
     Object.keys(groupedProducts).forEach(type => {
       if (type === 'ISAs') {
-        // Special sorting for ISAs: ISA products first, then JISA products, then by provider
+        // Special sorting for ISAs: ISA products first, then JISA products, then by custom owner order
         groupedProducts[type].sort((a, b) => {
           const typeA = a.product_type?.toLowerCase().trim() || '';
           const typeB = b.product_type?.toLowerCase().trim() || '';
@@ -88,18 +95,15 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
           if (isJISA_A && !isJISA_B) return 1;
           if (!isJISA_A && isJISA_B) return -1;
           
-          // If both are same type (both JISA or both ISA), sort by provider
-          const providerA = a.provider_name || '';
-          const providerB = b.provider_name || '';
-          return providerA.localeCompare(providerB);
+          // If both are same type (both JISA or both ISA), sort by custom product owner order
+          return 0; // Will be handled by the custom owner order sort below
         });
+        
+        // Apply custom owner order after ISA/JISA sorting
+        groupedProducts[type] = sortProductsByOwnerOrder(groupedProducts[type], reportData.productOwnerOrder || []);
       } else {
-        // Standard sorting by provider name for other product types
-        groupedProducts[type].sort((a, b) => {
-          const providerA = a.provider_name || '';
-          const providerB = b.provider_name || '';
-          return providerA.localeCompare(providerB);
-        });
+        // Standard sorting by custom product owner order for other product types
+        groupedProducts[type] = sortProductsByOwnerOrder(groupedProducts[type], reportData.productOwnerOrder || []);
       }
     });
 
@@ -123,73 +127,6 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
     
     // Return active products first, then inactive/lapsed products
     return [...activeProducts, ...inactiveProducts];
-  };
-
-  // Extract plan number from product
-  const extractPlanNumber = (product: ProductPeriodSummary): string | null => {
-    // First, check if plan_number field exists
-    if (product.plan_number) {
-      console.log(`🔍 Plan number from field for product ${product.id}: ${product.plan_number}`);
-      return product.plan_number;
-    }
-    
-    // Fallback: try to extract from product_name if it contains plan-like patterns
-    if (product.product_name) {
-      const patterns = [
-        /Plan Number[:\s]*([A-Z0-9\-\/]+)/i,
-        /Plan[:\s]*([A-Z0-9\-\/]+)/i,
-        /Policy[:\s]*([A-Z0-9\-\/]+)/i,
-      ];
-      
-      for (const pattern of patterns) {
-        const match = product.product_name.match(pattern);
-        if (match) {
-          console.log(`🔍 Plan number from regex for product ${product.id}: ${match[1].trim()}`);
-          return match[1].trim();
-        }
-      }
-    }
-    
-    console.log(`🔍 No plan number found for product ${product.id}. Fields: plan_number=${product.plan_number}, product_name=${product.product_name}`);
-    return null;
-  };
-
-  // Generate product title
-  const generateProductTitle = (product: ProductPeriodSummary, customTitle?: string): string => {
-    if (customTitle && customTitle.trim()) {
-      return customTitle.trim();
-    }
-
-    // Standard format: Provider - Product Type - Product Owner Name [Plan Number]
-    let title = `${product.provider_name || 'Unknown Provider'}`;
-    
-    if (product.product_type) {
-      // Simplify bond types to just "Bond"
-      const simplifiedType = product.product_type.toLowerCase().includes('bond') ? 'Bond' : product.product_type;
-      title += ` - ${simplifiedType}`;
-    }
-    
-    if (product.product_owner_name) {
-      // Check if the product_owner_name contains multiple names (comma-separated or other delimiters)
-      const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
-      if (ownerNames.length > 1) {
-        // For multiple owners, show "Joint"
-        title += ` - Joint`;
-      } else {
-        // For single owner, extract just the nickname (first word)
-        const nameParts = product.product_owner_name.trim().split(' ');
-        const nickname = nameParts[0]; // Take first part (nickname)
-        title += ` - ${nickname}`;
-      }
-    }
-    
-    // Add plan number if available
-    const planNumber = extractPlanNumber(product);
-    if (planNumber) {
-      title += ` [${planNumber}]`;
-    }
-    
-    return title;
   };
 
   // Local function to format fund IRRs to whole numbers (0 decimal places)
@@ -351,13 +288,11 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
                     const profit = totalGains - totalCosts;
                     
                     // Determine if this inactive product should be greyed out
-                    const isInactiveAndNotDetailed = product.status === 'inactive' && 
-                      !reportData.showInactiveProducts && 
-                      !showInactiveProductDetails.has(product.id);
+                    const isInactive = product.status === 'inactive';
                     
                     return (
-                      <tr key={product.id} className={`hover:bg-blue-50 ${isInactiveAndNotDetailed ? 'opacity-50 bg-gray-50' : ''}`}>
-                        <td className={`product-name-cell text-left px-1 py-2 ${isInactiveAndNotDetailed ? 'text-gray-500' : 'text-gray-800'}`}>
+                      <tr key={product.id} className={`hover:bg-blue-50 ${isInactive ? 'opacity-50 bg-gray-50' : ''}`}>
+                        <td className={`product-name-cell text-left px-1 py-2 ${isInactive ? 'text-gray-500' : 'text-gray-800'}`}>
                           <div className="flex items-start gap-1.5">
                             {product.provider_theme_color && (
                               <div 
@@ -367,9 +302,9 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
                             )}
                             <div className="flex-1 min-w-0">
                               <div className="text-xs leading-tight">
-                                {generateProductTitle(product, customTitles.get(product.id))}
+                                {generateEffectiveProductTitle(product, customTitles)}
                                 {product.status === 'inactive' && (
-                                  <span className="ml-2 text-xs text-red-600 font-medium">(Inactive)</span>
+                                  <span className="ml-2 text-xs text-red-600 font-medium">(Lapsed)</span>
                                 )}
                               </div>
                             </div>
@@ -538,7 +473,7 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
                       });
                       
                       if (totalValue > 0) {
-                        return formatWeightedRisk(weightedRisk / totalValue);
+                        return formatWeightedRiskConsistent(weightedRisk / totalValue);
                       } else {
                         return 'N/A';
                       }
@@ -554,20 +489,40 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
       {/* Individual Product Cards */}
       <div className="mb-8 print:break-before-page">
         {organizeProductsByType(reportData.productSummaries)
+          .filter(product => {
+            // Filter out inactive products when checkbox is unchecked
+            if (product.status === 'inactive') {
+              // Only show inactive products if:
+              // 1. showInactiveProducts is true globally, OR
+              // 2. this specific product is checked in showInactiveProductDetails
+              const shouldShow = reportData.showInactiveProducts || showInactiveProductDetails.has(product.id);
+              
+              console.log(`🔍 [PRODUCT CARD FILTER DEBUG] Product ${product.id} (${product.product_name}):`, {
+                status: product.status,
+                showInactiveProducts: reportData.showInactiveProducts,
+                hasInShowInactiveProductDetails: showInactiveProductDetails.has(product.id),
+                showInactiveProductDetailsSet: Array.from(showInactiveProductDetails),
+                shouldShow,
+                reportDataShowInactiveProductDetails: reportData.showInactiveProductDetails
+              });
+              
+              return shouldShow;
+            }
+            // Always show active products
+            return true;
+          })
           .map((product, index) => {
             const totalGains = (product.current_valuation || 0) + (product.total_withdrawal || 0) + (product.total_product_switch_out || 0) + (product.total_fund_switch_out || 0);
             const totalCosts = (product.total_investment || 0) + (product.total_regular_investment || 0) + (product.total_tax_uplift || 0) + (product.total_product_switch_in || 0) + (product.total_fund_switch_in || 0);
             const profit = totalGains - totalCosts;
 
             // Determine if this inactive product should be greyed out
-            const isInactiveAndNotDetailed = product.status === 'inactive' && 
-              !reportData.showInactiveProducts && 
-              !showInactiveProductDetails.has(product.id);
+            const isInactive = product.status === 'inactive';
 
             return (
               <div
                 key={`${product.id}-${index}`}
-                className={`mb-8 bg-white shadow-sm rounded-lg border border-gray-200 p-6 w-full product-card print-clean ${isInactiveAndNotDetailed ? 'opacity-60 bg-gray-50' : ''}`}
+                className={`mb-8 bg-white shadow-sm rounded-lg border border-gray-200 p-6 w-full product-card print-clean ${isInactive ? 'opacity-60 bg-gray-50' : ''}`}
                 style={{
                   borderLeft: product.provider_theme_color ? `4px solid ${product.provider_theme_color}` : '4px solid #e5e7eb',
                   borderTop: product.provider_theme_color ? `1px solid ${product.provider_theme_color}` : undefined,
@@ -584,11 +539,11 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className={`text-xl font-semibold flex-1 min-w-0 ${isInactiveAndNotDetailed ? 'text-gray-600' : 'text-gray-800'}`}>
-                        {generateProductTitle(product, customTitles.get(product.id))}
+                      <h3 className={`text-xl font-semibold flex-1 min-w-0 ${isInactive ? 'text-gray-600' : 'text-gray-800'}`}>
+                        {generateEffectiveProductTitle(product, customTitles)}
                       </h3>
                       {product.status === 'inactive' && (
-                        <span className="text-sm text-red-600 font-medium whitespace-nowrap">(Inactive)</span>
+                        <span className="text-sm text-red-600 font-medium whitespace-nowrap">(Lapsed)</span>
                       )}
                     </div>
                   </div>
@@ -797,7 +752,7 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ reportData }) => {
                             </td>
                             <td className="px-2 py-2 text-xs font-bold text-right text-black">
                               {product.weighted_risk !== undefined && product.weighted_risk !== null ? (
-                                formatWeightedRisk(product.weighted_risk)
+                                formatWeightedRiskConsistent(product.weighted_risk)
                               ) : (
                                 'N/A'
                               )}

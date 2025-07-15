@@ -5,7 +5,10 @@ import IRRHistorySummaryService, {
   PortfolioIRRHistory 
 } from '../../services/irrHistorySummaryService';
 import { formatWeightedRisk } from '../../utils/reportFormatters';
-import type { ReportData } from '../../types/reportTypes';
+import { generateEffectiveProductTitle, sortProductsByOwnerOrder } from '../../utils/productTitleUtils';
+import { useReportStateManager } from '../../hooks/report/useReportStateManager';
+import { normalizeProductType, PRODUCT_TYPE_ORDER } from '../../utils/reportConstants';
+import type { ReportData, ProductPeriodSummary } from '../../types/reportTypes';
 
 interface IRRHistorySummaryTableProps {
   productIds: number[];
@@ -37,6 +40,122 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Get custom titles from state manager
+  const {
+    state: { customTitles }
+  } = useReportStateManager();
+
+  // Function to get effective product title for IRR history product
+  const getEffectiveProductTitle = (irrProduct: ProductIRRHistory): string => {
+    // Find the corresponding product summary to get full product details
+    const productSummary = reportData?.productSummaries.find(p => p.id === irrProduct.product_id);
+    
+    if (productSummary) {
+      // Use the utility function with the full product details
+      return generateEffectiveProductTitle(productSummary, customTitles);
+    }
+    
+    // Fallback: use the original display name if product summary not found
+    return irrProduct.provider_name 
+      ? `${irrProduct.product_name} - ${irrProduct.provider_name}`
+      : irrProduct.product_name;
+  };
+
+  // Organize products by type in the same order as SummaryTab, with inactive/lapsed products at the bottom
+  const organizeProductsByType = (products: ProductIRRHistory[]): ProductIRRHistory[] => {
+    if (!reportData?.productSummaries) {
+      // Fallback to simple status sorting if no reportData
+      const activeProducts = products.filter(product => 
+        product.status !== 'inactive' && product.status !== 'lapsed'
+      );
+      const inactiveProducts = products.filter(product => 
+        product.status === 'inactive' || product.status === 'lapsed'
+      );
+      return [...activeProducts, ...inactiveProducts];
+    }
+
+    // Create a map of product ID to product summary for quick lookup
+    const productSummaryMap = new Map(reportData.productSummaries.map(p => [p.id, p]));
+
+    // Group products by normalized type
+    const groupedProducts: { [key: string]: ProductIRRHistory[] } = {};
+    
+    products.forEach(product => {
+      const productSummary = productSummaryMap.get(product.product_id);
+      if (productSummary) {
+        const normalizedType = normalizeProductType(productSummary.product_type);
+        if (!groupedProducts[normalizedType]) {
+          groupedProducts[normalizedType] = [];
+        }
+        groupedProducts[normalizedType].push(product);
+      }
+    });
+
+    // Sort products within each type by custom product owner order, with special ordering for ISAs
+    Object.keys(groupedProducts).forEach(type => {
+      if (type === 'ISAs') {
+        // Special sorting for ISAs: ISA products first, then JISA products, then by custom owner order
+        groupedProducts[type].sort((a, b) => {
+          const productA = productSummaryMap.get(a.product_id);
+          const productB = productSummaryMap.get(b.product_id);
+          
+          if (!productA || !productB) return 0;
+          
+          const typeA = productA.product_type?.toLowerCase().trim() || '';
+          const typeB = productB.product_type?.toLowerCase().trim() || '';
+          
+          // Check if products are JISA
+          const isJISA_A = typeA === 'jisa';
+          const isJISA_B = typeB === 'jisa';
+          
+          // If one is JISA and the other is not, non-JISA comes first
+          if (isJISA_A && !isJISA_B) return 1;
+          if (!isJISA_A && isJISA_B) return -1;
+          
+          // If both are same type (both JISA or both ISA), sort by custom product owner order
+          return 0; // Will be handled by the custom owner order sort below
+        });
+        
+        // Apply custom owner order after ISA/JISA sorting
+        // Convert to ProductPeriodSummary for sorting, then back to ProductIRRHistory
+        const summariesToSort = groupedProducts[type].map(p => productSummaryMap.get(p.product_id)).filter(Boolean) as ProductPeriodSummary[];
+        const sortedSummaries = sortProductsByOwnerOrder(summariesToSort, reportData.productOwnerOrder || []);
+        groupedProducts[type] = sortedSummaries.map(summary => 
+          groupedProducts[type].find(p => p.product_id === summary.id)!
+        );
+      } else {
+        // Standard sorting by custom product owner order for other product types
+        // Convert to ProductPeriodSummary for sorting, then back to ProductIRRHistory
+        const summariesToSort = groupedProducts[type].map(p => productSummaryMap.get(p.product_id)).filter(Boolean) as ProductPeriodSummary[];
+        const sortedSummaries = sortProductsByOwnerOrder(summariesToSort, reportData.productOwnerOrder || []);
+        groupedProducts[type] = sortedSummaries.map(summary => 
+          groupedProducts[type].find(p => p.product_id === summary.id)!
+        );
+      }
+    });
+
+    // Return products in the specified order
+    const orderedProducts: ProductIRRHistory[] = [];
+    
+    PRODUCT_TYPE_ORDER.forEach(type => {
+      if (groupedProducts[type]) {
+        orderedProducts.push(...groupedProducts[type]);
+      }
+    });
+
+    // Apply status-based sorting: active products first, then inactive/lapsed at the bottom
+    // while maintaining original relative order within each group
+    const activeProducts = orderedProducts.filter(product => 
+      product.status !== 'inactive' && product.status !== 'lapsed'
+    );
+    const inactiveProducts = orderedProducts.filter(product => 
+      product.status === 'inactive' || product.status === 'lapsed'
+    );
+    
+    // Return active products first, then inactive/lapsed products
+    return [...activeProducts, ...inactiveProducts];
+  };
 
   // Fetch IRR history summary data
   useEffect(() => {
@@ -90,20 +209,6 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
 
     fetchSummaryData();
   }, [productIds, selectedDates, clientGroupIds]);
-
-  // Sort products to put inactive/lapsed products at the bottom while maintaining original relative order
-  const sortProductsByStatus = (products: ProductIRRHistory[]): ProductIRRHistory[] => {
-    // Separate active and inactive/lapsed products while preserving original order
-    const activeProducts = products.filter(product => 
-      product.status !== 'inactive' && product.status !== 'lapsed'
-    );
-    const inactiveProducts = products.filter(product => 
-      product.status === 'inactive' || product.status === 'lapsed'
-    );
-    
-    // Return active products first, then inactive/lapsed products
-    return [...activeProducts, ...inactiveProducts];
-  };
 
   // Get IRR value for a specific product and date
   const getIRRValueForProductAndDate = (product: ProductIRRHistory, date: string): number | null => {
@@ -309,64 +414,72 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
               {/* Table Body */}
               <tbody className="bg-white divide-y divide-gray-200">
                 {/* Product Rows */}
-                {sortProductsByStatus(tableData.productRows).map((product) => (
-                  <tr key={product.product_id} className="hover:bg-blue-50">
-                    {/* Product Name Cell */}
-                    <td className="text-left px-2 py-2 text-gray-800">
-                      <div className="flex items-start gap-1.5">
-                        {/* Provider Color Indicator */}
-                        {product.provider_theme_color && (
-                          <div 
-                            className="w-2.5 h-2.5 rounded-full mt-0.5 flex-shrink-0" 
-                            style={{ backgroundColor: product.provider_theme_color }}
-                          />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs leading-tight">
-                            {IRRHistorySummaryService.getProductDisplayName(product)}
+                {organizeProductsByType(tableData.productRows).map((product) => {
+                  // Determine if this product should be greyed out (same logic as SummaryTab)
+                  const isLapsed = product.status === 'inactive' || product.status === 'lapsed';
+                  
+                  return (
+                    <tr key={product.product_id} className={`hover:bg-blue-50 ${isLapsed ? 'opacity-50 bg-gray-50' : ''}`}>
+                      {/* Product Name Cell */}
+                      <td className={`text-left px-2 py-2 ${isLapsed ? 'text-gray-500' : 'text-gray-800'}`}>
+                        <div className="flex items-start gap-1.5">
+                          {/* Provider Color Indicator */}
+                          {product.provider_theme_color && (
+                            <div 
+                              className="w-2.5 h-2.5 rounded-full mt-0.5 flex-shrink-0" 
+                              style={{ backgroundColor: product.provider_theme_color }}
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs leading-tight">
+                              {getEffectiveProductTitle(product)}
+                              {isLapsed && (
+                                <span className="ml-2 text-xs text-red-600 font-medium">(Lapsed)</span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Current Risk Cell */}
-                    <td className="px-2 py-2 text-xs text-right">
-                      {(() => {
-                        const productRisk = getProductRisk(product.product_id);
-                        return productRisk !== null ? (
-                          formatWeightedRisk(productRisk)
-                        ) : (
-                          <span className="text-gray-400">N/A</span>
-                        );
-                      })()}
-                    </td>
-
-                    {/* IRR Value Cells */}
-                    {tableData.dateHeaders.map((date, index) => {
-                      const irrValue = getIRRValueForProductAndDate(product, date);
-                      // Check if this is the most recent (first) date since dates are sorted newest first
-                      const isCurrentYear = index === 0;
-                      // Use 'total' format type for active products (1 decimal place), 'inactive' for inactive products (smart decimal places)
-                      const formatType = product.status === 'inactive' || product.status === 'lapsed' ? 'inactive' : 'total';
-                      return (
-                        <td
-                          key={`${product.product_id}-${date}`}
-                          className={`px-2 py-2 text-xs text-right ${
-                            isCurrentYear ? 'bg-purple-50' : ''
-                          }`}
-                        >
-                          {irrValue !== null ? (
-                            <span className={irrValue >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
-                              {IRRHistorySummaryService.formatIRRValue(irrValue, formatType)}
-                            </span>
+                      {/* Current Risk Cell */}
+                      <td className="px-2 py-2 text-xs text-right">
+                        {(() => {
+                          const productRisk = getProductRisk(product.product_id);
+                          return productRisk !== null ? (
+                            formatWeightedRisk(productRisk)
                           ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
+                            <span className="text-gray-400">N/A</span>
+                          );
+                        })()}
+                      </td>
+
+                      {/* IRR Value Cells */}
+                      {tableData.dateHeaders.map((date, index) => {
+                        const irrValue = getIRRValueForProductAndDate(product, date);
+                        // Check if this is the most recent (first) date since dates are sorted newest first
+                        const isCurrentYear = index === 0;
+                        // Use 'total' format type for active products (1 decimal place), 'inactive' for inactive products (smart decimal places)
+                        const formatType = isLapsed ? 'inactive' : 'total';
+                        return (
+                          <td
+                            key={`${product.product_id}-${date}`}
+                            className={`px-2 py-2 text-xs text-right ${
+                              isCurrentYear ? 'bg-purple-50' : ''
+                            }`}
+                          >
+                            {irrValue !== null ? (
+                              <span className={irrValue >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                                {IRRHistorySummaryService.formatIRRValue(irrValue, formatType)}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
 
                 {/* Portfolio Total Row - Matches Investment Totals Style */}
                 <tr className="bg-gray-50 border-t-2 border-gray-300">

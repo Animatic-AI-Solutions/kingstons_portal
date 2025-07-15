@@ -6,12 +6,14 @@
  * - Full CRUD operations for custom titles
  * - Modal state management
  * - Save/cancel/reset functionality
+ * - Pre-populated input fields with current effective titles
  */
 
 import React, { useEffect } from 'react';
 import { useReportStateManager } from '../../hooks/report/useReportStateManager';
-import BaseInput from '../ui/inputs/BaseInput';
-import type { ReportData } from '../../types/reportTypes';
+import { normalizeProductType, PRODUCT_TYPE_ORDER } from '../../utils/reportConstants';
+import { generateEffectiveProductTitle, generateDefaultProductTitle } from '../../utils/productTitleUtils';
+import type { ReportData, ProductPeriodSummary } from '../../types/reportTypes';
 
 interface ProductTitleModalProps {
   reportData: ReportData;
@@ -38,57 +40,116 @@ export const ProductTitleModal: React.FC<ProductTitleModalProps> = ({ reportData
   } = useReportStateManager();
 
   // Extract plan number from product
-  const extractPlanNumber = (product: any): string | null => {
-    const productName = product.product_name || '';
+  const extractPlanNumber = (product: ProductPeriodSummary): string | null => {
+    // First, check if plan_number field exists
+    if (product.plan_number) {
+      return product.plan_number;
+    }
     
-    const patterns = [
-      /Plan Number[:\s]*([A-Z0-9\-\/]+)/i,
-      /Plan[:\s]*([A-Z0-9\-\/]+)/i,
-      /Policy[:\s]*([A-Z0-9\-\/]+)/i,
-    ];
-    
-    for (const pattern of patterns) {
-      const match = productName.match(pattern);
-      if (match) {
-        return match[1].trim();
+    // Fallback: try to extract from product_name if it contains plan-like patterns
+    if (product.product_name) {
+      const patterns = [
+        /Plan Number[:\s]*([A-Z0-9\-\/]+)/i,
+        /Plan[:\s]*([A-Z0-9\-\/]+)/i,
+        /Policy[:\s]*([A-Z0-9\-\/]+)/i,
+      ];
+      
+      for (const pattern of patterns) {
+        const match = product.product_name.match(pattern);
+        if (match) {
+          return match[1].trim();
+        }
       }
     }
     
     return null;
   };
 
-  // Generate default product title
-  const generateDefaultProductTitle = (product: any): string => {
-    let title = `${product.provider_name || 'Unknown Provider'}`;
+  // Organize products by type in the specified order, with inactive/lapsed products at the bottom
+  // This matches the same ordering logic used in SummaryTab for product cards
+  const organizeProductsByType = (products: ProductPeriodSummary[]) => {
+    // Group products by normalized type
+    const groupedProducts: { [key: string]: ProductPeriodSummary[] } = {};
     
-    if (product.product_type) {
-      title += ` - ${product.product_type}`;
-    }
+    products.forEach(product => {
+      const normalizedType = normalizeProductType(product.product_type);
+      if (!groupedProducts[normalizedType]) {
+        groupedProducts[normalizedType] = [];
+      }
+      groupedProducts[normalizedType].push(product);
+    });
+
+    // Sort products within each type by provider name, with special ordering for ISAs
+    Object.keys(groupedProducts).forEach(type => {
+      if (type === 'ISAs') {
+        // Special sorting for ISAs: ISA products first, then JISA products, then by provider
+        groupedProducts[type].sort((a, b) => {
+          const typeA = a.product_type?.toLowerCase().trim() || '';
+          const typeB = b.product_type?.toLowerCase().trim() || '';
+          
+          // Check if products are JISA
+          const isJISA_A = typeA === 'jisa';
+          const isJISA_B = typeB === 'jisa';
+          
+          // If one is JISA and the other is not, non-JISA comes first
+          if (isJISA_A && !isJISA_B) return 1;
+          if (!isJISA_A && isJISA_B) return -1;
+          
+          // If both are same type (both JISA or both ISA), sort by provider
+          const providerA = a.provider_name || '';
+          const providerB = b.provider_name || '';
+          return providerA.localeCompare(providerB);
+        });
+      } else {
+        // Standard sorting by provider name for other product types
+        groupedProducts[type].sort((a, b) => {
+          const providerA = a.provider_name || '';
+          const providerB = b.provider_name || '';
+          return providerA.localeCompare(providerB);
+        });
+      }
+    });
+
+    // Return products in the specified order
+    const orderedProducts: ProductPeriodSummary[] = [];
     
-    const planNumber = extractPlanNumber(product);
-    if (planNumber) {
-      title += ` [${planNumber}]`;
-    }
+    PRODUCT_TYPE_ORDER.forEach(type => {
+      if (groupedProducts[type]) {
+        orderedProducts.push(...groupedProducts[type]);
+      }
+    });
+
+    // Apply status-based sorting: active products first, then inactive/lapsed at the bottom
+    // while maintaining original relative order within each group
+    const activeProducts = orderedProducts.filter(product => 
+      product.status !== 'inactive' && product.status !== 'lapsed'
+    );
+    const inactiveProducts = orderedProducts.filter(product => 
+      product.status === 'inactive' || product.status === 'lapsed'
+    );
     
-    return title;
+    // Return active products first, then inactive/lapsed products
+    return [...activeProducts, ...inactiveProducts];
   };
 
   // Initialize modal titles when modal opens
-  const openTitleModal = () => {
-    // Copy current custom titles to modal state
-    const currentModalTitles = new Map(customTitles);
-    
-    // Ensure all products have an entry in modal titles
-    reportData.productSummaries.forEach(product => {
-      if (!currentModalTitles.has(product.id)) {
-        currentModalTitles.set(product.id, ''); // Empty means use default
-      }
-    });
-    
-    setModalTitles(currentModalTitles);
-    setModalHasChanges(false);
-    setShowTitleModal(true);
-  };
+  useEffect(() => {
+    if (showTitleModal) {
+      // Pre-populate with current effective titles (what user sees on screen)
+      const currentModalTitles = new Map<number, string>();
+      
+      // Use the same product ordering as the report cards
+      const organizedProducts = organizeProductsByType(reportData.productSummaries);
+      
+      organizedProducts.forEach(product => {
+        const effectiveTitle = generateEffectiveProductTitle(product, customTitles);
+        currentModalTitles.set(product.id, effectiveTitle);
+      });
+      
+      setModalTitles(currentModalTitles);
+      setModalHasChanges(false);
+    }
+  }, [showTitleModal, reportData.productSummaries, customTitles]); // Removed unstable function references
 
   // Close modal without saving
   const closeTitleModal = () => {
@@ -97,11 +158,18 @@ export const ProductTitleModal: React.FC<ProductTitleModalProps> = ({ reportData
 
   // Save modal changes to custom titles
   const handleModalSave = () => {
-    // Copy only non-empty titles to custom titles
+    // Save all titles that are different from the default
     const newCustomTitles = new Map<number, string>();
+    
     modalTitles.forEach((title, productId) => {
-      if (title && title.trim()) {
-        newCustomTitles.set(productId, title.trim());
+      const product = reportData.productSummaries.find(p => p.id === productId);
+      if (product) {
+        const defaultTitle = generateDefaultProductTitle(product);
+        
+        // Only save as custom if it's different from default and not empty
+        if (title && title.trim() && title.trim() !== defaultTitle) {
+          newCustomTitles.set(productId, title.trim());
+        }
       }
     });
     
@@ -109,13 +177,14 @@ export const ProductTitleModal: React.FC<ProductTitleModalProps> = ({ reportData
     resetModalState();
   };
 
-  // Reset modal titles to current custom titles
+  // Reset modal titles to current custom titles (what was there when modal opened)
   const handleModalReset = () => {
     const resetTitles = new Map<number, string>();
     
-    // Reset to current custom titles
-    reportData.productSummaries.forEach(product => {
-      resetTitles.set(product.id, customTitles.get(product.id) || '');
+    // Reset to current effective titles (what user sees on screen)
+    organizeProductsByType(reportData.productSummaries).forEach(product => {
+      const effectiveTitle = generateEffectiveProductTitle(product, customTitles);
+      resetTitles.set(product.id, effectiveTitle);
     });
     
     setModalTitles(resetTitles);
@@ -132,11 +201,11 @@ export const ProductTitleModal: React.FC<ProductTitleModalProps> = ({ reportData
 
   // Reset all titles to defaults
   const resetAllTitles = () => {
-    const emptyTitles = new Map<number, string>();
-    reportData.productSummaries.forEach(product => {
-      emptyTitles.set(product.id, '');
+    const defaultTitles = new Map<number, string>();
+    organizeProductsByType(reportData.productSummaries).forEach(product => {
+      defaultTitles.set(product.id, generateDefaultProductTitle(product));
     });
-    setModalTitles(emptyTitles);
+    setModalTitles(defaultTitles);
     setModalHasChanges(true);
   };
 
@@ -149,7 +218,8 @@ export const ProductTitleModal: React.FC<ProductTitleModalProps> = ({ reportData
 
   // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
+    // Only handle escape if not focused on an input field
+    if (e.key === 'Escape' && e.target && (e.target as HTMLElement).tagName !== 'INPUT') {
       closeTitleModal();
     }
   };
@@ -182,34 +252,74 @@ export const ProductTitleModal: React.FC<ProductTitleModalProps> = ({ reportData
         <div className="p-6 overflow-y-auto max-h-[60vh]">
           <div className="space-y-6">
             <div className="text-sm text-gray-600 mb-4">
-              Customize the display names for your products. Leave blank to use the default format.
+              Edit the display names for your products. The input fields show the current titles as they appear on the report.
             </div>
 
-            {reportData.productSummaries.map(product => (
-              <div key={product.id} className="border rounded-lg p-4 bg-gray-50">
-                <div className="mb-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {product.provider_name} - {product.product_type}
-                  </label>
-                  <div className="text-xs text-gray-500 mb-2">
-                    Default: {generateDefaultProductTitle(product)}
+            {organizeProductsByType(reportData.productSummaries).map(product => {
+              const currentTitle = modalTitles.get(product.id) || '';
+              const defaultTitle = generateDefaultProductTitle(product);
+              const effectiveTitle = generateEffectiveProductTitle(product, customTitles);
+              const isCustom = customTitles.has(product.id);
+              const hasChanges = currentTitle !== effectiveTitle;
+
+              return (
+                <div key={product.id} className="border rounded-lg p-4 bg-gray-50">
+                  <div className="mb-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {product.provider_name} - {product.product_type}
+                      {isCustom && <span className="ml-2 text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">Custom</span>}
+                    </label>
+                    
+                    <div className="space-y-1 text-xs text-gray-500">
+                      <div>
+                        <span className="font-medium">Auto-generated:</span> {defaultTitle}
+                      </div>
+                      {isCustom && (
+                        <div>
+                          <span className="font-medium">Original current:</span> {effectiveTitle}
+                        </div>
+                      )}
+                      {hasChanges && (
+                        <div className="text-blue-600">
+                          <span className="font-medium">Preview:</span> {currentTitle}
+                        </div>
+                      )}
+                    </div>
                   </div>
+                  
+                  <input
+                    key={`title-input-${product.id}`}
+                    type="text"
+                    value={currentTitle}
+                    onChange={(e) => handleModalTitleChange(product.id, e.target.value)}
+                    onInput={(e) => handleModalTitleChange(product.id, (e.target as HTMLInputElement).value)}
+                    placeholder="Enter custom title"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    readOnly={false}
+                    disabled={false}
+                    autoComplete="off"
+                    spellCheck="false"
+                  />
+                  
+                  {hasChanges && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <button
+                        onClick={() => handleModalTitleChange(product.id, effectiveTitle)}
+                        className="text-xs text-blue-600 hover:text-blue-800 underline"
+                      >
+                        Revert to original
+                      </button>
+                      <button
+                        onClick={() => handleModalTitleChange(product.id, defaultTitle)}
+                        className="text-xs text-gray-600 hover:text-gray-800 underline"
+                      >
+                        Use auto-generated
+                      </button>
+                    </div>
+                  )}
                 </div>
-                
-                <BaseInput
-                  value={modalTitles.get(product.id) || ''}
-                  onChange={(e) => handleModalTitleChange(product.id, e.target.value)}
-                  placeholder="Enter custom title (leave blank for default)"
-                  className="w-full"
-                />
-                
-                {modalTitles.get(product.id) && modalTitles.get(product.id)!.trim() && (
-                  <div className="text-xs text-blue-600 mt-1">
-                    Preview: {modalTitles.get(product.id)!.trim()}
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -219,7 +329,7 @@ export const ProductTitleModal: React.FC<ProductTitleModalProps> = ({ reportData
               onClick={resetAllTitles}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
             >
-              Reset All to Default
+              Reset All to Auto-generated
             </button>
             <button
               onClick={handleModalReset}
