@@ -6,7 +6,8 @@ import {
   BaseInput, 
   InputLabel, 
   InputError,
-  ActionButton
+  ActionButton,
+  DateInput
 } from '../components/ui';
 import { CreatableDropdown, BaseDropdown } from '../components/ui';
 
@@ -15,6 +16,7 @@ interface ClientFormData {
   status: string;
   advisor: string | null;
   type: string;
+  created_at: string | null;
 }
 
 const AddClient: React.FC = () => {
@@ -25,7 +27,8 @@ const AddClient: React.FC = () => {
     name: '',
     status: 'active',
     advisor: null,
-    type: 'Family'
+    type: 'Family',
+    created_at: null
   });
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -96,9 +99,15 @@ const AddClient: React.FC = () => {
     setError(null);
 
     try {
-      console.log('Creating client with data:', formData);
+      // Prepare form data with created_at handling
+      const submitData = {
+        ...formData,
+        created_at: formData.created_at || new Date().toISOString() // Default to current date if not provided
+      };
       
-      const response = await api.post('/client_groups', formData);
+      console.log('Creating client with data:', submitData);
+      
+      const response = await api.post('/client_groups', submitData);
       
       console.log('Client created successfully:', response.data);
       
@@ -190,6 +199,27 @@ const AddClient: React.FC = () => {
                 </svg>
               }
             />
+
+            <div>
+              <DateInput
+                label="Client Since"
+                value={formData.created_at ? new Date(formData.created_at) : undefined}
+                onChange={(date, formattedDate) => {
+                  console.log('DEBUG: AddClient DateInput onChange:', { date, formattedDate });
+                  if (date) {
+                    const isoString = date.toISOString();
+                    console.log('DEBUG: AddClient setting created_at to:', isoString);
+                    setFormData(prev => ({ ...prev, created_at: isoString }));
+                  } else {
+                    console.log('DEBUG: AddClient setting created_at to null');
+                    setFormData(prev => ({ ...prev, created_at: null }));
+                  }
+                }}
+                placeholder="dd/mm/yyyy"
+                showCalendarIcon={true}
+                helperText="Optional: Set the actual start date for this client relationship. Leave blank to use today's date."
+              />
+            </div>
 
             <div>
               <CreatableDropdown

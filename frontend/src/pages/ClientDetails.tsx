@@ -11,12 +11,14 @@ import {
   AddButton,
   BaseInput,
   NumberInput,
-  BaseDropdown
+  BaseDropdown,
+  DateInput
 } from '../components/ui';
 import api, { getClientGroupProductOwners, calculateStandardizedMultipleFundsIRR, getProductOwners, addClientGroupProductOwner, removeClientGroupProductOwner, getProductOwnersForProducts, getStandardizedClientIRR } from '../services/api';
 import { useClientDetails } from '../hooks/useClientDetails';
 import { useClientMutations } from '../hooks/useClientMutations';
 import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
+import { isCashFund } from '../utils/fundUtils';
 
 // Enhanced TypeScript interfaces
 interface Client {
@@ -47,6 +49,7 @@ interface ClientFormData {
   status: string;
   advisor: string | null;
   type: string | null;
+  created_at: string; // Add this field
 }
 
 interface ClientAccount {
@@ -96,6 +99,7 @@ interface ProductFund {
   amount_invested?: number;
   market_value?: number;
   investments?: number;
+  tax_uplift?: number;
   withdrawals?: number;
   fund_switch_in?: number;
   fund_switch_out?: number;
@@ -280,11 +284,13 @@ const ClientHeader = ({
 
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-GB', {
+    const formattedDate = date.toLocaleDateString('en-GB', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
     });
+    console.log('DEBUG: ClientHeader formatDate - input:', dateString, 'output:', formattedDate);
+    return formattedDate;
   };
 
   // Input component for inline editing
@@ -508,13 +514,13 @@ const ClientHeader = ({
                        </div>
                      </div>
                     
-                    {/* Member Since - Only show inline when NOT editing */}
+                    {/* Start Date - Only show inline when NOT editing */}
                     {!isEditing && (
                       <div className="flex items-center">
-                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2">Member Since:</span>
+                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2">Client Since:</span>
                         <div className="flex items-center text-sm font-semibold text-gray-900">
                           <svg className="w-3 h-3 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2z" />
                           </svg>
                           {formatDate(client.created_at)}
                         </div>
@@ -522,16 +528,29 @@ const ClientHeader = ({
                     )}
                   </div>
                   
-                  {/* Member Since - Show on new line when editing */}
+                  {/* Start Date - Show on new line when editing */}
                   {isEditing && (
                     <div className="flex items-center w-full mt-4">
-                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2">Member Since:</span>
-                      <div className="flex items-center text-sm font-semibold text-gray-900">
-                        <svg className="w-3 h-3 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        {formatDate(client.created_at)}
-                      </div>
+                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2">Client Since:</span>
+                      <DateInput
+                        value={editData.created_at ? new Date(editData.created_at) : undefined}
+                        onChange={(date, formattedDate) => {
+                          console.log('DateInput onChange:', { date, formattedDate });
+                          if (date) {
+                            // Convert to ISO string for storage
+                            const isoString = date.toISOString();
+                            console.log('Setting created_at to:', isoString);
+                            onFieldChange('created_at', isoString);
+                          } else {
+                            console.log('Setting created_at to empty');
+                            onFieldChange('created_at', '');
+                          }
+                        }}
+                        placeholder="dd/mm/yyyy"
+                        showCalendarIcon={true}
+                        size="sm"
+                        className="text-sm font-semibold text-gray-900"
+                      />
                     </div>
                   )}
 
@@ -785,6 +804,32 @@ const ProductCard: React.FC<{
     return null;
   }, [funds]);
 
+  // Sort funds using the same logic as ProductIRRCalculation page
+  const sortedFunds = useMemo(() => {
+    if (!funds || funds.length === 0) return [];
+    
+    const fundsToSort = [...funds];
+    
+    // Sort funds alphabetically, but place Cash at the end and Previous Funds at the very end
+    fundsToSort.sort((a, b) => {
+      // Previous Funds entry always goes last (virtual entry)
+      if (a.is_virtual_entry) return 1;
+      if (b.is_virtual_entry) return -1;
+      
+      // Cash fund always goes second-to-last (before Previous Funds)
+      const aIsCash = isCashFund({ fund_name: a.fund_name, isin_number: a.isin_number || '' } as any);
+      const bIsCash = isCashFund({ fund_name: b.fund_name, isin_number: b.isin_number || '' } as any);
+
+      if (aIsCash) return 1; // If a is Cash, it should come after non-Cash, non-Virtual
+      if (bIsCash) return -1; // If b is Cash, it should come after non-Cash, non-Virtual
+                      
+      // All other funds are sorted alphabetically
+      return a.fund_name.localeCompare(b.fund_name);
+    });
+    
+    return fundsToSort;
+  }, [funds]);
+
   // Use either the calculated fund total or the API-provided total_value
   const displayValue = totalFundValue !== null && totalFundValue > 0 
     ? totalFundValue 
@@ -993,7 +1038,7 @@ const ProductCard: React.FC<{
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fund Name</th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Invest.</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Investment</th>
                     <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Withdraw.</th>
                     <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Fund In</th>
                     <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Fund Out</th>
@@ -1004,7 +1049,7 @@ const ProductCard: React.FC<{
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {funds.map((fund) => (
+                  {sortedFunds.map((fund) => (
                     <tr 
                       key={fund.id} 
                       className={`${fund.is_virtual_entry ? 'bg-gray-50' : 'hover:bg-gray-50'}`}
@@ -1021,7 +1066,7 @@ const ProductCard: React.FC<{
                           <span className="truncate block">{fund.fund_name}</span>
                         )}
                       </td>
-                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.investments || 0)}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling((fund.investments || 0) + (fund.tax_uplift || 0))}</td>
                       <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.withdrawals || 0)}</td>
                                       <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.fund_switch_in || 0)}</td>
                 <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.fund_switch_out || 0)}</td>
@@ -1056,22 +1101,22 @@ const ProductCard: React.FC<{
                   <tr className="bg-gray-50 font-medium">
                     <td className="px-3 py-2 text-xs font-medium text-gray-900 truncate">TOTAL</td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
-                      {formatCurrencyWithZeroHandling(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.investments || 0), 0))}
+                      {formatCurrencyWithZeroHandling(funds.reduce((sum, fund) => sum + (fund.investments || 0) + (fund.tax_uplift || 0), 0))}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
-                      {formatCurrencyWithZeroHandling(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.withdrawals || 0), 0))}
+                      {formatCurrencyWithZeroHandling(funds.reduce((sum, fund) => sum + (fund.withdrawals || 0), 0))}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
-                      {formatCurrencyWithZeroHandling(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.fund_switch_in || 0), 0))}
+                      {formatCurrencyWithZeroHandling(funds.reduce((sum, fund) => sum + (fund.fund_switch_in || 0), 0))}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
-                      {formatCurrencyWithZeroHandling(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.fund_switch_out || 0), 0))}
+                      {formatCurrencyWithZeroHandling(funds.reduce((sum, fund) => sum + (fund.fund_switch_out || 0), 0))}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
-                      {formatCurrencyWithZeroHandling(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.product_switch_in || 0), 0))}
+                      {formatCurrencyWithZeroHandling(funds.reduce((sum, fund) => sum + (fund.product_switch_in || 0), 0))}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
-                      {formatCurrencyWithZeroHandling(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.product_switch_out || 0), 0))}
+                      {formatCurrencyWithZeroHandling(funds.reduce((sum, fund) => sum + (fund.product_switch_out || 0), 0))}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
                       {formatCurrencyWithZeroHandling(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.market_value || 0), 0), true)}
@@ -1196,7 +1241,8 @@ const ClientDetails: React.FC = () => {
     name: null,
     status: 'active',
     advisor: null,
-    type: null
+    type: null,
+    created_at: ''
   });
   
   // State for expanded product cards
@@ -1306,22 +1352,48 @@ const ClientDetails: React.FC = () => {
     changeClientStatus.mutate({ clientId, status: 'active' });
   };
 
+  // Format date for display
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    const formattedDate = date.toLocaleDateString('en-GB', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+    console.log('DEBUG: formatDate - input:', dateString, 'output:', formattedDate);
+    return formattedDate;
+  };
+
   const startCorrection = () => {
     if (!client) return;
+    
+    console.log('DEBUG: startCorrection - client.created_at:', client.created_at);
+    console.log('DEBUG: startCorrection - formatDate result:', formatDate(client.created_at));
     
     // Initialize form data with current client values
     setFormData({
       name: client.name,
       status: client.status,
       advisor: client.advisor,
-      type: client.type
+      type: client.type,
+      created_at: client.created_at
     });
+    
+    console.log('DEBUG: startCorrection - formData.created_at set to:', client.created_at);
     
     // Fetch product owners for the dropdown when editing starts
     fetchAvailableProductOwners();
     
     // Enter correction mode
     setIsCorrecting(true);
+  };
+
+  const handleFieldChange = (field: keyof ClientFormData, value: string | null) => {
+    console.log('DEBUG: handleFieldChange - field:', field, 'value:', value);
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const handleCorrect = async () => {
@@ -1334,6 +1406,10 @@ const ClientDetails: React.FC = () => {
       }
 
     setLocalError(null);
+    
+    console.log('DEBUG: handleCorrect - current formData:', formData);
+    console.log('DEBUG: handleCorrect - client.created_at:', client.created_at);
+    console.log('DEBUG: handleCorrect - formData.created_at:', formData.created_at);
 
       // Only send fields that have actually changed
       const changedFields: Partial<ClientFormData> = {};
@@ -1358,6 +1434,14 @@ const ClientDetails: React.FC = () => {
         changedFields.type = formData.type;
       }
       
+      // Handle created_at field change
+      if (formData.created_at !== client.created_at) {
+        console.log('DEBUG: handleCorrect - created_at has changed from:', client.created_at, 'to:', formData.created_at);
+        changedFields.created_at = formData.created_at;
+      }
+      
+      console.log('DEBUG: handleCorrect - changedFields:', changedFields);
+      
       // Only perform API call if there are changes
       if (Object.keys(changedFields).length > 0) {
       updateClient.mutate(
@@ -1374,17 +1458,9 @@ const ClientDetails: React.FC = () => {
         }
       );
     } else {
+      console.log('DEBUG: handleCorrect - no changes detected');
       setIsCorrecting(false);
     }
-  };
-
-
-
-  const handleFieldChange = (field: keyof ClientFormData, value: string | null) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
   };
 
   const handleVersionHistory = async () => {
