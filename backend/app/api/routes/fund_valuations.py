@@ -105,6 +105,7 @@ async def create_fund_valuation(
     Zero-value valuations are now allowed and will be saved.
     """
     try:
+        logger.info(f"🔍 VALUATION ENTRY: ===== FUND VALUATION CREATE ENDPOINT HIT =====")
         logger.info(f"🔍 VALUATION ENTRY: create_fund_valuation called for fund {fund_valuation.portfolio_fund_id}, date {fund_valuation.valuation_date}, value {fund_valuation.valuation}")
         # Check if portfolio fund exists
         portfolio_fund_result = db.table("portfolio_funds").select("id").eq("id", fund_valuation.portfolio_fund_id).execute()
@@ -138,7 +139,7 @@ async def create_fund_valuation(
                 .execute()
             
             if update_result.data:
-                logger.info(f"Updated existing fund valuation with ID {existing_id}")
+                logger.info(f"🔍 VALUATION ENTRY (UPDATE): Updated existing fund valuation with ID {existing_id} for fund {fund_valuation.portfolio_fund_id}, date {fund_valuation.valuation_date}, value {fund_valuation.valuation}")
                 
                 updated_valuation = update_result.data[0]
                 
@@ -149,32 +150,21 @@ async def create_fund_valuation(
                     # Get the valuation date for IRR recalculation
                     valuation_date = fund_valuation.valuation_date.isoformat().split('T')[0]
                     
-                    # Find existing IRR for this fund and date
+                    logger.info(f"🔍 VALUATION DEBUG (UPDATE): About to check for existing IRR for fund {fund_valuation.portfolio_fund_id}, date {valuation_date}")
+                    
+                    # Check if IRR already exists for this fund and date
                     existing_irr = db.table("portfolio_fund_irr_values")\
                         .select("*")\
                         .eq("fund_id", fund_valuation.portfolio_fund_id)\
                         .eq("date", valuation_date)\
                         .execute()
                     
-                    if existing_irr.data:
-                        # Update existing IRR
-                        from app.api.routes.portfolio_funds import calculate_single_portfolio_fund_irr
-                        irr_result = await calculate_single_portfolio_fund_irr(
-                            portfolio_fund_id=fund_valuation.portfolio_fund_id,
-                            irr_date=valuation_date,
-                            db=db
-                        )
+                    logger.info(f"🔍 VALUATION DEBUG (UPDATE): Found {len(existing_irr.data) if existing_irr.data else 0} existing IRR records")
+                    
+                    if not existing_irr.data or len(existing_irr.data) == 0:
+                        logger.info(f"🔍 VALUATION DEBUG (UPDATE): About to create new IRR for fund {fund_valuation.portfolio_fund_id}")
                         
-                        if irr_result.get("success"):
-                            new_irr = irr_result.get("irr_percentage", 0.0)
-                            db.table("portfolio_fund_irr_values")\
-                                .update({"irr_result": float(new_irr)})\
-                                .eq("id", existing_irr.data[0]["id"])\
-                                .execute()
-                            logger.info(f"Updated existing IRR for {valuation_date}: {new_irr}%")
-                    else:
-                        # Create new IRR if none exists
-                        logger.info(f"No existing IRR found for {valuation_date}, creating new IRR")
+                        # Calculate IRR for this fund and date
                         from app.api.routes.portfolio_funds import calculate_single_portfolio_fund_irr
                         irr_result = await calculate_single_portfolio_fund_irr(
                             portfolio_fund_id=fund_valuation.portfolio_fund_id,
@@ -192,12 +182,47 @@ async def create_fund_valuation(
                                 "fund_valuation_id": updated_valuation.get("id")
                             }
                             
-                            db.table("portfolio_fund_irr_values").insert(irr_data).execute()
-                            logger.info(f"Created new IRR for {valuation_date}: {new_irr}%")
+                            logger.info(f"🔍 VALUATION DEBUG (UPDATE): About to insert IRR data: {irr_data}")
+                            insert_result = db.table("portfolio_fund_irr_values").insert(irr_data).execute()
+                            logger.info(f"🔍 VALUATION DEBUG (UPDATE): Successfully created new IRR: {insert_result.data}")
+                    else:
+                        logger.info(f"🔍 VALUATION DEBUG (UPDATE): IRR already exists for {valuation_date}, updating existing IRR with new valuation data")
+                        
+                        # Verify existing_irr.data is not empty and has expected structure
+                        if not existing_irr.data or len(existing_irr.data) == 0:
+                            logger.error(f"🔍 VALUATION DEBUG (UPDATE): Expected existing IRR data but found none")
+                        else:
+                            existing_irr_id = existing_irr.data[0].get("id")
+                            if not existing_irr_id:
+                                logger.error(f"🔍 VALUATION DEBUG (UPDATE): Existing IRR record has no ID")
+                            else:
+                                # Enhanced logging to track the fix
+                                logger.info(f"🔍 VALUATION DEBUG (UPDATE): Found existing IRR record with ID {existing_irr_id}")
+                                logger.info(f"🔍 VALUATION DEBUG (UPDATE): Current IRR value: {existing_irr.data[0].get('irr_result', 'Unknown')}%")
+                                logger.info(f"🔍 VALUATION DEBUG (UPDATE): About to recalculate IRR with new valuation: £{fund_valuation.valuation}")
+                                
+                                # Update existing IRR with new valuation data (mirror CREATE path logic)
+                                from app.api.routes.portfolio_funds import calculate_single_portfolio_fund_irr
+                                irr_result = await calculate_single_portfolio_fund_irr(
+                                    portfolio_fund_id=fund_valuation.portfolio_fund_id,
+                                    irr_date=valuation_date,
+                                    db=db
+                                )
+                                
+                                if irr_result.get("success"):
+                                    new_irr = irr_result.get("irr_percentage", 0.0)
+                                    update_result = db.table("portfolio_fund_irr_values")\
+                                        .update({"irr_result": float(new_irr)})\
+                                        .eq("id", existing_irr_id)\
+                                        .execute()
+                                    logger.info(f"🔍 VALUATION DEBUG (UPDATE): Updated existing IRR for {valuation_date}: {new_irr}%")
+                                    logger.info(f"🔍 VALUATION DEBUG (UPDATE): Update result: {update_result}")
+                                else:
+                                    logger.warning(f"🔍 VALUATION DEBUG (UPDATE): Failed to recalculate IRR for existing record: {irr_result.get('error', 'Unknown error')}")
                         
                 except Exception as e:
                     # Don't fail the valuation update if IRR recalculation fails
-                    logger.error(f"IRR recalculation failed after valuation update: {str(e)}")
+                    logger.error(f"🔍 VALUATION DEBUG (UPDATE): IRR calculation failed after valuation update: {str(e)}")
                 # ========================================================================
                 
                 # ========================================================================
@@ -285,7 +310,39 @@ async def create_fund_valuation(
                     insert_result = db.table("portfolio_fund_irr_values").insert(irr_data).execute()
                     logger.info(f"🔍 VALUATION DEBUG: Successfully created new IRR: {insert_result.data}")
             else:
-                logger.info(f"🔍 VALUATION DEBUG: IRR already exists for {valuation_date}, skipping creation")
+                logger.info(f"🔍 VALUATION DEBUG: IRR already exists for {valuation_date}, updating existing IRR with new valuation data")
+                
+                # Verify existing_irr.data is not empty and has expected structure
+                if not existing_irr.data or len(existing_irr.data) == 0:
+                    logger.error(f"🔍 VALUATION DEBUG: Expected existing IRR data but found none")
+                else:
+                    existing_irr_id = existing_irr.data[0].get("id")
+                    if not existing_irr_id:
+                        logger.error(f"🔍 VALUATION DEBUG: Existing IRR record has no ID")
+                    else:
+                        # Enhanced logging to track the fix
+                        logger.info(f"🔍 VALUATION DEBUG: Found existing IRR record with ID {existing_irr_id}")
+                        logger.info(f"🔍 VALUATION DEBUG: Current IRR value: {existing_irr.data[0].get('irr_result', 'Unknown')}%")
+                        logger.info(f"🔍 VALUATION DEBUG: About to recalculate IRR with new valuation: £{fund_valuation.valuation}")
+                        
+                        # Update existing IRR with new valuation data (mirror UPDATE path logic)
+                        from app.api.routes.portfolio_funds import calculate_single_portfolio_fund_irr
+                        irr_result = await calculate_single_portfolio_fund_irr(
+                            portfolio_fund_id=fund_valuation.portfolio_fund_id,
+                            irr_date=valuation_date,
+                            db=db
+                        )
+                        
+                        if irr_result.get("success"):
+                            new_irr = irr_result.get("irr_percentage", 0.0)
+                            update_result = db.table("portfolio_fund_irr_values")\
+                                .update({"irr_result": float(new_irr)})\
+                                .eq("id", existing_irr_id)\
+                                .execute()
+                            logger.info(f"🔍 VALUATION DEBUG: Updated existing IRR for {valuation_date}: {new_irr}%")
+                            logger.info(f"🔍 VALUATION DEBUG: Update result: {update_result}")
+                        else:
+                            logger.warning(f"🔍 VALUATION DEBUG: Failed to recalculate IRR for existing record: {irr_result.get('error', 'Unknown error')}")
                 
         except Exception as e:
             # Don't fail the valuation creation if IRR calculation fails

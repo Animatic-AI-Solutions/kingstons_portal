@@ -129,12 +129,21 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 }) => {
   const [months, setMonths] = useState<string[]>([]);
   const [allMonths, setAllMonths] = useState<string[]>([]); // Store all months for totals calculation
-  const [currentYear, setCurrentYear] = useState<number>(new Date().getFullYear());
+  // Initialize currentYear with localStorage value if available, otherwise use current year
+  const [currentYear, setCurrentYear] = useState<number>(() => {
+    const savedYear = localStorage.getItem('irr-calculation-selected-year');
+    return savedYear ? parseInt(savedYear) : new Date().getFullYear();
+  });
   const [availableYears, setAvailableYears] = useState<number[]>([]);
   const [pendingEdits, setPendingEdits] = useState<CellEdit[]>([]);
   
   // Add state to track initial load vs year changes
   const [isInitialLoad, setIsInitialLoad] = useState<boolean>(true);
+  
+  // Persist selected year to localStorage
+  useEffect(() => {
+    localStorage.setItem('irr-calculation-selected-year', currentYear.toString());
+  }, [currentYear]);
   
   // Debug effect to track pendingEdits changes
   useEffect(() => {
@@ -956,9 +965,18 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     const years = [...new Set(sortedMonths.map(month => parseInt(month.split('-')[0])))].sort();
     setAvailableYears(years);
     
-    // Set initial year to the latest year with data
+    // Set initial year to the latest year with data, but respect saved year if it's valid
     if (years.length > 0) {
-      setCurrentYear(years[years.length - 1]);
+      const savedYear = localStorage.getItem('irr-calculation-selected-year');
+      const savedYearValue = savedYear ? parseInt(savedYear) : null;
+      
+      if (savedYearValue && years.includes(savedYearValue)) {
+        // Use saved year if it's valid (exists in available years)
+        setCurrentYear(savedYearValue);
+      } else {
+        // Use latest year with data if saved year is invalid or doesn't exist
+        setCurrentYear(years[years.length - 1]);
+      }
     }
   }, [productStartDate]);
 
@@ -1407,14 +1425,38 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         console.log(`Month ${month}, Fund ${fundId}: Processing edits:`, monthEdits.map(e => e.activityType));
       }
       
+      // Debug: Log all pendingEdits with their values
+      console.log('🔍 DEBUG: All pending edits before filtering:', pendingEdits.map(edit => ({
+        activityType: edit.activityType,
+        value: edit.value,
+        valueLength: edit.value.length,
+        trimmedValue: edit.value.trim(),
+        trimmedLength: edit.value.trim().length,
+        toDelete: edit.toDelete,
+        fundId: edit.fundId,
+        month: edit.month
+      })));
+
       // Process the actual edits (existing logic)
       const editsToProcess = pendingEdits.filter(edit => 
         edit.value.trim() !== '' || edit.toDelete
       );
 
+      console.log('🔍 DEBUG: Edits after first filtering:', editsToProcess.map(edit => ({
+        activityType: edit.activityType,
+        value: edit.value,
+        trimmedValue: edit.value.trim()
+      })));
+
       // Group edits by operation (existing logic)
       const deletions = editsToProcess.filter(edit => edit.toDelete && edit.originalActivityId);
       const creationsAndUpdates = editsToProcess.filter(edit => !edit.toDelete);
+
+      console.log('🔍 DEBUG: Creations and updates after grouping:', creationsAndUpdates.map(edit => ({
+        activityType: edit.activityType,
+        value: edit.value,
+        trimmedValue: edit.value.trim()
+      })));
 
       // Process deletions
       for (const edit of deletions) {
@@ -1427,7 +1469,12 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
       // Process creations and updates
       for (const edit of creationsAndUpdates) {
-        if (edit.value.trim() === '') continue;
+        console.log(`🔍 DEBUG: Processing edit - Type: ${edit.activityType}, Value: "${edit.value}", Trimmed: "${edit.value.trim()}", Length: ${edit.value.trim().length}`);
+        
+        if (edit.value.trim() === '') {
+          console.log(`🔍 DEBUG: Skipping edit due to empty value - Type: ${edit.activityType}`);
+          continue;
+        }
 
         if (edit.activityType === 'Current Value') {
           // Handle fund valuations
@@ -1437,10 +1484,28 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
             valuation: parseFloat(edit.value)
           };
 
+          console.log(`🔍 SAVING VALUATION: ${JSON.stringify(valuationData)}`);
+
           if (edit.isNew) {
-            await createFundValuation(valuationData);
+            console.log('🔍 DEBUG: Creating new valuation');
+            try {
+              const response = await createFundValuation(valuationData);
+              console.log('🔍 DEBUG: Valuation created successfully, response:', response);
+            } catch (error) {
+              console.error('🔍 ERROR: Failed to create valuation:', error);
+              console.error('🔍 ERROR: Error details:', error.response?.data);
+              throw error; // Re-throw to trigger the catch block
+            }
           } else if (edit.originalActivityId) {
-            await api.patch(`fund_valuations/${edit.originalActivityId}`, valuationData);
+            console.log(`🔍 DEBUG: Updating existing valuation ${edit.originalActivityId}`);
+            try {
+              const response = await api.patch(`fund_valuations/${edit.originalActivityId}`, valuationData);
+              console.log('🔍 DEBUG: Valuation updated successfully, response:', response);
+            } catch (error) {
+              console.error('🔍 ERROR: Failed to update valuation:', error);
+              console.error('🔍 ERROR: Error details:', error.response?.data);
+              throw error; // Re-throw to trigger the catch block
+            }
           }
         } else {
           // Handle regular activities with uniform structure
