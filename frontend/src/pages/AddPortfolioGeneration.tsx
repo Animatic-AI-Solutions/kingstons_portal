@@ -48,6 +48,7 @@ const AddPortfolioGeneration: React.FC = () => {
   const [selectedFunds, setSelectedFunds] = useState<number[]>([]);
   const [fundWeightings, setFundWeightings] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  const [dateError, setDateError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingFunds, setIsLoadingFunds] = useState(false);
   const [isLoadingPortfolio, setIsLoadingPortfolio] = useState(true);
@@ -176,6 +177,21 @@ const AddPortfolioGeneration: React.FC = () => {
     if (error) {
       setError(null);
     }
+    
+    // Real-time date validation
+    if (name === 'created_at') {
+      if (value.trim()) {
+        const dateValidationResult = validateCreationDate(value);
+        if (!dateValidationResult.isValid) {
+          setDateError(dateValidationResult.error);
+        } else {
+          setDateError(null);
+        }
+      } else {
+        setDateError(null); // Clear error if date is empty (valid)
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -267,12 +283,27 @@ const AddPortfolioGeneration: React.FC = () => {
   const validateForm = () => {
     // Clear any previous errors before validation
     setError(null);
+    setDateError(null); // Clear date error
     
     // Auto-generate generation name if empty
     const generationName = formData.generation_name.trim() || generateGenerationName();
     
     if (!generationName) {
       setError('Unable to generate generation name');
+      return false;
+    }
+    
+    // Validate creation date if provided
+    if (formData.created_at && formData.created_at.trim()) {
+      const dateValidationResult = validateCreationDate(formData.created_at);
+      if (!dateValidationResult.isValid) {
+        setDateError(dateValidationResult.error);
+        return false;
+      }
+    }
+    
+    // Check if there are any existing date errors
+    if (dateError) {
       return false;
     }
     
@@ -297,6 +328,160 @@ const AddPortfolioGeneration: React.FC = () => {
     return true;
   };
 
+  const validateCreationDate = (dateString: string) => {
+    if (!dateString.trim()) {
+      return { isValid: true, error: null }; // Empty date is valid (will use current date)
+    }
+    
+    try {
+      let date: Date;
+      let year: number, month: number, day: number;
+      
+      // Handle dd/mm/yyyy format (from DateInput component)
+      if (dateString.includes('/')) {
+        const parts = dateString.trim().split('/');
+        
+        // Check if we have exactly 3 parts
+        if (parts.length !== 3) {
+          return { 
+            isValid: false, 
+            error: 'Invalid date format. Please use dd/mm/yyyy format.' 
+          };
+        }
+        
+        // Parse day, month, year
+        day = parseInt(parts[0], 10);
+        month = parseInt(parts[1], 10);
+        year = parseInt(parts[2], 10);
+        
+        // Check for invalid numbers
+        if (isNaN(day) || isNaN(month) || isNaN(year)) {
+          return { 
+            isValid: false, 
+            error: 'Invalid date format. Please enter valid numbers.' 
+          };
+        }
+        
+        // Check year range (reasonable range for business purposes)
+        if (year < 1900 || year > 2100) {
+          return { 
+            isValid: false, 
+            error: 'Year must be between 1900 and 2100.' 
+          };
+        }
+        
+        // Check month range
+        if (month < 1 || month > 12) {
+          return { 
+            isValid: false, 
+            error: 'Month must be between 01 and 12.' 
+          };
+        }
+        
+        // Check day range for the specific month/year
+        const daysInMonth = new Date(year, month, 0).getDate();
+        if (day < 1 || day > daysInMonth) {
+          return { 
+            isValid: false, 
+            error: `Day must be between 01 and ${daysInMonth.toString().padStart(2, '0')} for the selected month.` 
+          };
+        }
+        
+        // Create date object (month is 0-indexed in Date constructor)
+        date = new Date(year, month - 1, day);
+        
+        // Verify the date components match what we parsed (catches invalid dates)
+        if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+          return { 
+            isValid: false, 
+            error: 'The entered date does not correspond to a valid calendar date.' 
+          };
+        }
+        
+      } else {
+        // Handle ISO format (YYYY-MM-DD)
+        date = new Date(dateString);
+        
+        // Check if the date is invalid (NaN)
+        if (isNaN(date.getTime())) {
+          return { 
+            isValid: false, 
+            error: 'Invalid date format. Please enter a valid date.' 
+          };
+        }
+        
+        // For ISO format input (YYYY-MM-DD), do additional validation
+        if (dateString.includes('-') && dateString.length === 10) {
+          const parts = dateString.split('-').map(Number);
+          [year, month, day] = parts;
+          
+          // Check year range
+          if (year < 1900 || year > 2100) {
+            return { 
+              isValid: false, 
+              error: 'Year must be between 1900 and 2100.' 
+            };
+          }
+          
+          // Check month range
+          if (month < 1 || month > 12) {
+            return { 
+              isValid: false, 
+              error: 'Month must be between 01 and 12.' 
+            };
+          }
+          
+          // Check day range for the specific month/year
+          const daysInMonth = new Date(year, month, 0).getDate();
+          if (day < 1 || day > daysInMonth) {
+            return { 
+              isValid: false, 
+              error: `Day must be between 01 and ${daysInMonth.toString().padStart(2, '0')} for the selected month.` 
+            };
+          }
+          
+          // Verify the date components match what we parsed
+          if (date.getFullYear() !== year || date.getMonth() + 1 !== month || date.getDate() !== day) {
+            return { 
+              isValid: false, 
+              error: 'The entered date does not correspond to a valid calendar date.' 
+            };
+          }
+        }
+      }
+      
+      // Check if date is too far in the future (more than 10 years)
+      const tenYearsFromNow = new Date();
+      tenYearsFromNow.setFullYear(tenYearsFromNow.getFullYear() + 10);
+      
+      if (date > tenYearsFromNow) {
+        return { 
+          isValid: false, 
+          error: 'Creation date cannot be more than 10 years in the future.' 
+        };
+      }
+      
+      // Check if date is too far in the past (more than 50 years)
+      const fiftyYearsAgo = new Date();
+      fiftyYearsAgo.setFullYear(fiftyYearsAgo.getFullYear() - 50);
+      
+      if (date < fiftyYearsAgo) {
+        return { 
+          isValid: false, 
+          error: 'Creation date cannot be more than 50 years in the past.' 
+        };
+      }
+      
+      return { isValid: true, error: null };
+      
+    } catch (error) {
+      return { 
+        isValid: false, 
+        error: 'Invalid date format. Please enter a valid date.' 
+      };
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -305,6 +490,7 @@ const AddPortfolioGeneration: React.FC = () => {
       try {
         setIsSubmitting(true);
         setError(null);
+        setDateError(null); // Clear date error on successful submission
         
         // Use auto-generated name if field is empty
         const generationName = formData.generation_name.trim() || generateGenerationName();
@@ -325,7 +511,22 @@ const AddPortfolioGeneration: React.FC = () => {
         // Include created_at only if a date is provided (for backlogged generations)
         if (formData.created_at.trim()) {
           // Convert date string to ISO datetime format for backend
-          const createdAtDate = new Date(formData.created_at);
+          let createdAtDate: Date;
+          
+          if (formData.created_at.includes('/')) {
+            // Handle dd/mm/yyyy format
+            const parts = formData.created_at.split('/');
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10);
+            const year = parseInt(parts[2], 10);
+            
+            // Create date object (month is 0-indexed in Date constructor)
+            createdAtDate = new Date(year, month - 1, day);
+          } else {
+            // Handle ISO format
+            createdAtDate = new Date(formData.created_at);
+          }
+          
           payload.created_at = createdAtDate.toISOString();
         }
 
@@ -372,8 +573,8 @@ const AddPortfolioGeneration: React.FC = () => {
     // Use the created_at field if provided, otherwise use current date
     const date = formData.created_at ? new Date(formData.created_at) : new Date();
     const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
     ];
     
     const month = monthNames[date.getMonth()];
@@ -476,7 +677,7 @@ const AddPortfolioGeneration: React.FC = () => {
 
       {/* Main Content */}
       <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
-        {error && (
+        {(error || dateError) && (
           <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-0">
             <div className="flex">
               <div className="flex-shrink-0">
@@ -485,7 +686,7 @@ const AddPortfolioGeneration: React.FC = () => {
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-red-700 text-sm font-medium">{error}</p>
+                <p className="text-red-700 text-sm font-medium">{error || dateError}</p>
               </div>
             </div>
           </div>
@@ -521,15 +722,46 @@ const AddPortfolioGeneration: React.FC = () => {
                     name="created_at"
                     value={formData.created_at}
                     onChange={(date, formatted) => {
-                      setFormData(prev => ({
-                        ...prev,
-                        created_at: date ? date.toISOString() : ''
-                      }));
+                      if (date) {
+                        // Valid date - use ISO string
+                        const dateValue = date.toISOString();
+                        setFormData(prev => ({
+                          ...prev,
+                          created_at: dateValue
+                        }));
+                        setDateError(null); // Clear any previous errors
+                      } else {
+                        // Invalid date or empty - validate the raw input
+                        setFormData(prev => ({
+                          ...prev,
+                          created_at: formatted || ''
+                        }));
+                        
+                        // Real-time date validation for invalid dates
+                        if (formatted && formatted.trim()) {
+                          const dateValidationResult = validateCreationDate(formatted);
+                          if (!dateValidationResult.isValid) {
+                            setDateError(dateValidationResult.error);
+                          } else {
+                            setDateError(null);
+                          }
+                        } else {
+                          setDateError(null); // Clear error if date is empty (valid)
+                        }
+                      }
+                      
+                      // Clear general errors when user makes changes
+                      if (error) {
+                        setError(null);
+                      }
                     }}
                     placeholder="Select creation date"
                     helperText="Leave empty to use current date/time"
                     required={false}
                   />
+                  {dateError && (
+                    <p className="mt-1 text-xs text-red-500">{dateError}</p>
+                  )}
                 </div>
                 <div className="w-full lg:w-1/3">
                   <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
@@ -613,13 +845,13 @@ const AddPortfolioGeneration: React.FC = () => {
           {/* Footer Actions */}
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
             <div className="flex-1">
-              {error && (
+              {(error || dateError) && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3 mr-4">
                   <div className="flex items-center">
                     <svg className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <p className="text-sm text-red-700">{error}</p>
+                    <p className="text-sm text-red-700">{error || dateError}</p>
                   </div>
                 </div>
               )}
@@ -634,9 +866,9 @@ const AddPortfolioGeneration: React.FC = () => {
               </Link>
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || dateError !== null}
                 className={`bg-primary-700 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 shadow-sm transition-colors duration-200 ${
-                  isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
+                  isSubmitting || dateError !== null ? 'opacity-70 cursor-not-allowed' : ''
                 }`}
               >
                 {isSubmitting ? (
