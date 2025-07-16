@@ -277,7 +277,10 @@ async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, acti
 async def find_common_valuation_dates_from_date(fund_ids: List[int], start_date: str, db) -> List[str]:
     """
     Find dates where ALL portfolio funds have valuations from a start date onwards.
-    Only returns dates that are >= start_date.
+    
+    For active funds: Must have actual valuations on that date.
+    For inactive funds: Either have actual valuations on that date, OR the date is after their latest valuation date 
+    (in which case they are considered to have £0 valuation).
     
     Args:
         fund_ids: List of portfolio fund IDs
@@ -294,6 +297,22 @@ async def find_common_valuation_dates_from_date(fund_ids: List[int], start_date:
     try:
         logger.info(f"Finding common valuation dates for {len(fund_ids)} funds from {start_date} onwards")
         
+        # Get fund statuses to separate active and inactive funds
+        fund_statuses = db.table("portfolio_funds")\
+            .select("id, status")\
+            .in_("id", fund_ids)\
+            .execute()
+        
+        if not fund_statuses.data:
+            logger.info("No fund information found")
+            return []
+        
+        # Separate active and inactive funds
+        active_funds = [f["id"] for f in fund_statuses.data if f.get("status", "active") == "active"]
+        inactive_funds = [f["id"] for f in fund_statuses.data if f.get("status", "active") != "active"]
+        
+        logger.info(f"Found {len(active_funds)} active funds and {len(inactive_funds)} inactive funds")
+        
         # Get all valuation dates for all funds from start date onwards
         all_valuations = db.table("portfolio_fund_valuations")\
             .select("portfolio_fund_id, valuation_date")\
@@ -305,24 +324,68 @@ async def find_common_valuation_dates_from_date(fund_ids: List[int], start_date:
             logger.info("No valuations found for any funds from start date onwards")
             return []
         
-        # Group by date and count funds
-        date_fund_counts = {}
+        # For inactive funds, get their latest valuation date
+        inactive_fund_latest_dates = {}
+        if inactive_funds:
+            for fund_id in inactive_funds:
+                latest_valuation = db.table("portfolio_fund_valuations")\
+                    .select("valuation_date")\
+                    .eq("portfolio_fund_id", fund_id)\
+                    .order("valuation_date", desc=True)\
+                    .limit(1)\
+                    .execute()
+                
+                if latest_valuation.data:
+                    latest_date = latest_valuation.data[0]["valuation_date"].split('T')[0]
+                    inactive_fund_latest_dates[fund_id] = latest_date
+                    logger.info(f"Inactive fund {fund_id} latest valuation date: {latest_date}")
+        
+        # Group active fund valuations by date
+        active_fund_dates = {}
         for valuation in all_valuations.data:
-            date = valuation["valuation_date"].split('T')[0]  # Ensure YYYY-MM-DD
-            if date not in date_fund_counts:
-                date_fund_counts[date] = set()
-            date_fund_counts[date].add(valuation["portfolio_fund_id"])
+            fund_id = valuation["portfolio_fund_id"]
+            if fund_id in active_funds:
+                date = valuation["valuation_date"].split('T')[0]  # Ensure YYYY-MM-DD
+                if date not in active_fund_dates:
+                    active_fund_dates[date] = set()
+                active_fund_dates[date].add(fund_id)
         
-        # Find dates where ALL funds have valuations
+        # Find common dates where:
+        # 1. All active funds have actual valuations
+        # 2. All inactive funds either have actual valuations OR the date is after their latest valuation date
         common_dates = []
-        required_fund_count = len(fund_ids)
         
-        for date, fund_set in date_fund_counts.items():
-            if len(fund_set) == required_fund_count:
-                common_dates.append(date)
+        for date, active_fund_set in active_fund_dates.items():
+            # Check if all active funds have valuations on this date
+            if len(active_fund_set) == len(active_funds):
+                # Now check inactive funds
+                all_inactive_covered = True
+                
+                for inactive_fund_id in inactive_funds:
+                    # Check if this inactive fund has a valuation on this date
+                    has_valuation_on_date = any(
+                        v["portfolio_fund_id"] == inactive_fund_id and 
+                        v["valuation_date"].split('T')[0] == date
+                        for v in all_valuations.data
+                    )
+                    
+                    # If no valuation on this date, check if date is after latest valuation date
+                    if not has_valuation_on_date:
+                        latest_date = inactive_fund_latest_dates.get(inactive_fund_id)
+                        if latest_date is None or date <= latest_date:
+                            # This inactive fund doesn't have a valuation on this date and 
+                            # the date is not after its latest valuation date
+                            all_inactive_covered = False
+                            break
+                
+                if all_inactive_covered:
+                    common_dates.append(date)
         
         common_dates.sort()  # Sort chronologically
         logger.info(f"Found {len(common_dates)} common valuation dates from {start_date} onwards: {common_dates}")
+        
+        if inactive_funds:
+            logger.info(f"Inactive funds treated as £0 valuation for dates after their latest valuation dates")
         
         return common_dates
         

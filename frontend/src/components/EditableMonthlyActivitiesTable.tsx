@@ -278,7 +278,26 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   const cellValuesCache = useMemo(() => {
     const cache = new Map<string, string>();
     
-    funds.forEach(fund => {
+    // Get all funds to process (including inactive funds when shown)
+    const allFundsToProcess = [...funds];
+    
+    // If showing inactive funds, add them to the processing list
+    if (showInactiveFunds) {
+      const previousFundsEntry = funds.find(f => f.isActive === false && f.inactiveHoldingIds && f.inactiveHoldingIds.length > 0);
+      if (previousFundsEntry && previousFundsEntry.inactiveHoldingIds) {
+        const inactiveFundsToShow = previousFundsEntry.inactiveHoldingIds.map(holding => ({
+          id: holding.id,
+          fund_name: holding.fund_name || `Inactive Fund ${holding.id}`,
+          holding_id: -1,
+          isActive: false,
+          isInactiveBreakdown: true,
+          fund_id: holding.fund_id
+        }));
+        allFundsToProcess.push(...inactiveFundsToShow);
+      }
+    }
+    
+    allFundsToProcess.forEach(fund => {
       allMonths.forEach(month => {
         ACTIVITY_TYPES.forEach(activityType => {
           const key = `${fund.id}-${month}-${activityType}`;
@@ -354,7 +373,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     });
     
     return cache;
-  }, [funds, allMonths, activitiesState, fundValuations, pendingEditsMap, activitiesIndex, fundValuationsIndex]);
+      }, [funds, allMonths, activitiesState, fundValuations, pendingEditsMap, activitiesIndex, fundValuationsIndex, showInactiveFunds]);
 
   // Memoized calculation results - pre-calculate all totals
   const calculationResults = useMemo(() => {
@@ -367,8 +386,27 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       fundRowTotals: new Map<number, number>()
     };
 
-    // Calculate fund month totals
-    funds.forEach(fund => {
+    // Get all funds to process (including inactive funds when shown)
+    const allFundsToProcess = [...funds];
+    
+    // If showing inactive funds, add them to the processing list
+    if (showInactiveFunds) {
+      const previousFundsEntry = funds.find(f => f.isActive === false && f.inactiveHoldingIds && f.inactiveHoldingIds.length > 0);
+      if (previousFundsEntry && previousFundsEntry.inactiveHoldingIds) {
+        const inactiveFundsToShow = previousFundsEntry.inactiveHoldingIds.map(holding => ({
+          id: holding.id,
+          fund_name: holding.fund_name || `Inactive Fund ${holding.id}`,
+          holding_id: -1,
+          isActive: false,
+          isInactiveBreakdown: true,
+          fund_id: holding.fund_id
+        }));
+        allFundsToProcess.push(...inactiveFundsToShow);
+      }
+    }
+
+    // Calculate fund month totals for all funds (including inactive ones when shown)
+    allFundsToProcess.forEach(fund => {
       months.forEach(month => {
         const key = `${fund.id}-${month}`;
         let total = 0;
@@ -466,7 +504,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       return monthYear <= currentYear;
     });
 
-    funds.forEach(fund => {
+    allFundsToProcess.forEach(fund => {
       ACTIVITY_TYPES.forEach(activityType => {
         const key = `${fund.id}-${activityType}`;
         let total = 0;
@@ -493,7 +531,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     });
 
     // Calculate fund row totals across months in selected year and before
-    funds.forEach(fund => {
+    allFundsToProcess.forEach(fund => {
       let total = 0;
       
       ACTIVITY_TYPES.forEach(activityType => {
@@ -521,7 +559,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     });
 
     return results;
-  }, [funds, months, allMonths, cellValuesCache, inactiveFundsForTotals, activitiesIndex, activityTypeSignMap, currentYear]);
+      }, [funds, months, allMonths, cellValuesCache, inactiveFundsForTotals, activitiesIndex, activityTypeSignMap, currentYear, showInactiveFunds]);
 
   // Color management for switch groups
   const SWITCH_COLORS = [

@@ -16,6 +16,10 @@ async def should_recalculate_portfolio_irr(portfolio_id: int, valuation_date: st
     Check if portfolio IRR should be recalculated for a given date.
     Portfolio IRR should be recalculated whenever there's a common valuation date across all funds.
     
+    For active funds: Must have actual valuations on that date.
+    For inactive funds: Either have actual valuations on that date, OR the date is after their latest valuation date 
+    (in which case they are considered to have £0 valuation).
+    
     Args:
         portfolio_id: The portfolio ID to check
         valuation_date: The valuation date in YYYY-MM-DD format
@@ -25,22 +29,24 @@ async def should_recalculate_portfolio_irr(portfolio_id: int, valuation_date: st
         True if portfolio IRR should be calculated/recalculated, False otherwise
     """
     try:
-        # Get all portfolio funds in this portfolio (active and inactive)
+        # Get all portfolio funds in this portfolio (active and inactive) with their status
         all_portfolio_funds_result = db.table("portfolio_funds")\
-            .select("id")\
+            .select("id, status")\
             .eq("portfolio_id", portfolio_id)\
             .execute()
         
         if not all_portfolio_funds_result.data:
             return False
         
-        all_fund_ids = [pf["id"] for pf in all_portfolio_funds_result.data]
+        # Separate active and inactive funds
+        active_funds = [pf["id"] for pf in all_portfolio_funds_result.data if pf.get("status", "active") == "active"]
+        inactive_funds = [pf["id"] for pf in all_portfolio_funds_result.data if pf.get("status", "active") != "active"]
         
-        # Check if ALL funds have a valuation on this date
+        # Check if ALL active funds have valuations on this date
         date_start = f"{valuation_date}T00:00:00"
         date_end = f"{valuation_date}T23:59:59"
         
-        for fund_id in all_fund_ids:
+        for fund_id in active_funds:
             fund_valuation_check = db.table("portfolio_fund_valuations")\
                 .select("id")\
                 .eq("portfolio_fund_id", fund_id)\
@@ -49,13 +55,40 @@ async def should_recalculate_portfolio_irr(portfolio_id: int, valuation_date: st
                 .execute()
             
             if not fund_valuation_check.data:
-                # This fund doesn't have a valuation on this date, so it's not a common date
+                # This active fund doesn't have a valuation on this date, so it's not a common date
                 return False
         
-        # All funds have valuations on this date, so portfolio IRR should be calculated/recalculated
-        # We should ALWAYS recalculate portfolio IRR when fund valuations change on a common date
-        # This ensures portfolio IRR stays in sync with fund-level changes
-        logger.info(f"All {len(all_fund_ids)} funds have valuations on {valuation_date} - portfolio IRR calculation needed")
+        # Check inactive funds - they either need actual valuations or the date must be after their latest valuation date
+        for fund_id in inactive_funds:
+            fund_valuation_check = db.table("portfolio_fund_valuations")\
+                .select("id")\
+                .eq("portfolio_fund_id", fund_id)\
+                .gte("valuation_date", date_start)\
+                .lte("valuation_date", date_end)\
+                .execute()
+            
+            if not fund_valuation_check.data:
+                # This inactive fund doesn't have a valuation on this date
+                # Check if the date is after its latest valuation date
+                latest_valuation = db.table("portfolio_fund_valuations")\
+                    .select("valuation_date")\
+                    .eq("portfolio_fund_id", fund_id)\
+                    .order("valuation_date", desc=True)\
+                    .limit(1)\
+                    .execute()
+                
+                if latest_valuation.data:
+                    latest_date = latest_valuation.data[0]["valuation_date"].split('T')[0]
+                    if valuation_date <= latest_date:
+                        # The date is not after the latest valuation date, so it's not a common date
+                        return False
+                else:
+                    # No valuations found for this inactive fund, so it's not a common date
+                    return False
+        
+        # All active funds have valuations on this date, and all inactive funds either have valuations 
+        # or the date is after their latest valuation date
+        logger.info(f"All {len(active_funds)} active funds + {len(inactive_funds)} inactive funds (with £0 after latest date) have valuations on {valuation_date} - portfolio IRR calculation needed")
         return True
         
     except Exception as e:
@@ -706,11 +739,17 @@ async def delete_fund_valuation(
         all_portfolio_fund_ids = [pf["id"] for pf in all_portfolio_funds_result.data] if all_portfolio_funds_result.data else []
         
         # Check if after deleting this valuation, ALL funds still have valuations on this date
-        # For a common date to exist, EVERY portfolio fund (active + inactive) must have a valuation on that date
+        # For active funds: Must have actual valuations on that date
+        # For inactive funds: Either have actual valuations on that date, OR the date is after their latest valuation date
         common_date_still_exists = True
         
         if len(all_portfolio_fund_ids) > 0:
-            for fund_id in all_portfolio_fund_ids:
+            # Separate active and inactive funds
+            active_funds = [pf["id"] for pf in all_portfolio_funds_result.data if pf.get("status", "active") == "active"]
+            inactive_funds = [pf["id"] for pf in all_portfolio_funds_result.data if pf.get("status", "active") != "active"]
+            
+            # Check active funds first
+            for fund_id in active_funds:
                 # Check if this fund has a valuation on the same date using date range
                 date_start = f"{valuation_date_only}T00:00:00"
                 date_end = f"{valuation_date_only}T23:59:59"
@@ -729,17 +768,84 @@ async def delete_fund_valuation(
                     # (excluding the one we're about to delete)
                     remaining_valuations = [v for v in fund_valuation_check.data if v["id"] != valuation_id] if fund_valuation_check.data else []
                     if not remaining_valuations:
-                        # This fund will have no valuations left on this date after deletion
+                        # This active fund will have no valuations left on this date after deletion
                         common_date_still_exists = False
-                        logger.info(f"Fund {fund_id} will have no valuations on {valuation_date_only} after deleting valuation {valuation_id}")
+                        logger.info(f"Active fund {fund_id} will have no valuations on {valuation_date_only} after deleting valuation {valuation_id}")
                         break
                 else:
-                    # For other funds, just check if they have any valuation on this date
+                    # For other active funds, just check if they have any valuation on this date
                     if not fund_valuation_check.data:
-                        # This fund doesn't have a valuation on this date, so common date is already broken
+                        # This active fund doesn't have a valuation on this date, so common date is broken
                         common_date_still_exists = False
-                        logger.info(f"Fund {fund_id} has no valuations on {valuation_date_only}")
+                        logger.info(f"Active fund {fund_id} has no valuations on {valuation_date_only}")
                         break
+            
+            # Check inactive funds if active funds all passed
+            if common_date_still_exists:
+                for fund_id in inactive_funds:
+                    # Check if this inactive fund has a valuation on the same date using date range
+                    date_start = f"{valuation_date_only}T00:00:00"
+                    date_end = f"{valuation_date_only}T23:59:59"
+                    
+                    fund_valuation_check = db.table("portfolio_fund_valuations")\
+                        .select("id")\
+                        .eq("portfolio_fund_id", fund_id)\
+                        .gte("valuation_date", date_start)\
+                        .lte("valuation_date", date_end)\
+                        .execute()
+                    
+                    # IMPORTANT: For the fund we're deleting from, we need to check if there are 
+                    # OTHER valuations on this date (since we're about to delete one)
+                    if fund_id == portfolio_fund_id:
+                        # For the fund we're deleting from, check if there are other valuations on this date
+                        # (excluding the one we're about to delete)
+                        remaining_valuations = [v for v in fund_valuation_check.data if v["id"] != valuation_id] if fund_valuation_check.data else []
+                        if not remaining_valuations:
+                            # This inactive fund will have no valuations left on this date after deletion
+                            # Check if the date is after its latest valuation date
+                            latest_valuation = db.table("portfolio_fund_valuations")\
+                                .select("valuation_date")\
+                                .eq("portfolio_fund_id", fund_id)\
+                                .order("valuation_date", desc=True)\
+                                .limit(1)\
+                                .execute()
+                            
+                            if latest_valuation.data:
+                                latest_date = latest_valuation.data[0]["valuation_date"].split('T')[0]
+                                if valuation_date_only <= latest_date:
+                                    # The date is not after the latest valuation date, so common date is broken
+                                    common_date_still_exists = False
+                                    logger.info(f"Inactive fund {fund_id} will have no valuations on {valuation_date_only} after deletion and date is not after latest valuation date")
+                                    break
+                            else:
+                                # No valuations found for this inactive fund, so common date is broken
+                                common_date_still_exists = False
+                                logger.info(f"Inactive fund {fund_id} has no valuations at all")
+                                break
+                    else:
+                        # For other inactive funds, check if they have any valuation on this date
+                        if not fund_valuation_check.data:
+                            # This inactive fund doesn't have a valuation on this date
+                            # Check if the date is after its latest valuation date
+                            latest_valuation = db.table("portfolio_fund_valuations")\
+                                .select("valuation_date")\
+                                .eq("portfolio_fund_id", fund_id)\
+                                .order("valuation_date", desc=True)\
+                                .limit(1)\
+                                .execute()
+                            
+                            if latest_valuation.data:
+                                latest_date = latest_valuation.data[0]["valuation_date"].split('T')[0]
+                                if valuation_date_only <= latest_date:
+                                    # The date is not after the latest valuation date, so common date is broken
+                                    common_date_still_exists = False
+                                    logger.info(f"Inactive fund {fund_id} has no valuations on {valuation_date_only} and date is not after latest valuation date")
+                                    break
+                            else:
+                                # No valuations found for this inactive fund, so common date is broken
+                                common_date_still_exists = False
+                                logger.info(f"Inactive fund {fund_id} has no valuations at all")
+                                break
             
             logger.info(f"Common valuation date {valuation_date_only} still exists after deletion: {common_date_still_exists}")
         else:

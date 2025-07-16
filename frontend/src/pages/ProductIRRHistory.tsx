@@ -177,6 +177,8 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
   const [portfolioIRRData, setPortfolioIRRData] = useState<{[monthYear: string]: number}>({});
   const [previousFundsIRRData, setPreviousFundsIRRData] = useState<{[monthYear: string]: number}>({});
   const [isLoadingPreviousFunds, setIsLoadingPreviousFunds] = useState(false);
+  const [showInactiveFundsBreakdown, setShowInactiveFundsBreakdown] = useState(false);
+  const [inactiveFundsIRRData, setInactiveFundsIRRData] = useState<IRRTableData>({});
 
   useEffect(() => {
     if (accountId) {
@@ -237,6 +239,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
           setIrrTableColumns([]);
           setPortfolioIRRData({});
           setPreviousFundsIRRData({});
+          setInactiveFundsIRRData({});
           setIsLoadingHistory(false);
           setIsLoading(false);
           return;
@@ -333,7 +336,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
           setIsLoadingPreviousFunds(true);
           console.log(`Calculating Previous Funds IRR for ${inactiveHoldings.length} inactive funds`);
           
-          const inactiveFundIds = inactiveHoldings.map(h => h.id);
+          const inactiveFundIds = inactiveHoldings.map(h => h.portfolio_fund_id);
           
           for (const date of recentDates) {
             try {
@@ -358,6 +361,43 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
         
         // Set the previous funds IRR data
         setPreviousFundsIRRData(previousFundsIRRResults);
+        
+        // Fetch individual inactive fund IRR data for breakdown from database
+        const inactiveFundsData: IRRTableData = {};
+        if (inactiveHoldings.length > 0) {
+          for (const holding of inactiveHoldings) {
+            try {
+              console.log(`Fetching stored IRR values for inactive fund ${holding.fund_name} (portfolio_fund_id: ${holding.portfolio_fund_id})`);
+              // Get stored IRR values for this inactive fund from portfolio_fund_irr_values table
+              const irrResponse = await getFundIRRValues(holding.portfolio_fund_id);
+              const irrValues = irrResponse.data || [];
+              
+              console.log(`Found ${irrValues.length} IRR values for inactive fund ${holding.fund_name}:`, irrValues);
+              
+              const fundValues: {[monthYear: string]: number} = {};
+              
+              irrValues.forEach((irr: any) => {
+                const monthYear = formatMonthYear(irr.date);
+                fundValues[monthYear] = parseFloat(irr.irr);
+                console.log(`Added IRR value for ${holding.fund_name} on ${monthYear}: ${irr.irr}%`);
+              });
+              
+              inactiveFundsData[holding.portfolio_fund_id] = {
+                fundName: holding.fund_name || `Inactive Fund ${holding.portfolio_fund_id}`,
+                values: fundValues
+              };
+            } catch (err) {
+              console.warn(`Failed to fetch IRR values for inactive fund ${holding.fund_name}:`, err);
+              inactiveFundsData[holding.portfolio_fund_id] = {
+                fundName: holding.fund_name || `Inactive Fund ${holding.portfolio_fund_id}`,
+                values: {}
+              };
+            }
+          }
+        }
+        
+        // Set the inactive funds IRR data
+        setInactiveFundsIRRData(inactiveFundsData);
         
         // Create columns from the dates we calculated
         const columns = recentDates.map((date: string) => formatMonthYear(date + 'T00:00:00Z'));
@@ -448,13 +488,18 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
   };
 
   // Format percentage value with smart decimal places (removes unnecessary zeros)
-  const formatPercentage = (value: number | undefined, maxDecimalPlaces: number = 2): string => {
+  const formatPercentage = (value: number | undefined, maxDecimalPlaces: number = 2, forceDecimalPlaces: boolean = false): string => {
     if (value === undefined || value === null) return 'N/A';
     
-    // Format to the maximum decimal places, then remove trailing zeros
-    const formatted = value.toFixed(maxDecimalPlaces);
-    const withoutTrailingZeros = parseFloat(formatted).toString();
-    return `${withoutTrailingZeros}%`;
+    if (forceDecimalPlaces) {
+      // Always show the specified number of decimal places
+      return `${value.toFixed(maxDecimalPlaces)}%`;
+    } else {
+      // Format to the maximum decimal places, then remove trailing zeros
+      const formatted = value.toFixed(maxDecimalPlaces);
+      const withoutTrailingZeros = parseFloat(formatted).toString();
+      return `${withoutTrailingZeros}%`;
+    }
   };
 
   // Format activity type for display - convert camelCase or snake_case to spaces
@@ -587,7 +632,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
                     Fund
                   </th>
                   {irrTableColumns.map(monthYear => (
-                    <th key={monthYear} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th key={monthYear} scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       {monthYear}
                     </th>
                   ))}
@@ -614,34 +659,77 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
                     return fundAName.localeCompare(fundBName);
                   })
                   .map(([fundId, fund]) => (
-                  <tr key={fundId} className={fund.isPreviousFunds ? 'bg-blue-50' : ''}>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium sticky left-0 z-10 ${
-                      fund.isPreviousFunds ? 'text-blue-800 bg-blue-50' : 'text-gray-900 bg-white'
-                    }`}>
-                      {fund.fundName}
-                      {fund.isPreviousFunds && (
-                        <div className="text-xs text-blue-600 font-normal">
-                          Aggregated inactive funds
+                  <React.Fragment key={fundId}>
+                    <tr className={fund.isPreviousFunds ? 'bg-blue-50' : ''}>
+                      <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium sticky left-0 z-10 ${
+                        fund.isPreviousFunds ? 'text-blue-800 bg-blue-50' : 'text-gray-900 bg-white'
+                      }`}>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            {fund.fundName}
+                            {fund.isPreviousFunds && (
+                              <div className="text-xs text-blue-600 font-normal">
+                                Aggregated inactive funds ({Object.keys(inactiveFundsIRRData).length} inactive {Object.keys(inactiveFundsIRRData).length === 1 ? 'fund' : 'funds'})
+                              </div>
+                            )}
+                          </div>
+                          {fund.isPreviousFunds && Object.keys(inactiveFundsIRRData).length > 0 && (
+                            <button
+                              onClick={() => setShowInactiveFundsBreakdown(!showInactiveFundsBreakdown)}
+                              className="ml-2 px-2 py-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                              title={showInactiveFundsBreakdown ? "Hide inactive funds breakdown" : "Show inactive funds breakdown"}
+                            >
+                              {showInactiveFundsBreakdown ? "Hide" : "Show"} Breakdown
+                            </button>
+                          )}
                         </div>
-                      )}
-                    </td>
-                    {irrTableColumns.map(monthYear => {
-                      const irrValue = fund.values[monthYear];
-                      const irrClass = irrValue !== undefined
-                        ? irrValue >= 0 
-                          ? 'text-green-600' 
-                          : 'text-red-600'
-                        : 'text-gray-400';
-                      
-                      return (
-                        <td key={`${fundId}-${monthYear}`} className="px-6 py-4 whitespace-nowrap text-sm">
-                          <span className={irrClass}>
-                            {formatPercentage(irrValue)}
-                          </span>
+                      </td>
+                      {irrTableColumns.map(monthYear => {
+                        const irrValue = fund.values[monthYear];
+                        const irrClass = irrValue !== undefined
+                          ? irrValue >= 0 
+                            ? 'text-green-600' 
+                            : 'text-red-600'
+                          : 'text-gray-400';
+                        
+                        return (
+                          <td key={`${fundId}-${monthYear}`} className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                            <span className={irrClass}>
+                              {formatPercentage(irrValue, 1, true)}
+                            </span>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                    
+                    {/* Show individual inactive funds breakdown if enabled and this is the Previous Funds row */}
+                    {fund.isPreviousFunds && showInactiveFundsBreakdown && Object.entries(inactiveFundsIRRData).map(([inactiveFundId, inactiveFund]) => (
+                      <tr key={`inactive-${inactiveFundId}`} className="bg-gray-50 border-t border-dashed border-gray-300">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-600 bg-gray-50 sticky left-0 z-10 pl-8">
+                          {inactiveFund.fundName}
+                          <div className="text-xs text-gray-500 font-normal">
+                            Individual inactive fund
+                          </div>
                         </td>
-                      );
-                    })}
-                  </tr>
+                        {irrTableColumns.map(monthYear => {
+                          const irrValue = inactiveFund.values[monthYear];
+                          const irrClass = irrValue !== undefined
+                            ? irrValue >= 0 
+                              ? 'text-green-600' 
+                              : 'text-red-600'
+                            : 'text-gray-400';
+                          
+                          return (
+                            <td key={`inactive-${inactiveFundId}-${monthYear}`} className="px-6 py-4 whitespace-nowrap text-sm text-right bg-gray-50">
+                              <span className={irrClass}>
+                                {formatPercentage(irrValue, 1, true)}
+                              </span>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </React.Fragment>
                 ))}
                 
                 {/* Portfolio IRR Total Row */}
@@ -659,9 +747,9 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
                         : 'text-gray-400';
                       
                       return (
-                        <td key={`portfolio-${monthYear}`} className="px-6 py-4 whitespace-nowrap text-sm">
+                        <td key={`portfolio-${monthYear}`} className="px-6 py-4 whitespace-nowrap text-sm text-right">
                           <span className={irrClass}>
-                            {formatPercentage(portfolioIrrValue, 1)}
+                            {formatPercentage(portfolioIrrValue, 1, true)}
                           </span>
                         </td>
                       );

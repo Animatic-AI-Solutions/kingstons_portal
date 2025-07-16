@@ -673,13 +673,13 @@ const PreviousFundsIRRDisplay: React.FC<{
   }, [calculateLivePreviousFundsIRR]);
 
   if (isLoadingLivePreviousFundsIRR) {
-    return <span className="text-xs text-gray-500 text-center">Loading...</span>;
+    return <span className="text-xs text-gray-500 text-right">Loading...</span>;
   }
 
   if (livePreviousFundsIRR !== null) {
     return (
       <>
-        <div className={`font-medium text-center ${
+        <div className={`font-medium text-right ${
           livePreviousFundsIRR >= 0 ? 'text-green-700' : 'text-red-700'
         }`}>
           {Math.abs(livePreviousFundsIRR) > 1 
@@ -690,7 +690,7 @@ const PreviousFundsIRRDisplay: React.FC<{
           </span>
         </div>
         {livePreviousFundsIRR !== null && (
-          <div className="text-xs text-gray-600 mt-1">
+          <div className="text-xs text-gray-600 mt-1 text-right">
             {latestValuationDate ? formatDateMonthYear(latestValuationDate) : 'N/A'}
           </div>
         )}
@@ -698,7 +698,7 @@ const PreviousFundsIRRDisplay: React.FC<{
     );
   }
 
-  return <span className="text-gray-500 text-center">N/A</span>;
+  return <span className="text-gray-500 text-right">N/A</span>;
 }, (prevProps, nextProps) => {
   // Custom comparison function for React.memo
   // Only re-render if the actual data that affects IRR calculation has changed
@@ -1647,7 +1647,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
     if (viewIRR && viewIRR.irr !== null) {
       return (
         <>
-          <div className={`text-center ${
+          <div className={`text-right ${
             viewIRR.irr >= 0 ? 'text-green-700' : 'text-red-700'
           }`}>
             {Math.abs(viewIRR.irr) > 1 
@@ -1658,7 +1658,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
             </span>
           </div>
           {viewIRR.date && (
-            <div className="text-xs text-gray-500 mt-1 text-center">
+            <div className="text-xs text-gray-500 mt-1 text-right">
               {formatDateMonthYear(viewIRR.date)}
             </div>
           )}
@@ -1670,7 +1670,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
     if (fund.irr !== undefined && fund.irr !== null) {
       return (
         <>
-          <div className={`text-center ${
+          <div className={`text-right ${
             fund.irr >= 0 ? 'text-green-700' : 'text-red-700'
           }`}>
             {Math.abs(fund.irr) > 1 
@@ -1681,7 +1681,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
             </span>
           </div>
           {fund.irr_calculation_date && (
-            <div className="text-xs text-gray-500 mt-1 text-center">
+            <div className="text-xs text-gray-500 mt-1 text-right">
               {formatDateMonthYear(fund.irr_calculation_date)}
             </div>
           )}
@@ -1691,7 +1691,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
 
     // If no IRR available, show N/A
     return (
-      <span className="text-gray-500 text-center">N/A</span>
+      <span className="text-gray-500 text-right">N/A</span>
     );
   };
 
@@ -1896,16 +1896,16 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                           </th>
                         )}
                         <th className="px-1 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-24" title="Fund Name">Name</th>
-                        <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Total Investments">INV.</th>
-                        <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Regular Investments">REG. INV.</th>
-                        <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Tax Uplifts">TAX UPLIFTS</th>
-                        <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Fund Switch Ins">FUND SWITCH IN</th>
-                        <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Fund Switch Outs">FUND SWITCH OUT</th>
-                        <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Product Switch Ins">PROD SWITCH IN</th>
-                        <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Product Switch Outs">PROD SWITCH OUT</th>
-                        <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Withdrawals">WITH.</th>
-                        <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-20" title="Most Recent Valuation">Valuation</th>
-                        <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Most Recent IRR">IRR</th>
+                        <th className="px-1 py-1 text-right text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Total Investments">INV.</th>
+                        <th className="px-1 py-1 text-right text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Regular Investments">REG. INV.</th>
+                        <th className="px-1 py-1 text-right text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Tax Uplifts">TAX UPLIFTS</th>
+                        <th className="px-1 py-1 text-right text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Fund Switch Ins">FUND SWITCH IN</th>
+                        <th className="px-1 py-1 text-right text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Fund Switch Outs">FUND SWITCH OUT</th>
+                        <th className="px-1 py-1 text-right text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Product Switch Ins">PROD SWITCH IN</th>
+                        <th className="px-1 py-1 text-right text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Product Switch Outs">PROD SWITCH OUT</th>
+                        <th className="px-1 py-1 text-right text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Withdrawals">WITH.</th>
+                        <th className="px-1 py-1 text-right text-xs font-medium text-gray-700 uppercase tracking-wider w-20" title="Most Recent Valuation">Valuation</th>
+                        <th className="px-1 py-1 text-right text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Most Recent IRR">IRR</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -2000,63 +2000,63 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
-                                  <div className={`text-sm text-center ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                  <div className={`text-sm text-right ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual 
                                       ? formatCurrency(calculatePreviousFundsInvestments(allTimeActivities, inactiveHoldings))
                                       : formatCurrency(calculateInvestments(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
-                                  <div className={`text-sm text-center ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                  <div className={`text-sm text-right ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual 
                                       ? formatCurrency(calculatePreviousFundsRegularInvestments(allTimeActivities, inactiveHoldings))
                                       : formatCurrency(calculateRegularInvestments(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
-                                  <div className={`text-sm text-center ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                  <div className={`text-sm text-right ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
                                       ? formatCurrency(calculatePreviousFundsTaxUplifts(allTimeActivities, inactiveHoldings))
 : formatCurrency(calculateTaxUplifts(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
-                                  <div className={`text-sm text-center ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                  <div className={`text-sm text-right ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
                                       ? formatCurrency(calculatePreviousFundsSwitchIns(allTimeActivities, inactiveHoldings))
                                       : formatCurrency(calculateSwitchIns(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
-                                  <div className={`text-sm text-center ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                  <div className={`text-sm text-right ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
                                       ? formatCurrency(calculatePreviousFundsSwitchOuts(allTimeActivities, inactiveHoldings))
                                       : formatCurrency(calculateSwitchOuts(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
-                                  <div className={`text-sm text-center ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                  <div className={`text-sm text-right ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
                                       ? formatCurrency(calculatePreviousFundsProductSwitchIns(allTimeActivities, inactiveHoldings))
                                       : formatCurrency(calculateProductSwitchIns(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
-                                  <div className={`text-sm text-center ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                  <div className={`text-sm text-right ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
                                       ? formatCurrency(calculatePreviousFundsProductSwitchOuts(allTimeActivities, inactiveHoldings))
                                       : formatCurrency(calculateProductSwitchOuts(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
-                                  <div className={`text-sm text-center ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                  <div className={`text-sm text-right ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual
                                       ? formatCurrency(calculatePreviousFundsWithdrawals(allTimeActivities, inactiveHoldings))
                                       : formatCurrency(calculateWithdrawals(allTimeActivities, holding.id))}
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
-                                  <div className={`text-sm text-center ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                  <div className={`text-sm text-right ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
                                     {holding.isVirtual ? (
                                       formatCurrency(0)
                                     ) : (
@@ -2074,7 +2074,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
-                                  <div>
+                                  <div className="text-right">
                                       {holding.isVirtual ? (
                                       // Use live Previous Funds IRR component
                                       <PreviousFundsIRRDisplay 
@@ -2114,52 +2114,52 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                     </div>
                                   </td>
                                   <td className="px-1 py-1 whitespace-nowrap">
-                                    <div className="text-sm text-center text-gray-700">
+                                    <div className="text-sm text-right text-gray-700">
                                       {formatCurrency(calculateInvestments(allTimeActivities, inactiveHolding.id))}
                                     </div>
                                   </td>
                                   <td className="px-1 py-1 whitespace-nowrap">
-                                    <div className="text-sm text-center text-gray-700">
+                                    <div className="text-sm text-right text-gray-700">
                                       {formatCurrency(calculateRegularInvestments(allTimeActivities, inactiveHolding.id))}
                                     </div>
                                   </td>
                                   <td className="px-1 py-1 whitespace-nowrap">
-                                    <div className="text-sm text-center text-gray-700">
+                                    <div className="text-sm text-right text-gray-700">
                                       {formatCurrency(calculateTaxUplifts(allTimeActivities, inactiveHolding.id))}
                                     </div>
                                   </td>
                                   <td className="px-1 py-1 whitespace-nowrap">
-                                    <div className="text-sm text-center text-gray-700">
+                                    <div className="text-sm text-right text-gray-700">
                                       {formatCurrency(calculateSwitchIns(allTimeActivities, inactiveHolding.id))}
                                     </div>
                                   </td>
                                   <td className="px-1 py-1 whitespace-nowrap">
-                                    <div className="text-sm text-center text-gray-700">
+                                    <div className="text-sm text-right text-gray-700">
                                       {formatCurrency(calculateSwitchOuts(allTimeActivities, inactiveHolding.id))}
                                     </div>
                                   </td>
                                   <td className="px-1 py-1 whitespace-nowrap">
-                                    <div className="text-sm text-center text-gray-700">
+                                    <div className="text-sm text-right text-gray-700">
                                       {formatCurrency(calculateProductSwitchIns(allTimeActivities, inactiveHolding.id))}
                                     </div>
                                   </td>
                                   <td className="px-1 py-1 whitespace-nowrap">
-                                    <div className="text-sm text-center text-gray-700">
+                                    <div className="text-sm text-right text-gray-700">
                                       {formatCurrency(calculateProductSwitchOuts(allTimeActivities, inactiveHolding.id))}
                                     </div>
                                   </td>
                                   <td className="px-1 py-1 whitespace-nowrap">
-                                    <div className="text-sm text-center text-gray-700">
+                                    <div className="text-sm text-right text-gray-700">
                                       {formatCurrency(calculateWithdrawals(allTimeActivities, inactiveHolding.id))}
                                     </div>
                                   </td>
                                   <td className="px-1 py-1 whitespace-nowrap">
-                                    <div className="text-sm text-center text-gray-700">
+                                    <div className="text-sm text-right text-gray-700">
                                       {formatCurrency(0)}
                                     </div>
                                   </td>
                                   <td className="px-1 py-1 whitespace-nowrap">
-                                    <div className="text-sm text-gray-700">
+                                    <div className="text-sm text-right text-gray-700">
                                       {getSingleFundIRRDisplay(inactiveHolding)}
                                     </div>
                                   </td>
@@ -2181,57 +2181,57 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                           <div className="ml-4 text-base font-bold text-red-600">TOTAL</div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-                          <div className="text-sm text-center font-bold text-red-600">
+                          <div className="text-sm text-right font-bold text-red-600">
                             {formatCurrency(calculateTotalInvestments(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-                          <div className="text-sm text-center font-bold text-red-600">
+                          <div className="text-sm text-right font-bold text-red-600">
                             {formatCurrency(calculateTotalRegularInvestments(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-                          <div className="text-sm text-center font-bold text-red-600">
+                          <div className="text-sm text-right font-bold text-red-600">
                             {formatCurrency(calculateTotalTaxUplifts(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-                          <div className="text-sm text-center font-bold text-red-600">
+                          <div className="text-sm text-right font-bold text-red-600">
                             {formatCurrency(calculateTotalSwitchIns(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-                          <div className="text-sm text-center font-bold text-red-600">
+                          <div className="text-sm text-right font-bold text-red-600">
                             {formatCurrency(calculateTotalSwitchOuts(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-                          <div className="text-sm text-center font-bold text-red-600">
+                          <div className="text-sm text-right font-bold text-red-600">
                             {formatCurrency(calculateTotalProductSwitchIns(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-                          <div className="text-sm text-center font-bold text-red-600">
+                          <div className="text-sm text-right font-bold text-red-600">
                             {formatCurrency(calculateTotalProductSwitchOuts(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-                          <div className="text-sm text-center font-bold text-red-600">
+                          <div className="text-sm text-right font-bold text-red-600">
                             {formatCurrency(calculateTotalWithdrawals(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-                          <div className="text-sm text-center font-bold text-red-600">
+                          <div className="text-sm text-right font-bold text-red-600">
                             {formatCurrency(calculateTotalValue(holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
                           {isTotalPortfolioIRRLoading ? (
-                            <span className="text-sm text-gray-500 text-center">Loading...</span>
+                            <span className="text-sm text-gray-500 text-right">Loading...</span>
                           ) : totalPortfolioIRRError ? (
-                            <span className="text-sm text-red-500 text-center" title={totalPortfolioIRRError}>Error</span>
+                            <span className="text-sm text-red-500 text-right" title={totalPortfolioIRRError}>Error</span>
                           ) : totalPortfolioIRR !== null ? (
-                            <div className="text-center">
+                            <div className="text-right">
                               <div className={`text-sm font-bold ${
                                 totalPortfolioIRR >= 0 ? 'text-green-700' : 'text-red-700'
                               }`}>
@@ -2247,7 +2247,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                               )}
                             </div>
                           ) : (
-                            <span className="text-sm text-gray-500 text-center">N/A</span>
+                            <span className="text-sm text-gray-500 text-right">N/A</span>
                           )}
                         </td>
                       </tr>
