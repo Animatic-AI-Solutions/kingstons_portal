@@ -1669,9 +1669,14 @@ async def get_company_revenue_analytics(db = Depends(get_db)):
 async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
     """
     Get revenue breakdown by client groups, showing each client group's revenue and percentage of total.
+    Updated to handle 4-state revenue status logic:
+    - no_setup: Both fixed_cost and percentage_fee are NULL
+    - zero_fee_setup: Both fixed_cost and percentage_fee are explicitly set to 0
+    - needs_valuation: Has non-zero fees but missing valuations
+    - complete: Has fees and all valuations available
     """
     try:
-        logger.info("Calculating client group revenue breakdown")
+        logger.info("Calculating client group revenue breakdown with 4-state logic")
         
         # First get the total company revenue for percentage calculations
         company_revenue_result = db.table("company_revenue_analytics").select("total_annual_revenue").execute()
@@ -1716,20 +1721,32 @@ async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
             total_client_fum = 0
             products_with_revenue = 0
             
-            # Track revenue status for this client
-            has_revenue_setup = False
-            needs_valuation = False
+            # Track revenue status for this client (4-state logic)
+            has_null_fees = False  # Any product with NULL fees
+            has_zero_fees = False  # Any product with deliberately 0 fees
+            has_positive_fees = False  # Any product with positive fees
+            needs_valuation = False  # Any product with positive fees but missing valuations
             
             for product in products_result.data:
-                fixed_cost = float(product.get("fixed_cost", 0) or 0)
-                percentage_fee = float(product.get("percentage_fee", 0) or 0)
+                fixed_cost = product.get("fixed_cost")  # Don't default to 0, keep None
+                percentage_fee = product.get("percentage_fee")  # Don't default to 0, keep None
                 portfolio_id = product.get("portfolio_id")
                 
-                # Check if product has any revenue setup
-                if fixed_cost > 0 or percentage_fee > 0:
-                    has_revenue_setup = True
+                # Determine fee setup status for this product
+                if fixed_cost is None and percentage_fee is None:
+                    # Both NULL - no fee setup
+                    has_null_fees = True
+                elif (fixed_cost == 0 or fixed_cost is None) and (percentage_fee == 0 or percentage_fee is None):
+                    # Check if at least one is explicitly 0 (not NULL)
+                    if fixed_cost == 0 or percentage_fee == 0:
+                        has_zero_fees = True
+                    else:
+                        has_null_fees = True
+                else:
+                    # Has positive fees
+                    has_positive_fees = True
                 
-                # Calculate product FUM from portfolio valuations
+                # Calculate product FUM from portfolio valuations (include ALL products for FUM)
                 product_fum = 0
                 if portfolio_id:
                     # Get all portfolio funds for this portfolio
@@ -1752,23 +1769,30 @@ async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
                             if valuation_result.data and valuation_result.data[0]["valuation"]:
                                 product_fum += float(valuation_result.data[0]["valuation"])
                 
+                # Add to total FUM regardless of fee status
                 total_client_fum += product_fum
                 
-                # Calculate product revenue using the same logic as the view
+                # Calculate product revenue (only for products with positive fees)
                 product_revenue = 0
                 
-                # If only fixed cost is set (no percentage fee)
-                if fixed_cost > 0 and percentage_fee == 0:
-                    product_revenue = fixed_cost
-                    products_with_revenue += 1
-                # If percentage fee is involved (with or without fixed cost)
-                elif percentage_fee > 0:
-                    if product_fum > 0:  # Only count if there's valuation
-                        product_revenue = fixed_cost + (product_fum * (percentage_fee / 100))
+                # Convert None to 0 for revenue calculation
+                fixed_cost_val = float(fixed_cost) if fixed_cost is not None else 0
+                percentage_fee_val = float(percentage_fee) if percentage_fee is not None else 0
+                
+                # Only calculate revenue if there are positive fees
+                if fixed_cost_val > 0 or percentage_fee_val > 0:
+                    # If only fixed cost is set (no percentage fee)
+                    if fixed_cost_val > 0 and percentage_fee_val == 0:
+                        product_revenue = fixed_cost_val
                         products_with_revenue += 1
-                    else:
-                        # Has percentage fee setup but no valuation - needs valuation
-                        needs_valuation = True
+                    # If percentage fee is involved (with or without fixed cost)
+                    elif percentage_fee_val > 0:
+                        if product_fum > 0:  # Only count if there's valuation
+                            product_revenue = fixed_cost_val + (product_fum * (percentage_fee_val / 100))
+                            products_with_revenue += 1
+                        else:
+                            # Has percentage fee setup but no valuation - needs valuation
+                            needs_valuation = True
                 
                 total_client_revenue += product_revenue
             
@@ -1777,12 +1801,25 @@ async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
             if total_company_revenue > 0:
                 revenue_percentage = (total_client_revenue / total_company_revenue) * 100
             
-            # Determine revenue status for visual indicators
-            revenue_status = "complete"  # Green dot - has revenue setup and calculations complete
-            if not has_revenue_setup:
-                revenue_status = "no_setup"  # Red dot - no revenue information configured
-            elif needs_valuation:
-                revenue_status = "needs_valuation"  # Amber dot - has setup but needs latest valuation
+            # Determine revenue status using 4-state logic
+            revenue_status = "complete"  # Default to complete
+            
+            if has_null_fees and not has_zero_fees and not has_positive_fees:
+                revenue_status = "no_setup"  # Red dot - all products have NULL fees
+            elif has_zero_fees and not has_null_fees and not has_positive_fees:
+                revenue_status = "zero_fee_setup"  # Blue dot - all products have zero fees
+            elif has_positive_fees and needs_valuation:
+                revenue_status = "needs_valuation"  # Amber dot - has positive fees but needs valuation
+            elif has_positive_fees and not needs_valuation:
+                revenue_status = "complete"  # Green dot - has positive fees and all valuations
+            else:
+                # Mixed scenarios - prioritize by most critical need
+                if has_null_fees:
+                    revenue_status = "no_setup"  # Red dot - some products not set up
+                elif needs_valuation:
+                    revenue_status = "needs_valuation"  # Amber dot - some products need valuation
+                else:
+                    revenue_status = "complete"  # Green dot - everything is set up
             
             revenue_breakdown.append({
                 "id": client_id,
@@ -1799,13 +1836,13 @@ async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
         # Sort by total revenue (descending)
         revenue_breakdown.sort(key=lambda x: x["total_revenue"], reverse=True)
         
-        logger.info(f"Generated revenue breakdown for {len(revenue_breakdown)} client groups. Total company revenue: £{total_company_revenue:,.2f}")
+        logger.info(f"Generated revenue breakdown for {len(revenue_breakdown)} client groups with 4-state logic. Total company revenue: £{total_company_revenue:,.2f}")
         
         return revenue_breakdown
         
     except Exception as e:
         logger.error(f"Error calculating client group revenue breakdown: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error calculating revenue breakdown: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"Error calculating revenue breakdown: {str(e)}")
 
 import hashlib
 import json
@@ -1820,18 +1857,21 @@ _revenue_cache = {
 @router.get("/revenue-rate-analytics")
 async def get_revenue_rate_analytics(db = Depends(get_db)):
     """
-    Calculate revenue rate only for 'complete' client groups.
-    Complete = has at least one revenue product AND all revenue products have latest valuations.
+    Calculate revenue rate for 'complete' client groups.
+    Updated to include zero-fee products in FUM calculations.
+    
+    Complete = has at least one product with fee setup (including zero fees) AND 
+              all products with positive fees have latest valuations.
     
     Returns:
-    - total_revenue: Sum of revenue from complete client groups
-    - total_fum: Sum of FUM from complete client groups  
+    - total_revenue: Sum of revenue from products with positive fees
+    - total_fum: Sum of FUM from ALL products (including zero-fee products)
     - revenue_rate_percentage: (total_revenue / total_fum) * 100
     - complete_client_groups_count: Number of complete client groups
     - total_client_groups: Total number of active client groups
     """
     try:
-        logger.info("Calculating revenue rate analytics for complete client groups only")
+        logger.info("Calculating revenue rate analytics with zero-fee products included in FUM")
         
         # Get a hash of all revenue-relevant data to check if recalculation is needed
         # Get all active client products with revenue configuration
@@ -1893,28 +1933,41 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
             if not products_result.data:
                 continue  # Skip client groups with no products
             
-            # Find products with revenue configuration
-            revenue_products = []
-            for product in products_result.data:
-                fixed_cost = float(product.get("fixed_cost", 0) or 0)
-                percentage_fee = float(product.get("percentage_fee", 0) or 0)
-                
-                if fixed_cost > 0 or percentage_fee > 0:
-                    revenue_products.append(product)
+            # Find products with fee setup (including zero fees)
+            products_with_fee_setup = []
+            products_with_positive_fees = []
             
-            # Skip client groups with no revenue products
-            if len(revenue_products) == 0:
+            for product in products_result.data:
+                fixed_cost = product.get("fixed_cost")
+                percentage_fee = product.get("percentage_fee")
+                
+                # Check if product has any fee setup (including zero fees)
+                if fixed_cost is not None or percentage_fee is not None:
+                    products_with_fee_setup.append(product)
+                    
+                    # Also track products with positive fees
+                    fixed_cost_val = float(fixed_cost) if fixed_cost is not None else 0
+                    percentage_fee_val = float(percentage_fee) if percentage_fee is not None else 0
+                    
+                    if fixed_cost_val > 0 or percentage_fee_val > 0:
+                        products_with_positive_fees.append(product)
+            
+            # Skip client groups with no fee setup at all
+            if len(products_with_fee_setup) == 0:
                 continue
             
-            # Check if ALL revenue products have complete calculations (valuations available)
+            # Check if ALL products with positive fees have complete calculations (valuations available)
             client_revenue = 0
-            all_complete = True
+            all_positive_fees_complete = True
             
-            # First, check revenue products for completeness and calculate revenue
-            for product in revenue_products:
-                fixed_cost = float(product.get("fixed_cost", 0) or 0)
-                percentage_fee = float(product.get("percentage_fee", 0) or 0)
+            # Check products with positive fees for completeness and calculate revenue
+            for product in products_with_positive_fees:
+                fixed_cost = product.get("fixed_cost")
+                percentage_fee = product.get("percentage_fee")
                 portfolio_id = product.get("portfolio_id")
+                
+                fixed_cost_val = float(fixed_cost) if fixed_cost is not None else 0
+                percentage_fee_val = float(percentage_fee) if percentage_fee is not None else 0
                 
                 # Calculate product FUM from portfolio valuations
                 product_fum = 0
@@ -1943,24 +1996,24 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
                 product_revenue = 0
                 
                 # If only fixed cost is set (no percentage fee)
-                if fixed_cost > 0 and percentage_fee == 0:
-                    product_revenue = fixed_cost
+                if fixed_cost_val > 0 and percentage_fee_val == 0:
+                    product_revenue = fixed_cost_val
                 # If percentage fee is involved (with or without fixed cost)
-                elif percentage_fee > 0:
+                elif percentage_fee_val > 0:
                     if product_fum > 0:  # Only complete if there's valuation
-                        product_revenue = fixed_cost + (product_fum * (percentage_fee / 100))
+                        product_revenue = fixed_cost_val + (product_fum * (percentage_fee_val / 100))
                     else:
                         # Has percentage fee setup but no valuation - not complete
-                        all_complete = False
+                        all_positive_fees_complete = False
                         break
                 
                 client_revenue += product_revenue
             
-            # Only include this client group if ALL revenue products are complete
-            if all_complete:
-                # Now calculate total FUM from ALL products in the client group (not just revenue products)
+            # Only include this client group if ALL products with positive fees are complete
+            if all_positive_fees_complete:
+                # Calculate total FUM from ALL products with fee setup (including zero-fee products)
                 client_total_fum = 0
-                for product in products_result.data:  # All products, not just revenue_products
+                for product in products_with_fee_setup:  # All products with fee setup
                     portfolio_id = product.get("portfolio_id")
                     
                     if portfolio_id:
@@ -1994,10 +2047,10 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
                 total_fum += client_total_fum
                 
                 # Debug logging
-                logger.info(f"INCLUDED Client Group '{client_name}': £{client_revenue:,.2f} revenue from {len(revenue_products)} revenue products, £{client_total_fum:,.2f} total FUM from {len(products_result.data)} total products")
+                logger.info(f"INCLUDED Client Group '{client_name}': £{client_revenue:,.2f} revenue from {len(products_with_positive_fees)} revenue products, £{client_total_fum:,.2f} total FUM from {len(products_with_fee_setup)} products with fee setup")
             else:
                 # Debug logging for excluded groups
-                logger.info(f"EXCLUDED Client Group '{client_name}': {len(revenue_products)} revenue products, but missing valuations for percentage fee products")
+                logger.info(f"EXCLUDED Client Group '{client_name}': {len(products_with_positive_fees)} revenue products, but missing valuations for percentage fee products")
         
         # Calculate revenue rate percentage
         revenue_rate_percentage = 0
@@ -2013,7 +2066,7 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
         }
         
         logger.info(f"Revenue rate analytics: {len(complete_client_groups)}/{total_client_groups} complete client groups, "
-                   f"Rate: {revenue_rate_percentage:.2f}% (£{total_revenue:,.2f} / £{total_fum:,.2f})")
+                   f"Rate: {revenue_rate_percentage:.2f}% (£{total_revenue:,.2f} / £{total_fum:,.2f}) - includes zero-fee products in FUM")
         
         # Cache the result
         _revenue_cache["data"] = result
