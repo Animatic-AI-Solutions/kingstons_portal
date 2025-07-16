@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePortfolioTemplateDetails } from '../hooks/usePortfolioTemplates';
 import StandardTable, { ColumnConfig } from '../components/StandardTable';
-import { Button, DeleteButton, ActionButton, AddButton } from '../components/ui';
+import { Button, DeleteButton, ActionButton, AddButton, EditButton } from '../components/ui';
 
 interface PortfolioTemplate {
   id: number;
@@ -98,6 +98,9 @@ const PortfolioTemplateDetails: React.FC = () => {
   // Local state for UI interactions
   const [selectedGeneration, setSelectedGeneration] = useState<Generation | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState<Partial<PortfolioTemplate>>({});
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAddGenerationModal, setShowAddGenerationModal] = useState(false);
@@ -287,7 +290,63 @@ const PortfolioTemplateDetails: React.FC = () => {
     }
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
+  const handleSaveChanges = async () => {
+    // Check if any changes were made
+    const hasChanges = Object.keys(formData).some(key => {
+      const currentValue = formData[key as keyof PortfolioTemplate];
+      const originalValue = template?.[key as keyof PortfolioTemplate];
+      return currentValue !== originalValue;
+    });
+
+    if (!hasChanges) {
+      setIsEditing(false);
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      setError(null);
+      
+      const response = await api.put(`/available_portfolios/${portfolioId}`, formData);
+      
+      if (response.data) {
+        // Refresh the data to get the updated template
+        await refetchPortfolioData();
+        setIsEditing(false);
+        console.log('Portfolio template updated successfully');
+      }
+    } catch (err: any) {
+      console.error('Error updating portfolio template:', err);
+      if (err.response?.data?.detail) {
+        setError(err.response.data.detail);
+      } else {
+        setError('Failed to update portfolio template');
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setFormData(template || {});
+    setIsEditing(false);
+    setError(null);
+  };
+
+  // Initialize form data when template changes
+  useEffect(() => {
+    if (template) {
+      setFormData(template);
+    }
+  }, [template]);
 
   const handleGenerationSelect = (generation: Generation) => {
     setSelectedGeneration(generation);
@@ -701,13 +760,36 @@ const PortfolioTemplateDetails: React.FC = () => {
             </div>
             
             <div className="relative">
-              <DeleteButton
-                onClick={handleDeleteClick}
-                disabled={hasProductsUsingTemplate || isCheckingProducts}
-                context="Template"
-                size="md"
-                loading={isCheckingProducts}
-              />
+              <div className="flex items-center gap-2">
+                {!isEditing ? (
+                  <>
+                    <EditButton
+                      context="Template"
+                      design="balanced"
+                      onClick={() => setIsEditing(true)}
+                    />
+                    <DeleteButton
+                      onClick={handleDeleteClick}
+                      disabled={hasProductsUsingTemplate || isCheckingProducts}
+                      context="Template"
+                      size="md"
+                      loading={isCheckingProducts}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <ActionButton
+                      variant="cancel"
+                      onClick={handleCancel}
+                    />
+                    <ActionButton
+                      variant="save"
+                      loading={isSaving}
+                      onClick={handleSaveChanges}
+                    />
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -715,18 +797,50 @@ const PortfolioTemplateDetails: React.FC = () => {
 
       {/* Priority Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
-        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
+        {/* Template Name Card */}
+        <div className={`bg-white shadow-sm rounded-lg border p-4 ${isEditing ? 'border-indigo-300 ring-1 ring-indigo-300' : 'border-gray-100'}`}>
           <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Template Name</div>
-          <div className="mt-1 text-lg font-semibold text-gray-900">{template?.name || 'Unnamed'}</div>
+          <div className="mt-1">
+            {isEditing ? (
+              <input
+                type="text"
+                name="name"
+                value={formData.name || ''}
+                onChange={handleChange}
+                className="block w-full text-lg font-semibold border-0 p-0 focus:ring-0 focus:border-0 bg-transparent"
+                placeholder="Enter template name"
+              />
+            ) : (
+              <div className="text-lg font-semibold text-gray-900">{template?.name || 'Unnamed'}</div>
+            )}
+          </div>
         </div>
-        <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
+
+        {/* Created Date Card */}
+        <div className={`bg-white shadow-sm rounded-lg border p-4 ${isEditing ? 'border-indigo-300 ring-1 ring-indigo-300' : 'border-gray-100'}`}>
           <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Created Date</div>
-          <div className="mt-1 text-lg font-semibold text-gray-900">{formatDate(template?.created_at)}</div>
+          <div className="mt-1">
+            {isEditing ? (
+              <input
+                type="date"
+                name="created_at"
+                value={formData.created_at ? new Date(formData.created_at).toISOString().split('T')[0] : ''}
+                onChange={handleChange}
+                className="block w-full text-lg font-semibold border-0 p-0 focus:ring-0 focus:border-0 bg-transparent"
+              />
+            ) : (
+              <div className="text-lg font-semibold text-gray-900">{formatDate(template?.created_at)}</div>
+            )}
+          </div>
         </div>
+
+        {/* Generations Card (Read-only) */}
         <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
           <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Generations</div>
           <div className="mt-1 text-lg font-semibold text-gray-900">{generations?.length || 0}</div>
         </div>
+
+        {/* Migration Status Card (Read-only) */}
         <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
           <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Migration Status</div>
           <div className="mt-1">
@@ -752,6 +866,28 @@ const PortfolioTemplateDetails: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Save/Cancel buttons when editing */}
+      {isEditing && (
+        <div className="mb-4 space-y-3">
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
+          <div className="flex justify-end space-x-3">
+            <ActionButton
+              variant="cancel"
+              onClick={handleCancel}
+            />
+            <ActionButton
+              variant="save"
+              loading={isSaving}
+              onClick={handleSaveChanges}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Archived Generations Migration Checklist */}
       {getArchivedGenerations().length > 0 && (

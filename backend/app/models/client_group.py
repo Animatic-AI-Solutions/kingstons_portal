@@ -7,6 +7,7 @@ class ClientGroupBase(BaseModel):
     status: Optional[str] = Field(default="active")
     advisor: Optional[str] = Field(default=None)
     type: Optional[str] = Field(default="Family")
+    created_at: Optional[str] = Field(default=None)  # Allow setting start date when creating/updating
 
     model_config = ConfigDict(
         from_attributes=True

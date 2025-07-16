@@ -157,8 +157,12 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(({
         onChange(null, '');
       }
     } else {
-      // Invalid date - keep the input but don't call onChange
+      // Invalid date - keep the input but call onChange with null so parent can handle validation
       setDisplayValue(e.target.value);
+      if (onChange) {
+        // Pass the raw input value as the formatted string so parent can validate it
+        onChange(null, e.target.value);
+      }
     }
   };
   

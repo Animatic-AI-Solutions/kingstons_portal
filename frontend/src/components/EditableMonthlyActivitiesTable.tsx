@@ -2496,7 +2496,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                               </button>
                             )}
                           </div>
-                            <div className="font-medium text-red-600 text-sm mt-1">
+                            <div className="font-bold text-red-700 text-sm mt-1">
                           Total Activities
                             </div>
                           </div>
@@ -2507,14 +2507,10 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                           const total = calculateFundTotal(fund.id, month);
                           return (
                             <td key={`compact-${fund.id}-${month}`} 
-                                className={`px-1 py-0 text-right text-sm font-medium ${
+                                className={`px-1 py-0 text-right text-sm font-bold text-red-700 ${
                                   fund.isActive === false 
                                     ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
                                     : 'bg-white'
-                                } ${
-                                  total > 0 ? 'text-green-700' : 
-                                  total < 0 ? 'text-red-700' : 
-                                  'text-gray-500'
                                 }`}>
                               {total !== 0 ? formatCurrency(total) : ''}
                             </td>
@@ -2530,11 +2526,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                           {(() => {
                             const rowTotal = calculateFundRowTotal(fund.id);
                             return (
-                              <span className={
-                                rowTotal > 0 ? 'text-green-700' : 
-                                rowTotal < 0 ? 'text-red-700' : 
-                                'text-gray-500'
-                              }>
+                              <span className="text-red-700">
                                 {rowTotal !== 0 ? formatRowTotal(rowTotal) : ''}
                               </span>
                             );
@@ -2659,7 +2651,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                 ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
                                 : activityType === 'Current Value' ? 'bg-blue-50' : 'bg-white'
                             } ${
-                              activityType === 'Current Value' ? 'text-blue-700' : 'text-gray-500'
+                              activityType === 'Current Value' ? 'text-blue-700 font-semibold' : 'text-gray-500'
                             }`}>
                             {fund.isInactiveBreakdown && 
                               <span className="text-gray-400 mr-2">→</span>
@@ -2699,7 +2691,10 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                               <div className="flex justify-center items-center">
                                   <input
                                     type="text"
-                                    className={`focus:outline-none bg-transparent text-right border-0 shadow-none w-full ${!fund.isActive || fund.isInactiveBreakdown ? 'text-gray-500 cursor-not-allowed' : ''}`}
+                                    className={`focus:outline-none bg-transparent text-right border-0 shadow-none w-full ${
+                                      !fund.isActive || fund.isInactiveBreakdown ? 'text-gray-500 cursor-not-allowed' : 
+                                      activityType === 'Current Value' ? 'text-blue-700 font-semibold' : ''
+                                    }`}
                                     value={formatCellValue(cellValue, fund.id, month, activityType)}
                                     disabled={isSubmitting || fund.isActive === false || fund.isInactiveBreakdown}
                                     onChange={(e) => {
@@ -2780,7 +2775,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       if (!fund.isInactiveBreakdown) {
                         rows.push(
                           <tr key={`total-${fund.id}`} className="bg-gray-100 border-t border-gray-200">
-                            <td className="px-1 py-0 font-semibold text-sm text-red-600 sticky left-0 z-10 bg-gray-100 pl-4">
+                            <td className="px-1 py-0 font-bold text-sm text-red-700 sticky left-0 z-10 bg-gray-100 pl-4">
                         Monthly Total
                       </td>
                       {months.map(month => {
@@ -2789,8 +2784,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                         
                         return (
                           <td 
-                                  key={`total-${fund.id}-${month}`} 
-                                  className="px-1 py-0 text-right font-semibold text-red-600"
+                            key={`total-${fund.id}-${month}`} 
+                            className="px-1 py-0 text-right text-sm font-bold text-red-700 bg-gray-100"
                           >
                             {formattedTotal}
                           </td>
@@ -2798,7 +2793,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       })}
                       
                       {/* Row Total column for fund total row */}
-                      <td className="px-1 py-0 text-right font-semibold text-red-600 border-l border-gray-300 bg-gray-100">
+                      <td className="px-1 py-0 text-right text-sm font-bold text-red-700 border-l border-gray-300 bg-gray-100">
                         {(() => {
                           const rowTotal = calculateFundRowTotal(fund.id);
                           return formatRowTotal(rowTotal);
@@ -2904,7 +2899,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
                 {/* Grand total row */}
                 <tr className="bg-gray-100 border-t border-gray-200">
-                  <td className="px-1 py-0 font-semibold text-red-600 sticky left-0 z-10 bg-gray-100" style={{minWidth: '120px'}}>
+                  <td className="px-1 py-0 font-bold text-sm text-red-700 sticky left-0 z-10 bg-gray-100" style={{minWidth: '120px'}}>
                     Overall Total
                   </td>
                   {months.map((month, monthIndex) => {
@@ -2915,7 +2910,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       <td 
                         key={`grand-total-${month}`}
                         id={`totals-cell-Overall Total-${month}`}
-                        className="px-1 py-0 text-right font-semibold text-red-600 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 focus:bg-blue-50 focus:z-20 relative"
+                        className="px-1 py-0 text-right text-sm font-bold text-red-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 focus:bg-blue-50 focus:z-20 relative"
                         tabIndex={0}
                         onKeyDown={(e) => handleTotalsKeyDown(e, 'Overall Total', monthIndex)}
                         onFocus={() => {
@@ -2930,7 +2925,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       </td>
                     );
                   })}
-                  <td className="px-1 py-0 text-right border-l border-gray-300 bg-gray-100">
+                  <td className="px-1 py-0 text-right text-sm font-bold text-red-700 border-l border-gray-300 bg-gray-100">
                     {(() => {
                       const rowTotal = calculateOverallRowTotal();
                       return rowTotal !== 0 ? formatTotal(rowTotal) : '';

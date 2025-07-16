@@ -90,6 +90,10 @@ class GenerationUpdate(BaseModel):
     status: Optional[str] = None
     funds: Optional[List[PortfolioFund]] = None
 
+class PortfolioTemplateUpdate(BaseModel):
+    name: Optional[str] = None
+    created_at: Optional[datetime] = None
+
 router = APIRouter(prefix="/available_portfolios")
 
 @router.get("", response_model=List[AvailablePortfolio])
@@ -688,6 +692,45 @@ async def delete_available_portfolio(portfolio_id: int, db = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error deleting portfolio template: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@router.put("/{portfolio_id}", response_model=dict)
+async def update_portfolio_template(portfolio_id: int, template_update: PortfolioTemplateUpdate, db = Depends(get_db)):
+    """
+    Update a portfolio template's basic information (name and created_at).
+    
+    Args:
+        portfolio_id: The ID of the portfolio template to update
+        template_update: The fields to update
+        
+    Returns:
+        The updated portfolio template
+    """
+    try:
+        logger.info(f"Updating portfolio template with ID: {portfolio_id}")
+        
+        # Remove None values from the update data
+        update_data = {k: v for k, v in template_update.model_dump().items() if v is not None}
+        
+        if not update_data:
+            raise HTTPException(status_code=400, detail="No valid update data provided")
+        
+        # Check if portfolio exists
+        check_result = db.table("available_portfolios").select("id").eq("id", portfolio_id).execute()
+        if not check_result.data or len(check_result.data) == 0:
+            raise HTTPException(status_code=404, detail=f"Portfolio template with ID {portfolio_id} not found")
+        
+        # Update the portfolio template
+        result = db.table("available_portfolios").update(update_data).eq("id", portfolio_id).execute()
+        
+        if result.data and len(result.data) > 0:
+            return result.data[0]
+        
+        raise HTTPException(status_code=400, detail="Failed to update portfolio template")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating portfolio template: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to update portfolio template: {str(e)}")
 
 @router.get("/available_portfolio_funds", response_model=List[dict])
 async def get_available_portfolio_funds(
