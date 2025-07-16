@@ -133,6 +133,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   const [availableYears, setAvailableYears] = useState<number[]>([]);
   const [pendingEdits, setPendingEdits] = useState<CellEdit[]>([]);
   
+  // Add state to track initial load vs year changes
+  const [isInitialLoad, setIsInitialLoad] = useState<boolean>(true);
+  
   // Debug effect to track pendingEdits changes
   useEffect(() => {
     console.log('🔍 DEBUG: pendingEdits state changed, length:', pendingEdits.length, 'edits:', pendingEdits);
@@ -948,7 +951,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
   // Auto-scroll to the month with the latest activity when the table loads
   useEffect(() => {
-    if (months.length > 0 && activities.length > 0 && tableContainerRef.current) {
+    // Only auto-scroll on initial load, not when year changes
+    if (isInitialLoad && months.length > 0 && activities.length > 0 && tableContainerRef.current) {
       // Small delay to ensure the table has rendered
       const scrollTimer = setTimeout(() => {
         if (tableContainerRef.current) {
@@ -981,7 +985,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       }, 100);
 
       return () => clearTimeout(scrollTimer);
-    } else if (months.length > 0 && activities.length === 0 && tableContainerRef.current) {
+    } else if (isInitialLoad && months.length > 0 && activities.length === 0 && tableContainerRef.current) {
       // If no activities, fallback to scrolling to the rightmost position
       const scrollTimer = setTimeout(() => {
         if (tableContainerRef.current) {
@@ -991,7 +995,19 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
       return () => clearTimeout(scrollTimer);
     }
-  }, [months, activities]);
+  }, [months, activities, isInitialLoad]);
+
+  // Set initial load to false after the first auto-scroll completes
+  useEffect(() => {
+    if (isInitialLoad && months.length > 0) {
+      // Wait for the auto-scroll to complete before marking as no longer initial load
+      const timer = setTimeout(() => {
+        setIsInitialLoad(false);
+      }, 200); // Slightly longer than the auto-scroll timer (100ms)
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isInitialLoad, months]);
 
   // Get fund valuation for a specific fund and month - now uses indexed lookup
   const getFundValuation = (fundId: number, month: string): FundValuation | undefined => {
@@ -1801,6 +1817,24 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     return calculationResults.monthTotals.get(month) || 0;
   };
 
+  // Calculate row total for a specific activity type across all months
+  const calculateActivityTypeRowTotal = (activityType: string): number => {
+    let total = 0;
+    months.forEach(month => {
+      total += calculateActivityTypeTotal(activityType, month);
+    });
+    return total;
+  };
+
+  // Calculate row total for all activity types across all months (Overall Total row)
+  const calculateOverallRowTotal = (): number => {
+    let total = 0;
+    months.forEach(month => {
+      total += calculateMonthTotal(month);
+    });
+    return total;
+  };
+
   // Format cell value for display - format to 2 decimal places unless actively editing
   const formatCellValue = (value: string, fundId?: number, month?: string, activityType?: string): string => {
     if (!value || value.trim() === '') return '';
@@ -2055,6 +2089,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
             onClick={() => {
               const currentIndex = availableYears.indexOf(currentYear);
               if (currentIndex > 0) {
+                setIsInitialLoad(false); // Mark as manual year change
                 setCurrentYear(availableYears[currentIndex - 1]);
                 setTimeout(scrollToBeginning, 100);
               }
@@ -2072,6 +2107,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
               <button
                 key={year}
                 onClick={() => {
+                  setIsInitialLoad(false); // Mark as manual year change
                   setCurrentYear(year);
                   setTimeout(scrollToBeginning, 100);
                 }}
@@ -2094,6 +2130,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
             onClick={() => {
               const currentIndex = availableYears.indexOf(currentYear);
               if (currentIndex < availableYears.length - 1) {
+                setIsInitialLoad(false); // Mark as manual year change
                 setCurrentYear(availableYears[currentIndex + 1]);
                 setTimeout(scrollToBeginning, 100);
               }
@@ -2746,7 +2783,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                   {months.map(month => (
                     <td key={`totals-header-${month}`} className="px-1 py-0 text-right"></td>
                   ))}
-                  <td className="px-1 py-0 text-right border-l border-gray-300 bg-gray-50"></td>
+                  <td className="px-1 py-0 text-right border-l border-gray-300 bg-gray-50 text-sm font-medium">
+                    Row Total
+                  </td>
                 </tr>
 
                 {/* Activity type total rows */}
@@ -2780,7 +2819,12 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                           </td>
                         );
                       })}
-                      <td className="px-1 py-0 text-right border-l border-gray-300 bg-white"></td>
+                      <td className="px-1 py-0 text-right border-l border-gray-300 bg-white">
+                        {(() => {
+                          const rowTotal = calculateActivityTypeRowTotal(activityType);
+                          return rowTotal !== 0 ? formatTotal(rowTotal) : '';
+                        })()}
+                      </td>
                     </tr>
                   ))}
 
@@ -2812,7 +2856,12 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       </td>
                     );
                   })}
-                  <td className="px-1 py-0 text-right border-l border-gray-300 bg-blue-50"></td>
+                  <td className="px-1 py-0 text-right border-l border-gray-300 bg-blue-50">
+                    {(() => {
+                      const rowTotal = calculateActivityTypeRowTotal('Current Value');
+                      return rowTotal !== 0 ? formatTotal(rowTotal) : '';
+                    })()}
+                  </td>
                 </tr>
 
                 {/* Grand total row */}
@@ -2843,7 +2892,12 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       </td>
                     );
                   })}
-                  <td className="px-1 py-0 text-right border-l border-gray-300 bg-gray-100"></td>
+                  <td className="px-1 py-0 text-right border-l border-gray-300 bg-gray-100">
+                    {(() => {
+                      const rowTotal = calculateOverallRowTotal();
+                      return rowTotal !== 0 ? formatTotal(rowTotal) : '';
+                    })()}
+                  </td>
                 </tr>
               </tbody>
             </table>
