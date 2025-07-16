@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DatePicker } from 'antd';
 import dayjs, { Dayjs } from 'dayjs';
+import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../context/AuthContext';
 import { getProductFUM, calculateStandardizedMultipleFundsIRR, lapseProduct, reactivateProduct } from '../services/api';
 import { 
@@ -76,6 +77,7 @@ interface Holding {
   status?: string;
   end_date?: string;
   riskFactor?: number;
+  inactiveFunds?: Holding[];
 }
 
 interface ProductOwner {
@@ -196,6 +198,9 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   const [isSubmittingOwners, setIsSubmittingOwners] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [ownersFormError, setOwnersFormError] = useState<string | null>(null);
+  
+  // Previous Funds expansion state
+  const [isPreviousFundsExpanded, setIsPreviousFundsExpanded] = useState(false);
 
   // Portfolio fund management state (simplified)
   const [isEditingFunds, setIsEditingFunds] = useState(false);
@@ -462,21 +467,23 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             averageRiskFactor
           });
           
-          // Create the Previous Funds entry with all required properties for a Holding
-          return {
-            id: -1, // Virtual ID for Previous Funds
-            fund_name: 'Previous Funds',
-            isin_number: '',
-            amount_invested: totalAmountInvested,
-            market_value: 0, // We'll display N/A for this
-            isVirtual: true, // Mark as virtual
-            status: 'inactive',
-            fund_id: 0, 
-            target_weighting: undefined,
-            valuation_date: undefined,
-            irr: undefined,
-            riskFactor: averageRiskFactor
-          } as Holding;
+                  // Create the Previous Funds entry with all required properties for a Holding
+        return {
+          id: -1, // Virtual ID for Previous Funds
+          fund_name: 'Previous Funds',
+          isin_number: '',
+          amount_invested: totalAmountInvested,
+          market_value: 0, // We'll display N/A for this
+          isVirtual: true, // Mark as virtual
+          status: 'inactive',
+          fund_id: 0, 
+          target_weighting: undefined,
+          valuation_date: undefined,
+          irr: undefined,
+          riskFactor: averageRiskFactor,
+          // Add inactive funds data for expansion
+          inactiveFunds: inactiveHoldings
+        } as Holding & { inactiveFunds: Holding[] };
         };
         
         const previousFundsEntry = createPreviousFundsEntry(inactiveHoldings);
@@ -1034,17 +1041,27 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       setIsSavingFunds(true);
       setFundError(null);
       
-      // Find the portfolio fund record to soft delete
-      const portfolioFund = holdings.find(h => h.fund_id === fundId && h.status === 'active');
-      if (!portfolioFund) {
-        throw new Error('Active portfolio fund not found');
-      }
+      // Check if it's an active fund first
+      const activePortfolioFund = holdings.find(h => h.fund_id === fundId && h.status === 'active');
       
-      // Soft delete by setting status to inactive and end_date to current date
-      await api.patch(`/portfolio_funds/${portfolioFund.id}`, {
-        status: 'inactive',
-        end_date: new Date().toISOString().split('T')[0] // Current date in YYYY-MM-DD format
-      });
+      if (activePortfolioFund) {
+        // Active fund: soft delete by setting status to inactive and end_date to current date
+        await api.patch(`/portfolio_funds/${activePortfolioFund.id}`, {
+          status: 'inactive',
+          end_date: new Date().toISOString().split('T')[0] // Current date in YYYY-MM-DD format
+        });
+      } else {
+        // Check if it's an inactive fund
+        const previousFundsEntry = holdings.find(h => h.isVirtual && h.fund_name === 'Previous Funds');
+        const inactivePortfolioFund = previousFundsEntry?.inactiveFunds?.find(h => h.fund_id === fundId);
+        
+        if (inactivePortfolioFund) {
+          // Inactive fund: permanently delete it
+          await api.delete(`/portfolio_funds/${inactivePortfolioFund.id}`);
+        } else {
+          throw new Error('Portfolio fund not found');
+        }
+      }
       
       // Trigger portfolio IRR recalculation after removing fund
       if (account?.portfolio_id) {
@@ -1151,14 +1168,24 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     handleAddFund(fundId, 0); // Add with 0% weighting initially
   };
 
-  // Calculate total weighting for validation - only count active funds
+  // Calculate total weighting for validation - count both active and inactive funds
   const getTotalWeighting = () => {
-    return holdings
-      .filter(h => !h.isVirtual && h.status === 'active') // Only count active funds
+    // Count active funds
+    const activeTotal = holdings
+      .filter(h => !h.isVirtual && h.status === 'active')
       .reduce((sum, holding) => {
         const weighting = parseFloat(holding.target_weighting || '0');
         return sum + (isNaN(weighting) ? 0 : weighting);
       }, 0);
+
+    // Count inactive funds
+    const previousFundsEntry = holdings.find(h => h.isVirtual && h.fund_name === 'Previous Funds');
+    const inactiveTotal = previousFundsEntry?.inactiveFunds?.reduce((sum, holding) => {
+      const weighting = parseFloat(holding.target_weighting || '0');
+      return sum + (isNaN(weighting) ? 0 : weighting);
+    }, 0) || 0;
+
+    return activeTotal + inactiveTotal;
   };
 
   // Save all fund weightings
@@ -1173,8 +1200,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       setIsSavingFunds(true);
       setFundError(null);
       
-      // Update all active fund weightings only
-      const updatePromises = holdings
+      // Update all active fund weightings
+      const activeFundPromises = holdings
         .filter(h => !h.isVirtual && h.fund_id && h.status === 'active')
         .map(holding => {
           const weighting = parseFloat(holding.target_weighting || '0');
@@ -1182,6 +1209,17 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             target_weighting: weighting
           });
         });
+
+      // Update all inactive fund weightings  
+      const previousFundsEntry = holdings.find(h => h.isVirtual && h.fund_name === 'Previous Funds');
+      const inactiveFundPromises = previousFundsEntry?.inactiveFunds?.map(holding => {
+        const weighting = parseFloat(holding.target_weighting || '0');
+        return api.patch(`/portfolio_funds/${holding.id}`, {
+          target_weighting: weighting
+        });
+      }) || [];
+
+      const updatePromises = [...activeFundPromises, ...inactiveFundPromises];
       
       await Promise.all(updatePromises);
       
@@ -2491,9 +2529,20 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-md font-semibold text-gray-900">Product Fund List</h4>
-              {!isEditingFunds && holdings.filter(h => !h.isVirtual && h.status === 'active').length > 0 && (
+              {!isEditingFunds && (holdings.filter(h => !h.isVirtual && h.status === 'active').length > 0 || holdings.some(h => h.isVirtual && h.fund_name === 'Previous Funds')) && (
                 <span className="text-sm text-gray-500">
-                  {holdings.filter(h => !h.isVirtual && h.status === 'active').length} active fund{holdings.filter(h => !h.isVirtual && h.status === 'active').length !== 1 ? 's' : ''}
+                  {(() => {
+                    const activeFunds = holdings.filter(h => !h.isVirtual && h.status === 'active').length;
+                    const previousFundsEntry = holdings.find(h => h.isVirtual && h.fund_name === 'Previous Funds');
+                    const inactiveFunds = previousFundsEntry?.inactiveFunds?.length || 0;
+                    const totalEntries = activeFunds + (inactiveFunds > 0 ? 1 : 0); // +1 for Previous Funds virtual entry
+                    
+                    const parts = [];
+                    if (activeFunds > 0) parts.push(`${activeFunds} active`);
+                    if (inactiveFunds > 0) parts.push(`1 previous (${inactiveFunds} funds)`);
+                    
+                    return parts.join(' • ');
+                  })()}
                 </span>
               )}
             </div>
@@ -2506,13 +2555,13 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                       <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Fund Name
                       </th>
-                      <th scope="col" className="px-6 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                         ISIN
                       </th>
-                      <th scope="col" className="px-6 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Risk Factor
                       </th>
-                      <th scope="col" className="px-6 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                         <div>Valuation</div>
                         {findCommonValuationDate(holdings.filter(h => !h.isVirtual && h.status === 'active')) && (
                           <div className="text-xs text-gray-400 font-normal normal-case mt-1">
@@ -2520,13 +2569,13 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           </div>
                         )}
                       </th>
-                      <th scope="col" className="px-6 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actual Weighting %
                       </th>
-                      <th scope="col" className="px-6 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Target Weighting %
                       </th>
-                      <th scope="col" className="px-6 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                         <div>IRR</div>
                         {findCommonValuationDate(holdings.filter(h => !h.isVirtual && h.status === 'active')) && (
                           <div className="text-xs text-gray-400 font-normal normal-case mt-1">
@@ -2535,7 +2584,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                         )}
                       </th>
                       {isEditingFunds && account && !account.template_generation_id && (
-                        <th scope="col" className="px-6 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" className="px-6 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Actions
                         </th>
                       )}
@@ -2547,24 +2596,24 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                         <td className="px-6 py-2 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900 truncate">{holding.fund_name}</div>
                         </td>
-                        <td className="px-6 py-2 whitespace-nowrap text-center">
+                        <td className="px-6 py-2 whitespace-nowrap text-right">
                           <div className="text-sm text-gray-500">{holding.isin_number || 'N/A'}</div>
                         </td>
-                        <td className="px-6 py-2 whitespace-nowrap text-center">
+                        <td className="px-6 py-2 whitespace-nowrap text-right">
                           <div className="text-sm text-gray-500">
                             {getFundRiskRating(holding.fund_id || 0, fundsData)}
                           </div>
                         </td>
-                        <td className="px-6 py-2 whitespace-nowrap text-sm text-center">
+                        <td className="px-6 py-2 whitespace-nowrap text-sm text-right">
                           {holding.market_value !== undefined && holding.market_value !== null ? (
                             <div className="font-medium">{formatCurrency(holding.market_value)}</div>
                           ) : (
                             <span className="text-gray-500">N/A</span>
                           )}
                         </td>
-                        <td className="px-6 py-2 whitespace-nowrap text-sm text-center">
+                        <td className="px-6 py-2 whitespace-nowrap text-sm text-right">
                           {liveWeightings.has(holding.id) ? (
-                            <div className="flex items-center justify-center">
+                            <div className="flex items-center justify-end">
                               <span className="font-medium">
                                 {liveWeightings.get(holding.id)?.toFixed(1)}%
                               </span>
@@ -2588,9 +2637,9 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             <span className="text-gray-500">N/A</span>
                           )}
                         </td>
-                        <td className="px-6 py-2 whitespace-nowrap text-center">
+                        <td className="px-6 py-2 whitespace-nowrap text-right">
                           {isEditingFunds && account && !account.template_generation_id ? (
-                            <div className="flex items-center justify-center space-x-2">
+                            <div className="flex items-center justify-end space-x-2">
                               <div className="relative">
                                 <input
                                   type="number"
@@ -2627,7 +2676,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             </span>
                           )}
                         </td>
-                        <td className="px-6 py-2 whitespace-nowrap text-sm text-center">
+                        <td className="px-6 py-2 whitespace-nowrap text-sm text-right">
                           {holding.irr !== undefined && holding.irr !== null ? (
                             <span className={`font-medium ${
                               holding.irr >= 0 ? 'text-green-600' : 'text-red-600'
@@ -2639,7 +2688,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           )}
                         </td>
                         {isEditingFunds && account && !account.template_generation_id && !isCashFund({ fund_name: holding.fund_name, isin_number: holding.isin_number } as any) && (
-                          <td className="px-6 py-2 whitespace-nowrap text-center">
+                          <td className="px-6 py-2 whitespace-nowrap text-right">
                             <ActionButton
                               variant="delete"
                               size="icon"
@@ -2650,6 +2699,156 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                         )}
                       </tr>
                     ))}
+                    
+                    {/* Previous Funds Virtual Row */}
+                    {holdings.some(h => h.isVirtual && h.fund_name === 'Previous Funds') && (
+                      <>
+                        <tr className="bg-gray-100 border-t-2 border-gray-300">
+                          <td className="px-6 py-2 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <button
+                                onClick={() => setIsPreviousFundsExpanded(!isPreviousFundsExpanded)}
+                                className="mr-2 p-0.5 rounded hover:bg-gray-200 transition-colors"
+                                title={isPreviousFundsExpanded ? 'Collapse previous funds' : 'Expand previous funds'}
+                              >
+                                {isPreviousFundsExpanded ? (
+                                  <ChevronUpIcon className="h-4 w-4 text-gray-500" />
+                                ) : (
+                                  <ChevronDownIcon className="h-4 w-4 text-gray-500" />
+                                )}
+                              </button>
+                              <div className="text-sm font-medium text-gray-600">Previous Funds</div>
+                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-800">
+                                {(() => {
+                                  const previousFundsEntry = holdings.find(h => h.isVirtual && h.fund_name === 'Previous Funds');
+                                  return previousFundsEntry?.inactiveFunds?.length || 0;
+                                })()} funds
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-2 whitespace-nowrap text-right">
+                            <div className="text-sm text-gray-500">-</div>
+                          </td>
+                          <td className="px-6 py-2 whitespace-nowrap text-right">
+                            <div className="text-sm text-gray-500">-</div>
+                          </td>
+                          <td className="px-6 py-2 whitespace-nowrap text-sm text-right">
+                            <span className="text-gray-500">N/A</span>
+                          </td>
+                          <td className="px-6 py-2 whitespace-nowrap text-sm text-right">
+                            <span className="text-gray-500">-</span>
+                          </td>
+                          <td className="px-6 py-2 whitespace-nowrap text-right">
+                            <span className="text-gray-500">-</span>
+                          </td>
+                          <td className="px-6 py-2 whitespace-nowrap text-right">
+                            <span className="text-gray-500">-</span>
+                          </td>
+                          {isEditingFunds && account && !account.template_generation_id && (
+                            <td className="px-6 py-2 whitespace-nowrap text-right">
+                              <span className="text-gray-500">-</span>
+                            </td>
+                          )}
+                        </tr>
+                        
+                        {/* Expanded Individual Inactive Funds */}
+                        {isPreviousFundsExpanded && 
+                          (() => {
+                            const previousFundsEntry = holdings.find(h => h.isVirtual && h.fund_name === 'Previous Funds');
+                            return previousFundsEntry?.inactiveFunds || [];
+                          })().map((holding, index) => (
+                            <tr key={`inactive-${holding.id}`} className="bg-blue-50 border-l-4 border-blue-300">
+                              <td className="px-6 py-2 whitespace-nowrap">
+                                <div className="flex items-center">
+                                  <div className="ml-8 text-sm text-gray-700">
+                                    ↳ {holding.fund_name}
+                                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                      Inactive
+                                    </span>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-6 py-2 whitespace-nowrap text-right">
+                                <div className="text-sm text-gray-500">{holding.isin_number || 'N/A'}</div>
+                              </td>
+                              <td className="px-6 py-2 whitespace-nowrap text-right">
+                                <div className="text-sm text-gray-500">
+                                  {getFundRiskRating(holding.fund_id || 0, fundsData)}
+                                </div>
+                              </td>
+                              <td className="px-6 py-2 whitespace-nowrap text-right">
+                                <div className="text-sm text-gray-500">
+                                  {holding.end_date ? formatDate(holding.end_date) : 'N/A'}
+                                </div>
+                              </td>
+                              <td className="px-6 py-2 whitespace-nowrap text-right">
+                                <span className="text-sm text-gray-500">-</span>
+                              </td>
+                              <td className="px-6 py-2 whitespace-nowrap text-right">
+                                {isEditingFunds && account && !account.template_generation_id ? (
+                                  <div className="flex items-center justify-end space-x-2">
+                                    <div className="relative">
+                                      <input
+                                        type="number"
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            e.currentTarget.blur();
+                                          }
+                                        }}
+                                        value={holding.target_weighting || ''}
+                                        onChange={(e) => {
+                                          const newWeighting = parseFloat(e.target.value) || 0;
+                                          // Update the inactive holding in the virtual Previous Funds entry
+                                          setHoldings(prev => prev.map(h => {
+                                            if (h.isVirtual && h.fund_name === 'Previous Funds' && h.inactiveFunds) {
+                                              return {
+                                                ...h,
+                                                inactiveFunds: h.inactiveFunds.map(inactiveFund => 
+                                                  inactiveFund.id === holding.id 
+                                                    ? { ...inactiveFund, target_weighting: newWeighting.toString() }
+                                                    : inactiveFund
+                                                )
+                                              };
+                                            }
+                                            return h;
+                                          }));
+                                        }}
+                                        className="w-16 px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center"
+                                        placeholder="0"
+                                        min="0"
+                                        max="100"
+                                        step="0.01"
+                                      />
+                                      <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-400 pointer-events-none">
+                                        %
+                                      </span>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <span className="text-sm text-gray-500">
+                                    {holding.target_weighting ? parseFloat(holding.target_weighting).toFixed(2) : '0.00'}%
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-6 py-2 whitespace-nowrap text-right">
+                                <span className="text-sm text-gray-500">-</span>
+                              </td>
+                              {isEditingFunds && account && !account.template_generation_id && (
+                                <td className="px-6 py-2 whitespace-nowrap text-right">
+                                  <ActionButton
+                                    variant="delete"
+                                    size="icon"
+                                    onClick={() => handleRemoveFund(holding.fund_id || 0)}
+                                    title="Remove inactive fund"
+                                  />
+                                </td>
+                              )}
+                            </tr>
+                          ))
+                        }
+                      </>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -2680,89 +2879,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             )}
           </div>
 
-          {/* Previous Funds Section - Only show if there are inactive funds */}
-          {holdings.filter(h => !h.isVirtual && h.status === 'inactive').length > 0 && (
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <h4 className="text-md font-semibold text-gray-900">Previous Funds</h4>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                    Inactive
-                  </span>
-                </div>
-                <span className="text-sm text-gray-500">
-                  {holdings.filter(h => !h.isVirtual && h.status === 'inactive').length} inactive fund{holdings.filter(h => !h.isVirtual && h.status === 'inactive').length !== 1 ? 's' : ''}
-                </span>
-              </div>
-              
-              <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-                <table className="min-w-full divide-y divide-gray-300">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th scope="col" className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Fund Name
-                      </th>
-                      <th scope="col" className="px-6 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        ISIN
-                      </th>
-                      <th scope="col" className="px-6 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Risk Factor
-                      </th>
-                      <th scope="col" className="px-6 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        End Date
-                      </th>
-                      <th scope="col" className="px-6 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Last Target %
-                      </th>
-                      {isEditingFunds && account && !account.template_generation_id && (
-                        <th scope="col" className="px-6 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {holdings.filter(h => !h.isVirtual && h.status === 'inactive').map((holding, index) => (
-                      <tr key={holding.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                        <td className="px-6 py-2 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-500 truncate">{holding.fund_name}</div>
-                        </td>
-                        <td className="px-6 py-2 whitespace-nowrap text-center">
-                          <div className="text-sm text-gray-500">{holding.isin_number || 'N/A'}</div>
-                        </td>
-                        <td className="px-6 py-2 whitespace-nowrap text-center">
-                          <div className="text-sm text-gray-500">
-                            {getFundRiskRating(holding.fund_id || 0, fundsData)}
-                          </div>
-                        </td>
-                        <td className="px-6 py-2 whitespace-nowrap text-center">
-                          <div className="text-sm text-gray-500">
-                            {holding.end_date ? formatDate(holding.end_date) : 'N/A'}
-                          </div>
-                        </td>
-                        <td className="px-6 py-2 whitespace-nowrap text-center">
-                          <span className="text-sm text-gray-500">
-                            {holding.target_weighting ? parseFloat(holding.target_weighting).toFixed(2) : '0.00'}%
-                          </span>
-                        </td>
-                        {isEditingFunds && account && !account.template_generation_id && (
-                          <td className="px-6 py-2 whitespace-nowrap text-center">
-                            <ActionButton
-                              variant="add"
-                              size="xs"
-                              context="Reactivate"
-                              design="descriptive"
-                              onClick={() => handleReactivateFund(holding.fund_id || 0)}
-                            />
-                          </td>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+
 
 
         </div>
