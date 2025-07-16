@@ -20,8 +20,8 @@ export interface NumberInputProps extends Omit<InputHTMLAttributes<HTMLInputElem
   suffix?: string;
   prefix?: string;
   // Override value and onChange to be number-specific
-  value?: number;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  value?: number | string;
+  onChange?: (value: number | null) => void;
   // Allow onKeyDown to be passed through
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 }
@@ -73,6 +73,9 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(({
     const numValue = typeof num === 'string' ? parseFloat(num) : num;
     if (isNaN(numValue)) return '';
     
+    // Handle zero values properly
+    if (numValue === 0) return '0';
+    
     let formatted = numValue.toFixed(decimalPlaces);
     
     if (thousandSeparator) {
@@ -85,10 +88,11 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(({
   };
   
   // Parse formatted string back to number
-  const parseNumber = (str: string): number => {
-    if (!str) return 0;
+  const parseNumber = (str: string): number | null => {
+    if (!str || str.trim() === '') return null;
     const cleaned = str.replace(/[^\d.-]/g, '');
-    return parseFloat(cleaned) || 0;
+    const parsed = parseFloat(cleaned);
+    return isNaN(parsed) ? null : parsed;
   };
   
   // Update display value when value prop changes
@@ -101,6 +105,9 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(({
         // Show formatted number when not focused
         setDisplayValue(formatNumber(value));
       }
+    } else {
+      // Handle null/undefined values
+      setDisplayValue('');
     }
   }, [value, isFocused, decimalPlaces, thousandSeparator]);
   
@@ -118,23 +125,19 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(({
     
     // Validate min/max
     let validatedValue = numValue;
-    if (min !== undefined && numValue < Number(min)) {
+    if (min !== undefined && numValue !== null && numValue < Number(min)) {
       validatedValue = Number(min);
     }
-    if (max !== undefined && numValue > Number(max)) {
+    if (max !== undefined && numValue !== null && numValue > Number(max)) {
       validatedValue = Number(max);
     }
     
     // Format for display
-    setDisplayValue(formatNumber(validatedValue));
+    setDisplayValue(validatedValue !== null ? formatNumber(validatedValue) : '');
     
     // Call onChange with validated number
     if (onChange) {
-      const syntheticEvent = {
-        ...e,
-        target: { ...e.target, value: validatedValue.toString() }
-      } as React.ChangeEvent<HTMLInputElement>;
-      onChange(syntheticEvent);
+      onChange(validatedValue);
     }
     
     if (onBlur) {
@@ -152,7 +155,9 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(({
       setDisplayValue(inputValue);
       
       if (onChange) {
-        onChange(e);
+        // Convert to number if valid, otherwise pass null
+        const numValue = parseNumber(inputValue);
+        onChange(numValue);
       }
     }
   };
@@ -174,16 +179,12 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(({
   const handleStepUp = () => {
     const currentValue = parseNumber(displayValue);
     const stepValue = step ? Number(step) : 1;
-    const newValue = currentValue + stepValue;
+    const newValue = currentValue !== null ? currentValue + stepValue : stepValue;
     
     if (max === undefined || newValue <= Number(max)) {
-      const syntheticEvent = {
-        target: { value: newValue.toString() }
-      } as React.ChangeEvent<HTMLInputElement>;
-      
       setDisplayValue(newValue.toString());
       if (onChange) {
-        onChange(syntheticEvent);
+        onChange(newValue);
       }
     }
   };
@@ -191,16 +192,12 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(({
   const handleStepDown = () => {
     const currentValue = parseNumber(displayValue);
     const stepValue = step ? Number(step) : 1;
-    const newValue = currentValue - stepValue;
+    const newValue = currentValue !== null ? currentValue - stepValue : -stepValue;
     
     if (min === undefined || newValue >= Number(min)) {
-      const syntheticEvent = {
-        target: { value: newValue.toString() }
-      } as React.ChangeEvent<HTMLInputElement>;
-      
       setDisplayValue(newValue.toString());
       if (onChange) {
-        onChange(syntheticEvent);
+        onChange(newValue);
       }
     }
   };
@@ -272,7 +269,7 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(({
         {/* Left Content (Icon, Currency, Prefix) */}
         {(leftIcon || format === 'currency' || prefix) && (
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <div className="h-4 w-4 text-gray-600 font-medium">
+            <div className="h-3 w-3 text-gray-500 text-sm flex items-center justify-center">
               {leftIcon || (format === 'currency' && currency) || prefix}
             </div>
           </div>
@@ -329,7 +326,7 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(({
           {/* Right Icon/Suffix */}
           {(rightIcon || format === 'percentage' || suffix) && (
             <div className="pr-3 flex items-center pointer-events-none">
-              <div className="h-4 w-4 text-gray-600 font-medium">
+              <div className="h-3 w-3 text-gray-500 text-sm flex items-center justify-center">
                 {rightIcon || (format === 'percentage' && '%') || suffix}
               </div>
             </div>
