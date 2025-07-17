@@ -1,4 +1,4 @@
-import React, { InputHTMLAttributes, ReactNode, forwardRef, useState, useEffect } from 'react';
+import React, { InputHTMLAttributes, ReactNode, forwardRef, useState, useEffect, useRef } from 'react';
 
 export interface NumberInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'type' | 'value' | 'onChange'> {
   label?: string;
@@ -59,6 +59,8 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(({
 }, ref) => {
   const [displayValue, setDisplayValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const [isUserTyping, setIsUserTyping] = useState(false);
+  const lastValueRef = useRef(value);
   
   // Generate unique ID if not provided
   const inputId = id || `number-input-${Math.random().toString(36).substr(2, 9)}`;
@@ -90,29 +92,48 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(({
   // Parse formatted string back to number
   const parseNumber = (str: string): number | null => {
     if (!str || str.trim() === '') return null;
+    
+    // Handle the case where user types just "0"
+    if (str.trim() === '0') return 0;
+    
     const cleaned = str.replace(/[^\d.-]/g, '');
     const parsed = parseFloat(cleaned);
     return isNaN(parsed) ? null : parsed;
   };
   
-  // Update display value when value prop changes
+  // Initialize display value when component mounts
   useEffect(() => {
     if (value !== undefined && value !== null) {
-      if (isFocused) {
-        // Show raw number when focused
-        setDisplayValue(value.toString());
-      } else {
-        // Show formatted number when not focused
-        setDisplayValue(formatNumber(value));
-      }
+      setDisplayValue(formatNumber(value));
     } else {
-      // Handle null/undefined values
       setDisplayValue('');
     }
-  }, [value, isFocused, decimalPlaces, thousandSeparator]);
+    lastValueRef.current = value;
+  }, []); // Only run on mount
+  
+  // Update display value when value prop changes from outside (not from user input)
+  useEffect(() => {
+    // Only update if the value changed from outside the component (not from user typing)
+    if (value !== lastValueRef.current && !isUserTyping) {
+      if (value !== undefined && value !== null) {
+        if (isFocused) {
+          // Show raw number when focused
+          setDisplayValue(value.toString());
+        } else {
+          // Show formatted number when not focused
+          setDisplayValue(formatNumber(value));
+        }
+      } else {
+        // Handle null/undefined values
+        setDisplayValue('');
+      }
+    }
+    lastValueRef.current = value;
+  }, [value, isFocused, decimalPlaces, thousandSeparator, isUserTyping]);
   
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     setIsFocused(true);
+    setIsUserTyping(false);
     // Show raw number for editing
     if (value !== undefined && value !== null) {
       setDisplayValue(value.toString());
@@ -121,6 +142,7 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(({
   
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     setIsFocused(false);
+    setIsUserTyping(false);
     const numValue = parseNumber(e.target.value);
     
     // Validate min/max
@@ -152,6 +174,7 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(({
     const regex = allowNegative ? /^-?\d*\.?\d*$/ : /^\d*\.?\d*$/;
     
     if (regex.test(inputValue) || inputValue === '') {
+      setIsUserTyping(true);
       setDisplayValue(inputValue);
       
       if (onChange) {
@@ -163,6 +186,9 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Set user typing flag when user starts typing
+    setIsUserTyping(true);
+    
     // Prevent form submission when Enter is pressed unless specifically overridden
     if (e.key === 'Enter') {
       e.preventDefault();

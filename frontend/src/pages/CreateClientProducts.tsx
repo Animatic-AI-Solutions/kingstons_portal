@@ -2509,9 +2509,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                           label="Fixed Cost (£) *"
                                           placeholder="Enter amount (0 for no fixed cost)"
                                           value={product.fixed_cost}
-                                          onChange={(e) => {
-                                            const value = e.target.value;
-                                            const numericValue = value === '' ? undefined : parseFloat(value);
+                                          onChange={(numericValue: number | null) => {
                                             handleProductChange(product.id, 'fixed_cost', numericValue);
                                           }}
                                           size="sm"
@@ -2532,9 +2530,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                           label="Percentage Fee (%) *"
                                           placeholder="Enter percentage (0 for no percentage fee)"
                                           value={product.percentage_fee}
-                                          onChange={(e) => {
-                                            const value = e.target.value;
-                                            const numericValue = value === '' ? undefined : parseFloat(value);
+                                          onChange={(numericValue: number | null) => {
                                             handleProductChange(product.id, 'percentage_fee', numericValue);
                                           }}
                                           size="sm"
