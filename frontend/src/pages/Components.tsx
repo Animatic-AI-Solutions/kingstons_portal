@@ -309,8 +309,8 @@ const Components: React.FC = () => {
     setEmailValue(e.target.value);
   }, []);
 
-  const handleCurrencyChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setCurrencyValue(parseFloat(e.target.value) || 0);
+  const handleCurrencyChange = useCallback((value: number | null) => {
+    setCurrencyValue(value || 0);
   }, []);
 
   const handleTextAreaChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -1525,7 +1525,7 @@ const Components: React.FC = () => {
                 format="currency"
                 currency="£"
                 value={0}
-                onChange={() => {}}
+                onChange={(value: number | null) => {}}
                 size="md"
               />
               <BaseDropdown
