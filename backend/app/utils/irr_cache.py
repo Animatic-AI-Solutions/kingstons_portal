@@ -83,7 +83,7 @@ class IRRCache:
                 del self._cache[cache_key]
                 return None
             
-            logger.info(f"✅ IRR cache hit for funds {portfolio_fund_ids} - saved computation!")
+            logger.debug(f"IRR cache hit for funds {portfolio_fund_ids}")
             return cached_item['data']
     
     async def set(self, 
@@ -116,7 +116,7 @@ class IRRCache:
                 'calculation_date': calculation_date
             }
             
-            logger.info(f"💾 IRR result cached for funds {portfolio_fund_ids} (TTL: {ttl_minutes or self._default_ttl.total_seconds() / 60}min)")
+            logger.debug(f"IRR result cached for funds {portfolio_fund_ids}")
     
     async def clear_expired(self) -> int:
         """
@@ -136,7 +136,7 @@ class IRRCache:
                 del self._cache[key]
             
             if expired_keys:
-                logger.info(f"🧹 Cleared {len(expired_keys)} expired IRR cache entries")
+                logger.debug(f"Cleared {len(expired_keys)} expired IRR cache entries")
             
             return len(expired_keys)
     
@@ -165,7 +165,7 @@ class IRRCache:
                 del self._cache[key]
             
             if keys_to_remove:
-                logger.info(f"🗑️ Invalidated {len(keys_to_remove)} IRR cache entries for funds {portfolio_fund_ids}")
+                logger.debug(f"Invalidated {len(keys_to_remove)} IRR cache entries for funds {portfolio_fund_ids}")
             
             return len(keys_to_remove)
     

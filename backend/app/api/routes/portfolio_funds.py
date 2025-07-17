@@ -74,7 +74,6 @@ class IRRCache:
                 del self._cache[cache_key]
                 return None
             
-            logger.info(f"✅ IRR cache hit for funds {portfolio_fund_ids} - saved computation!")
             return cached_item['data']
     
     async def set(self, 
@@ -96,8 +95,6 @@ class IRRCache:
                 'fund_ids': portfolio_fund_ids,
                 'calculation_date': calculation_date
             }
-            
-            logger.info(f"💾 IRR result cached for funds {portfolio_fund_ids} (TTL: {ttl_minutes or self._default_ttl.total_seconds() / 60}min)")
 
     async def invalidate_portfolio_funds(self, portfolio_fund_ids: List[int]) -> int:
         """
@@ -123,9 +120,6 @@ class IRRCache:
             for key in keys_to_remove:
                 del self._cache[key]
             
-            if keys_to_remove:
-                logger.info(f"🗑️ Invalidated {len(keys_to_remove)} IRR cache entries for funds {portfolio_fund_ids}")
-            
             return len(keys_to_remove)
 
     async def clear_expired(self) -> int:
@@ -146,9 +140,6 @@ class IRRCache:
             # Remove expired entries
             for key in keys_to_remove:
                 del self._cache[key]
-            
-            if keys_to_remove:
-                logger.info(f"🧹 Cleared {len(keys_to_remove)} expired IRR cache entries")
             
             return len(keys_to_remove)
 
@@ -693,11 +684,9 @@ async def update_portfolio_fund(portfolio_fund_id: int, portfolio_fund_update: P
         
         # Invalidate IRR cache for this fund since data has changed
         await _irr_cache.invalidate_portfolio_funds([portfolio_fund_id])
-        logger.info(f"🔄 Invalidated IRR cache for updated fund {portfolio_fund_id}")
         
         # Convert Decimal objects to float for JSON serialization with comprehensive handling
         updated_fund = response.data[0]
-        logger.info(f"Raw response data: {updated_fund}")
         
         try:
             # Deep conversion of all values to ensure JSON serialization
@@ -2355,9 +2344,8 @@ async def calculate_single_portfolio_fund_irr(
             if fund_name_result.data:
                 fund_name = fund_name_result.data[0]["fund_name"]
                 isin = fund_name_result.data[0]["isin_number"]
-                logger.info(f"💰 DEBUG: Calculating IRR for Fund - ID: {portfolio_fund_id}, Name: {fund_name}, ISIN: {isin}")
             else:
-                logger.info(f"💰 DEBUG: Calculating IRR for Fund - ID: {portfolio_fund_id}, Name: Unknown")
+                pass  # Fund name not found
         
         # Verify portfolio fund exists
         fund_response = db.table("portfolio_funds").select("id").eq("id", portfolio_fund_id).execute()
@@ -2369,17 +2357,14 @@ async def calculate_single_portfolio_fund_irr(
         if irr_date is not None:
             try:
                 irr_date_obj = datetime.strptime(irr_date, "%Y-%m-%d").date()
-                logger.info(f"💰 DEBUG: Using provided IRR date: {irr_date_obj}")
             except ValueError:
                 logger.error(f"💰 DEBUG: ❌ Invalid date format. Expected YYYY-MM-DD, got: {irr_date}")
                 raise HTTPException(status_code=422, detail=f"Invalid date format. Expected YYYY-MM-DD, got: {irr_date}")
         else:
             irr_date_obj = None
-            logger.info(f"💰 DEBUG: No IRR date provided, will find latest valuation date")
         
         # If no IRR date provided, find the latest valuation date for this fund
         if irr_date_obj is None:
-            logger.info("💰 DEBUG: No IRR date provided, finding latest valuation date")
             latest_valuation_response = db.table("portfolio_fund_valuations").select("valuation_date").eq("portfolio_fund_id", portfolio_fund_id).order("valuation_date", desc=True).limit(1).execute()
             
             if latest_valuation_response.data:
