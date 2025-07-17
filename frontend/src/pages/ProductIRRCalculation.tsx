@@ -787,45 +787,10 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
   const [notesError, setNotesError] = useState<string | null>(null);
   const [hasUnsavedNotes, setHasUnsavedNotes] = useState(false);
   
-  // Utility functions for localStorage notes persistence
-  const getStorageKey = () => `irr_notes_${paramAccountId}`;
-  
-  const saveNotesToStorage = (notes: string) => {
-    try {
-      localStorage.setItem(getStorageKey(), notes);
-      localStorage.setItem(`${getStorageKey()}_timestamp`, Date.now().toString());
-    } catch (error) {
-      console.warn('Failed to save notes to localStorage:', error);
-    }
-  };
-  
-  const loadNotesFromStorage = () => {
-    try {
-      return localStorage.getItem(getStorageKey()) || '';
-    } catch (error) {
-      console.warn('Failed to load notes from localStorage:', error);
-      return '';
-    }
-  };
-  
-  const clearNotesFromStorage = () => {
-    try {
-      localStorage.removeItem(getStorageKey());
-      localStorage.removeItem(`${getStorageKey()}_timestamp`);
-    } catch (error) {
-      console.warn('Failed to clear notes from localStorage:', error);
-    }
-  };
-  
-  const getStorageTimestamp = () => {
-    try {
-      const timestamp = localStorage.getItem(`${getStorageKey()}_timestamp`);
-      return timestamp ? parseInt(timestamp, 10) : 0;
-    } catch (error) {
-      console.warn('Failed to get storage timestamp:', error);
-      return 0;
-    }
-  };
+  // Notes state - will be loaded from database
+  const [notes, setNotes] = useState<string>('');
+  const [lastSavedNotes, setLastSavedNotes] = useState<string>('');
+  const [isNotesSaving, setIsNotesSaving] = useState(false);
   
   // State for total portfolio IRR from backend
   const [totalPortfolioIRR, setTotalPortfolioIRR] = useState<number | null>(null);
@@ -875,10 +840,12 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
   // Removed availableYears useEffect since we're no longer using year selection
 
   useEffect(() => {
-    if (account) {
+    if (paramAccountId && account) {
+      // Notes are now loaded directly from database in account object
+      // No localStorage needed - each product has its own notes
       setInitialNotes(account.notes || '');
     }
-  }, [account]);
+  }, [account?.id]);
 
   // useEffect to fetch total portfolio IRR from backend (all time)
   useEffect(() => {
@@ -966,20 +933,9 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
   // Load notes from localStorage when component mounts and account data is available
   useEffect(() => {
     if (paramAccountId && account) {
-      const storedNotes = loadNotesFromStorage();
-      const storageTimestamp = getStorageTimestamp();
-      
-      // If there are stored notes and they're newer than the account data
-      if (storedNotes && storageTimestamp > 0) {
-        const accountNotes = account.notes || '';
-        
-        // Use stored notes if they're different from backend notes
-        if (storedNotes !== accountNotes) {
-          const updatedAccount = { ...account, notes: storedNotes };
-          setAccount(updatedAccount);
-          setHasUnsavedNotes(true);
-        }
-      }
+      // Notes are now loaded directly from database in account object
+      // No localStorage needed - each product has its own notes
+      setInitialNotes(account.notes || '');
     }
   }, [account?.id]);
 
@@ -1005,8 +961,8 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden' && account?.notes) {
-        // Save to localStorage when tab becomes hidden
-        saveNotesToStorage(account.notes);
+        // Notes are now auto-saved to database on blur - no localStorage needed
+        // Each product has its own notes in the database
       }
     };
 
@@ -1039,13 +995,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
         setIsLoading(false);
         // Set account even if there's an error so we can show product info
         setAccount(accountResponse.data);
-        // Initialize notes from account data, checking localStorage first
-        const storedNotes = loadNotesFromStorage();
-        if (storedNotes && storedNotes !== accountResponse.data.notes) {
-          console.log('Using stored notes from localStorage');
-          accountResponse.data.notes = storedNotes;
-          setHasUnsavedNotes(true);
-        }
+        // Initialize notes from account data - each product has its own notes
         setInitialNotes(accountResponse.data.notes || '');
         return;
       }
@@ -1059,13 +1009,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
         }
       }
       
-      // Set account data with portfolio information, checking localStorage first
-      const storedNotesMain = loadNotesFromStorage();
-      if (storedNotesMain && storedNotesMain !== accountResponse.data.notes) {
-        console.log('Using stored notes from localStorage (main flow)');
-        accountResponse.data.notes = storedNotesMain;
-        setHasUnsavedNotes(true);
-      }
+      // Set account data with portfolio information - each product has its own notes
       setAccount(accountResponse.data);
       setInitialNotes(accountResponse.data.notes || '');
       
@@ -1594,8 +1538,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       // Track unsaved changes
       setHasUnsavedNotes(e.target.value !== initialNotes);
       
-      // Save to localStorage on every change for persistence
-      saveNotesToStorage(e.target.value);
+      // Notes are now saved to database on blur - no localStorage needed
       
       // Clear any previous error
       setNotesError(null);
@@ -1612,8 +1555,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       setInitialNotes(account.notes || '');
       setHasUnsavedNotes(false);
       
-      // Clear localStorage since notes are now saved to backend
-      clearNotesFromStorage();
+      // Notes are now saved to database only - no localStorage needed
       
       console.log('Notes saved successfully');
     } catch (err) {
