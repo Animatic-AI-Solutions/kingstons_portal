@@ -45,6 +45,14 @@ api.interceptors.request.use(
       config.url = `/api${config.url.startsWith('/') ? '' : '/'}${config.url}`;
     }
     
+    // Add logging for fund_valuations requests
+    if (config.url && config.url.includes('fund_valuations')) {
+      console.log('🔍 API REQUEST: Making request to', config.url);
+      console.log('🔍 API REQUEST: Method:', config.method);
+      console.log('🔍 API REQUEST: Data:', config.data);
+      console.log('🔍 API REQUEST: Headers:', config.headers);
+    }
+    
     return config;
   },
   (error) => {
@@ -61,9 +69,22 @@ api.interceptors.request.use(
  */
 api.interceptors.response.use(
   (response) => {
+    // Add logging for fund_valuations responses
+    if (response.config.url && response.config.url.includes('fund_valuations')) {
+      console.log('🔍 API RESPONSE: Success response from', response.config.url);
+      console.log('🔍 API RESPONSE: Status:', response.status);
+      console.log('🔍 API RESPONSE: Data:', response.data);
+    }
     return response;
   },
   (error) => {
+    // Add logging for fund_valuations errors
+    if (error.config?.url && error.config.url.includes('fund_valuations')) {
+      console.error('🔍 API ERROR: Error response from', error.config.url);
+      console.error('🔍 API ERROR: Status:', error.response?.status);
+      console.error('🔍 API ERROR: Data:', error.response?.data);
+      console.error('🔍 API ERROR: Full error:', error);
+    }
     return Promise.reject(error);
   }
 );
@@ -290,6 +311,8 @@ export const createFundValuation = (data: {
   valuation_date: string;
   valuation: number;
 }) => {
+  console.log('🔍 API: createFundValuation called with data:', data);
+  console.log('🔍 API: Making POST request to fund_valuations endpoint');
   return api.post('fund_valuations', data);
 };
 

@@ -22,7 +22,6 @@ async def get_funds(
 ):
     """Get all funds with optional search"""
     try:
-        logger.info("=== Starting get_funds ===")
         query = db.table("available_funds").select("*")
         
         if search:
@@ -37,40 +36,25 @@ async def get_funds(
         except Exception as e:
             logger.error(f"Failed to execute Supabase query: {str(e)}")
             raise HTTPException(status_code=500, detail="Database query failed")
-
-        # Log the response for debugging
-        logger.info("=== Supabase Response ===")
-        logger.info(f"Response type: {type(response)}")
-        logger.info(f"Has data attribute: {hasattr(response, 'data')}")
         
         if not hasattr(response, 'data'):
             logger.error("Response missing data attribute")
             raise HTTPException(status_code=500, detail="Invalid response format from database")
-            
-        logger.info(f"Response data: {response.data}")
-        logger.info(f"Response data type: {type(response.data)}")
 
         if not response.data:
-            logger.info("No funds found")
             return []
 
         if not isinstance(response.data, list):
             logger.error(f"Expected list but got {type(response.data)}")
             raise HTTPException(status_code=500, detail="Unexpected response format from database")
 
-        # Process each fund with detailed error handling
+        # Process each fund
         funds = []
         for idx, fund in enumerate(response.data):
             try:
-                logger.info(f"Processing fund {idx}: {fund}")
-                
                 # Validate required fields
-                if 'id' not in fund:
-                    logger.error(f"Fund {idx} missing id field")
-                    continue
-                    
-                if 'created_at' not in fund:
-                    logger.error(f"Fund {idx} missing created_at field")
+                if 'id' not in fund or 'created_at' not in fund:
+                    logger.error(f"Fund {idx} missing required fields")
                     continue
 
                 # Create model with explicit type conversion
@@ -84,22 +68,16 @@ async def get_funds(
                     status=fund.get('status', 'active')
                 )
                 funds.append(fund_model)
-                logger.info(f"Successfully processed fund {idx}")
                 
             except Exception as e:
-                        logger.error(f"Error processing fund {idx}")
-                        logger.error(f"Fund data: {fund}")
-                        logger.error(f"Error: {str(e)}")
-                        continue
+                logger.error(f"Error processing fund {idx}: {str(e)}")
+                continue
 
-        logger.info(f"Successfully processed {len(funds)} funds")
         return funds
 
     except Exception as e:
-        logger.error("=== Fatal Error ===")
-        logger.error(f"Type: {type(e)}")
-        logger.error(f"Message: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Failed to retrieve funds: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve funds")
 
 @router.get("/funds/{fund_id}", response_model=FundWithProvider)
 async def get_fund(
@@ -109,20 +87,13 @@ async def get_fund(
 ):
     """Get a specific fund"""
     try:
-        logger.info(f"Received request for fund_id: {fund_id}")
-        
         # Get base fund data
-        logger.info(f"Querying available_funds table for fund with ID {fund_id}")
         fund_result = db.table("available_funds").select("*").eq("id", fund_id).execute()
         
-        logger.info(f"Query result: {fund_result}")
-        
         if not fund_result.data:
-            logger.error(f"Fund with ID {fund_id} not found")
             raise HTTPException(status_code=404, detail=f"Fund with ID {fund_id} not found")
         
         fund_data = fund_result.data[0]
-        logger.info(f"Found fund data: {fund_data}")
         
         # Available funds in this context are never assigned providers
         # Only return the portfolio_id parameter which may be used for context
@@ -134,9 +105,7 @@ async def get_fund(
         raise
     except Exception as e:
         logger.error(f"Error fetching fund {fund_id}: {str(e)}")
-        logger.error(f"Exception type: {type(e)}")
-        logger.error(f"Exception details: {e.__dict__}")
-        raise HTTPException(status_code=500, detail=f"Failed to fetch fund: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch fund")
 
 @router.post("/funds", response_model=FundInDB)
 async def create_fund(fund: FundCreate, db: SupabaseClient = Depends(get_db)):

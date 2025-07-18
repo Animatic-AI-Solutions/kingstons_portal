@@ -60,7 +60,7 @@ from app.api.routes import (
     client_products, holding_activity_logs, product_holdings,
     product_owners, client_group_product_owners,
     provider_switch_log, search, portfolio_valuations, portfolio_irr_values,
-    historical_irr, presence
+    historical_irr, presence, transaction_coordinator
 )
 
 # Load environment variables from .env file
@@ -230,6 +230,7 @@ app.include_router(portfolio_valuations.router, prefix="/api", tags=["Holdings"]
 app.include_router(portfolio_irr_values.router, prefix="/api", tags=["Analytics"])
 app.include_router(historical_irr.router, prefix="/api/historical-irr", tags=["Analytics"])
 app.include_router(presence.router, prefix="/api", tags=["Presence"])
+app.include_router(transaction_coordinator.router, prefix="/api", tags=["Transactions"])
 
 # Background task for cleaning up stale presence records
 async def periodic_cleanup():

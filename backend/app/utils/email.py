@@ -35,18 +35,7 @@ async def send_password_reset_email(email: str, token: str) -> bool:
     reset_url = f"{frontend_url}/reset-password?token={token}"
     
     # Log the email info - in production, you'd send an actual email
-    logger.info(f"\n{'='*50}")
-    logger.info(f"SENDING PASSWORD RESET EMAIL")
-    logger.info(f"{'='*50}")
-    logger.info(f"To: {email}")
-    logger.info(f"Subject: Password Reset Request")
-    logger.info(f"Body:")
-    logger.info(f"Hello,")
-    logger.info(f"You have requested to reset your password.")
-    logger.info(f"Please click on the following link to reset your password:")
-    logger.info(f"{reset_url}")
-    logger.info(f"If you did not request this, please ignore this email.")
-    logger.info(f"{'='*50}\n")
+    logger.info(f"Password reset email would be sent to: {email}")
     
     # TODO: Implement actual email sending for production
     # Example with a service like SendGrid:

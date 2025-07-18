@@ -901,14 +901,15 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
 
   // Add function to calculate target risk from weighted average
   const calculateTargetRiskFromFunds = (product: ProductItem): number | null => {
-    if (product.portfolio.type !== 'bespoke') {
+    // Skip if no funds selected
+    if (product.portfolio.selectedFunds.length === 0) {
       return null;
     }
 
     let totalWeightedRisk = 0;
     let totalWeight = 0;
 
-    // Only calculate from funds that have actual weightings set (not null)
+    // Calculate risk for both bespoke and template portfolios
     for (const fundId of product.portfolio.selectedFunds) {
       const fund = funds.find(f => f.id === fundId);
       const weighting = product.portfolio.fundWeightings[fundId.toString()];
@@ -1562,11 +1563,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         // Now, create client product with reference to the portfolio
         if (portfolioId) {
           try {
-            // Calculate target risk for bespoke portfolios
+            // Calculate target risk for both bespoke and template portfolios
             let targetRisk = null;
-            if (product.portfolio.type === 'bespoke') {
-              targetRisk = calculateTargetRiskFromFunds(product);
-            }
+            targetRisk = calculateTargetRiskFromFunds(product);
             
             const clientProductResponse = await api.post('/api/client_products', {
               client_id: selectedClientId,

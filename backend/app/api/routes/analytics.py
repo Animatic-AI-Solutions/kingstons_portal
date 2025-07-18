@@ -39,8 +39,6 @@ async def get_fund_distribution(
     Expected output: A list of funds with their names and current market values
     """
     try:
-        logger.info(f"Fetching fund distribution data with limit: {limit}")
-        
         # Get all available funds
         funds_result = db.table("available_funds").select("id,fund_name").execute()
         
@@ -86,9 +84,6 @@ async def get_fund_distribution(
                     "valuation_source": "latest_valuation" if fund_has_valuations else "amount_invested"
                 })
         
-        # Log the data source breakdown for transparency
-        logger.info(f"Fund distribution calculation completed: {valuations_used} valuations used, {amount_invested_fallbacks} amount_invested fallbacks")
-        
         # Sort by amount (descending) and limit results
         fund_data.sort(key=lambda x: x["amount"], reverse=True)
         fund_data = fund_data[:limit]
@@ -114,8 +109,6 @@ async def get_provider_distribution(
     Expected output: A list of providers with their names and total current market value
     """
     try:
-        logger.info(f"Fetching provider distribution data with limit: {limit}")
-        
         # Get all providers
         providers_result = db.table("available_providers").select("id,name").execute()
         
@@ -166,8 +159,6 @@ async def get_provider_distribution(
                 })
         
         # Log the data source breakdown for transparency
-        logger.info(f"Provider distribution calculation completed: {valuations_used} valuations used, {amount_invested_fallbacks} amount_invested fallbacks")
-        
         # Sort by amount (descending) and limit results
         provider_data.sort(key=lambda x: x["amount"], reverse=True)
         provider_data = provider_data[:limit]
@@ -207,7 +198,6 @@ async def get_dashboard_stats(db = Depends(get_db)):
         if latest_valuations_result.data:
             total_from_valuations = sum(val["valuation"] or 0 for val in latest_valuations_result.data)
             stats["totalFUM"] = total_from_valuations
-            logger.info(f"Dashboard stats: Total FUM calculated from {len(latest_valuations_result.data)} latest valuations: {total_from_valuations}")
         
         # If no valuations exist, fallback to amount_invested
         if total_from_valuations == 0:
@@ -221,8 +211,6 @@ async def get_dashboard_stats(db = Depends(get_db)):
         active_holdings_result = db.table("portfolio_funds").select("id").eq("status", "active").execute()
         if active_holdings_result.data:
             stats["totalActiveHoldings"] = len(active_holdings_result.data)
-        
-        logger.info(f"Dashboard stats completed - FUM: {stats['totalFUM']}, IRR: {stats['companyIRR']}%, Clients: {stats['totalClients']}, Products: {stats['totalAccounts']}")
         
         return stats
     except Exception as e:
@@ -238,8 +226,6 @@ async def get_performance_data(
     db = Depends(get_db)
 ):
     try:
-        logger.info(f"Starting performance data fetch for date_range: {date_range}, entity_type: {entity_type}")
-        
         response = {
             "companyFUM": 0,
             "companyIRR": 0,
@@ -254,7 +240,6 @@ async def get_performance_data(
         latest_valuations_result = db.table("latest_portfolio_fund_valuations").select("valuation").execute()
         if latest_valuations_result.data:
             response["companyFUM"] = sum(val["valuation"] or 0 for val in latest_valuations_result.data)
-            logger.info(f"Performance data: Company FUM calculated from {len(latest_valuations_result.data)} latest valuations: {response['companyFUM']}")
         else:
             # Fallback to amount_invested if no valuations exist
             fum_result = db.table("portfolio_funds").select("amount_invested").execute()
@@ -566,7 +551,6 @@ async def get_performance_data(
             )
             response["performanceData"] = all_performers[:limit]
 
-        logger.info("Successfully completed performance data fetch")
         return response
         
     except Exception as e:
@@ -723,18 +707,14 @@ async def calculate_company_irr(client):
     This ensures consistency with individual fund IRR calculations and properly handles
     internal transfers (SwitchIn/SwitchOut) by aggregating them monthly.
     """
-    logger.info("Starting company IRR calculation using standardized multiple IRR endpoint...")
-    
     try:
         # Step 1: Get all portfolio fund IDs in a single query
-        logger.info("Fetching all portfolio fund IDs...")
         portfolio_funds_response = client.table('portfolio_funds') \
             .select('id') \
             .eq('status', 'active') \
             .execute()
         
         all_portfolio_fund_ids = [fund['id'] for fund in portfolio_funds_response.data]
-        logger.info(f"Found {len(all_portfolio_fund_ids)} active portfolio funds")
         
         if not all_portfolio_fund_ids:
             logger.warning("No active portfolio funds found")
@@ -751,7 +731,6 @@ async def calculate_company_irr(client):
                 self.irr_date = irr_date
         
         # Call the standardized multiple IRR calculation
-        logger.info("Calling standardized multiple IRR endpoint for company-wide calculation...")
         irr_result = await calculate_multiple_portfolio_funds_irr(
             portfolio_fund_ids=all_portfolio_fund_ids,
             irr_date=None,  # Use latest valuation date
@@ -760,9 +739,6 @@ async def calculate_company_irr(client):
         
         if irr_result and irr_result.get('success'):
             company_irr = irr_result.get('irr_percentage', 0.0)
-            logger.info(f"Company IRR calculated using standardized endpoint: {company_irr}%")
-            logger.info(f"Calculation details: {irr_result.get('cash_flows_count', 0)} cash flows, "
-                       f"period: {irr_result.get('period_start')} to {irr_result.get('period_end')}")
             return company_irr
         else:
             logger.warning("Standardized IRR calculation failed or returned unsuccessful result")
@@ -772,7 +748,6 @@ async def calculate_company_irr(client):
         logger.error(f"Error in calculate_company_irr using standardized endpoint: {e}")
         # Fallback to simple calculation if standardized endpoint fails
         try:
-            logger.info("Attempting fallback calculation...")
             
             # Get total current valuations
             latest_valuations_response = client.table('latest_portfolio_fund_valuations') \
@@ -792,8 +767,6 @@ async def calculate_company_irr(client):
             if total_invested > 0:
                 # Simple ROI calculation as fallback
                 simple_roi = ((total_current_value / total_invested) - 1) * 100
-                logger.info(f"Fallback simple ROI calculation: {simple_roi}% "
-                           f"(current value: {total_current_value}, invested: {total_invested})")
                 return simple_roi
             else:
                 logger.warning("No investment amount found for fallback calculation")
@@ -810,8 +783,6 @@ async def get_company_irr_endpoint(db = Depends(get_db)):
     This endpoint wraps the optimized calculate_company_irr function.
     """
     try:
-        logger.info("Calculating company-wide IRR via endpoint")
-        
         # Calculate the optimized IRR
         company_irr = await calculate_company_irr(db)
         
@@ -854,8 +825,6 @@ async def calculate_client_irr(client_id: int, db = Depends(get_db)):
     3. Using the standardized multiple funds IRR calculation to get the true aggregated IRR
     """
     try:
-        logger.info(f"Calculating standardized IRR for client {client_id}")
-        
         # Get all products for the client
         products_result = db.table("client_products").select("*").eq("client_id", client_id).execute()
         
@@ -878,14 +847,6 @@ async def calculate_client_irr(client_id: int, db = Depends(get_db)):
                 .eq("portfolio_id", product["portfolio_id"])\
                 .execute()
                 
-            # DEBUG: Log fund counts for client IRR
-            logger.info(f"🔍 DEBUG: analytics.py client IRR calculation:")
-            logger.info(f"🔍 DEBUG: Product portfolio ID: {product['portfolio_id']}")
-            logger.info(f"🔍 DEBUG: Funds found for this portfolio: {len(portfolio_funds_result.data) if portfolio_funds_result.data else 0}")
-            if portfolio_funds_result.data:
-                fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
-                logger.info(f"🔍 DEBUG: Fund IDs: {fund_ids}")
-                
             if portfolio_funds_result.data:
                 portfolio_fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
                 all_portfolio_fund_ids.extend(portfolio_fund_ids)
@@ -905,7 +866,6 @@ async def calculate_client_irr(client_id: int, db = Depends(get_db)):
             )
             
             client_irr = irr_result.get("irr_percentage", 0)
-            logger.info(f"Calculated standardized client IRR: {client_irr}% from {len(all_portfolio_fund_ids)} portfolio funds")
             
             return {
                 "client_id": client_id,
@@ -939,8 +899,6 @@ async def calculate_product_irr(product_id: int, db = Depends(get_db)):
     3. Using the standardized multiple funds IRR calculation to get the true product IRR
     """
     try:
-        logger.info(f"Calculating standardized IRR for product {product_id}")
-        
         # Get the product and its associated portfolio
         product_result = db.table("client_products")\
             .select("portfolio_id, start_date")\
@@ -966,13 +924,6 @@ async def calculate_product_irr(product_id: int, db = Depends(get_db)):
             .execute()
             
         # DEBUG: Log fund counts
-        logger.info(f"🔍 DEBUG: analytics.py product IRR calculation:")
-        logger.info(f"🔍 DEBUG: Portfolio ID: {portfolio_id}")
-        logger.info(f"🔍 DEBUG: Total funds found: {len(portfolio_funds_result.data) if portfolio_funds_result.data else 0}")
-        if portfolio_funds_result.data:
-            fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
-            logger.info(f"🔍 DEBUG: Fund IDs: {fund_ids}")
-        
         if not portfolio_funds_result.data:
             logger.info(f"No portfolio funds found for portfolio {portfolio_id}")
             return {
@@ -999,8 +950,6 @@ async def calculate_product_irr(product_id: int, db = Depends(get_db)):
             # Display '-' if IRR is exactly 0%
             if product_irr == 0:
                 product_irr = "-"
-            
-            logger.info(f"Calculated standardized product IRR: {product_irr}% from {len(portfolio_fund_ids)} portfolio funds")
             
             return {
                 "product_id": product_id,
@@ -1132,8 +1081,6 @@ async def calculate_portfolio_irr(portfolio_id: int, db = Depends(get_db)):
     3. Calculating weighted average IRR using amount_invested as weights
     """
     try:
-        logger.info(f"Calculating IRR for portfolio {portfolio_id}")
-        
         # Check if portfolio exists
         portfolio_check = db.table("portfolios").select("id").eq("id", portfolio_id).execute()
         if not portfolio_check.data:
@@ -1167,7 +1114,6 @@ async def calculate_portfolio_irr(portfolio_id: int, db = Depends(get_db)):
                     
                     all_irr_values.append(irr_value)
                     all_weights.append(weight)
-                    logger.info(f"Added fund {fund['id']} IRR: {irr_value}% with weight {weight}")
             except Exception as e:
                 logger.error(f"Error getting IRR for fund {fund['id']}: {str(e)}")
                 continue
@@ -1178,7 +1124,6 @@ async def calculate_portfolio_irr(portfolio_id: int, db = Depends(get_db)):
             if total_weight > 0:
                 weighted_irr = sum(irr * (weight / total_weight) 
                                 for irr, weight in zip(all_irr_values, all_weights))
-                logger.info(f"Calculated weighted portfolio IRR: {weighted_irr}% from {len(all_irr_values)} funds")
             else:
                 weighted_irr = 0
         else:
@@ -1212,8 +1157,6 @@ async def get_portfolio_template_distribution(
     Expected output: A list of portfolio template generations with their names and total current market value
     """
     try:
-        logger.info(f"Fetching portfolio template distribution data with limit: {limit}")
-        
         # Get all template portfolio generations
         generations_result = db.table("template_portfolio_generations").select("id,generation_name").execute()
         
@@ -1306,9 +1249,6 @@ async def get_portfolio_template_distribution(
         if bespoke_total == 0:
             template_data = template_data[1:]
         
-        # Log the data source breakdown for transparency
-        logger.info(f"Portfolio template distribution calculation completed: {valuations_used} valuations used, {amount_invested_fallbacks} amount_invested fallbacks")
-        
         # Sort by amount (descending) and limit results
         template_data.sort(key=lambda x: x["amount"], reverse=True)
         template_data = template_data[:limit]
@@ -1331,8 +1271,6 @@ async def get_dashboard_all_data(
     Eliminates N+1 query problem by fetching all data in bulk.
     """
     try:
-        logger.info("Fetching complete dashboard data with optimized bulk queries")
-        
         # 1. Get ALL latest valuations in one query (instead of N individual queries)
         all_valuations_result = db.table("latest_portfolio_fund_valuations")\
             .select("portfolio_fund_id, valuation, valuation_date")\
@@ -1481,9 +1419,6 @@ async def get_dashboard_all_data(
             }
         }
         
-        logger.info(f"Dashboard data fetched with 6 optimized queries instead of 50+. Total FUM: {final_fum}")
-        logger.info(f"Performance: {len(portfolio_funds_result.data) if portfolio_funds_result.data else 0} portfolio funds processed with {len(valuations_lookup)} valuations")
-        
         return response
         
     except Exception as e:
@@ -1502,8 +1437,6 @@ async def get_products_risk_differences(
     Actual risk: weighted average risk of portfolio_funds against their latest valuations
     """
     try:
-        logger.info("Fetching products with risk differences")
-        
         # Get all active client products with their portfolios
         products_result = db.table("client_products")\
             .select("id, product_name, client_id, portfolio_id")\
@@ -1612,7 +1545,6 @@ async def get_products_risk_differences(
         # Sort by risk difference (descending) and limit results
         risk_differences.sort(key=lambda x: x["risk_difference"], reverse=True)
         
-        logger.info(f"Found {len(risk_differences)} products with calculable risk differences")
         return risk_differences[:limit]
         
     except Exception as e:
@@ -1626,8 +1558,6 @@ async def get_company_revenue_analytics(db = Depends(get_db)):
     Returns total revenue, breakdown by type, and key metrics.
     """
     try:
-        logger.info("Fetching company revenue analytics from database view")
-        
         # Query the company_revenue_analytics view
         result = db.table("company_revenue_analytics").select("*").execute()
         
@@ -1657,8 +1587,6 @@ async def get_company_revenue_analytics(db = Depends(get_db)):
             "active_providers": int(revenue_data.get("active_providers", 0) or 0)
         }
         
-        logger.info(f"Company revenue analytics: Total annual revenue £{formatted_data['total_annual_revenue']:,.2f} from {formatted_data['revenue_generating_products']} products")
-        
         return [formatted_data]  # Return as array for frontend compatibility
         
     except Exception as e:
@@ -1676,8 +1604,6 @@ async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
     - complete: Has fees and all valuations available
     """
     try:
-        logger.info("Calculating client group revenue breakdown with 4-state logic")
-        
         # First get the total company revenue for percentage calculations
         company_revenue_result = db.table("company_revenue_analytics").select("total_annual_revenue").execute()
         total_company_revenue = float(company_revenue_result.data[0]["total_annual_revenue"]) if company_revenue_result.data else 0
@@ -1836,8 +1762,7 @@ async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
         # Sort by total revenue (descending)
         revenue_breakdown.sort(key=lambda x: x["total_revenue"], reverse=True)
         
-        logger.info(f"Generated revenue breakdown for {len(revenue_breakdown)} client groups with 4-state logic. Total company revenue: £{total_company_revenue:,.2f}")
-        
+
         return revenue_breakdown
         
     except Exception as e:
@@ -1871,8 +1796,7 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
     - total_client_groups: Total number of active client groups
     """
     try:
-        logger.info("Calculating revenue rate analytics with zero-fee products included in FUM")
-        
+
         # Get a hash of all revenue-relevant data to check if recalculation is needed
         # Get all active client products with revenue configuration
         products_for_hash = db.table("client_products")\
@@ -1896,10 +1820,7 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
         # Check if we can use cached result
         if (_revenue_cache["hash"] == current_hash and 
             _revenue_cache["data"] is not None):
-            logger.info(f"Using cached revenue rate analytics (hash: {current_hash[:8]}...)")
             return _revenue_cache["data"]
-        
-        logger.info(f"Revenue data changed, recalculating (new hash: {current_hash[:8]}...)")
         
         # Get all active client groups
         client_groups_result = db.table("client_groups").select("id, name, status").eq("status", "active").execute()
@@ -2046,11 +1967,7 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
                 total_revenue += client_revenue
                 total_fum += client_total_fum
                 
-                # Debug logging
-                logger.info(f"INCLUDED Client Group '{client_name}': £{client_revenue:,.2f} revenue from {len(products_with_positive_fees)} revenue products, £{client_total_fum:,.2f} total FUM from {len(products_with_fee_setup)} products with fee setup")
-            else:
-                # Debug logging for excluded groups
-                logger.info(f"EXCLUDED Client Group '{client_name}': {len(products_with_positive_fees)} revenue products, but missing valuations for percentage fee products")
+
         
         # Calculate revenue rate percentage
         revenue_rate_percentage = 0
@@ -2065,9 +1982,7 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
             "total_client_groups": total_client_groups
         }
         
-        logger.info(f"Revenue rate analytics: {len(complete_client_groups)}/{total_client_groups} complete client groups, "
-                   f"Rate: {revenue_rate_percentage:.2f}% (£{total_revenue:,.2f} / £{total_fum:,.2f}) - includes zero-fee products in FUM")
-        
+
         # Cache the result
         _revenue_cache["data"] = result
         _revenue_cache["hash"] = current_hash
