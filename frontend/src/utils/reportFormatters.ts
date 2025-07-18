@@ -52,7 +52,7 @@ export const formatCurrencyWithZeroToggle = (
 
 // IRR formatter with consistent 1 decimal place display
 export const formatIrrWithPrecision = (irr: number | null | undefined): string => {
-  if (irr === null || irr === undefined) return '-';
+  if (irr === null || irr === undefined || isNaN(irr)) return '-';
   
   // Always format to 1 decimal place for consistency
   return `${irr.toFixed(1)}%`;
