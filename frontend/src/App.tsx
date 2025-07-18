@@ -33,6 +33,7 @@ import ProductOwnerDetails from './pages/ProductOwnerDetails';
 import Funds from './pages/Funds';
 import Providers from './pages/Providers';
 import PortfolioTemplates from './pages/PortfolioTemplates';
+import PortfolioTemplatesWithTabs from './pages/PortfolioTemplatesWithTabs';
 import ProviderDetails from './pages/ProviderDetails';
 import FundDetails from './pages/FundDetails';
 import PortfolioDetails from './pages/PortfolioDetails';
@@ -104,7 +105,7 @@ const AppContent: React.FC = () => {
           {/* Separate definition pages */}
           <Route path="/definitions/funds" element={<AppLayout><Funds /></AppLayout>} />
           <Route path="/definitions/providers" element={<AppLayout><Providers /></AppLayout>} />
-          <Route path="/definitions/portfolio-templates" element={<AppLayout><PortfolioTemplates /></AppLayout>} />
+          <Route path="/definitions/portfolio-templates" element={<AppLayout><PortfolioTemplatesWithTabs /></AppLayout>} />
           
           {/* Legacy unified definitions page (redirect to funds by default) */}
           <Route path="/definitions" element={<Navigate to="/definitions/funds" replace />} />
@@ -122,6 +123,10 @@ const AppContent: React.FC = () => {
           <Route path="/definitions/templates/add" element={<AppLayout><AddPortfolioTemplate /></AppLayout>} />
           <Route path="/add-generation/:portfolioId" element={<AppLayout><AddPortfolioGeneration /></AppLayout>} />
           <Route path="/edit-generation/:portfolioId/:generationId" element={<AppLayout><EditPortfolioGeneration /></AppLayout>} />
+          
+          {/* Add individual routes for generations */}
+          <Route path="/definitions/portfolio-generations/:generationId" element={<AppLayout><div>Generation Details Component</div></AppLayout>} />
+          <Route path="/definitions/portfolio-generations/add" element={<AppLayout><div>Add Generation Component</div></AppLayout>} />
           
           {/* Client Account Management - Creating accounts for specific client groups */}
           <Route path="/client-group-products/:clientId" element={<AppLayout><CreateClientProducts /></AppLayout>} />
