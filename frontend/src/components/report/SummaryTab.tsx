@@ -172,7 +172,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                 <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600"></div>
                 <div className="text-xs text-purple-600">Calculating...</div>
               </div>
-            ) : realTimeTotalIRR !== null && realTimeTotalIRR !== undefined ? (
+            ) : realTimeTotalIRR !== null && realTimeTotalIRR !== undefined && !isNaN(realTimeTotalIRR) ? (
               <div className="text-2xl font-bold text-black">
                 {formatIrrWithPrecision(realTimeTotalIRR)}
               </div>
@@ -452,7 +452,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                     })()}
                   </td>
                   <td className="px-2 py-2 text-xs font-bold text-right bg-purple-100 text-black">
-                    {realTimeTotalIRR !== null && realTimeTotalIRR !== undefined ? (
+                    {realTimeTotalIRR !== null && realTimeTotalIRR !== undefined && !isNaN(realTimeTotalIRR) ? (
                       formatIrrWithPrecision(realTimeTotalIRR)
                     ) : (
                       'N/A'
@@ -745,7 +745,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                               {(() => {
                                 const productIrr = portfolioIrrValues.get(product.id);
                                 if (productIrr !== null && productIrr !== undefined) {
-                                  return `${productIrr.toFixed(1)}%`;
+                                  return formatIrrWithPrecision(productIrr);
                                 }
                                 return 'N/A';
                               })()}

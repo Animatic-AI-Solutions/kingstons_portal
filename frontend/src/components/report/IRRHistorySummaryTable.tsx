@@ -384,7 +384,7 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
                     scope="col" 
                     className="px-2 py-2 text-center text-[10px] font-semibold text-gray-700 uppercase tracking-wide"
                   >
-                    Current Risk
+                    Current "Risk" 1-7 scale, (7 High)
                   </th>
                   
                   {/* Date Columns */}

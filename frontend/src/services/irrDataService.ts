@@ -55,7 +55,8 @@ export class IRRDataService {
         irrDate: response.data?.irr_date
       });
       
-      const irrResult = response.data?.irr_result || null;
+      // Fix: Properly handle zero values - only convert undefined/null to null
+      const irrResult = response.data?.irr_result !== undefined ? response.data.irr_result : null;
       console.log(`🔍 [IRR DEBUG] Extracted IRR result: ${irrResult} (type: ${typeof irrResult})`);
       
       return irrResult;
@@ -104,8 +105,15 @@ export class IRRDataService {
       
       console.log('🔄 [IRR DEBUG] Raw API response from calculateStandardizedMultipleFundsIRR:', response.data);
       
-      // The API response structure might be different, let's check both possible fields
-      const irrResult = response.data.irr_percentage || response.data.irr_result || response.data.irr || null;
+      // Fix: Properly handle zero values - check each field without treating 0 as falsy
+      let irrResult = null;
+      if (response.data.irr_percentage !== undefined) {
+        irrResult = response.data.irr_percentage;
+      } else if (response.data.irr_result !== undefined) {
+        irrResult = response.data.irr_result;
+      } else if (response.data.irr !== undefined) {
+        irrResult = response.data.irr;
+      }
       
       console.log('🔄 [IRR DEBUG] Extracted IRR result:', irrResult);
       
