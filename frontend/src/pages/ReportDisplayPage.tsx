@@ -37,8 +37,7 @@ const ReportDisplayPage: React.FC = () => {
   // IRR calculation service
   const {
     fetchPortfolioIrrValues,
-    processHistoricalIRRData,
-    calculateRealTimeTotalIRR
+    processHistoricalIRRData
   } = useIRRCalculationService(api);
 
   // Flag to track if data has been initialized
@@ -59,6 +58,7 @@ const ReportDisplayPage: React.FC = () => {
       }
 
       const data = location.state.reportData as ReportData;
+      const clientGroupIds = location.state.clientGroupIds as (string | number)[];
       console.log('🔍 [REPORT DISPLAY DEBUG] Received report data with', data.productSummaries?.length, 'products');
       
       setReportData(data);
@@ -81,10 +81,52 @@ const ReportDisplayPage: React.FC = () => {
             sample: historicalIrrData[0]
           });
           
-          // Calculate real-time total IRR
-          const totalIrrResult = await calculateRealTimeTotalIRR(data);
-          if (totalIrrResult.success && totalIrrResult.irr !== null) {
-            setRealTimeTotalIRR(totalIrrResult.irr);
+          // Calculate real-time total IRR using all activities from all products selected
+          try {
+            // Extract all portfolio fund IDs from all selected products
+            const allPortfolioFundIds: number[] = [];
+            data.productSummaries.forEach(product => {
+              if (product.funds) {
+                product.funds.forEach(fund => {
+                  // Filter out virtual funds and ensure valid ID (same logic as ReportGenerator)
+                  if (!fund.isVirtual && fund.id > 0) {
+                    allPortfolioFundIds.push(fund.id);
+                  }
+                });
+              }
+            });
+            
+            console.log(`🎯 [REPORT DISPLAY] Calculating real-time total IRR for ${allPortfolioFundIds.length} portfolio funds:`, allPortfolioFundIds);
+            
+            if (allPortfolioFundIds.length > 0) {
+              // Get the end date from report data (use latest valuation date)
+              let endDate: string | undefined = undefined;
+              if (data.selectedValuationDate) {
+                // Convert YYYY-MM format to YYYY-MM-DD (last day of month)
+                const [year, month] = data.selectedValuationDate.split('-').map(part => parseInt(part));
+                const lastDayOfMonth = new Date(year, month, 0).getDate();
+                endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+              }
+              
+              console.log(`🎯 [REPORT DISPLAY] Using end date for real-time IRR: ${endDate}`);
+              
+              // Calculate real-time total IRR using all portfolio fund IDs
+              const totalIRRData = await irrDataService.getOptimizedIRRData({
+                portfolioFundIds: allPortfolioFundIds,
+                endDate: endDate,
+                includeHistorical: false
+              });
+              
+              console.log('🎯 [REPORT DISPLAY] Real-time total IRR response:', totalIRRData);
+              setRealTimeTotalIRR(totalIRRData.portfolioIRR);
+              console.log(`🎯 [REPORT DISPLAY] Set real-time total IRR: ${totalIRRData.portfolioIRR}%`);
+            } else {
+              console.warn('❌ No portfolio fund IDs found for total IRR calculation');
+              setRealTimeTotalIRR(null);
+            }
+          } catch (irrError) {
+            console.error('❌ Error calculating real-time total IRR:', irrError);
+            setRealTimeTotalIRR(null);
           }
         } catch (error) {
           console.error('❌ Error loading IRR data:', error);
