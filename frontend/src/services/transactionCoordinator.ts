@@ -85,28 +85,52 @@ export class TransactionCoordinator {
       }
 
       // PHASE 3: Trigger IRR recalculation for affected portfolio funds
+      console.log('🔄 Phase 3: Triggering IRR recalculation...');
+      
+      // Group activities by fund and month to trigger recalculation
+      const fundRecalculationMap = new Map<number, string[]>();
+      
+      // Process activities
       if (activities.length > 0) {
-        console.log('🔄 Phase 3: Triggering IRR recalculation for activity changes...');
-        
-        // Group activities by fund and month to trigger recalculation
-        const fundActivityMap = new Map<number, string[]>();
+        console.log('🔄 Phase 3a: Processing activity-based IRR recalculation...');
         
         activities.forEach(activity => {
           if (!activity.toDelete) { // Only for non-deleted activities
             const fundId = activity.fundId;
             const activityDate = `${activity.month}-01`;
             
-            if (!fundActivityMap.has(fundId)) {
-              fundActivityMap.set(fundId, []);
+            if (!fundRecalculationMap.has(fundId)) {
+              fundRecalculationMap.set(fundId, []);
             }
-            fundActivityMap.get(fundId)!.push(activityDate);
+            fundRecalculationMap.get(fundId)!.push(activityDate);
           }
         });
+      }
+      
+      // Process valuations - NEW: Also trigger IRR recalculation for valuation changes
+      if (valuations.length > 0) {
+        console.log('🔄 Phase 3b: Processing valuation-based IRR recalculation...');
+        
+        valuations.forEach(valuation => {
+          if (!valuation.toDelete) { // Only for non-deleted valuations
+            const fundId = valuation.fundId;
+            const valuationDate = `${valuation.month}-01`;
+            
+            if (!fundRecalculationMap.has(fundId)) {
+              fundRecalculationMap.set(fundId, []);
+            }
+            fundRecalculationMap.get(fundId)!.push(valuationDate);
+            
+            console.log(`📊 Valuation change detected for fund ${fundId} on ${valuationDate} - will trigger IRR recalculation`);
+          }
+        });
+      }
 
-        // Trigger recalculation for each affected fund
-        for (const [fundId, dates] of fundActivityMap) {
+      // Trigger recalculation for each affected fund (both activities and valuations)
+      if (fundRecalculationMap.size > 0) {
+        for (const [fundId, dates] of fundRecalculationMap) {
           try {
-            // Get the earliest activity date for this fund to trigger recalculation
+            // Get the earliest date for this fund to trigger recalculation
             const earliestDate = dates.sort()[0];
             
             console.log(`🔄 Triggering IRR recalculation for fund ${fundId} from date ${earliestDate}`);
@@ -129,7 +153,9 @@ export class TransactionCoordinator {
           }
         }
         
-        console.log(`✅ Phase 3 Complete: ${result.recalculatedIRRs} IRR values recalculated`);
+        console.log(`✅ Phase 3 Complete: ${result.recalculatedIRRs} IRR values recalculated across ${fundRecalculationMap.size} funds`);
+      } else {
+        console.log('✅ Phase 3 Complete: No IRR recalculation needed (no non-deleted activities or valuations)');
       }
 
       console.log('🎉 Transaction Coordinator: All saves completed successfully');

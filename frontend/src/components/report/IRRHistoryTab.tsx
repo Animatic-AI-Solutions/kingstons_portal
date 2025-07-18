@@ -47,7 +47,7 @@ import api from '../../services/api';
 
 // Local function to format fund IRRs with consistent 1 decimal place display
 const formatFundIrr = (irr: number | null | undefined): string => {
-  if (irr === null || irr === undefined) return '-';
+  if (irr === null || irr === undefined || isNaN(irr)) return '-';
   
   // Always format to 1 decimal place for consistency
   return `${irr.toFixed(1)}%`;
@@ -55,6 +55,7 @@ const formatFundIrr = (irr: number | null | undefined): string => {
 
 // Helper function for chart tick formatting (1 decimal place, consistent)
 const formatChartTick = (value: number): string => {
+  if (isNaN(value)) return '0.0%';
   return `${value.toFixed(1)}%`;
 };
 
@@ -311,7 +312,12 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
         
         if (productHistory?.portfolio_historical_irr) {
           const record = productHistory.portfolio_historical_irr.find((r: any) => r.irr_date === date);
-          dataPoint[productKey] = record ? parseFloat(record.irr_result) : null;
+          if (record && record.irr_result !== null && record.irr_result !== undefined) {
+            const irrValue = parseFloat(record.irr_result);
+            dataPoint[productKey] = !isNaN(irrValue) ? irrValue : null;
+          } else {
+            dataPoint[productKey] = null;
+          }
         }
       });
 
@@ -508,7 +514,12 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
         
         if (productHistory?.portfolio_historical_irr) {
           const record = productHistory.portfolio_historical_irr.find((r: any) => r.irr_date === date);
-                          row.push(record ? formatIrrWithPrecision(parseFloat(record.irr_result)) : 'N/A');
+          if (record && record.irr_result !== null && record.irr_result !== undefined) {
+            const irrValue = parseFloat(record.irr_result);
+            row.push(!isNaN(irrValue) ? formatIrrWithPrecision(irrValue) : 'N/A');
+          } else {
+            row.push('N/A');
+          }
         } else {
           row.push('N/A');
         }
@@ -1806,7 +1817,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                 dateType: typeof r.irr_date,
                                 irr: r.irr_result,
                                 irrType: typeof r.irr_result,
-                                irrParsed: parseFloat(r.irr_result),
+                                irrParsed: !isNaN(parseFloat(r.irr_result)) ? parseFloat(r.irr_result) : null,
                                 originalRecord: r
                               })),
                               uniqueRawIrrValues: [...new Set(productHistory.portfolio_historical_irr.map((r: any) => r.irr_result))],
@@ -1821,7 +1832,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                 }
                                 acc[normalizedDate] = {
                                   rawIrr: record.irr_result,
-                                  parsedIrr: parseFloat(record.irr_result),
+                                  parsedIrr: !isNaN(parseFloat(record.irr_result)) ? parseFloat(record.irr_result) : null,
                                   rawDate: record.irr_date
                                 };
                                 return acc;
@@ -1829,7 +1840,10 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                             });
                             
                             // 🚨 CRITICAL DEBUG: Check if all IRR values are actually the same
-                            const allIrrValues = productHistory.portfolio_historical_irr.map((r: any) => parseFloat(r.irr_result));
+                            const allIrrValues = productHistory.portfolio_historical_irr.map((r: any) => {
+                              const parsed = parseFloat(r.irr_result);
+                              return !isNaN(parsed) ? parsed : null;
+                            }).filter(v => v !== null);
                             const uniqueIrrValues = [...new Set(allIrrValues)];
                             if (uniqueIrrValues.length === 1) {
                               console.warn(`🚨 [DATA QUALITY WARNING] Product ${productHistory.product_id} has IDENTICAL IRR values for ALL dates:`, {
@@ -1870,8 +1884,10 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                               // ONLY include if this date is in the normalized selected dates
                               if (normalizedSelectedDates.includes(normalizedDbDate)) {
                                 const irrValue = parseFloat(record.irr_result);
-                                // Store using the normalized date for consistency
-                                productHistoricalIrrMap.set(normalizedDbDate, irrValue);
+                                // Store using the normalized date for consistency, but only if not NaN
+                                if (!isNaN(irrValue)) {
+                                  productHistoricalIrrMap.set(normalizedDbDate, irrValue);
+                                }
                               }
                             });
                             
