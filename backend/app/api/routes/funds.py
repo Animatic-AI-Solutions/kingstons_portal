@@ -36,7 +36,7 @@ async def get_funds(
         except Exception as e:
             logger.error(f"Failed to execute Supabase query: {str(e)}")
             raise HTTPException(status_code=500, detail="Database query failed")
-
+        
         if not hasattr(response, 'data'):
             logger.error("Response missing data attribute")
             raise HTTPException(status_code=500, detail="Invalid response format from database")

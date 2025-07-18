@@ -535,85 +535,68 @@ async def get_holding_activity_logs(
 
 @router.post("/holding_activity_logs", response_model=HoldingActivityLog)
 async def create_holding_activity_log(
-    holding_activity_log: HoldingActivityLogCreate, 
-    db = Depends(get_db)
+    log: HoldingActivityLogCreate,
+    db = Depends(get_db),
+    skip_irr_calculation: bool = False  # New parameter to skip IRR when part of transaction
 ):
     """
-    Creates a new holding activity log in the database.
-    Simple version that just stores the activity without complex processing.
-    Automatically determines product_id from portfolio_fund_id.
+    Create a new holding activity log entry.
+    
+    Args:
+        log: The activity log data to create
+        db: Database connection
+        skip_irr_calculation: If True, skips IRR calculation (used in transactions)
     """
     try:
-        # Get the data dictionary from the model
-        log_data = holding_activity_log.model_dump()
+        # Convert log data to dict and prepare for insertion
+        log_data = {
+            "portfolio_fund_id": log.portfolio_fund_id,
+            "product_id": log.product_id,
+            "activity_type": log.activity_type,
+            "activity_timestamp": log.activity_timestamp.isoformat(),
+            "amount": float(log.amount) if log.amount is not None else None,
+        }
         
-        logger.info(f"Creating activity log with data: {log_data}")
-        
-        # Automatically determine product_id from portfolio_fund_id
-        portfolio_fund_id = log_data.get('portfolio_fund_id')
-        if portfolio_fund_id and not log_data.get('product_id'):
-            # Get the portfolio_id from the portfolio_fund
-            portfolio_fund_result = db.table("portfolio_funds") \
-                .select("portfolio_id") \
-                .eq("id", portfolio_fund_id) \
-                .execute()
-            
-            if portfolio_fund_result.data and len(portfolio_fund_result.data) > 0:
-                portfolio_id = portfolio_fund_result.data[0]["portfolio_id"]
-                
-                # Find the client_product (the "product") that uses this portfolio
-                product_result = db.table("client_products") \
-                    .select("id") \
-                    .eq("portfolio_id", portfolio_id) \
-                .execute()
-                
-                if product_result.data and len(product_result.data) > 0:
-                    product_id = product_result.data[0]["id"]
-                    log_data['product_id'] = product_id
-                    logger.info(f"Automatically determined product_id: {product_id} for portfolio_fund_id: {portfolio_fund_id}")
-                else:
-                    logger.warning(f"No client_product found for portfolio_id: {portfolio_id}")
-                    raise HTTPException(status_code=400, detail=f"No product found for portfolio_fund_id: {portfolio_fund_id}")
-            else:
-                logger.error(f"Portfolio fund not found with id: {portfolio_fund_id}")
-                raise HTTPException(status_code=400, detail=f"Portfolio fund not found with id: {portfolio_fund_id}")
-        
-        # Handle date serialization
-        if "activity_timestamp" in log_data and isinstance(log_data["activity_timestamp"], date):
-            log_data["activity_timestamp"] = log_data["activity_timestamp"].isoformat()
-        
-        # Handle amount conversion
-        if 'amount' in log_data and log_data['amount'] is not None:
-            if isinstance(log_data['amount'], Decimal):
-                log_data['amount'] = float(log_data['amount'])
+        logger.info(f"🔍 ACTIVITY CREATE: Prepared log_data: {log_data}")
         
         # Insert the new activity log
         result = db.table("holding_activity_log").insert(log_data).execute()
         
         if not result.data:
-            raise HTTPException(status_code=400, detail="Failed to create holding activity log")
+            raise HTTPException(status_code=500, detail="Failed to create holding activity log")
         
         created_activity = result.data[0]
+        portfolio_fund_id = created_activity['portfolio_fund_id']
+        
+        logger.info(f"Created new holding activity log for portfolio fund {portfolio_fund_id}")
         
         # ========================================================================
-        # NEW: Automatically recalculate IRR after creating activity
+        # NEW: Conditional IRR recalculation for transaction coordination
         # ========================================================================
-        try:
-            # Extract the activity date for sophisticated recalculation
-            activity_date = log_data.get("activity_timestamp", "").split('T')[0]
-            
-            irr_recalc_result = await recalculate_irr_after_activity_change(portfolio_fund_id, db, activity_date)
-        except Exception as e:
-            # Don't fail the activity creation if IRR recalculation fails
-            logger.error(f"IRR recalculation failed after activity creation: {str(e)}")
-            import traceback
-            logger.error(f"Traceback: {traceback.format_exc()}")
+        if skip_irr_calculation:
+            logger.info(f"⏭️ TRANSACTION COORDINATOR: Skipping IRR calculation for activity on fund {portfolio_fund_id} (will be calculated after valuation)")
+        else:
+            logger.info(f"🔄 STANDALONE: Calculating IRR for activity on fund {portfolio_fund_id} (not part of transaction)")
+            try:
+                # Extract the activity date for sophisticated recalculation
+                activity_date = log_data.get("activity_timestamp", "").split('T')[0]
+                
+                irr_recalc_result = await recalculate_irr_after_activity_change(portfolio_fund_id, db, activity_date)
+            except Exception as e:
+                # Don't fail the activity creation if IRR recalculation fails
+                logger.error(f"IRR recalculation failed after activity creation: {str(e)}")
+                import traceback
+                logger.error(f"Traceback: {traceback.format_exc()}")
         # ========================================================================
         
         return created_activity
         
     except Exception as e:
         logger.error(f"Error creating holding activity log: {str(e)}")
+        logger.error(f"Error type: {type(e)}")
+        logger.error(f"Error details: {repr(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.get("/holding_activity_logs/{holding_activity_log_id}", response_model=HoldingActivityLog)

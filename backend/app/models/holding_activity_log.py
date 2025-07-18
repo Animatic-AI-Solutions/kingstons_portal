@@ -6,10 +6,10 @@ from decimal import Decimal
 class HoldingActivityLogBase(BaseModel):
     """Base model for holding activity logs with simplified structure."""
     portfolio_fund_id: int
+    product_id: int
     activity_timestamp: date
     activity_type: str
     amount: Optional[Decimal] = None
-    product_id: Optional[int] = None
     
     @field_validator('activity_timestamp', mode='before')
     @classmethod
@@ -37,10 +37,10 @@ class HoldingActivityLogCreate(HoldingActivityLogBase):
 class HoldingActivityLogUpdate(BaseModel):
     """Model for updating existing activity logs."""
     portfolio_fund_id: Optional[int] = None
+    product_id: Optional[int] = None
     activity_timestamp: Optional[date] = None
     activity_type: Optional[str] = None
     amount: Optional[Decimal] = None
-    product_id: Optional[int] = None
     
     @field_validator('activity_timestamp', mode='before')
     @classmethod

@@ -2233,6 +2233,12 @@ async def calculate_multiple_portfolio_funds_irr(
         amounts = [cash_flows[month] for month in sorted_months]
         dates = [month.strftime("%Y-%m-%dT00:00:00") for month in sorted_months]
         
+        # DEBUG: Log the actual data being passed to IRR calculation
+        logger.info(f"💰 DEBUG: About to call calculate_excel_style_irr with:")
+        logger.info(f"💰 DEBUG: Dates: {dates}")
+        logger.info(f"💰 DEBUG: Amounts: {amounts}")
+        logger.info(f"💰 DEBUG: First amount: {amounts[0]}, Last amount: {amounts[-1]}")
+        
         # Calculate IRR using Excel-style method
         irr_result = calculate_excel_style_irr(dates, amounts)
         
@@ -2529,10 +2535,120 @@ async def calculate_single_portfolio_fund_irr(
                 "note": "No cash flows after processing (zero valuation) - IRR set to 0%"
             }
         
+        # SPECIAL CASE: Handle single-month scenario with both activities and valuations
+        if len(cash_flows) == 1 and len(activities) > 0 and valuation_amount > 0:
+            logger.info(f"💰 DEBUG: Single month scenario detected with activities and valuation - separating cash flows for IRR calculation")
+            
+            # Get the single month
+            single_month = list(cash_flows.keys())[0]
+            
+            # Create separate cash flows: activities at start of month, valuation at end of month
+            separated_cash_flows = {}
+            
+            # Calculate the total activity amount (excluding valuation)
+            # We need to reconstruct the activity amounts from the original activities
+            total_activity_amount = 0.0
+            logger.info(f"💰 DEBUG: Processing {len(activities)} activities for separation")
+            
+            for activity in activities:
+                activity_timestamp = activity['activity_timestamp']
+                logger.info(f"💰 DEBUG: Processing activity: {activity}")
+                
+                # Parse the activity timestamp (handle both date-only and datetime formats)
+                if 'T' in activity_timestamp:
+                    # Full datetime format
+                    activity_date = datetime.strptime(activity_timestamp, '%Y-%m-%dT%H:%M:%S')
+                else:
+                    # Date-only format
+                    activity_date = datetime.strptime(activity_timestamp, '%Y-%m-%d')
+                
+                activity_month = activity_date.replace(day=1)
+                logger.info(f"💰 DEBUG: Activity month: {activity_month}, Single month: {single_month}")
+                
+                # Only include activities from the same month
+                # Convert both to date objects for comparison
+                activity_month_date = activity_month.date()
+                single_month_date = single_month.date() if hasattr(single_month, 'date') else single_month
+                logger.info(f"💰 DEBUG: Comparing dates - Activity: {activity_month_date}, Single: {single_month_date}")
+                
+                if activity_month_date == single_month_date:
+                    amount = float(activity['amount'])
+                    activity_type = activity['activity_type'].lower()
+                    logger.info(f"💰 DEBUG: Activity matches month - Amount: £{amount}, Type: {activity_type}")
+                    
+                    # Apply the same logic as in the main loop to determine cash flow direction
+                    if any(keyword in activity_type for keyword in ["investment"]):
+                        total_activity_amount -= amount  # Negative for investments
+                        logger.info(f"💰 DEBUG: Applied as INVESTMENT (negative): -£{amount}")
+                    elif activity_type in ["taxuplift", "taxuplift_tax"]:
+                        total_activity_amount -= amount  # Tax uplift = negative (inflow)
+                        logger.info(f"💰 DEBUG: Applied as TAX UPLIFT (negative): -£{amount}")
+                    elif activity_type in ["productswitchin"]:
+                        total_activity_amount -= amount  # Product switch in = negative (money out)
+                        logger.info(f"💰 DEBUG: Applied as PRODUCT SWITCH IN (negative): -£{amount}")
+                    elif activity_type in ["fundswitchin"]:
+                        total_activity_amount -= amount  # Fund switch in = negative (money coming into fund)
+                        logger.info(f"💰 DEBUG: Applied as FUND SWITCH IN (negative): -£{amount}")
+                    elif any(keyword in activity_type for keyword in ["withdrawal"]):
+                        total_activity_amount += amount  # Positive for withdrawals
+                        logger.info(f"💰 DEBUG: Applied as WITHDRAWAL (positive): +£{amount}")
+                    elif activity_type in ["productswitchout"]:
+                        total_activity_amount += amount  # Product switch out = positive (money in)
+                        logger.info(f"💰 DEBUG: Applied as PRODUCT SWITCH OUT (positive): +£{amount}")
+                    elif activity_type in ["fundswitchout"]:
+                        total_activity_amount += amount  # Fund switch out = positive (money leaving fund)
+                        logger.info(f"💰 DEBUG: Applied as FUND SWITCH OUT (positive): +£{amount}")
+                    elif any(keyword in activity_type for keyword in ["fee", "charge", "expense"]):
+                        total_activity_amount += amount  # Positive for fees (money out)
+                        logger.info(f"💰 DEBUG: Applied as FEE (positive): +£{amount}")
+                    elif any(keyword in activity_type for keyword in ["dividend", "interest", "capital gain"]):
+                        total_activity_amount -= amount  # Negative for reinvested gains
+                        logger.info(f"💰 DEBUG: Applied as DIVIDEND/GAIN (negative): -£{amount}")
+                    else:
+                        logger.warning(f"💰 DEBUG: Unknown activity type: {activity_type}, not applied")
+                else:
+                    logger.info(f"💰 DEBUG: Activity month {activity_month} doesn't match single month {single_month}")
+            
+            logger.info(f"💰 DEBUG: Total activity amount after processing: £{total_activity_amount}")
+            
+            # Add activities at the start of the month (1st day) - these are the investments
+            if total_activity_amount != 0:
+                activity_date = single_month.replace(day=1)
+                separated_cash_flows[activity_date] = total_activity_amount
+                logger.info(f"💰 DEBUG: Separated activities: £{total_activity_amount} on {activity_date}")
+            else:
+                logger.warning(f"💰 DEBUG: No activities to separate (total_activity_amount = 0)")
+            
+            # Add valuation at the end of the month - but in the NEXT month to avoid aggregation
+            # This represents one month of growth from the activities to the valuation
+            if single_month.month == 12:
+                # Handle December -> January transition
+                valuation_date = single_month.replace(year=single_month.year + 1, month=1, day=1)
+            else:
+                # Normal month transition
+                valuation_date = single_month.replace(month=single_month.month + 1, day=1)
+            
+            separated_cash_flows[valuation_date] = valuation_amount
+            logger.info(f"💰 DEBUG: Separated valuation: £{valuation_amount} on {valuation_date}")
+            
+            # Use the separated cash flows for IRR calculation
+            cash_flows = separated_cash_flows
+            logger.info(f"💰 DEBUG: Using separated cash flows for IRR calculation: {len(cash_flows)} flows")
+            
+            # Debug: Print the separated cash flows
+            for date, amount in sorted(cash_flows.items()):
+                logger.info(f"💰 DEBUG: Final separated cash flow - {date}: £{amount}")
+        
         # Convert to sorted lists for IRR calculation
         sorted_months = sorted(cash_flows.keys())
         amounts = [cash_flows[month] for month in sorted_months]
         dates = [month.strftime("%Y-%m-%dT00:00:00") for month in sorted_months]
+        
+        # DEBUG: Log the actual data being passed to IRR calculation
+        logger.info(f"💰 DEBUG: About to call calculate_excel_style_irr with:")
+        logger.info(f"💰 DEBUG: Dates: {dates}")
+        logger.info(f"💰 DEBUG: Amounts: {amounts}")
+        logger.info(f"💰 DEBUG: First amount: {amounts[0]}, Last amount: {amounts[-1]}")
         
         # Calculate IRR using Excel-style method
         irr_result = calculate_excel_style_irr(dates, amounts)
@@ -2806,3 +2922,50 @@ async def invalidate_irr_cache_for_funds(
     except Exception as e:
         logger.error(f"Error invalidating IRR cache for funds {fund_ids}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to invalidate cache: {str(e)}")
+
+
+@router.post("/portfolio_funds/{portfolio_fund_id}/recalculate-irr", response_model=dict)
+async def recalculate_irr_after_activity(
+    portfolio_fund_id: int,
+    request: dict,
+    db = Depends(get_db)
+):
+    """
+    Recalculate IRR values after activity changes.
+    
+    This endpoint is used when activities are saved to recalculate existing IRR values 
+    that should include the new activity data. It only recalculates IRR values on or 
+    after the specified activity date.
+    
+    Args:
+        portfolio_fund_id: The portfolio fund ID
+        request: Request body containing activity_date (YYYY-MM-DD format)
+        
+    Returns:
+        dict: Result of the recalculation operation
+    """
+    try:
+        activity_date = request.get("activity_date")
+        
+        logger.info(f"Recalculating IRR after activity change for portfolio_fund_id: {portfolio_fund_id}, activity_date: {activity_date}")
+        
+        # Import the recalculation function from holding_activity_logs
+        from app.api.routes.holding_activity_logs import recalculate_irr_after_activity_change
+        
+        # Call the recalculation function
+        result = await recalculate_irr_after_activity_change(
+            portfolio_fund_id=portfolio_fund_id,
+            db=db,
+            activity_date=activity_date
+        )
+        
+        return {
+            "success": True,
+            "portfolio_fund_id": portfolio_fund_id,
+            "activity_date": activity_date,
+            "recalculation_result": result
+        }
+        
+    except Exception as e:
+        logger.error(f"Error recalculating IRR after activity change for fund {portfolio_fund_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to recalculate IRR: {str(e)}")
