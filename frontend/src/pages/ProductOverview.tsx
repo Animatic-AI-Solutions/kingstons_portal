@@ -1045,19 +1045,19 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       const activePortfolioFund = holdings.find(h => h.fund_id === fundId && h.status === 'active');
       
       if (activePortfolioFund) {
-        // Active fund: soft delete by setting status to inactive and end_date to current date
-        // This immediately excludes it from weighting calculations since getTotalWeighting only counts active funds
-        await api.patch(`/portfolio_funds/${activePortfolioFund.id}`, {
-          status: 'inactive',
-          end_date: new Date().toISOString().split('T')[0] // Current date in YYYY-MM-DD format
-        });
+        // Confirm deletion with user since this is permanent
+        if (!window.confirm('Are you sure you want to permanently remove this fund from the portfolio? This action cannot be undone and will remove all historical data for this fund.')) {
+          setIsSavingFunds(false);
+          return;
+        }
         
-        // Immediately update local state to reflect the change and update weighting calculations
+        // Active fund: permanently delete it (changed from soft delete to permanent delete)
+        await api.delete(`/portfolio_funds/${activePortfolioFund.id}`);
+        
+        // Immediately update local state to completely remove the fund
         setHoldings(prevHoldings => 
-          prevHoldings.map(holding => 
-            holding.fund_id === fundId && holding.status === 'active' 
-              ? { ...holding, status: 'inactive', end_date: new Date().toISOString().split('T')[0] }
-              : holding
+          prevHoldings.filter(holding => 
+            !(holding.fund_id === fundId && holding.status === 'active')
           )
         );
       } else {
@@ -2709,7 +2709,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                               variant="delete"
                               size="icon"
                               onClick={() => handleRemoveFund(holding.fund_id || 0)}
-                              title="Remove fund"
+                              title="Permanently remove fund from portfolio"
                             />
                           </td>
                         )}
@@ -2856,7 +2856,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                                     variant="delete"
                                     size="icon"
                                     onClick={() => handleRemoveFund(holding.fund_id || 0)}
-                                    title="Remove inactive fund"
+                                    title="Permanently delete inactive fund and all historical data"
                                   />
                                 </td>
                               )}
