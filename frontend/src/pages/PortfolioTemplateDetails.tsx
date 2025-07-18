@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePortfolioTemplateDetails } from '../hooks/usePortfolioTemplates';
 import StandardTable, { ColumnConfig } from '../components/StandardTable';
@@ -80,7 +80,11 @@ const PortfolioTemplateDetails: React.FC = () => {
   const { portfolioId } = useParams<{ portfolioId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { api } = useAuth();
+  
+  // Get generation ID from URL parameters
+  const generationIdFromUrl = searchParams.get('generation');
   
   // Use optimized custom hook for data fetching
   const { 
@@ -195,12 +199,88 @@ const PortfolioTemplateDetails: React.FC = () => {
     }
   }, [selectedGeneration]);
 
+  // Function to check if any products are using any generation of this template
+  const checkForProductsUsingTemplate = useCallback(async () => {
+    if (generations.length === 0) return;
+    
+    setIsCheckingProducts(true);
+    try {
+      let totalProductsCount = 0;
+      const counts: Record<number, number> = {};
+      
+      // Check each generation for products
+      for (const generation of generations) {
+        try {
+          const response = await api.get('/portfolios', {
+            params: {
+              template_generation_id: generation.id,
+              count_only: true
+            }
+          });
+          
+          const count = response.data?.count || 0;
+          counts[generation.id] = count;
+          totalProductsCount += count;
+          
+          if (count > 0) {
+            console.log(`Found ${count} portfolios using generation ${generation.generation_name || generation.id}`);
+          }
+        } catch (err) {
+          console.warn(`Failed to check products for generation ${generation.id}:`, err);
+          counts[generation.id] = 0;
+        }
+      }
+      
+      setGenerationProductCounts(counts);
+      setHasProductsUsingTemplate(totalProductsCount > 0);
+      console.log(`Total portfolios using this template: ${totalProductsCount}`);
+    } catch (err) {
+      console.error('Error checking for products using template:', err);
+      // On error, assume there might be products to be safe
+      setHasProductsUsingTemplate(true);
+    } finally {
+      setIsCheckingProducts(false);
+    }
+  }, [generations, api]);
+
   // When generations are loaded, check if any products are using them
   useEffect(() => {
     if (generations.length > 0) {
       checkForProductsUsingTemplate();
     }
-  }, [generations]);
+  }, [generations, checkForProductsUsingTemplate]);
+
+  // Auto-select generation from URL parameter or default to first active generation
+  useEffect(() => {
+    if (generations.length > 0) {
+      let generationToSelect = null;
+      
+      // If there's a generation ID in the URL, try to find and select it
+      if (generationIdFromUrl) {
+        console.log('🔗 Generation ID from URL:', generationIdFromUrl);
+        const generationFromUrl = generations.find(g => g.id === parseInt(generationIdFromUrl));
+        if (generationFromUrl) {
+          console.log('✅ Found generation from URL:', generationFromUrl.generation_name);
+          generationToSelect = generationFromUrl;
+        } else {
+          console.log('❌ Generation from URL not found in available generations');
+        }
+      }
+      
+      // If no generation from URL or not found, select the first active generation
+      if (!generationToSelect) {
+        const activeGeneration = generations.find(g => g.status === 'active');
+        generationToSelect = activeGeneration || generations[0];
+        console.log('🎯 Auto-selected generation:', generationToSelect?.generation_name);
+      }
+      
+      // Only set if different from current selection
+      if (generationToSelect && (!selectedGeneration || selectedGeneration.id !== generationToSelect.id)) {
+        console.log('🔄 Setting selected generation:', generationToSelect.generation_name);
+        setSelectedGeneration(generationToSelect);
+      }
+    }
+  }, [generations, generationIdFromUrl, selectedGeneration]);
 
 
 
@@ -249,7 +329,14 @@ const PortfolioTemplateDetails: React.FC = () => {
   }, [portfolioId, refreshAllData]);
 
   const handleBack = () => {
-    navigate('/definitions/portfolio-templates');
+    // Check if we came from the generations page
+    if (generationIdFromUrl) {
+      // If we have a generation ID in the URL, we likely came from the generations page
+      navigate('/definitions/portfolio-templates');
+    } else {
+      // Otherwise go back to the regular templates page
+      navigate('/definitions/portfolio-templates');
+    }
   };
 
   const handleDeleteClick = () => {
@@ -349,7 +436,15 @@ const PortfolioTemplateDetails: React.FC = () => {
   }, [template]);
 
   const handleGenerationSelect = (generation: Generation) => {
+    console.log('🎯 User selected generation:', generation.generation_name);
     setSelectedGeneration(generation);
+    
+    // Update URL parameters to reflect the selected generation
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set('generation', generation.id.toString());
+    const newUrl = `${location.pathname}?${newSearchParams.toString()}`;
+    console.log('🔄 Updating URL to:', newUrl);
+    navigate(newUrl, { replace: true });
   };
 
   const handleActivateGeneration = async (generationId: number) => {
@@ -496,50 +591,6 @@ const PortfolioTemplateDetails: React.FC = () => {
       case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'low': return 'bg-green-100 text-green-800 border-green-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  // Function to check if any products are using any generation of this template
-  const checkForProductsUsingTemplate = async () => {
-    if (generations.length === 0) return;
-    
-    setIsCheckingProducts(true);
-    try {
-      let totalProductsCount = 0;
-      const counts: Record<number, number> = {};
-      
-      // Check each generation for products
-      for (const generation of generations) {
-        try {
-          const response = await api.get('/portfolios', {
-            params: {
-              template_generation_id: generation.id,
-              count_only: true
-            }
-          });
-          
-          const count = response.data?.count || 0;
-          counts[generation.id] = count;
-          totalProductsCount += count;
-          
-          if (count > 0) {
-            console.log(`Found ${count} portfolios using generation ${generation.generation_name || generation.id}`);
-          }
-        } catch (err) {
-          console.warn(`Failed to check products for generation ${generation.id}:`, err);
-          counts[generation.id] = 0;
-        }
-      }
-      
-      setGenerationProductCounts(counts);
-      setHasProductsUsingTemplate(totalProductsCount > 0);
-      console.log(`Total portfolios using this template: ${totalProductsCount}`);
-    } catch (err) {
-      console.error('Error checking for products using template:', err);
-      // On error, assume there might be products to be safe
-      setHasProductsUsingTemplate(true);
-    } finally {
-      setIsCheckingProducts(false);
     }
   };
 

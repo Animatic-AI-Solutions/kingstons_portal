@@ -1197,13 +1197,13 @@ async def get_available_portfolio_funds_by_generation(
 
 @router.get("/template-portfolio-generations/active", response_model=List[dict])
 async def get_active_template_portfolio_generations(db = Depends(get_db)):
-    """Get all template portfolio generations that are not inactive"""
+    """Get all template portfolio generations that are not inactive with product counts"""
     try:
-        logger.info("Fetching active template portfolio generations")
+        logger.info("Fetching active template portfolio generations with product counts")
         
         # Get all template portfolio generations that are not inactive
         response = db.table('template_portfolio_generations')\
-            .select('id, generation_name, available_portfolio_id, status')\
+            .select('id, generation_name, available_portfolio_id, status, created_at, description')\
             .neq('status', 'inactive')\
             .order('generation_name')\
             .execute()
@@ -1213,10 +1213,35 @@ async def get_active_template_portfolio_generations(db = Depends(get_db)):
             return []
         
         logger.info(f"Found {len(response.data)} active template portfolio generations")
-        return response.data
+        
+        # Get product counts for each generation
+        product_counts = {}
+        for generation in response.data:
+            generation_id = generation["id"]
+            try:
+                # Count products using the products_list_view where effective_template_generation_id matches
+                count_result = db.table("products_list_view")\
+                    .select("product_id")\
+                    .eq("effective_template_generation_id", generation_id)\
+                    .execute()
+                product_counts[generation_id] = len(count_result.data) if count_result.data else 0
+                logger.debug(f"Generation {generation_id} ({generation.get('generation_name', 'Unknown')}): {product_counts[generation_id]} products")
+            except Exception as count_err:
+                logger.error(f"Error counting products for generation {generation_id}: {str(count_err)}")
+                product_counts[generation_id] = 0
+        
+        # Add product counts to each generation
+        enhanced_generations = []
+        for generation in response.data:
+            generation_with_count = generation.copy()
+            generation_with_count["product_count"] = product_counts.get(generation["id"], 0)
+            enhanced_generations.append(generation_with_count)
+        
+        logger.info(f"Successfully calculated product counts for {len(enhanced_generations)} generations")
+        return enhanced_generations
         
     except Exception as e:
-        logger.error(f"Error fetching active template portfolio generations: {str(e)}")
+        logger.error(f"Error fetching active template portfolio generations with product counts: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/batch/generation-with-funds/{generation_id}", response_model=dict)

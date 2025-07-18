@@ -5,19 +5,27 @@ import { TableSkeleton } from '../components/ui/feedback/TableSkeleton';
 import { EmptyState } from '../components/ui/feedback/EmptyState';
 import { ErrorDisplay } from '../components/ui/feedback/ErrorDisplay';
 import { AddButton, SearchInput } from '../components/ui';
-import { usePortfolioTemplates } from '../hooks/usePortfolioTemplates';
-import { 
-  Portfolio, 
-  calculateAverageRisk,
-  getRiskRange 
-} from '../utils/definitionsShared';
+import { usePortfolioGenerations } from '../hooks/usePortfolioGenerations';
 import StandardTable, { ColumnConfig } from '../components/StandardTable';
 
-interface PortfolioTemplatesProps {
+// Define the Generation interface
+interface Generation {
+  id: number;
+  name: string;
+  template_id: number;
+  template_name: string;
+  created_date: string;
+  status: string;
+  product_count: number;
+  created_by?: string;
+  description?: string;
+}
+
+interface PortfolioGenerationsProps {
   tabMode?: boolean;
 }
 
-const PortfolioTemplates: React.FC<PortfolioTemplatesProps> = ({ tabMode = false }) => {
+const PortfolioGenerations: React.FC<PortfolioGenerationsProps> = ({ tabMode = false }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   
@@ -26,77 +34,71 @@ const PortfolioTemplates: React.FC<PortfolioTemplatesProps> = ({ tabMode = false
 
   // Data fetching using optimized custom hook
   const { 
-    portfolios, 
-    loading: portfoliosLoading, 
-    error: portfoliosError,
+    generations, 
+    loading: generationsLoading, 
+    error: generationsError,
     isRefetching
-  } = usePortfolioTemplates();
-
-
+  } = usePortfolioGenerations();
 
   // Event handlers
-  const handleItemClick = useCallback((portfolio: Portfolio) => {
-    navigate(`/definitions/portfolio-templates/${portfolio.id}`);
+  const handleItemClick = useCallback((generation: Generation) => {
+    // Navigate to the template details page with generation ID as parameter
+    navigate(`/definitions/portfolio-templates/${generation.template_id}?generation=${generation.id}`);
   }, [navigate]);
 
   const handleAddNew = useCallback(() => {
-    navigate('/definitions/portfolio-templates/add');
+    navigate('/definitions/portfolio-generations/add');
   }, [navigate]);
 
-
-
   // Apply search filtering only - StandardTable will handle column filtering and sorting
-  const searchFilteredPortfolios = useMemo(() => {
-    console.log('Processing portfolios data:', portfolios.length, 'portfolios');
-    console.log('Sample portfolio:', portfolios[0]);
+  const searchFilteredGenerations = useMemo(() => {
+    console.log('Processing generations data:', generations.length, 'generations');
+    console.log('Sample generation:', generations[0]);
     
-    let filtered = portfolios;
+    let filtered = generations;
     
     // Apply text search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(portfolio => 
-        portfolio.name?.toLowerCase().includes(query)
+      filtered = filtered.filter(generation => 
+        generation.name?.toLowerCase().includes(query) ||
+        generation.template_name?.toLowerCase().includes(query) ||
+        generation.description?.toLowerCase().includes(query)
       );
     }
     
-    // Apply status filter - only show active templates
-    const portfoliosWithStatus = portfolios.filter(p => 'status' in p && p.status);
-    if (portfoliosWithStatus.length > 0) {
-      filtered = filtered.filter(portfolio => portfolio.status === 'active');
+    // Apply status filter - only show active generations
+    const generationsWithStatus = generations.filter(g => 'status' in g && g.status);
+    if (generationsWithStatus.length > 0) {
+      filtered = filtered.filter(generation => generation.status === 'active');
     }
     
-    console.log('Filtered portfolios:', filtered.length);
+    console.log('Filtered generations:', filtered.length);
     
-    // Add computed values for StandardTable
-    return filtered.map(portfolio => ({
-      ...portfolio,
-      weighted_risk_value: calculateAverageRisk(portfolio),
-      risk_range: getRiskRange(portfolio)
-    }));
-  }, [portfolios, searchQuery]);
+    return filtered;
+  }, [generations, searchQuery]);
 
   // Column configuration for StandardTable
   const columns: ColumnConfig[] = [
     {
       key: 'name',
-      label: 'Name',
+      label: 'Generation Name',
       dataType: 'text',
       alignment: 'left',
       control: 'sort'
     },
     {
-      key: 'weighted_risk_value',
-      label: 'Weighted Risk',
-      dataType: 'risk',
+      key: 'template_name',
+      label: 'Source Template',
+      dataType: 'text',
       alignment: 'left',
       control: 'sort'
     },
     {
-      key: 'portfolioCount',
-      label: 'Portfolio Count',
+      key: 'product_count',
+      label: 'Products Using',
       dataType: 'number',
-      alignment: 'left',
+      alignment: 'right',
       control: 'sort',
       format: (value) => (value || 0).toString()
     }
@@ -109,10 +111,10 @@ const PortfolioTemplates: React.FC<PortfolioTemplatesProps> = ({ tabMode = false
       {/* Header - only show when not in tab mode */}
       {!tabMode && (
         <div className="flex justify-between items-center mb-3">
-          <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Portfolio Templates</h1>
+          <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Portfolio Generations</h1>
           <div className="flex items-center gap-4">
             <AddButton 
-              context="Template"
+              context="Generation"
               design="balanced"
               size="md"
               onClick={handleAddNew}
@@ -124,10 +126,10 @@ const PortfolioTemplates: React.FC<PortfolioTemplatesProps> = ({ tabMode = false
       {/* Header when in tab mode */}
       {tabMode && (
         <div className="flex justify-between items-center mb-3">
-          <h2 className="text-xl font-semibold text-gray-900">Portfolio Templates</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Portfolio Generations</h2>
           <div className="flex items-center gap-4">
             <AddButton 
-              context="Template"
+              context="Generation"
               design="balanced"
               size="md"
               onClick={handleAddNew}
@@ -141,25 +143,25 @@ const PortfolioTemplates: React.FC<PortfolioTemplatesProps> = ({ tabMode = false
         <SearchInput
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search portfolio templates..."
+          placeholder="Search portfolio generations..."
           size="md"
           className="flex-1"
         />
       </div>
 
-      {/* Portfolio Templates Table */}
+      {/* Portfolio Generations Table */}
       <div className="bg-white shadow rounded-lg overflow-hidden">
-        {portfoliosLoading ? (
+        {generationsLoading ? (
           <div className="p-6">
             <TableSkeleton columns={3} />
           </div>
-        ) : portfoliosError ? (
+        ) : generationsError ? (
           <div className="p-6">
-            <ErrorDisplay message={portfoliosError} />
+            <ErrorDisplay message={generationsError} />
           </div>
-        ) : searchFilteredPortfolios.length === 0 ? (
+        ) : searchFilteredGenerations.length === 0 ? (
           <div className="p-6">
-            <EmptyState message="No portfolio templates found" />
+            <EmptyState message="No portfolio generations found" />
           </div>
         ) : (
           <div className="relative">
@@ -168,12 +170,12 @@ const PortfolioTemplates: React.FC<PortfolioTemplatesProps> = ({ tabMode = false
                 <div className="h-full bg-primary-500 animate-pulse"></div>
               </div>
             )}
-          <StandardTable
-            data={searchFilteredPortfolios}
-            columns={columns}
-            className="cursor-pointer"
-            onRowClick={handleItemClick}
-          />
+            <StandardTable
+              data={searchFilteredGenerations}
+              columns={columns}
+              className="cursor-pointer"
+              onRowClick={handleItemClick}
+            />
           </div>
         )}
       </div>
@@ -187,4 +189,4 @@ const PortfolioTemplates: React.FC<PortfolioTemplatesProps> = ({ tabMode = false
   );
 };
 
-export default PortfolioTemplates; 
+export default PortfolioGenerations; 
