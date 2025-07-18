@@ -106,11 +106,10 @@ const AddFundModal: React.FC<AddFundModalProps> = ({
     }
   };
 
-  const handleRiskFactorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value);
+  const handleRiskFactorChange = (value: number | null) => {
     setFormData(prev => ({
       ...prev,
-      risk_factor: isNaN(value) ? null : value
+      risk_factor: value
     }));
     
     // Clear field error when user starts typing
@@ -122,11 +121,10 @@ const AddFundModal: React.FC<AddFundModalProps> = ({
     }
   };
 
-  const handleFundCostChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value);
+  const handleFundCostChange = (value: number | null) => {
     setFormData(prev => ({
       ...prev,
-      fund_cost: isNaN(value) ? null : value
+      fund_cost: value
     }));
     
     // Clear field error when user starts typing

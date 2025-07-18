@@ -1865,12 +1865,12 @@ const RevenueAssignmentModal: React.FC<{
     }).format(amount);
   };
 
-  const handleInputChange = (productId: number, field: 'fixed_cost' | 'percentage_fee', value: string) => {
+  const handleInputChange = (productId: number, field: 'fixed_cost' | 'percentage_fee', value: number | null) => {
     setFormData(prev => ({
       ...prev,
       [productId]: {
         ...prev[productId],
-        [field]: value
+        [field]: value !== null ? value.toString() : ''
       }
     }));
   };
@@ -2086,8 +2086,8 @@ const RevenueAssignmentModal: React.FC<{
                      </td>
                      <td className="px-4 py-2 whitespace-nowrap text-right">
                        <NumberInput
-                         value={parseFloat(productData.fixed_cost) || 0}
-                         onChange={(value) => handleInputChange(account.id, 'fixed_cost', String(value))}
+                         value={productData.fixed_cost}
+                         onChange={(value) => handleInputChange(account.id, 'fixed_cost', value)}
                          placeholder="0.00"
                          min={0}
                          decimalPlaces={2}
@@ -2099,8 +2099,8 @@ const RevenueAssignmentModal: React.FC<{
                      </td>
                      <td className="px-4 py-2 whitespace-nowrap text-right">
                        <NumberInput
-                         value={parseFloat(productData.percentage_fee) || 0}
-                         onChange={(value) => handleInputChange(account.id, 'percentage_fee', String(value))}
+                         value={productData.percentage_fee}
+                         onChange={(value) => handleInputChange(account.id, 'percentage_fee', value)}
                          placeholder="0.00"
                          min={0}
                          decimalPlaces={2}

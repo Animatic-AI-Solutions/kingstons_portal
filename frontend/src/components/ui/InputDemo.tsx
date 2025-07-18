@@ -18,7 +18,8 @@ const InputDemo: React.FC = () => {
     fundValue: 0,
     riskScore: 0,
     description: '',
-    portfolio: ''
+    portfolio: '',
+    expectedReturn: 0
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -135,7 +136,7 @@ const InputDemo: React.FC = () => {
                 format="currency"
                 currency="£"
                 value={formData.fundValue}
-                onChange={(e) => handleInputChange('fundValue', parseFloat(e.target.value) || 0)}
+                onChange={(value) => handleInputChange('fundValue', value || 0)}
                 error={errors.fundValue}
                 required
                 min={0}
@@ -146,7 +147,7 @@ const InputDemo: React.FC = () => {
               <NumberInput
                 label="Risk Score"
                 value={formData.riskScore}
-                onChange={(e) => handleInputChange('riskScore', parseFloat(e.target.value) || 0)}
+                onChange={(value) => handleInputChange('riskScore', value || 0)}
                 error={errors.riskScore}
                 required
                 min={1}
@@ -159,11 +160,15 @@ const InputDemo: React.FC = () => {
               <NumberInput
                 label="Expected Return"
                 format="percentage"
-                value={7.5}
-                decimalPlaces={1}
-                suffix="%"
-                disabled
-                helperText="Based on historical performance"
+                value={formData.expectedReturn}
+                onChange={(value) => handleInputChange('expectedReturn', value || 0)}
+                error={errors.expectedReturn}
+                required
+                min={0}
+                max={100}
+                step={0.01}
+                decimalPlaces={2}
+                helperText="Expected annual return as a percentage"
               />
             </div>
           </div>

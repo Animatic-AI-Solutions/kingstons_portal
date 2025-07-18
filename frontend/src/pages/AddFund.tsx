@@ -68,19 +68,17 @@ const AddFund: React.FC = () => {
   };
 
   // New handlers for NumberInput components
-  const handleRiskFactorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value);
+  const handleRiskFactorChange = (value: number | null) => {
     setFormData(prev => ({
       ...prev,
-      risk_factor: isNaN(value) ? null : value
+      risk_factor: value
     }));
   };
 
-  const handleFundCostChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value);
+  const handleFundCostChange = (value: number | null) => {
     setFormData(prev => ({
       ...prev,
-      fund_cost: isNaN(value) ? null : value
+      fund_cost: value
     }));
   };
 

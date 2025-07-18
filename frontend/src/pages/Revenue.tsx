@@ -29,7 +29,7 @@ interface ClientRevenueData {
   revenue_percentage_of_total: number;
   product_count: number;
   products_with_revenue: number;
-  revenue_status: 'complete' | 'no_setup' | 'needs_valuation';
+  revenue_status: 'complete' | 'no_setup' | 'needs_valuation' | 'zero_fee_setup';
 }
 
 // Loading Components - Consistent with other pages
@@ -301,6 +301,8 @@ const Revenue: React.FC = () => {
         return { color: 'bg-green-500', tooltip: 'Revenue fully calculated' };
       case 'needs_valuation':
         return { color: 'bg-amber-500', tooltip: 'Needs latest valuation to complete revenue calculation' };
+      case 'zero_fee_setup':
+        return { color: 'bg-blue-500', tooltip: 'Zero fees deliberately set - included in FUM, no revenue' };
       case 'no_setup':
         return { color: 'bg-red-500', tooltip: 'No fee set up' };
       default:
@@ -371,7 +373,7 @@ const Revenue: React.FC = () => {
             <div className="flex justify-between items-center mb-3">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Client Revenue Breakdown</h2>
-                {/* Compact Revenue Status Legend */}
+                {/* Updated Revenue Status Legend with 4 states */}
                 <div className="flex items-center space-x-3 mt-1">
                   <div className="flex items-center space-x-1">
                     <div className="w-2 h-2 rounded-full bg-green-500"></div>
@@ -380,6 +382,10 @@ const Revenue: React.FC = () => {
                   <div className="flex items-center space-x-1">
                     <div className="w-2 h-2 rounded-full bg-amber-500"></div>
                     <span className="text-xs text-gray-600">Needs Valuation</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    <span className="text-xs text-gray-600">Zero Fee Setup</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <div className="w-2 h-2 rounded-full bg-red-500"></div>
@@ -465,11 +471,12 @@ const Revenue: React.FC = () => {
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap">
                           <div className="text-sm font-semibold text-green-600">
-                            {formatCurrency(client.total_revenue)}
+                            {client.revenue_status === 'no_setup' ? '-' : formatCurrency(client.total_revenue)}
                           </div>
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                          {client.total_fum > 0 ? formatPercentage((client.total_revenue / client.total_fum) * 100) : '0.0%'}
+                          {client.revenue_status === 'no_setup' ? '-' : 
+                           client.total_fum > 0 ? formatPercentage((client.total_revenue / client.total_fum) * 100) : '0.0%'}
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap text-xs text-gray-500">
                           {client.product_count} ({client.products_with_revenue} rev)

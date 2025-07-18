@@ -67,8 +67,13 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   
   // Reset focused index when filtered options change
   useEffect(() => {
-    setFocusedIndex(-1);
-  }, [searchTerm]);
+    // Auto-focus the first option when there are filtered results and no option is currently focused
+    if (filteredOptions.length > 0 && searchTerm.length > 0) {
+      setFocusedIndex(0);
+    } else {
+      setFocusedIndex(-1);
+    }
+  }, [searchTerm, filteredOptions.length]);
 
   // Close dropdown when clicking outside - improved reliability
   useEffect(() => {
@@ -143,6 +148,15 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     } else if (key === 'Enter') {
       if (focusedIndex >= 0 && focusedIndex < filteredOptions.length) {
         handleSelect(filteredOptions[focusedIndex].value);
+      }
+    } else if (key === 'Backspace') {
+      if (searchTerm) {
+        // Remove characters from search term if we're searching
+        setSearchTerm(prev => prev.slice(0, -1));
+      } else if (selectedOption && onChange) {
+        // Clear the selected option if there's one selected and no search term
+        onChange('');
+        setIsOpen(true); // Keep dropdown open so user can start typing again
       }
     }
   };
@@ -311,8 +325,13 @@ export const MultiSelectSearchableDropdown: React.FC<MultiSelectSearchableDropdo
 
   // Reset focused index when filtered options change
   useEffect(() => {
-    setFocusedIndex(-1);
-  }, [searchTerm]);
+    // Auto-focus the first option when there are filtered results and no option is currently focused
+    if (filteredOptions.length > 0 && searchTerm.length > 0) {
+      setFocusedIndex(0);
+    } else {
+      setFocusedIndex(-1);
+    }
+  }, [searchTerm, filteredOptions.length]);
 
   // Close dropdown when clicking outside - improved reliability
   useEffect(() => {
@@ -391,6 +410,17 @@ export const MultiSelectSearchableDropdown: React.FC<MultiSelectSearchableDropdo
     } else if (key === "Enter") {
       if (focusedIndex >= 0 && focusedIndex < filteredOptions.length) {
         handleSelect(filteredOptions[focusedIndex].value);
+      }
+    } else if (key === "Backspace") {
+      if (searchTerm) {
+        // Remove characters from search term if we're searching
+        setSearchTerm(prev => prev.slice(0, -1));
+      } else if (values.length > 0 && onChange) {
+        // Remove the last selected item if there's no search term but there are selected values
+        const newValues = [...values];
+        newValues.pop(); // Remove last item
+        onChange(newValues);
+        setIsOpen(true); // Keep dropdown open so user can continue
       }
     }
   };
