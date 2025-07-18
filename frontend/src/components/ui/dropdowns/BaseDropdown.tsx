@@ -95,8 +95,13 @@ const BaseDropdown = React.forwardRef<HTMLButtonElement, BaseDropdownProps>(({
   
   // Reset focused index when filtered options change
   useEffect(() => {
-    setFocusedIndex(-1);
-  }, [searchTerm]);
+    // Auto-focus the first option when there are filtered results and user has typed something
+    if (filteredOptions.length > 0 && searchTerm.length > 0) {
+      setFocusedIndex(0);
+    } else {
+      setFocusedIndex(-1);
+    }
+  }, [searchTerm, filteredOptions.length]);
   
   // Scroll focused option into view
   useEffect(() => {
@@ -173,9 +178,14 @@ const BaseDropdown = React.forwardRef<HTMLButtonElement, BaseDropdownProps>(({
         setFocusedIndex(-1);
         break;
       case 'Backspace':
+        e.preventDefault();
         if (searchable && searchTerm) {
-          e.preventDefault();
+          // Remove characters from search term if we're searching
           setSearchTerm(prev => prev.slice(0, -1));
+        } else if (selectedOption && onChange) {
+          // Clear the selected option if there's one selected and no search term
+          onChange('');
+          setIsOpen(true); // Keep dropdown open so user can start typing again
         }
         break;
       default:
