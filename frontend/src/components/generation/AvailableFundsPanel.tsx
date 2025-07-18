@@ -97,7 +97,7 @@ const AvailableFundsPanel: React.FC<AvailableFundsPanelProps> = ({
       </div>
       
       {/* Available Funds List */}
-      <div className="h-96 sm:h-[500px] lg:h-[600px] overflow-y-auto border rounded bg-gray-50 p-1.5">
+      <div className="h-[500px] sm:h-[600px] lg:h-[700px] xl:h-[800px] overflow-y-auto border rounded bg-gray-50 p-1.5">
         {isLoading ? (
           <div className="h-full flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>

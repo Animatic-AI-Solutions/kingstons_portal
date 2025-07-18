@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { findCashFund, isCashFund } from '../utils/fundUtils';
 import { DateInput } from '../components/ui';
+import FundSelectionManager from '../components/generation/FundSelectionManager';
 
 interface Fund {
   id: number;
@@ -61,7 +62,7 @@ const EditPortfolioGeneration: React.FC = () => {
   const [isLoadingFunds, setIsLoadingFunds] = useState(false);
   const [isLoadingPortfolio, setIsLoadingPortfolio] = useState(true);
   const [isLoadingGeneration, setIsLoadingGeneration] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [fundSearchTerm, setFundSearchTerm] = useState('');
 
   useEffect(() => {
     if (portfolioId && generationId) {
@@ -191,6 +192,11 @@ const EditPortfolioGeneration: React.FC = () => {
       return;
     }
     
+    // Clear errors when user makes changes
+    if (error) {
+      setError(null);
+    }
+    
     setSelectedFunds(prev => {
       if (prev.includes(fundId)) {
         const newSelected = prev.filter(id => id !== fundId);
@@ -211,6 +217,11 @@ const EditPortfolioGeneration: React.FC = () => {
   };
 
   const handleWeightingChange = (fundId: number, weighting: string) => {
+    // Clear errors when user makes changes
+    if (error) {
+      setError(null);
+    }
+    
     // Allow empty string for clearing the field
     if (weighting === '') {
       setFundWeightings(prev => ({
@@ -246,6 +257,23 @@ const EditPortfolioGeneration: React.FC = () => {
       ...prev,
       [fundId.toString()]: cleanedValue
     }));
+  };
+
+  const handleClearAllFunds = () => {
+    // Clear errors when user makes changes
+    if (error) {
+      setError(null);
+    }
+    
+    setSelectedFunds([]);
+    setFundWeightings({});
+    
+    // Re-add cash fund if it exists
+    const cashFund = findCashFund(availableFunds);
+    if (cashFund) {
+      setSelectedFunds([cashFund.id]);
+      setFundWeightings({ [cashFund.id.toString()]: '0' });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -319,32 +347,16 @@ const EditPortfolioGeneration: React.FC = () => {
     return true;
   };
 
-  // Calculate total weighting for the progress bar
-  const totalWeighting = useMemo(() => {
-    return Object.values(fundWeightings).reduce((a, b) => {
-      const numValue = parseFloat(b) || 0;
-      return a + numValue;
-    }, 0);
-  }, [fundWeightings]);
-
-  // Determine progress bar color based on total
-  const getProgressBarColor = () => {
-    if (Math.abs(totalWeighting - 100) < 0.01) return 'bg-green-500'; // Perfect at 100%
-    if (totalWeighting > 100) return 'bg-red-500'; // Too high
-    if (totalWeighting > 90) return 'bg-yellow-500'; // Close to target
-    return 'bg-blue-500'; // Still collecting
-  };
-
-  // Filter funds based on search query
-  const filteredFunds = useMemo(() => {
-    if (!searchQuery.trim()) return availableFunds;
-    
-    const query = searchQuery.toLowerCase();
-    return availableFunds.filter(fund => 
-      (fund.fund_name && fund.fund_name.toLowerCase().includes(query)) || 
-      (fund.isin_number && fund.isin_number.toLowerCase().includes(query))
-    );
-  }, [availableFunds, searchQuery]);
+  // Initialize form data when template changes
+  useEffect(() => {
+    if (generation) {
+      setFormData({
+        generation_name: generation.generation_name || '',
+        description: generation.description || '',
+        created_at: generation.created_at || ''
+      });
+    }
+  }, [generation]);
 
   if (isLoadingPortfolio || isLoadingGeneration) {
     return (
@@ -531,23 +543,8 @@ const EditPortfolioGeneration: React.FC = () => {
           {/* Fund Selection Section */}
           <div className="p-5">
             <div className="rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 sm:px-6 flex justify-between items-center">
+              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 sm:px-6">
                 <h3 className="text-base font-medium text-gray-900">Edit Funds</h3>
-                <div className="flex items-center">
-                  <span className="text-sm text-gray-500 mr-2">Allocation: </span>
-                  <div className="w-56 bg-gray-200 rounded-full h-2.5 flex-grow">
-                    <div 
-                      className={`h-2.5 rounded-full ${getProgressBarColor()}`} 
-                      style={{ width: `${Math.min(totalWeighting, 100)}%` }}
-                    ></div>
-                  </div>
-                  <span className={`ml-2 text-sm font-medium ${
-                    Math.abs(totalWeighting - 100) < 0.01 ? 'text-green-700' : 
-                    totalWeighting > 100 ? 'text-red-700' : 'text-gray-700'
-                  }`}>
-                    {totalWeighting.toFixed(1)}%
-                  </span>
-                </div>
               </div>
               
               <div className="p-4">
@@ -571,177 +568,19 @@ const EditPortfolioGeneration: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {/* Search Bar */}
-                    <div className="mb-2">
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          placeholder="Search funds by name or ISIN..."
-                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-700 focus:border-primary-700 transition-colors duration-200"
-                          aria-label="Search funds"
-                        />
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                          </svg>
-                        </div>
-                        {searchQuery && (
-                          <button
-                            type="button"
-                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                            onClick={() => setSearchQuery('')}
-                          >
-                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-100">
-                          <tr>
-                            <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                              Select
-                            </th>
-                            <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                              Fund Name
-                            </th>
-                            <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                              ISIN
-                            </th>
-                            <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                              Risk Factor
-                            </th>
-                            <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                              Status
-                            </th>
-                            <th scope="col" className="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">
-                              Target Weighting (%)
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {filteredFunds.map((fund) => {
-                            const isCash = isCashFund(fund);
-                            const isSelected = selectedFunds.includes(fund.id);
-                            
-                            return (
-                            <tr 
-                              key={fund.id} 
-                                className={`transition-all duration-150 ${
-                                  isCash ? 'bg-blue-50 border-blue-200' : 
-                                  isSelected ? 'bg-blue-50 border-blue-200' : 
-                                  'hover:bg-gray-50 hover:border-gray-200 cursor-pointer'
-                                } border-b border-gray-100`}
-                                onClick={() => !isCash && handleFundSelection(fund.id)}
-                            >
-                              <td className="px-6 py-3 whitespace-nowrap">
-                                  <div className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                      checked={isSelected}
-                                      onChange={() => !isCash && handleFundSelection(fund.id)}
-                                      disabled={isCash}
-                                      className={`h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded ${
-                                        isCash ? 'cursor-not-allowed opacity-75' : 'pointer-events-none'
-                                      }`}
-                                    />
-                                    {isCash && (
-                                      <span className="ml-2 text-xs text-blue-600 font-medium">Required</span>
-                                    )}
-                                  </div>
-                              </td>
-                              <td className="px-6 py-3 whitespace-nowrap">
-                                  <div className={`text-sm font-medium font-sans tracking-tight ${
-                                    isCash ? 'text-blue-800' : 'text-gray-800'
-                                  }`}>
-                                    {fund.fund_name}
-                                    {isCash && <span className="ml-2 text-xs text-blue-600 font-normal">(Always included)</span>}
-                                  </div>
-                              </td>
-                              <td className="px-6 py-3 whitespace-nowrap">
-                                <div className="text-sm text-gray-600 font-sans">{fund.isin_number || 'N/A'}</div>
-                              </td>
-                              <td className="px-6 py-3 whitespace-nowrap">
-                                <div className="text-sm text-gray-600 font-sans">
-                                  {fund.risk_factor !== undefined && fund.risk_factor !== null ? (
-                                    <span className="flex items-center">
-                                      {fund.risk_factor}
-                                      <span className={`ml-1.5 w-2 h-2 rounded-full ${
-                                        fund.risk_factor <= 2 ? 'bg-green-500' : 
-                                        fund.risk_factor <= 4 ? 'bg-blue-500' : 
-                                        fund.risk_factor <= 6 ? 'bg-yellow-500' : 
-                                        'bg-red-500'
-                                      }`}></span>
-                                    </span>
-                                  ) : 'N/A'}
-                                </div>
-                              </td>
-                              <td className="px-6 py-3 whitespace-nowrap">
-                                <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                  fund.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                }`}>
-                                  {fund.status}
-                                </span>
-                              </td>
-                              <td className="px-6 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                                  {isSelected && (
-                                  <div className="flex items-center">
-                                    <input
-                                      type="text"
-                                      value={fundWeightings[fund.id.toString()] || ''}
-                                      onChange={(e) => handleWeightingChange(
-                                        fund.id,
-                                        e.target.value
-                                      )}
-                                      onKeyDown={(e) => {
-                                        // Prevent form submission when Enter is pressed
-                                        if (e.key === 'Enter') {
-                                          e.preventDefault();
-                                          // Optionally blur the field to simulate moving to next field
-                                          e.currentTarget.blur();
-                                        }
-                                      }}
-                                      placeholder="0.00"
-                                      className="w-20 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                                    />
-                                  </div>
-                                )}
-                                  {!isSelected && (
-                                  <span className="text-gray-400 text-sm">Click to select</span>
-                                )}
-                              </td>
-                            </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                    
-                    <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg">
-                      <div className="text-sm text-gray-500">
-                        {selectedFunds.length} fund(s) selected
-                      </div>
-                      <div className={`text-sm ${
-                        Math.abs(totalWeighting - 100) < 0.01
-                          ? 'text-green-600 font-medium' 
-                          : totalWeighting > 100
-                            ? 'text-red-600 font-medium'
-                            : 'text-gray-600'
-                      }`}>
-                        Total weighting: {totalWeighting.toFixed(2)}%
-                        {selectedFunds.length > 0 && Math.abs(totalWeighting - 100) > 0.01 && 
-                          <span className="ml-2 text-sm">(Must equal 100%)</span>
-                        }
-                      </div>
-                    </div>
-                  </div>
+                  <FundSelectionManager
+                    availableFunds={availableFunds}
+                    selectedFunds={selectedFunds}
+                    fundWeightings={fundWeightings}
+                    onFundSelect={handleFundSelection}
+                    onFundDeselect={handleFundSelection}
+                    onWeightingChange={handleWeightingChange}
+                    onClearAll={handleClearAllFunds}
+                    searchQuery={fundSearchTerm}
+                    onSearchChange={setFundSearchTerm}
+                    isLoading={isLoadingFunds}
+                    error={error}
+                  />
                 )}
               </div>
             </div>

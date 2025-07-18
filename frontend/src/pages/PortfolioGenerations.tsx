@@ -42,7 +42,8 @@ const PortfolioGenerations: React.FC<PortfolioGenerationsProps> = ({ tabMode = f
 
   // Event handlers
   const handleItemClick = useCallback((generation: Generation) => {
-    navigate(`/definitions/portfolio-generations/${generation.id}`);
+    // Navigate to the template details page with generation ID as parameter
+    navigate(`/definitions/portfolio-templates/${generation.template_id}?generation=${generation.id}`);
   }, [navigate]);
 
   const handleAddNew = useCallback(() => {
