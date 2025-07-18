@@ -1046,10 +1046,20 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       
       if (activePortfolioFund) {
         // Active fund: soft delete by setting status to inactive and end_date to current date
+        // This immediately excludes it from weighting calculations since getTotalWeighting only counts active funds
         await api.patch(`/portfolio_funds/${activePortfolioFund.id}`, {
           status: 'inactive',
           end_date: new Date().toISOString().split('T')[0] // Current date in YYYY-MM-DD format
         });
+        
+        // Immediately update local state to reflect the change and update weighting calculations
+        setHoldings(prevHoldings => 
+          prevHoldings.map(holding => 
+            holding.fund_id === fundId && holding.status === 'active' 
+              ? { ...holding, status: 'inactive', end_date: new Date().toISOString().split('T')[0] }
+              : holding
+          )
+        );
       } else {
         // Check if it's an inactive fund
         const previousFundsEntry = holdings.find(h => h.isVirtual && h.fund_name === 'Previous Funds');
@@ -1058,6 +1068,19 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         if (inactivePortfolioFund) {
           // Inactive fund: permanently delete it
           await api.delete(`/portfolio_funds/${inactivePortfolioFund.id}`);
+          
+          // Immediately update local state to remove the inactive fund
+          setHoldings(prevHoldings => 
+            prevHoldings.map(holding => {
+              if (holding.isVirtual && holding.fund_name === 'Previous Funds' && holding.inactiveFunds) {
+                return {
+                  ...holding,
+                  inactiveFunds: holding.inactiveFunds.filter(inactiveFund => inactiveFund.fund_id !== fundId)
+                };
+              }
+              return holding;
+            })
+          );
         } else {
           throw new Error('Portfolio fund not found');
         }
@@ -1168,24 +1191,28 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     handleAddFund(fundId, 0); // Add with 0% weighting initially
   };
 
-  // Calculate total weighting for validation - count both active and inactive funds
+  // Calculate total weighting for validation - only count active funds during editing
   const getTotalWeighting = () => {
-    // Count active funds
-    const activeTotal = holdings
-      .filter(h => !h.isVirtual && h.status === 'active')
-      .reduce((sum, holding) => {
-        const weighting = parseFloat(holding.target_weighting || '0');
-        return sum + (isNaN(weighting) ? 0 : weighting);
-      }, 0);
-
-    // Count inactive funds
-    const previousFundsEntry = holdings.find(h => h.isVirtual && h.fund_name === 'Previous Funds');
-    const inactiveTotal = previousFundsEntry?.inactiveFunds?.reduce((sum, holding) => {
+    // Only count active funds during editing mode
+    const activeFunds = holdings.filter(h => !h.isVirtual && h.status === 'active');
+    const activeTotal = activeFunds.reduce((sum, holding) => {
       const weighting = parseFloat(holding.target_weighting || '0');
       return sum + (isNaN(weighting) ? 0 : weighting);
-    }, 0) || 0;
+    }, 0);
 
-    return activeTotal + inactiveTotal;
+    // Debug logging to help track weighting calculations
+    console.log('🔢 Weighting calculation:', {
+      activeFunds: activeFunds.length,
+      activeTotal: activeTotal.toFixed(2),
+      fundDetails: activeFunds.map(h => ({
+        name: h.fund_name,
+        weighting: h.target_weighting || '0'
+      }))
+    });
+
+    // During editing mode, we only want to count active funds
+    // Inactive funds are considered "deleted" from the user's perspective
+    return activeTotal;
   };
 
   // Save all fund weightings
@@ -1200,7 +1227,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       setIsSavingFunds(true);
       setFundError(null);
       
-      // Update all active fund weightings
+      // Update only active fund weightings (inactive funds are not included in weighting validation)
       const activeFundPromises = holdings
         .filter(h => !h.isVirtual && h.fund_id && h.status === 'active')
         .map(holding => {
@@ -1210,18 +1237,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           });
         });
 
-      // Update all inactive fund weightings  
-      const previousFundsEntry = holdings.find(h => h.isVirtual && h.fund_name === 'Previous Funds');
-      const inactiveFundPromises = previousFundsEntry?.inactiveFunds?.map(holding => {
-        const weighting = parseFloat(holding.target_weighting || '0');
-        return api.patch(`/portfolio_funds/${holding.id}`, {
-          target_weighting: weighting
-        });
-      }) || [];
-
-      const updatePromises = [...activeFundPromises, ...inactiveFundPromises];
-      
-      await Promise.all(updatePromises);
+      await Promise.all(activeFundPromises);
       
       // Trigger portfolio IRR recalculation after updating fund weightings
       if (account?.portfolio_id) {
@@ -2402,8 +2418,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
               </span>
             </div>
             
-            {/* Edit button - Only for bespoke portfolios */}
-            {account && !account.template_generation_id && (
+            {/* Edit button for all portfolios */}
+            {account && (
               <div className="flex space-x-3">
                 {isEditingFunds ? (
                   <>
@@ -2452,8 +2468,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             </div>
           )}
 
-          {/* Weighting Progress Bar - Only show when editing bespoke portfolios */}
-          {isEditingFunds && account && !account.template_generation_id && (
+          {/* Weighting Progress Bar - Show when editing any portfolio */}
+          {isEditingFunds && account && (
             <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
               <div className="flex justify-between items-center mb-3">
                 <span className="text-sm font-medium text-gray-700">Total Portfolio Weighting</span>
@@ -2485,8 +2501,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             </div>
           )}
 
-          {/* Fund Management Tools - Only for bespoke portfolios when editing */}
-          {isEditingFunds && account && !account.template_generation_id && (
+          {/* Fund Management Tools - For all portfolios when editing */}
+          {isEditingFunds && account && (
             <div className="mb-8">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-md font-semibold text-gray-900">Add Funds to Product</h4>
@@ -2583,7 +2599,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           </div>
                         )}
                       </th>
-                      {isEditingFunds && account && !account.template_generation_id && (
+                      {isEditingFunds && account && (
                         <th scope="col" className="px-6 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Actions
                         </th>
@@ -2638,7 +2654,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           )}
                         </td>
                         <td className="px-6 py-2 whitespace-nowrap text-right">
-                          {isEditingFunds && account && !account.template_generation_id ? (
+                          {isEditingFunds && account ? (
                             <div className="flex items-center justify-end space-x-2">
                               <div className="relative">
                                 <input
@@ -2687,7 +2703,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             <span className="text-gray-500">-</span>
                           )}
                         </td>
-                        {isEditingFunds && account && !account.template_generation_id && !isCashFund({ fund_name: holding.fund_name, isin_number: holding.isin_number } as any) && (
+                        {isEditingFunds && account && !isCashFund({ fund_name: holding.fund_name, isin_number: holding.isin_number } as any) && (
                           <td className="px-6 py-2 whitespace-nowrap text-right">
                             <ActionButton
                               variant="delete"
@@ -2744,7 +2760,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           <td className="px-6 py-2 whitespace-nowrap text-right">
                             <span className="text-gray-500">-</span>
                           </td>
-                          {isEditingFunds && account && !account.template_generation_id && (
+                          {isEditingFunds && account && (
                             <td className="px-6 py-2 whitespace-nowrap text-right">
                               <span className="text-gray-500">-</span>
                             </td>
@@ -2785,7 +2801,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                                 <span className="text-sm text-gray-500">-</span>
                               </td>
                               <td className="px-6 py-2 whitespace-nowrap text-right">
-                                {isEditingFunds && account && !account.template_generation_id ? (
+                                {isEditingFunds && account ? (
                                   <div className="flex items-center justify-end space-x-2">
                                     <div className="relative">
                                       <input
@@ -2834,7 +2850,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                               <td className="px-6 py-2 whitespace-nowrap text-right">
                                 <span className="text-sm text-gray-500">-</span>
                               </td>
-                              {isEditingFunds && account && !account.template_generation_id && (
+                              {isEditingFunds && account && !isCashFund({ fund_name: holding.fund_name, isin_number: holding.isin_number } as any) && (
                                 <td className="px-6 py-2 whitespace-nowrap text-right">
                                   <ActionButton
                                     variant="delete"
@@ -2860,11 +2876,11 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                 <h3 className="mt-2 text-sm font-medium text-gray-900">No active funds in portfolio</h3>
                 <p className="mt-1 text-sm text-gray-500">
                   {account?.template_generation_id 
-                    ? 'This template portfolio has no funds configured.'
+                    ? 'This template portfolio has no funds configured, but you can customize it by adding funds.'
                     : 'Get started by adding funds to this bespoke portfolio.'
                   }
                 </p>
-                {!isEditingFunds && account && !account.template_generation_id && (
+                {!isEditingFunds && account && (
                   <div className="mt-6">
                     <ActionButton
                       variant="add"

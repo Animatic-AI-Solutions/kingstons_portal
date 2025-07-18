@@ -92,6 +92,9 @@ interface PortfolioGeneration {
 //   name: string;
 // }
 
+// Add a counter for unique ID generation
+let productIdCounter = 0;
+
 const CreateClientProducts: React.FC = (): JSX.Element => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -121,6 +124,12 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       document.head.removeChild(style);
     };
   }, []);
+
+  // Helper function to generate unique product IDs
+  const generateUniqueProductId = (): string => {
+    return `temp-${Date.now()}-${++productIdCounter}`;
+  };
+
   const [clients, setClients] = useState<Client[]>([]);
   const [providers, setProviders] = useState<Provider[]>([]);
   const [productOwners, setProductOwners] = useState<ProductOwner[]>([]);
@@ -298,7 +307,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         const lastProduct = products[products.length - 1];
         const newProduct = {
           ...lastProduct,
-          id: `temp-${Date.now()}`,
+          id: generateUniqueProductId(),
           product_name: '',
           start_date: dayjs().startOf('month'), // Reset to first day of current month for new product
           portfolio: {
@@ -604,7 +613,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     }
     
     // Create a new empty product with a temporary ID
-    const productId = `temp-${Date.now()}`;
+    const productId = generateUniqueProductId();
     
     // Find cash fund to preselect it
     const cashFund = findCashFund(funds);
@@ -2294,7 +2303,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                               const lastProduct = products[products.length - 1];
                               const newProduct = {
                                 ...lastProduct,
-                                id: `temp-${Date.now()}`,
+                                id: generateUniqueProductId(),
                                 product_name: '',
                                 start_date: dayjs().startOf('month'), // Reset to first day of current month for new product
                                 portfolio: {

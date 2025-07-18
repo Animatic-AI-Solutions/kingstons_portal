@@ -103,8 +103,13 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
   
   // Reset focused index when filtered options change
   useEffect(() => {
-    setFocusedIndex(-1);
-  }, [searchTerm]);
+    // Auto-focus the first option when there are filtered results and user has typed something
+    if (filteredOptions.length > 0 && searchTerm.length > 0) {
+      setFocusedIndex(0);
+    } else {
+      setFocusedIndex(-1);
+    }
+  }, [searchTerm, filteredOptions.length]);
   
   // Scroll focused option into view
   useEffect(() => {
@@ -157,11 +162,26 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
     
     let newValues: (string | number)[];
     if (values.includes(optionValue)) {
+      // Removing existing selection (toggle off)
       newValues = values.filter(v => v !== optionValue);
+      console.log('🔄 MultiSelect: Removing item', optionValue, 'from selection. New values:', newValues);
     } else {
+      // Adding new selection (multi-select behavior)
       newValues = [...values, optionValue];
+      console.log('✅ MultiSelect: Adding item', optionValue, 'to selection. New values:', newValues);
     }
     onChange(newValues);
+    
+    // Clear search term after selection for smooth keyboard workflow
+    setSearchTerm('');
+    
+    // Keep dropdown open so user can continue typing for next selection
+    // Focus back to input for immediate typing
+    setTimeout(() => {
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+    }, 0);
   };
   
   const handleRemove = (optionValue: string | number) => {
@@ -181,6 +201,23 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
       if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
         e.preventDefault();
         setIsOpen(true);
+        // Focus search input when opening
+        setTimeout(() => {
+          if (searchInputRef.current) {
+            searchInputRef.current.focus();
+          }
+        }, 0);
+      }
+      // Auto-open dropdown when user starts typing
+      if (e.key.length === 1 && /[a-zA-Z0-9\s]/.test(e.key)) {
+        e.preventDefault();
+        setIsOpen(true);
+        setSearchTerm(e.key);
+        setTimeout(() => {
+          if (searchInputRef.current) {
+            searchInputRef.current.focus();
+          }
+        }, 0);
       }
       return;
     }
@@ -198,6 +235,7 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
         e.preventDefault();
         if (focusedIndex >= 0 && filteredOptions[focusedIndex]) {
           handleSelect(filteredOptions[focusedIndex].value);
+          // setSearchTerm(''); // Clear search term after selection - REMOVED
         }
         break;
       case 'Escape':
@@ -209,6 +247,31 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
         setIsOpen(false);
         setSearchTerm('');
         setFocusedIndex(-1);
+        break;
+      case 'Backspace':
+        if (searchTerm) {
+          // Remove characters from search term if we're searching
+          setSearchTerm(prev => prev.slice(0, -1));
+        } else if (values.length > 0 && onChange) {
+          // Remove the last selected item if there's no search term but there are selected values
+          e.preventDefault();
+          const newValues = [...values];
+          newValues.pop(); // Remove last item
+          onChange(newValues);
+          // Keep dropdown open and focus on input for continued typing
+          setTimeout(() => {
+            if (searchInputRef.current) {
+              searchInputRef.current.focus();
+            }
+          }, 0);
+        }
+        break;
+      default:
+        // Add characters to search term when typing
+        if (e.key.length === 1 && /[a-zA-Z0-9\s]/.test(e.key)) {
+          e.preventDefault();
+          setSearchTerm(prev => prev + e.key);
+        }
         break;
     }
   };
@@ -298,6 +361,11 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
               </button>
             </div>
           ))}
+          {selectedOptions.length > 1 && (
+            <div className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-300">
+              {selectedOptions.length} selected
+            </div>
+          )}
         </div>
       )}
       
@@ -320,6 +388,12 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
+          aria-expanded={isOpen}
+          aria-activedescendant={focusedIndex >= 0 ? `${dropdownId}-option-${focusedIndex}` : undefined}
+          aria-describedby={
+            error ? `${dropdownId}-error` : 
+            helperText ? `${dropdownId}-helper` : undefined
+          }
           className={`
             ${baseClasses}
             ${sizeClasses[size]}
@@ -360,6 +434,7 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
                     aria-selected={isSelected}
                   >
                     <button
+                      id={`${dropdownId}-option-${index}`}
                       type="button"
                       onClick={() => handleSelect(option.value)}
                       className={`
@@ -370,8 +445,8 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
                           ? 'bg-primary-50 text-primary-900 border-l-2 border-primary-500' 
                           : 'hover:bg-gray-50 text-gray-900'
                         }
-                        ${focusedIndex === index && !isSelected 
-                          ? 'bg-gray-50' 
+                        ${focusedIndex === index 
+                          ? 'bg-primary-100 text-primary-900 ring-2 ring-primary-500 ring-inset' 
                           : ''
                         }
                         focus:outline-none focus:bg-gray-50
@@ -414,6 +489,11 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
           className="mt-1 text-xs text-gray-500"
         >
           {helperText}
+          {isOpen && (
+            <span className="ml-2 text-gray-400">
+              • Type to search • Enter to select • Backspace to remove
+            </span>
+          )}
         </p>
       )}
     </div>

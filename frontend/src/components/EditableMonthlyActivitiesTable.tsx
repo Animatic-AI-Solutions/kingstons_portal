@@ -498,18 +498,15 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       results.monthTotals.set(month, total);
     });
 
-    // Calculate row totals across months in selected year and before (not future years)
-    const monthsUpToSelectedYear = allMonths.filter(month => {
-      const monthYear = parseInt(month.split('-')[0]);
-      return monthYear <= currentYear;
-    });
-
+    // Calculate row totals across ALL months for entire product lifetime (not filtered by year)
+    // This ensures row totals show cumulative totals across all years, not just the current year
     allFundsToProcess.forEach(fund => {
       ACTIVITY_TYPES.forEach(activityType => {
         const key = `${fund.id}-${activityType}`;
         let total = 0;
 
-        monthsUpToSelectedYear.forEach(month => {
+        // Use allMonths instead of monthsUpToSelectedYear for row totals
+        allMonths.forEach(month => {
           const cellKey = `${fund.id}-${month}-${activityType}`;
           const cellValue = cellValuesCache.get(cellKey) || '';
           const numericValue = parseFloat(cellValue) || 0;
@@ -530,13 +527,15 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       });
     });
 
-    // Calculate fund row totals across months in selected year and before
+    // Calculate fund row totals across ALL months for entire product lifetime (not filtered by year)
+    // This ensures fund row totals show cumulative totals across all years, not just the current year
     allFundsToProcess.forEach(fund => {
       let total = 0;
       
       ACTIVITY_TYPES.forEach(activityType => {
         if (activityType !== 'Current Value') {
-          monthsUpToSelectedYear.forEach(month => {
+          // Use allMonths instead of monthsUpToSelectedYear for fund row totals
+          allMonths.forEach(month => {
             const cellKey = `${fund.id}-${month}-${activityType}`;
             const cellValue = cellValuesCache.get(cellKey) || '';
             const numericValue = parseFloat(cellValue) || 0;
@@ -1842,7 +1841,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     return calculationResults.fundMonthTotals.get(key) || 0;
   };
 
-  // Calculate total for all funds for a specific activity type - now uses memoized results
+  // Calculate activity type total for a specific month across all funds (current year only)
   const calculateActivityTypeTotal = (activityType: string, month: string): number => {
 
     const key = `${activityType}-${month}`;
@@ -1850,25 +1849,91 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
   };
 
-  // Calculate total for all activity types and all funds for a specific month - now uses memoized results
+  // Calculate activity type total for a specific month across all funds (entire product lifetime)
+  const calculateActivityTypeTotalAllTime = (activityType: string, month: string): number => {
+    let total = 0;
+    
+    // Include activities from displayed funds
+    funds.forEach(fund => {
+      const cellKey = `${fund.id}-${month}-${activityType}`;
+      const cellValue = cellValuesCache.get(cellKey) || '';
+      const numericValue = parseFloat(cellValue.replace(/,/g, '')) || 0;
+      
+      if (numericValue !== 0) {
+        const signType = activityTypeSignMap.get(activityType);
+        if (signType === 'inflow') {
+          total -= numericValue; // Negative for inflows
+        } else if (signType === 'outflow') {
+          total += numericValue; // Positive for outflows
+        } else if (signType === 'neutral' && activityType === 'Current Value') {
+          total += numericValue; // Positive for current value
+        }
+      }
+    });
+    
+    // Also include activities from inactive funds
+    if (inactiveFundsForTotals && inactiveFundsForTotals.length > 0) {
+      inactiveFundsForTotals.forEach(inactiveFund => {
+        const backendType = convertActivityTypeForBackend(activityType);
+        const activityKey = `${inactiveFund.id}-${month}-${backendType}`;
+        const activity = activitiesIndex.get(activityKey);
+        
+        if (activity) {
+          const numericValue = parseFloat(activity.amount);
+          if (!isNaN(numericValue)) {
+            const signType = activityTypeSignMap.get(activityType);
+            if (signType === 'inflow') {
+              total -= numericValue; // Negative for inflows
+            } else if (signType === 'outflow') {
+              total += numericValue; // Positive for outflows
+            } else if (signType === 'neutral' && activityType === 'Current Value') {
+              total += numericValue; // Positive for current value
+            }
+          }
+        }
+      });
+    }
+    
+    return total;
+  };
+
+  // Calculate total for all activity types and all funds for a specific month (current year only)
   const calculateMonthTotal = (month: string): number => {
     return calculationResults.monthTotals.get(month) || 0;
   };
 
-  // Calculate row total for a specific activity type across all months
+  // Calculate total for all activity types and all funds for a specific month (entire product lifetime)
+  const calculateMonthTotalAllTime = (month: string): number => {
+    const total = ACTIVITY_TYPES
+      .filter(activityType => activityType !== 'Current Value')
+      .reduce((sum, activityType) => {
+        return sum + calculateActivityTypeTotalAllTime(activityType, month);
+      }, 0);
+    
+    return total;
+  };
+
+  // Calculate row total for a specific activity type across all months (entire product lifetime)
   const calculateActivityTypeRowTotal = (activityType: string): number => {
+    // Don't sum valuations (Current Value) across time periods - doesn't make sense
+    if (activityType === 'Current Value') {
+      return 0;
+    }
+    
     let total = 0;
-    months.forEach(month => {
-      total += calculateActivityTypeTotal(activityType, month);
+    // Use allMonths instead of months to include entire product lifetime
+    allMonths.forEach(month => {
+      total += calculateActivityTypeTotalAllTime(activityType, month);
     });
     return total;
   };
 
-  // Calculate row total for all activity types across all months (Overall Total row)
+  // Calculate row total for all activity types across all months (entire product lifetime)
   const calculateOverallRowTotal = (): number => {
     let total = 0;
-    months.forEach(month => {
-      total += calculateMonthTotal(month);
+    // Use allMonths instead of months to include entire product lifetime
+    allMonths.forEach(month => {
+      total += calculateMonthTotalAllTime(month);
     });
     return total;
   };
@@ -2212,7 +2277,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                   <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                   </svg>
-                  Row totals include all activities from {availableYears[0]} through {currentYear}
+                  Row totals include all activities for the entire product lifetime ({availableYears[0]} - {availableYears[availableYears.length - 1]})
                 </span>
               </div>
             )}
