@@ -732,127 +732,46 @@ const ReportGenerator: React.FC = () => {
           inactiveProducts: inactiveProducts.length
         });
         
-        // NEW ELIGIBILITY LOGIC
-        // Step 1: Get all valuation dates for each product (active and inactive)
-        const productValuationDates = new Map<number, string[]>();
-        const productLatestDates = new Map<number, string>();
-        let globalLatestDate = '';
+        // FLEXIBLE VALUATION DATE LOGIC
+        // Step 1: Collect ALL valuation dates from ALL products (no common date requirement)
+        const allValuationDates = new Set<string>();
         
         // Get all historical valuations for ALL funds (active and inactive)
         const allFundIds = [...activeFundIds, ...inactiveProductFundIds];
         const batchValuationResult = await valuationService.getBatchHistoricalValuations(allFundIds);
         
-        // Process valuations for each product
+        // Process valuations across all products to collect ALL available dates
         for (const product of includedProducts) {
           const productFunds = portfolioFundsByProduct.get(product.id) || [];
-          const productDates = new Set<string>();
-          let productLatest = '';
           
           // Collect all valuation dates for this product's funds
           for (const fund of productFunds) {
             const fundValuations = batchValuationResult.get(fund.id) || [];
           
-          fundValuations.forEach((val: any) => {
-            if (val.valuation_date) {
-              const dateParts = val.valuation_date.split('-');
-              if (dateParts.length >= 2) {
-                const yearMonth = `${dateParts[0]}-${dateParts[1]}`;
-                  productDates.add(yearMonth);
-                  
-                  // Track latest date for this product
-                  if (yearMonth > productLatest) {
-                    productLatest = yearMonth;
-                  }
-                  
-                  // Track global latest date
-                  if (yearMonth > globalLatestDate) {
-                    globalLatestDate = yearMonth;
-                  }
+            fundValuations.forEach((val: any) => {
+              if (val.valuation_date) {
+                const dateParts = val.valuation_date.split('-');
+                if (dateParts.length >= 2) {
+                  const yearMonth = `${dateParts[0]}-${dateParts[1]}`;
+                  allValuationDates.add(yearMonth);
+                }
               }
-            }
-          });
-          }
-          
-          productValuationDates.set(product.id, Array.from(productDates).sort());
-          if (productLatest) {
-            productLatestDates.set(product.id, productLatest);
+            });
           }
         }
         
-        console.log('📊 [ELIGIBILITY DEBUG] Product valuation analysis:', {
-          globalLatestDate,
-          productLatestDates: Object.fromEntries(productLatestDates),
-          productValuationDates: Object.fromEntries(
-            Array.from(productValuationDates.entries()).map(([id, dates]) => [id, dates])
-          )
+        // Convert to sorted array (most recent first)
+        const sortedDates = Array.from(allValuationDates).sort((a: string, b: string) => b.localeCompare(a));
+        
+        console.log('📊 [VALUATION DEBUG] All available valuation dates across products:', {
+          totalDates: sortedDates.length,
+          dates: sortedDates,
+          includedProducts: includedProducts.length
         });
         
-        // Step 2: Find eligible dates where all products have valuations (actual or assumed zero)
-        const eligibleDates = new Set<string>();
-        
-        // Generate all possible month candidates up to the global latest date
-        const candidateDates: string[] = [];
-        if (globalLatestDate) {
-          const [latestYear, latestMonth] = globalLatestDate.split('-').map(Number);
-          
-          // Find earliest date among all products
-          let earliestDate = globalLatestDate;
-          for (const dates of productValuationDates.values()) {
-            if (dates.length > 0 && dates[0] < earliestDate) {
-              earliestDate = dates[0];
-            }
-          }
-          
-          const [earliestYear, earliestMonth] = earliestDate.split('-').map(Number);
-          
-          // Generate all months from earliest to latest
-          let currentYear = earliestYear;
-          let currentMonth = earliestMonth;
-          
-          while (currentYear < latestYear || (currentYear === latestYear && currentMonth <= latestMonth)) {
-            const monthStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
-            candidateDates.push(monthStr);
-            
-            currentMonth++;
-            if (currentMonth > 12) {
-              currentMonth = 1;
-              currentYear++;
-            }
-          }
-        }
-        
-        // Step 3: Check each candidate date for eligibility
-        for (const candidateDate of candidateDates) {
-          let allProductsHaveValuation = true;
-          
-          for (const product of includedProducts) {
-            const productDates = productValuationDates.get(product.id) || [];
-            const productLatest = productLatestDates.get(product.id) || '';
-            const isActiveProduct = product.status !== 'inactive';
-            
-            // Check if this product has valuation for this date
-            const hasActualValuation = productDates.includes(candidateDate);
-            const canAssumeZero = !isActiveProduct && candidateDate > productLatest;
-            
-            if (!hasActualValuation && !canAssumeZero) {
-              allProductsHaveValuation = false;
-              break;
-            }
-          }
-          
-          if (allProductsHaveValuation) {
-            eligibleDates.add(candidateDate);
-          }
-        }
-        
-        // Sort eligible dates chronologically (newest first)
-        const sortedDates = Array.from(eligibleDates).sort((a: string, b: string) => b.localeCompare(a));
-        
-        console.log('📊 [ELIGIBILITY DEBUG] Final eligible dates:', sortedDates);
-        
-        // Step 4: Set results based on eligibility
+        // Step 2: Set results
         if (sortedDates.length === 0) {
-          console.log('📊 [ELIGIBILITY DEBUG] No eligible dates found - products do not meet report generation criteria');
+          console.log('📊 [VALUATION DEBUG] No valuation dates found across selected products');
           setAvailableValuationDates([]);
           setSelectedValuationDate(null);
           setIsLoadingValuationDates(false);
@@ -1192,37 +1111,10 @@ const ReportGenerator: React.FC = () => {
 
   // Function to check if the end valuation date validation would fail
   const hasEndValuationDateError = useMemo(() => {
-    if (!hasEffectiveProductSelection) return false;
-    
-    // Get all product IDs that will be included in the report
-    const productIdsForReport = new Set<number>();
-    if (selectedProductIds.length > 0) {
-      selectedProductIds
-        .filter(p => !excludedProductIds.has(Number(p)))
-        .forEach(p => productIdsForReport.add(Number(p)));
-    }
-    if (selectedClientGroupIds.length > 0) {
-      const clientGroupAttachedProducts = relatedProducts.filter(p => !excludedProductIds.has(p.id));
-      clientGroupAttachedProducts.forEach(p => productIdsForReport.add(p.id));
-    }
-    
-    const reportProductIds = Array.from(productIdsForReport);
-    
-    // Check if end valuation date matches the latest common IRR date
-    if (reportProductIds.length > 0 && Object.keys(selectedIRRDates).length > 0 && selectedValuationDate) {
-      const latestCommonDate = findLatestCommonIRRDate(selectedIRRDates, reportProductIds);
-      
-      if (latestCommonDate) {
-        // Convert both dates to YYYY-MM format for comparison
-        const endValuationYearMonth = selectedValuationDate.substring(0, 7);
-        const latestCommonYearMonth = latestCommonDate.substring(0, 7);
-        
-        return endValuationYearMonth !== latestCommonYearMonth;
-      }
-    }
-    
+    // No validation needed - end valuation date can be any available date
+    // IRR dates are automatically filtered to match the selected end valuation date
     return false;
-  }, [hasEffectiveProductSelection, selectedProductIds, excludedProductIds, selectedClientGroupIds, relatedProducts, selectedIRRDates, selectedValuationDate]);
+  }, []);
 
   const generateReport = async () => {
     // Check if any products are effectively selected (accounting for exclusions)
@@ -1251,7 +1143,7 @@ const ReportGenerator: React.FC = () => {
     
     // Check if there are any available valuation dates at all
     if (availableValuationDates.length === 0 && !availableValuationDates.includes('inactive-products-valid')) {
-      setDataError('Cannot generate report: Products do not have common valuation dates. Please select products with overlapping valuation periods.');
+      setDataError('Cannot generate report: No valuation dates available for the selected products. Please ensure products have valuations.');
       setIsCalculating(false);
       return;
     }
@@ -1302,22 +1194,8 @@ const ReportGenerator: React.FC = () => {
       
       const uniqueProductIds = Array.from(productIdsForReport);
       
-      // Check if end valuation date matches the latest common IRR date
-      if (uniqueProductIds.length > 0 && Object.keys(selectedIRRDates).length > 0) {
-        const latestCommonDate = findLatestCommonIRRDate(selectedIRRDates, uniqueProductIds);
-        
-        if (latestCommonDate && selectedValuationDate) {
-          // Convert both dates to YYYY-MM format for comparison
-          const endValuationYearMonth = selectedValuationDate.substring(0, 7); // YYYY-MM-DD -> YYYY-MM
-          const latestCommonYearMonth = latestCommonDate.substring(0, 7); // YYYY-MM-DD -> YYYY-MM
-          
-          if (endValuationYearMonth !== latestCommonYearMonth) {
-            setDataError(`The end valuation date must be the same as the latest common date selected among the historical IRR dates. Latest common date: ${latestCommonDate.substring(0, 7)}, End valuation date: ${endValuationYearMonth}.`);
-            setIsCalculating(false);
-            return;
-          }
-        }
-      }
+      // Note: End valuation date and IRR dates are now independent - users can select any available valuation date
+      // The IRR dates are automatically filtered to only show dates on or before the selected end valuation date
       
       if (uniqueProductIds.length === 0) {
         setDataError('No products found for your selection to generate the report.');
@@ -2932,7 +2810,7 @@ Please select a different valuation date or ensure all active funds have valuati
                     </div>
                   </div>
                   <p className="mt-1 text-xs text-gray-500">
-                    {availableValuationDates.length} valuation periods available for selected products
+                    {availableValuationDates.length} valuation periods available across selected products
                   </p>
                 </div>
               )}
@@ -3041,7 +2919,7 @@ Please select a different valuation date or ensure all active funds have valuati
                   isCalculating ? "Report is being calculated..." :
                   isLoading ? "Data is loading..." :
                   !hasEffectiveProductSelection ? "Select at least one product to generate a report" :
-                  hasEndValuationDateError ? "The end valuation date must match the latest common historical IRR date selection" :
+                  false ? "End valuation date validation disabled" :
                   "Generate Report"
                 }
                 className="w-full flex justify-center items-center px-6 py-3 text-base font-medium text-white bg-primary-700 hover:bg-primary-800 rounded-md shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -3070,11 +2948,7 @@ Please select a different valuation date or ensure all active funds have valuati
                 </p>
               )}
               
-              {hasEffectiveProductSelection && hasEndValuationDateError && !isCalculating && !isLoading && (
-                <p className="mt-2 text-sm text-orange-600 text-center">
-                  End valuation date must match the latest common historical IRR date selection
-                </p>
-              )}
+
             </div>
             
             {dataError && (

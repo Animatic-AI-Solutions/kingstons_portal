@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import AddFundModal from '../components/AddFundModal';
 import CreateProductOwnerModal from '../components/CreateProductOwnerModal';
 
@@ -99,6 +100,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
+  const queryClient = useQueryClient();
   const { api } = useAuth();
   const { navigateToClientGroups } = useNavigationRefresh();
   
@@ -1620,7 +1622,11 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
 
       // Navigate to client details page - only if we have a valid client ID
       if (selectedClientId && selectedClientId > 0) {
-      navigate(`/client_groups/${selectedClientId}`);
+        // Invalidate client cache to ensure fresh data is loaded
+        console.log(`🔄 Invalidating client cache for ID: ${selectedClientId}`);
+        await queryClient.invalidateQueries({ queryKey: ['clients', selectedClientId.toString()] });
+        
+        navigate(`/client_groups/${selectedClientId}`);
       } else {
         console.error('❌ Invalid selectedClientId:', selectedClientId);
         navigate('/client_groups'); // Fallback to clients list
