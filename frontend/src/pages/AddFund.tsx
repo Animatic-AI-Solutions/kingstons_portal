@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { BaseInput, NumberInput, BaseDropdown, ActionButton } from '../components/ui';
@@ -11,12 +11,29 @@ interface FundFormData {
   status: string;
 }
 
+interface DuplicateIsinWarning {
+  isChecking: boolean;
+  isDuplicate: boolean;
+  duplicateFund?: {
+    id: number;
+    name: string;
+    status: string;
+  };
+  message?: string;
+}
+
 const AddFund: React.FC = () => {
   const navigate = useNavigate();
   const { api } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState<DuplicateIsinWarning>({
+    isChecking: false,
+    isDuplicate: false
+  });
+  const isinCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const [formData, setFormData] = useState<FundFormData>({
     fund_name: '',
     isin_number: '',
@@ -60,11 +77,54 @@ const AddFund: React.FC = () => {
     }
   };
 
+  // Debounced ISIN duplicate check function
+  const checkIsinDuplicate = useCallback(async (isin: string) => {
+    if (!isin.trim() || isin.length < 3) {
+      setDuplicateWarning({
+        isChecking: false,
+        isDuplicate: false
+      });
+      return;
+    }
+
+    setDuplicateWarning(prev => ({ ...prev, isChecking: true }));
+
+    try {
+      const response = await api.get(`/funds/check-isin/${encodeURIComponent(isin.trim().toUpperCase())}`);
+      const data = response.data;
+
+      setDuplicateWarning({
+        isChecking: false,
+        isDuplicate: data.is_duplicate,
+        duplicateFund: data.duplicate_fund,
+        message: data.message
+      });
+    } catch (error) {
+      console.error('Error checking ISIN duplicate:', error);
+      setDuplicateWarning({
+        isChecking: false,
+        isDuplicate: false,
+        message: 'Unable to check for duplicates'
+      });
+    }
+  }, [api]);
+
   const handleIsinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toUpperCase(); // Auto-capitalize ISIN
     setFormData(prev => ({
       ...prev,
-      isin_number: e.target.value.toUpperCase() // Auto-capitalize ISIN
+      isin_number: value
     }));
+
+    // Clear any existing timeout
+    if (isinCheckTimeoutRef.current) {
+      clearTimeout(isinCheckTimeoutRef.current);
+    }
+
+    // Set new timeout for debounced duplicate check (800ms delay)
+    isinCheckTimeoutRef.current = setTimeout(() => {
+      checkIsinDuplicate(value);
+    }, 800);
   };
 
   // New handlers for NumberInput components
@@ -89,6 +149,15 @@ const AddFund: React.FC = () => {
       status: String(value)
     }));
   };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (isinCheckTimeoutRef.current) {
+        clearTimeout(isinCheckTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -233,7 +302,47 @@ const AddFund: React.FC = () => {
               required
               maxLength={12}
               helperText="12-character alphanumeric code (auto-capitalized)"
+              rightIcon={
+                duplicateWarning.isChecking ? (
+                  <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-primary-600 rounded-full"></div>
+                ) : duplicateWarning.isDuplicate ? (
+                  <svg className="h-4 w-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                ) : formData.isin_number.length >= 3 ? (
+                  <svg className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : null
+              }
             />
+
+            {/* ISIN Duplicate Warning */}
+            {duplicateWarning.isDuplicate && (
+              <div className="md:col-span-2 bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-md">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                  </div>
+                  <div className="ml-3 flex-1">
+                    <h4 className="text-sm font-medium text-amber-800">
+                      Duplicate ISIN Warning
+                    </h4>
+                    <div className="mt-1 text-sm text-amber-700">
+                      <p>
+                        This ISIN already exists for fund: <strong>{duplicateWarning.duplicateFund?.name}</strong>
+                        {duplicateWarning.duplicateFund?.status === 'inactive' && ' (inactive)'}
+                      </p>
+                      <p className="mt-1 text-xs">
+                        You can still save this fund if intentional, but please verify this is not a mistake.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <NumberInput
               label="Risk Factor"
