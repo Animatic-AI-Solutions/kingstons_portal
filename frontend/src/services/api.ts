@@ -784,7 +784,7 @@ export const getProductOwnersForProducts = async (clientId: number) => {
  * @returns {Promise} - API response with total revenue, active products, etc.
  */
 export const getCompanyRevenueAnalytics = async () => {
-  return api.get('/company-revenue-analytics');
+  return api.get('/revenue/company');
 };
 
 /**
@@ -793,13 +793,13 @@ export const getCompanyRevenueAnalytics = async () => {
  */
 export const getClientGroupRevenueBreakdown = async () => {
   console.log('🔍 Calling getClientGroupRevenueBreakdown API');
-  return api.get('/client-groups/revenue-breakdown');
+  return api.get('/revenue/client-groups');
 };
 
 // NEW: Optimized revenue breakdown endpoint
 export const getOptimizedRevenueBreakdown = async () => {
   console.log('🚀 Calling optimized revenue breakdown API');
-  return api.get('/analytics/revenue_breakdown_optimized');
+  return api.get('/revenue/optimized');
 };
 
 // NEW: Consolidated revenue data fetcher (single API call for all data)
@@ -834,11 +834,11 @@ export const getConsolidatedRevenueData = async () => {
 };
 
 export const getRevenueRateAnalytics = async () => {
-  return api.get('/revenue-rate-analytics');
+  return api.get('/revenue/rate');
 };
 
 export const refreshRevenueRateCache = async () => {
-  return api.post('/revenue-rate-analytics/refresh');
+  return api.post('/revenue/rate/refresh');
 };
 
 // ⚡ PHASE 1 OPTIMIZATION: Analytics Dashboard Service
