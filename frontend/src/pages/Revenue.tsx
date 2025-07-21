@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { getCompanyRevenueAnalytics, getClientGroupRevenueBreakdown, getRevenueRateAnalytics, refreshRevenueRateCache } from '../services/api';
+import { useNavigate } from 'react-router-dom';
+import { getConsolidatedRevenueData, refreshRevenueRateCache } from '../services/api';
 
 // Types
 interface CompanyRevenueData {
@@ -117,6 +117,9 @@ const Revenue: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'dormant'>('all');
   const [revenueFilter, setRevenueFilter] = useState<'all' | 'low' | 'medium' | 'high'>('all');
 
+  // Performance monitoring
+  const [loadingTime, setLoadingTime] = useState<number | null>(null);
+
   // Format currency
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-GB', {
@@ -140,35 +143,35 @@ const Revenue: React.FC = () => {
     return 'teal';
   };
 
-  // Fetch revenue data
+  // Fetch revenue data - OPTIMIZED VERSION
   const fetchRevenueData = async () => {
     try {
       setLoading(true);
       setError(null);
+      const startTime = performance.now();
 
-      // Try to fetch revenue data (backend APIs may not be implemented yet)
-      try {
-        const [companyResponse, clientResponse, revenueRateResponse] = await Promise.all([
-          getCompanyRevenueAnalytics(),
-          getClientGroupRevenueBreakdown(),
-          getRevenueRateAnalytics()
-        ]);
-
-        setRevenueData(companyResponse.data?.[0] || null);
-        setClientRevenueData(clientResponse.data || []);
-        setRevenueRateData(revenueRateResponse.data || null);
-      } catch (apiError: any) {
-        console.warn('Revenue APIs not yet implemented:', apiError);
-        if (apiError.response?.status === 404) {
-          setError('Revenue analytics features are coming soon. The backend APIs need to be implemented first.');
-        } else {
-          setError(apiError.response?.data?.detail || 'Failed to fetch revenue data');
-        }
-      }
+      console.time('⚡ Revenue Data Fetch');
+      
+      // Single consolidated API call instead of 3 separate calls
+      const consolidatedData = await getConsolidatedRevenueData();
+      
+      console.timeEnd('⚡ Revenue Data Fetch');
+      
+      const endTime = performance.now();
+      setLoadingTime(endTime - startTime);
+      console.log(`🚀 Revenue page loaded in ${(endTime - startTime).toFixed(2)}ms`);
+      
+      setRevenueData(consolidatedData.company);
+      setClientRevenueData(consolidatedData.clients);
+      setRevenueRateData(consolidatedData.revenueRate);
 
     } catch (err: any) {
-      console.error('Error fetching revenue data:', err);
-      setError(err.response?.data?.detail || 'Failed to fetch revenue data');
+      console.error('❌ Error fetching revenue data:', err);
+      if (err.response?.status === 404) {
+        setError('Revenue analytics features are coming soon. The backend APIs need to be implemented first.');
+      } else {
+        setError(err.response?.data?.detail || 'Failed to fetch revenue data');
+      }
     } finally {
       setLoading(false);
     }
@@ -300,19 +303,15 @@ const Revenue: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-3">
-      {/* Header - Consistent with Products page */}
+      {/* Header - Standalone Revenue Page */}
       <div className="flex justify-between items-center mb-3">
-        <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Revenue Analytics</h1>
-        <div className="flex items-center gap-4">
-          <Link
-            to="/analytics"
-            className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-primary-700"
-          >
-            <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
-            </svg>
-            ← Back to Analytics
-          </Link>
+        <div>
+          <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Revenue Analytics</h1>
+          {loadingTime && (
+            <div className="text-xs text-gray-500 mt-1">
+              ⚡ Loaded in {loadingTime.toFixed(0)}ms
+            </div>
+          )}
         </div>
       </div>
 

@@ -1985,3 +1985,98 @@ async def refresh_revenue_rate_cache():
     }
     logger.info("Revenue rate analytics cache cleared manually")
     return {"message": "Cache cleared successfully", "status": "success"}
+
+@router.get("/analytics/revenue_breakdown_optimized")
+async def get_revenue_breakdown_optimized(db = Depends(get_db)):
+    """
+    Optimized revenue breakdown endpoint using pre-joined database view
+    Eliminates N+1 query problems for fast loading
+    """
+    try:
+        logger.info("Fetching optimized revenue breakdown")
+        
+        # Single query to get all revenue data using optimized view
+        result = db.table("revenue_analytics_optimized").select("*").execute()
+        
+        if not result.data:
+            return []
+        
+        # Group data by client for aggregation
+        client_data = {}
+        
+        for row in result.data:
+            client_id = row["client_id"]
+            
+            if client_id not in client_data:
+                client_data[client_id] = {
+                    "id": client_id,
+                    "name": row["client_name"],
+                    "status": row["client_status"],
+                    "total_fum": 0,
+                    "total_revenue": 0,
+                    "product_count": 0,
+                    "products_with_revenue": 0,
+                    "revenue_status": "complete",
+                    "has_missing_valuations": False,
+                    "processed_products": set()
+                }
+            
+            client = client_data[client_id]
+            product_id = row["product_id"]
+            
+            # Process each product only once (due to multiple fund rows per product)
+            if product_id and product_id not in client["processed_products"]:
+                client["processed_products"].add(product_id)
+                client["product_count"] += 1
+                
+                # Check if product has complete valuations
+                fund_count = row["product_fund_count"] or 0
+                valued_fund_count = row["product_valued_fund_count"] or 0
+                product_fum = float(row["product_total_fum"] or 0)
+                
+                if fund_count > 0 and valued_fund_count == fund_count:
+                    # Product has complete valuations
+                    client["total_fum"] += product_fum
+                    
+                    # Calculate revenue
+                    fixed_cost = float(row["fixed_cost"] or 0)
+                    percentage_fee = float(row["percentage_fee"] or 0)
+                    
+                    if fixed_cost > 0 or percentage_fee > 0:
+                        revenue = fixed_cost + (product_fum * percentage_fee / 100)
+                        client["total_revenue"] += revenue
+                        client["products_with_revenue"] += 1
+                else:
+                    # Product has missing valuations
+                    client["has_missing_valuations"] = True
+        
+        # Calculate company totals for percentage calculations
+        total_company_revenue = sum(client["total_revenue"] for client in client_data.values())
+        
+        # Finalize client data
+        revenue_breakdown = []
+        for client in client_data.values():
+            # Remove processed_products set (not JSON serializable)
+            del client["processed_products"]
+            
+            # Set revenue status
+            client["revenue_status"] = "needs_valuation" if client["has_missing_valuations"] else "complete"
+            del client["has_missing_valuations"]  # Remove internal flag
+            
+            # Calculate revenue percentage
+            client["revenue_percentage_of_total"] = (
+                (client["total_revenue"] / total_company_revenue * 100) 
+                if total_company_revenue > 0 else 0
+            )
+            
+            revenue_breakdown.append(client)
+        
+        # Sort by total revenue (descending)
+        revenue_breakdown.sort(key=lambda x: x["total_revenue"], reverse=True)
+        
+        logger.info(f"Optimized revenue breakdown: processed {len(revenue_breakdown)} clients")
+        return revenue_breakdown
+        
+    except Exception as e:
+        logger.error(f"Error in optimized revenue breakdown: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error calculating revenue breakdown: {str(e)}")

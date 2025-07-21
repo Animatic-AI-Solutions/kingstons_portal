@@ -1379,3 +1379,35 @@ $$;
 -- =========================================================
 -- End of Script
 -- =========================================================
+
+-- Create optimized revenue analytics view to eliminate N+1 queries
+CREATE OR REPLACE VIEW revenue_analytics_optimized AS
+SELECT 
+    cg.id as client_id,
+    cg.name as client_name,
+    cg.status as client_status,
+    cp.id as product_id,
+    cp.fixed_cost,
+    cp.percentage_fee,
+    cp.portfolio_id,
+    
+    -- Portfolio fund data
+    pf.id as portfolio_fund_id,
+    
+    -- Latest valuation data (pre-joined)
+    lfv.valuation as fund_valuation,
+    CASE 
+        WHEN lfv.valuation IS NOT NULL THEN true 
+        ELSE false 
+    END as has_valuation,
+    
+    -- Aggregated portfolio data
+    SUM(COALESCE(lfv.valuation, 0)) OVER (PARTITION BY cp.id) as product_total_fum,
+    COUNT(pf.id) OVER (PARTITION BY cp.id) as product_fund_count,
+    COUNT(lfv.valuation) OVER (PARTITION BY cp.id) as product_valued_fund_count
+
+FROM client_groups cg
+LEFT JOIN client_products cp ON cg.id = cp.client_id AND cp.status = 'active'
+LEFT JOIN portfolio_funds pf ON cp.portfolio_id = pf.portfolio_id AND pf.status = 'active'
+LEFT JOIN latest_portfolio_fund_valuations lfv ON pf.id = lfv.portfolio_fund_id
+WHERE cg.status IN ('active', 'dormant');
