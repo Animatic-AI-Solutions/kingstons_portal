@@ -800,8 +800,16 @@ SELECT
     -- Fund count for each product
     (SELECT COUNT(*) FROM portfolio_funds pf2 WHERE pf2.portfolio_id = cp.portfolio_id AND pf2.status = 'active') as active_fund_count,
     (SELECT COUNT(*) FROM portfolio_funds pf2 WHERE pf2.portfolio_id = cp.portfolio_id AND pf2.status != 'active') as inactive_fund_count,
-    -- Product total value - sum of all fund market values for this product
-    (SELECT COALESCE(SUM(lfv.valuation), 0) 
+    -- Product total value - sum of all fund market values for this product with ad-hoc fallback
+    (SELECT 
+        CASE 
+            -- Use real valuations if available
+            WHEN COALESCE(SUM(lfv.valuation), 0) > 0 THEN
+                SUM(lfv.valuation)
+            -- Use ad-hoc valuation when no real valuations exist
+            ELSE
+                calculate_adhoc_portfolio_valuation(cp.portfolio_id)
+        END
      FROM portfolio_funds pf3 
      LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf3.id 
      WHERE pf3.portfolio_id = cp.portfolio_id 
@@ -809,7 +817,7 @@ SELECT
     -- Revenue tracking columns
     cp.fixed_cost,
     cp.percentage_fee,
-    -- Calculated annual revenue for this product with proper validation logic
+    -- Calculated annual revenue for this product with ad-hoc valuation fallback
     CASE 
         WHEN cp.status = 'active' THEN
             CASE
@@ -821,22 +829,22 @@ SELECT
                     cp.fixed_cost
                 -- If percentage fee is involved (with or without fixed cost)
                 WHEN COALESCE(cp.percentage_fee, 0) > 0 THEN
+                    COALESCE(cp.fixed_cost, 0) + 
                     CASE
-                        -- Check if there's any valuation available
+                        -- Use real valuations if available
                         WHEN (SELECT COALESCE(SUM(lfv.valuation), 0) 
                               FROM portfolio_funds pf3 
                               LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf3.id 
                               WHERE pf3.portfolio_id = cp.portfolio_id 
                               AND pf3.status = 'active') > 0 THEN
-                            -- Calculate with valuation
-                            COALESCE(cp.fixed_cost, 0) + 
                             (SELECT SUM(lfv.valuation) * (cp.percentage_fee / 100.0)
                              FROM portfolio_funds pf3 
                              LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf3.id 
                              WHERE pf3.portfolio_id = cp.portfolio_id 
                              AND pf3.status = 'active')
+                        -- Use ad-hoc valuation when no real valuations exist
                         ELSE
-                            NULL -- Will show as 'Latest valuation needed' in frontend
+                            calculate_adhoc_portfolio_valuation(cp.portfolio_id) * (cp.percentage_fee / 100.0)
                     END
                 ELSE
                     NULL -- Default case
@@ -917,8 +925,16 @@ SELECT
         THEN COALESCE(tpg.generation_name, avp.name, 'Template')
         ELSE 'Bespoke'
     END as portfolio_type_display,
-    -- Portfolio total value calculation
-    (SELECT COALESCE(SUM(lfv.valuation), 0) 
+    -- Portfolio total value calculation with ad-hoc fallback
+    (SELECT 
+        CASE 
+            -- Use real valuations if available
+            WHEN COALESCE(SUM(lfv.valuation), 0) > 0 THEN
+                SUM(lfv.valuation)
+            -- Use ad-hoc valuation when no real valuations exist
+            ELSE
+                calculate_adhoc_portfolio_valuation(cp.portfolio_id)
+        END
      FROM portfolio_funds pf 
      LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id 
      WHERE pf.portfolio_id = cp.portfolio_id 
@@ -926,7 +942,7 @@ SELECT
     -- Revenue tracking
     cp.fixed_cost,
     cp.percentage_fee,
-    -- Calculated annual revenue for this product with proper validation logic
+    -- Calculated annual revenue for this product with ad-hoc valuation fallback
     CASE 
         WHEN cp.status = 'active' THEN
             CASE
@@ -938,22 +954,22 @@ SELECT
                     cp.fixed_cost
                 -- If percentage fee is involved (with or without fixed cost)
                 WHEN COALESCE(cp.percentage_fee, 0) > 0 THEN
+                    COALESCE(cp.fixed_cost, 0) + 
                     CASE
-                        -- Check if there's any valuation available
+                        -- Use real valuations if available
                         WHEN (SELECT COALESCE(SUM(lfv.valuation), 0) 
                               FROM portfolio_funds pf 
                               LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id 
                               WHERE pf.portfolio_id = cp.portfolio_id 
                               AND pf.status = 'active') > 0 THEN
-                            -- Calculate with valuation
-                            COALESCE(cp.fixed_cost, 0) + 
                             (SELECT SUM(lfv.valuation) * (cp.percentage_fee / 100.0)
                              FROM portfolio_funds pf 
                              LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id 
                              WHERE pf.portfolio_id = cp.portfolio_id 
                              AND pf.status = 'active')
+                        -- Use ad-hoc valuation when no real valuations exist
                         ELSE
-                            NULL -- Will show as 'Latest valuation needed' in frontend
+                            calculate_adhoc_portfolio_valuation(cp.portfolio_id) * (cp.percentage_fee / 100.0)
                     END
                 ELSE
                     NULL -- Default case
@@ -980,13 +996,22 @@ SELECT
     SUM(CASE 
         WHEN cp.status = 'active' AND cp.percentage_fee IS NOT NULL THEN
             COALESCE(
-                (SELECT SUM(lfv.valuation) * (cp.percentage_fee / 100.0)
+                (SELECT SUM(COALESCE(lfv.valuation, 0)) * (cp.percentage_fee / 100.0)
                  FROM portfolio_funds pf 
                  LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id 
                  WHERE pf.portfolio_id = cp.portfolio_id 
                  AND pf.status = 'active'), 
                 0
-            )
+            ) + 
+            -- Add ad-hoc valuation calculation when no real valuations exist
+            CASE 
+                WHEN (SELECT COUNT(*) FROM portfolio_funds pf 
+                      LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id 
+                      WHERE pf.portfolio_id = cp.portfolio_id 
+                      AND lfv.valuation > 0) = 0 
+                THEN calculate_adhoc_portfolio_valuation(cp.portfolio_id) * (cp.percentage_fee / 100.0)
+                ELSE 0
+            END
         ELSE 0
     END) as total_percentage_revenue,
     SUM(CASE 
@@ -997,22 +1022,22 @@ SELECT
                     cp.fixed_cost
                 -- If percentage fee is involved (with or without fixed cost)
                 WHEN COALESCE(cp.percentage_fee, 0) > 0 THEN
+                    COALESCE(cp.fixed_cost, 0) + 
                     CASE
-                        -- Check if there's any valuation available
+                        -- Use real valuations if available
                         WHEN (SELECT COALESCE(SUM(lfv.valuation), 0) 
                               FROM portfolio_funds pf 
                               LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id 
                               WHERE pf.portfolio_id = cp.portfolio_id 
                               AND pf.status = 'active') > 0 THEN
-                            -- Calculate with valuation
-                            COALESCE(cp.fixed_cost, 0) + 
                             (SELECT SUM(lfv.valuation) * (cp.percentage_fee / 100.0)
                              FROM portfolio_funds pf 
                              LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id 
                              WHERE pf.portfolio_id = cp.portfolio_id 
                              AND pf.status = 'active')
+                        -- Use ad-hoc valuation when no real valuations exist
                         ELSE
-                            0 -- Don't count revenue when valuation is needed
+                            calculate_adhoc_portfolio_valuation(cp.portfolio_id) * (cp.percentage_fee / 100.0)
                     END
                 ELSE
                     0 -- Don't count when nothing is configured
@@ -1032,25 +1057,25 @@ SELECT
                     cp.fixed_cost
                 -- If percentage fee is involved (with or without fixed cost)
                 WHEN COALESCE(cp.percentage_fee, 0) > 0 THEN
+                    COALESCE(cp.fixed_cost, 0) + 
                     CASE
-                        -- Check if there's any valuation available
+                        -- Use real valuations if available
                         WHEN (SELECT COALESCE(SUM(lfv.valuation), 0) 
                               FROM portfolio_funds pf 
                               LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id 
                               WHERE pf.portfolio_id = cp.portfolio_id 
                               AND pf.status = 'active') > 0 THEN
-                            -- Calculate with valuation
-                            COALESCE(cp.fixed_cost, 0) + 
                             (SELECT SUM(lfv.valuation) * (cp.percentage_fee / 100.0)
                              FROM portfolio_funds pf 
                              LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id 
                              WHERE pf.portfolio_id = cp.portfolio_id 
                              AND pf.status = 'active')
+                        -- Use ad-hoc valuation when no real valuations exist
                         ELSE
-                            NULL -- Don't count revenue when valuation is needed
+                            calculate_adhoc_portfolio_valuation(cp.portfolio_id) * (cp.percentage_fee / 100.0)
                     END
                 ELSE
-                    NULL -- Don't count when nothing is configured
+                    NULL -- Default case
             END
         ELSE NULL
     END) as avg_revenue_per_product
@@ -1189,7 +1214,7 @@ FROM
     ) pv_agg ON pv_agg.portfolio_id = cp.portfolio_id
     
     -- IRR data (from existing optimized view)
-    LEFT JOIN latest_portfolio_irr_values lpiv ON lpiv.portfolio_id = cp.portfolio_id
+    LEFT JOIN latest_portfolio_irr_values lpiv ON lpiv.portfolio_id = cp.portfolio_id;
 
 -- Include all products regardless of client group status
 -- No WHERE clause needed - show all products
@@ -1317,6 +1342,39 @@ BEGIN
     LIMIT result_limit;
 END;
 $$ LANGUAGE plpgsql;
+
+-- =========================================================
+-- AD-HOC VALUATION FUNCTION
+-- =========================================================
+-- Purpose: Calculate valuation based on transaction history when real valuations are missing
+-- Logic: Start with 0, subtract inflows (negative), add outflows (positive)
+
+CREATE OR REPLACE FUNCTION calculate_adhoc_portfolio_valuation(portfolio_id_param BIGINT)
+RETURNS NUMERIC
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    result_value NUMERIC DEFAULT 0;
+BEGIN
+    SELECT 
+        COALESCE(SUM(
+            CASE 
+                WHEN hal.activity_type IN ('Investment', 'RegularInvestment', 'TaxUplift', 'FundSwitchIn', 'ProductSwitchIn') 
+                THEN -ABS(hal.amount)
+                WHEN hal.activity_type IN ('FundSwitchOut', 'ProductSwitchOut', 'Withdrawal')
+                THEN ABS(hal.amount)
+                ELSE 0
+            END
+        ), 0)
+    INTO result_value
+    FROM holding_activity_log hal
+    INNER JOIN portfolio_funds pf ON pf.id = hal.portfolio_fund_id
+    WHERE pf.portfolio_id = portfolio_id_param
+    AND pf.status = 'active';
+    
+    RETURN GREATEST(result_value, 0);
+END;
+$$;
 
 -- =========================================================
 -- End of Script

@@ -1597,11 +1597,9 @@ async def get_company_revenue_analytics(db = Depends(get_db)):
 async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
     """
     Get revenue breakdown by client groups, showing each client group's revenue and percentage of total.
-    Updated to handle 4-state revenue status logic:
-    - no_setup: Both fixed_cost and percentage_fee are NULL
-    - zero_fee_setup: Both fixed_cost and percentage_fee are explicitly set to 0
-    - needs_valuation: Has non-zero fees but missing valuations
-    - complete: Has fees and all valuations available
+    Updated to handle 2-state revenue status logic:
+    - needs_valuation: Has non-zero fees but using ad-hoc valuations
+    - complete: Has fees and real valuations available
     """
     try:
         # First get the total company revenue for percentage calculations
@@ -1629,7 +1627,7 @@ async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
                 .execute()
             
             if not products_result.data:
-                # Client has no products, add with zero revenue
+                # Client has no products, add with zero revenue and complete status
                 revenue_breakdown.append({
                     "id": client_id,
                     "name": client_name,
@@ -1639,7 +1637,7 @@ async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
                     "revenue_percentage_of_total": 0,
                     "product_count": 0,
                     "products_with_revenue": 0,
-                    "revenue_status": "no_setup"  # Red dot - no products means no revenue setup
+                    "revenue_status": "complete"  # Green dot - no products, nothing to calculate
                 })
                 continue
             
@@ -1647,33 +1645,20 @@ async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
             total_client_fum = 0
             products_with_revenue = 0
             
-            # Track revenue status for this client (4-state logic)
-            has_null_fees = False  # Any product with NULL fees
-            has_zero_fees = False  # Any product with deliberately 0 fees
-            has_positive_fees = False  # Any product with positive fees
-            needs_valuation = False  # Any product with positive fees but missing valuations
+            # Track revenue status for this client - SIMPLIFIED LOGIC
+            has_missing_valuations = False  # Any product missing valuations = amber
             
             for product in products_result.data:
-                fixed_cost = product.get("fixed_cost")  # Don't default to 0, keep None
-                percentage_fee = product.get("percentage_fee")  # Don't default to 0, keep None
+                fixed_cost = float(product.get("fixed_cost", 0))
+                percentage_fee = float(product.get("percentage_fee", 0))
                 portfolio_id = product.get("portfolio_id")
                 
-                # Determine fee setup status for this product
-                if fixed_cost is None and percentage_fee is None:
-                    # Both NULL - no fee setup
-                    has_null_fees = True
-                elif (fixed_cost == 0 or fixed_cost is None) and (percentage_fee == 0 or percentage_fee is None):
-                    # Check if at least one is explicitly 0 (not NULL)
-                    if fixed_cost == 0 or percentage_fee == 0:
-                        has_zero_fees = True
-                    else:
-                        has_null_fees = True
-                else:
-                    # Has positive fees
-                    has_positive_fees = True
+                logger.info(f"  Product ID {product.get('id')}: fixed_cost={fixed_cost}, percentage_fee={percentage_fee}, portfolio_id={portfolio_id}")
                 
-                # Calculate product FUM from portfolio valuations (include ALL products for FUM)
+                # Calculate product FUM and check if valuations exist
                 product_fum = 0
+                product_has_valuations = False
+                
                 if portfolio_id:
                     # Get all portfolio funds for this portfolio
                     portfolio_funds_result = db.table("portfolio_funds")\
@@ -1682,9 +1667,13 @@ async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
                         .eq("status", "active")\
                         .execute()
                     
+                    
                     if portfolio_funds_result.data:
-                        # Get latest valuations for all portfolio funds
-                        fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
+                        fund_ids = [fund["id"] for fund in portfolio_funds_result.data]
+                        
+                        # Check if ALL portfolio funds have valuations in latest_portfolio_fund_valuations
+                        total_valuations = 0
+                        funds_with_valuations = 0
                         
                         for fund_id in fund_ids:
                             valuation_result = db.table("latest_portfolio_fund_valuations")\
@@ -1692,60 +1681,49 @@ async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
                                 .eq("portfolio_fund_id", fund_id)\
                                 .execute()
                             
-                            if valuation_result.data and valuation_result.data[0]["valuation"]:
-                                product_fum += float(valuation_result.data[0]["valuation"])
-                
-                # Add to total FUM regardless of fee status
-                total_client_fum += product_fum
-                
-                # Calculate product revenue (only for products with positive fees)
-                product_revenue = 0
-                
-                # Convert None to 0 for revenue calculation
-                fixed_cost_val = float(fixed_cost) if fixed_cost is not None else 0
-                percentage_fee_val = float(percentage_fee) if percentage_fee is not None else 0
-                
-                # Only calculate revenue if there are positive fees
-                if fixed_cost_val > 0 or percentage_fee_val > 0:
-                    # If only fixed cost is set (no percentage fee)
-                    if fixed_cost_val > 0 and percentage_fee_val == 0:
-                        product_revenue = fixed_cost_val
-                        products_with_revenue += 1
-                    # If percentage fee is involved (with or without fixed cost)
-                    elif percentage_fee_val > 0:
-                        if product_fum > 0:  # Only count if there's valuation
-                            product_revenue = fixed_cost_val + (product_fum * (percentage_fee_val / 100))
-                            products_with_revenue += 1
+                            if valuation_result.data:
+                                funds_with_valuations += 1
+                                valuation_value = valuation_result.data[0]["valuation"]
+                                if valuation_value is not None:
+                                    total_valuations += float(valuation_value)
+                        
+                        # Product has complete valuations if ALL its portfolio funds have valuations
+                        if funds_with_valuations == len(fund_ids):
+                            product_has_valuations = True
+                            product_fum = total_valuations
                         else:
-                            # Has percentage fee setup but no valuation - needs valuation
-                            needs_valuation = True
+                            product_has_valuations = False
+                            product_fum = 0  # Exclude from revenue calculations
+                            has_missing_valuations = True  # Mark client as needing amber status
+                    else:
+                        has_missing_valuations = True  # No funds = missing valuations
+                else:
+                    has_missing_valuations = True  # No portfolio = missing valuations
                 
-                total_client_revenue += product_revenue
+                # Add to totals only if product has complete valuations
+                if product_has_valuations:
+                    total_client_fum += product_fum
+                    
+                    # Calculate revenue only for products with complete valuations
+                    if fixed_cost > 0 or percentage_fee > 0:
+                        revenue = (fixed_cost) + (product_fum * percentage_fee / 100)
+                        total_client_revenue += revenue
+                        products_with_revenue += 1
             
             # Calculate percentage of total company revenue
             revenue_percentage = 0
             if total_company_revenue > 0:
                 revenue_percentage = (total_client_revenue / total_company_revenue) * 100
             
-            # Determine revenue status using 4-state logic
+            # Determine revenue status using simplified logic
             revenue_status = "complete"  # Default to complete
             
-            if has_null_fees and not has_zero_fees and not has_positive_fees:
-                revenue_status = "no_setup"  # Red dot - all products have NULL fees
-            elif has_zero_fees and not has_null_fees and not has_positive_fees:
-                revenue_status = "zero_fee_setup"  # Blue dot - all products have zero fees
-            elif has_positive_fees and needs_valuation:
-                revenue_status = "needs_valuation"  # Amber dot - has positive fees but needs valuation
-            elif has_positive_fees and not needs_valuation:
-                revenue_status = "complete"  # Green dot - has positive fees and all valuations
+            if has_missing_valuations:
+                revenue_status = "needs_valuation"  # Amber dot - has missing valuations
             else:
-                # Mixed scenarios - prioritize by most critical need
-                if has_null_fees:
-                    revenue_status = "no_setup"  # Red dot - some products not set up
-                elif needs_valuation:
-                    revenue_status = "needs_valuation"  # Amber dot - some products need valuation
-                else:
-                    revenue_status = "complete"  # Green dot - everything is set up
+                revenue_status = "complete"  # Green dot (hidden) - complete valuations
+            
+
             
             revenue_breakdown.append({
                 "id": client_id,
@@ -1762,7 +1740,6 @@ async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
         # Sort by total revenue (descending)
         revenue_breakdown.sort(key=lambda x: x["total_revenue"], reverse=True)
         
-
         return revenue_breakdown
         
     except Exception as e:
