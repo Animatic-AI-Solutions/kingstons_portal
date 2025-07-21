@@ -8,6 +8,7 @@ import { ActionButton } from '../components/ui';
 import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
 import { StatCard, StatBox, Skeleton } from '../components/ui';
 import StandardTable, { ColumnConfig } from '../components/StandardTable';
+import DynamicPageContainer from '../components/DynamicPageContainer';
 
 interface Product {
   id: number;
@@ -242,7 +243,10 @@ const Products: React.FC = () => {
 
 
   return (
-    <div className="container mx-auto px-4 py-3">
+    <DynamicPageContainer 
+      maxWidth="1800px"
+      className="py-3"
+    >
       <div className="flex justify-between items-center mb-3">
         <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Products</h1>
         <div className="flex items-center gap-4">
@@ -261,13 +265,17 @@ const Products: React.FC = () => {
         <div className="flex flex-col gap-3 mb-2">
           {/* Search Bar */}
           <div className="flex-1">
-            <FilterSearch
-              placeholder="Filter products by name, client, provider, or status..."
-              onFilter={setSearchQuery}
-              showResultCount={true}
-              resultCount={finalFilteredData.length}
-              filterLabel="Product"
-            />
+            <div style={{ fontSize: '0.75rem' }}>
+              <FilterSearch
+                placeholder="Filter products by name, client, provider, or status..."
+                onFilter={setSearchQuery}
+                showResultCount={true}
+                resultCount={finalFilteredData.length}
+                filterLabel="Product"
+                className="small-search-text"
+                style={{ fontSize: '0.75rem' }}
+              />
+            </div>
           </div>
         </div>
 
@@ -291,7 +299,7 @@ const Products: React.FC = () => {
           )}
         </div>
       </div>
-    </div>
+    </DynamicPageContainer>
   );
 };
 
