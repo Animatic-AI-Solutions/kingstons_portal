@@ -286,6 +286,30 @@ const AddPortfolioTemplate: React.FC = () => {
     }, 0);
   }, [fundWeightings]);
 
+  // Calculate weighted risk when total weighting is 100%
+  const weightedRisk = useMemo(() => {
+    // Only calculate if total weighting equals 100%
+    if (Math.abs(totalWeighting - 100) > 0.01) {
+      return null;
+    }
+
+    let totalWeightedRisk = 0;
+    let totalValidWeighting = 0;
+
+    selectedFunds.forEach(fundId => {
+      const fund = availableFunds.find(f => f.id === fundId);
+      const weighting = parseFloat(fundWeightings[fundId.toString()] || '0');
+      
+      if (fund && fund.risk_factor !== undefined && fund.risk_factor !== null && weighting > 0) {
+        totalWeightedRisk += (fund.risk_factor * weighting);
+        totalValidWeighting += weighting;
+      }
+    });
+
+    // Return the weighted average risk, or null if no valid risk data
+    return totalValidWeighting > 0 ? totalWeightedRisk / totalValidWeighting : null;
+  }, [selectedFunds, fundWeightings, availableFunds, totalWeighting]);
+
   // Sort selected funds: alphabetical order for non-cash funds, cash funds always last
   const sortedSelectedFunds = useMemo(() => {
     const selectedFundObjects = selectedFunds.map(fundId => 
@@ -519,6 +543,18 @@ const AddPortfolioTemplate: React.FC = () => {
                             }`}>
                               {totalWeighting.toFixed(1)}%
                             </div>
+                            {Math.abs(totalWeighting - 100) < 0.01 && weightedRisk !== null && weightedRisk !== undefined && (
+                              <div className="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                <span className="flex items-center space-x-1">
+                                  <span>Risk: {weightedRisk.toFixed(1)}</span>
+                                  <div className={`w-2 h-2 rounded-full ${
+                                    weightedRisk <= 2 ? 'bg-green-500' :
+                                    weightedRisk <= 4 ? 'bg-blue-500' :
+                                    weightedRisk <= 6 ? 'bg-yellow-500' : 'bg-red-500'
+                                  }`}></div>
+                                </span>
+                              </div>
+                            )}
                           </div>
                           {selectedFunds.length > 0 && (
                             <button
@@ -536,7 +572,7 @@ const AddPortfolioTemplate: React.FC = () => {
                         </div>
 
                         {/* Selected Funds Display */}
-                        <div className="h-80 sm:h-96 lg:h-[450px] overflow-y-auto border rounded bg-white">
+                        <div className="h-[500px] sm:h-[600px] lg:h-[700px] xl:h-[800px] overflow-y-auto border rounded bg-white">
                           {selectedFunds.length === 0 ? (
                             <div className="h-full flex items-center justify-center text-sm text-gray-500">
                               <div className="text-center">
@@ -700,7 +736,7 @@ const AddPortfolioTemplate: React.FC = () => {
                         />
                         
                         {/* Available Fund List */}
-                        <div className="h-80 sm:h-96 lg:h-[450px] overflow-y-auto border rounded p-2 bg-gray-50">
+                        <div className="h-[500px] sm:h-[600px] lg:h-[700px] xl:h-[800px] overflow-y-auto border rounded p-2 bg-gray-50">
                           {filteredFunds.length === 0 ? (
                             <div className="text-sm text-gray-500 text-center py-8">
                               <div className="mx-auto w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mb-3">

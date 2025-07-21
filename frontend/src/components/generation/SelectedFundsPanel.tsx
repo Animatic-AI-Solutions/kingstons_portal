@@ -18,6 +18,7 @@ interface SelectedFundsPanelProps {
   onClearAll: () => void;
   totalWeighting: number;
   isLoading: boolean;
+  weightedRisk?: number | null;
 }
 
 const SelectedFundsPanel: React.FC<SelectedFundsPanelProps> = ({
@@ -27,7 +28,8 @@ const SelectedFundsPanel: React.FC<SelectedFundsPanelProps> = ({
   onWeightingChange,
   onClearAll,
   totalWeighting,
-  isLoading
+  isLoading,
+  weightedRisk
 }) => {
   // Separate cash funds from other funds and sort non-cash funds alphabetically
   const cashFunds = selectedFunds.filter(fund => isCashFund(fund));
@@ -35,50 +37,13 @@ const SelectedFundsPanel: React.FC<SelectedFundsPanelProps> = ({
     .filter(fund => !isCashFund(fund))
     .sort((a, b) => a.fund_name.localeCompare(b.fund_name));
 
-  // Calculate weighted risk
-  const calculateWeightedRisk = (): number | null => {
-    if (totalWeighting === 0) return null;
-    
-    let totalRiskWeighted = 0;
-    let totalWeightingWithRisk = 0;
-    
-    selectedFunds.forEach(fund => {
-      const weight = parseFloat(fundWeightings[fund.id.toString()] || '0');
-      if (weight > 0 && fund.risk_factor !== undefined && fund.risk_factor !== null) {
-        totalRiskWeighted += fund.risk_factor * weight;
-        totalWeightingWithRisk += weight;
-      }
-    });
-    
-    return totalWeightingWithRisk > 0 ? totalRiskWeighted / totalWeightingWithRisk : null;
+  // Get risk level color based on weighted risk value
+  const getRiskColor = (risk: number) => {
+    if (risk <= 2) return { bgClass: 'bg-green-500', textClass: 'text-green-700' };
+    if (risk <= 4) return { bgClass: 'bg-blue-500', textClass: 'text-blue-700' };
+    if (risk <= 6) return { bgClass: 'bg-yellow-500', textClass: 'text-yellow-700' };
+    return { bgClass: 'bg-red-500', textClass: 'text-red-700' };
   };
-
-  // Get color based on risk value (1-7 scale) - green to red gradient
-  const getRiskColor = (riskValue: number): { textClass: string; bgClass: string } => {
-    if (riskValue <= 0) return { textClass: 'text-gray-500', bgClass: 'bg-gray-300' };
-    
-    // Clamp the value between 1 and 7
-    const clampedRisk = Math.max(1, Math.min(7, riskValue));
-    
-    // Calculate color intensity based on position between 1 and 7
-    const normalizedRisk = (clampedRisk - 1) / 6; // 0 to 1 scale
-    
-    if (normalizedRisk <= 0.16) {
-      return { textClass: 'text-green-600', bgClass: 'bg-green-500' };
-    } else if (normalizedRisk <= 0.33) {
-      return { textClass: 'text-lime-600', bgClass: 'bg-lime-500' };
-    } else if (normalizedRisk <= 0.5) {
-      return { textClass: 'text-yellow-600', bgClass: 'bg-yellow-500' };
-    } else if (normalizedRisk <= 0.66) {
-      return { textClass: 'text-orange-600', bgClass: 'bg-orange-500' };
-    } else if (normalizedRisk <= 0.83) {
-      return { textClass: 'text-red-500', bgClass: 'bg-red-400' };
-    } else {
-      return { textClass: 'text-red-600', bgClass: 'bg-red-500' };
-    }
-  };
-
-  const weightedRisk = calculateWeightedRisk();
 
   return (
     <div className="space-y-1">
@@ -102,15 +67,11 @@ const SelectedFundsPanel: React.FC<SelectedFundsPanelProps> = ({
           }`}>
             Weight: {totalWeighting.toFixed(1)}%
           </div>
-          {weightedRisk !== null && (
-            <div className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-              weightedRisk !== null ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-600'
-            }`}>
+          {Math.abs(totalWeighting - 100) < 0.01 && weightedRisk !== null && weightedRisk !== undefined && (
+            <div className={`px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800`}>
               <span className="flex items-center space-x-1">
-                <span>Risk: {weightedRisk.toFixed(1)}/7</span>
-                <div className={`w-2 h-2 rounded-full ${
-                  weightedRisk !== null ? getRiskColor(weightedRisk).bgClass : 'bg-gray-300'
-                }`}></div>
+                <span>Risk: {weightedRisk.toFixed(1)}</span>
+                <div className={`w-2 h-2 rounded-full ${getRiskColor(weightedRisk).bgClass}`}></div>
               </span>
             </div>
           )}

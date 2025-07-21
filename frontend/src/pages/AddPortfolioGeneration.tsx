@@ -566,6 +566,30 @@ const AddPortfolioGeneration: React.FC = () => {
     }, 0);
   }, [fundWeightings]);
 
+  // Calculate weighted risk when total weighting is 100%
+  const weightedRisk = useMemo(() => {
+    // Only calculate if total weighting equals 100%
+    if (Math.abs(totalWeighting - 100) > 0.01) {
+      return null;
+    }
+
+    let totalWeightedRisk = 0;
+    let totalValidWeighting = 0;
+
+    selectedFunds.forEach(fundId => {
+      const fund = availableFunds.find(f => f.id === fundId);
+      const weighting = parseFloat(fundWeightings[fundId.toString()] || '0');
+      
+      if (fund && fund.risk_factor !== undefined && fund.risk_factor !== null && weighting > 0) {
+        totalWeightedRisk += (fund.risk_factor * weighting);
+        totalValidWeighting += weighting;
+      }
+    });
+
+    // Return the weighted average risk, or null if no valid risk data
+    return totalValidWeighting > 0 ? totalWeightedRisk / totalValidWeighting : null;
+  }, [selectedFunds, fundWeightings, availableFunds, totalWeighting]);
+
   // Auto-generation function for generation name
   const generateGenerationName = () => {
     if (!portfolio) return '';
@@ -836,6 +860,7 @@ const AddPortfolioGeneration: React.FC = () => {
                     onSearchChange={setFundSearchTerm}
                     isLoading={isLoadingFunds || isLoadingLatestFunds}
                     error={error}
+                    weightedRisk={weightedRisk}
                   />
                 )}
               </div>
