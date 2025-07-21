@@ -117,17 +117,17 @@ const GlobalSearch: React.FC = () => {
     
     switch (entityType) {
       case 'client_group':
-        return <UsersIcon {...iconProps} className="h-4 w-4 text-blue-600 flex-shrink-0" />;
+        return <UsersIcon {...iconProps} className="h-4 w-4 text-blue-500 flex-shrink-0" />;
       case 'product':
-        return <CubeIcon {...iconProps} className="h-4 w-4 text-green-600 flex-shrink-0" />;
+        return <CubeIcon {...iconProps} className="h-4 w-4 text-green-500 flex-shrink-0" />;
       case 'fund':
-        return <ArrowTrendingUpIcon {...iconProps} className="h-4 w-4 text-purple-600 flex-shrink-0" />;
+        return <ArrowTrendingUpIcon {...iconProps} className="h-4 w-4 text-purple-500 flex-shrink-0" />;
       case 'provider':
-        return <BuildingOffice2Icon {...iconProps} className="h-4 w-4 text-orange-600 flex-shrink-0" />;
+        return <BuildingOffice2Icon {...iconProps} className="h-4 w-4 text-orange-500 flex-shrink-0" />;
       case 'portfolio':
-        return <BriefcaseIcon {...iconProps} className="h-4 w-4 text-indigo-600 flex-shrink-0" />;
+        return <BriefcaseIcon {...iconProps} className="h-4 w-4 text-indigo-500 flex-shrink-0" />;
       default:
-        return <MagnifyingGlassIcon {...iconProps} className="h-4 w-4 text-gray-500 flex-shrink-0" />;
+        return <MagnifyingGlassIcon {...iconProps} className="h-4 w-4 text-gray-400 flex-shrink-0" />;
     }
   };
 
@@ -142,15 +142,59 @@ const GlobalSearch: React.FC = () => {
     return labels[entityType as keyof typeof labels] || entityType;
   };
 
-  const getEntityTypeColor = (entityType: string) => {
+  const getEntityTypeBadgeColor = (entityType: string) => {
     const colors = {
-      client_group: 'bg-blue-50 text-blue-700 border-blue-200',
-      product: 'bg-green-50 text-green-700 border-green-200',
-      fund: 'bg-purple-50 text-purple-700 border-purple-200',
-      provider: 'bg-orange-50 text-orange-700 border-orange-200',
-      portfolio: 'bg-indigo-50 text-indigo-700 border-indigo-200'
+      client_group: 'bg-blue-50 text-blue-600',
+      product: 'bg-green-50 text-green-600',
+      fund: 'bg-purple-50 text-purple-600',
+      provider: 'bg-orange-50 text-orange-600',
+      portfolio: 'bg-indigo-50 text-indigo-600'
     };
-    return colors[entityType as keyof typeof colors] || 'bg-gray-50 text-gray-700 border-gray-200';
+    return colors[entityType as keyof typeof colors] || 'bg-gray-50 text-gray-600';
+  };
+
+  const getEntityKeyDetail = (result: SearchResult) => {
+    // Return simplified, entity-specific key information
+    switch (result.entity_type) {
+      case 'client_group':
+        return result.additional_info || 'Active client';
+      case 'product':
+        return result.additional_info || 'Active product';
+      case 'fund':
+        // Extract ISIN if available, otherwise show additional info
+        const isinMatch = result.additional_info?.match(/ISIN:\s*([A-Z0-9]+)/i);
+        return isinMatch ? isinMatch[1] : (result.additional_info || 'Investment fund');
+      case 'provider':
+        return result.additional_info || 'Financial provider';
+      case 'portfolio':
+        return result.additional_info || 'Portfolio template';
+      default:
+        return result.additional_info || '';
+    }
+  };
+
+  // Business priority order for search results
+  const sortResultsByBusinessPriority = (results: SearchResult[]): SearchResult[] => {
+    const priorityOrder = {
+      'client_group': 1,
+      'product': 2,
+      'fund': 3,
+      'portfolio': 4,
+      'provider': 5
+    };
+
+    return [...results].sort((a, b) => {
+      // First, sort by entity type priority
+      const aPriority = priorityOrder[a.entity_type as keyof typeof priorityOrder] || 999;
+      const bPriority = priorityOrder[b.entity_type as keyof typeof priorityOrder] || 999;
+      
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
+      }
+      
+      // Within same type, sort alphabetically by name
+      return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+    });
   };
 
   const handleResultClick = (result: SearchResult) => {
@@ -191,37 +235,22 @@ const GlobalSearch: React.FC = () => {
     inputRef.current?.focus();
   };
 
-  const highlightMatch = (text: string, searchQuery: string) => {
-    if (!searchQuery.trim()) return text;
-    
-    const regex = new RegExp(`(${searchQuery.trim()})`, 'gi');
-    const parts = text.split(regex);
-    
-    return parts.map((part, index) => 
-      regex.test(part) ? (
-        <span key={index} className="bg-yellow-200 text-yellow-900 font-medium rounded px-0.5">
-          {part}
-        </span>
-      ) : part
-    );
-  };
-
   // Loading icon
   const loadingIcon = (
-    <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+    <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
     </svg>
   );
 
   return (
-    <div ref={searchRef} className="relative w-full max-w-md">
+    <div ref={searchRef} className="relative w-full">
       {/* Search Input - Following Group 1 Design System */}
       <div className="relative">
         {/* Search Icon */}
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <div className="h-4 w-4 text-gray-400">
-            {isLoading ? loadingIcon : <MagnifyingGlassIcon className="h-4 w-4" />}
+        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+          <div className="h-5 w-5 text-gray-400">
+            {isLoading ? loadingIcon : <MagnifyingGlassIcon className="h-5 w-5" />}
           </div>
         </div>
         
@@ -233,8 +262,8 @@ const GlobalSearch: React.FC = () => {
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={() => query.trim().length >= 2 && results.length > 0 && setIsOpen(true)}
-          placeholder="Search clients, products, funds..."
-          className="block w-full h-10 px-3 py-2 pl-10 pr-10 text-sm border border-gray-300 rounded-md shadow-sm bg-white 
+          placeholder="Search clients, products, funds, providers, portfolios..."
+          className="block w-full h-11 px-4 py-3 pl-11 pr-11 text-sm border border-gray-300 rounded-lg shadow-sm bg-white 
                      transition-all duration-150 ease-in-out 
                      focus:outline-none focus:ring-4 focus:ring-offset-2 focus:border-primary-700 focus:ring-primary-700/10
                      hover:border-gray-400"
@@ -249,11 +278,11 @@ const GlobalSearch: React.FC = () => {
           <button
             type="button"
             onClick={handleClear}
-            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-150"
+            className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-150"
             aria-label="Clear search"
           >
-            <div className="h-4 w-4">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="h-5 w-5">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
@@ -263,53 +292,49 @@ const GlobalSearch: React.FC = () => {
 
       {/* Dropdown Results */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-96 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-80 overflow-y-auto min-w-[400px]">
           {results.length > 0 ? (
             <ul role="listbox" className="py-1">
-              {results.map((result, index) => (
+              {sortResultsByBusinessPriority(results).map((result, index) => (
                 <li key={`${result.entity_type}-${result.entity_id}`} role="option" aria-selected={selectedIndex === index}>
                   <button
                     type="button"
                     onClick={() => handleResultClick(result)}
-                    className={`w-full text-left px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none transition-colors duration-150 ${
+                    className={`w-full text-left px-3 py-1.5 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none transition-colors duration-150 ${
                       selectedIndex === index ? 'bg-gray-50' : ''
                     }`}
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-3 min-w-0 flex-1">
-                        {/* Entity Icon */}
-                        <div className="flex-shrink-0 mt-0.5">
-                          {getEntityIcon(result.entity_type)}
-                        </div>
-                        
-                        {/* Content */}
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <span className="font-medium text-gray-900 truncate">
-                              {highlightMatch(result.name, query)}
-                            </span>
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${getEntityTypeColor(result.entity_type)}`}>
-                              {getEntityTypeLabel(result.entity_type)}
-                            </span>
-                          </div>
-                          
-                          {result.description && (
-                            <p className="text-sm text-gray-600 truncate">
-                              {highlightMatch(result.description, query)}
-                            </p>
-                          )}
-                          
-                          {result.additional_info && (
-                            <p className="text-xs text-gray-500 mt-1 truncate">
-                              {highlightMatch(result.additional_info, query)}
-                            </p>
-                          )}
-                        </div>
+                    {/* Single-line layout - Full width utilization */}
+                    <div className="flex items-center gap-3 w-full">
+                      {/* Icon column - fixed, centered */}
+                      <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                        {getEntityIcon(result.entity_type)}
                       </div>
                       
-                      {/* Arrow Icon */}
-                      <div className="flex-shrink-0 ml-2">
-                        <ChevronRightIcon className="h-4 w-4 text-gray-400" />
+                      {/* Name column - flexible, takes remaining space */}
+                      <div className="flex-1 min-w-0">
+                        <span className="font-medium text-gray-900 text-sm truncate block">
+                          {result.name}
+                        </span>
+                      </div>
+                      
+                      {/* Type Badge column - fixed width */}
+                      <div className="w-16 flex-shrink-0">
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${getEntityTypeBadgeColor(result.entity_type)}`}>
+                          {getEntityTypeLabel(result.entity_type)}
+                        </span>
+                      </div>
+                      
+                      {/* Key Detail column - fixed width */}
+                      <div className="w-20 flex-shrink-0">
+                        <span className="text-xs text-gray-500 truncate block">
+                          {getEntityKeyDetail(result)}
+                        </span>
+                      </div>
+                      
+                      {/* Arrow column - fixed, centered */}
+                      <div className="w-4 flex items-center justify-center flex-shrink-0">
+                        <ChevronRightIcon className="h-3 w-3 text-gray-400" />
                       </div>
                     </div>
                   </button>
@@ -317,10 +342,10 @@ const GlobalSearch: React.FC = () => {
               ))}
             </ul>
           ) : query.trim().length >= 2 && !isLoading ? (
-            <div className="px-4 py-3 text-sm text-gray-500 text-center">
-              <div className="flex items-center justify-center space-x-2">
-                <MagnifyingGlassIcon className="h-4 w-4" />
-                <span>No results found for "{query}"</span>
+            <div className="px-4 py-4 text-sm text-gray-500 text-center">
+              <div className="flex flex-col items-center justify-center space-y-1">
+                <MagnifyingGlassIcon className="h-6 w-6 text-gray-300" />
+                <span>No results found</span>
               </div>
             </div>
           ) : null}
@@ -330,4 +355,4 @@ const GlobalSearch: React.FC = () => {
   );
 };
 
-export default GlobalSearch; 
+export default GlobalSearch;

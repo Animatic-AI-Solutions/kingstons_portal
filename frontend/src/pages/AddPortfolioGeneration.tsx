@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { findCashFund, isCashFund } from '../utils/fundUtils';
 import FundSelectionManager from '../components/generation/FundSelectionManager';
 import { DateInput } from '../components/ui';
+import ConcurrentUserModal from '../components/ui/ConcurrentUserModal';
+import { useConcurrentUserDetection } from '../hooks/useConcurrentUserDetection';
 
 interface Fund {
   id: number;
@@ -36,6 +38,19 @@ const AddPortfolioGeneration: React.FC = () => {
   const { portfolioId } = useParams<{ portfolioId: string }>();
   const navigate = useNavigate();
   const { api } = useAuth();
+  
+  // Concurrent user detection
+  const pageIdentifier = `portfolio-generation-${portfolioId}`;
+  const {
+    showConcurrentUserModal,
+    currentUsers,
+    handleConfirmProceed,
+    handleCancel,
+    isCheckingPresence
+  } = useConcurrentUserDetection({
+    pageIdentifier,
+    pageName: 'portfolio generation'
+  });
   
   const [formData, setFormData] = useState<GenerationFormData>({
     generation_name: '',
@@ -566,6 +581,30 @@ const AddPortfolioGeneration: React.FC = () => {
     }, 0);
   }, [fundWeightings]);
 
+  // Calculate weighted risk when total weighting is 100%
+  const weightedRisk = useMemo(() => {
+    // Only calculate if total weighting equals 100%
+    if (Math.abs(totalWeighting - 100) > 0.01) {
+      return null;
+    }
+
+    let totalWeightedRisk = 0;
+    let totalValidWeighting = 0;
+
+    selectedFunds.forEach(fundId => {
+      const fund = availableFunds.find(f => f.id === fundId);
+      const weighting = parseFloat(fundWeightings[fundId.toString()] || '0');
+      
+      if (fund && fund.risk_factor !== undefined && fund.risk_factor !== null && weighting > 0) {
+        totalWeightedRisk += (fund.risk_factor * weighting);
+        totalValidWeighting += weighting;
+      }
+    });
+
+    // Return the weighted average risk, or null if no valid risk data
+    return totalValidWeighting > 0 ? totalWeightedRisk / totalValidWeighting : null;
+  }, [selectedFunds, fundWeightings, availableFunds, totalWeighting]);
+
   // Auto-generation function for generation name
   const generateGenerationName = () => {
     if (!portfolio) return '';
@@ -603,291 +642,307 @@ const AddPortfolioGeneration: React.FC = () => {
     }
   };
 
-  if (isLoadingPortfolio) {
+  // Show loading while checking for concurrent users
+  if (isLoadingPortfolio || isCheckingPresence) {
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-700"></div>
+        {isCheckingPresence && (
+          <p className="ml-4 text-gray-600">Checking for active users...</p>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Breadcrumb Navigation */}
-      <nav className="mb-8 flex" aria-label="Breadcrumb">
-        <ol className="inline-flex items-center space-x-1 md:space-x-3">
-          <li className="inline-flex items-center">
-            <Link to="/definitions/portfolio-templates" className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-primary-700">
-              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
-              </svg>
-              Portfolio Templates
-            </Link>
-          </li>
-          <li>
-            <div className="flex items-center">
-              <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
-              </svg>
-              <button 
-                onClick={() => navigate(`/definitions/portfolio-templates/${portfolioId}`, {
-                  state: { refreshNeeded: true }
-                })}
-                className="ml-1 text-sm font-medium text-gray-500 hover:text-primary-700 md:ml-2"
-              >
-                {portfolio?.name || 'Template'}
-              </button>
-            </div>
-          </li>
-          <li aria-current="page">
-            <div className="flex items-center">
-              <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
-              </svg>
-              <span className="ml-1 text-sm font-medium text-primary-700 md:ml-2">Add Generation</span>
-            </div>
-          </li>
-        </ol>
-      </nav>
+    <>
+      {/* Concurrent User Warning Modal */}
+      <ConcurrentUserModal
+        isOpen={showConcurrentUserModal}
+        onConfirm={handleConfirmProceed}
+        onCancel={handleCancel}
+        currentUsers={currentUsers}
+        pageName="portfolio generation"
+      />
 
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8 mt-4">
-        <div className="flex items-center">
-          <div className="bg-primary-100 p-2 rounded-lg mr-3 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-          </div>
-          <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">
-            Add Generation to {portfolio?.name || 'Template Portfolio'}
-          </h1>
-        </div>
-        <button
-          onClick={() => navigate(`/definitions/portfolio-templates/${portfolioId}`, {
-            state: { refreshNeeded: true }
-          })}
-          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-        >
-          <svg className="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-          </svg>
-          Back
-        </button>
-      </div>
-
-      {/* Main Content */}
-      <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
-        {(error || dateError) && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-0">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Breadcrumb Navigation */}
+        <nav className="mb-8 flex" aria-label="Breadcrumb">
+          <ol className="inline-flex items-center space-x-1 md:space-x-3">
+            <li className="inline-flex items-center">
+              <Link to="/definitions/portfolio-templates" className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-primary-700">
+                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
                 </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-red-700 text-sm font-medium">{error || dateError}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <div className="p-4 border-b border-gray-200 bg-gray-50">
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col lg:flex-row gap-4">
-                <div className="w-full lg:w-1/3">
-                  <label htmlFor="generation_name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Generation Name <span className="text-gray-500 text-xs">(optional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="generation_name"
-                    name="generation_name"
-                    value={formData.generation_name}
-                    onChange={handleChange}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                    placeholder="Leave empty to auto-generate"
-                  />
-                  {!formData.generation_name.trim() && portfolio && (
-                    <div className="mt-1 text-xs text-gray-500">
-                      <span className="font-medium">Auto-generated:</span> {generateGenerationName()}
-                    </div>
-                  )}
-                </div>
-                <div className="w-full lg:w-1/3">
-                  <DateInput
-                    label="Creation Date"
-                    id="created_at"
-                    name="created_at"
-                    value={formData.created_at}
-                    onChange={(date, formatted) => {
-                      if (date) {
-                        // Valid date - use ISO string
-                        const dateValue = date.toISOString();
-                        setFormData(prev => ({
-                          ...prev,
-                          created_at: dateValue
-                        }));
-                        setDateError(null); // Clear any previous errors
-                      } else {
-                        // Invalid date or empty - validate the raw input
-                        setFormData(prev => ({
-                          ...prev,
-                          created_at: formatted || ''
-                        }));
-                        
-                        // Real-time date validation for invalid dates
-                        if (formatted && formatted.trim()) {
-                          const dateValidationResult = validateCreationDate(formatted);
-                          if (!dateValidationResult.isValid) {
-                            setDateError(dateValidationResult.error);
-                          } else {
-                            setDateError(null);
-                          }
-                        } else {
-                          setDateError(null); // Clear error if date is empty (valid)
-                        }
-                      }
-                      
-                      // Clear general errors when user makes changes
-                      if (error) {
-                        setError(null);
-                      }
-                    }}
-                    placeholder="Select creation date"
-                    helperText="Leave empty to use current date/time"
-                    required={false}
-                  />
-                  {dateError && (
-                    <p className="mt-1 text-xs text-red-500">{dateError}</p>
-                  )}
-                </div>
-                <div className="w-full lg:w-1/3">
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
-                  </label>
-                  <textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    rows={2}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                    placeholder="Enter a detailed description of this portfolio generation"
-                  />
-                </div>
-              </div>
-              
-              {latestGenerationId && (
-                <div className="mt-2">
-                  <div className="flex items-center">
-                    <div className="text-sm text-gray-600">
-                      {isLoadingLatestFunds ? 
-                        <span className="flex items-center">
-                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-primary-700" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Loading funds from latest generation...
-                        </span> :
-                        <span>Funds and weightings from the latest generation have been pre-loaded below. You can adjust them as needed.</span>
-                      }
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Fund Selection Section */}
-          <div className="p-5">
-            <div className="rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 sm:px-6">
-                <h3 className="text-base font-medium text-gray-900">Fund Selection</h3>
-              </div>
-              
-              <div className="p-4">
-                {availableFunds.length === 0 ? (
-                  <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-                    <div className="flex">
-                      <div className="flex-shrink-0">
-                        <svg className="h-5 w-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                      </div>
-                      <div className="ml-3">
-                        <p className="text-sm text-yellow-700">
-                          No funds available. Please add funds before creating a portfolio generation.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <FundSelectionManager
-                    availableFunds={availableFunds}
-                    selectedFunds={selectedFunds}
-                    fundWeightings={fundWeightings}
-                    onFundSelect={handleFundSelection}
-                    onFundDeselect={handleFundSelection}
-                    onWeightingChange={handleWeightingChange}
-                    onClearAll={handleClearAllFunds}
-                    searchQuery={fundSearchTerm}
-                    onSearchChange={setFundSearchTerm}
-                    isLoading={isLoadingFunds || isLoadingLatestFunds}
-                    error={error}
-                  />
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Footer Actions */}
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
-            <div className="flex-1">
-              {(error || dateError) && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mr-4">
-                  <div className="flex items-center">
-                    <svg className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p className="text-sm text-red-700">{error || dateError}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex space-x-3">
-              <Link
-                to={`/definitions/portfolio-templates/${portfolioId}`}
-                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-              >
-                Cancel
+                Portfolio Templates
               </Link>
-              <button
-                type="submit"
-                disabled={isSubmitting || dateError !== null}
-                className={`bg-primary-700 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 shadow-sm transition-colors duration-200 ${
-                  isSubmitting || dateError !== null ? 'opacity-70 cursor-not-allowed' : ''
-                }`}
-              >
-                {isSubmitting ? (
-                  <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Creating...
-                  </span>
-                ) : (
-                  'Create Generation'
-                )}
-              </button>
+            </li>
+            <li>
+              <div className="flex items-center">
+                <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
+                </svg>
+                <button 
+                  onClick={() => navigate(`/definitions/portfolio-templates/${portfolioId}`, {
+                    state: { refreshNeeded: true }
+                  })}
+                  className="ml-1 text-sm font-medium text-gray-500 hover:text-primary-700 md:ml-2"
+                >
+                  {portfolio?.name || 'Template'}
+                </button>
+              </div>
+            </li>
+            <li aria-current="page">
+              <div className="flex items-center">
+                <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
+                </svg>
+                <span className="ml-1 text-sm font-medium text-primary-700 md:ml-2">Add Generation</span>
+              </div>
+            </li>
+          </ol>
+        </nav>
+
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8 mt-4">
+          <div className="flex items-center">
+            <div className="bg-primary-100 p-2 rounded-lg mr-3 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
             </div>
+            <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">
+              Add Generation to {portfolio?.name || 'Template Portfolio'}
+            </h1>
           </div>
-        </form>
+          <button
+            onClick={() => navigate(`/definitions/portfolio-templates/${portfolioId}`, {
+              state: { refreshNeeded: true }
+            })}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+          >
+            <svg className="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+            </svg>
+            Back
+          </button>
+        </div>
+
+        {/* Main Content */}
+        <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
+          {(error || dateError) && (
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-0">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-red-700 text-sm font-medium">{error || dateError}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            <div className="p-4 border-b border-gray-200 bg-gray-50">
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col lg:flex-row gap-4">
+                  <div className="w-full lg:w-1/3">
+                    <label htmlFor="generation_name" className="block text-sm font-medium text-gray-700 mb-1">
+                      Generation Name <span className="text-gray-500 text-xs">(optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="generation_name"
+                      name="generation_name"
+                      value={formData.generation_name}
+                      onChange={handleChange}
+                      className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                      placeholder="Leave empty to auto-generate"
+                    />
+                    {!formData.generation_name.trim() && portfolio && (
+                      <div className="mt-1 text-xs text-gray-500">
+                        <span className="font-medium">Auto-generated:</span> {generateGenerationName()}
+                      </div>
+                    )}
+                  </div>
+                  <div className="w-full lg:w-1/3">
+                    <DateInput
+                      label="Creation Date"
+                      id="created_at"
+                      name="created_at"
+                      value={formData.created_at}
+                      onChange={(date, formatted) => {
+                        if (date) {
+                          // Valid date - use ISO string
+                          const dateValue = date.toISOString();
+                          setFormData(prev => ({
+                            ...prev,
+                            created_at: dateValue
+                          }));
+                          setDateError(null); // Clear any previous errors
+                        } else {
+                          // Invalid date or empty - validate the raw input
+                          setFormData(prev => ({
+                            ...prev,
+                            created_at: formatted || ''
+                          }));
+                          
+                          // Real-time date validation for invalid dates
+                          if (formatted && formatted.trim()) {
+                            const dateValidationResult = validateCreationDate(formatted);
+                            if (!dateValidationResult.isValid) {
+                              setDateError(dateValidationResult.error);
+                            } else {
+                              setDateError(null);
+                            }
+                          } else {
+                            setDateError(null); // Clear error if date is empty (valid)
+                          }
+                        }
+                        
+                        // Clear general errors when user makes changes
+                        if (error) {
+                          setError(null);
+                        }
+                      }}
+                      placeholder="Select creation date"
+                      helperText="Leave empty to use current date/time"
+                      required={false}
+                    />
+                    {dateError && (
+                      <p className="mt-1 text-xs text-red-500">{dateError}</p>
+                    )}
+                  </div>
+                  <div className="w-full lg:w-1/3">
+                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                      Description
+                    </label>
+                    <textarea
+                      id="description"
+                      name="description"
+                      value={formData.description}
+                      onChange={handleChange}
+                      rows={2}
+                      className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                      placeholder="Enter a detailed description of this portfolio generation"
+                    />
+                  </div>
+                </div>
+                
+                {latestGenerationId && (
+                  <div className="mt-2">
+                    <div className="flex items-center">
+                      <div className="text-sm text-gray-600">
+                        {isLoadingLatestFunds ? 
+                          <span className="flex items-center">
+                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-primary-700" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Loading funds from latest generation...
+                          </span> :
+                          <span>Funds and weightings from the latest generation have been pre-loaded below. You can adjust them as needed.</span>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Fund Selection Section */}
+            <div className="p-5">
+              <div className="rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 sm:px-6">
+                  <h3 className="text-base font-medium text-gray-900">Fund Selection</h3>
+                </div>
+                
+                <div className="p-4">
+                  {availableFunds.length === 0 ? (
+                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <svg className="h-5 w-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-sm text-yellow-700">
+                            No funds available. Please add funds before creating a portfolio generation.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <FundSelectionManager
+                      availableFunds={availableFunds}
+                      selectedFunds={selectedFunds}
+                      fundWeightings={fundWeightings}
+                      onFundSelect={handleFundSelection}
+                      onFundDeselect={handleFundSelection}
+                      onWeightingChange={handleWeightingChange}
+                      onClearAll={handleClearAllFunds}
+                      searchQuery={fundSearchTerm}
+                      onSearchChange={setFundSearchTerm}
+                      isLoading={isLoadingFunds || isLoadingLatestFunds}
+                      error={error}
+                      weightedRisk={weightedRisk}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+              <div className="flex-1">
+                {(error || dateError) && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 mr-4">
+                    <div className="flex items-center">
+                      <svg className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-sm text-red-700">{error || dateError}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex space-x-3">
+                <Link
+                  to={`/definitions/portfolio-templates/${portfolioId}`}
+                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                >
+                  Cancel
+                </Link>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || dateError !== null}
+                  className={`bg-primary-700 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 shadow-sm transition-colors duration-200 ${
+                    isSubmitting || dateError !== null ? 'opacity-70 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Creating...
+                    </span>
+                  ) : (
+                    'Create Generation'
+                  )}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

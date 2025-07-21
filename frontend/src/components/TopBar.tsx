@@ -55,7 +55,7 @@ const TopBar: React.FC = () => {
       </div>
 
       {/* Center - Global Search */}
-      <div className="flex-1 max-w-lg mx-8">
+      <div className="flex-1 max-w-2xl mx-4 lg:mx-8">
         <GlobalSearch />
       </div>
 
