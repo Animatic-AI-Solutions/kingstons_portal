@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePortfolioTemplateDetails } from '../hooks/usePortfolioTemplates';
+import DynamicPageContainer from '../components/DynamicPageContainer';
 import StandardTable, { ColumnConfig } from '../components/StandardTable';
 import { Button, DeleteButton, ActionButton, AddButton, EditButton } from '../components/ui';
 
@@ -122,6 +123,7 @@ const PortfolioTemplateDetails: React.FC = () => {
   const [generationProductCounts, setGenerationProductCounts] = useState<Record<number, number>>({});
   const [migrationNotes, setMigrationNotes] = useState<Record<number, string>>({});
   const [expandedArchivedGenerations, setExpandedArchivedGenerations] = useState<Set<number>>(new Set<number>());
+  const [isMigrationChecklistExpanded, setIsMigrationChecklistExpanded] = useState(false);
 
   // Simplified refresh function using the custom hook
   const refreshAllData = useCallback(async () => {
@@ -696,17 +698,17 @@ const PortfolioTemplateDetails: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 lg:px-8 py-4">
+      <DynamicPageContainer maxWidth="2800px" className="py-4">
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600"></div>
         </div>
-      </div>
+      </DynamicPageContainer>
     );
   }
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 lg:px-8 py-4">
+      <DynamicPageContainer maxWidth="2800px" className="py-4">
         <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -728,13 +730,13 @@ const PortfolioTemplateDetails: React.FC = () => {
         >
           Back to Portfolios
         </Button>
-      </div>
+      </DynamicPageContainer>
     );
   }
 
   if (!template) {
     return (
-      <div className="container mx-auto px-4 lg:px-8 py-4">
+      <DynamicPageContainer maxWidth="2800px" className="py-4">
         <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-4">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -754,14 +756,14 @@ const PortfolioTemplateDetails: React.FC = () => {
         >
           Back to Portfolios
         </Button>
-      </div>
+      </DynamicPageContainer>
     );
   }
 
   const weightedRisk = calculateWeightedRisk();
 
   return (
-    <div className="container mx-auto px-4 lg:px-8 py-4">
+    <DynamicPageContainer maxWidth="2800px" className="py-4">
       {/* Clean page layout without color strip */}
       
       {/* Breadcrumbs */}
@@ -943,23 +945,46 @@ const PortfolioTemplateDetails: React.FC = () => {
       {/* Archived Generations Migration Checklist */}
       {getArchivedGenerations().length > 0 && (
         <div className="bg-white shadow-sm rounded-lg border border-gray-100 mb-4">
-          <div className="px-3 py-2 border-b border-gray-200">
+          <div 
+            className="px-3 py-2 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
+            onClick={() => setIsMigrationChecklistExpanded(!isMigrationChecklistExpanded)}
+          >
             <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-semibold text-gray-900 flex items-center">
-                  <svg className="h-3 w-3 text-orange-500 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  Migration Checklist - Archived Generations
-                </h2>
-                <p className="text-xs text-gray-600 mt-0.5">
-                  Products still using archived generations need to be migrated to the active generation for optimal fund composition
-                </p>
+              <div className="flex items-center">
+                <svg 
+                  className={`h-4 w-4 text-gray-400 transition-transform duration-200 mr-2 ${isMigrationChecklistExpanded ? 'rotate-90' : ''}`} 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+                <div>
+                  <h2 className="text-sm font-semibold text-gray-900 flex items-center">
+                    <svg className="h-3 w-3 text-orange-500 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    Migration Checklist - Archived Generations
+                  </h2>
+                  <p className="text-xs text-gray-600 mt-0.5">
+                    Products still using archived generations need to be migrated to the active generation for optimal fund composition
+                  </p>
+                </div>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="text-xs text-gray-500">
+                  {getArchivedGenerations().reduce((total, gen) => total + getProductsForGeneration(gen.id).length, 0)} products need migration
+                </div>
+                <div className="text-xs text-gray-500">
                   {getArchivedGenerations().length} archived generation{getArchivedGenerations().length !== 1 ? 's' : ''}
                 </div>
+              </div>
+            </div>
+          </div>
+          
+          {isMigrationChecklistExpanded && (
+            <div className="p-3 space-y-2">
+              <div className="flex justify-end mb-2">
                 <Button
                   onClick={() => {
                     const archivedGenerations = getArchivedGenerations();
@@ -977,11 +1002,7 @@ const PortfolioTemplateDetails: React.FC = () => {
                   {getArchivedGenerations().every(gen => expandedArchivedGenerations.has(gen.id)) ? 'Collapse All' : 'Expand All'}
                 </Button>
               </div>
-            </div>
-          </div>
-          
-          <div className="p-3 space-y-2">
-            {getArchivedGenerations().map((generation) => {
+              {getArchivedGenerations().map((generation) => {
               const productsUsingGeneration = getProductsForGeneration(generation.id);
               const isExpanded = expandedArchivedGenerations.has(generation.id);
               
@@ -1180,6 +1201,7 @@ const PortfolioTemplateDetails: React.FC = () => {
               );
             })}
           </div>
+          )}
         </div>
       )}
 
@@ -1429,7 +1451,7 @@ const PortfolioTemplateDetails: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </DynamicPageContainer>
   );
 };
 

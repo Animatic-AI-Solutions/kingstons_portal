@@ -12,7 +12,7 @@ interface AppLayoutProps {
  * 
  * Provides consistent layout structure with top bar, sidebar and footer for all protected pages.
  * Handles the responsive spacing and layout positioning.
- * The sidebar is now minimized by default (64px) and expands on hover (256px).
+ * The sidebar is now minimized by default (64px) and expands on hover (208px).
  * The top bar is fixed at the top with higher z-index than the sidebar.
  */
 const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {

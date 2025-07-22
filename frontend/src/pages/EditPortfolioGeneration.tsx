@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import DynamicPageContainer from '../components/DynamicPageContainer';
 import { findCashFund, isCashFund } from '../utils/fundUtils';
-import { DateInput } from '../components/ui';
+import { DateInput, BaseInput } from '../components/ui';
 import FundSelectionManager from '../components/generation/FundSelectionManager';
 
 interface Fund {
@@ -368,7 +369,7 @@ const EditPortfolioGeneration: React.FC = () => {
 
   if (!generation) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <DynamicPageContainer maxWidth="2800px" className="py-8">
         <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -392,12 +393,12 @@ const EditPortfolioGeneration: React.FC = () => {
           </svg>
           Back to Template
         </button>
-      </div>
+      </DynamicPageContainer>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <DynamicPageContainer maxWidth="2800px" className="py-8">
       {/* Breadcrumb Navigation */}
       <nav className="mb-8 flex" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
@@ -482,17 +483,13 @@ const EditPortfolioGeneration: React.FC = () => {
             <div className="flex flex-col gap-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="w-full">
-                  <label htmlFor="generation_name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Generation Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
+                  <BaseInput
+                    label="Generation Name"
+                    required
                     id="generation_name"
                     name="generation_name"
                     value={formData.generation_name}
                     onChange={handleChange}
-                    required
-                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
                     placeholder="e.g., Q2 2023 Conservative Allocation"
                   />
                 </div>
@@ -509,16 +506,12 @@ const EditPortfolioGeneration: React.FC = () => {
                   />
                 </div>
                 <div className="w-full">
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
-                  </label>
-                  <textarea
+                  <BaseInput
+                    label="Description"
                     id="description"
                     name="description"
                     value={formData.description || ''}
                     onChange={handleChange}
-                    rows={2}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
                     placeholder="Enter a detailed description of this portfolio generation"
                   />
                 </div>
@@ -616,7 +609,7 @@ const EditPortfolioGeneration: React.FC = () => {
           </div>
         </form>
       </div>
-    </div>
+    </DynamicPageContainer>
   );
 };
 

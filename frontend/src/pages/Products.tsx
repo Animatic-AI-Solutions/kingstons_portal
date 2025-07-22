@@ -141,7 +141,7 @@ const Products: React.FC = () => {
         if (value && value.length > 0) {
           if (value.length === 1) {
             return (
-              <div className="text-xs text-gray-600">
+              <div className="text-sm font-semibold text-gray-800">
                 {getProductOwnerDisplayName(value[0])}
               </div>
             );
@@ -149,13 +149,13 @@ const Products: React.FC = () => {
             const names = value.slice(0, 2).map((owner: any) => getProductOwnerDisplayName(owner));
             const additional = value.length > 2 ? `+${value.length - 2}` : '';
             return (
-              <div className="text-xs text-gray-600">
+              <div className="text-sm font-semibold text-gray-800">
                 {names.join(' • ') + (additional ? ` • ${additional}` : '')}
               </div>
             );
           }
         }
-        return <div className="text-xs text-gray-500">N/A</div>;
+        return <div className="text-sm font-medium text-gray-600">N/A</div>;
       }
     },
     {
@@ -180,18 +180,18 @@ const Products: React.FC = () => {
           
           return (
             <div className="text-right">
-              <div className={`text-xs font-medium ${value >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+              <div className={`text-sm font-bold ${value >= 0 ? 'text-green-800' : 'text-red-800'}`}>
                 {irrPercentage}
               </div>
               {irrDate && (
-                <div className="text-[10px] text-gray-500 mt-0">
+                <div className="text-xs text-gray-600 mt-0">
                   {irrDate}
                 </div>
               )}
             </div>
           );
         }
-        return <div className="text-xs text-gray-500">-</div>;
+        return <div className="text-sm font-medium text-gray-600">-</div>;
       }
     }
   ];
@@ -244,7 +244,7 @@ const Products: React.FC = () => {
 
   return (
     <DynamicPageContainer 
-      maxWidth="1800px"
+      maxWidth="2800px"
       className="py-3"
     >
       <div className="flex justify-between items-center mb-3">

@@ -138,7 +138,7 @@ const Sidebar: React.FC = () => {
   return (
     <div 
       className={`fixed left-0 top-0 h-screen bg-white shadow-lg z-50 border-r border-gray-200 transition-all duration-300 ease-in-out ${
-        isHovered ? 'w-64' : 'w-16'
+        isHovered ? 'w-52' : 'w-16'
       }`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

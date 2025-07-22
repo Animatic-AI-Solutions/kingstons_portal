@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getAvailableColors } from '../services/api';
+import DynamicPageContainer from '../components/DynamicPageContainer';
 import { EditButton, DeleteButton, ActionButton } from '../components/ui';
 import StandardTable, { ColumnConfig } from '../components/StandardTable';
 
@@ -313,17 +314,17 @@ const ProviderDetails: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 lg:px-8 py-4">
+      <DynamicPageContainer maxWidth="2800px" className="py-4">
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600"></div>
         </div>
-      </div>
+      </DynamicPageContainer>
     );
   }
 
   if (error || !provider) {
     return (
-      <div className="max-w-7xl mx-auto px-4 lg:px-8 py-4">
+      <DynamicPageContainer maxWidth="2800px" className="py-4">
         <div className="bg-red-50 border-l-4 border-red-500 p-4 mt-8">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -344,19 +345,12 @@ const ProviderDetails: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+      </DynamicPageContainer>
     );
   }
 
   return (
-    <div 
-      className="max-w-7xl mx-auto px-4 lg:px-8 py-4 border-l-8"
-      style={{ 
-        borderLeftColor: provider.theme_color || '#FB7185'
-      }}
-    >
-      {/* Sidebar Color Strip implemented via left border */}
-      
+    <DynamicPageContainer maxWidth="2800px" className="py-4">
       {/* Breadcrumbs */}
       <nav className="mb-4 flex" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
@@ -633,7 +627,7 @@ const ProviderDetails: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </DynamicPageContainer>
   );
 };
 

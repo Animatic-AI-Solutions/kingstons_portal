@@ -149,7 +149,7 @@ const Clients: React.FC = () => {
 
   return (
     <DynamicPageContainer 
-      maxWidth="1800px"
+      maxWidth="2800px"
       className="py-3"
     >
       <div className="flex justify-between items-center mb-3">

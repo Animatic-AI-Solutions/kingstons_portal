@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import DynamicPageContainer from '../components/DynamicPageContainer';
 import { findCashFund, isCashFund } from '../utils/fundUtils';
 import FundSelectionManager from '../components/generation/FundSelectionManager';
-import { DateInput } from '../components/ui';
+import { DateInput, BaseInput } from '../components/ui';
 
 interface Fund {
   id: number;
@@ -612,7 +613,7 @@ const AddPortfolioGeneration: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <DynamicPageContainer maxWidth="2800px" className="py-8">
       {/* Breadcrumb Navigation */}
       <nav className="mb-8 flex" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
@@ -697,16 +698,13 @@ const AddPortfolioGeneration: React.FC = () => {
             <div className="flex flex-col gap-4">
               <div className="flex flex-col lg:flex-row gap-4">
                 <div className="w-full lg:w-1/3">
-                  <label htmlFor="generation_name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Generation Name <span className="text-gray-500 text-xs">(optional)</span>
-                  </label>
-                  <input
-                    type="text"
+                  <BaseInput
+                    label="Generation Name"
+                    helperText="(optional) - Leave empty to auto-generate"
                     id="generation_name"
                     name="generation_name"
                     value={formData.generation_name}
                     onChange={handleChange}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
                     placeholder="Leave empty to auto-generate"
                   />
                   {!formData.generation_name.trim() && portfolio && (
@@ -764,16 +762,12 @@ const AddPortfolioGeneration: React.FC = () => {
                   )}
                 </div>
                 <div className="w-full lg:w-1/3">
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
-                  </label>
-                  <textarea
+                  <BaseInput
+                    label="Description"
                     id="description"
                     name="description"
                     value={formData.description}
                     onChange={handleChange}
-                    rows={2}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
                     placeholder="Enter a detailed description of this portfolio generation"
                   />
                 </div>
@@ -887,7 +881,7 @@ const AddPortfolioGeneration: React.FC = () => {
           </div>
         </form>
       </div>
-    </div>
+    </DynamicPageContainer>
   );
 };
 
