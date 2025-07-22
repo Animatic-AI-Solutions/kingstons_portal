@@ -53,8 +53,23 @@ class HistoricalIRRService {
   private baseUrl: string;
 
   constructor() {
-    // Empty base URL to work with Vite's proxy configuration
-    this.baseUrl = '';
+    // Environment-based API configuration (same as api.ts)
+    const getApiBaseUrl = () => {
+      // Check if we're in development mode (localhost or Vite dev server)
+      const isDevelopment = window.location.hostname === 'localhost' || 
+                           window.location.hostname === '127.0.0.1' ||
+                           window.location.port === '3000';
+      
+      // In development (Vite dev server), use proxy (empty baseURL)
+      if (isDevelopment) {
+        return '';  // Vite proxy handles /api requests
+      }
+      
+      // In production (built app), use direct API server
+      return 'http://intranet.kingston.local:8001';
+    };
+
+    this.baseUrl = getApiBaseUrl();
   }
 
   /**
