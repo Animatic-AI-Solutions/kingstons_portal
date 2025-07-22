@@ -332,7 +332,6 @@ const ReportGenerator: React.FC = () => {
   const [availableValuationDates, setAvailableValuationDates] = useState<string[]>([]);
   const [selectedValuationDate, setSelectedValuationDate] = useState<string | null>(null);
   const [isLoadingValuationDates, setIsLoadingValuationDates] = useState<boolean>(false);
-  const [hasCommonValuationDates, setHasCommonValuationDates] = useState<boolean>(true);
   
   // State for results
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
@@ -642,7 +641,6 @@ const ReportGenerator: React.FC = () => {
         if (includedProducts.length === 0) {
           setAvailableValuationDates([]);
           setSelectedValuationDate(null);
-          setHasCommonValuationDates(true);
           setIsLoadingValuationDates(false);
           return;
         }
@@ -655,7 +653,6 @@ const ReportGenerator: React.FC = () => {
         if (portfolioIds.length === 0) {
           setAvailableValuationDates([]);
           setSelectedValuationDate(null);
-          setHasCommonValuationDates(true);
           setIsLoadingValuationDates(false);
           return;
         }
@@ -667,7 +664,6 @@ const ReportGenerator: React.FC = () => {
         if (allPortfolioFunds.length === 0) {
           setAvailableValuationDates([]);
           setSelectedValuationDate(null);
-          setHasCommonValuationDates(true);
           setIsLoadingValuationDates(false);
           return;
         }
@@ -726,7 +722,6 @@ const ReportGenerator: React.FC = () => {
           console.log('📊 [VALUATION DEBUG] No active funds, no inactive products - clearing dates');
           setAvailableValuationDates([]);
           setSelectedValuationDate(null);
-          setHasCommonValuationDates(true);
           setIsLoadingValuationDates(false);
           return;
         }
@@ -738,10 +733,11 @@ const ReportGenerator: React.FC = () => {
           inactiveProducts: inactiveProducts.length
         });
         
-        // FLEXIBLE VALUATION DATE LOGIC WITH COMMON DATE DETECTION
-        // Step 1: Collect ALL valuation dates AND detect common dates
-        const allValuationDates = new Set<string>();
+        // NEW ELIGIBILITY LOGIC
+        // Step 1: Get all valuation dates for each product (active and inactive)
         const productValuationDates = new Map<number, string[]>();
+        const productLatestDates = new Map<number, string>();
+        let globalLatestDate = '';
         
         // Get all historical valuations for ALL funds (active and inactive)
         const allFundIds = [...activeFundIds, ...inactiveProductFundIds];
@@ -751,58 +747,115 @@ const ReportGenerator: React.FC = () => {
         for (const product of includedProducts) {
           const productFunds = portfolioFundsByProduct.get(product.id) || [];
           const productDates = new Set<string>();
+          let productLatest = '';
           
           // Collect all valuation dates for this product's funds
           for (const fund of productFunds) {
             const fundValuations = batchValuationResult.get(fund.id) || [];
           
-            fundValuations.forEach((val: any) => {
-              if (val.valuation_date) {
-                const dateParts = val.valuation_date.split('-');
-                if (dateParts.length >= 2) {
-                  const yearMonth = `${dateParts[0]}-${dateParts[1]}`;
-                  allValuationDates.add(yearMonth);
+          fundValuations.forEach((val: any) => {
+            if (val.valuation_date) {
+              const dateParts = val.valuation_date.split('-');
+              if (dateParts.length >= 2) {
+                const yearMonth = `${dateParts[0]}-${dateParts[1]}`;
                   productDates.add(yearMonth);
-                }
+                  
+                  // Track latest date for this product
+                  if (yearMonth > productLatest) {
+                    productLatest = yearMonth;
+                  }
+                  
+                  // Track global latest date
+                  if (yearMonth > globalLatestDate) {
+                    globalLatestDate = yearMonth;
+                  }
               }
-            });
+            }
+          });
           }
           
-          productValuationDates.set(product.id, Array.from(productDates));
+          productValuationDates.set(product.id, Array.from(productDates).sort());
+          if (productLatest) {
+            productLatestDates.set(product.id, productLatest);
+          }
         }
         
-        // Step 2: Detect common valuation dates
-        let commonDates: string[] = [];
-        if (productValuationDates.size > 0) {
-          // Start with the first product's dates
-          const firstProductDates = Array.from(productValuationDates.values())[0] || [];
-          commonDates = firstProductDates.filter(date => 
-            Array.from(productValuationDates.values()).every(productDates => 
-              productDates.includes(date)
-            )
-          );
-        }
-        
-        // Convert all dates to sorted array (most recent first)
-        const sortedDates = Array.from(allValuationDates).sort((a: string, b: string) => b.localeCompare(a));
-        
-        // Update common dates status
-        setHasCommonValuationDates(commonDates.length > 0);
-        
-        console.log('📊 [VALUATION DEBUG] Flexible valuation analysis:', {
-          totalDates: sortedDates.length,
-          commonDates: commonDates.length,
-          hasCommonDates: commonDates.length > 0,
-          allDates: sortedDates,
-          includedProducts: includedProducts.length
+        console.log('📊 [ELIGIBILITY DEBUG] Product valuation analysis:', {
+          globalLatestDate,
+          productLatestDates: Object.fromEntries(productLatestDates),
+          productValuationDates: Object.fromEntries(
+            Array.from(productValuationDates.entries()).map(([id, dates]) => [id, dates])
+          )
         });
         
-        // Step 2: Set results
+        // Step 2: Find eligible dates where all products have valuations (actual or assumed zero)
+        const eligibleDates = new Set<string>();
+        
+        // Generate all possible month candidates up to the global latest date
+        const candidateDates: string[] = [];
+        if (globalLatestDate) {
+          const [latestYear, latestMonth] = globalLatestDate.split('-').map(Number);
+          
+          // Find earliest date among all products
+          let earliestDate = globalLatestDate;
+          for (const dates of productValuationDates.values()) {
+            if (dates.length > 0 && dates[0] < earliestDate) {
+              earliestDate = dates[0];
+            }
+          }
+          
+          const [earliestYear, earliestMonth] = earliestDate.split('-').map(Number);
+          
+          // Generate all months from earliest to latest
+          let currentYear = earliestYear;
+          let currentMonth = earliestMonth;
+          
+          while (currentYear < latestYear || (currentYear === latestYear && currentMonth <= latestMonth)) {
+            const monthStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+            candidateDates.push(monthStr);
+            
+            currentMonth++;
+            if (currentMonth > 12) {
+              currentMonth = 1;
+              currentYear++;
+            }
+          }
+        }
+        
+        // Step 3: Check each candidate date for eligibility
+        for (const candidateDate of candidateDates) {
+          let allProductsHaveValuation = true;
+          
+          for (const product of includedProducts) {
+            const productDates = productValuationDates.get(product.id) || [];
+            const productLatest = productLatestDates.get(product.id) || '';
+            const isActiveProduct = product.status !== 'inactive';
+            
+            // Check if this product has valuation for this date
+            const hasActualValuation = productDates.includes(candidateDate);
+            const canAssumeZero = !isActiveProduct && candidateDate > productLatest;
+            
+            if (!hasActualValuation && !canAssumeZero) {
+              allProductsHaveValuation = false;
+              break;
+            }
+          }
+          
+          if (allProductsHaveValuation) {
+            eligibleDates.add(candidateDate);
+          }
+        }
+        
+        // Sort eligible dates chronologically (newest first)
+        const sortedDates = Array.from(eligibleDates).sort((a: string, b: string) => b.localeCompare(a));
+        
+        console.log('📊 [ELIGIBILITY DEBUG] Final eligible dates:', sortedDates);
+        
+        // Step 4: Set results based on eligibility
         if (sortedDates.length === 0) {
-          console.log('📊 [VALUATION DEBUG] No valuation dates found across selected products');
+          console.log('📊 [ELIGIBILITY DEBUG] No eligible dates found - products do not meet report generation criteria');
           setAvailableValuationDates([]);
           setSelectedValuationDate(null);
-          setHasCommonValuationDates(true);
           setIsLoadingValuationDates(false);
           return;
         }
@@ -1140,10 +1193,37 @@ const ReportGenerator: React.FC = () => {
 
   // Function to check if the end valuation date validation would fail
   const hasEndValuationDateError = useMemo(() => {
-    // No validation needed - end valuation date can be any available date
-    // IRR dates are automatically filtered to match the selected end valuation date
+    if (!hasEffectiveProductSelection) return false;
+    
+    // Get all product IDs that will be included in the report
+    const productIdsForReport = new Set<number>();
+    if (selectedProductIds.length > 0) {
+      selectedProductIds
+        .filter(p => !excludedProductIds.has(Number(p)))
+        .forEach(p => productIdsForReport.add(Number(p)));
+    }
+    if (selectedClientGroupIds.length > 0) {
+      const clientGroupAttachedProducts = relatedProducts.filter(p => !excludedProductIds.has(p.id));
+      clientGroupAttachedProducts.forEach(p => productIdsForReport.add(p.id));
+    }
+    
+    const reportProductIds = Array.from(productIdsForReport);
+    
+    // Check if end valuation date matches the latest common IRR date
+    if (reportProductIds.length > 0 && Object.keys(selectedIRRDates).length > 0 && selectedValuationDate) {
+      const latestCommonDate = findLatestCommonIRRDate(selectedIRRDates, reportProductIds);
+      
+      if (latestCommonDate) {
+        // Convert both dates to YYYY-MM format for comparison
+        const endValuationYearMonth = selectedValuationDate.substring(0, 7);
+        const latestCommonYearMonth = latestCommonDate.substring(0, 7);
+        
+        return endValuationYearMonth !== latestCommonYearMonth;
+      }
+    }
+    
     return false;
-  }, []);
+  }, [hasEffectiveProductSelection, selectedProductIds, excludedProductIds, selectedClientGroupIds, relatedProducts, selectedIRRDates, selectedValuationDate]);
 
   const generateReport = async () => {
     // Check if any products are effectively selected (accounting for exclusions)
@@ -1172,7 +1252,7 @@ const ReportGenerator: React.FC = () => {
     
     // Check if there are any available valuation dates at all
     if (availableValuationDates.length === 0 && !availableValuationDates.includes('inactive-products-valid')) {
-      setDataError('Cannot generate report: No valuation dates available for the selected products. Please ensure products have valuations.');
+      setDataError('Cannot generate report: Products do not have common valuation dates. Please select products with overlapping valuation periods.');
       setIsCalculating(false);
       return;
     }
@@ -1223,8 +1303,22 @@ const ReportGenerator: React.FC = () => {
       
       const uniqueProductIds = Array.from(productIdsForReport);
       
-      // Note: End valuation date and IRR dates are now independent - users can select any available valuation date
-      // The IRR dates are automatically filtered to only show dates on or before the selected end valuation date
+      // Check if end valuation date matches the latest common IRR date
+      if (uniqueProductIds.length > 0 && Object.keys(selectedIRRDates).length > 0) {
+        const latestCommonDate = findLatestCommonIRRDate(selectedIRRDates, uniqueProductIds);
+        
+        if (latestCommonDate && selectedValuationDate) {
+          // Convert both dates to YYYY-MM format for comparison
+          const endValuationYearMonth = selectedValuationDate.substring(0, 7); // YYYY-MM-DD -> YYYY-MM
+          const latestCommonYearMonth = latestCommonDate.substring(0, 7); // YYYY-MM-DD -> YYYY-MM
+          
+          if (endValuationYearMonth !== latestCommonYearMonth) {
+            setDataError(`The end valuation date must be the same as the latest common date selected among the historical IRR dates. Latest common date: ${latestCommonDate.substring(0, 7)}, End valuation date: ${endValuationYearMonth}.`);
+            setIsCalculating(false);
+            return;
+          }
+        }
+      }
       
       if (uniqueProductIds.length === 0) {
         setDataError('No products found for your selection to generate the report.');
@@ -2351,12 +2445,7 @@ Please select a different valuation date or ensure all active funds have valuati
             };
 
             // Navigate to the report display page
-            navigate('/report-display', { 
-              state: { 
-                reportData: reportDataWithoutIRR,
-                clientGroupIds: selectedClientGroupIds 
-              } 
-            });
+            navigate('/report-display', { state: { reportData: reportDataWithoutIRR } });
           }
         } catch (irrErr) {
           console.error('Error calculating standardized IRR:', irrErr);
@@ -2424,12 +2513,7 @@ Please select a different valuation date or ensure all active funds have valuati
       };
 
       // Navigate to the report display page
-                  navigate('/report-display', { 
-              state: { 
-                reportData: finalReportData,
-                clientGroupIds: selectedClientGroupIds 
-              } 
-            });
+      navigate('/report-display', { state: { reportData: finalReportData } });
       
     } catch (err: any) {
       console.error('Error generating report:', err);
@@ -2757,8 +2841,9 @@ Please select a different valuation date or ensure all active funds have valuati
 
   // Sync showInactiveProductDetails with state manager
   useEffect(() => {
+    console.log(`🔍 [STATE SYNC DEBUG] Syncing showInactiveProductDetails with state manager:`, Array.from(showInactiveProductDetails));
     stateManagerActions.setShowInactiveProductDetails(showInactiveProductDetails);
-  }, [showInactiveProductDetails]); // Removed stateManagerActions from dependencies to prevent infinite loop
+  }, [showInactiveProductDetails, stateManagerActions]);
 
   return (
     <DynamicPageContainer maxWidth="2800px" className="py-3">
@@ -2774,12 +2859,11 @@ Please select a different valuation date or ensure all active funds have valuati
       )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Left Side - Report Items */}
+          {/* Left Side - Selection and Status Panels */}
           <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
-            <h2 className="text-lg font-normal text-gray-900 mb-4">Report Items</h2>
+            <h2 className="text-lg font-normal text-gray-900 mb-4">Select Items for Report</h2>
             
-            {/* Selected Items for Report */}
-            <div className="space-y-4 mb-6">
+            <div className="space-y-4">
               <MultiSelectDropdown
                 label="Client Groups"
                 options={clientGroups.map(group => ({
@@ -2806,7 +2890,7 @@ Please select a different valuation date or ensure all active funds have valuati
               
               {/* Add valuation date dropdown */}
               {availableValuationDates.length > 0 && (
-                <div className="dropdown-container">
+                <div className="dropdown-container mt-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     End Valuation Date
                     <span className="text-xs text-gray-500 ml-1">(select the date for IRR calculation)</span>
@@ -2840,72 +2924,14 @@ Please select a different valuation date or ensure all active funds have valuati
                     </div>
                   </div>
                   <p className="mt-1 text-xs text-gray-500">
-                    {availableValuationDates.length} valuation periods available across selected products
+                    {availableValuationDates.length} valuation periods available for selected products
                   </p>
                 </div>
               )}
             </div>
 
-            {/* Common Valuation Dates and Check */}
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Common Valuation Dates and Check</h3>
-              <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border">
-                <div className="flex items-center">
-                  {hasCommonValuationDates || availableValuationDates.includes('inactive-products-valid') ? (
-                    <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm font-medium text-gray-900">
-                    {availableValuationDates.includes('inactive-products-valid') ? (
-                      <>Inactive products detected - zero valuations will be assumed</>
-                    ) : hasCommonValuationDates ? (
-                      // Check if we have inactive products mixed with active products
-                      relatedProducts.some(p => p.status === 'inactive') ? (
-                        <>Common valuation dates available (inactive products assume zero)</>
-                      ) : (
-                        <>All portfolio funds have common valuation dates</>
-                      )
-                    ) : availableValuationDates.length > 0 ? (
-                      <>Products have different valuation dates - using flexible matching</>
-                    ) : relatedProducts.length > 0 ? (
-                      <>No valuation dates available for selected products</>
-                    ) : (
-                      <>No products selected</>
-                    )}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {isLoadingValuationDates ? (
-                      <>Checking valuation data...</>
-                    ) : availableValuationDates.includes('inactive-products-valid') ? (
-                      <>Report generation is available for inactive products</>
-                    ) : hasCommonValuationDates ? (
-                      relatedProducts.some(p => p.status === 'inactive') ? (
-                        <>{availableValuationDates.length} common period{availableValuationDates.length !== 1 ? 's' : ''} - inactive products will use zero valuations</>
-                      ) : (
-                        <>{availableValuationDates.length} common valuation period{availableValuationDates.length !== 1 ? 's' : ''} available</>
-                      )
-                    ) : availableValuationDates.length > 0 ? (
-                      <>⚠️ No common dates - report uses closest available valuations for each product</>
-                    ) : relatedProducts.length > 0 ? (
-                      <>No valuation data found for selected products</>
-                    ) : (
-                      <>Select products to check valuation data availability</>
-                    )}
-                  </div>
-
-                </div>
-              </div>
-            </div>
-
-            {/* Related Items Section */}
-            <div className="mb-6">
+            {/* Related Items Section - moved from right panel */}
+            <div className="mt-6">
               <h3 className="text-sm font-medium text-gray-700 mb-2">Related Items</h3>
               <p className="text-xs text-gray-500 mb-2">
                 This section shows all products included in your report. Click × to exclude a product or ✓ to include it.
@@ -3012,10 +3038,10 @@ Please select a different valuation date or ensure all active funds have valuati
               </div>
             </div>
             
-            {/* Product Owner Display Order */}
+            {/* Product Owner Display Order - moved from right panel */}
             {relatedProducts.length > 0 && productOwnerOrder.length > 1 && (
-              <div className="mb-6">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Product Owners Display Order</h3>
+              <div className="mt-6">
+                <h3 className="text-sm font-medium text-gray-700 mb-2">Product Owner Display Order</h3>
                 <p className="text-xs text-gray-500 mb-3">
                   Set the order in which product owners appear in the report. Drag to reorder or use arrows.
                 </p>
@@ -3110,6 +3136,30 @@ Please select a different valuation date or ensure all active funds have valuati
                 </div>
               </div>
             )}
+            
+            {/* Valuation Data Status - moved from right panel */}
+            <div className="mt-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Valuation Data Status</h3>
+              <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border">
+                <div className="flex items-center">
+                  {availableValuationDates.length > 0 || availableValuationDates.includes('inactive-products-valid') ? (
+                    <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </div>
+                <div className="text-sm text-gray-700">
+                  {availableValuationDates.length > 0 
+                    ? `Data available for ${availableValuationDates.length} valuation periods` 
+                    : 'No common valuation data found for selected products'
+                  }
+                </div>
+              </div>
+            </div>
 
             {/* Generate Report Button */}
             <div className="mt-6">
