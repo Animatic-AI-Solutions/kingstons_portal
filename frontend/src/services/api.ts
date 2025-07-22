@@ -784,7 +784,7 @@ export const getProductOwnersForProducts = async (clientId: number) => {
  * @returns {Promise} - API response with total revenue, active products, etc.
  */
 export const getCompanyRevenueAnalytics = async () => {
-  return api.get('company-revenue-analytics');
+  return api.get('/revenue/company');
 };
 
 /**
@@ -792,15 +792,53 @@ export const getCompanyRevenueAnalytics = async () => {
  * @returns {Promise} - API response with client group revenue data
  */
 export const getClientGroupRevenueBreakdown = async () => {
-  return api.get('client-groups/revenue-breakdown');
+  console.log('🔍 Calling getClientGroupRevenueBreakdown API');
+  return api.get('/revenue/client-groups');
+};
+
+// NEW: Optimized revenue breakdown endpoint
+export const getOptimizedRevenueBreakdown = async () => {
+  console.log('🚀 Calling optimized revenue breakdown API');
+  return api.get('/revenue/optimized');
+};
+
+// NEW: Consolidated revenue data fetcher (single API call for all data)
+export const getConsolidatedRevenueData = async () => {
+  console.log('⚡ Calling consolidated revenue data API');
+  try {
+    // Try to get all data in parallel - use optimized endpoint for clients
+    const [companyResponse, clientResponse, revenueRateResponse] = await Promise.all([
+      getCompanyRevenueAnalytics().catch(err => {
+        console.warn('⚠️ Company revenue analytics failed:', err.message);
+        return { data: [{ total_annual_revenue: 0, active_products: 0, revenue_generating_products: 0, avg_revenue_per_product: 0, active_providers: 0 }] };
+      }),
+      getOptimizedRevenueBreakdown().catch(err => {
+        console.warn('⚠️ Optimized revenue breakdown failed, trying fallback:', err.message);
+        return getClientGroupRevenueBreakdown();  // Fallback to original
+      }),
+      getRevenueRateAnalytics().catch(err => {
+        console.warn('⚠️ Revenue rate analytics failed:', err.message);
+        return { data: { total_revenue: 0, total_fum: 0, revenue_rate_percentage: 0, complete_client_groups_count: 0, total_client_groups: 0 } };
+      })
+    ]);
+
+    return {
+      company: companyResponse.data?.[0] || null,
+      clients: clientResponse.data || [],
+      revenueRate: revenueRateResponse.data || null
+    };
+  } catch (error) {
+    console.error('❌ Error in consolidated revenue data fetch:', error);
+    throw error;
+  }
 };
 
 export const getRevenueRateAnalytics = async () => {
-  return api.get('revenue-rate-analytics');
+  return api.get('/revenue/rate');
 };
 
 export const refreshRevenueRateCache = async () => {
-  return api.post('revenue-rate-analytics/refresh');
+  return api.post('/revenue/rate/refresh');
 };
 
 // ⚡ PHASE 1 OPTIMIZATION: Analytics Dashboard Service

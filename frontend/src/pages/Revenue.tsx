@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getConsolidatedRevenueData, refreshRevenueRateCache } from '../services/api';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getCompanyRevenueAnalytics, getClientGroupRevenueBreakdown, getRevenueRateAnalytics, refreshRevenueRateCache } from '../services/api';
 import DynamicPageContainer from '../components/DynamicPageContainer';
+
 
 // Types
 interface CompanyRevenueData {
@@ -30,7 +33,7 @@ interface ClientRevenueData {
   revenue_percentage_of_total: number;
   product_count: number;
   products_with_revenue: number;
-  revenue_status: 'complete' | 'no_setup' | 'needs_valuation' | 'zero_fee_setup';
+  revenue_status: 'complete' | 'needs_valuation';
 }
 
 // Loading Components - Consistent with other pages
@@ -106,7 +109,7 @@ const SortableHeader: React.FC<{
 };
 
 const Revenue: React.FC = () => {
-  const { api } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [revenueData, setRevenueData] = useState<CompanyRevenueData | null>(null);
@@ -118,6 +121,9 @@ const Revenue: React.FC = () => {
   });
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'dormant'>('all');
   const [revenueFilter, setRevenueFilter] = useState<'all' | 'low' | 'medium' | 'high'>('all');
+
+  // Performance monitoring
+  const [loadingTime, setLoadingTime] = useState<number | null>(null);
 
   // Format currency
   const formatCurrency = (amount: number): string => {
@@ -142,35 +148,35 @@ const Revenue: React.FC = () => {
     return 'teal';
   };
 
-  // Fetch revenue data
+  // Fetch revenue data - OPTIMIZED VERSION
   const fetchRevenueData = async () => {
     try {
       setLoading(true);
       setError(null);
+      const startTime = performance.now();
 
-      // Try to fetch revenue data (backend APIs may not be implemented yet)
-      try {
-        const [companyResponse, clientResponse, revenueRateResponse] = await Promise.all([
-          getCompanyRevenueAnalytics(),
-          getClientGroupRevenueBreakdown(),
-          getRevenueRateAnalytics()
-        ]);
-
-        setRevenueData(companyResponse.data?.[0] || null);
-        setClientRevenueData(clientResponse.data || []);
-        setRevenueRateData(revenueRateResponse.data || null);
-      } catch (apiError: any) {
-        console.warn('Revenue APIs not yet implemented:', apiError);
-        if (apiError.response?.status === 404) {
-          setError('Revenue analytics features are coming soon. The backend APIs need to be implemented first.');
-        } else {
-          setError(apiError.response?.data?.detail || 'Failed to fetch revenue data');
-        }
-      }
+      console.time('⚡ Revenue Data Fetch');
+      
+      // Single consolidated API call instead of 3 separate calls
+      const consolidatedData = await getConsolidatedRevenueData();
+      
+      console.timeEnd('⚡ Revenue Data Fetch');
+      
+      const endTime = performance.now();
+      setLoadingTime(endTime - startTime);
+      console.log(`🚀 Revenue page loaded in ${(endTime - startTime).toFixed(2)}ms`);
+      
+      setRevenueData(consolidatedData.company);
+      setClientRevenueData(consolidatedData.clients);
+      setRevenueRateData(consolidatedData.revenueRate);
 
     } catch (err: any) {
-      console.error('Error fetching revenue data:', err);
-      setError(err.response?.data?.detail || 'Failed to fetch revenue data');
+      console.error('❌ Error fetching revenue data:', err);
+      if (err.response?.status === 404) {
+        setError('Revenue analytics features are coming soon. The backend APIs need to be implemented first.');
+      } else {
+        setError(err.response?.data?.detail || 'Failed to fetch revenue data');
+      }
     } finally {
       setLoading(false);
     }
@@ -257,14 +263,10 @@ const Revenue: React.FC = () => {
     return sortedAndFilteredData.reduce((acc, client) => {
       acc.totalFum += client.total_fum;
       acc.totalRevenue += client.total_revenue;
-      acc.totalProducts += client.product_count;
-      acc.totalWithRevenue += client.products_with_revenue;
       return acc;
     }, {
       totalFum: 0,
-      totalRevenue: 0,
-      totalProducts: 0,
-      totalWithRevenue: 0
+      totalRevenue: 0
     });
   }, [sortedAndFilteredData]);
 
@@ -283,9 +285,6 @@ const Revenue: React.FC = () => {
       <td className="px-4 py-2 whitespace-nowrap text-sm font-bold text-indigo-900">
         {totals.totalFum > 0 ? formatPercentage((totals.totalRevenue / totals.totalFum) * 100) : '0.0%'}
       </td>
-      <td className="px-4 py-2 whitespace-nowrap text-sm font-bold text-indigo-900">
-        {totals.totalProducts} ({totals.totalWithRevenue} with revenue)
-      </td>
       <td className="px-4 py-2 whitespace-nowrap"></td>
     </tr>
   );
@@ -295,40 +294,34 @@ const Revenue: React.FC = () => {
     ? ((revenueData.total_annual_revenue / (revenueData.total_annual_revenue * 20)) * 100) // Approximate FUM calculation
     : 0;
 
-  // Get revenue status indicator
+  // Get revenue status indicator - Only show amber dots, hide green (most will be green)
   const getRevenueStatusIndicator = (revenueStatus: string) => {
     switch (revenueStatus) {
       case 'complete':
-        return { color: 'bg-green-500', tooltip: 'Revenue fully calculated' };
+        return null; // Hide green dots to reduce visual clutter
       case 'needs_valuation':
         return { color: 'bg-amber-500', tooltip: 'Needs latest valuation to complete revenue calculation' };
-      case 'zero_fee_setup':
-        return { color: 'bg-blue-500', tooltip: 'Zero fees deliberately set - included in FUM, no revenue' };
-      case 'no_setup':
-        return { color: 'bg-red-500', tooltip: 'No fee set up' };
       default:
-        return { color: 'bg-gray-400', tooltip: 'Unknown status' };
+        return null; // Hide unknown status too
     }
   };
 
   return (
+
     <DynamicPageContainer 
       maxWidth="2800px"
       className="py-3"
     >
       {/* Header - Consistent with Products page */}
+
       <div className="flex justify-between items-center mb-3">
-        <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Revenue Analytics</h1>
-        <div className="flex items-center gap-4">
-          <Link
-            to="/analytics"
-            className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-primary-700"
-          >
-            <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
-            </svg>
-            ← Back to Analytics
-          </Link>
+        <div>
+          <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Revenue Analytics</h1>
+          {loadingTime && (
+            <div className="text-xs text-gray-500 mt-1">
+              ⚡ Loaded in {loadingTime.toFixed(0)}ms
+            </div>
+          )}
         </div>
       </div>
 
@@ -348,7 +341,6 @@ const Revenue: React.FC = () => {
             <SummaryCard 
               title="Active Products" 
               value={revenueData?.active_products || 0}
-              subtitle={`${revenueData?.revenue_generating_products || 0} with revenue`}
               color="indigo"
             />
             <SummaryCard 
@@ -361,13 +353,11 @@ const Revenue: React.FC = () => {
               value={revenueData && clientRevenueData.length > 0 
                 ? formatCurrency(revenueData.total_annual_revenue / clientRevenueData.length) 
                 : '£0'}
-              subtitle={`${clientRevenueData.length} product owners`}
               color="cyan"
             />
             <SummaryCard 
               title="% Fee Achieved" 
               value={revenueRateData ? `${revenueRateData.revenue_rate_percentage.toFixed(2)}%` : '0.00%'}
-              subtitle={`${revenueRateData?.complete_client_groups_count || 0} complete groups`}
               color={getRevenueRateColor(revenueRateData?.revenue_rate_percentage)}
             />
           </div>
@@ -377,24 +367,13 @@ const Revenue: React.FC = () => {
             <div className="flex justify-between items-center mb-3">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Client Revenue Breakdown</h2>
-                {/* Updated Revenue Status Legend with 4 states */}
-                <div className="flex items-center space-x-3 mt-1">
-                  <div className="flex items-center space-x-1">
-                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                    <span className="text-xs text-gray-600">Complete</span>
-                  </div>
+                {/* Updated Revenue Status Legend - Only amber dots shown */}
+                <div className="flex items-center space-x-4 mt-1">
                   <div className="flex items-center space-x-1">
                     <div className="w-2 h-2 rounded-full bg-amber-500"></div>
                     <span className="text-xs text-gray-600">Needs Valuation</span>
                   </div>
-                  <div className="flex items-center space-x-1">
-                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                    <span className="text-xs text-gray-600">Zero Fee Setup</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                    <span className="text-xs text-gray-600">No Fee Set Up</span>
-                  </div>
+                  <span className="text-xs text-gray-500 italic">No dot = Complete</span>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
@@ -445,8 +424,6 @@ const Revenue: React.FC = () => {
                     <SortableHeader title="Total FUM" sortKey="total_fum" currentSort={sortConfig} onSort={handleSort} />
                     <SortableHeader title="Annual Revenue" sortKey="total_revenue" currentSort={sortConfig} onSort={handleSort} />
                     <SortableHeader title="% Fee Achieved" sortKey="fee_percentage_achieved" currentSort={sortConfig} onSort={handleSort} />
-                    <SortableHeader title="Products" sortKey="product_count" currentSort={sortConfig} onSort={handleSort} />
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider border-b-2 border-indigo-300">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -456,14 +433,20 @@ const Revenue: React.FC = () => {
                   {sortedAndFilteredData.map((client) => {
                     const statusIndicator = getRevenueStatusIndicator(client.revenue_status);
                     return (
-                      <tr key={client.id} className="hover:bg-gray-50">
+                      <tr 
+                        key={client.id} 
+                        className="hover:bg-gray-50 cursor-pointer transition-colors"
+                        onClick={() => navigate(`/client_groups/${client.id}`)}
+                      >
                         <td className="px-4 py-2 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div 
-                              className={`w-2 h-2 rounded-full mr-2 ${statusIndicator.color} cursor-help`}
-                              title={statusIndicator.tooltip}
-                              aria-label={statusIndicator.tooltip}
-                            ></div>
+                            {statusIndicator && (
+                              <div 
+                                className={`w-2 h-2 rounded-full mr-2 ${statusIndicator.color} cursor-help`}
+                                title={statusIndicator.tooltip}
+                                aria-label={statusIndicator.tooltip}
+                              ></div>
+                            )}
                             <div>
                               <div className="text-sm font-medium text-gray-900">{client.name}</div>
                               <div className="text-xs text-gray-500 capitalize">{client.status}</div>
@@ -475,23 +458,11 @@ const Revenue: React.FC = () => {
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap">
                           <div className="text-sm font-semibold text-green-600">
-                            {client.revenue_status === 'no_setup' ? '-' : formatCurrency(client.total_revenue)}
+                            {formatCurrency(client.total_revenue)}
                           </div>
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                          {client.revenue_status === 'no_setup' ? '-' : 
-                           client.total_fum > 0 ? formatPercentage((client.total_revenue / client.total_fum) * 100) : '0.0%'}
-                        </td>
-                        <td className="px-4 py-2 whitespace-nowrap text-xs text-gray-500">
-                          {client.product_count} ({client.products_with_revenue} rev)
-                        </td>
-                        <td className="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
-                          <Link
-                            to={`/client_groups/${client.id}`}
-                            className="text-blue-600 hover:text-blue-900 transition-colors"
-                          >
-                            →
-                          </Link>
+                          {client.total_fum > 0 ? formatPercentage((client.total_revenue / client.total_fum) * 100) : '0.0%'}
                         </td>
                       </tr>
                   );
