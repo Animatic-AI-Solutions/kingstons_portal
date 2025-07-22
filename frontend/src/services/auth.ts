@@ -286,7 +286,7 @@ export const createAuthenticatedApi = () => {
   } catch (error) {
     // Fallback to a simpler axios instance if there's an error
     return axios.create({
-      baseURL: '',  // Empty baseURL to work with Vite's proxy
+      baseURL: getApiBaseUrl(),  // Use environment-based baseURL
       withCredentials: true
     });
   }

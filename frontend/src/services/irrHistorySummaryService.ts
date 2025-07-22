@@ -1,8 +1,24 @@
 import axios from 'axios';
 
-// Create axios instance with the correct baseURL that works with Vite's proxy
+// Environment-based API configuration (same as api.ts)
+const getApiBaseUrl = () => {
+  // Check if we're in development mode (localhost or Vite dev server)
+  const isDevelopment = window.location.hostname === 'localhost' || 
+                       window.location.hostname === '127.0.0.1' ||
+                       window.location.port === '3000';
+  
+  // In development (Vite dev server), use proxy (empty baseURL)
+  if (isDevelopment) {
+    return '';  // Vite proxy handles /api requests
+  }
+  
+  // In production (built app), use direct API server
+  return 'http://intranet.kingston.local:8001';
+};
+
+// Create axios instance with environment-appropriate baseURL
 const api = axios.create({
-  baseURL: '',  // Empty base URL since we're using Vite's proxy configuration
+  baseURL: getApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
