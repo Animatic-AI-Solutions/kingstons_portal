@@ -12,6 +12,7 @@ import {
   getRiskRange 
 } from '../utils/definitionsShared';
 import StandardTable, { ColumnConfig } from '../components/StandardTable';
+import DynamicPageContainer from '../components/DynamicPageContainer';
 
 interface PortfolioTemplatesProps {
   tabMode?: boolean;
@@ -181,9 +182,12 @@ const PortfolioTemplates: React.FC<PortfolioTemplatesProps> = ({ tabMode = false
   );
 
   return tabMode ? content : (
-    <div className="container mx-auto px-2 py-1">
+    <DynamicPageContainer 
+      maxWidth="2800px"
+      className="py-1"
+    >
       {content}
-    </div>
+    </DynamicPageContainer>
   );
 };
 

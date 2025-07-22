@@ -16,6 +16,7 @@ import {
 import api from '../services/api';
 import StandardTable, { ColumnConfig } from '../components/StandardTable';
 import AddFundModal from '../components/AddFundModal';
+import DynamicPageContainer from '../components/DynamicPageContainer';
 
 const DefinitionsFunds: React.FC = () => {
   const { user } = useAuth();
@@ -107,7 +108,10 @@ const DefinitionsFunds: React.FC = () => {
   if (!user) return null;
 
   return (
-    <div className="container mx-auto px-2 py-1">
+    <DynamicPageContainer 
+      maxWidth="2800px"
+      className="py-1"
+    >
       <div className="flex justify-between items-center mb-3">
         <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Funds</h1>
         <div className="flex items-center gap-4">
@@ -161,7 +165,7 @@ const DefinitionsFunds: React.FC = () => {
         onClose={() => setShowAddFundModal(false)}
         onSuccess={handleAddFundSuccess}
       />
-    </div>
+    </DynamicPageContainer>
   );
 };
 

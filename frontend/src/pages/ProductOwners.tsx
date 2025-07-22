@@ -8,6 +8,7 @@ import FilterSearch from '../components/ui/search/FilterSearch';
 import FilterDropdown from '../components/ui/dropdowns/FilterDropdown';
 import { BaseInput, MultiSelectDropdown, ActionButton } from '../components/ui';
 import StandardTable, { ColumnConfig } from '../components/StandardTable';
+import DynamicPageContainer from '../components/DynamicPageContainer';
 
 interface Product {
   id: number;
@@ -185,7 +186,10 @@ const ProductOwners: React.FC = () => {
 
 
   return (
-    <div className="container mx-auto px-4 py-3">
+    <DynamicPageContainer 
+      maxWidth="2800px"
+      className="py-3"
+    >
       <div className="flex justify-between items-center mb-3">
         <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Product Owners</h1>
         <div className="flex items-center gap-4">
@@ -290,7 +294,7 @@ const ProductOwners: React.FC = () => {
           </div>
         </Modal>
       )}
-    </div>
+    </DynamicPageContainer>
   );
 };
 

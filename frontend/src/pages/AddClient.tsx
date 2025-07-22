@@ -10,6 +10,7 @@ import {
   DateInput
 } from '../components/ui';
 import { CreatableDropdown, BaseDropdown } from '../components/ui';
+import DynamicPageContainer from '../components/DynamicPageContainer';
 
 interface ClientFormData {
   name: string;
@@ -143,7 +144,10 @@ const AddClient: React.FC = () => {
   ];
 
   return (
-    <div className="container mx-auto px-4 py-3">
+    <DynamicPageContainer 
+      maxWidth="2800px"
+      className="py-3"
+    >
       {/* Breadcrumb Navigation */}
       <nav className="mb-4 flex" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
@@ -273,7 +277,7 @@ const AddClient: React.FC = () => {
           </div>
         </form>
       </div>
-    </div>
+    </DynamicPageContainer>
   );
 };
 

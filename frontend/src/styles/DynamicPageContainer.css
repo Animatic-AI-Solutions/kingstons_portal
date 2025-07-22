@@ -1,0 +1,231 @@
+/* Dynamic Page Container Styles */
+.dynamic-page-container {
+  position: relative;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.dynamic-content-wrapper {
+  position: relative;
+  z-index: 1;
+}
+
+/* Apply dynamic spacing to direct children */
+.dynamic-content-wrapper > *:not(:last-child) {
+  margin-bottom: var(--dynamic-gap, 1rem);
+}
+
+/* Section-level spacing */
+.dynamic-content-wrapper > .section,
+.dynamic-content-wrapper > div.mb-6,
+.dynamic-content-wrapper > div.mt-6,
+.dynamic-content-wrapper > .grid {
+  margin-bottom: var(--dynamic-section-gap, 1.5rem);
+}
+
+/* Enhanced spacing for specific components */
+.dynamic-page-container .grid {
+  gap: var(--dynamic-gap, 1rem);
+}
+
+.dynamic-page-container .space-y-6 > * + * {
+  margin-top: var(--dynamic-gap, 1rem);
+}
+
+.dynamic-page-container .space-y-4 > * + * {
+  margin-top: calc(var(--dynamic-gap, 1rem) * 0.75);
+}
+
+.dynamic-page-container .space-y-3 > * + * {
+  margin-top: calc(var(--dynamic-gap, 1rem) * 0.5);
+}
+
+/* Card and component padding enhancements */
+.dynamic-page-container .bg-white.rounded-lg.shadow,
+.dynamic-page-container .bg-white.rounded-lg.border {
+  padding: var(--dynamic-gap, 1rem);
+}
+
+/* Button scaling */
+.dynamic-page-container button {
+  padding: calc(var(--dynamic-gap, 1rem) * 0.5) var(--dynamic-gap, 1rem);
+  font-size: inherit;
+}
+
+/* Form input scaling */
+.dynamic-page-container input,
+.dynamic-page-container select,
+.dynamic-page-container textarea {
+  padding: calc(var(--dynamic-gap, 1rem) * 0.5);
+  font-size: inherit;
+}
+
+/* Table scaling */
+.dynamic-page-container table td,
+.dynamic-page-container table th {
+  padding: calc(var(--dynamic-gap, 1rem) * 0.75);
+  font-size: inherit;
+}
+
+/* Responsive breakpoints for fine-tuning */
+@media (max-width: 768px) {
+  .dynamic-page-container {
+    font-size: 0.875rem;
+  }
+}
+
+@media (min-width: 1920px) {
+  .dynamic-page-container {
+    --scale-factor: 1.2;
+  }
+}
+
+@media (min-width: 2560px) {
+  .dynamic-page-container {
+    --scale-factor: 1.4;
+  }
+}
+
+/* Override for specific page types */
+.dynamic-page-container.auth-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: #f9fafb;
+}
+
+.dynamic-page-container.dashboard-page {
+  background-color: white;
+  min-height: 100vh;
+}
+
+.dynamic-page-container.data-page {
+  background-color: #f9fafb;
+  min-height: 100vh;
+}
+
+/* Horizontal Scaling Container Styles */
+.horizontal-scaling-container {
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* Keep vertical spacing compact while allowing horizontal scaling */
+.horizontal-scaling-container h1,
+.horizontal-scaling-container h2,
+.horizontal-scaling-container h3 {
+  margin-bottom: 0.75rem;
+}
+
+.horizontal-scaling-container .mb-3 {
+  margin-bottom: 0.75rem;
+}
+
+.horizontal-scaling-container .mb-6 {
+  margin-bottom: 1.5rem;
+}
+
+.horizontal-scaling-container .mt-3 {
+  margin-top: 0.75rem;
+}
+
+.horizontal-scaling-container .py-3 {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+/* Scale buttons and inputs horizontally */
+.horizontal-scaling-container button {
+  padding-left: clamp(0.75rem, 2vw, 1.5rem);
+  padding-right: clamp(0.75rem, 2vw, 1.5rem);
+  font-size: inherit;
+}
+
+.horizontal-scaling-container input,
+.horizontal-scaling-container select {
+  padding-left: clamp(0.5rem, 1.5vw, 1rem);
+  padding-right: clamp(0.5rem, 1.5vw, 1rem);
+  font-size: inherit;
+}
+
+/* Enhanced cards and tables for large screens */
+.horizontal-scaling-container .bg-white.shadow {
+  padding: clamp(1rem, 2.5vw, 2rem);
+}
+
+.horizontal-scaling-container table {
+  font-size: inherit;
+}
+
+.horizontal-scaling-container table td,
+.horizontal-scaling-container table th {
+  padding-left: clamp(0.5rem, 1.5vw, 1rem);
+  padding-right: clamp(0.5rem, 1.5vw, 1rem);
+}
+
+/* Grid gaps scale horizontally */
+.horizontal-scaling-container .grid {
+  gap: clamp(1rem, 2vw, 2rem);
+}
+
+/* Better spacing for large monitors */
+@media (min-width: 1920px) {
+  .horizontal-scaling-container {
+    max-width: 90vw;
+  }
+}
+
+@media (min-width: 2560px) {
+  .horizontal-scaling-container {
+    max-width: 85vw;
+  }
+}
+
+/* Small text for search boxes */
+.small-search-text input {
+  font-size: 0.8rem !important;
+}
+
+.small-search-text input::placeholder {
+  font-size: 0.75rem !important;
+}
+
+/* More specific targeting for FilterSearch component */
+.horizontal-scaling-container .small-search-text input {
+  font-size: 0.8rem !important;
+}
+
+.horizontal-scaling-container .small-search-text input::placeholder {
+  font-size: 0.75rem !important;
+  color: #6b7280;
+}
+
+/* Even more specific selectors to override any FilterSearch styling */
+.horizontal-scaling-container .small-search-text input[type="text"] {
+  font-size: 0.8rem !important;
+}
+
+.horizontal-scaling-container .small-search-text input[type="text"]::placeholder {
+  font-size: 0.75rem !important;
+  color: #9ca3af !important;
+}
+
+/* Target FilterSearch specifically */
+.horizontal-scaling-container .small-search-text div input {
+  font-size: 0.8rem !important;
+}
+
+.horizontal-scaling-container .small-search-text div input::placeholder {
+  font-size: 0.75rem !important;
+  color: #9ca3af !important;
+}
+
+/* Global override for all input placeholders in small-search-text */
+.small-search-text input::placeholder,
+.small-search-text input::-webkit-input-placeholder,
+.small-search-text input::-moz-placeholder,
+.small-search-text input:-ms-input-placeholder {
+  font-size: 0.75rem !important;
+  color: #9ca3af !important;
+} 

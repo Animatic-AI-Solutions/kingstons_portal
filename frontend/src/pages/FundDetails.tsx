@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import DynamicPageContainer from '../components/DynamicPageContainer';
 import FilterDropdown from '../components/ui/dropdowns/FilterDropdown';
 import StandardTable, { ColumnConfig } from '../components/StandardTable';
 
@@ -421,17 +422,17 @@ const FundDetails: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 lg:px-8 py-4">
+      <DynamicPageContainer maxWidth="2800px">
         <div className="flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
         </div>
-      </div>
+      </DynamicPageContainer>
     );
   }
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 lg:px-8 py-4">
+      <DynamicPageContainer maxWidth="2800px" className="py-4">
         <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-md shadow-sm">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -452,13 +453,13 @@ const FundDetails: React.FC = () => {
             Back to Funds
           </button>
         </div>
-      </div>
+      </DynamicPageContainer>
     );
   }
 
   if (!fund) {
     return (
-      <div className="container mx-auto px-4 lg:px-8 py-4">
+      <DynamicPageContainer maxWidth="2800px">
         <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6 rounded-md shadow-sm">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -479,12 +480,12 @@ const FundDetails: React.FC = () => {
             Back to Funds
           </button>
         </div>
-      </div>
+      </DynamicPageContainer>
     );
   }
 
   return (
-    <div className="w-full min-h-screen mx-auto px-4 lg:px-8 py-4">
+    <DynamicPageContainer maxWidth="2800px" className="py-4 min-h-screen">
 
       
       {/* Breadcrumbs */}
@@ -735,7 +736,7 @@ const FundDetails: React.FC = () => {
             Created: {new Date(fund.created_at).toLocaleString()}
           </div>
         </div>
-    </div>
+    </DynamicPageContainer>
   );
 };
 

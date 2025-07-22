@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Routes, Route, NavLink, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import DynamicPageContainer from '../components/DynamicPageContainer';
 import AccountOverview from './ProductOverview';
 import AccountIRRCalculation from './ProductIRRCalculation';
 import AccountIRRHistory from './ProductIRRHistory';
@@ -160,7 +161,7 @@ const ProductDetails: React.FC = () => {
   }, [productId, api]);
 
   return (
-    <div className="max-w-7xl mx-auto px-1 sm:px-2 lg:px-3">
+    <DynamicPageContainer maxWidth="2800px">
       {/* Breadcrumbs */}
       <nav className="mb-4 flex" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
@@ -265,7 +266,7 @@ const ProductDetails: React.FC = () => {
           element={<AccountIRRHistory accountId={productId} />}
         />
       </Routes>
-    </div>
+    </DynamicPageContainer>
   );
 };
 

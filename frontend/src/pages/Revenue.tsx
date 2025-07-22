@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getCompanyRevenueAnalytics, getClientGroupRevenueBreakdown, getRevenueRateAnalytics, refreshRevenueRateCache } from '../services/api';
+import DynamicPageContainer from '../components/DynamicPageContainer';
 
 // Types
 interface CompanyRevenueData {
@@ -311,7 +312,10 @@ const Revenue: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-3">
+    <DynamicPageContainer 
+      maxWidth="2800px"
+      className="py-3"
+    >
       {/* Header - Consistent with Products page */}
       <div className="flex justify-between items-center mb-3">
         <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Revenue Analytics</h1>
@@ -501,7 +505,7 @@ const Revenue: React.FC = () => {
           </div>
         </>
       )}
-    </div>
+    </DynamicPageContainer>
   );
 };
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import PortfolioTemplates from './PortfolioTemplates';
 import PortfolioGenerations from './PortfolioGenerations';
+import DynamicPageContainer from '../components/DynamicPageContainer';
 
 type TabType = 'templates' | 'generations';
 
@@ -12,7 +13,10 @@ const PortfolioTemplatesWithTabs: React.FC = () => {
   if (!user) return null;
 
   return (
-    <div className="container mx-auto px-2 py-1">
+    <DynamicPageContainer 
+      maxWidth="2800px"
+      className="py-1"
+    >
       {/* Tab Navigation */}
       <div className="border-b border-gray-200 mb-6">
         <nav className="-mb-px flex space-x-8" aria-label="Tabs">
@@ -49,7 +53,7 @@ const PortfolioTemplatesWithTabs: React.FC = () => {
           <PortfolioGenerations tabMode={true} />
         )}
       </div>
-    </div>
+    </DynamicPageContainer>
   );
 };
 

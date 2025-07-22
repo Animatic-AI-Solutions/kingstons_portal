@@ -8,6 +8,7 @@ import type { Moment } from 'moment';
 import api from '../services/api';
 import AddFundModal from '../components/AddFundModal';
 import '../styles/PortfolioTemplate.css';
+import DynamicPageContainer from '../components/DynamicPageContainer';
 
 interface Client {
   id: number;
@@ -880,7 +881,7 @@ const AddAccount: React.FC = () => {
                     </div>
 
         {/* Product Details */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
                       {/* Product Name */}
                       <div>
                         <label htmlFor={`product-name-${product.id}`} className="block text-sm font-medium text-gray-700 mb-1">
@@ -983,7 +984,14 @@ const AddAccount: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div 
+        className="w-full mx-auto py-10"
+        style={{ 
+          maxWidth: '2800px',
+          paddingLeft: '8px',
+          paddingRight: '8px'
+        }}
+      >
         <div className="flex justify-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600"></div>
                           </div>
@@ -992,7 +1000,19 @@ const AddAccount: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <DynamicPageContainer 
+      maxWidth="2800px"
+      className="py-10"
+      customPadding="px-4 sm:px-6 lg:px-4 xl:px-2"
+    >
+      <div 
+        className="w-full mx-auto py-10"
+        style={{ 
+          maxWidth: '2800px',
+          paddingLeft: '8px',
+          paddingRight: '8px'
+        }}
+      >
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Create New Account</h1>
         <button 
@@ -1020,7 +1040,7 @@ const AddAccount: React.FC = () => {
 
       <div className="bg-white shadow rounded-lg p-6">
         <Form onFinish={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
             {/* Client Selection */}
             <div>
               <label htmlFor="client" className="block text-sm font-medium text-gray-700 mb-1">
@@ -1131,9 +1151,9 @@ const AddAccount: React.FC = () => {
       <AddFundModal
         isOpen={isAddFundModalOpen}
         onClose={() => setIsAddFundModalOpen(false)}
-        onFundAdded={handleFundAdded}
+        onSuccess={handleFundAdded}
       />
-    </div>
+    </DynamicPageContainer>
   );
 };
 

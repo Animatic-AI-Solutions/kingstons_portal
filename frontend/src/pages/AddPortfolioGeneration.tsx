@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import DynamicPageContainer from '../components/DynamicPageContainer';
 import { findCashFund, isCashFund } from '../utils/fundUtils';
 import FundSelectionManager from '../components/generation/FundSelectionManager';
-import { DateInput } from '../components/ui';
+
+import { DateInput, BaseInput } from '../components/ui';
 import ConcurrentUserModal from '../components/ui/ConcurrentUserModal';
 import { useConcurrentUserDetection } from '../hooks/useConcurrentUserDetection';
+
 
 interface Fund {
   id: number;
@@ -655,15 +658,70 @@ const AddPortfolioGeneration: React.FC = () => {
   }
 
   return (
-    <>
-      {/* Concurrent User Warning Modal */}
-      <ConcurrentUserModal
-        isOpen={showConcurrentUserModal}
-        onConfirm={handleConfirmProceed}
-        onCancel={handleCancel}
-        currentUsers={currentUsers}
-        pageName="portfolio generation"
-      />
+
+    <DynamicPageContainer maxWidth="2800px" className="py-8">
+      {/* Breadcrumb Navigation */}
+      <nav className="mb-8 flex" aria-label="Breadcrumb">
+        <ol className="inline-flex items-center space-x-1 md:space-x-3">
+          <li className="inline-flex items-center">
+            <Link to="/definitions/portfolio-templates" className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-primary-700">
+              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
+              </svg>
+              Portfolio Templates
+            </Link>
+          </li>
+          <li>
+            <div className="flex items-center">
+              <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
+              </svg>
+              <button 
+                onClick={() => navigate(`/definitions/portfolio-templates/${portfolioId}`, {
+                  state: { refreshNeeded: true }
+                })}
+                className="ml-1 text-sm font-medium text-gray-500 hover:text-primary-700 md:ml-2"
+              >
+                {portfolio?.name || 'Template'}
+              </button>
+            </div>
+          </li>
+          <li aria-current="page">
+            <div className="flex items-center">
+              <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
+              </svg>
+              <span className="ml-1 text-sm font-medium text-primary-700 md:ml-2">Add Generation</span>
+            </div>
+          </li>
+        </ol>
+      </nav>
+
+      {/* Header */}
+      <div className="flex justify-between items-center mb-8 mt-4">
+        <div className="flex items-center">
+          <div className="bg-primary-100 p-2 rounded-lg mr-3 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+          </div>
+          <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">
+            Add Generation to {portfolio?.name || 'Template Portfolio'}
+          </h1>
+        </div>
+        <button
+          onClick={() => navigate(`/definitions/portfolio-templates/${portfolioId}`, {
+            state: { refreshNeeded: true }
+          })}
+          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+        >
+          <svg className="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+          </svg>
+          Back
+        </button>
+      </div>
+
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb Navigation */}
@@ -728,18 +786,85 @@ const AddPortfolioGeneration: React.FC = () => {
           </button>
         </div>
 
-        {/* Main Content */}
-        <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
-          {(error || dateError) && (
-            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-0">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+
+        <form onSubmit={handleSubmit}>
+          <div className="p-4 border-b border-gray-200 bg-gray-50">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="w-full lg:w-1/3">
+                  <BaseInput
+                    label="Generation Name"
+                    helperText="(optional) - Leave empty to auto-generate"
+                    id="generation_name"
+                    name="generation_name"
+                    value={formData.generation_name}
+                    onChange={handleChange}
+                    placeholder="Leave empty to auto-generate"
+                  />
+                  {!formData.generation_name.trim() && portfolio && (
+                    <div className="mt-1 text-xs text-gray-500">
+                      <span className="font-medium">Auto-generated:</span> {generateGenerationName()}
+                    </div>
+                  )}
                 </div>
-                <div className="ml-3">
-                  <p className="text-red-700 text-sm font-medium">{error || dateError}</p>
+                <div className="w-full lg:w-1/3">
+                  <DateInput
+                    label="Creation Date"
+                    id="created_at"
+                    name="created_at"
+                    value={formData.created_at}
+                    onChange={(date, formatted) => {
+                      if (date) {
+                        // Valid date - use ISO string
+                        const dateValue = date.toISOString();
+                        setFormData(prev => ({
+                          ...prev,
+                          created_at: dateValue
+                        }));
+                        setDateError(null); // Clear any previous errors
+                      } else {
+                        // Invalid date or empty - validate the raw input
+                        setFormData(prev => ({
+                          ...prev,
+                          created_at: formatted || ''
+                        }));
+                        
+                        // Real-time date validation for invalid dates
+                        if (formatted && formatted.trim()) {
+                          const dateValidationResult = validateCreationDate(formatted);
+                          if (!dateValidationResult.isValid) {
+                            setDateError(dateValidationResult.error);
+                          } else {
+                            setDateError(null);
+                          }
+                        } else {
+                          setDateError(null); // Clear error if date is empty (valid)
+                        }
+                      }
+                      
+                      // Clear general errors when user makes changes
+                      if (error) {
+                        setError(null);
+                      }
+                    }}
+                    placeholder="Select creation date"
+                    helperText="Leave empty to use current date/time"
+                    required={false}
+                  />
+                  {dateError && (
+                    <p className="mt-1 text-xs text-red-500">{dateError}</p>
+                  )}
+                </div>
+                <div className="w-full lg:w-1/3">
+                  <BaseInput
+                    label="Description"
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    placeholder="Enter a detailed description of this portfolio generation"
+                  />
+
                 </div>
               </div>
             </div>
@@ -942,7 +1067,9 @@ const AddPortfolioGeneration: React.FC = () => {
           </form>
         </div>
       </div>
-    </>
+
+    </DynamicPageContainer>
+
   );
 };
 
