@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import DynamicPageContainer from '../components/DynamicPageContainer';
 import { BaseInput, BaseDropdown, TextArea, ActionButton, DateInput } from '../components/ui';
 import { findCashFund, isCashFund } from '../utils/fundUtils';
 
@@ -352,7 +353,7 @@ const AddPortfolioTemplate: React.FC = () => {
   }, [availableFunds, searchQuery]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <DynamicPageContainer maxWidth="2800px" className="py-8">
       {/* Breadcrumb Navigation */}
       <nav className="mb-8 flex" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
@@ -826,7 +827,7 @@ const AddPortfolioTemplate: React.FC = () => {
           </div>
         </form>
       </div>
-    </div>
+    </DynamicPageContainer>
   );
 };
 
