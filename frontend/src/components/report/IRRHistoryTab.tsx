@@ -47,7 +47,7 @@ import api from '../../services/api';
 
 // Local function to format fund IRRs with consistent 1 decimal place display
 const formatFundIrr = (irr: number | null | undefined): string => {
-  if (irr === null || irr === undefined) return '-';
+  if (irr === null || irr === undefined || isNaN(irr)) return '-';
   
   // Always format to 1 decimal place for consistency
   return `${irr.toFixed(1)}%`;
@@ -55,6 +55,7 @@ const formatFundIrr = (irr: number | null | undefined): string => {
 
 // Helper function for chart tick formatting (1 decimal place, consistent)
 const formatChartTick = (value: number): string => {
+  if (isNaN(value)) return '0.0%';
   return `${value.toFixed(1)}%`;
 };
 
@@ -72,7 +73,8 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       customTitles: stableCustomTitles,
       hideZeros,
       loading,
-      showInactiveProductDetails
+      showInactiveProductDetails,
+      portfolioIrrValues
     }
   } = useReportStateManager();
   
@@ -310,7 +312,12 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
         
         if (productHistory?.portfolio_historical_irr) {
           const record = productHistory.portfolio_historical_irr.find((r: any) => r.irr_date === date);
-          dataPoint[productKey] = record ? parseFloat(record.irr_result) : null;
+          if (record && record.irr_result !== null && record.irr_result !== undefined) {
+            const irrValue = parseFloat(record.irr_result);
+            dataPoint[productKey] = !isNaN(irrValue) ? irrValue : null;
+          } else {
+            dataPoint[productKey] = null;
+          }
         }
       });
 
@@ -507,7 +514,12 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
         
         if (productHistory?.portfolio_historical_irr) {
           const record = productHistory.portfolio_historical_irr.find((r: any) => r.irr_date === date);
-                          row.push(record ? formatIrrWithPrecision(parseFloat(record.irr_result)) : 'N/A');
+          if (record && record.irr_result !== null && record.irr_result !== undefined) {
+            const irrValue = parseFloat(record.irr_result);
+            row.push(!isNaN(irrValue) ? formatIrrWithPrecision(irrValue) : 'N/A');
+          } else {
+            row.push('N/A');
+          }
         } else {
           row.push('N/A');
         }
@@ -588,7 +600,8 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       
       console.log(`🔄 [Previous Funds IRR] API Response for ${irrDate}:`, response.data);
       
-      const irrResult = response.data?.irr_percentage || null;
+      // Fix: Properly handle zero values - only convert undefined to null
+      const irrResult = response.data?.irr_percentage !== undefined ? response.data.irr_percentage : null;
       return irrResult;
     } catch (error) {
       console.error(`❌ [Previous Funds IRR] Error calculating for ${irrDate}:`, error);
@@ -1706,7 +1719,24 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
 
                           // Add product total row
                           const productForTotal = reportData.productSummaries.find(p => p.id === productHistory.product_id);
-                          const productIrr = productForTotal?.irr;
+                          
+                          // Use updated IRR from portfolioIrrValues if available, otherwise fall back to reportData
+                          let productIrr = portfolioIrrValues.has(productHistory.product_id) 
+                            ? portfolioIrrValues.get(productHistory.product_id) 
+                            : productForTotal?.irr;
+                          
+                          // Debug: Log current IRR value extraction
+                          console.log(`🔍 [IRR HISTORY] Product ${productHistory.product_id} current IRR debug:`, {
+                            productFound: !!productForTotal,
+                            rawIrrValueFromReportData: productForTotal?.irr,
+                            hasUpdatedIrrInState: portfolioIrrValues.has(productHistory.product_id),
+                            updatedIrrFromState: portfolioIrrValues.get(productHistory.product_id),
+                            finalProductIrr: productIrr,
+                            irrType: typeof productIrr,
+                            isNull: productIrr === null,
+                            isUndefined: productIrr === undefined,
+                            isZero: productIrr === 0
+                          });
                           
                                     // Calculate total weighted risk including Previous Funds
           let totalWeightedRisk: number | undefined = undefined;
@@ -1787,7 +1817,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                 dateType: typeof r.irr_date,
                                 irr: r.irr_result,
                                 irrType: typeof r.irr_result,
-                                irrParsed: parseFloat(r.irr_result),
+                                irrParsed: !isNaN(parseFloat(r.irr_result)) ? parseFloat(r.irr_result) : null,
                                 originalRecord: r
                               })),
                               uniqueRawIrrValues: [...new Set(productHistory.portfolio_historical_irr.map((r: any) => r.irr_result))],
@@ -1802,7 +1832,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                 }
                                 acc[normalizedDate] = {
                                   rawIrr: record.irr_result,
-                                  parsedIrr: parseFloat(record.irr_result),
+                                  parsedIrr: !isNaN(parseFloat(record.irr_result)) ? parseFloat(record.irr_result) : null,
                                   rawDate: record.irr_date
                                 };
                                 return acc;
@@ -1810,7 +1840,10 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                             });
                             
                             // 🚨 CRITICAL DEBUG: Check if all IRR values are actually the same
-                            const allIrrValues = productHistory.portfolio_historical_irr.map((r: any) => parseFloat(r.irr_result));
+                            const allIrrValues = productHistory.portfolio_historical_irr.map((r: any) => {
+                              const parsed = parseFloat(r.irr_result);
+                              return !isNaN(parsed) ? parsed : null;
+                            }).filter(v => v !== null);
                             const uniqueIrrValues = [...new Set(allIrrValues)];
                             if (uniqueIrrValues.length === 1) {
                               console.warn(`🚨 [DATA QUALITY WARNING] Product ${productHistory.product_id} has IDENTICAL IRR values for ALL dates:`, {
@@ -1851,8 +1884,10 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                               // ONLY include if this date is in the normalized selected dates
                               if (normalizedSelectedDates.includes(normalizedDbDate)) {
                                 const irrValue = parseFloat(record.irr_result);
-                                // Store using the normalized date for consistency
-                                productHistoricalIrrMap.set(normalizedDbDate, irrValue);
+                                // Store using the normalized date for consistency, but only if not NaN
+                                if (!isNaN(irrValue)) {
+                                  productHistoricalIrrMap.set(normalizedDbDate, irrValue);
+                                }
                               }
                             });
                             
@@ -1933,11 +1968,21 @@ Available database dates: ${productHistory.portfolio_historical_irr.map((r: any)
                                 )}
                               </td>
                               <td className="px-2 py-2 text-xs font-bold text-right bg-purple-100 text-black">
-                                {productIrr !== null && productIrr !== undefined ? (
-                                  formatIrrWithPrecision(productIrr)
-                                ) : (
-                                  '-'
-                                )}
+                                {(() => {
+                                  console.log(`🔍 [IRR HISTORY] Product ${productHistory.product_id} display logic:`, {
+                                    productIrr,
+                                    isNotNull: productIrr !== null,
+                                    isNotUndefined: productIrr !== undefined,
+                                    bothChecksPass: productIrr !== null && productIrr !== undefined,
+                                    willShowValue: productIrr !== null && productIrr !== undefined
+                                  });
+                                  
+                                  if (productIrr !== null && productIrr !== undefined) {
+                                    return formatIrrWithPrecision(productIrr);
+                                  } else {
+                                    return '-';
+                                  }
+                                })()}
                               </td>
                               {sortedDates.map((date, index) => {
                                 // Get the corresponding normalized date for lookup

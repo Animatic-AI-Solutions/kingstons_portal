@@ -52,7 +52,7 @@ export const formatCurrencyWithZeroToggle = (
 
 // IRR formatter with consistent 1 decimal place display
 export const formatIrrWithPrecision = (irr: number | null | undefined): string => {
-  if (irr === null || irr === undefined) return '-';
+  if (irr === null || irr === undefined || isNaN(irr)) return '-';
   
   // Always format to 1 decimal place for consistency
   return `${irr.toFixed(1)}%`;
@@ -86,20 +86,14 @@ export const formatFundRisk = (risk: number | undefined): string => {
   return Math.round(risk).toString();
 };
 
-// Product and portfolio weighted risk formatting (smart decimal places)
+// Product and portfolio weighted risk formatting (rounded to nearest whole number)
 export const formatWeightedRisk = (risk: number | undefined): string => {
   if (risk === undefined || risk === null) return '-';
   
-  // Round to 1 decimal place first
-  const rounded = Math.round(risk * 10) / 10;
+  // Round to nearest whole number
+  const rounded = Math.round(risk);
   
-  // If it's a whole number, display without decimal places
-  if (rounded === Math.floor(rounded)) {
-    return rounded.toString();
-  }
-  
-  // Otherwise, display with 1 decimal place
-  return rounded.toFixed(1);
+  return rounded.toString();
 };
 
 // Product and portfolio weighted risk formatting (consistent 1 decimal place for totals)

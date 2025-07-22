@@ -2445,7 +2445,12 @@ Please select a different valuation date or ensure all active funds have valuati
             };
 
             // Navigate to the report display page
-            navigate('/report-display', { state: { reportData: reportDataWithoutIRR } });
+            navigate('/report-display', { 
+              state: { 
+                reportData: reportDataWithoutIRR,
+                clientGroupIds: selectedClientGroupIds 
+              } 
+            });
           }
         } catch (irrErr) {
           console.error('Error calculating standardized IRR:', irrErr);
@@ -2513,7 +2518,12 @@ Please select a different valuation date or ensure all active funds have valuati
       };
 
       // Navigate to the report display page
-      navigate('/report-display', { state: { reportData: finalReportData } });
+                  navigate('/report-display', { 
+              state: { 
+                reportData: finalReportData,
+                clientGroupIds: selectedClientGroupIds 
+              } 
+            });
       
     } catch (err: any) {
       console.error('Error generating report:', err);
@@ -2841,9 +2851,8 @@ Please select a different valuation date or ensure all active funds have valuati
 
   // Sync showInactiveProductDetails with state manager
   useEffect(() => {
-    console.log(`🔍 [STATE SYNC DEBUG] Syncing showInactiveProductDetails with state manager:`, Array.from(showInactiveProductDetails));
     stateManagerActions.setShowInactiveProductDetails(showInactiveProductDetails);
-  }, [showInactiveProductDetails, stateManagerActions]);
+  }, [showInactiveProductDetails]); // Removed stateManagerActions from dependencies to prevent infinite loop
 
   return (
     <DynamicPageContainer maxWidth="2800px" className="py-3">

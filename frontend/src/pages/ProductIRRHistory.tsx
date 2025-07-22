@@ -628,11 +628,11 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10">
+                  <th scope="col" className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider sticky left-0 bg-gray-50 z-10">
                     Fund
                   </th>
                   {irrTableColumns.map(monthYear => (
-                    <th key={monthYear} scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th key={monthYear} scope="col" className="px-3 py-2 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       {monthYear}
                     </th>
                   ))}
@@ -661,7 +661,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
                   .map(([fundId, fund]) => (
                   <React.Fragment key={fundId}>
                     <tr className={fund.isPreviousFunds ? 'bg-blue-50' : ''}>
-                      <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium sticky left-0 z-10 ${
+                      <td className={`px-3 py-2 whitespace-nowrap text-sm font-medium sticky left-0 z-10 ${
                         fund.isPreviousFunds ? 'text-blue-800 bg-blue-50' : 'text-gray-900 bg-white'
                       }`}>
                         <div className="flex items-center justify-between">
@@ -687,13 +687,15 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
                       {irrTableColumns.map(monthYear => {
                         const irrValue = fund.values[monthYear];
                         const irrClass = irrValue !== undefined
-                          ? irrValue >= 0 
-                            ? 'text-green-600' 
-                            : 'text-red-600'
-                          : 'text-gray-400';
+                          ? irrValue === 0
+                            ? 'text-gray-400'  // 0.0% gets gray color
+                            : irrValue > 0 
+                              ? 'text-green-600'  // Positive values get green
+                              : 'text-red-600'    // Negative values get red
+                          : 'text-gray-400';     // Undefined/null gets gray
                         
                         return (
-                          <td key={`${fundId}-${monthYear}`} className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                          <td key={`${fundId}-${monthYear}`} className="px-3 py-2 whitespace-nowrap text-sm text-right">
                             <span className={irrClass}>
                               {formatPercentage(irrValue, 1, true)}
                             </span>
@@ -705,7 +707,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
                     {/* Show individual inactive funds breakdown if enabled and this is the Previous Funds row */}
                     {fund.isPreviousFunds && showInactiveFundsBreakdown && Object.entries(inactiveFundsIRRData).map(([inactiveFundId, inactiveFund]) => (
                       <tr key={`inactive-${inactiveFundId}`} className="bg-gray-50 border-t border-dashed border-gray-300">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-600 bg-gray-50 sticky left-0 z-10 pl-8">
+                        <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-600 bg-gray-50 sticky left-0 z-10 pl-8">
                           {inactiveFund.fundName}
                           <div className="text-xs text-gray-500 font-normal">
                             Individual inactive fund
@@ -714,13 +716,15 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
                         {irrTableColumns.map(monthYear => {
                           const irrValue = inactiveFund.values[monthYear];
                           const irrClass = irrValue !== undefined
-                            ? irrValue >= 0 
-                              ? 'text-green-600' 
-                              : 'text-red-600'
-                            : 'text-gray-400';
+                            ? irrValue === 0
+                              ? 'text-gray-400'  // 0.0% gets gray color
+                              : irrValue > 0 
+                                ? 'text-green-600'  // Positive values get green
+                                : 'text-red-600'    // Negative values get red
+                            : 'text-gray-400';     // Undefined/null gets gray
                           
                           return (
-                            <td key={`inactive-${inactiveFundId}-${monthYear}`} className="px-6 py-4 whitespace-nowrap text-sm text-right bg-gray-50">
+                            <td key={`inactive-${inactiveFundId}-${monthYear}`} className="px-3 py-2 whitespace-nowrap text-sm text-right bg-gray-50">
                               <span className={irrClass}>
                                 {formatPercentage(irrValue, 1, true)}
                               </span>
@@ -735,19 +739,19 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
                 {/* Portfolio IRR Total Row */}
                 {Object.keys(portfolioIRRData).length > 0 && (
                   <tr className="bg-gray-50 border-t-2 border-gray-300">
-                    <td className="px-6 py-4 whitespace-nowrap text-base font-bold text-red-600 sticky left-0 bg-gray-50 z-10">
+                    <td className="px-3 py-2 whitespace-nowrap text-base font-bold text-red-600 sticky left-0 bg-gray-50 z-10">
                       PORTFOLIO TOTAL
                     </td>
                     {irrTableColumns.map(monthYear => {
                       const portfolioIrrValue = portfolioIRRData[monthYear];
                       const irrClass = portfolioIrrValue !== undefined
                         ? portfolioIrrValue >= 0 
-                          ? 'text-green-700 font-bold' 
-                          : 'text-red-700 font-bold'
-                        : 'text-gray-400';
+                          ? 'text-green-700 font-bold'  // 0.0% and positive values get green (bold)
+                          : 'text-red-700 font-bold'    // Negative values get red (bold)
+                        : 'text-gray-400';               // Undefined/null gets gray
                       
                       return (
-                        <td key={`portfolio-${monthYear}`} className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                        <td key={`portfolio-${monthYear}`} className="px-3 py-2 whitespace-nowrap text-sm text-right">
                           <span className={irrClass}>
                             {formatPercentage(portfolioIrrValue, 1, true)}
                           </span>

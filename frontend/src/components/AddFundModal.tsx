@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { 
   BaseInput, 
@@ -25,6 +25,17 @@ interface FundFormData {
   risk_factor: number | null;
   fund_cost: number | null;
   status: string;
+}
+
+interface DuplicateIsinWarning {
+  isChecking: boolean;
+  isDuplicate: boolean;
+  duplicateFund?: {
+    id: number;
+    name: string;
+    status: string;
+  };
+  message?: string;
 }
 
 interface AddFundModalProps {
@@ -55,6 +66,11 @@ const AddFundModal: React.FC<AddFundModalProps> = ({
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
+  const [duplicateWarning, setDuplicateWarning] = useState<DuplicateIsinWarning>({
+    isChecking: false,
+    isDuplicate: false
+  });
+  const isinCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Reset form when modal closes
   useEffect(() => {
@@ -68,8 +84,58 @@ const AddFundModal: React.FC<AddFundModalProps> = ({
       });
       setError(null);
       setFieldErrors({});
+      setDuplicateWarning({
+        isChecking: false,
+        isDuplicate: false
+      });
+      
+      // Clear any pending ISIN check
+      if (isinCheckTimeoutRef.current) {
+        clearTimeout(isinCheckTimeoutRef.current);
+      }
     }
   }, [isOpen]);
+
+  // Debounced ISIN duplicate check function
+  const checkIsinDuplicate = useCallback(async (isin: string) => {
+    if (!isin.trim() || isin.length < 3) {
+      setDuplicateWarning({
+        isChecking: false,
+        isDuplicate: false
+      });
+      return;
+    }
+
+    setDuplicateWarning(prev => ({ ...prev, isChecking: true }));
+
+    try {
+      const response = await api.get(`/funds/check-isin/${encodeURIComponent(isin.trim().toUpperCase())}`);
+      const data = response.data;
+
+      setDuplicateWarning({
+        isChecking: false,
+        isDuplicate: data.is_duplicate,
+        duplicateFund: data.duplicate_fund,
+        message: data.message
+      });
+    } catch (error) {
+      console.error('Error checking ISIN duplicate:', error);
+      setDuplicateWarning({
+        isChecking: false,
+        isDuplicate: false,
+        message: 'Unable to check for duplicates'
+      });
+    }
+  }, [api]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (isinCheckTimeoutRef.current) {
+        clearTimeout(isinCheckTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleFundNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -104,6 +170,16 @@ const AddFundModal: React.FC<AddFundModalProps> = ({
         isin_number: ''
       }));
     }
+
+    // Clear any existing timeout
+    if (isinCheckTimeoutRef.current) {
+      clearTimeout(isinCheckTimeoutRef.current);
+    }
+
+    // Set new timeout for debounced duplicate check (800ms delay)
+    isinCheckTimeoutRef.current = setTimeout(() => {
+      checkIsinDuplicate(value);
+    }, 800);
   };
 
   const handleRiskFactorChange = (value: number | null) => {
@@ -312,6 +388,19 @@ const AddFundModal: React.FC<AddFundModalProps> = ({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 }
+                rightIcon={
+                  duplicateWarning.isChecking ? (
+                    <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-primary-600 rounded-full"></div>
+                  ) : duplicateWarning.isDuplicate ? (
+                    <svg className="h-4 w-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                  ) : formData.isin_number.length >= 3 ? (
+                    <svg className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : null
+                }
               />
 
               <NumberInput
@@ -352,6 +441,33 @@ const AddFundModal: React.FC<AddFundModalProps> = ({
                 placeholder="Select status"
               />
             </div>
+
+            {/* ISIN Duplicate Warning */}
+            {duplicateWarning.isDuplicate && (
+              <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-md">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                  </div>
+                  <div className="ml-3 flex-1">
+                    <h4 className="text-sm font-medium text-amber-800">
+                      Duplicate ISIN Warning
+                    </h4>
+                    <div className="mt-1 text-sm text-amber-700">
+                      <p>
+                        This ISIN already exists for fund: <strong>{duplicateWarning.duplicateFund?.name}</strong>
+                        {duplicateWarning.duplicateFund?.status === 'inactive' && ' (inactive)'}
+                      </p>
+                      <p className="mt-1 text-xs">
+                        You can still save this fund if intentional, but please verify this is not a mistake.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}

@@ -2766,12 +2766,15 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                     onChange={(e) => {
                                       if (fund.isActive !== false && !fund.isInactiveBreakdown) {
                                         const value = e.target.value;
-                                        if (value.includes('.')) {
+                                        
+                                        // Allow mathematical expressions - only restrict if it's a plain number with more than 2 decimal places
+                                        if (value.includes('.') && !/[+\-*/()]/.test(value)) {
                                           const parts = value.split('.');
                                           if (parts[1] && parts[1].length > 2) {
                                             return;
                                           }
                                         }
+                                        
                                         handleCellValueChangeEnhanced(fund.id, month, activityType, value);
                                       }
                                     }}

@@ -25,6 +25,7 @@ interface FundSelectionManagerProps {
   isLoading: boolean;
   error?: string;
   onAddFund?: () => void;
+  weightedRisk?: number | null;
 }
 
 const FundSelectionManager: React.FC<FundSelectionManagerProps> = ({
@@ -39,7 +40,8 @@ const FundSelectionManager: React.FC<FundSelectionManagerProps> = ({
   onSearchChange,
   isLoading,
   error,
-  onAddFund
+  onAddFund,
+  weightedRisk
 }) => {
   // Calculate total weighting for progress display
   const totalWeighting = useMemo(() => {
@@ -73,6 +75,14 @@ const FundSelectionManager: React.FC<FundSelectionManagerProps> = ({
     if (totalWeighting > 100) return 'bg-red-500'; // Too high
     if (totalWeighting > 90) return 'bg-yellow-500'; // Close to target
     return 'bg-blue-500'; // Still collecting
+  };
+
+  // Get risk level color based on weighted risk value
+  const getRiskLevelColor = (risk: number) => {
+    if (risk <= 2) return 'text-green-700 bg-green-100 border-green-200';
+    if (risk <= 4) return 'text-blue-700 bg-blue-100 border-blue-200';
+    if (risk <= 6) return 'text-yellow-700 bg-yellow-100 border-yellow-200';
+    return 'text-red-700 bg-red-100 border-red-200';
   };
 
   return (
@@ -122,6 +132,7 @@ const FundSelectionManager: React.FC<FundSelectionManagerProps> = ({
           onClearAll={onClearAll}
           totalWeighting={totalWeighting}
           isLoading={isLoading}
+          weightedRisk={weightedRisk}
         />
 
         {/* Available Funds Panel - Right Side */}

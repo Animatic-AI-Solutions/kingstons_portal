@@ -292,3 +292,60 @@ async def get_fund_products_with_owners(
     except Exception as e:
         logger.error(f"Error getting products with owners for fund {fund_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+
+@router.get("/funds/check-isin/{isin_number}")
+async def check_isin_duplicate(
+    isin_number: str = Path(..., description="ISIN number to check for duplicates"),
+    exclude_fund_id: Optional[int] = Query(None, description="Fund ID to exclude from duplicate check (for updates)"),
+    db: SupabaseClient = Depends(get_db)
+):
+    """
+    Check if an ISIN number already exists in the database
+    
+    What it does: Searches for existing funds with the same ISIN number
+    Why it's needed: Provides duplicate warning to users before saving
+    How it works:
+        1. Searches available_funds table for matching ISIN
+        2. Optionally excludes a specific fund ID (for updates)
+        3. Returns information about any duplicate found
+    Expected output: JSON object with duplicate status and details
+    """
+    try:
+        # Convert ISIN to uppercase for consistent comparison
+        isin_upper = isin_number.upper().strip()
+        
+        # Build query to find funds with matching ISIN
+        query = db.table("available_funds").select("id, fund_name, isin_number, status").eq("isin_number", isin_upper)
+        
+        # Exclude specific fund ID if provided (useful for updates)
+        if exclude_fund_id:
+            query = query.neq("id", exclude_fund_id)
+        
+        response = query.execute()
+        
+        if not response.data:
+            return {
+                "is_duplicate": False,
+                "isin_number": isin_upper,
+                "message": "ISIN is unique"
+            }
+        
+        # Found duplicate(s)
+        duplicate_fund = response.data[0]  # Get first match
+        return {
+            "is_duplicate": True,
+            "isin_number": isin_upper,
+            "duplicate_fund": {
+                "id": duplicate_fund["id"],
+                "name": duplicate_fund["fund_name"],
+                "status": duplicate_fund["status"]
+            },
+            "message": f"ISIN already exists for fund: {duplicate_fund['fund_name']}"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error checking ISIN duplicate for {isin_number}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
