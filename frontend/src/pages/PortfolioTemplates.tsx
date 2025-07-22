@@ -48,9 +48,6 @@ const PortfolioTemplates: React.FC<PortfolioTemplatesProps> = ({ tabMode = false
 
   // Apply search filtering only - StandardTable will handle column filtering and sorting
   const searchFilteredPortfolios = useMemo(() => {
-    console.log('Processing portfolios data:', portfolios.length, 'portfolios');
-    console.log('Sample portfolio:', portfolios[0]);
-    
     let filtered = portfolios;
     
     // Apply text search filter
@@ -66,8 +63,6 @@ const PortfolioTemplates: React.FC<PortfolioTemplatesProps> = ({ tabMode = false
     if (portfoliosWithStatus.length > 0) {
       filtered = filtered.filter(portfolio => portfolio.status === 'active');
     }
-    
-    console.log('Filtered portfolios:', filtered.length);
     
     // Add computed values for StandardTable
     return filtered.map(portfolio => ({

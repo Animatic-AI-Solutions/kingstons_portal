@@ -29,11 +29,18 @@ export const usePortfolioTemplates = (): UsePortfolioTemplatesResult => {
     
     try {
       const response = await api.get('/available_portfolios/bulk-with-counts', { signal });
-      console.log(`Successfully received ${response.data.length} portfolio templates with counts`);
+      
+      // Only log in development mode to reduce console noise
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Successfully received ${response.data.length} portfolio templates with counts`);
+      }
       
       return response.data as PortfolioTemplate[];
-    } catch (err) {
-      console.error('Error in fetchPortfolios:', err);
+    } catch (err: any) {
+      // Don't log canceled errors as they're normal behavior
+      if (err.name !== 'CanceledError' && err.code !== 'ERR_CANCELED') {
+        console.error('Error in fetchPortfolios:', err);
+      }
       throw err;
     }
   }, []);
@@ -89,8 +96,11 @@ export const usePortfolioTemplateDetails = (portfolioId: string | undefined) => 
         generations: generationsResponse.data || [],
         linkedProducts: linkedProductsResponse.data || []
       };
-    } catch (err) {
-      console.error('Error fetching portfolio template details:', err);
+    } catch (err: any) {
+      // Don't log canceled errors as they're normal behavior
+      if (err.name !== 'CanceledError' && err.code !== 'ERR_CANCELED') {
+        console.error('Error fetching portfolio template details:', err);
+      }
       throw err;
     }
   }, [portfolioId]);
