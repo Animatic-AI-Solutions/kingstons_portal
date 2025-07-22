@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import DynamicPageContainer from '../components/DynamicPageContainer';
 import { findCashFund, isCashFund } from '../utils/fundUtils';
@@ -45,6 +46,7 @@ interface Generation {
 const EditPortfolioGeneration: React.FC = () => {
   const { portfolioId, generationId } = useParams<{ portfolioId: string, generationId: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { api } = useAuth();
   
   const [formData, setFormData] = useState<GenerationFormData>({
@@ -299,10 +301,13 @@ const EditPortfolioGeneration: React.FC = () => {
           funds: fundsData
         });
         
-        // Navigate back to the template details page with refresh flag
-        navigate(`/definitions/portfolio-templates/${portfolioId}`, {
-          state: { refreshNeeded: true }
+        // Invalidate React Query cache for portfolio template details to ensure fresh data
+        await queryClient.invalidateQueries({
+          queryKey: ['portfolio-template-details', portfolioId]
         });
+        
+        // Navigate back to the template details page
+        navigate(`/definitions/portfolio-templates/${portfolioId}`);
       } catch (err: any) {
         console.error('Error updating portfolio generation:', err);
         if (err.response?.data?.detail) {
