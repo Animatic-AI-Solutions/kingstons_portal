@@ -868,208 +868,97 @@ const AddPortfolioGeneration: React.FC = () => {
                 </div>
               </div>
             </div>
-          )}
+          </div>
 
-          <form onSubmit={handleSubmit}>
-            <div className="p-4 border-b border-gray-200 bg-gray-50">
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col lg:flex-row gap-4">
-                  <div className="w-full lg:w-1/3">
-                    <label htmlFor="generation_name" className="block text-sm font-medium text-gray-700 mb-1">
-                      Generation Name <span className="text-gray-500 text-xs">(optional)</span>
-                    </label>
-                    <input
-                      type="text"
-                      id="generation_name"
-                      name="generation_name"
-                      value={formData.generation_name}
-                      onChange={handleChange}
-                      className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                      placeholder="Leave empty to auto-generate"
-                    />
-                    {!formData.generation_name.trim() && portfolio && (
-                      <div className="mt-1 text-xs text-gray-500">
-                        <span className="font-medium">Auto-generated:</span> {generateGenerationName()}
-                      </div>
-                    )}
-                  </div>
-                  <div className="w-full lg:w-1/3">
-                    <DateInput
-                      label="Creation Date"
-                      id="created_at"
-                      name="created_at"
-                      value={formData.created_at}
-                      onChange={(date, formatted) => {
-                        if (date) {
-                          // Valid date - use ISO string
-                          const dateValue = date.toISOString();
-                          setFormData(prev => ({
-                            ...prev,
-                            created_at: dateValue
-                          }));
-                          setDateError(null); // Clear any previous errors
-                        } else {
-                          // Invalid date or empty - validate the raw input
-                          setFormData(prev => ({
-                            ...prev,
-                            created_at: formatted || ''
-                          }));
-                          
-                          // Real-time date validation for invalid dates
-                          if (formatted && formatted.trim()) {
-                            const dateValidationResult = validateCreationDate(formatted);
-                            if (!dateValidationResult.isValid) {
-                              setDateError(dateValidationResult.error);
-                            } else {
-                              setDateError(null);
-                            }
-                          } else {
-                            setDateError(null); // Clear error if date is empty (valid)
-                          }
-                        }
-                        
-                        // Clear general errors when user makes changes
-                        if (error) {
-                          setError(null);
-                        }
-                      }}
-                      placeholder="Select creation date"
-                      helperText="Leave empty to use current date/time"
-                      required={false}
-                    />
-                    {dateError && (
-                      <p className="mt-1 text-xs text-red-500">{dateError}</p>
-                    )}
-                  </div>
-                  <div className="w-full lg:w-1/3">
-                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                      Description
-                    </label>
-                    <textarea
-                      id="description"
-                      name="description"
-                      value={formData.description}
-                      onChange={handleChange}
-                      rows={2}
-                      className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                      placeholder="Enter a detailed description of this portfolio generation"
-                    />
-                  </div>
-                </div>
-                
-                {latestGenerationId && (
-                  <div className="mt-2">
-                    <div className="flex items-center">
-                      <div className="text-sm text-gray-600">
-                        {isLoadingLatestFunds ? 
-                          <span className="flex items-center">
-                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-primary-700" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Loading funds from latest generation...
-                          </span> :
-                          <span>Funds and weightings from the latest generation have been pre-loaded below. You can adjust them as needed.</span>
-                        }
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Fund Selection Section */}
-            <div className="p-5">
-              <div className="rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 sm:px-6">
-                  <h3 className="text-base font-medium text-gray-900">Fund Selection</h3>
-                </div>
-                
-                <div className="p-4">
-                  {availableFunds.length === 0 ? (
-                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-                      <div className="flex">
-                        <div className="flex-shrink-0">
-                          <svg className="h-5 w-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                          </svg>
-                        </div>
-                        <div className="ml-3">
-                          <p className="text-sm text-yellow-700">
-                            No funds available. Please add funds before creating a portfolio generation.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <FundSelectionManager
-                      availableFunds={availableFunds}
-                      selectedFunds={selectedFunds}
-                      fundWeightings={fundWeightings}
-                      onFundSelect={handleFundSelection}
-                      onFundDeselect={handleFundSelection}
-                      onWeightingChange={handleWeightingChange}
-                      onClearAll={handleClearAllFunds}
-                      searchQuery={fundSearchTerm}
-                      onSearchChange={setFundSearchTerm}
-                      isLoading={isLoadingFunds || isLoadingLatestFunds}
-                      error={error}
-                      weightedRisk={weightedRisk}
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Footer Actions */}
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
-              <div className="flex-1">
-                {(error || dateError) && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 mr-4">
-                    <div className="flex items-center">
-                      <svg className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <p className="text-sm text-red-700">{error || dateError}</p>
-                    </div>
-                  </div>
-                )}
+          {/* Fund Selection Section */}
+          <div className="p-5">
+            <div className="rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 sm:px-6">
+                <h3 className="text-base font-medium text-gray-900">Fund Selection</h3>
               </div>
               
-              <div className="flex space-x-3">
-                <Link
-                  to={`/definitions/portfolio-templates/${portfolioId}`}
-                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                >
-                  Cancel
-                </Link>
-                <button
-                  type="submit"
-                  disabled={isSubmitting || dateError !== null}
-                  className={`bg-primary-700 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 shadow-sm transition-colors duration-200 ${
-                    isSubmitting || dateError !== null ? 'opacity-70 cursor-not-allowed' : ''
-                  }`}
-                >
-                  {isSubmitting ? (
-                    <span className="flex items-center">
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Creating...
-                    </span>
-                  ) : (
-                    'Create Generation'
-                  )}
-                </button>
+              <div className="p-4">
+                {availableFunds.length === 0 ? (
+                  <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-yellow-700">
+                          No funds available. Please add funds before creating a portfolio generation.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <FundSelectionManager
+                    availableFunds={availableFunds}
+                    selectedFunds={selectedFunds}
+                    fundWeightings={fundWeightings}
+                    onFundSelect={handleFundSelection}
+                    onFundDeselect={handleFundSelection}
+                    onWeightingChange={handleWeightingChange}
+                    onClearAll={handleClearAllFunds}
+                    searchQuery={fundSearchTerm}
+                    onSearchChange={setFundSearchTerm}
+                    isLoading={isLoadingFunds || isLoadingLatestFunds}
+                    error={error}
+                    weightedRisk={weightedRisk}
+                  />
+                )}
               </div>
             </div>
-          </form>
-        </div>
+          </div>
+
+          {/* Footer Actions */}
+          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+            <div className="flex-1">
+              {(error || dateError) && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mr-4">
+                  <div className="flex items-center">
+                    <svg className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-sm text-red-700">{error || dateError}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex space-x-3">
+              <Link
+                to={`/definitions/portfolio-templates/${portfolioId}`}
+                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              >
+                Cancel
+              </Link>
+              <button
+                type="submit"
+                disabled={isSubmitting || dateError !== null}
+                className={`bg-primary-700 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 shadow-sm transition-colors duration-200 ${
+                  isSubmitting || dateError !== null ? 'opacity-70 cursor-not-allowed' : ''
+                }`}
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Creating...
+                  </span>
+                ) : (
+                  'Create Generation'
+                )}
+              </button>
+            </div>
+          </div>
+        </form>
       </div>
-
     </DynamicPageContainer>
-
   );
 };
 
