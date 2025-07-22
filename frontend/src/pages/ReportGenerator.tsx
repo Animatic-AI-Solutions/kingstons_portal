@@ -139,7 +139,7 @@ interface FilteredIRRDate extends SelectedIRRDate {
   isAvailableForProduct: boolean; // Whether this date is available for the current product
 }
 
-// IRR Date Selection Grid Component
+// IRR Date Selection Grid Component,
 interface IRRDateSelectionGridProps {
   products: Product[];
   excludedProductIds: Set<number>;
@@ -3213,9 +3213,9 @@ Please select a different valuation date or ensure all active funds have valuati
             )}
           </div>
           
-          {/* Right Side - Report Format and IRR Configuration */}
+          {/* Right Side - Historical Date Selection */}
           <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
-            <h2 className="text-lg font-normal text-gray-900 mb-4">Report Format & Historical Data</h2>
+            <h2 className="text-lg font-normal text-gray-900 mb-4">Historical Date Selection</h2>
             
             {/* Historical IRR Date Selection */}
             {relatedProducts.length > 0 && availableIRRDates.length > 0 && (
