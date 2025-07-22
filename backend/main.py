@@ -54,7 +54,7 @@ logger.info("All modules imported successfully")
 from app.api.routes import (
     client_groups, products, funds, portfolios, providers, 
     auth, profiles, product_funds,
-    portfolio_funds, analytics,
+    portfolio_funds, analytics, revenue,
     available_providers,
     available_portfolios, fund_valuations,
     client_products, holding_activity_logs, product_holdings,
@@ -152,6 +152,10 @@ app = FastAPI(
             "description": "Performance analytics, IRR calculations, and reporting endpoints.",
         },
         {
+            "name": "Revenue",
+            "description": "Revenue analytics, fee calculations, and client group revenue tracking.",
+        },
+        {
             "name": "Holdings",
             "description": "Portfolio holdings management including activities, valuations, and historical data.",
         },
@@ -220,6 +224,7 @@ app.include_router(client_products.router, prefix="/api", tags=["Products"])
 app.include_router(product_holdings.router, prefix="/api", tags=["Holdings"])
 app.include_router(holding_activity_logs.router, prefix="/api", tags=["Holdings"])
 app.include_router(analytics.router, prefix="/api", tags=["Analytics"])
+app.include_router(revenue.router, prefix="/api", tags=["Revenue"])
 app.include_router(product_portfolio_assignments.router, prefix="/api", tags=["Portfolios"])
 app.include_router(fund_valuations.router, prefix="/api", tags=["Holdings"])
 app.include_router(product_owners.router, prefix="/api", tags=["Client Groups"])
