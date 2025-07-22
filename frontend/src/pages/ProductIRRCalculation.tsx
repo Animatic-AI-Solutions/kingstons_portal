@@ -2125,60 +2125,47 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                           <div className="ml-4 text-base font-bold text-red-700">TOTAL</div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-                          <div className="text-sm text-center font-bold text-red-700">
+                          <div className="text-sm text-right font-bold text-red-700">
                             {formatCurrency(calculateTotalInvestments(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-                          <div className="text-sm text-center font-bold text-red-700">
+                          <div className="text-sm text-right font-bold text-red-700">
                             {formatCurrency(calculateTotalRegularInvestments(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-
-                          <div className="text-sm text-center font-bold text-red-700">
-
+                          <div className="text-sm text-right font-bold text-red-700">
                             {formatCurrency(calculateTotalTaxUplifts(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-
-                          <div className="text-sm text-center font-bold text-red-700">
-
+                          <div className="text-sm text-right font-bold text-red-700">
                             {formatCurrency(calculateTotalSwitchIns(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-
-                          <div className="text-sm text-center font-bold text-red-700">
-
+                          <div className="text-sm text-right font-bold text-red-700">
                             {formatCurrency(calculateTotalSwitchOuts(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-
-                          <div className="text-sm text-center font-bold text-red-700">
-
+                          <div className="text-sm text-right font-bold text-red-700">
                             {formatCurrency(calculateTotalProductSwitchIns(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-
-                          <div className="text-sm text-center font-bold text-red-700">
-
+                          <div className="text-sm text-right font-bold text-red-700">
                             {formatCurrency(calculateTotalProductSwitchOuts(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-
-                          <div className="text-sm text-center font-bold text-red-700">
-
+                          <div className="text-sm text-right font-bold text-red-700">
                             {formatCurrency(calculateTotalWithdrawals(allTimeActivities, holdings))}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
-
-                          <div className="text-sm text-center font-bold text-red-700">
+                          <div className="text-sm text-right font-bold text-red-700">
                             {formatCurrency(calculateTotalValue(holdings))}
                           </div>
                         </td>

@@ -312,7 +312,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           ...lastProduct,
           id: generateUniqueProductId(),
           product_name: '',
-          start_date: dayjs().startOf('month'), // Reset to first day of current month for new product
+          start_date: dayjs(), // Reset to current date for new product
           portfolio: {
             ...lastProduct.portfolio,
             name: '', // Will be auto-generated based on product details
@@ -630,7 +630,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       product_type: '',
       product_name: '',
       status: 'active',
-      start_date: dayjs().startOf('month'), // Default to first day of current month
+      start_date: dayjs(), // Default to current date
       plan_number: '', // Initialize as empty string
       product_owner_ids: [],
       // fixed_cost and percentage_fee left undefined - user must enter values
@@ -2033,7 +2033,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             <div>
             <BaseDropdown
               label="Select Template"
-              options={availableTemplates.map(t => ({ value: t.id.toString(), label: t.name || `Template ${t.id}` }))}
+              options={availableTemplates
+                .sort((a, b) => (a.name || `Template ${a.id}`).localeCompare(b.name || `Template ${b.id}`))
+                .map(t => ({ value: t.id.toString(), label: t.name || `Template ${t.id}` }))}
               value={product.portfolio.templateId?.toString() ?? ''}
               onChange={(value) => handleTemplateSelection(product.id, String(value))}
               placeholder="Select template"
@@ -2056,10 +2058,12 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               <div>
             <BaseDropdown
               label="Select Generation"
-              options={generations.map(g => ({ 
-                value: g.id.toString(), 
-                label: g.generation_name || 'Unnamed Generation'
-              }))}
+              options={generations
+                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                .map(g => ({ 
+                  value: g.id.toString(), 
+                  label: g.generation_name || 'Unnamed Generation'
+                }))}
               value={product.portfolio.generationId?.toString() ?? ''}
               onChange={(value) => handleGenerationSelection(product.id, String(value))}
               placeholder="Select generation"
@@ -2317,7 +2321,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                 ...lastProduct,
                                 id: generateUniqueProductId(),
                                 product_name: '',
-                                start_date: dayjs().startOf('month'), // Reset to first day of current month for new product
+                                start_date: dayjs(), // Reset to current date for new product
                                 portfolio: {
                                   ...lastProduct.portfolio,
                                   name: '', // Will be auto-generated based on product details
@@ -2462,9 +2466,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                     <div>
                                       <BaseInput
                                         label="Product Name"
-                                        helperText={`(optional) ${product.product_name.length}/30 characters`}
+                                        helperText={`(optional) ${product.product_name.length}/60 characters`}
                                         value={product.product_name}
-                                        maxLength={30}
+                                        maxLength={60}
                                         onChange={(e) => handleProductChange(product.id, 'product_name', e.target.value)}
                                         className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm border-gray-300 rounded-md h-8"
                                         placeholder="e.g. Smoothed Savings Pension Fund"
@@ -2481,18 +2485,17 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                         value={product.start_date ? product.start_date.toDate() : undefined}
                                         onChange={(date) => {
                                           if (date) {
-                                            // Convert to first day of the month and create dayjs object
-                                            const firstOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-                                            const dayjsDate = dayjs(firstOfMonth);
+                                            // Use the selected date as-is
+                                            const dayjsDate = dayjs(date);
                                             handleProductChange(product.id, 'start_date', dayjsDate);
                                           } else {
-                                            handleProductChange(product.id, 'start_date', dayjs().startOf('month'));
+                                            handleProductChange(product.id, 'start_date', dayjs());
                                           }
                                         }}
                                         size="sm"
                                         required
                                         error={validationErrors[product.id]?.start_date}
-                                        helperText="Product start date (will be set to 1st of the selected month)"
+                                        helperText="Product start date"
                                       />
                                     </div>
 

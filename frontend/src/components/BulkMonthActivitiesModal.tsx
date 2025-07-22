@@ -836,7 +836,6 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
                                     }}
                                     onKeyDown={(e) => handleKeyDown(e, index, getDisplayedActivities().indexOf(activityType))}
                                     onBlur={(e) => handleInputBlur(fund.id, activityType)}
-                                    placeholder="0"
                                   />
                                   {/* Error message display */}
                                   {inputErrors[getInputKey(fund.id, activityType)] && (
