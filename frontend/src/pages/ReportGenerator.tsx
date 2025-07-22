@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import DynamicPageContainer from '../components/DynamicPageContainer';
 import { useReportStateManager } from '../hooks/report/useReportStateManager';
 import MultiSelectDropdown from '../components/ui/dropdowns/MultiSelectDropdown';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
@@ -2760,20 +2761,20 @@ Please select a different valuation date or ensure all active funds have valuati
   }, [showInactiveProductDetails]); // Removed stateManagerActions from dependencies to prevent infinite loop
 
   return (
-    <div className="mx-auto px-4 sm:px-6 lg:px-8 py-3">
+    <DynamicPageContainer maxWidth="2800px" className="py-3">
       <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide mb-6">
         Report Generator
       </h1>
       
       {/* Error display for initial load errors */}
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 max-w-7xl mx-auto">
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
               <p className="text-red-700">{error}</p>
             </div>
       )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-7xl mx-auto">
-          {/* Left Side - Selection Panels */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Left Side - Selection and Status Panels */}
           <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
             <h2 className="text-lg font-normal text-gray-900 mb-4">Select Items for Report</h2>
             
@@ -2843,102 +2844,8 @@ Please select a different valuation date or ensure all active funds have valuati
                 </div>
               )}
             </div>
-            
-            {/* Report formatting options */}
-            <div className="mt-4 p-3 bg-gray-50 rounded-lg border">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Report Formatting</h4>
-              <div className="space-y-2">
 
-                
-                {/* Historical IRR Date Selection */}
-                {relatedProducts.length > 0 && availableIRRDates.length > 0 && (
-                  <IRRDateSelectionGrid
-                    products={relatedProducts}
-                    excludedProductIds={excludedProductIds}
-                    availableIRRDates={availableIRRDates}
-                    selectedIRRDates={selectedIRRDates}
-                    onSelectionChange={handleGridSelectionChange}
-                    onSelectAllForProduct={handleSelectAllForProduct}
-                    onClearAllForProduct={handleClearAllForProduct}
-                    onSelectRecentForProduct={handleSelectRecentForProduct}
-                    onSelectAllForAllProducts={selectAllDatesForAll}
-                    onClearAllForAllProducts={clearAllDatesForAll}
-                  />
-                )}
-                
-                {/* Inactive Product Detail Controls */}
-                {relatedProducts.filter(product => !excludedProductIds.has(product.id) && product.status === 'inactive').length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
-                    <h5 className="text-sm font-medium text-gray-700 mb-2">Show Detailed Cards For</h5>
-                    <p className="text-xs text-gray-500 mb-2">
-                      Choose which inactive products to show detailed cards for (unchecked = summary table only)
-                    </p>
-                    <div className="space-y-1">
-                      {relatedProducts
-                        .filter(product => !excludedProductIds.has(product.id) && product.status === 'inactive')
-                        .map(product => (
-                          <label key={product.id} className="inline-flex items-center w-full">
-                            <input
-                              type="checkbox"
-                              checked={showInactiveProductDetails.has(product.id)}
-                              onChange={() => toggleInactiveProductDetails(product.id)}
-                              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                            />
-                            <span className="ml-2 text-sm text-gray-600">
-                              {product.product_name}
-                              <span className="ml-1 text-xs text-red-600">(Inactive)</span>
-                            </span>
-                          </label>
-                        ))
-                      }
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              {/* Previous Funds Breakdown Controls */}
-              {relatedProducts.length > 0 && relatedProducts.some(product => 
-                productSummaries.find(p => p.id === product.id)?.funds?.some(fund => 
-                  fund.fund_name === 'Previous Funds' && fund.isVirtual && fund.inactiveFunds && fund.inactiveFunds.length > 0
-                )
-              ) && (
-                <div className="mt-3 pt-3 border-t border-gray-200">
-                  <h5 className="text-sm font-medium text-gray-700 mb-2">Previous Funds Breakdown</h5>
-                  <div className="space-y-1">
-                    {relatedProducts
-                      .filter(product => !excludedProductIds.has(product.id))
-                      .filter(product => 
-                        productSummaries.find(p => p.id === product.id)?.funds?.some(fund => 
-                          fund.fund_name === 'Previous Funds' && fund.isVirtual && fund.inactiveFunds && fund.inactiveFunds.length > 0
-                        )
-                      )
-                      .map(product => {
-                        const productSummary = productSummaries.find(p => p.id === product.id);
-                        const previousFund = productSummary?.funds?.find(fund => 
-                          fund.fund_name === 'Previous Funds' && fund.isVirtual && fund.inactiveFunds
-                        );
-                        return (
-                          <label key={product.id} className="inline-flex items-center w-full">
-                            <input
-                              type="checkbox"
-                              checked={expandedPreviousFunds.has(product.id)}
-                              onChange={() => togglePreviousFundsExpansion(product.id)}
-                              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                            />
-                            <span className="ml-2 text-sm text-gray-600">
-                              {product.product_name} ({previousFund?.inactiveFunds?.length || 0} funds)
-                            </span>
-                          </label>
-                        );
-                      })
-                    }
-                  </div>
-                </div>
-              )}
-              
-
-            </div>
-            
+            {/* Related Items Section - moved from right panel */}
             <div className="mt-6">
               <button
                 onClick={generateReport}
@@ -2991,6 +2898,7 @@ Please select a different valuation date or ensure all active funds have valuati
             <h2 className="text-lg font-normal text-gray-900 mb-4">Report Summary</h2>
             
             <div className="mb-6">
+
               <h3 className="text-sm font-medium text-gray-700 mb-2">Related Items</h3>
               <p className="text-xs text-gray-500 mb-2">
                 This section shows all products included in your report. Click × to exclude a product or ✓ to include it.
@@ -3097,9 +3005,9 @@ Please select a different valuation date or ensure all active funds have valuati
               </div>
             </div>
             
-            {/* Product Owner Display Order - Compact Version */}
+            {/* Product Owner Display Order - moved from right panel */}
             {relatedProducts.length > 0 && productOwnerOrder.length > 1 && (
-              <div className="mb-6">
+              <div className="mt-6">
                 <h3 className="text-sm font-medium text-gray-700 mb-2">Product Owner Display Order</h3>
                 <p className="text-xs text-gray-500 mb-3">
                   Set the order in which product owners appear in the report. Drag to reorder or use arrows.
@@ -3196,8 +3104,8 @@ Please select a different valuation date or ensure all active funds have valuati
               </div>
             )}
             
-            {/* Common Valuation Dates Status */}
-            <div className="mb-6">
+            {/* Valuation Data Status - moved from right panel */}
+            <div className="mt-6">
               <h3 className="text-sm font-medium text-gray-700 mb-2">Valuation Data Status</h3>
               <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border">
                 <div className="flex items-center">
@@ -3249,17 +3157,153 @@ Please select a different valuation date or ensure all active funds have valuati
                       <>Select products to check valuation data availability</>
                     )}
                   </div>
+
                 </div>
-                {isLoadingValuationDates && (
-                  <svg className="animate-spin h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                )}
               </div>
             </div>
-            
 
+            {/* Generate Report Button */}
+            <div className="mt-6">
+              <button
+                onClick={generateReport}
+                disabled={isCalculating || isLoading || !hasEffectiveProductSelection || hasEndValuationDateError}
+                title={
+                  isCalculating ? "Report is being calculated..." :
+                  isLoading ? "Data is loading..." :
+                  !hasEffectiveProductSelection ? "Select at least one product to generate a report" :
+                  hasEndValuationDateError ? "The end valuation date must match the latest common historical IRR date selection" :
+                  "Generate Report"
+                }
+                className="w-full flex justify-center items-center px-6 py-3 text-base font-medium text-white bg-primary-700 hover:bg-primary-800 rounded-md shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isCalculating ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Calculating...
+                  </>
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Generate Report
+                  </>
+                )}
+              </button>
+              
+              {!hasEffectiveProductSelection && !isCalculating && !isLoading && (
+                <p className="mt-2 text-sm text-gray-500 text-center">
+                  Select at least one product to generate a report
+                </p>
+              )}
+              
+              {hasEffectiveProductSelection && hasEndValuationDateError && !isCalculating && !isLoading && (
+                <p className="mt-2 text-sm text-orange-600 text-center">
+                  End valuation date must match the latest common historical IRR date selection
+                </p>
+              )}
+            </div>
+            
+            {dataError && (
+              <div className="mt-4 bg-red-50 border-l-4 border-red-500 p-3">
+                <p className="text-sm text-red-700">{dataError}</p>
+              </div>
+            )}
+          </div>
+          
+          {/* Right Side - Report Format and IRR Configuration */}
+          <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
+            <h2 className="text-lg font-normal text-gray-900 mb-4">Report Format & Historical Data</h2>
+            
+            {/* Historical IRR Date Selection */}
+            {relatedProducts.length > 0 && availableIRRDates.length > 0 && (
+              <div className="mb-6">
+                <IRRDateSelectionGrid
+                  products={relatedProducts}
+                  excludedProductIds={excludedProductIds}
+                  availableIRRDates={availableIRRDates}
+                  selectedIRRDates={selectedIRRDates}
+                  onSelectionChange={handleGridSelectionChange}
+                  onSelectAllForProduct={handleSelectAllForProduct}
+                  onClearAllForProduct={handleClearAllForProduct}
+                  onSelectRecentForProduct={handleSelectRecentForProduct}
+                  onSelectAllForAllProducts={selectAllDatesForAll}
+                  onClearAllForAllProducts={clearAllDatesForAll}
+                />
+              </div>
+            )}
+            
+            {/* Inactive Product Detail Controls */}
+            {relatedProducts.filter(product => !excludedProductIds.has(product.id) && product.status === 'inactive').length > 0 && (
+              <div className="mb-6">
+                <h5 className="text-sm font-medium text-gray-700 mb-2">Show Detailed Cards For</h5>
+                <p className="text-xs text-gray-500 mb-2">
+                  Choose which inactive products to show detailed cards for (unchecked = summary table only)
+                </p>
+                <div className="space-y-1">
+                  {relatedProducts
+                    .filter(product => !excludedProductIds.has(product.id) && product.status === 'inactive')
+                    .map(product => (
+                      <label key={product.id} className="inline-flex items-center w-full">
+                        <input
+                          type="checkbox"
+                          checked={showInactiveProductDetails.has(product.id)}
+                          onChange={() => toggleInactiveProductDetails(product.id)}
+                          className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-600">
+                          {product.product_name}
+                          <span className="ml-1 text-xs text-red-600">(Inactive)</span>
+                        </span>
+                      </label>
+                    ))
+                  }
+                </div>
+              </div>
+            )}
+              
+            {/* Previous Funds Breakdown Controls */}
+            {relatedProducts.length > 0 && relatedProducts.some(product => 
+              productSummaries.find(p => p.id === product.id)?.funds?.some(fund => 
+                fund.fund_name === 'Previous Funds' && fund.isVirtual && fund.inactiveFunds && fund.inactiveFunds.length > 0
+              )
+            ) && (
+              <div className="mb-6">
+                <h5 className="text-sm font-medium text-gray-700 mb-2">Previous Funds Breakdown</h5>
+                <div className="space-y-1">
+                  {relatedProducts
+                    .filter(product => !excludedProductIds.has(product.id))
+                    .filter(product => 
+                      productSummaries.find(p => p.id === product.id)?.funds?.some(fund => 
+                        fund.fund_name === 'Previous Funds' && fund.isVirtual && fund.inactiveFunds && fund.inactiveFunds.length > 0
+                      )
+                    )
+                    .map(product => {
+                      const productSummary = productSummaries.find(p => p.id === product.id);
+                      const previousFund = productSummary?.funds?.find(fund => 
+                        fund.fund_name === 'Previous Funds' && fund.isVirtual && fund.inactiveFunds
+                      );
+                      return (
+                        <label key={product.id} className="inline-flex items-center w-full">
+                          <input
+                            type="checkbox"
+                            checked={expandedPreviousFunds.has(product.id)}
+                            onChange={() => togglePreviousFundsExpansion(product.id)}
+                            className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                          />
+                          <span className="ml-2 text-sm text-gray-600">
+                            {product.product_name} ({previousFund?.inactiveFunds?.length || 0} funds)
+                          </span>
+                        </label>
+                      );
+                    })
+                  }
+                </div>
+              </div>
+            )}
           </div>
         </div>
       
@@ -3811,7 +3855,7 @@ Please select a different valuation date or ensure all active funds have valuati
           </div>
         </div>
       )}
-    </div>
+    </DynamicPageContainer>
   );
 };
 

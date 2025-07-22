@@ -19,6 +19,7 @@ import { useClientDetails } from '../hooks/useClientDetails';
 import { useClientMutations } from '../hooks/useClientMutations';
 import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
 import { isCashFund } from '../utils/fundUtils';
+import DynamicPageContainer from '../components/DynamicPageContainer';
 
 // Enhanced TypeScript interfaces
 interface Client {
@@ -1635,18 +1636,22 @@ const ClientDetails: React.FC = () => {
   // Loading state
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <DynamicPageContainer 
+        maxWidth="2800px"
+      >
         <div className="flex justify-center items-center py-16">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600"></div>
         </div>
-      </div>
+      </DynamicPageContainer>
     );
   }
 
   // Error state
   if (error || !client) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <DynamicPageContainer 
+        maxWidth="2800px"
+      >
         <div className="bg-red-50 border-l-4 border-red-500 p-4 mt-8">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -1670,154 +1675,153 @@ const ClientDetails: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+      </DynamicPageContainer>
     );
   }
 
   return (
-    <>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Breadcrumbs */}
-        <Breadcrumbs />
+    <DynamicPageContainer 
+      maxWidth="2800px"
+    >
+      {/* Breadcrumbs */}
+      <Breadcrumbs />
 
-        {/* Client Header */}
-        <ClientHeader 
-          client={client}
-          totalValue={totalFundsUnderManagement}
-          totalIRR={totalIRR}
-          onEditClick={startCorrection}
-          isEditing={isCorrecting}
-          editData={formData}
-          onSave={handleCorrect}
-          onCancel={() => setIsCorrecting(false)}
-          onFieldChange={handleFieldChange}
-          isSaving={updateClient.isPending}
-          availableProductOwners={availableProductOwners}
-          onAddProductOwner={handleAddProductOwner}
-          onRemoveProductOwner={handleRemoveProductOwner}
-          handleDelete={handleDelete}
-        />
+      {/* Client Header */}
+      <ClientHeader 
+        client={client}
+        totalValue={totalFundsUnderManagement}
+        totalIRR={totalIRR}
+        onEditClick={startCorrection}
+        isEditing={isCorrecting}
+        editData={formData}
+        onSave={handleCorrect}
+        onCancel={() => setIsCorrecting(false)}
+        onFieldChange={handleFieldChange}
+        isSaving={updateClient.isPending}
+        availableProductOwners={availableProductOwners}
+        onAddProductOwner={handleAddProductOwner}
+        onRemoveProductOwner={handleRemoveProductOwner}
+        handleDelete={handleDelete}
+      />
 
 
-        {/* Client Products Section */}
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-normal text-gray-900 font-sans tracking-wide">Client Products</h2>
-            
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={() => setShowRevenueModal(true)}
-                className="inline-flex items-center px-4 py-2 text-sm font-medium text-primary-700 bg-white border border-primary-300 rounded-lg hover:bg-primary-50 hover:border-primary-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 shadow-sm"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                </svg>
-                Assign Fees
-              </button>
-              
-              <Link
-                to={`/create-client-group-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.name}`)}&returnTo=${encodeURIComponent(`/client_groups/${clientId}`)}`}
-              >
-                <AddButton
-                  context="Product"
-                  design="balanced"
-                  size="md"
-                />
-              </Link>
-            </div>
-          </div>
+      {/* Client Products Section */}
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-normal text-gray-900 font-sans tracking-wide">Client Products</h2>
           
-          {!isLoading ? (
-            clientAccounts.length > 0 ? (
-              <div className="space-y-6">
-                {/* Organize products by type */}
-                {organizeProductsByType(clientAccounts.filter(account => account.status === 'active')).map(group => (
-                  <div key={group.type}>
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">
-                      {group.type === 'ISA' ? 'ISAs' : 
-                       group.type === 'GIA' ? 'GIAs' : 
-                       group.type === 'Onshore Bond' ? 'Onshore Bonds' : 
-                       group.type === 'Offshore Bond' ? 'Offshore Bonds' : 
-                       group.type === 'Pension' ? 'Pensions' : 
-                       'Other'}
-                    </h3>
-                    <div className="grid grid-cols-1 gap-4">
-                      {group.products.map((account: ClientAccount) => (
-                        <ProductCard 
-                          key={account.id} 
-                          account={account} 
-                          isExpanded={expandedProducts.includes(account.id)}
-                          onToggleExpand={() => toggleProductExpand(account.id)}
-                          funds={expandedProductFunds[account.id] || []}
-                          isLoadingFunds={isLoadingFunds[account.id] || false}
-                          client={client}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-                
-                {/* Lapsed Products - Show separately at the bottom */}
-                {clientAccounts.filter(account => account.status === 'inactive').length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-500 mb-4">Lapsed Products</h3>
-                    <div className="grid grid-cols-1 gap-4 opacity-60">
-                      {clientAccounts
-                        .filter(account => account.status === 'inactive')
-                        .map(account => (
-                          <div key={account.id} className="filter grayscale relative">
-                            <ProductCard 
-                              account={account} 
-                              isExpanded={expandedProducts.includes(account.id)}
-                              onToggleExpand={() => toggleProductExpand(account.id)}
-                              funds={expandedProductFunds[account.id] || []}
-                              isLoadingFunds={isLoadingFunds[account.id] || false}
-                              client={client}
-                            />
-                            {/* Reactivate Button Overlay */}
-                            <div className="absolute top-4 right-4 z-10">
-                              <button
-                                onClick={() => handleReactivateProduct(account.id, account.product_name)}
-                                className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 shadow-sm flex items-center space-x-1 opacity-100"
-                                title="Reactivate this product"
-                              >
-                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                                <span>Reactivate</span>
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="bg-gray-50 p-6 rounded-lg text-center border border-gray-200">
-                <div className="text-gray-500 mb-4">No products found for this client.</div>
-                <div className="flex justify-center">
-                  <Link 
-                    to={`/create-client-group-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.name}`)}&returnTo=${encodeURIComponent(`/client_groups/${clientId}`)}`}
-                  >
-                    <AddButton
-                      context="Product"
-                      design="descriptive"
-                      size="md"
-                    >
-                      Add First Product
-                    </AddButton>
-                  </Link>
-                </div>
-              </div>
-            )
-          ) : (
-            <div className="text-gray-500 p-6 text-center">Loading client products...</div>
-          )}
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setShowRevenueModal(true)}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-primary-700 bg-white border border-primary-300 rounded-lg hover:bg-primary-50 hover:border-primary-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 shadow-sm"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+              </svg>
+              Assign Fees
+            </button>
+            
+            <Link
+              to={`/create-client-group-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.name}`)}&returnTo=${encodeURIComponent(`/client_groups/${clientId}`)}`}
+            >
+              <AddButton
+                context="Product"
+                design="balanced"
+                size="md"
+              />
+            </Link>
+          </div>
         </div>
         
-
+        {!isLoading ? (
+          clientAccounts.length > 0 ? (
+            <div className="space-y-6">
+              {/* Organize products by type */}
+              {organizeProductsByType(clientAccounts.filter(account => account.status === 'active')).map(group => (
+                <div key={group.type}>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    {group.type === 'ISA' ? 'ISAs' : 
+                     group.type === 'GIA' ? 'GIAs' : 
+                     group.type === 'Onshore Bond' ? 'Onshore Bonds' : 
+                     group.type === 'Offshore Bond' ? 'Offshore Bonds' : 
+                     group.type === 'Pension' ? 'Pensions' : 
+                     'Other'}
+                  </h3>
+                  <div className="grid grid-cols-1 gap-4">
+                    {group.products.map((account: ClientAccount) => (
+                      <ProductCard 
+                        key={account.id} 
+                        account={account} 
+                        isExpanded={expandedProducts.includes(account.id)}
+                        onToggleExpand={() => toggleProductExpand(account.id)}
+                        funds={expandedProductFunds[account.id] || []}
+                        isLoadingFunds={isLoadingFunds[account.id] || false}
+                        client={client}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+              
+              {/* Lapsed Products - Show separately at the bottom */}
+              {clientAccounts.filter(account => account.status === 'inactive').length > 0 && (
+                <div>
+                  <h3 className="text-lg font-medium text-gray-500 mb-4">Lapsed Products</h3>
+                  <div className="grid grid-cols-1 gap-4 opacity-60">
+                    {clientAccounts
+                      .filter(account => account.status === 'inactive')
+                      .map(account => (
+                        <div key={account.id} className="filter grayscale relative">
+                          <ProductCard 
+                            account={account} 
+                            isExpanded={expandedProducts.includes(account.id)}
+                            onToggleExpand={() => toggleProductExpand(account.id)}
+                            funds={expandedProductFunds[account.id] || []}
+                            isLoadingFunds={isLoadingFunds[account.id] || false}
+                            client={client}
+                          />
+                          {/* Reactivate Button Overlay */}
+                          <div className="absolute top-4 right-4 z-10">
+                            <button
+                              onClick={() => handleReactivateProduct(account.id, account.product_name)}
+                              className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 shadow-sm flex items-center space-x-1 opacity-100"
+                              title="Reactivate this product"
+                            >
+                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                              </svg>
+                              <span>Reactivate</span>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-gray-50 p-6 rounded-lg text-center border border-gray-200">
+              <div className="text-gray-500 mb-4">No products found for this client.</div>
+              <div className="flex justify-center">
+                <Link 
+                  to={`/create-client-group-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.name}`)}&returnTo=${encodeURIComponent(`/client_groups/${clientId}`)}`}
+                >
+                  <AddButton
+                    context="Product"
+                    design="descriptive"
+                    size="md"
+                  >
+                    Add First Product
+                  </AddButton>
+                </Link>
+              </div>
+            </div>
+          )
+        ) : (
+          <div className="text-gray-500 p-6 text-center">Loading client products...</div>
+        )}
       </div>
+      
 
       {/* Revenue Assignment Modal */}
       {showRevenueModal && (
@@ -1828,7 +1832,7 @@ const ClientDetails: React.FC = () => {
           onSave={handleRevenueAssignmentSave}
         />
       )}
-    </>
+    </DynamicPageContainer>
   );
 };
 

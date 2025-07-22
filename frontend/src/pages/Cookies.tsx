@@ -1,8 +1,12 @@
 import React from 'react';
+import DynamicPageContainer from '../components/DynamicPageContainer';
 
 const Cookies: React.FC = () => {
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <DynamicPageContainer 
+      maxWidth="1000px"
+      className="py-6"
+    >
       <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Cookie Policies</h1>
       
       <div className="prose prose-lg max-w-none">
@@ -76,7 +80,7 @@ const Cookies: React.FC = () => {
           </p>
         </section>
       </div>
-    </div>
+    </DynamicPageContainer>
   );
 };
 

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Modal } from 'antd';
 import { BaseInput, ActionButton, BaseDropdown, AddButton, SearchInput, Button } from '../components/ui';
 import { getProductOwnerDisplayName, ProductOwner } from '../utils/productOwnerUtils';
+import DynamicPageContainer from '../components/DynamicPageContainer';
 
 interface Product {
   id: number;
@@ -336,7 +337,10 @@ const ProductOwnerDetails: React.FC = () => {
 
   if (error) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <DynamicPageContainer 
+        maxWidth="2800px"
+        className="py-8"
+      >
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -360,13 +364,16 @@ const ProductOwnerDetails: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+      </DynamicPageContainer>
     );
   }
 
   if (!productOwner) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <DynamicPageContainer 
+        maxWidth="2800px"
+        className="py-8"
+      >
         <div className="text-center">
           <p className="text-gray-500">Product owner not found.</p>
           <button
@@ -376,12 +383,15 @@ const ProductOwnerDetails: React.FC = () => {
             Back to Product Owners
           </button>
         </div>
-      </div>
+      </DynamicPageContainer>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6">
+    <DynamicPageContainer 
+      maxWidth="2800px"
+      className="py-6"
+    >
       
       {/* Breadcrumbs */}
       <nav className="mb-4 flex" aria-label="Breadcrumb">
@@ -419,9 +429,9 @@ const ProductOwnerDetails: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-2 gap-6">
         {/* Main Details */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 xl:col-span-1">
           <div className="bg-white shadow rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-medium text-gray-900">Product Owner Information</h2>
@@ -778,7 +788,7 @@ const ProductOwnerDetails: React.FC = () => {
           </div>
         </Modal>
       )}
-    </div>
+    </DynamicPageContainer>
   );
 };
 

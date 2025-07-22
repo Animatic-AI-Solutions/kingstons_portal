@@ -14,6 +14,7 @@ import { getProviderColor } from '../services/providerColors';
 import { findCashFund, isCashFund } from '../utils/fundUtils';
 import { useNavigationRefresh } from '../hooks/useNavigationRefresh';
 import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
+import DynamicPageContainer from '../components/DynamicPageContainer';
 
 interface Client {
   id: number;
@@ -1748,7 +1749,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             </div>
 
             {/* Selected Funds Display */}
-            <div className="h-80 sm:h-96 lg:h-[450px] overflow-y-auto border rounded bg-white">
+            <div className="h-80 sm:h-96 lg:h-[450px] xl:h-[600px] overflow-y-auto border rounded bg-white">
               {product.portfolio.selectedFunds.length === 0 ? (
                 <div className="h-full flex items-center justify-center text-xs text-gray-500">
                   No funds selected
@@ -1925,7 +1926,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             )}
             
             {/* Available Fund List */}
-            <div className={`h-80 sm:h-96 lg:h-[450px] overflow-y-auto border rounded p-2 bg-gray-50 ${
+            <div className={`h-80 sm:h-96 lg:h-[450px] xl:h-[600px] overflow-y-auto border rounded p-2 bg-gray-50 ${
               validationErrors[product.id]?.funds ? 'border-red-500 bg-red-50' : 'border-gray-200'
             }`}>
               {getFilteredFunds().length === 0 ? (
@@ -2137,11 +2138,14 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-3 py-3">
+      <DynamicPageContainer 
+        maxWidth="2800px"
+        className="py-1"
+      >
         <div className="flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-3 border-primary-600"></div>
         </div>
-      </div>
+      </DynamicPageContainer>
     );
   }
 
@@ -2189,7 +2193,10 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-3 py-1">
+    <DynamicPageContainer 
+      maxWidth="2800px"
+      className="py-1"
+    >
       {/* Breadcrumbs */}
       <Breadcrumbs />
       {/* Toast notification */}
@@ -2689,7 +2696,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         onSuccess={(newFund: any) => handleFundAdded(newFund as Fund)}
       />
       )}
-    </div>
+    </DynamicPageContainer>
   );
 };
 

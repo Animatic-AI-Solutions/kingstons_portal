@@ -43,4 +43,12 @@
 
 .custom-name-input {
   margin-top: 1rem;
+}
+
+/* Large monitor optimization - minimal padding */
+@media (min-width: 1280px) {
+  .add-products-container {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
 } 

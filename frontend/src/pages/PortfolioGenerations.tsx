@@ -7,6 +7,7 @@ import { ErrorDisplay } from '../components/ui/feedback/ErrorDisplay';
 import { AddButton, SearchInput } from '../components/ui';
 import { usePortfolioGenerations } from '../hooks/usePortfolioGenerations';
 import StandardTable, { ColumnConfig } from '../components/StandardTable';
+import DynamicPageContainer from '../components/DynamicPageContainer';
 
 // Define the Generation interface
 interface Generation {
@@ -183,9 +184,12 @@ const PortfolioGenerations: React.FC<PortfolioGenerationsProps> = ({ tabMode = f
   );
 
   return tabMode ? content : (
-    <div className="container mx-auto px-2 py-1">
+    <DynamicPageContainer 
+      maxWidth="2800px"
+      className="py-1"
+    >
       {content}
-    </div>
+    </DynamicPageContainer>
   );
 };
 

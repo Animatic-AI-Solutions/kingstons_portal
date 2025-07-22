@@ -5,6 +5,7 @@ import { SearchableDropdown, FilterSearch } from '../components/ui';
 import FilterDropdown from '../components/ui/dropdowns/FilterDropdown';
 import { useOptimizedClientData } from '../hooks/useOptimizedClientData';
 import StandardTable, { ColumnConfig } from '../components/StandardTable';
+import DynamicPageContainer from '../components/DynamicPageContainer';
 
 interface Client {
   id: string;
@@ -147,7 +148,10 @@ const Clients: React.FC = () => {
   ];
 
   return (
-    <div className="container mx-auto px-4 py-3">
+    <DynamicPageContainer 
+      maxWidth="2800px"
+      className="py-3"
+    >
       <div className="flex justify-between items-center mb-3">
         <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Client Groups</h1>
         <div className="flex items-center gap-4">
@@ -181,22 +185,17 @@ const Clients: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-white shadow rounded-lg p-4 overflow-visible">
-        {/* Search and Sort Controls */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-1">
-          {/* Search Bar */}
+      {/* Filter section */}
+      <div className="mb-6">
+        <div className="flex items-center gap-4 mb-4">
           <div className="flex-1">
             <FilterSearch
-              placeholder="Filter client groups by name or type..."
-              onFilter={setSearchQuery}
-              showResultCount={true}
-              resultCount={searchFilteredClients.length}
-              filterLabel="Client Group"
-              size="md"
-              fullWidth={true}
-              debounceMs={150}
-              className="!border-gray-300 focus:!border-indigo-500 focus:!ring-indigo-500/10 hover:!border-indigo-400"
+              placeholder="Search client groups..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full"
             />
+          </div>
           </div>
         </div>
 
@@ -219,8 +218,7 @@ const Clients: React.FC = () => {
             />
           )}
         </div>
-      </div>
-    </div>
+    </DynamicPageContainer>
   );
 };
 
