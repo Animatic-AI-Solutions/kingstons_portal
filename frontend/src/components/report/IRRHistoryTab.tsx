@@ -699,7 +699,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
   if (!irrHistoryData || irrHistoryData.length === 0) {
     return (
       <div className="irr-history-section print:block print:mt-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">IRR History</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">History</h2>
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
           <p className="text-yellow-700 mb-2">No IRR history data available</p>
           <p className="text-sm text-yellow-600">
@@ -710,11 +710,22 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
     );
   }
 
+  // Memoize expensive prop calculations to prevent infinite re-renders
+  const memoizedProductIds = useMemo(
+    () => reportData?.productSummaries?.map(p => p.id) || [],
+    [reportData?.productSummaries]
+  );
+
+  const memoizedSelectedDates = useMemo(
+    () => reportData?.availableHistoricalIRRDates?.map(d => d.date) || [],
+    [reportData?.availableHistoricalIRRDates]
+  );
+
   return (
-    <div className="irr-history-section print:block print:mt-8 report-section" id="irr-history-tab-panel" role="tabpanel" aria-labelledby="irr-history-tab">
+    <div className="irr-history-section print:block print:mt-8 report-section" id="irr-history-tab-panel" role="tabpanel" aria-labelledby="history-tab">
       {/* Header with controls */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-        <h2 className="text-2xl font-bold text-gray-900">IRR History</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">History</h2>
         
         <div className="flex items-center gap-4 print-hide">
           {/* View Mode Toggle */}
@@ -910,7 +921,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       )}
 
       {/* Table View */}
-      <div className={`space-y-8 irr-history-table ${viewMode === 'table' ? '' : 'hidden print:block'}`}>
+      <div className={`mb-8 irr-history-table ${viewMode === 'table' ? '' : 'hidden print:block'}`}>
         {(() => {
           // Organize products by type in the specified order, with inactive/lapsed products at the bottom
           const organizeProductsByType = (products: ProductPeriodSummary[]) => {
@@ -1112,7 +1123,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
             return (
               <div 
                 key={index} 
-                className={`product-card bg-white shadow-sm rounded-lg border border-gray-200 p-4 w-full print-clean ${product?.status === 'inactive' ? 'opacity-60 bg-gray-50' : ''}`}
+                className={`mb-8 bg-white shadow-sm rounded-lg border border-gray-200 p-6 w-full product-card print-clean ${product?.status === 'inactive' ? 'opacity-60 bg-gray-50' : ''}`}
                 style={{
                   borderLeft: product?.provider_theme_color ? `4px solid ${product.provider_theme_color}` : '4px solid #e5e7eb',
                   borderTop: product?.provider_theme_color ? `1px solid ${product.provider_theme_color}` : undefined,
@@ -1120,7 +1131,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                   borderBottom: product?.provider_theme_color ? `1px solid ${product.provider_theme_color}` : undefined,
                 }}
               >
-                <div className="flex items-center gap-3 mb-2">
+                <div className="flex items-center gap-3 mb-4">
                   {product?.provider_theme_color && (
                     <div 
                       className="w-4 h-4 rounded-full" 
@@ -2019,10 +2030,10 @@ Available database dates: ${productHistory.portfolio_historical_irr.map((r: any)
           }).filter(Boolean);
         })()}
         
-        {/* IRR History Summary Table */}
+        {/* History Summary Table */}
         <IRRHistorySummaryTable
-          productIds={reportData?.productSummaries?.map(p => p.id) || []}
-          selectedDates={reportData?.availableHistoricalIRRDates?.map(d => d.date) || []}
+          productIds={memoizedProductIds}
+          selectedDates={memoizedSelectedDates}
           clientGroupIds={undefined}
           realTimeTotalIRR={reportData?.totalIRR}
           reportData={reportData}

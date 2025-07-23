@@ -1,12 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import IRRHistorySummaryService, { 
-  IRRHistorySummaryRequest, 
-  ProductIRRHistory, 
-  PortfolioIRRHistory 
-} from '../../services/irrHistorySummaryService';
+import React, { useState, useEffect, useRef } from 'react';
+import { useReportStateManager } from '../../hooks/report/useReportStateManager';
+import { IRRHistorySummaryService, type IRRHistorySummaryRequest, type ProductIRRHistory, type PortfolioIRRHistory } from '../../services/irrHistorySummaryService';
 import { formatWeightedRisk } from '../../utils/reportFormatters';
 import { generateEffectiveProductTitle, sortProductsByOwnerOrder } from '../../utils/productTitleUtils';
-import { useReportStateManager } from '../../hooks/report/useReportStateManager';
 import { normalizeProductType, PRODUCT_TYPE_ORDER } from '../../utils/reportConstants';
 import type { ReportData, ProductPeriodSummary } from '../../types/reportTypes';
 
@@ -40,6 +36,12 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const currentRequestRef = useRef<string>('');
+
+  // Generate a key for request deduplication
+  const generateRequestKey = (productIds: number[], selectedDates: string[]) => {
+    return `${productIds.sort().join(',')}|${selectedDates.sort().join(',')}`;
+  };
 
   // Get custom titles from state manager
   const {
@@ -160,20 +162,28 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
   // Fetch IRR history summary data
   useEffect(() => {
     const fetchSummaryData = async () => {
-      console.log('🔍 [IRR SUMMARY TABLE] Effect triggered with props:', {
-        productIds,
-        selectedDates,
-        clientGroupIds,
-        productIdsLength: productIds.length,
-        selectedDatesLength: selectedDates.length
-      });
-      
       if (productIds.length === 0 || selectedDates.length === 0) {
         console.log('⚠️ [IRR SUMMARY TABLE] Early return - empty productIds or selectedDates');
         setTableData({ productRows: [], portfolioTotals: [], dateHeaders: [] });
         return;
       }
 
+      // Generate request key for deduplication
+      const requestKey = generateRequestKey(productIds, selectedDates);
+      
+      // If the same request is already in progress, skip
+      if (currentRequestRef.current === requestKey && isLoading) {
+        console.log('⚠️ [IRR SUMMARY TABLE] Request already in progress, skipping:', requestKey);
+        return;
+      }
+
+      console.log('🔍 [IRR SUMMARY TABLE] Starting new request:', {
+        requestKey,
+        productIds: productIds.length,
+        selectedDates: selectedDates.length
+      });
+
+      currentRequestRef.current = requestKey;
       setIsLoading(true);
       setError(null);
 
@@ -184,9 +194,7 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
           client_group_ids: clientGroupIds
         };
 
-        console.log('🔍 [IRR SUMMARY TABLE] Making API request:', request);
         const response = await IRRHistorySummaryService.getIRRHistorySummary(request);
-        console.log('🔍 [IRR SUMMARY TABLE] API response:', response);
 
         // Sort dates for consistent column ordering (most recent first)
         const sortedDates = [...selectedDates].sort((a, b) => b.localeCompare(a));
@@ -204,6 +212,7 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
         setError(err.message || 'Failed to load IRR history summary');
       } finally {
         setIsLoading(false);
+        currentRequestRef.current = '';
       }
     };
 
@@ -292,11 +301,11 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
   // Loading state
   if (isLoading) {
     return (
-      <div className={`bg-white rounded-lg border border-gray-200 p-6 ${className}`}>
+      <div className={className}>
         <div className="flex items-center justify-center py-8">
           <div className="flex items-center space-x-2">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            <span className="text-gray-600">Loading IRR History Summary...</span>
+            <span className="text-gray-600">Loading History Summary...</span>
           </div>
         </div>
       </div>
@@ -306,13 +315,13 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
   // Error state
   if (error) {
     return (
-      <div className={`bg-white rounded-lg border border-red-200 p-6 ${className}`}>
+      <div className={className}>
         <div className="text-center py-4">
           <div className="text-red-600 mb-2">
             <svg className="h-8 w-8 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            Error Loading IRR History Summary
+            <h3 className="text-lg font-medium text-red-800 mb-2">Error Loading History Summary</h3>
           </div>
           <p className="text-sm text-gray-600">{error}</p>
         </div>
@@ -323,9 +332,9 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
   // Empty state
   if (tableData.productRows.length === 0) {
     return (
-      <div className={`bg-white rounded-lg border border-gray-200 p-6 ${className}`}>
+      <div className={className}>
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          IRR History Summary
+          History Summary
         </h3>
         <div className="text-center py-8">
           <div className="text-gray-400 mb-2">
@@ -356,8 +365,8 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
   return (
     <div className={`irr-history-section ${className}`}>
       <div className="mb-4 product-card print-clean">
-        <div className="bg-white px-2 py-2">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">IRR History Summary</h2>
+        <div className="px-2 py-2">
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">History Summary</h2>
           <div className="overflow-x-auto product-table">
             <table className="w-full table-fixed divide-y divide-gray-300 landscape-table">
               <colgroup>

@@ -24,7 +24,7 @@ export class ReportStateManager implements IReportStateManager {
       showInactiveProductDetails: new Set<number>(),
       realTimeTotalIRR: null,
       portfolioIrrValues: new Map<number, number>(),
-      hideZeros: false,
+      hideZeros: true,
       visualSigning: false,
       customTitles: new Map<number, string>(),
       showTitleModal: false,

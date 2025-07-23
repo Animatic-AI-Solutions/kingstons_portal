@@ -73,14 +73,6 @@ async def get_client_products_with_owners(
                 # Get IRR dates efficiently
                 all_portfolio_funds_result = db.table("portfolio_funds").select("id,portfolio_id").in_("portfolio_id", portfolio_ids).execute()
                 
-                # DEBUG: Log fund counts
-                logger.info(f"🔍 DEBUG: client_products.py bulk fund query:")
-                logger.info(f"🔍 DEBUG: Portfolio IDs queried: {portfolio_ids}")
-                logger.info(f"🔍 DEBUG: Total funds found: {len(all_portfolio_funds_result.data) if all_portfolio_funds_result.data else 0}")
-                if all_portfolio_funds_result.data:
-                    for pf in all_portfolio_funds_result.data[:10]:  # Log first 10 for debugging
-                        logger.info(f"🔍 DEBUG: Fund {pf.get('id')} in portfolio {pf.get('portfolio_id')}")
-                
                 if all_portfolio_funds_result.data:
                     portfolio_to_funds = {}
                     all_fund_ids = []
@@ -486,14 +478,6 @@ async def get_client_products(
                 # Get all portfolio funds for all portfolios
                 all_portfolio_funds_result = db.table("portfolio_funds").select("id,portfolio_id").in_("portfolio_id", portfolio_ids).execute()
                 
-                # DEBUG: Log fund counts
-                logger.info(f"🔍 DEBUG: client_products.py bulk fund query:")
-                logger.info(f"🔍 DEBUG: Portfolio IDs queried: {portfolio_ids}")
-                logger.info(f"🔍 DEBUG: Total funds found: {len(all_portfolio_funds_result.data) if all_portfolio_funds_result.data else 0}")
-                if all_portfolio_funds_result.data:
-                    for pf in all_portfolio_funds_result.data[:10]:  # Log first 10 for debugging
-                        logger.info(f"🔍 DEBUG: Fund {pf.get('id')} in portfolio {pf.get('portfolio_id')}")
-                
                 if all_portfolio_funds_result.data:
                     portfolio_to_funds = {}
                     all_fund_ids = []
@@ -533,14 +517,6 @@ async def get_client_products(
                 
                 # Get all portfolio funds for all portfolios (active + inactive for historical accuracy)
                 all_portfolio_funds_result = db.table("portfolio_funds").select("id,portfolio_id").in_("portfolio_id", portfolio_ids).execute()
-                
-                # DEBUG: Log fund counts
-                logger.info(f"🔍 DEBUG: client_products.py bulk fund query:")
-                logger.info(f"🔍 DEBUG: Portfolio IDs queried: {portfolio_ids}")
-                logger.info(f"🔍 DEBUG: Total funds found: {len(all_portfolio_funds_result.data) if all_portfolio_funds_result.data else 0}")
-                if all_portfolio_funds_result.data:
-                    for pf in all_portfolio_funds_result.data[:10]:  # Log first 10 for debugging
-                        logger.info(f"🔍 DEBUG: Fund {pf.get('id')} in portfolio {pf.get('portfolio_id')}")
                 
                 if all_portfolio_funds_result.data:
                     portfolio_to_funds = {}
