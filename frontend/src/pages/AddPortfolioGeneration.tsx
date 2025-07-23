@@ -109,9 +109,12 @@ const AddPortfolioGeneration: React.FC = () => {
     }
   }, [availableFunds, latestGenerationId, selectedFunds, isLoadingLatestFunds, hasUserModifiedFunds]);
 
+  // Track if user has manually edited the generation name
+  const [hasCustomGenerationName, setHasCustomGenerationName] = useState(false);
+
   // Auto-populate generation name when portfolio is loaded or creation date changes
   useEffect(() => {
-    if (portfolio && !formData.generation_name.trim()) {
+    if (portfolio && !hasCustomGenerationName) {
       // Generate the name: Template Name + Month + Year
       const date = formData.created_at ? new Date(formData.created_at) : new Date();
       const monthNames = [
@@ -128,7 +131,7 @@ const AddPortfolioGeneration: React.FC = () => {
         generation_name: generatedName
       }));
     }
-  }, [portfolio, formData.created_at, formData.generation_name]); // Re-run when portfolio loads or creation date changes
+  }, [portfolio, formData.created_at, hasCustomGenerationName]); // Re-run when portfolio loads or creation date changes
 
   const fetchPortfolioDetails = async () => {
     try {
@@ -215,6 +218,16 @@ const AddPortfolioGeneration: React.FC = () => {
     // Clear errors when user makes changes
     if (error) {
       setError(null);
+    }
+    
+    // Track manual editing of generation name
+    if (name === 'generation_name') {
+      if (value.trim() === '') {
+        // If user clears the field completely, allow auto-generation again
+        setHasCustomGenerationName(false);
+      } else {
+        setHasCustomGenerationName(true);
+      }
     }
     
     // Real-time date validation

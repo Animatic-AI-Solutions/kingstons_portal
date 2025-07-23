@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import AppLayout from './components/layout/AppLayout';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -159,6 +160,41 @@ const App: React.FC = () => {
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <AuthProvider>
           <AppContent />
+          <Toaster 
+            position="top-center"
+            reverseOrder={false}
+            gutter={8}
+            containerClassName=""
+            containerStyle={{}}
+            toastOptions={{
+              // Default options
+              className: '',
+              duration: 4000,
+              style: {
+                background: '#fff',
+                color: '#363636',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+              },
+              // Success
+              success: {
+                duration: 4000,
+                iconTheme: {
+                  primary: '#10b981',
+                  secondary: '#fff',
+                },
+              },
+              // Error
+              error: {
+                duration: 6000,
+                iconTheme: {
+                  primary: '#ef4444',
+                  secondary: '#fff',
+                },
+              },
+            }}
+          />
         </AuthProvider>
       </Router>
     </QueryClientProvider>

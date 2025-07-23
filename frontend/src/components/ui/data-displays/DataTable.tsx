@@ -7,11 +7,24 @@ interface DataTableProps {
     amount: number;
   }>;
   title: string;
+  totalAmount?: number; // Optional: Full dataset total (if different from displayed items total)
 }
 
-const DataTable: React.FC<DataTableProps> = ({ data, title }) => {
-  // Calculate total for percentage calculations
-  const total = data.reduce((sum, item) => sum + item.amount, 0);
+const DataTable: React.FC<DataTableProps> = ({ data, title, totalAmount }) => {
+  // Calculate total for percentage calculations (use provided totalAmount or calculate from data)
+  const total = totalAmount || data.reduce((sum, item) => sum + item.amount, 0);
+  
+  // Calculate displayed items total for debugging
+  const displayedTotal = data.reduce((sum, item) => sum + item.amount, 0);
+  
+  // DEBUGGING: Log table data
+  console.log(`📋 ${title} Table - Full Total: £${total.toLocaleString()}, Displayed (Top 5): £${displayedTotal.toLocaleString()}, Items: ${data.length}`);
+
+  // Truncate names to prevent horizontal scrolling
+  const truncateName = (name: string, maxLength: number = 12) => {
+    if (name.length <= maxLength) return name;
+    return name.substring(0, maxLength) + '...';
+  };
 
   // Format currency
   const formatCurrency = (amount: number) => {
@@ -41,13 +54,13 @@ const DataTable: React.FC<DataTableProps> = ({ data, title }) => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/2">
                 Name
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">
                 Amount
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">
                 Percentage
               </th>
             </tr>
@@ -56,13 +69,18 @@ const DataTable: React.FC<DataTableProps> = ({ data, title }) => {
             {data.length > 0 ? (
               data.map((item, index) => (
                 <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                  <td className="px-6 py-4 whitespace-nowrap w-1/2">
+                    <div 
+                      className="text-sm font-medium text-gray-900 cursor-help" 
+                      title={item.name}
+                    >
+                      {truncateName(item.name)}
+                    </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                  <td className="px-6 py-4 whitespace-nowrap text-right w-1/4">
                     <div className="text-sm text-gray-900">{formatCurrency(item.amount)}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                  <td className="px-6 py-4 whitespace-nowrap text-right w-1/4">
                     <div className="text-sm font-medium text-primary-600">
                       {formatPercentage(item.amount, total)}
                     </div>
