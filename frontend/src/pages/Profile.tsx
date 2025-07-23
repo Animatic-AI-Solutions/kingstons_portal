@@ -6,9 +6,7 @@ import { Card, Button, ProfileAvatar } from '../components/ui';
 
 const landingPageOptions = [
   { value: '/', label: 'Home' },
-  { value: '/client_groups', label: 'Clients' },
-  { value: '/products', label: 'Products' },
-  { value: '/definitions', label: 'Definitions' }
+  { value: '/client_groups', label: 'Client Groups' }
 ];
 
 const Profile: React.FC = () => {
@@ -28,8 +26,14 @@ const Profile: React.FC = () => {
   // Update form data when user data is loaded
   useEffect(() => {
     if (user) {
+      // Validate landing page - fallback to home if invalid
+      const validLandingPages = ['/', '/client_groups'];
+      const landingPage = user.preferred_landing_page && validLandingPages.includes(user.preferred_landing_page)
+        ? user.preferred_landing_page
+        : '/';
+      
       setFormData({
-        preferred_landing_page: user.preferred_landing_page || '/',
+        preferred_landing_page: landingPage,
         profile_picture_url: user.profile_picture_url || '/images/Companylogo2.png',
         preferred_client_view: user.preferred_client_view || 'list'
       });
