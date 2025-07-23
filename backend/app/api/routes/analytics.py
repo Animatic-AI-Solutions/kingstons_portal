@@ -1293,10 +1293,11 @@ async def get_dashboard_all_data(
             .execute()
         
         # 3. Get ALL reference data in parallel batch queries
-        funds_task = db.table("available_funds").select("id, fund_name").execute()
-        providers_task = db.table("available_providers").select("id, name").execute()
-        portfolios_task = db.table("portfolios").select("id, template_generation_id").execute()
-        templates_task = db.table("template_portfolio_generations").select("id, generation_name").execute()
+        # FIXED: Include ALL funds regardless of status to prevent exclusions
+        funds_task = db.table("available_funds").select("id, fund_name, status").execute()
+        providers_task = db.table("available_providers").select("id, name, status").execute()
+        portfolios_task = db.table("portfolios").select("id, template_generation_id, status").execute()
+        templates_task = db.table("template_portfolio_generations").select("id, generation_name, status").execute()
         client_products_task = db.table("client_products").select("id, portfolio_id, provider_id, status").eq("status", "active").execute()
         
         # Execute queries in parallel
@@ -1313,11 +1314,19 @@ async def get_dashboard_all_data(
         total_fum = 0
         total_from_investments = 0
         
-        # Create lookup dictionaries for O(1) access
+        # Create lookup dictionaries for O(1) access (FIXED: Include ALL funds/providers regardless of status)
         funds_lookup = {f["id"]: f["fund_name"] for f in funds_result.data} if funds_result.data else {}
         providers_lookup = {p["id"]: p["name"] for p in providers_result.data} if providers_result.data else {}
         templates_lookup = {t["id"]: t["generation_name"] for t in templates_result.data} if templates_result.data else {}
         portfolios_lookup = {p["id"]: p["template_generation_id"] for p in portfolios_result.data} if portfolios_result.data else {}
+        
+        # DEBUGGING: Log lookup sizes to identify the data inconsistency
+        logger.info(f"🔍 Lookup Dictionary Sizes:")
+        logger.info(f"   Funds Lookup: {len(funds_lookup)} funds")
+        logger.info(f"   Providers Lookup: {len(providers_lookup)} providers")
+        logger.info(f"   Templates Lookup: {len(templates_lookup)} templates")
+        logger.info(f"   Portfolios Lookup: {len(portfolios_lookup)} portfolios")
+        logger.info(f"   Portfolio Funds to Process: {len(portfolio_funds_result.data) if portfolio_funds_result.data else 0}")
         
         # Group client products by portfolio and provider for O(1) lookup
         portfolio_to_provider = {}
@@ -1327,29 +1336,54 @@ async def get_dashboard_all_data(
                     portfolio_to_provider[cp["portfolio_id"]] = cp["provider_id"]
         
         # 5. Process all portfolio funds in one pass (instead of nested loops)
+        # FIXED: Ensure consistent FUM totals across all distributions by including ALL valid portfolio funds
+        
+        # DEBUGGING: Track fund distribution issues
+        portfolio_funds_with_values = 0
+        portfolio_funds_with_fund_ids = 0
+        portfolio_funds_missing_fund_ids = 0
+        
         if portfolio_funds_result.data:
             for pf in portfolio_funds_result.data:
                 # Get current value (valuation preferred, amount_invested as fallback)
                 current_value = valuations_lookup.get(pf["id"]) or pf["amount_invested"] or 0
                 
                 if current_value > 0:
+                    portfolio_funds_with_values += 1
+                    
+                    # Track fund ID statistics
+                    if pf["available_funds_id"]:
+                        portfolio_funds_with_fund_ids += 1
+                    else:
+                        portfolio_funds_missing_fund_ids += 1
                     total_fum += current_value
                     
                     # Track amount_invested separately for fallback calculations
                     if pf["amount_invested"]:
                         total_from_investments += pf["amount_invested"]
                     
-                    # Aggregate by fund
+                    # Aggregate by fund (FIXED: Include ALL funds, even if missing from lookup)
                     fund_id = pf["available_funds_id"]
                     if fund_id and fund_id in funds_lookup:
                         fund_totals[fund_id] = fund_totals.get(fund_id, 0) + current_value
+                    else:
+                        # Include orphaned/unknown funds to maintain total consistency
+                        fund_totals["unknown_fund"] = fund_totals.get("unknown_fund", 0) + current_value
+                        # DEBUGGING: Log which portfolio funds are missing fund references
+                        if fund_id:
+                            logger.warning(f"🔍 Portfolio Fund {pf['id']} references missing fund_id: {fund_id} (£{current_value:,.2f})")
+                        else:
+                            logger.warning(f"🔍 Portfolio Fund {pf['id']} has NULL fund_id (£{current_value:,.2f})")
                     
-                    # Aggregate by provider
+                    # Aggregate by provider (FIXED: Include ALL funds, even if missing provider mapping)
                     provider_id = portfolio_to_provider.get(pf["portfolio_id"])
                     if provider_id and provider_id in providers_lookup:
                         provider_totals[provider_id] = provider_totals.get(provider_id, 0) + current_value
+                    else:
+                        # Include funds without provider mapping to maintain total consistency
+                        provider_totals["unassigned_provider"] = provider_totals.get("unassigned_provider", 0) + current_value
                     
-                    # Aggregate by template
+                    # Aggregate by template (FIXED: Include ALL funds, even if missing template mapping)
                     portfolio_id = pf["portfolio_id"]
                     if portfolio_id in portfolios_lookup:
                         template_id = portfolios_lookup[portfolio_id]
@@ -1357,6 +1391,12 @@ async def get_dashboard_all_data(
                             template_totals[template_id] = template_totals.get(template_id, 0) + current_value
                         elif not template_id:  # Bespoke portfolios (null template_id)
                             template_totals["bespoke"] = template_totals.get("bespoke", 0) + current_value
+                        else:
+                            # Template ID exists but not found in templates_lookup
+                            template_totals["unknown_template"] = template_totals.get("unknown_template", 0) + current_value
+                    else:
+                        # Portfolio not found in portfolios lookup
+                        template_totals["unassigned_template"] = template_totals.get("unassigned_template", 0) + current_value
         
         # 6. Calculate company IRR using optimized function (eliminates N+1 queries)
         company_irr = await calculate_company_irr(db)
@@ -1368,22 +1408,30 @@ async def get_dashboard_all_data(
         product_count_result = db.table("client_products").select("id").eq("status", "active").execute()
         total_products = len(product_count_result.data) if product_count_result.data else 0
         
-        # 7. Format response data efficiently
-        funds_list = [
-            {"id": str(fund_id), "name": funds_lookup[fund_id], "amount": amount}
-            for fund_id, amount in sorted(fund_totals.items(), key=lambda x: x[1], reverse=True)[:fund_limit]
-        ]
+        # 7. Format response data efficiently (FIXED: Handle unknown/unassigned categories)
+        funds_list = []
+        for fund_id, amount in sorted(fund_totals.items(), key=lambda x: x[1], reverse=True)[:fund_limit]:
+            if fund_id == "unknown_fund":
+                funds_list.append({"id": "unknown_fund", "name": "Unknown/Orphaned Funds", "amount": amount})
+            else:
+                funds_list.append({"id": str(fund_id), "name": funds_lookup[fund_id], "amount": amount})
         
-        providers_list = [
-            {"id": str(provider_id), "name": providers_lookup[provider_id], "amount": amount}
-            for provider_id, amount in sorted(provider_totals.items(), key=lambda x: x[1], reverse=True)[:provider_limit]
-        ]
+        providers_list = []
+        for provider_id, amount in sorted(provider_totals.items(), key=lambda x: x[1], reverse=True)[:provider_limit]:
+            if provider_id == "unassigned_provider":
+                providers_list.append({"id": "unassigned_provider", "name": "Unassigned Provider", "amount": amount})
+            else:
+                providers_list.append({"id": str(provider_id), "name": providers_lookup[provider_id], "amount": amount})
         
-        # Handle templates including bespoke
+        # Handle templates including bespoke and unknown categories (FIXED)
         template_items = []
         for template_id, amount in template_totals.items():
             if template_id == "bespoke":
                 template_items.append(("bespoke", "Bespoke Portfolios", amount))
+            elif template_id == "unknown_template":
+                template_items.append(("unknown_template", "Unknown Template", amount))
+            elif template_id == "unassigned_template":
+                template_items.append(("unassigned_template", "Unassigned Template", amount))
             elif template_id in templates_lookup:
                 template_items.append((template_id, templates_lookup[template_id], amount))
         
@@ -1396,6 +1444,34 @@ async def get_dashboard_all_data(
         
         # 8. Use total_fum from valuations, fallback to investments if needed
         final_fum = total_fum if total_fum > 0 else total_from_investments
+        
+        # FIXED: Log data consistency information for debugging
+        fund_distribution_total = sum(fund_totals.values())
+        provider_distribution_total = sum(provider_totals.values())
+        template_distribution_total = sum(template_totals.values())
+        
+        logger.info(f"📊 FUM Distribution Consistency Check:")
+        logger.info(f"   Total FUM: £{final_fum:,.2f}")
+        logger.info(f"   Fund Distribution Total: £{fund_distribution_total:,.2f}")
+        logger.info(f"   Provider Distribution Total: £{provider_distribution_total:,.2f}")
+        logger.info(f"   Template Distribution Total: £{template_distribution_total:,.2f}")
+        
+        # DEBUGGING: Log portfolio fund processing statistics
+        logger.info(f"🔍 Portfolio Fund Processing Statistics:")
+        logger.info(f"   Portfolio Funds with Values: {portfolio_funds_with_values}")
+        logger.info(f"   Portfolio Funds with Fund IDs: {portfolio_funds_with_fund_ids}")
+        logger.info(f"   Portfolio Funds missing Fund IDs: {portfolio_funds_missing_fund_ids}")
+        logger.info(f"   Fund Categories in totals: {len(fund_totals)}")
+        
+        # Log any unknown/unassigned categories for debugging
+        if "unknown_fund" in fund_totals:
+            logger.warning(f"⚠️  Unknown/Orphaned Funds: £{fund_totals['unknown_fund']:,.2f}")
+        if "unassigned_provider" in provider_totals:
+            logger.warning(f"⚠️  Unassigned Provider: £{provider_totals['unassigned_provider']:,.2f}")
+        if "unknown_template" in template_totals or "unassigned_template" in template_totals:
+            unknown_amt = template_totals.get('unknown_template', 0)
+            unassigned_amt = template_totals.get('unassigned_template', 0)
+            logger.warning(f"⚠️  Template Issues - Unknown: £{unknown_amt:,.2f}, Unassigned: £{unassigned_amt:,.2f}")
         
         response = {
             "metrics": {

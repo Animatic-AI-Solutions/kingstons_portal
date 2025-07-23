@@ -354,6 +354,51 @@ async def find_common_valuation_dates_from_date(fund_ids: List[int], start_date:
         return []
 
 
+async def calculate_portfolio_valuation_for_date(portfolio_id: int, date: str, db) -> float:
+    """
+    Calculate total portfolio valuation for a specific date by summing fund valuations.
+    
+    Args:
+        portfolio_id: The portfolio ID
+        date: Date in YYYY-MM-DD format
+        db: Database connection
+    
+    Returns:
+        Total portfolio valuation as float, or 0.0 if no valuations found
+    """
+    try:
+        # Get all portfolio funds for this portfolio
+        portfolio_funds = db.table("portfolio_funds")\
+            .select("id")\
+            .eq("portfolio_id", portfolio_id)\
+            .execute()
+        
+        if not portfolio_funds.data:
+            logger.warning(f"No portfolio funds found for portfolio {portfolio_id}")
+            return 0.0
+        
+        fund_ids = [pf["id"] for pf in portfolio_funds.data]
+        
+        # Get fund valuations for this date
+        fund_valuations = db.table("portfolio_fund_valuations")\
+            .select("valuation")\
+            .in_("portfolio_fund_id", fund_ids)\
+            .eq("valuation_date", date)\
+            .execute()
+        
+        if not fund_valuations.data:
+            logger.warning(f"No fund valuations found for portfolio {portfolio_id} on {date}")
+            return 0.0
+        
+        total_valuation = sum(float(fv["valuation"]) for fv in fund_valuations.data)
+        logger.info(f"Calculated portfolio valuation for portfolio {portfolio_id} on {date}: {total_valuation}")
+        return total_valuation
+        
+    except Exception as e:
+        logger.error(f"Error calculating portfolio valuation for portfolio {portfolio_id} on {date}: {str(e)}")
+        return 0.0
+
+
 async def recalculate_portfolio_irr_values_from_date(portfolio_id: int, start_date: str, db) -> int:
     """
     Recalculate portfolio-level IRR values from a start date onwards.
@@ -451,11 +496,36 @@ async def recalculate_portfolio_irr_values_from_date(portfolio_id: int, start_da
                         
                         portfolio_valuation_id = portfolio_valuation_result.data[0]["id"] if portfolio_valuation_result.data else None
                         
+                        # VALIDATION: Don't create IRR without portfolio valuation
+                        if portfolio_valuation_id is None:
+                            logger.warning(f"No portfolio valuation found for portfolio {portfolio_id} on {common_date}. Creating portfolio valuation first...")
+                            
+                            # Calculate portfolio valuation by summing fund valuations
+                            total_valuation = await calculate_portfolio_valuation_for_date(portfolio_id, common_date, db)
+                            
+                            if total_valuation > 0:
+                                portfolio_valuation_data = {
+                                    "portfolio_id": portfolio_id,
+                                    "valuation_date": common_date,
+                                    "valuation": total_valuation
+                                }
+                                
+                                valuation_create_result = db.table("portfolio_valuations").insert(portfolio_valuation_data).execute()
+                                if valuation_create_result.data:
+                                    portfolio_valuation_id = valuation_create_result.data[0]["id"]
+                                    logger.info(f"Created missing portfolio valuation {portfolio_valuation_id} for portfolio {portfolio_id}")
+                                else:
+                                    logger.error(f"Failed to create portfolio valuation for portfolio {portfolio_id} on {common_date}")
+                                    continue  # Skip IRR creation if we can't create valuation
+                            else:
+                                logger.error(f"Cannot calculate portfolio valuation for portfolio {portfolio_id} on {common_date} - no fund valuations found")
+                                continue  # Skip IRR creation
+                        
                         portfolio_irr_data = {
                             "portfolio_id": portfolio_id,
                             "irr_result": float(portfolio_irr_percentage),
                             "date": common_date,
-                            "portfolio_valuation_id": portfolio_valuation_id
+                            "portfolio_valuation_id": portfolio_valuation_id  # Now guaranteed to be not None
                         }
                         
                         db.table("portfolio_irr_values").insert(portfolio_irr_data).execute()

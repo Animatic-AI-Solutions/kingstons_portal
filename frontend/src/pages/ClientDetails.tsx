@@ -244,9 +244,7 @@ const ClientHeader = ({
   onCancel,
   onFieldChange,
   isSaving,
-  availableProductOwners,
-  onAddProductOwner,
-  onRemoveProductOwner,
+  availableAdvisors,
   handleDelete
 }: { 
   client: Client; 
@@ -259,9 +257,7 @@ const ClientHeader = ({
   onCancel: () => void;
   onFieldChange: (field: keyof ClientFormData, value: string | null) => void;
   isSaving?: boolean;
-  availableProductOwners: ClientProductOwner[];
-  onAddProductOwner: (productOwnerId: number) => void;
-  onRemoveProductOwner: (associationId: number) => void;
+  availableAdvisors: { value: string; label: string }[];
   handleDelete: () => void;
 }) => {
   const formatCurrency = (amount: number): string => {
@@ -455,39 +451,16 @@ const ClientHeader = ({
                        label="Advisor" 
                        value={isEditing ? editData.advisor : client.advisor} 
                        field="advisor" 
+                       type="select"
+                       options={availableAdvisors}
                      />
                      
                      <StatusBadge />
                      
-                     {/* Product Owners Section */}
+                     {/* Product Owners Section - Read Only Display */}
                      <div className="flex items-center">
                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2">Product Owners:</span>
                        <div className="flex items-center space-x-2">
-                         {isEditing && availableProductOwners.length > 0 && (
-                           <div className="relative z-50 mt-3">
-                             <BaseDropdown
-                               options={[
-                                 { value: '', label: '+ Add Owner' },
-                                 ...availableProductOwners.map((owner) => ({
-                                   value: owner.id.toString(),
-                                   label: getProductOwnerDisplayName(owner)
-                                 }))
-                               ]}
-                               value=""
-                               onChange={(selectedValue) => {
-                                 if (selectedValue && selectedValue !== '') {
-                                   const valueStr = typeof selectedValue === 'string' ? selectedValue : String(selectedValue);
-                                   onAddProductOwner(parseInt(valueStr));
-                                 }
-                               }}
-                               size="sm"
-                               fullWidth={false}
-                               className="text-xs bg-white min-w-max w-56"
-                               placeholder="+ Add Owner"
-                             />
-                           </div>
-                         )}
-                         
                          {client.product_owners && client.product_owners.length > 0 ? (
                            <div className="flex flex-wrap gap-1">
                              {client.product_owners.map((owner) => (
@@ -496,21 +469,11 @@ const ClientHeader = ({
                                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
                                >
                                  {getProductOwnerDisplayName(owner)}
-                                                                   {isEditing && owner.association_id && (
-                                    <button
-                                      onClick={() => onRemoveProductOwner(owner.association_id!)}
-                                      className="ml-1 text-blue-600 hover:text-blue-800"
-                                    >
-                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                      </svg>
-                                    </button>
-                                  )}
                                </span>
                              ))}
                            </div>
                          ) : (
-                           <span className="text-sm text-gray-500">None assigned</span>
+                           <span className="text-sm text-gray-500">Managed at product level</span>
                          )}
                        </div>
                      </div>
@@ -1162,12 +1125,10 @@ const ClientDetails: React.FC = () => {
   const { 
     updateClient, 
     changeClientStatus, 
-    deleteClient, 
-    manageProductOwner,
+    deleteClient,
     isUpdating,
     isDeleting,
-    isChangingStatus,
-    isManagingProductOwner
+    isChangingStatus
   } = useClientMutations();
   
   // Transform data for component compatibility - the API returns { client_group: {...}, products: [...] }
@@ -1232,8 +1193,7 @@ const ClientDetails: React.FC = () => {
   const error = queryError ? (queryError as any).response?.data?.detail || 'Failed to fetch client details' : null;
   const [isCorrecting, setIsCorrecting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
-  const [availableProductOwners, setAvailableProductOwners] = useState<ClientProductOwner[]>([]);
-  const [isEditingProductOwners, setIsEditingProductOwners] = useState(false);
+  const [availableAdvisors, setAvailableAdvisors] = useState<{ value: string; label: string }[]>([]);
   const [versions, setVersions] = useState<any[]>([]);
   const [showVersionModal, setShowVersionModal] = useState(false);
   const [showRevenueModal, setShowRevenueModal] = useState(false);
@@ -1280,43 +1240,43 @@ const ClientDetails: React.FC = () => {
     }
   };
 
-  // Function to fetch product owners for the client group (called on-demand)
-  const fetchAvailableProductOwners = async () => {
-    if (!apiResponse?.client_group) return;
-    
-    try {
-      // Fetch all available product owners for the dropdown
-      const allProductOwnersResponse = await api.get('/product_owners');
-      console.log('All product owners response:', allProductOwnersResponse.data);
-      
-      // Get current client's product owners to exclude them from available list
-      const currentProductOwners = apiResponse.client_group.product_owners || [];
-      
-      // Set available product owners (excluding already assigned ones)
-      const availableOwners = allProductOwnersResponse.data
-        .filter((owner: any) => owner.status === 'active')
-        .filter((owner: any) => !currentProductOwners.find(current => current.id === owner.id))
-        .map((owner: any) => ({
-          id: owner.id,
-          firstname: owner.firstname,
-          surname: owner.surname,
-          known_as: owner.known_as,
-          status: owner.status,
-          created_at: owner.created_at
-        }));
-      
-      setAvailableProductOwners(availableOwners);
-      
-    } catch (err: any) {
-      console.error('Error fetching available product owners:', err);
-    }
-  };
+
 
   // React Query handles data fetching automatically
   // No manual fetchClientData function needed
 
   // React Query automatically handles data fetching when clientId changes
   // No useEffect needed for data fetching
+
+  // Fetch available advisors for dropdown
+  useEffect(() => {
+    const fetchAvailableAdvisors = async () => {
+      try {
+        const response = await api.get('/client_groups');
+        const clients = response.data || [];
+        
+        // Extract unique non-null advisors
+        const uniqueAdvisors = [...new Set(
+          clients
+            .map((client: any) => client.advisor)
+            .filter((advisor: string | null) => advisor && advisor.trim() !== '')
+        )].sort();
+        
+        // Convert to dropdown options format
+        const advisorOptions = uniqueAdvisors.map((advisor: string) => ({
+          value: advisor,
+          label: advisor
+        }));
+        
+        setAvailableAdvisors(advisorOptions);
+      } catch (error) {
+        console.error('Error fetching advisors:', error);
+        setAvailableAdvisors([]);
+      }
+    };
+
+    fetchAvailableAdvisors();
+  }, [api]);
 
   // Set all products to be expanded when clientAccounts are updated and populate funds data
   useEffect(() => {
@@ -1381,9 +1341,6 @@ const ClientDetails: React.FC = () => {
     });
     
     console.log('DEBUG: startCorrection - formData.created_at set to:', client.created_at);
-    
-    // Fetch product owners for the dropdown when editing starts
-    fetchAvailableProductOwners();
     
     // Enter correction mode
     setIsCorrecting(true);
@@ -1508,43 +1465,7 @@ const ClientDetails: React.FC = () => {
     }
   };
 
-  // Product owner management functions
-  const handleAddProductOwner = async (productOwnerId: number) => {
-      if (!clientId) return;
-      
-    manageProductOwner.mutate({
-      clientId,
-      productOwnerId,
-      action: 'add'
-    }, {
-      onSuccess: () => {
-      console.log('Product owner added successfully');
-      },
-      onError: (err: any) => {
-      console.error('Error adding product owner:', err);
-        setLocalError(err.response?.data?.detail || 'Failed to add product owner');
-    }
-    });
-  };
 
-  const handleRemoveProductOwner = async (associationId: number) => {
-    if (!clientId) return;
-    
-    manageProductOwner.mutate({
-      clientId,
-      productOwnerId: 0, // Not needed for remove action
-      action: 'remove',
-      associationId
-    }, {
-      onSuccess: () => {
-      console.log('Product owner removed successfully');
-      },
-      onError: (err: any) => {
-      console.error('Error removing product owner:', err);
-        setLocalError(err.response?.data?.detail || 'Failed to remove product owner');
-    }
-    });
-  };
 
   // Handle revenue assignment save
   const handleRevenueAssignmentSave = async (updates: Record<number, { fixed_cost: number | null; percentage_fee: number | null }>) => {
@@ -1698,9 +1619,7 @@ const ClientDetails: React.FC = () => {
         onCancel={() => setIsCorrecting(false)}
         onFieldChange={handleFieldChange}
         isSaving={updateClient.isPending}
-        availableProductOwners={availableProductOwners}
-        onAddProductOwner={handleAddProductOwner}
-        onRemoveProductOwner={handleRemoveProductOwner}
+        availableAdvisors={availableAdvisors}
         handleDelete={handleDelete}
       />
 
