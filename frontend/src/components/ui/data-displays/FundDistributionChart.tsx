@@ -119,6 +119,13 @@ const FundDistributionChart: React.FC<FundDistributionChartProps> = ({
       (sum, fund) => sum + fund.amount, 0
     );
     
+    // DEBUGGING: Log filtering results
+    console.log(`📈 ${title} - Threshold Filtering:`);
+    console.log(`   Total items: ${data.length}, Significant (>${threshold}%): ${significantFunds.length}`);
+    console.log(`   Significant total: £${significantFunds.reduce((sum, fund) => sum + fund.amount, 0).toLocaleString()}`);
+    console.log(`   Other amount: £${otherAmount.toLocaleString()}`);
+    console.log(`   Chart will show: ${significantFunds.length + (otherAmount > 0 ? 1 : 0)} slices`);
+    
     // Format data for the chart
     const result = significantFunds.map((fund, index) => ({
       name: fund.name,
@@ -138,7 +145,7 @@ const FundDistributionChart: React.FC<FundDistributionChartProps> = ({
     }
     
     return result;
-  }, [data, threshold]);
+  }, [data, threshold, title]);
 
   // Calculate dynamic height based on number of items in legend
   const dynamicHeight = useMemo(() => {
@@ -164,8 +171,11 @@ const FundDistributionChart: React.FC<FundDistributionChartProps> = ({
 
   // Calculate total value for display
   const totalValue = useMemo(() => {
-    return data.reduce((sum, fund) => sum + fund.amount, 0);
-  }, [data]);
+    const total = data.reduce((sum, fund) => sum + fund.amount, 0);
+    console.log(`📊 ${title} - Total: £${total.toLocaleString()}, Items: ${data.length}`);
+    console.log(`📊 ${title} - Data:`, data.map(d => `${d.name}: £${d.amount.toLocaleString()}`));
+    return total;
+  }, [data, title]);
 
   return (
     <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-100 flex flex-col h-full">

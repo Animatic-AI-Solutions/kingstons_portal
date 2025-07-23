@@ -196,25 +196,6 @@ async def get_page_users(page_identifier: str) -> List[dict]:
         logger.error(f"Error getting page users: {str(e)}")
         return []
 
-# Test endpoint for debugging
-@router.get("/presence/debug/status")
-async def debug_status():
-    """Debug endpoint to check presence system status"""
-    try:
-        active_pages = list(manager.active_connections.keys())
-        total_connections = sum(len(connections) for connections in manager.active_connections.values())
-        
-        return {
-            "status": "operational",
-            "active_pages": active_pages,
-            "total_connections": total_connections,
-            "connection_details": {
-                page: len(connections) for page, connections in manager.active_connections.items()
-            }
-        }
-    except Exception as e:
-        logger.error(f"Error in debug status: {str(e)}")
-        return {"status": "error", "error": str(e)}
 
 # REST endpoints for fallback/polling
 @router.get("/presence/{page_identifier}")
