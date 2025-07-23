@@ -2036,11 +2036,6 @@ async def calculate_multiple_portfolio_funds_irr(
     try:
         logger.info(f"Calculating aggregated IRR for {len(portfolio_fund_ids)} portfolio funds")
         
-        # 🔴 DEBUG: IRR CALCULATION - START
-        logger.error(f"🔴 🧮 MULTIPLE FUNDS IRR CALCULATION START")
-        logger.error(f"🔴 📋 Portfolio Fund IDs: {portfolio_fund_ids}")
-        logger.error(f"🔴 📅 IRR Date: {irr_date}")
-        
         # Check cache first to avoid redundant calculations
         cached_result = await _irr_cache.get(
             portfolio_fund_ids=portfolio_fund_ids,
@@ -2049,7 +2044,6 @@ async def calculate_multiple_portfolio_funds_irr(
         
         if cached_result is not None:
             logger.info(f"📊 Returning cached IRR result: {cached_result.get('irr_percentage', 'N/A')}%")
-            logger.error(f"🔴 💾 RETURNING CACHED RESULT: {cached_result.get('irr_percentage', 'N/A')}%")
             return cached_result
 
         # Parse the date string if provided
@@ -2112,17 +2106,6 @@ async def calculate_multiple_portfolio_funds_irr(
                 fund_valuations[fund_id] = None  # Use None instead of 0.0 for missing valuations
         
         logger.info(f"✅ Batch valuation optimization complete - Fund valuations: {fund_valuations}")
-        
-        # 🔴 DEBUG: Show detailed fund valuations
-        logger.error(f"🔴 💰 FUND VALUATIONS BREAKDOWN:")
-        total_valuation_debug = 0
-        for fund_id, valuation in fund_valuations.items():
-            if valuation is not None:
-                total_valuation_debug += valuation
-                logger.error(f"🔴   Fund {fund_id}: £{valuation} ✅")
-            else:
-                logger.error(f"🔴   Fund {fund_id}: None ❌")
-        logger.error(f"🔴 💰 TOTAL VALUATION: £{total_valuation_debug}")
         
         # Verify all portfolio funds exist
         funds_response = db.table("portfolio_funds").select("id").in_("id", portfolio_fund_ids).execute()
@@ -2272,20 +2255,14 @@ async def calculate_multiple_portfolio_funds_irr(
             "days_in_period": days_in_period
         }
         
-        # 🔴 DEBUG: Final result
-        logger.error(f"🔴 ✅ MULTIPLE FUNDS IRR CALCULATION COMPLETE")
-        logger.error(f"🔴 🎯 FINAL RESULT: {result['irr_percentage']}%")
-        
-        # Cache the result for future use (include cash flows and fund valuations for uniqueness)
-        cash_flow_values = [cash_flows[month] for month in sorted(cash_flows.keys())]
+        # Cache the result for future use
         await _irr_cache.set(
             portfolio_fund_ids=portfolio_fund_ids,
-            result=result,
             calculation_date=irr_date,
-            cash_flows=cash_flow_values,
-            fund_valuations=fund_valuations,
-            ttl_minutes=30
+            result=result
         )
+        
+        logger.info(f"✅ Successfully calculated aggregate IRR for {len(portfolio_fund_ids)} portfolio funds: {result['irr_percentage']}%")
         
         return result
         

@@ -207,6 +207,15 @@
 
 /* Print styles to hide edit controls and other UI elements when printing */
 @media print {
+  /* Remove grey background for clean print */
+  .min-h-screen {
+    background: white !important;
+  }
+
+  body {
+    background: white !important;
+  }
+  
   .print-hide {
     display: none !important;
   }
@@ -237,7 +246,8 @@
   /* Ensure both report sections are visible in print */
   .irr-history-section {
     display: block !important;
-    page-break-before: always;
+    page-break-before: auto;
+    page-break-inside: avoid;
   }
   
   /* Ensure IRR history table columns are right-aligned in print */
@@ -291,35 +301,122 @@
     font-size: 10px !important;
   }
   
-  /* Smaller font for rate/risk columns in print */
+  /* Match font size for rate/risk columns in print to other values */
   .portfolio-summary-table td.text-xs {
-    font-size: 8px !important;
+    font-size: 10px !important;
   }
   
   /* Tighter spacing for IRR history section in print */
   .irr-history-section {
     margin-top: 0.5rem !important;
-    page-break-before: always !important;
+    page-break-before: auto !important;
+    page-break-inside: avoid !important;
+  }
+  
+  /* Keep History Summary title and table together when possible */
+  .irr-history-section .product-card:last-child {
+    page-break-before: auto !important;
+    page-break-inside: avoid !important;
+  }
+  
+  /* Optimize page breaks for History section content */
+  .irr-history-section > div:first-child {
+    /* Allow the header/title to break to new page if needed, but prefer staying */
+    page-break-before: auto !important;
+    page-break-after: avoid !important;
+  }
+  
+  /* Ensure individual History tables stay together */
+  .irr-history-section .product-table {
+    page-break-inside: avoid !important;
+  }
+  
+  /* Force IRR History product cards to match Summary tab spacing */
+  .irr-history-section .product-card.mb-8 {
+    margin-bottom: 0.25rem !important;
+  }
+  
+  /* Additional specificity for IRR History card spacing */
+  .irr-history-section div.product-card {
+    margin-bottom: 0.25rem !important;
+  }
+  
+  .irr-history-section .mb-8.product-card.print-clean {
+    margin-bottom: 0.25rem !important;
+  }
+  
+  /* Maximum specificity rule to ensure spacing works */
+  .irr-history-section .mb-8.bg-white.shadow-sm.rounded-lg.border.border-gray-200.p-6.w-full.product-card.print-clean {
+    margin-bottom: 0.25rem !important;
   }
   
   /* Reduce spacing between IRR history title and content */
   .irr-history-section h2 {
     margin-bottom: 0.5rem !important;
   }
+
+  /* Override base h2 styling for report section titles in print */
+  .irr-history-section h2,
+  .product-card h2,
+  h2.text-lg.font-semibold.text-gray-900,
+  div.irr-history-section h2.text-lg,
+  div.product-card h2.text-lg,
+  .bg-white h2.text-lg.font-semibold.text-gray-900 {
+    font-size: 1.125rem !important; /* text-lg equivalent: 18px */
+    font-weight: 600 !important; /* font-semibold equivalent */
+    color: #111827 !important; /* text-gray-900 equivalent */
+    margin-bottom: 0.5rem !important; /* mb-2 equivalent: 8px */
+    line-height: 1.75rem !important; /* Tailwind text-lg line-height */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  }
   
-  /* Reduce IRR history card spacing for better print density */
-  .irr-history-section .product-card {
+  /* Specific override for any h2 elements that might inherit base styling */
+  .report-section h2,
+  .irr-history-section > div > div > h2,
+  .product-card > div > h2 {
+    font-size: 1.125rem !important;
+    font-weight: 600 !important;
+    color: #111827 !important;
     margin-bottom: 0.5rem !important;
+    line-height: 1.75rem !important;
+    font-family: inherit !important;
+  }
+  
+  /* Nuclear option: Force all h2 elements in report containers to match */
+  .irr-history-section h2,
+  .irr-history-section * h2,
+  div[class*="irr-history"] h2,
+  div[class*="product-card"] h2,
+  h2[class*="text-lg"],
+  h2[class*="font-semibold"] {
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    color: rgb(17, 24, 39) !important;
+    margin-bottom: 8px !important;
+    line-height: 28px !important;
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  }
+  
+  /* Override Tailwind base layer h2 styles specifically for print */
+  body h2.text-lg.font-semibold.text-gray-900.mb-2,
+  body .irr-history-section h2,
+  body .product-card h2,
+  html body div h2[class] {
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    color: rgb(17, 24, 39) !important;
+    margin-bottom: 8px !important;
+    line-height: 28px !important;
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    /* Reset any other potential styling */
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    text-decoration: none !important;
   }
   
   /* Reduce spacing between product header and table */
   .irr-history-section .product-card .flex.items-center {
     margin-bottom: 0.5rem !important;
-  }
-  
-  /* Tighter spacing for IRR history tables */
-  .irr-history-table {
-    margin-bottom: 0.25rem !important;
   }
   
   /* Reduce padding in IRR history table cells */
@@ -329,14 +426,191 @@
     line-height: 1.1 !important;
   }
   
+  /* Match History Summary table padding to History tables */
+  .irr-history-section .product-card:last-child .landscape-table th,
+  .irr-history-section .product-card:last-child .landscape-table td,
+  .irr-history-section .product-card:last-child table th,
+  .irr-history-section .product-card:last-child table td {
+    padding: 0.125rem 0.25rem !important;
+    line-height: 1.1 !important;
+  }
+  
+  /* Reduce padding in History Summary container */
+  .irr-history-section .product-card:last-child .bg-white {
+    padding: 0.5rem !important;
+  }
+  
+  /* Ensure History Summary table cells match History table cell sizes */
+  .irr-history-section .product-card:last-child .product-table th,
+  .irr-history-section .product-card:last-child .product-table td {
+    padding-left: 0.125rem !important;
+    padding-right: 0.125rem !important;
+    padding-top: 0.125rem !important;
+    padding-bottom: 0.125rem !important;
+    font-size: 10px !important;
+    line-height: 1.1 !important;
+  }
+  
+  /* Additional specificity for History Summary table */
+  .irr-history-section div.product-card:last-child table.landscape-table th,
+  .irr-history-section div.product-card:last-child table.landscape-table td,
+  .irr-history-section div.mb-4.product-card.print-clean table th,
+  .irr-history-section div.mb-4.product-card.print-clean table td {
+    padding: 0.125rem 0.25rem !important;
+    font-size: 10px !important;
+    line-height: 1.1 !important;
+  }
+  
+  /* Force History Summary to match History table cell styling */
+  .irr-history-section:last-child .bg-white.px-2.py-2,
+  .irr-history-section .product-card:last-child .bg-white.px-2.py-2 {
+    padding: 0.5rem !important;
+  }
+  
+  /* Override any conflicting padding on History Summary table container */
+  .irr-history-section .product-card:last-child .overflow-x-auto.product-table table {
+    margin: 0 !important;
+  }
+  
+  /* Stretch History Summary section to full width for title alignment */
+  .irr-history-section .product-card:last-child {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  
+  /* Ensure History Summary container takes full width */
+  .irr-history-section .product-card:last-child .px-2.py-2 {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  
+  /* Align History Summary title with History title */
+  .irr-history-section .product-card:last-child h2 {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+  }
+  
+  /* Remove any container constraints on History Summary */
+  .irr-history-section div.irr-history-section {
+    width: 100% !important;
+    max-width: none !important;
+  }
+  
+  /* Ensure the History Summary table container stretches full width */
+  .irr-history-section .product-card:last-child .overflow-x-auto {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+  
+  /* Remove any padding that might offset the title alignment */
+  .irr-history-section .mb-4.product-card.print-clean:last-child {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  
+  /* Ensure both History titles have identical positioning */
+  .irr-history-section > div:first-child h2,
+  .irr-history-section .product-card:last-child h2 {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    margin-right: auto !important;
+    text-align: left !important;
+    position: relative !important;
+    left: 0 !important;
+  }
+  
+  /* Force consistent width for all History section containers */
+  .irr-history-section > div,
+  .irr-history-section .product-card {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Comprehensive History Summary alignment fix */
+  .irr-history-section .irr-history-section,
+  div.irr-history-section:last-child {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  /* Ensure History Summary title container matches main History container */
+  .irr-history-section .irr-history-section .product-card,
+  .irr-history-section > .irr-history-section {
+    width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  
+  /* Final alignment fix - remove any flex/grid constraints */
+  .irr-history-section .mb-6.gap-4,
+  .irr-history-section .flex.flex-col {
+    width: 100% !important;
+  }
+  
+  /* Ensure no margin/padding differences between title containers */
+  .irr-history-section > div:first-child,
+  .irr-history-section .mt-8 {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  
+  /* Remove top margin from History Summary to improve alignment */
+  .irr-history-section .mt-8.irr-history-section {
+    margin-top: 0.5rem !important;
+  }
+  
+  /* Ensure History Summary doesn't have offsetting margins */
+  .irr-history-section:last-child,
+  .irr-history-section .irr-history-section:last-child {
+    margin-top: 0.5rem !important;
+    width: 100% !important;
+  }
+  
+  /* Force History Summary table to full width for title alignment */
+  .irr-history-section .product-card:last-child table,
+  .irr-history-section .irr-history-section table,
+  .irr-history-section .mt-8 table {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+  
+  /* Ensure History Summary section container is full width */
+  .irr-history-section .irr-history-section .product-card:first-child {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  
+  /* Nuclear option: Force all History Summary elements to match History tables */
+  .irr-history-section .product-card:last-child *,
+  .irr-history-section .product-card:last-child table *,
+  .irr-history-section .product-card:last-child .landscape-table * {
+    font-size: 10px !important;
+  }
+  
+  /* Specifically target History Summary table cells with maximum specificity */
+  body .irr-history-section .product-card:last-child table th,
+  body .irr-history-section .product-card:last-child table td,
+  html body .irr-history-section .product-card:last-child .landscape-table th,
+  html body .irr-history-section .product-card:last-child .landscape-table td {
+    padding: 0.125rem 0.25rem !important;
+    font-size: 10px !important;
+    line-height: 1.1 !important;
+  }
+  
   /* Minimize spacing between table rows */
   .irr-history-table tbody tr {
     height: auto !important;
-  }
-  
-  /* Reduce IRR history section spacing for better print density */
-  .irr-history-section .mb-8 {
-    margin-bottom: 0.5rem !important;
   }
   
   /* Reduce spacing in IRR history header controls */
@@ -354,6 +628,80 @@
   .irr-history-section .py-12 {
     padding-top: 1rem !important;
     padding-bottom: 1rem !important;
+  }
+}
+
+/* Comprehensive print-only normalization for all report titles */
+@media print {
+  .irr-history-section h2,
+  .product-card h2,
+  h2.text-lg,
+  h2.font-semibold,
+  h2.text-gray-900,
+  h2[class*="text-lg"],
+  h2[class*="font-semibold"],
+  h2[class*="text-gray-900"] {
+    /* Font properties */
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    font-style: normal !important;
+    font-variant: normal !important;
+    font-stretch: normal !important;
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif !important;
+    
+    /* Text properties */
+    color: rgb(17, 24, 39) !important;
+    text-transform: none !important;
+    text-decoration: none !important;
+    text-align: left !important;
+    letter-spacing: normal !important;
+    word-spacing: normal !important;
+    text-shadow: none !important;
+    
+    /* Layout properties */
+    margin: 0 0 8px 0 !important;
+    padding: 0 !important;
+    line-height: 28px !important;
+    display: block !important;
+    
+    /* Reset any inherited styles */
+    background: none !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+  
+  /* Force History section to NOT break to new page */
+  .irr-history-section,
+  div.irr-history-section,
+  div[id*="irr-history"],
+  div[id*="history-tab"] {
+    page-break-before: auto !important;
+    page-break-inside: avoid !important;
+    break-before: auto !important;
+    break-inside: avoid !important;
+  }
+  
+  /* Override any potential conflicting page break rules */
+  body .irr-history-section,
+  html body .irr-history-section,
+  * .irr-history-section {
+    page-break-before: auto !important;
+    page-break-after: auto !important;
+    break-before: auto !important;
+    break-after: auto !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  
+  /* Reset all page break properties on the specific element */
+  #irr-history-tab-panel {
+    page-break-before: auto !important;
+    page-break-after: auto !important;
+    page-break-inside: avoid !important;
+    break-before: auto !important;
+    break-after: auto !important;
+    break-inside: avoid !important;
   }
 }
 

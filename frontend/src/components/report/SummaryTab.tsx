@@ -161,26 +161,9 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
     <div className="print:block report-section" id="summary-tab-panel" role="tabpanel" aria-labelledby="summary-tab">
       {/* Portfolio Performance Cards */}
       <div className="mb-2 bg-white px-2 py-2 product-card print-clean investment-performance-container">
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">Investment Performance</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-3 print-hide">Investment Performance</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 portfolio-performance-grid">
           
-          {/* Total Current Average Returns */}
-          <div className="bg-purple-50 rounded-lg p-3 portfolio-performance-card relative flex flex-col justify-center items-center h-24">
-            <div className="text-sm font-medium text-purple-700 mb-2">Total Current Average Returns</div>
-            {loading.totalIRR ? (
-              <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600"></div>
-                <div className="text-xs text-purple-600">Calculating...</div>
-              </div>
-            ) : realTimeTotalIRR !== null && realTimeTotalIRR !== undefined && !isNaN(realTimeTotalIRR) ? (
-              <div className="text-2xl font-bold text-black">
-                {formatIrrWithPrecision(realTimeTotalIRR)}
-              </div>
-            ) : (
-              <div className="text-2xl font-bold text-black">N/A</div>
-            )}
-          </div>
-
           {/* Total Portfolio Value */}
           {reportData.totalValuation !== null && (
             <div className="bg-green-50 rounded-lg p-3 portfolio-performance-card relative flex flex-col justify-center items-center h-24">
@@ -209,6 +192,23 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
               );
             })()}
           </div>
+
+          {/* Total Current Average Returns */}
+          <div className="bg-purple-50 rounded-lg p-3 portfolio-performance-card relative flex flex-col justify-center items-center h-24">
+            <div className="text-sm font-medium text-purple-700 mb-2">Total Current Average Returns</div>
+            {loading.totalIRR ? (
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600"></div>
+                <div className="text-xs text-purple-600">Calculating...</div>
+              </div>
+            ) : realTimeTotalIRR !== null && realTimeTotalIRR !== undefined && !isNaN(realTimeTotalIRR) ? (
+              <div className="text-2xl font-bold text-black">
+                {formatIrrWithPrecision(realTimeTotalIRR)}
+              </div>
+            ) : (
+              <div className="text-2xl font-bold text-black">N/A</div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -228,8 +228,8 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                 <col className="w-[7%]" />
                 <col className="w-[8%]" />
                 <col className="w-[8%]" />
-                <col className="w-[9%]" />
-                <col className="w-[5%]" />
+                <col className="w-[8%]" />
+                <col className="w-[6%]" />
               </colgroup>
               <thead className="bg-gray-100">
                 <tr>
@@ -272,7 +272,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                   </th>
                   <th scope="col" className="px-1 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide bg-purple-100">
                     <div className="leading-tight">
-                      Average Returns<br />p.a.
+                      Average<br />Return P.A.
                     </div>
                   </th>
                   <th scope="col" className="px-1 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
