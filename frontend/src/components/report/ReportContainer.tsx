@@ -130,11 +130,11 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
         });
       }
       
-      // Note: IRR history loading is handled by individual components
+      // Note: History loading is handled by individual components
       if (irrHistoryData && irrHistoryData.length > 0) {
-        console.log('✅ [PRINT] IRR history data available for printing');
+        console.log('✅ [PRINT] History data available for printing');
       } else {
-        console.log('ℹ️ [PRINT] No IRR history data available, printing summary only');
+        console.log('ℹ️ [PRINT] No History data available, printing summary only');
       }
       
       return Promise.resolve();
@@ -202,7 +202,7 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
   }, [setShowProductOwnerModal]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 print:bg-white">
       {/* Header with navigation and actions */}
       <header 
         className="bg-white shadow-sm border-b border-gray-200 print-hide"
@@ -296,7 +296,7 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
       </header>
 
       {/* Report Content */}
-      <div ref={printRef} className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div ref={printRef} className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 print:bg-white print:p-4">
         
         {/* Print-only Company Logo Header */}
         <div className="hidden print:block mb-12 text-center">
@@ -390,7 +390,7 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
                 aria-selected={activeTab === REPORT_TABS.IRR_HISTORY}
                 aria-controls="irr-history-tab-panel"
               >
-                IRR History
+                History
               </button>
             </nav>
           </div>
