@@ -941,4 +941,23 @@ export const getFallbackAnalyticsDashboard = async (
   };
 };
 
+// =============================================================================
+// ADVISOR MANAGEMENT API ENDPOINTS (Phase 4 Priority 2)
+// =============================================================================
+
+/**
+ * Get list of available advisors for dropdown selection
+ */
+export const getAvailableAdvisors = async () => {
+  try {
+    const response = await api.get('/advisors');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching available advisors:', error);
+    throw error;
+  }
+};
+
+
+
 export default api; 

@@ -7,11 +7,17 @@ import { useOptimizedClientData } from '../hooks/useOptimizedClientData';
 import StandardTable, { ColumnConfig } from '../components/StandardTable';
 import DynamicPageContainer from '../components/DynamicPageContainer';
 
+
 interface Client {
   id: string;
   name: string | null;
   status: string;
-  advisor: string | null;
+  advisor: string | null; // Legacy text field
+  advisor_id?: number | null; // New advisor relationship field
+  advisor_name?: string | null;
+  advisor_email?: string | null;
+  advisor_first_name?: string | null;
+  advisor_last_name?: string | null;
   type: string | null;
   created_at: string;
   updated_at: string;
@@ -67,11 +73,16 @@ const Clients: React.FC = () => {
 
 
   // Transform React Query data to match component expectations
-  const clients: Client[] = bulkClientData?.client_groups.map((client) => ({
+  const clients: Client[] = bulkClientData?.client_groups.map((client: any) => ({
     id: client.id,
     name: client.name,
     status: client.status,
-    advisor: client.advisor,
+    advisor: client.advisor, // Legacy text field
+    advisor_id: client.advisor_id || null, // New advisor relationship fields (from Priority 1)
+    advisor_name: client.advisor_name || null,
+    advisor_email: client.advisor_email || null,
+    advisor_first_name: client.advisor_first_name || null,
+    advisor_last_name: client.advisor_last_name || null,
     type: client.type,
     created_at: client.created_at,
     updated_at: client.created_at, // Use created_at as fallback for updated_at
@@ -132,7 +143,7 @@ const Clients: React.FC = () => {
       control: 'sort'
     },
     {
-      key: 'advisor',
+      key: 'advisor_name', // Use the new advisor_name field instead of legacy advisor
       label: 'Advisor',
       dataType: 'category', 
       alignment: 'left',

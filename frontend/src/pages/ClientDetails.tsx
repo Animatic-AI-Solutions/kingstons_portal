@@ -21,12 +21,18 @@ import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
 import { isCashFund } from '../utils/fundUtils';
 import DynamicPageContainer from '../components/DynamicPageContainer';
 
+
 // Enhanced TypeScript interfaces
 interface Client {
   id: string;
   name: string | null;
   status: string;
-  advisor: string | null;
+  advisor: string | null; // Legacy text field (will be phased out)
+  advisor_id?: number | null; // New advisor relationship field
+  advisor_name?: string | null;
+  advisor_email?: string | null;
+  advisor_first_name?: string | null;
+  advisor_last_name?: string | null;
   type: string | null;
   created_at: string;
   updated_at: string;
@@ -48,7 +54,8 @@ interface ClientProductOwner {
 interface ClientFormData {
   name: string | null;
   status: string;
-  advisor: string | null;
+  advisor: string | null; // Keep legacy field for compatibility
+  advisor_id: number | null; // New advisor relationship field
   type: string | null;
   created_at: string; // Add this field
 }
@@ -447,13 +454,23 @@ const ClientHeader = ({
                       ]}
                     />
                     
-                                         <EditableField 
-                       label="Advisor" 
-                       value={isEditing ? editData.advisor : client.advisor} 
-                       field="advisor" 
-                       type="select"
-                       options={availableAdvisors}
-                     />
+                                                                                 {/* Advisor Assignment using BaseDropdown */}
+                    {!isEditing ? (
+                      <div className="flex items-center">
+                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2">Advisor:</span>
+                        <div className="flex items-center text-sm font-semibold text-gray-900">
+                          {client.advisor_name || 'Unassigned'}
+                        </div>
+                      </div>
+                    ) : (
+                      <EditableField 
+                        label="Advisor" 
+                        value={editData.advisor_id?.toString() || ''} 
+                        field="advisor_id" 
+                        type="select"
+                        options={availableAdvisors}
+                      />
+                    )}
                      
                      <StatusBadge />
                      
@@ -1137,7 +1154,12 @@ const ClientDetails: React.FC = () => {
     id: apiResponse.client_group.id,
     name: apiResponse.client_group.name,
     status: apiResponse.client_group.status,
-    advisor: apiResponse.client_group.advisor,
+    advisor: apiResponse.client_group.advisor, // Legacy field
+    advisor_id: apiResponse.client_group.advisor_id, // New advisor relationship fields
+    advisor_name: apiResponse.client_group.advisor_name,
+    advisor_email: apiResponse.client_group.advisor_email,
+    advisor_first_name: apiResponse.client_group.advisor_first_name,
+    advisor_last_name: apiResponse.client_group.advisor_last_name,
     type: apiResponse.client_group.type,
     created_at: apiResponse.client_group.created_at,
     updated_at: apiResponse.client_group.updated_at,
@@ -1202,6 +1224,7 @@ const ClientDetails: React.FC = () => {
     name: null,
     status: 'active',
     advisor: null,
+    advisor_id: null,
     type: null,
     created_at: ''
   });
@@ -1248,24 +1271,17 @@ const ClientDetails: React.FC = () => {
   // React Query automatically handles data fetching when clientId changes
   // No useEffect needed for data fetching
 
-  // Fetch available advisors for dropdown
+  // Fetch available advisors for dropdown using new API
   useEffect(() => {
     const fetchAvailableAdvisors = async () => {
       try {
-        const response = await api.get('/client_groups');
-        const clients = response.data || [];
+        const response = await api.get('/advisors');
+        const advisors = response.data;
         
-        // Extract unique non-null advisors
-        const uniqueAdvisors = [...new Set(
-          clients
-            .map((client: any) => client.advisor)
-            .filter((advisor: string | null) => advisor && advisor.trim() !== '')
-        )].sort();
-        
-        // Convert to dropdown options format
-        const advisorOptions = uniqueAdvisors.map((advisor: string) => ({
-          value: advisor,
-          label: advisor
+        // Convert to dropdown options format with advisor names and IDs
+        const advisorOptions = advisors.map((advisor) => ({
+          value: advisor.advisor_id.toString(),
+          label: advisor.full_name || `${advisor.first_name} ${advisor.last_name}`.trim()
         }));
         
         setAvailableAdvisors(advisorOptions);
@@ -1336,6 +1352,7 @@ const ClientDetails: React.FC = () => {
       name: client.name,
       status: client.status,
       advisor: client.advisor,
+      advisor_id: client.advisor_id || null,
       type: client.type,
       created_at: client.created_at
     });
@@ -1385,6 +1402,11 @@ const ClientDetails: React.FC = () => {
         (formData.advisor !== client.advisor && formData.advisor !== '')
       ) {
         changedFields.advisor = formData.advisor === '' ? null : formData.advisor?.trim();
+      }
+      
+      // Handle advisor_id field change (new advisor relationship)
+      if (formData.advisor_id !== client.advisor_id) {
+        changedFields.advisor_id = formData.advisor_id;
       }
 
       // Handle type field change

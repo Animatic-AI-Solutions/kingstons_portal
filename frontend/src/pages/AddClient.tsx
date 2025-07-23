@@ -12,10 +12,11 @@ import {
 import { CreatableDropdown, BaseDropdown } from '../components/ui';
 import DynamicPageContainer from '../components/DynamicPageContainer';
 
+
 interface ClientFormData {
   name: string;
   status: string;
-  advisor: string | null;
+  advisor_id: number | null; // New advisor relationship field
   type: string;
   created_at: string | null;
 }
@@ -27,32 +28,32 @@ const AddClient: React.FC = () => {
   const [formData, setFormData] = useState<ClientFormData>({
     name: '',
     status: 'active',
-    advisor: null,
+    advisor_id: null,
     type: 'Family',
     created_at: null
   });
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [advisors, setAdvisors] = useState<string[]>([]);
+  const [advisorOptions, setAdvisorOptions] = useState<{ value: string; label: string }[]>([]);
 
-  // Fetch advisors on component mount
+  // Fetch available advisors for dropdown using authenticated API
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchAdvisors = async () => {
       try {
-        // Fetch existing client groups to get unique advisor names
-        const clientGroupsResponse = await api.get('/client_groups');
-        const uniqueAdvisors = [...new Set(
-          clientGroupsResponse.data
-            .map((client: any) => client.advisor)
-            .filter((advisor: string) => advisor !== null && advisor.trim() !== '')
-        )] as string[];
-        setAdvisors(uniqueAdvisors);
+        const response = await api.get('/advisors');
+        const advisors = response.data;
+        const options = advisors.map((advisor) => ({
+          value: advisor.advisor_id.toString(),
+          label: advisor.full_name || `${advisor.first_name} ${advisor.last_name}`.trim()
+        }));
+        setAdvisorOptions(options);
       } catch (err) {
-        console.error('Error fetching data:', err);
+        console.error('Error fetching advisors:', err);
+        setAdvisorOptions([]);
       }
     };
 
-    fetchData();
+    fetchAdvisors();
   }, [api]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -63,36 +64,7 @@ const AddClient: React.FC = () => {
     }));
   };
 
-  const handleCreateAdvisor = async (advisorName: string) => {
-    try {
-      // For now, we'll add the advisor to the local list since there's no specific advisor API endpoint
-      // In a real implementation, you might want to create an advisor record in the database
-      const newAdvisor = advisorName.trim();
-      
-      if (!newAdvisor) {
-        throw new Error('Advisor name cannot be empty');
-      }
 
-      // Add to the local advisors list if it doesn't exist
-      if (!advisors.includes(newAdvisor)) {
-        setAdvisors(prevAdvisors => [...prevAdvisors, newAdvisor]);
-      }
-
-      // Return the option object for the CreatableDropdown
-      return {
-        value: newAdvisor,
-        label: newAdvisor
-      };
-    } catch (err) {
-      console.error('Error creating advisor:', err);
-      setError('Failed to create advisor. Please try again.');
-      // Return a fallback option instead of null
-      return {
-        value: advisorName.trim(),
-        label: advisorName.trim()
-      };
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,10 +98,6 @@ const AddClient: React.FC = () => {
   };
 
   // Prepare options for dropdowns
-  const advisorOptions = advisors.map(advisor => ({
-    value: advisor,
-    label: advisor
-  }));
 
   const typeOptions = [
     { value: 'Family', label: 'Family' },
@@ -225,15 +193,17 @@ const AddClient: React.FC = () => {
               />
             </div>
 
+            {/* Advisor Assignment - Using BaseDropdown */}
             <div>
-              <CreatableDropdown
+              <BaseDropdown
                 label="Advisor"
                 options={advisorOptions}
-                value={formData.advisor || ''}
-                onChange={(value) => setFormData(prev => ({ ...prev, advisor: value as string || null }))}
-                onCreateOption={handleCreateAdvisor}
-                placeholder="Select or create advisor"
-                createLabel="Create advisor"
+                value={formData.advisor_id?.toString() || ''}
+                onChange={(value) => setFormData(prev => ({ 
+                  ...prev, 
+                  advisor_id: value ? parseInt(value as string) : null 
+                }))}
+                placeholder="Select an advisor"
                 helperText="Optional: Assign a specific advisor to this client group"
               />
             </div>

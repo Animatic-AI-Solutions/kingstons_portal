@@ -2,12 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional
 import logging
 
-from app.models.client_group import (
-    ClientGroup, 
-    ClientGroupCreate, 
-    ClientGroupUpdate, 
-    AdvisorInfo
-)
+from app.models.client_group import ClientGroup, ClientGroupCreate, ClientGroupUpdate
 from app.db.database import get_db
 from app.api.routes.auth import get_current_user
 
@@ -47,21 +42,10 @@ async def get_bulk_client_data(db = Depends(get_db)):
                 client_groups_dict[client_id] = {
                     "id": client_id,
                     "name": row["client_group_name"],
+                    "advisor": row["advisor"],
                     "status": row["client_group_status"],
                     "type": row.get("type"),
                     "created_at": row.get("created_at"),
-                    
-                    # New advisor relationship fields
-                    "advisor_id": row.get("advisor_id"),
-                    "advisor_name": row.get("advisor_name"),
-                    "advisor_email": row.get("advisor_email"),
-                    "advisor_first_name": row.get("advisor_first_name"),
-                    "advisor_last_name": row.get("advisor_last_name"),
-                    "advisor_assignment_status": row.get("advisor_assignment_status"),
-                    
-                    # Legacy advisor field for backward compatibility
-                    "advisor": row.get("legacy_advisor_text"),
-                    
                     "products": [],
                     "fum": 0,
                     "active_products": 0,
@@ -209,45 +193,6 @@ async def get_dormant_client_groups(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-# =============================================================================
-# NEW ADVISOR MANAGEMENT ENDPOINTS (Priority 1) - Must come before parameterized routes
-# =============================================================================
-
-@router.get("/advisors", response_model=List[AdvisorInfo])
-async def get_available_advisors(
-    db = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
-):
-    """
-    Get list of available advisors for dropdown selection.
-    Uses advisor_client_summary view from Phase 3.
-    """
-    try:
-        # Query the advisor_client_summary view using Supabase client
-        result = db.table("advisor_client_summary").select("*").order("full_name").execute()
-        
-        advisors = []
-        for row in result.data or []:
-            advisor_data = {
-                "advisor_id": row.get("advisor_id"),
-                "first_name": row.get("first_name"),
-                "last_name": row.get("last_name"),
-                "full_name": row.get("full_name"),
-                "email": row.get("email"),
-                "client_groups_count": row.get("client_groups_count", 0),
-                "total_products_count": row.get("total_products_count", 0)
-            }
-            advisors.append(AdvisorInfo(**advisor_data))
-        
-        logger.info(f"Retrieved {len(advisors)} available advisors")
-        return advisors
-        
-    except Exception as e:
-        logger.error(f"Error retrieving advisors: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve advisors")
-
-
-
 @router.post("/client_groups", response_model=ClientGroup)
 async def create_client_group(client_group: ClientGroupCreate, db = Depends(get_db)):
     """
@@ -267,8 +212,6 @@ async def create_client_group(client_group: ClientGroupCreate, db = Depends(get_
     except Exception as e:
         logger.error(f"Error creating client group: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-
-
 
 @router.get("/client_groups/{client_group_id}", response_model=ClientGroup)
 async def get_client_group(client_group_id: int, db = Depends(get_db)):
@@ -1088,23 +1031,11 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
         
         logger.info(f"Found {len(all_product_owners)} unique product owners across all products")
         
-        # Update client_group with product owners and advisor information
+        # Update client_group with product owners
         client_group_with_owners = {
             **client_group,
             "product_owners": all_product_owners
         }
-        
-        # Add advisor information from the complete data view if available
-        if products_result.data and len(products_result.data) > 0:
-            first_row = products_result.data[0]
-            client_group_with_owners.update({
-                "advisor_id": first_row.get("advisor_id"),
-                "advisor_name": first_row.get("advisor_name"), 
-                "advisor_email": first_row.get("advisor_email"),
-                "advisor_first_name": first_row.get("advisor_first_name"),
-                "advisor_last_name": first_row.get("advisor_last_name"),
-                "advisor_assignment_status": first_row.get("advisor_assignment_status")
-            })
         
         # Step 8: Return complete response
         return {
@@ -1227,3 +1158,8 @@ async def get_client_group_irr(client_group_id: int, db = Depends(get_db)):
         logger.error(f"Error calculating IRR for client group {client_group_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
+
+
+ 
+
+ 
