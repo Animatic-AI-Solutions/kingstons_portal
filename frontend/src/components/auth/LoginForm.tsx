@@ -49,8 +49,12 @@ const LoginForm: React.FC = () => {
     
     try {
       await login(email, password);
-      // Redirect to the page they were trying to access or home
-      navigate(from, { replace: true });
+      
+      // The login function updates the user context, so we need to get the current user
+      // Since this is async, we'll handle redirect in a useEffect that watches for login success
+      
+      // For now, just redirect to home and let the AuthContext handle the preferred landing page
+      navigate('/', { replace: true });
     } catch (err: any) {
       setError(
         err.response?.data?.detail || 

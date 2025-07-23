@@ -450,13 +450,13 @@ async def update_profile(
         logger.info(f"Received profile data: {profile_data}")
         
         # Validate preferred landing page
-        valid_pages = ['/', '/clients', '/products', '/definitions', '/reporting']
+        valid_pages = ['/', '/client_groups']
         if profile_data.preferred_landing_page:
             # Trim any whitespace and ensure it's a valid page
             landing_page = profile_data.preferred_landing_page.strip()
             if landing_page not in valid_pages:
                 logger.warning(f"Invalid landing page: {landing_page}")
-                raise HTTPException(status_code=400, detail="Invalid landing page selected")
+                raise HTTPException(status_code=400, detail="Invalid landing page selected. Please choose either Home or Client Groups.")
             # Use the cleaned value
             profile_data.preferred_landing_page = landing_page
         
