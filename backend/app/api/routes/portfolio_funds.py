@@ -352,6 +352,9 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
                 
             monthly_amounts[month_index] += amount  # Add to any existing amount for that month
         
+        # Round amounts below a pence to zero to handle floating point precision errors
+        monthly_amounts = [0.0 if abs(amount) < 0.01 else amount for amount in monthly_amounts]
+        
         # Validate cash flow sequence
         final_value = monthly_amounts[-1]
         
@@ -1891,6 +1894,9 @@ async def calculate_portfolio_fund_irr(
                 monthly_amounts[month_idx] += amounts[i]
                 logger.info(f"Mapping flow: date={dates[i]}, amount={amounts[i]}, month_index={month_idx}")
             
+            # Round amounts below a pence to zero to handle floating point precision errors
+            monthly_amounts = [0.0 if abs(amount) < 0.01 else amount for amount in monthly_amounts]
+            
             # Log the cash flow sequence
             logger.info("\nCash flow sequence:")
             logger.info(f"Start date: {base_date.year}-{base_date.month:02d}")
@@ -2278,6 +2284,8 @@ async def calculate_multiple_portfolio_funds_irr(
         
         # Cache the result for future use (include cash flows and fund valuations for uniqueness)
         cash_flow_values = [cash_flows[month] for month in sorted(cash_flows.keys())]
+        # Round amounts below a pence to zero to handle floating point precision errors
+        cash_flow_values = [0.0 if abs(amount) < 0.01 else amount for amount in cash_flow_values]
         await _irr_cache.set(
             portfolio_fund_ids=portfolio_fund_ids,
             result=result,
@@ -2682,6 +2690,8 @@ async def calculate_single_portfolio_fund_irr(
         
         # Cache the single fund IRR result for future use (include cash flows for uniqueness)
         cash_flow_values = [cash_flows[month] for month in sorted(cash_flows.keys())]
+        # Round amounts below a pence to zero to handle floating point precision errors
+        cash_flow_values = [0.0 if abs(amount) < 0.01 else amount for amount in cash_flow_values]
         await _irr_cache.set(
             portfolio_fund_ids=[portfolio_fund_id],
             result=final_result,
@@ -2693,6 +2703,8 @@ async def calculate_single_portfolio_fund_irr(
         
         # Cache the single fund IRR result for future use (include cash flows for uniqueness)
         cash_flow_values = [cash_flows[month] for month in sorted(cash_flows.keys())]
+        # Round amounts below a pence to zero to handle floating point precision errors
+        cash_flow_values = [0.0 if abs(amount) < 0.01 else amount for amount in cash_flow_values]
         await _irr_cache.set(
             portfolio_fund_ids=[portfolio_fund_id],
             result=final_result,

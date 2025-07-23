@@ -805,10 +805,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
   const [singleFundIRRs, setSingleFundIRRs] = useState<{[fundId: number]: {irr: number, date: string} | null}>({});
   const [isLoadingSingleFundIRRs, setIsLoadingSingleFundIRRs] = useState(false);
 
-  // Manual IRR recalculation state
-  const [isRecalculatingAllIRRs, setIsRecalculatingAllIRRs] = useState(false);
-
-  // Valuation date indicator tooltip state
+    // Valuation date indicator tooltip state
   const [showValuationTooltip, setShowValuationTooltip] = useState(false);
 
   // Memoize inactiveHoldings to prevent unnecessary recalculations and re-renders
@@ -1204,85 +1201,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
     }
   }, [api, account?.portfolio_id, holdings]);
 
-  // Function to manually recalculate all IRRs for testing
-  const handleManualRecalculateAllIRRs = useCallback(async () => {
-    if (isRecalculatingAllIRRs || !account?.portfolio_id) {
-      return;
-    }
 
-    setIsRecalculatingAllIRRs(true);
-    try {
-      // Get all real holdings (both active and inactive, excluding virtual entries)
-      const allRealHoldings = holdings.filter(h => !h.isVirtual);
-
-      // Step 1: Recalculate single fund IRRs for ALL real funds (active + inactive)
-      const singleFundPromises = allRealHoldings.map(async (fund) => {
-        try {
-          const response = await calculateStandardizedSingleFundIRR({ 
-            portfolioFundId: fund.id 
-          });
-          return { success: true, fundId: fund.id, fundName: fund.fund_name };
-        } catch (error) {
-          console.error(`Single fund IRR failed for ${fund.id}: ${fund.fund_name}`, error);
-          return { success: false, fundId: fund.id, fundName: fund.fund_name, error };
-        }
-      });
-
-      const singleFundResults = await Promise.all(singleFundPromises);
-      const successfulSingleFunds = singleFundResults.filter(r => r.success);
-      const failedSingleFunds = singleFundResults.filter(r => !r.success);
-      
-      if (failedSingleFunds.length > 0) {
-        console.warn('Failed single fund IRRs:', failedSingleFunds);
-      }
-
-      // Step 2: Recalculate Previous Funds total IRR (inactive funds only)
-      if (inactiveHoldings.length > 0) {
-        try {
-          const inactiveFundIds = inactiveHoldings.map(h => h.id);
-          const previousFundsResponse = await calculateStandardizedMultipleFundsIRR({
-            portfolioFundIds: inactiveFundIds
-          });
-        } catch (error) {
-          console.error('Previous Funds IRR calculation failed:', error);
-        }
-      }
-
-      // Step 3: Force recalculate total portfolio IRR using multiple fund calculation
-      try {
-        // Use the multiple fund IRR calculation for ALL funds (active + inactive) to get portfolio IRR
-        const allFundIds = allRealHoldings.map(h => h.id);
-        
-        const portfolioIRRResponse = await calculateStandardizedMultipleFundsIRR({
-          portfolioFundIds: allFundIds
-        });
-        
-        // Step 3b: Store the calculated portfolio IRR in the database
-        if (portfolioIRRResponse.data?.irr_percentage !== undefined) {
-          try {
-            const storeResponse = await api.post(`/portfolio_irr_values`, {
-              portfolio_id: account.portfolio_id,
-              irr_result: portfolioIRRResponse.data.irr_percentage,
-              calculation_date: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
-              calculation_method: 'multiple_fund_standardized'
-            });
-          } catch (storeError) {
-            console.error('Failed to store portfolio IRR:', storeError);
-          }
-        }
-      } catch (error) {
-        console.error('Total portfolio IRR calculation failed:', error);
-      }
-
-      // Step 4: Refresh all data to fetch updated IRRs from views
-      await refreshData();
-      
-    } catch (error) {
-      console.error('Error during manual IRR recalculation:', error);
-    } finally {
-      setIsRecalculatingAllIRRs(false);
-    }
-  }, [api, account?.portfolio_id, holdings, refreshData]);
 
   // Format currency with commas and 2 decimal places
   const formatCurrency = (amount: number): string => {
@@ -2207,23 +2126,6 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-gray-900">Monthly Activities</h2>
               <div className="flex items-center space-x-3">
-                <button
-                  onClick={handleManualRecalculateAllIRRs}
-                  disabled={isRecalculatingAllIRRs}
-                  className="px-4 py-2 bg-green-600 text-white font-medium rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-green-300 disabled:cursor-not-allowed flex items-center"
-                >
-                  {isRecalculatingAllIRRs ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Recalculating...
-                    </>
-                  ) : (
-                    'Recalculate All IRRs'
-                  )}
-                </button>
                 <button
                   onClick={() => setIsProviderSwitchModalOpen(true)}
                   className="px-4 py-2 bg-indigo-600 text-white font-medium rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
