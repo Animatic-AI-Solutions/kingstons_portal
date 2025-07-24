@@ -627,3 +627,235 @@ async def get_latest_fund_valuations(
     except Exception as e:
         logger.error(f"Error getting latest fund valuations: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@router.post("/fund_valuations/test_cascade_deletion")
+async def test_cascade_deletion(
+    portfolio_id: int = Query(..., description="Portfolio ID to test cascade deletion with"),
+    test_date: str = Query(..., description="Date to test (YYYY-MM-DD format)"),
+    db = Depends(get_db)
+):
+    """
+    Test endpoint to verify cascading deletion logic.
+    
+    This endpoint simulates the deletion cascade process to help debug issues where:
+    1. Fund valuation is deleted
+    2. Portfolio becomes incomplete for that date 
+    3. Portfolio IRR and valuation should be deleted
+    
+    Returns detailed information about what would happen during cascade deletion.
+    """
+    try:
+        from app.services.irr_cascade_service import IRRCascadeService
+        
+        logger.info(f"🧪 [CASCADE TEST] Testing cascade deletion logic for portfolio {portfolio_id} on {test_date}")
+        
+        # Get all active funds in this portfolio
+        active_funds = db.table("portfolio_funds")\
+            .select("id, available_funds_id")\
+            .eq("portfolio_id", portfolio_id)\
+            .eq("status", "active")\
+            .execute()
+        
+        if not active_funds.data:
+            return {
+                "test_status": "completed",
+                "error": f"No active funds found in portfolio {portfolio_id}",
+                "portfolio_id": portfolio_id,
+                "test_date": test_date
+            }
+        
+        fund_ids = [f["id"] for f in active_funds.data]
+        logger.info(f"🧪 Found {len(fund_ids)} active funds: {fund_ids}")
+        
+        # Get current valuations for this date
+        current_valuations = db.table("portfolio_fund_valuations")\
+            .select("id, portfolio_fund_id, valuation")\
+            .in_("portfolio_fund_id", fund_ids)\
+            .eq("valuation_date", test_date)\
+            .execute()
+        
+        funds_with_valuations = [v["portfolio_fund_id"] for v in current_valuations.data] if current_valuations.data else []
+        funds_without_valuations = [f for f in fund_ids if f not in funds_with_valuations]
+        
+        # Check current portfolio completeness
+        is_currently_complete = len(funds_with_valuations) == len(fund_ids)
+        
+        # Get portfolio IRR and valuation for this date
+        portfolio_irr = db.table("portfolio_irr_values")\
+            .select("*")\
+            .eq("portfolio_id", portfolio_id)\
+            .eq("date", test_date)\
+            .execute()
+        
+        portfolio_valuation = db.table("portfolio_valuations")\
+            .select("*")\
+            .eq("portfolio_id", portfolio_id)\
+            .eq("valuation_date", test_date)\
+            .execute()
+        
+        # Simulate what happens if we delete each fund's valuation
+        simulation_results = []
+        
+        for fund_valuation in current_valuations.data:
+            fund_id = fund_valuation["portfolio_fund_id"]
+            valuation_id = fund_valuation["id"]
+            
+            # Check what would happen if we delete this fund's valuation
+            irr_service = IRRCascadeService(db)
+            would_be_complete = await irr_service._check_portfolio_completeness_after_deletion(
+                portfolio_id, test_date, fund_id
+            )
+            
+            simulation_results.append({
+                "fund_id": fund_id,
+                "valuation_id": valuation_id,
+                "current_valuation": fund_valuation["valuation"],
+                "would_be_complete_after_deletion": would_be_complete,
+                "cascade_actions": {
+                    "delete_portfolio_irr": not would_be_complete and len(portfolio_irr.data) > 0,
+                    "delete_portfolio_valuation": not would_be_complete and len(portfolio_valuation.data) > 0
+                }
+            })
+        
+        return {
+            "test_status": "completed",
+            "portfolio_id": portfolio_id,
+            "test_date": test_date,
+            "current_state": {
+                "total_active_funds": len(fund_ids),
+                "funds_with_valuations": len(funds_with_valuations),
+                "funds_without_valuations": len(funds_without_valuations),
+                "is_complete": is_currently_complete,
+                "has_portfolio_irr": len(portfolio_irr.data) > 0,
+                "has_portfolio_valuation": len(portfolio_valuation.data) > 0
+            },
+            "fund_details": {
+                "active_fund_ids": fund_ids,
+                "funds_with_valuations": funds_with_valuations,
+                "funds_without_valuations": funds_without_valuations
+            },
+            "deletion_simulations": simulation_results,
+            "recommendation": {
+                "issue_detected": any(not sim["would_be_complete_after_deletion"] for sim in simulation_results),
+                "explanation": "If any fund valuation is deleted and portfolio becomes incomplete, cascading deletion should remove portfolio IRR and valuation"
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in cascade deletion test: {str(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return {
+            "test_status": "failed",
+            "error": str(e),
+            "portfolio_id": portfolio_id,
+            "test_date": test_date
+        }
+
+@router.get("/fund_valuations/debug_api_calls")
+async def debug_api_calls(
+    portfolio_id: int = Query(..., description="Portfolio ID to track API calls for"),
+    db = Depends(get_db)
+):
+    """
+    Debug endpoint to track when the frontend is fetching portfolio IRR data.
+    This helps identify if the frontend is refetching data after deletions.
+    """
+    import time
+    
+    logger.warning(f"🔍 [API CALL DEBUG] Frontend requested portfolio IRR data for portfolio {portfolio_id} at {time.strftime('%H:%M:%S')}")
+    
+    # Get current portfolio IRR data
+    portfolio_irrs = db.table("portfolio_irr_values")\
+        .select("id, irr_result, date, created_at")\
+        .eq("portfolio_id", portfolio_id)\
+        .order("date", desc=True)\
+        .execute()
+    
+    records = portfolio_irrs.data if portfolio_irrs.data else []
+    
+    logger.warning(f"🔍 [API CALL DEBUG] Returning {len(records)} portfolio IRR records for portfolio {portfolio_id}")
+    for record in records[:3]:  # Log first 3 records
+        logger.warning(f"🔍 [API CALL DEBUG] Record: ID={record['id']}, IRR={record.get('irr_result')}%, Date={record['date']}")
+    
+    return {
+        "success": True,
+        "portfolio_id": portfolio_id,
+        "request_time": time.strftime('%H:%M:%S'),
+        "portfolio_irr_count": len(records),
+        "records": records
+    }
+
+@router.get("/fund_valuations/debug_portfolio_irrs")
+async def debug_portfolio_irrs(
+    portfolio_id: int = Query(..., description="Portfolio ID to check IRRs for"),
+    date: Optional[str] = Query(None, description="Specific date to check (YYYY-MM-DD format), or leave blank for all dates"),
+    db = Depends(get_db)
+):
+    """
+    Debug endpoint to check what portfolio IRR records exist for a portfolio.
+    
+    This helps diagnose issues where portfolio IRRs aren't being deleted properly
+    during cascade operations.
+    """
+    try:
+        logger.info(f"🔍 [DEBUG] Checking portfolio IRR records for portfolio {portfolio_id}")
+        
+        # Build query
+        query = db.table("portfolio_irr_values")\
+            .select("id, irr_result, date, created_at, portfolio_valuation_id")\
+            .eq("portfolio_id", portfolio_id)
+        
+        if date:
+            query = query.eq("date", date)
+            logger.info(f"🔍 [DEBUG] Filtering for date: {date}")
+        
+        # Execute query
+        result = query.order("date", desc=True).execute()
+        
+        records = result.data if result.data else []
+        logger.info(f"🔍 [DEBUG] Found {len(records)} portfolio IRR records")
+        
+        # Enhanced logging for each record
+        for record in records:
+            logger.info(f"🔍 [DEBUG] Record ID {record['id']}: IRR={record.get('irr_result', 'N/A')}%, Date={record['date']}, Created={record.get('created_at', 'N/A')}")
+        
+        # Also check if there are any fund IRRs for comparison
+        fund_irrs = db.table("portfolio_fund_irr_values")\
+            .select("id, fund_id, irr_result, date")\
+            .execute()
+        
+        fund_irr_by_date = {}
+        if fund_irrs.data:
+            for fund_irr in fund_irrs.data:
+                fund_date = fund_irr['date']
+                if fund_date not in fund_irr_by_date:
+                    fund_irr_by_date[fund_date] = []
+                fund_irr_by_date[fund_date].append(fund_irr)
+        
+        response = {
+            "success": True,
+            "portfolio_id": portfolio_id,
+            "date_filter": date,
+            "portfolio_irr_count": len(records),
+            "portfolio_irrs": [
+                {
+                    "id": record["id"],
+                    "irr_result": record.get("irr_result"),
+                    "date": record["date"],
+                    "created_at": record.get("created_at"),
+                    "portfolio_valuation_id": record.get("portfolio_valuation_id")
+                } for record in records
+            ],
+            "fund_irr_summary": {
+                date: len(fund_irrs) for date, fund_irrs in fund_irr_by_date.items()
+            } if not date else {
+                date: len(fund_irr_by_date.get(date, []))
+            }
+        }
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"❌ [DEBUG] Error checking portfolio IRRs: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Debug check failed: {str(e)}")

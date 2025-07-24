@@ -868,8 +868,8 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
           } else {
             setTotalPortfolioIRR(null);
             setTotalPortfolioIRRDate(undefined);
-            setTotalPortfolioIRRError('No portfolio IRR data available');
-            console.error('No portfolio IRR data found');
+            setTotalPortfolioIRRError(null); // Clear error state - this is a successful "no data" response
+            console.log('No portfolio IRR data found - this is normal when no IRR has been calculated');
           }
         } catch (err: any) {
           console.error('API Call Error fetching latest portfolio IRR:', err);
@@ -1103,12 +1103,19 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
           if (account?.portfolio_id) {
             try {
               const response = await getLatestPortfolioIRR(account.portfolio_id);
+              
               if (response.data && response.data.irr_result !== null && response.data.irr_result !== undefined) {
                 setTotalPortfolioIRR(response.data.irr_result);
                 setTotalPortfolioIRRDate(response.data.irr_date);
+              } else {
+                setTotalPortfolioIRR(null);
+                setTotalPortfolioIRRDate(undefined);
               }
             } catch (irrError) {
               console.error('Error fetching latest portfolio IRR:', irrError);
+              // Clear the IRR data on error (e.g., 404 when no IRR exists)
+              setTotalPortfolioIRR(null);
+              setTotalPortfolioIRRDate(undefined);
             }
           }
           
@@ -2216,14 +2223,26 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                     inactiveFundsForTotals={inactiveHoldings}  // Pass inactive funds separately for totals calculation
                     activities={convertActivityLogs(allActivities)}
                     accountHoldingId={accountId ? parseInt(accountId) : 0}
-                    onActivitiesUpdated={async (affectedFundIds?: number[]) => {
-                      // Trigger single fund IRR recalculation for affected funds
-                      if (affectedFundIds && affectedFundIds.length > 0) {
-                        await triggerSingleFundIRRRecalculation(affectedFundIds);
-                      }
-                      // Refresh the data to get updated IRRs from views
-                      await refreshData();
-                    }}
+                                onActivitiesUpdated={async (affectedFundIds?: number[]) => {
+              try {
+                // Trigger single fund IRR recalculation for affected funds
+                if (affectedFundIds && affectedFundIds.length > 0) {
+                  await triggerSingleFundIRRRecalculation(affectedFundIds);
+                }
+                
+                // Refresh the data to get updated IRRs from views
+                await refreshData();
+                
+              } catch (error) {
+                console.error('Error in onActivitiesUpdated callback:', error);
+                // Still try to refresh data even if IRR recalculation fails
+                try {
+                  await refreshData();
+                } catch (refreshError) {
+                  console.error('refreshData() also failed:', refreshError);
+                }
+              }
+            }}
                     productStartDate={account?.start_date} // Pass product start date instead of selectedYear
                     allFunds={allFunds} // Pass all funds from the API instead of just holdings
                     providerSwitches={providerSwitches} // Pass provider switches

@@ -2025,6 +2025,7 @@ async def calculate_portfolio_fund_irr(
 async def calculate_multiple_portfolio_funds_irr(
     portfolio_fund_ids: List[int] = Body(..., description="List of portfolio fund IDs to include in IRR calculation"),
     irr_date: Optional[str] = Body(None, description="Date for IRR calculation in YYYY-MM-DD format (defaults to latest valuation date)"),
+    bypass_cache: bool = Body(False, description="Bypass cache for fresh calculation (used during cascade operations)"),
     db = Depends(get_db)
 ):
     """
@@ -2040,17 +2041,20 @@ async def calculate_multiple_portfolio_funds_irr(
     Expected output: IRR percentage and supporting calculation details
     """
     try:
-        logger.info(f"Calculating aggregated IRR for {len(portfolio_fund_ids)} portfolio funds")
+        logger.info(f"Calculating aggregated IRR for {len(portfolio_fund_ids)} portfolio funds{'  (BYPASSING CACHE)' if bypass_cache else ''}")
         
-        # Check cache first to avoid redundant calculations
-        cached_result = await _irr_cache.get(
-            portfolio_fund_ids=portfolio_fund_ids,
-            calculation_date=irr_date
-        )
-        
-        if cached_result is not None:
-            logger.info(f"📊 Returning cached IRR result: {cached_result.get('irr_percentage', 'N/A')}%")
-            return cached_result
+        # Check cache first to avoid redundant calculations (unless bypassing)
+        if not bypass_cache:
+            cached_result = await _irr_cache.get(
+                portfolio_fund_ids=portfolio_fund_ids,
+                calculation_date=irr_date
+            )
+            
+            if cached_result is not None:
+                logger.info(f"📊 Returning cached IRR result: {cached_result.get('irr_percentage', 'N/A')}%")
+                return cached_result
+        else:
+            logger.info(f"🔄 Bypassing cache for fresh calculation as requested")
 
         # Parse the date string if provided
         if irr_date is not None:
@@ -2304,6 +2308,7 @@ async def calculate_multiple_portfolio_funds_irr(
 async def calculate_single_portfolio_fund_irr(
     portfolio_fund_id: int,
     irr_date: Optional[str] = Body(None, description="Date for IRR calculation in YYYY-MM-DD format (defaults to latest valuation date)"),
+    bypass_cache: bool = Body(False, description="Bypass cache for fresh calculation (used during cascade operations)"),
     db = Depends(get_db)
 ):
     """
@@ -2324,17 +2329,20 @@ async def calculate_single_portfolio_fund_irr(
         Dictionary containing IRR calculation results
     """
     try:
-        logger.info(f"🔍 IRR CALC ENTRY: calculate_single_portfolio_fund_irr called for fund {portfolio_fund_id}, date {irr_date}")
+        logger.info(f"🔍 IRR CALC ENTRY: calculate_single_portfolio_fund_irr called for fund {portfolio_fund_id}, date {irr_date}{'  (BYPASSING CACHE)' if bypass_cache else ''}")
         
-        # Check cache first for single fund IRR calculation
-        cached_result = await _irr_cache.get(
-            portfolio_fund_ids=[portfolio_fund_id],
-            calculation_date=irr_date
-        )
-        
-        if cached_result is not None:
-            logger.info(f"📊 Returning cached single fund IRR result: {cached_result.get('irr_percentage', 'N/A')}%")
-            return cached_result
+        # Check cache first for single fund IRR calculation (unless bypassing)
+        if not bypass_cache:
+            cached_result = await _irr_cache.get(
+                portfolio_fund_ids=[portfolio_fund_id],
+                calculation_date=irr_date
+            )
+            
+            if cached_result is not None:
+                logger.info(f"📊 Returning cached single fund IRR result: {cached_result.get('irr_percentage', 'N/A')}%")
+                return cached_result
+        else:
+            logger.info(f"🔄 Bypassing cache for fresh single fund calculation as requested")
 
         # Calculate IRR for portfolio fund
         

@@ -155,19 +155,44 @@ class IRRCache:
             # Find cache entries that involve any of the specified funds
             keys_to_remove = []
             
+            logger.debug(f"🔍 [CACHE DEBUG] Attempting to invalidate cache for funds: {portfolio_fund_ids}")
+            logger.debug(f"🔍 [CACHE DEBUG] Total cache entries: {len(self._cache)}")
+            
             for key, item in self._cache.items():
                 cached_fund_ids = item.get('fund_ids', [])
+                logger.debug(f"🔍 [CACHE DEBUG] Cache entry {key[:16]}... has fund_ids: {cached_fund_ids}")
+                
                 if any(fund_id in cached_fund_ids for fund_id in portfolio_fund_ids):
                     keys_to_remove.append(key)
+                    logger.debug(f"🗑️ [CACHE DEBUG] Marking for removal: {key[:16]}... (funds: {cached_fund_ids})")
             
             # Remove the entries
             for key in keys_to_remove:
                 del self._cache[key]
+                logger.debug(f"🗑️ [CACHE DEBUG] Removed cache entry: {key[:16]}...")
             
             if keys_to_remove:
-                logger.debug(f"Invalidated {len(keys_to_remove)} IRR cache entries for funds {portfolio_fund_ids}")
+                logger.info(f"🗑️ Invalidated {len(keys_to_remove)} IRR cache entries for funds {portfolio_fund_ids}")
+            else:
+                logger.warning(f"⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds {portfolio_fund_ids}")
             
             return len(keys_to_remove)
+    
+    async def clear_all(self) -> int:
+        """
+        Clear all cache entries. Useful when you want to ensure fresh calculations.
+        
+        Returns:
+            Number of entries cleared
+        """
+        async with self._lock:
+            cleared_count = len(self._cache)
+            self._cache.clear()
+            
+            if cleared_count > 0:
+                logger.info(f"🗑️ Cleared all {cleared_count} IRR cache entries")
+            
+            return cleared_count
     
     def get_cache_stats(self) -> Dict:
         """

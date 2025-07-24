@@ -73,8 +73,12 @@ class IRRCascadeService:
             
             # Step 4: If not complete, delete portfolio IRR and valuation
             if not will_be_complete:
+                logger.warning(f"🗑️ [CASCADE] Portfolio {portfolio_id} will be incomplete on {valuation_date} after deleting fund {fund_id} valuation - cascading deletion")
                 portfolio_irr_deleted = await self._delete_portfolio_irr_by_date(portfolio_id, valuation_date)
                 portfolio_valuation_deleted = await self._delete_portfolio_valuation_by_date(portfolio_id, valuation_date)
+                logger.info(f"🗑️ [CASCADE] Cascade deletion completed: IRR deleted={portfolio_irr_deleted}, Valuation deleted={portfolio_valuation_deleted}")
+            else:
+                logger.info(f"✅ [CASCADE] Portfolio {portfolio_id} remains complete on {valuation_date} after deleting fund {fund_id} valuation - no cascade needed")
             
             # Step 5: Delete the original fund valuation
             fund_valuation_deleted = await self._delete_fund_valuation(valuation_id)
@@ -105,11 +109,13 @@ class IRRCascadeService:
         """
         Handle IRR recalculation after batch activity changes.
         
+        FIXED: Activity changes affect all valuation dates on or after the activity date,
+        not just the activity date itself.
+        
         Flow:
-        1. Collect all unique affected dates
-        2. For each date, recalculate ALL portfolio fund IRRs
-        3. For each date, recalculate portfolio IRR (if complete)
-        4. Process dates in chronological order for consistency
+        1. For each activity date, find all valuation dates on or after that date
+        2. Recalculate IRRs for all affected valuation dates
+        3. Process dates in chronological order for consistency
         
         Args:
             portfolio_id: The portfolio affected by activity changes
@@ -118,36 +124,54 @@ class IRRCascadeService:
         Returns:
             Dict with recalculation summary
         """
-        logger.info(f"🔄 [IRR CASCADE] Starting batch IRR recalculation for portfolio {portfolio_id}, dates: {affected_dates}")
+        logger.info(f"🔄 [IRR CASCADE] Starting batch IRR recalculation for portfolio {portfolio_id}, activity dates: {affected_dates}")
         
         try:
-            # Step 1: Deduplicate and sort dates chronologically
-            unique_dates = sorted(list(set(affected_dates)))
-            logger.info(f"🔄 [IRR CASCADE] Processing {len(unique_dates)} unique dates: {unique_dates}")
+            # Step 1: Find the earliest activity date
+            unique_activity_dates = sorted(list(set(affected_dates)))
+            earliest_activity_date = unique_activity_dates[0] if unique_activity_dates else None
+            
+            if not earliest_activity_date:
+                logger.warning(f"🔄 [IRR CASCADE] No activity dates provided")
+                return {"success": True, "dates_processed": 0, "fund_irrs_recalculated": 0, "portfolio_irrs_recalculated": 0}
+            
+            logger.info(f"🔄 [IRR CASCADE] Activity dates: {unique_activity_dates}, earliest: {earliest_activity_date}")
+            
+            # Step 2: Find all valuation dates affected by these activity changes
+            # Activities affect all valuation dates on or after the earliest activity date
+            affected_valuation_dates = await self._find_valuation_dates_from_date(portfolio_id, earliest_activity_date)
+            
+            if not affected_valuation_dates:
+                logger.info(f"🔄 [IRR CASCADE] No fund valuations found on or after {earliest_activity_date}")
+                return {"success": True, "dates_processed": 0, "fund_irrs_recalculated": 0, "portfolio_irrs_recalculated": 0, "message": "No valuations affected"}
+            
+            logger.info(f"🔄 [IRR CASCADE] Found {len(affected_valuation_dates)} valuation dates to recalculate: {affected_valuation_dates}")
             
             fund_irrs_recalculated = 0
             portfolio_irrs_recalculated = 0
             
-            # Step 2: For each affected date, recalculate all IRRs
-            for affected_date in unique_dates:
-                logger.info(f"🔄 [IRR CASCADE] Processing date {affected_date}")
+            # Step 3: For each affected valuation date, recalculate IRRs
+            for valuation_date in affected_valuation_dates:
+                logger.info(f"🔄 [IRR CASCADE] Processing valuation date {valuation_date}")
                 
-                # Step 2a: Recalculate ALL portfolio fund IRRs for this date
-                fund_count = await self._recalculate_all_fund_irrs_for_date(portfolio_id, affected_date)
+                # Step 3a: Recalculate ALL portfolio fund IRRs for this valuation date
+                fund_count = await self._recalculate_all_fund_irrs_for_date(portfolio_id, valuation_date)
                 fund_irrs_recalculated += fund_count
                 
-                # Step 2b: Recalculate portfolio IRR for this date (if complete)
-                portfolio_recalc = await self._recalculate_portfolio_irr_for_date(portfolio_id, affected_date)
+                # Step 3b: Recalculate portfolio IRR for this valuation date (if complete)
+                portfolio_recalc = await self._recalculate_portfolio_irr_for_date(portfolio_id, valuation_date)
                 if portfolio_recalc:
                     portfolio_irrs_recalculated += 1
             
             result = {
                 "success": True,
                 "portfolio_id": portfolio_id,
-                "dates_processed": len(unique_dates),
+                "dates_processed": len(affected_valuation_dates),
                 "fund_irrs_recalculated": fund_irrs_recalculated,
                 "portfolio_irrs_recalculated": portfolio_irrs_recalculated,
-                "processed_dates": unique_dates
+                "processed_dates": affected_valuation_dates,
+                "activity_dates": unique_activity_dates,
+                "earliest_activity_date": earliest_activity_date
             }
             
             logger.info(f"🔄 [IRR CASCADE] ✅ Batch recalculation completed: {result}")
@@ -321,30 +345,47 @@ class IRRCascadeService:
     async def _check_portfolio_completeness_after_deletion(self, portfolio_id: int, date: str, excluding_fund_id: int) -> bool:
         """Check if portfolio will still be complete after deleting a specific fund's valuation"""
         try:
-            # Get all active portfolio funds for this portfolio (excluding the one being deleted)
-            active_funds = self.db.table("portfolio_funds")\
+            # FIXED: Get ALL active portfolio funds (including the one being deleted)
+            # We need to check if ALL active funds will have valuations AFTER the deletion
+            all_active_funds = self.db.table("portfolio_funds")\
                 .select("id")\
                 .eq("portfolio_id", portfolio_id)\
-                .is_("end_date", "null")\
-                .neq("id", excluding_fund_id)\
+                .eq("status", "active")\
                 .execute()
             
-            if not active_funds.data:
-                return False  # No other active funds, so portfolio won't be complete
+            if not all_active_funds.data:
+                logger.info(f"🔍 No active funds found in portfolio {portfolio_id}")
+                return False
             
-            # Check if all remaining active funds have valuations for this date
-            fund_ids = [f["id"] for f in active_funds.data]
+            all_fund_ids = [f["id"] for f in all_active_funds.data]
+            logger.info(f"🔍 Portfolio {portfolio_id} has {len(all_fund_ids)} active funds: {all_fund_ids}")
             
-            valuations = self.db.table("portfolio_fund_valuations")\
+            # Get current valuations for this date (BEFORE deletion)
+            current_valuations = self.db.table("portfolio_fund_valuations")\
                 .select("portfolio_fund_id")\
-                .in_("portfolio_fund_id", fund_ids)\
+                .in_("portfolio_fund_id", all_fund_ids)\
                 .eq("valuation_date", date)\
                 .execute()
             
-            funds_with_valuations = len(set([v["portfolio_fund_id"] for v in valuations.data])) if valuations.data else 0
+            current_funds_with_valuations = set([v["portfolio_fund_id"] for v in current_valuations.data]) if current_valuations.data else set()
             
-            is_complete = funds_with_valuations == len(fund_ids)
-            logger.info(f"📊 Portfolio {portfolio_id} completeness check for {date} (excluding fund {excluding_fund_id}): {funds_with_valuations}/{len(fund_ids)} = {is_complete}")
+            # Simulate what will happen AFTER deleting the specified fund's valuation
+            funds_with_valuations_after_deletion = current_funds_with_valuations.copy()
+            if excluding_fund_id in funds_with_valuations_after_deletion:
+                funds_with_valuations_after_deletion.remove(excluding_fund_id)
+            
+            # Check if ALL active funds will have valuations after the deletion
+            is_complete = len(funds_with_valuations_after_deletion) == len(all_fund_ids)
+            
+            logger.info(f"📊 Portfolio {portfolio_id} completeness check for {date}:")
+            logger.info(f"   • Total active funds: {len(all_fund_ids)}")
+            logger.info(f"   • Funds with valuations before deletion: {len(current_funds_with_valuations)}")
+            logger.info(f"   • Funds with valuations after deleting fund {excluding_fund_id}: {len(funds_with_valuations_after_deletion)}")
+            logger.info(f"   • Will be complete: {is_complete}")
+            
+            if not is_complete:
+                missing_funds = [f for f in all_fund_ids if f not in funds_with_valuations_after_deletion]
+                logger.info(f"🚨 Portfolio {portfolio_id} will be incomplete on {date}: missing valuations for funds {missing_funds}")
             
             return is_complete
             
@@ -353,8 +394,57 @@ class IRRCascadeService:
             return False
     
     async def _delete_portfolio_irr_by_date(self, portfolio_id: int, date: str) -> bool:
-        """Delete portfolio IRR for specific date"""
+        """Delete portfolio IRR for specific date with enhanced debugging and format handling"""
         try:
+            # ENHANCED DEBUG: Check ALL portfolio IRR records to see what exists
+            all_records = self.db.table("portfolio_irr_values")\
+                .select("id, irr_result, date, created_at")\
+                .eq("portfolio_id", portfolio_id)\
+                .execute()
+            
+            logger.info(f"🔍 [PORTFOLIO IRR DELETE] Portfolio {portfolio_id} has {len(all_records.data) if all_records.data else 0} total IRR records")
+            
+            if all_records.data:
+                for record in all_records.data:
+                    logger.info(f"🔍 [PORTFOLIO IRR DELETE] All records - ID {record['id']}: IRR={record.get('irr_result', 'N/A')}%, Date='{record['date']}'")
+            
+            # Check what records exist for the specific date
+            check_result = self.db.table("portfolio_irr_values")\
+                .select("id, irr_result, date, created_at")\
+                .eq("portfolio_id", portfolio_id)\
+                .eq("date", date)\
+                .execute()
+            
+            logger.info(f"🔍 [PORTFOLIO IRR DELETE] Targeting date '{date}': found {len(check_result.data) if check_result.data else 0} exact matches")
+            
+            if check_result.data:
+                for record in check_result.data:
+                    logger.info(f"🔍 [PORTFOLIO IRR DELETE] Target match - ID {record['id']}: IRR={record.get('irr_result', 'N/A')}%, Date='{record['date']}'")
+            
+            # Try alternative date formats if no exact match
+            if not check_result.data:
+                logger.warning(f"⚠️ [PORTFOLIO IRR DELETE] No exact date match for '{date}', trying alternative formats...")
+                
+                # Try with T00:00:00 suffix (common datetime format)
+                alt_date_formats = [
+                    f"{date}T00:00:00",
+                    f"{date}T00:00:00.000Z",
+                    f"{date} 00:00:00"
+                ]
+                
+                for alt_date in alt_date_formats:
+                    alt_check = self.db.table("portfolio_irr_values")\
+                        .select("id, irr_result, date")\
+                        .eq("portfolio_id", portfolio_id)\
+                        .eq("date", alt_date)\
+                        .execute()
+                    
+                    if alt_check.data:
+                        logger.info(f"🔍 [PORTFOLIO IRR DELETE] Found {len(alt_check.data)} records with alternative date format '{alt_date}'")
+                        date = alt_date  # Use the alternative format for deletion
+                        break
+            
+            # Delete the portfolio IRRs
             result = self.db.table("portfolio_irr_values")\
                 .delete()\
                 .eq("portfolio_id", portfolio_id)\
@@ -362,7 +452,21 @@ class IRRCascadeService:
                 .execute()
             
             deleted_count = len(result.data) if result.data else 0
-            logger.info(f"🗑️ Deleted {deleted_count} portfolio IRR records for portfolio {portfolio_id} on {date}")
+            logger.info(f"🗑️ Deleted {deleted_count} portfolio IRR records for portfolio {portfolio_id} on '{date}'")
+            
+            # ENHANCED DEBUG: Double-check that records are actually gone
+            verify_result = self.db.table("portfolio_irr_values")\
+                .select("id, irr_result, date")\
+                .eq("portfolio_id", portfolio_id)\
+                .execute()
+            
+            remaining_total = len(verify_result.data) if verify_result.data else 0
+            logger.info(f"🔍 [PORTFOLIO IRR DELETE] After deletion, portfolio {portfolio_id} has {remaining_total} total IRR records remaining")
+            
+            if verify_result.data:
+                for record in verify_result.data:
+                    logger.info(f"🔍 [PORTFOLIO IRR DELETE] Remaining record ID {record['id']}: IRR={record.get('irr_result', 'N/A')}%, Date='{record['date']}'")
+            
             return deleted_count > 0
             
         except Exception as e:
@@ -372,6 +476,20 @@ class IRRCascadeService:
     async def _delete_portfolio_valuation_by_date(self, portfolio_id: int, date: str) -> bool:
         """Delete portfolio valuation for specific date"""
         try:
+            # First, check if any portfolio valuations exist for this date
+            check_result = self.db.table("portfolio_valuations")\
+                .select("id, valuation_date")\
+                .eq("portfolio_id", portfolio_id)\
+                .eq("valuation_date", date)\
+                .execute()
+            
+            logger.info(f"🔍 [PORTFOLIO VALUATION] Checking portfolio {portfolio_id} on {date}: found {len(check_result.data) if check_result.data else 0} records")
+            
+            if check_result.data:
+                for record in check_result.data:
+                    logger.info(f"🔍 [PORTFOLIO VALUATION] Found record ID {record['id']} with date {record['valuation_date']}")
+            
+            # Delete the portfolio valuations
             result = self.db.table("portfolio_valuations")\
                 .delete()\
                 .eq("portfolio_id", portfolio_id)\
@@ -380,6 +498,10 @@ class IRRCascadeService:
             
             deleted_count = len(result.data) if result.data else 0
             logger.info(f"🗑️ Deleted {deleted_count} portfolio valuation records for portfolio {portfolio_id} on {date}")
+            
+            if deleted_count == 0 and check_result.data:
+                logger.warning(f"⚠️ [PORTFOLIO VALUATION] Found {len(check_result.data)} records but deleted 0 - possible date format mismatch")
+            
             return deleted_count > 0
             
         except Exception as e:
@@ -437,6 +559,16 @@ class IRRCascadeService:
                 if success:
                     recalculated_count += 1
             
+            # FIXED: Invalidate IRR cache for recalculated funds to prevent stale cached results
+            if recalculated_count > 0:
+                try:
+                    from app.utils.irr_cache import get_irr_cache
+                    irr_cache = get_irr_cache()
+                    invalidated_count = await irr_cache.invalidate_portfolio_funds(relevant_fund_ids)
+                    logger.info(f"🗑️ Invalidated {invalidated_count} IRR cache entries for {recalculated_count} recalculated funds")
+                except Exception as e:
+                    logger.warning(f"⚠️ Failed to invalidate IRR cache: {str(e)}")
+            
             logger.info(f"📊 Recalculated {recalculated_count} fund IRRs for portfolio {portfolio_id} on {date}")
             return recalculated_count
             
@@ -483,12 +615,13 @@ class IRRCascadeService:
             # Import IRR calculation function
             from app.api.routes.portfolio_funds import calculate_single_portfolio_fund_irr
             
-            # Calculate IRR
+                         # Calculate IRR with cache bypass for fresh calculation
             irr_result = await calculate_single_portfolio_fund_irr(
                 portfolio_fund_id=portfolio_fund_id,
                 irr_date=date,
+                bypass_cache=True,  # Force fresh calculation during cascade operations
                 db=self.db
-            )
+             )
             
             if not irr_result.get("success"):
                 logger.warning(f"📊 Failed to calculate fund IRR for fund {portfolio_fund_id} on {date}")
@@ -531,6 +664,15 @@ class IRRCascadeService:
                 self.db.table("portfolio_fund_irr_values").insert(irr_data).execute()
                 logger.info(f"📊 Created fund IRR for fund {portfolio_fund_id} on {date}: {irr_percentage}%")
             
+            # FIXED: Invalidate IRR cache for this fund to prevent stale cached results
+            try:
+                from app.utils.irr_cache import get_irr_cache
+                irr_cache = get_irr_cache()
+                await irr_cache.invalidate_portfolio_funds([portfolio_fund_id])
+                logger.debug(f"🗑️ Invalidated IRR cache for fund {portfolio_fund_id}")
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to invalidate IRR cache for fund {portfolio_fund_id}: {str(e)}")
+            
             return True
             
         except Exception as e:
@@ -541,13 +683,15 @@ class IRRCascadeService:
         """Check if all active portfolio funds have valuations for specific date"""
         try:
             # Get all active portfolio funds
+            # FIXED: Use consistent "active" status filtering instead of end_date check
             active_funds = self.db.table("portfolio_funds")\
                 .select("id")\
                 .eq("portfolio_id", portfolio_id)\
-                .is_("end_date", "null")\
+                .eq("status", "active")\
                 .execute()
             
             if not active_funds.data:
+                logger.info(f"🔍 No active funds found in portfolio {portfolio_id}")
                 return False
             
             fund_ids = [f["id"] for f in active_funds.data]
@@ -574,7 +718,7 @@ class IRRCascadeService:
         """Calculate and store portfolio IRR for specific date"""
         try:
             # Import portfolio IRR calculation function
-            from app.api.routes.holding_activity_logs import calculate_multiple_portfolio_funds_irr
+            from app.api.routes.portfolio_funds import calculate_multiple_portfolio_funds_irr
             
             # Get all portfolio fund IDs for this portfolio
             portfolio_funds = self.db.table("portfolio_funds")\
@@ -587,10 +731,30 @@ class IRRCascadeService:
             
             fund_ids = [pf["id"] for pf in portfolio_funds.data]
             
-            # Calculate portfolio IRR
+            # FIXED: Clear ALL cache BEFORE calculation to ensure fresh data is used
+            try:
+                from app.utils.irr_cache import get_irr_cache
+                irr_cache = get_irr_cache()
+                
+                # First try targeted invalidation
+                invalidated_count = await irr_cache.invalidate_portfolio_funds(fund_ids)
+                
+                # If targeted invalidation didn't work, clear all cache entries
+                if invalidated_count == 0:
+                    logger.warning(f"⚠️ Targeted cache invalidation found 0 entries, clearing entire cache for portfolio {portfolio_id}")
+                    cleared_count = await irr_cache.clear_all()
+                    logger.info(f"🗑️ Pre-calculation: Cleared {cleared_count} total cache entries to ensure fresh calculation")
+                else:
+                    logger.debug(f"🗑️ Pre-calculation: Invalidated {invalidated_count} targeted IRR cache entries for portfolio {portfolio_id}")
+                    
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to clear IRR cache for portfolio {portfolio_id}: {str(e)}")
+            
+                         # Calculate portfolio IRR with cache bypass for fresh calculation
             irr_result = await calculate_multiple_portfolio_funds_irr(
                 portfolio_fund_ids=fund_ids,
                 irr_date=date,
+                bypass_cache=True,  # Force fresh calculation during cascade operations
                 db=self.db
             )
             
@@ -609,7 +773,7 @@ class IRRCascadeService:
             
             portfolio_valuation_id = valuation_result.data[0]["id"] if valuation_result.data else None
             
-            # Check if portfolio IRR already exists
+                    # Check if portfolio IRR already exists
             existing_irr = self.db.table("portfolio_irr_values")\
                 .select("id")\
                 .eq("portfolio_id", portfolio_id)\
@@ -641,6 +805,47 @@ class IRRCascadeService:
             logger.error(f"Error calculating portfolio IRR: {str(e)}")
             return False
     
+    async def _find_valuation_dates_from_date(self, portfolio_id: int, start_date: str) -> List[str]:
+        """Find all fund valuation dates for this portfolio from start_date onwards"""
+        try:
+            # Get all portfolio funds for this portfolio
+            portfolio_funds = self.db.table("portfolio_funds")\
+                .select("id")\
+                .eq("portfolio_id", portfolio_id)\
+                .execute()
+            
+            if not portfolio_funds.data:
+                logger.info(f"🔍 No portfolio funds found for portfolio {portfolio_id}")
+                return []
+            
+            fund_ids = [pf["id"] for pf in portfolio_funds.data]
+            
+            # Get all valuation dates for these funds from start_date onwards
+            valuations = self.db.table("portfolio_fund_valuations")\
+                .select("valuation_date")\
+                .in_("portfolio_fund_id", fund_ids)\
+                .gte("valuation_date", start_date)\
+                .execute()
+            
+            if not valuations.data:
+                logger.info(f"🔍 No fund valuations found for portfolio {portfolio_id} from {start_date} onwards")
+                return []
+            
+            # Deduplicate and sort dates
+            unique_dates = set()
+            for record in valuations.data:
+                date_str = record["valuation_date"].split('T')[0] if 'T' in str(record["valuation_date"]) else str(record["valuation_date"])
+                unique_dates.add(date_str)
+            
+            sorted_dates = sorted(list(unique_dates))
+            logger.info(f"🔍 Found {len(sorted_dates)} unique valuation dates for portfolio {portfolio_id} from {start_date}: {sorted_dates}")
+            
+            return sorted_dates
+            
+        except Exception as e:
+            logger.error(f"Error finding valuation dates: {str(e)}")
+            return []
+ 
     async def _find_irr_dates_from_date(self, portfolio_id: int, start_date: str) -> List[str]:
         """Find all dates with IRRs from start_date onwards"""
         try:

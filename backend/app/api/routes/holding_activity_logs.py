@@ -10,18 +10,19 @@ from app.db.database import get_db
 # Import standardized IRR calculation functions
 from app.api.routes.portfolio_funds import calculate_single_portfolio_fund_irr, calculate_multiple_portfolio_funds_irr
 
+# Import modern IRR cascade service
+from app.services.irr_cascade_service import IRRCascadeService
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, activity_date: str = None):
     """
-    Advanced IRR recalculation that implements the user's sophisticated requirements:
+    OPTIMIZED: This function now uses targeted IRR recalculation for single activities.
     
-    1. Recalculates all IRR values from the activity date onwards (same date or later)
-    2. Only creates new IRR entries if all portfolio funds share common valuation dates
-    3. Replaces irr_result in existing entries rather than creating new ones
-    4. Recalculates both fund-level and portfolio-level IRR values
+    Delegates to IRRCascadeService.handle_activity_changes_batch() with only the
+    specific activity date, avoiding expensive historical recalculation.
     
     Args:
         portfolio_fund_id: The portfolio fund that was affected by the activity change
@@ -29,27 +30,24 @@ async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, acti
         activity_date: The date of the activity that was changed (YYYY-MM-DD format)
     """
     try:
-        # IRR recalculation for portfolio fund after activity change
-        # Starting sophisticated IRR recalculation
+        # Import the modern IRR cascade service
+        from app.services.irr_cascade_service import IRRCascadeService
         
-        # DEBUG: Get fund details to identify which fund this is
-        fund_details = db.table("portfolio_funds")\
-            .select("portfolio_id, available_funds_id")\
+        logger.info(f"⚡ [OPTIMIZED] Targeted IRR recalculation for portfolio_fund {portfolio_fund_id} on date {activity_date or 'latest'}")
+        
+        # Get portfolio_id from portfolio_fund_id
+        portfolio_fund_result = db.table("portfolio_funds")\
+            .select("portfolio_id")\
             .eq("id", portfolio_fund_id)\
             .execute()
         
-        if fund_details.data:
-            available_funds_id = fund_details.data[0]["available_funds_id"]
-            fund_name_result = db.table("available_funds")\
-                .select("fund_name, isin_number")\
-                .eq("id", available_funds_id)\
-                .execute()
-            
-            if fund_name_result.data:
-                fund_name = fund_name_result.data[0]["fund_name"]
-                isin = fund_name_result.data[0]["isin_number"]
+        if not portfolio_fund_result.data:
+            logger.error(f"Portfolio fund {portfolio_fund_id} not found")
+            return {"success": False, "error": "Portfolio fund not found"}
         
-        # Step 1: Get the latest activity date if not provided
+        portfolio_id = portfolio_fund_result.data[0]["portfolio_id"]
+        
+        # Get the latest activity date if not provided
         if not activity_date:
             latest_activity = db.table("holding_activity_log")\
                 .select("activity_timestamp")\
@@ -64,7 +62,59 @@ async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, acti
                 logger.warning(f"No activities found for portfolio fund {portfolio_fund_id}")
                 return {"success": False, "error": "No activities found"}
         
-        # Step 2: Get portfolio_id
+        # Use the IRR cascade service for targeted activity processing
+        irr_service = IRRCascadeService(db)
+        
+        # For single activity changes, only process the specific activity date
+        # This is much more efficient than processing all historical dates
+        cascade_result = await irr_service.handle_activity_changes_batch(portfolio_id, [activity_date])
+        
+        if cascade_result.get("success"):
+            logger.info(f"✅ [ACTIVITY WRAPPER] Targeted IRR cascade completed successfully: {cascade_result}")
+            
+            # Transform cascade service result to match legacy return format
+            return {
+                "success": True,
+                "portfolio_fund_id": portfolio_fund_id,
+                "portfolio_id": portfolio_id,
+                "activity_start_date": activity_date,
+                "recalculated_existing": cascade_result.get("fund_irrs_recalculated", 0),
+                "new_entries_created": 0,  # Cascade service updates existing, doesn't create duplicates
+                "portfolio_irr_recalculated": cascade_result.get("portfolio_irrs_recalculated", 0),
+                "dates_processed": cascade_result.get("dates_processed", 0),
+                "cascade_service_used": True,
+                "method": "targeted_activity_batch"
+            }
+        else:
+            logger.error(f"❌ [ACTIVITY WRAPPER] Targeted IRR cascade failed: {cascade_result}")
+            return cascade_result
+        
+    except Exception as e:
+        logger.error(f"❌ [ACTIVITY WRAPPER] Error in targeted IRR recalculation: {str(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return {"success": False, "error": str(e)}
+
+
+async def recalculate_irr_after_historical_change(portfolio_fund_id: int, db, activity_date: str = None):
+    """
+    HISTORICAL: This function is for major historical data corrections that affect all future IRRs.
+    
+    Use this ONLY when you've made a historical change that invalidates all IRR calculations
+    from that date forward. For normal activity changes, use recalculate_irr_after_activity_change().
+    
+    Args:
+        portfolio_fund_id: The portfolio fund that was affected by the historical change
+        db: Database connection
+        activity_date: The date from which to recalculate all future IRRs (YYYY-MM-DD format)
+    """
+    try:
+        from app.services.irr_cascade_service import IRRCascadeService
+        
+        logger.warning(f"🔄 [HISTORICAL] Full historical IRR recalculation for portfolio_fund {portfolio_fund_id} from {activity_date or 'latest'}")
+        logger.warning("⚠️  This will recalculate ALL IRRs from the specified date onwards - use sparingly!")
+        
+        # Get portfolio_id from portfolio_fund_id
         portfolio_fund_result = db.table("portfolio_funds")\
             .select("portfolio_id")\
             .eq("id", portfolio_fund_id)\
@@ -76,163 +126,48 @@ async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, acti
         
         portfolio_id = portfolio_fund_result.data[0]["portfolio_id"]
         
-        # DEBUG: Check current valuation for this fund
-        latest_valuation = db.table("portfolio_fund_valuations")\
-            .select("valuation, valuation_date")\
-            .eq("portfolio_fund_id", portfolio_fund_id)\
-            .order("valuation_date", desc=True)\
-            .limit(1)\
-            .execute()
-        
-        if latest_valuation.data:
-            current_valuation = latest_valuation.data[0]["valuation"]
-            valuation_date = latest_valuation.data[0]["valuation_date"]
-            
-            if current_valuation == 0:
-                logger.warning(f"Zero valuation detected for fund {portfolio_fund_id} - this may affect IRR calculation")
-        else:
-            logger.warning(f"No valuations found for fund {portfolio_fund_id}")
-        
-        # Step 3: Find all existing IRR values from the activity date onwards that need recalculation
-        existing_irr_values = db.table("portfolio_fund_irr_values")\
-            .select("*")\
-            .eq("fund_id", portfolio_fund_id)\
-            .gte("date", activity_date)\
-            .order("date", desc=True)\
-            .execute()
-        
-        # Process existing IRR values if any
-        
-        # Step 4: Recalculate each existing IRR value
-        recalculated_count = 0
-        for irr_record in existing_irr_values.data:
-            irr_date = irr_record["date"].split('T')[0]  # Ensure YYYY-MM-DD format
-            
-            # Recalculate IRR for this specific date
-            fund_irr_result = await calculate_single_portfolio_fund_irr(
-                portfolio_fund_id=portfolio_fund_id,
-                irr_date=irr_date,
-                db=db
-            )
-            
-            if fund_irr_result.get("success"):
-                new_irr_percentage = fund_irr_result.get("irr_percentage", 0.0)
-                old_irr_percentage = irr_record["irr_result"]
-                
-                # Update the existing IRR record (replace irr_result)
-                update_result = db.table("portfolio_fund_irr_values")\
-                    .update({"irr_result": float(new_irr_percentage)})\
-                    .eq("id", irr_record["id"])\
-                    .execute()
-                recalculated_count += 1
-            else:
-                error_msg = fund_irr_result.get("error", "Unknown error")
-                logger.warning(f"Failed to recalculate IRR for date {irr_date}: {error_msg}")
-        
-        # Step 5: Only create individual fund IRR entries for valuation dates where IRR truly doesn't exist
-        # This step should be conservative and only create entries for dates that have valuations but no IRR records
-        # The previous step (Step 4) already updated all existing IRR records from the activity date onwards
-        
-        # Get all valuation dates for this specific portfolio fund from activity date onwards
-        fund_valuations = db.table("portfolio_fund_valuations")\
-            .select("valuation_date, valuation")\
-            .eq("portfolio_fund_id", portfolio_fund_id)\
-            .gte("valuation_date", activity_date)\
-            .execute()
-        
-        fund_valuation_dates = [(val["valuation_date"].split('T')[0], val["valuation"]) for val in fund_valuations.data]
-        
-        new_entries_created = 0
-        
-        # Only create IRR entries for valuation dates where IRR truly doesn't exist
-        # Skip dates that were already processed in Step 4 (existing IRR updates)
-        existing_irr_dates = set(irr_record["date"].split('T')[0] for irr_record in existing_irr_values.data)
-        
-        for valuation_date, valuation_amount in fund_valuation_dates:
-            # Skip if this date already had an IRR record that was updated
-            if valuation_date in existing_irr_dates:
-                continue
-            
-            # Double-check if IRR already exists for this fund and date
-            existing_check = db.table("portfolio_fund_irr_values")\
-                .select("id")\
-                .eq("fund_id", portfolio_fund_id)\
-                .eq("date", valuation_date)\
+        # Get the latest activity date if not provided
+        if not activity_date:
+            latest_activity = db.table("holding_activity_log")\
+                .select("activity_timestamp")\
+                .eq("portfolio_fund_id", portfolio_fund_id)\
+                .order("activity_timestamp", desc=True)\
+                .limit(1)\
                 .execute()
             
-            if not existing_check.data:
-                # Create new IRR entry for this specific fund
-                fund_irr_result = await calculate_single_portfolio_fund_irr(
-                    portfolio_fund_id=portfolio_fund_id,
-                    irr_date=valuation_date,
-                    db=db
-                )
-                
-                if fund_irr_result.get("success"):
-                    irr_percentage = fund_irr_result.get("irr_percentage", 0.0)
-                    
-                    # Get valuation_id for this date
-                    valuation_result = db.table("portfolio_fund_valuations")\
-                        .select("id")\
-                        .eq("portfolio_fund_id", portfolio_fund_id)\
-                        .eq("valuation_date", valuation_date)\
-                        .execute()
-                    
-                    valuation_id = valuation_result.data[0]["id"] if valuation_result.data else None
-                    
-                    irr_value_data = {
-                        "fund_id": portfolio_fund_id,
-                        "irr_result": float(irr_percentage),
-                        "date": valuation_date,
-                        "fund_valuation_id": valuation_id
-                    }
-                    
-                    insert_result = db.table("portfolio_fund_irr_values").insert(irr_value_data).execute()
-                    new_entries_created += 1
-                else:
-                    error_msg = fund_irr_result.get("error", "Unknown error")
-                    logger.warning(f"Failed to calculate IRR for portfolio fund {portfolio_fund_id} on date {valuation_date}: {error_msg}")
+            if latest_activity.data:
+                activity_date = latest_activity.data[0]["activity_timestamp"].split('T')[0]
+            else:
+                logger.warning(f"No activities found for portfolio fund {portfolio_fund_id}")
+                return {"success": False, "error": "No activities found"}
         
-        # Step 6: Check for portfolio-level IRR calculations based on common dates
-        all_portfolio_funds = db.table("portfolio_funds")\
-            .select("id, status")\
-            .eq("portfolio_id", portfolio_id)\
-            .execute()
+        # Use the IRR cascade service for comprehensive historical changes
+        irr_service = IRRCascadeService(db)
+        cascade_result = await irr_service.handle_historical_changes(portfolio_id, activity_date)
         
-        common_dates = []
-        if all_portfolio_funds.data and len(all_portfolio_funds.data) > 1:
-            all_fund_ids = [pf["id"] for pf in all_portfolio_funds.data]
+        if cascade_result.get("success"):
+            dates_count = cascade_result.get("dates_processed", 0)
+            logger.warning(f"🔄 [HISTORICAL] Historical IRR cascade completed: processed {dates_count} dates")
             
-            # Find common valuation dates across all funds from the activity date onwards
-            common_dates = await find_common_valuation_dates_from_date(all_fund_ids, activity_date, db)
+            # Transform cascade service result to match legacy return format
+            return {
+                "success": True,
+                "portfolio_fund_id": portfolio_fund_id,
+                "portfolio_id": portfolio_id,
+                "activity_start_date": activity_date,
+                "recalculated_existing": cascade_result.get("fund_irrs_recalculated", 0),
+                "new_entries_created": 0,  # Cascade service updates existing, doesn't create duplicates
+                "portfolio_irr_recalculated": cascade_result.get("portfolio_irrs_recalculated", 0),
+                "dates_processed": cascade_result.get("dates_processed", 0),
+                "cascade_service_used": True,
+                "method": "full_historical_recalculation"
+            }
         else:
-            common_dates = []
-        
-        # Step 7: Recalculate portfolio-level IRR values from the activity date onwards
-        logger.info(f"🏢 [MAIN RECALC] Step 7: Starting portfolio-level IRR recalculation for portfolio {portfolio_id} from {activity_date}")
-        
-        portfolio_irr_recalculated = await recalculate_portfolio_irr_values_from_date(
-            portfolio_id, activity_date, db
-        )
-        
-        logger.info(f"🏢 [MAIN RECALC] Step 7 Complete: Portfolio IRR recalculation returned {portfolio_irr_recalculated} processed values")
-        
-        result = {
-            "success": True,
-            "portfolio_fund_id": portfolio_fund_id,
-            "portfolio_id": portfolio_id,
-            "activity_start_date": activity_date,
-            "recalculated_existing": recalculated_count,
-            "new_entries_created": new_entries_created,
-            "portfolio_irr_recalculated": portfolio_irr_recalculated,
-            "common_dates_found": len(common_dates)
-        }
-        
-        logger.info(f"🎉 [MAIN RECALC] IRR recalculation completed successfully: {result}")
-        return result
+            logger.error(f"❌ [HISTORICAL] Historical IRR cascade failed: {cascade_result}")
+            return cascade_result
         
     except Exception as e:
-        logger.error(f"Error in sophisticated IRR recalculation: {str(e)}")
+        logger.error(f"❌ [HISTORICAL] Error in historical IRR recalculation: {str(e)}")
         import traceback
         logger.error(f"Traceback: {traceback.format_exc()}")
         return {"success": False, "error": str(e)}
@@ -405,8 +340,11 @@ async def calculate_portfolio_valuation_for_date(portfolio_id: int, date: str, d
 
 async def recalculate_portfolio_irr_values_from_date(portfolio_id: int, start_date: str, db) -> int:
     """
-    Recalculate portfolio-level IRR values from a start date onwards.
-    This recalculates existing portfolio IRR entries and creates new ones for common valuation dates.
+    DEPRECATED: This function has been replaced by IRRCascadeService.
+    
+    Use IRRCascadeService.handle_historical_changes() instead.
+    
+    This wrapper maintains compatibility while delegating to the new cascade service.
     
     Args:
         portfolio_id: The portfolio ID
@@ -417,148 +355,30 @@ async def recalculate_portfolio_irr_values_from_date(portfolio_id: int, start_da
         The number of portfolio IRR values processed (recalculated + created)
     """
     try:
-        logger.info(f"🏢 [PORTFOLIO IRR RECALC] Starting portfolio-level IRR recalculation for portfolio {portfolio_id} from {start_date} onwards")
+        logger.info(f"🔄 [LEGACY WRAPPER] Delegating portfolio IRR recalculation to IRRCascadeService for portfolio {portfolio_id} from {start_date}")
         
-        # Get all funds for this portfolio (active + inactive for historical accuracy)
-        portfolio_funds = db.table("portfolio_funds")\
-            .select("id, status")\
-            .eq("portfolio_id", portfolio_id)\
-            .execute()
+        # Use the IRR cascade service for historical changes
+        irr_service = IRRCascadeService(db)
+        cascade_result = await irr_service.handle_historical_changes(portfolio_id, start_date)
         
-        if not portfolio_funds.data:
-            logger.warning(f"🏢 [PORTFOLIO IRR RECALC] No portfolio funds found for portfolio {portfolio_id}")
-            return 0
-        
-        all_fund_ids = [pf["id"] for pf in portfolio_funds.data]
-        logger.info(f"🏢 [PORTFOLIO IRR RECALC] Found {len(all_fund_ids)} funds for portfolio {portfolio_id}: {all_fund_ids}")
-        
-        # Get existing portfolio IRR values from start date onwards
-        existing_portfolio_irr = db.table("portfolio_irr_values")\
-            .select("*")\
-            .eq("portfolio_id", portfolio_id)\
-            .gte("date", start_date)\
-            .order("date", desc=True)\
-            .execute()
-        
-        logger.info(f"🏢 [PORTFOLIO IRR RECALC] Found {len(existing_portfolio_irr.data) if existing_portfolio_irr.data else 0} existing portfolio IRR values from {start_date} onwards")
-        
-        recalculated_count = 0
-        
-        # Recalculate each existing portfolio IRR value
-        for portfolio_irr_record in existing_portfolio_irr.data:
-            irr_date = portfolio_irr_record["date"].split('T')[0]  # Ensure YYYY-MM-DD format
-            old_irr_value = portfolio_irr_record["irr_result"]
+        if cascade_result.get("success"):
+            logger.info(f"✅ [LEGACY WRAPPER] Portfolio IRR cascade completed: {cascade_result}")
             
-            logger.info(f"🏢 [PORTFOLIO IRR RECALC] Recalculating existing portfolio IRR for date {irr_date} (current value: {old_irr_value}%)")
+            # Return the total number of IRRs processed (funds + portfolios)
+            fund_irrs = cascade_result.get("fund_irrs_recalculated", 0)
+            portfolio_irrs = cascade_result.get("portfolio_irrs_recalculated", 0)
+            total_processed = fund_irrs + portfolio_irrs
             
-            # Calculate new portfolio IRR using multiple funds endpoint
-            portfolio_irr_result = await calculate_multiple_portfolio_funds_irr(
-                portfolio_fund_ids=all_fund_ids,
-                irr_date=irr_date,
-                db=db
-            )
-            
-            if portfolio_irr_result.get("success"):
-                new_portfolio_irr = portfolio_irr_result.get("irr_percentage", 0.0)
-                
-                # Update existing portfolio IRR record (replace irr_result)
-                db.table("portfolio_irr_values")\
-                    .update({"irr_result": float(new_portfolio_irr)})\
-                    .eq("id", portfolio_irr_record["id"])\
-                    .execute()
-                
-                logger.info(f"🏢 [PORTFOLIO IRR RECALC] ✅ Updated portfolio IRR for date {irr_date}: {old_irr_value}% → {new_portfolio_irr}%")
-                recalculated_count += 1
-            else:
-                logger.warning(f"🏢 [PORTFOLIO IRR RECALC] ⚠️ Failed to recalculate portfolio IRR for date {irr_date}: {portfolio_irr_result.get('error', 'Unknown error')}")
-        
-        # NEW: Find common valuation dates and create portfolio IRR entries where they don't exist
-        if len(all_fund_ids) > 1:
-            common_dates = await find_common_valuation_dates_from_date(all_fund_ids, start_date, db)
-            logger.info(f"🏢 [PORTFOLIO IRR RECALC] Found {len(common_dates)} common valuation dates from {start_date} onwards: {common_dates}")
-            
-            created_count = 0
-            for common_date in common_dates:
-                # Check if portfolio IRR already exists for this date
-                existing_check = db.table("portfolio_irr_values")\
-                    .select("id")\
-                    .eq("portfolio_id", portfolio_id)\
-                    .eq("date", common_date)\
-                    .execute()
-                
-                if not existing_check.data:
-                    logger.info(f"🏢 [PORTFOLIO IRR RECALC] Creating new portfolio IRR entry for common date {common_date}")
-                    
-                    # Create new portfolio IRR entry for this common date
-                    portfolio_irr_result = await calculate_multiple_portfolio_funds_irr(
-                        portfolio_fund_ids=all_fund_ids,
-                        irr_date=common_date,
-                        db=db
-                    )
-                    
-                    if portfolio_irr_result.get("success"):
-                        portfolio_irr_percentage = portfolio_irr_result.get("irr_percentage", 0.0)
-                        
-                        # Get portfolio valuation ID for this date if it exists
-                        portfolio_valuation_result = db.table("portfolio_valuations")\
-                            .select("id")\
-                            .eq("portfolio_id", portfolio_id)\
-                            .eq("valuation_date", common_date)\
-                            .execute()
-                        
-                        portfolio_valuation_id = portfolio_valuation_result.data[0]["id"] if portfolio_valuation_result.data else None
-                        
-                        # VALIDATION: Don't create IRR without portfolio valuation
-                        if portfolio_valuation_id is None:
-                            logger.warning(f"🏢 [PORTFOLIO IRR RECALC] No portfolio valuation found for portfolio {portfolio_id} on {common_date}. Creating portfolio valuation first...")
-                            
-                            # Calculate portfolio valuation by summing fund valuations
-                            total_valuation = await calculate_portfolio_valuation_for_date(portfolio_id, common_date, db)
-                            
-                            if total_valuation > 0:
-                                portfolio_valuation_data = {
-                                    "portfolio_id": portfolio_id,
-                                    "valuation_date": common_date,
-                                    "valuation": total_valuation
-                                }
-                                
-                                valuation_create_result = db.table("portfolio_valuations").insert(portfolio_valuation_data).execute()
-                                if valuation_create_result.data:
-                                    portfolio_valuation_id = valuation_create_result.data[0]["id"]
-                                    logger.info(f"🏢 [PORTFOLIO IRR RECALC] Created missing portfolio valuation {portfolio_valuation_id} for portfolio {portfolio_id}")
-                                else:
-                                    logger.error(f"🏢 [PORTFOLIO IRR RECALC] Failed to create portfolio valuation for portfolio {portfolio_id} on {common_date}")
-                                    continue  # Skip IRR creation if we can't create valuation
-                            else:
-                                logger.error(f"🏢 [PORTFOLIO IRR RECALC] Cannot calculate portfolio valuation for portfolio {portfolio_id} on {common_date} - no fund valuations found")
-                                continue  # Skip IRR creation
-                        
-                        portfolio_irr_data = {
-                            "portfolio_id": portfolio_id,
-                            "irr_result": float(portfolio_irr_percentage),
-                            "date": common_date,
-                            "portfolio_valuation_id": portfolio_valuation_id  # Now guaranteed to be not None
-                        }
-                        
-                        db.table("portfolio_irr_values").insert(portfolio_irr_data).execute()
-                        logger.info(f"🏢 [PORTFOLIO IRR RECALC] ✅ Created new portfolio IRR entry for date {common_date}: {portfolio_irr_percentage}%")
-                        created_count += 1
-                    else:
-                        logger.warning(f"🏢 [PORTFOLIO IRR RECALC] ⚠️ Failed to calculate portfolio IRR for common date {common_date}: {portfolio_irr_result.get('error', 'Unknown error')}")
-                else:
-                    logger.info(f"🏢 [PORTFOLIO IRR RECALC] Portfolio IRR already exists for date {common_date}, skipping creation")
-            
-            total_processed = recalculated_count + created_count
-            logger.info(f"🏢 [PORTFOLIO IRR RECALC] ✅ Portfolio IRR processing complete: {recalculated_count} recalculated, {created_count} created, {total_processed} total")
+            logger.info(f"📊 [LEGACY WRAPPER] Total IRRs processed: {fund_irrs} fund IRRs + {portfolio_irrs} portfolio IRRs = {total_processed}")
             return total_processed
         else:
-            logger.info(f"🏢 [PORTFOLIO IRR RECALC] Only {len(all_fund_ids)} funds, skipping portfolio IRR creation for common dates")
-            return recalculated_count
+            logger.error(f"❌ [LEGACY WRAPPER] Portfolio IRR cascade failed: {cascade_result}")
+            return 0
         
     except Exception as e:
-        logger.error(f"🏢 [PORTFOLIO IRR RECALC] ❌ Error recalculating portfolio IRR values from date: {str(e)}")
+        logger.error(f"❌ [LEGACY WRAPPER] Error in portfolio IRR recalculation wrapper: {str(e)}")
         import traceback
-        logger.error(f"🏢 [PORTFOLIO IRR RECALC] Traceback: {traceback.format_exc()}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
         return 0
 
 router = APIRouter()
@@ -959,6 +779,110 @@ async def test_sophisticated_irr_recalculation(
     except Exception as e:
         logger.error(f"Error in sophisticated IRR recalculation test: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Test failed: {str(e)}")
+
+@router.post("/holding_activity_logs/compare_irr_performance")
+async def compare_irr_performance(
+    portfolio_fund_id: int = Query(..., description="Portfolio fund ID to test performance with"),
+    activity_date: Optional[str] = Query(None, description="Activity date to use for testing (YYYY-MM-DD format)"),
+    db = Depends(get_db)
+):
+    """
+    Compare performance between targeted activity recalculation vs full historical recalculation.
+    
+    This endpoint demonstrates the efficiency difference between:
+    1. Targeted recalculation (processes only specific activity date)
+    2. Historical recalculation (processes all dates from activity date onwards)
+    
+    Use this to understand when to use which method.
+    """
+    try:
+        import time
+        
+        logger.info(f"🔬 [PERFORMANCE TEST] Starting IRR performance comparison for portfolio fund {portfolio_fund_id}")
+        
+        # Verify portfolio fund exists
+        portfolio_fund_check = db.table("portfolio_funds")\
+            .select("id, portfolio_id")\
+            .eq("id", portfolio_fund_id)\
+            .execute()
+        
+        if not portfolio_fund_check.data:
+            raise HTTPException(status_code=404, detail=f"Portfolio fund {portfolio_fund_id} not found")
+        
+        portfolio_id = portfolio_fund_check.data[0]["portfolio_id"]
+        
+        # If no activity date provided, get the latest activity date
+        if not activity_date:
+            latest_activity = db.table("holding_activity_log")\
+                .select("activity_timestamp")\
+                .eq("portfolio_fund_id", portfolio_fund_id)\
+                .order("activity_timestamp", desc=True)\
+                .limit(1)\
+                .execute()
+            
+            if latest_activity.data:
+                activity_date = latest_activity.data[0]["activity_timestamp"].split('T')[0]
+            else:
+                raise HTTPException(status_code=400, detail=f"No activities found for portfolio fund {portfolio_fund_id} and no activity_date provided")
+        
+        # Test 1: Targeted Activity Recalculation
+        logger.info("🚀 [PERFORMANCE TEST] Testing targeted activity recalculation...")
+        start_time = time.time()
+        
+        targeted_result = await recalculate_irr_after_activity_change(portfolio_fund_id, db, activity_date)
+        
+        targeted_duration = time.time() - start_time
+        logger.info(f"⚡ [PERFORMANCE TEST] Targeted recalculation completed in {targeted_duration:.2f} seconds")
+        
+        # Test 2: Historical Recalculation
+        logger.info("🐌 [PERFORMANCE TEST] Testing full historical recalculation...")
+        start_time = time.time()
+        
+        historical_result = await recalculate_irr_after_historical_change(portfolio_fund_id, db, activity_date)
+        
+        historical_duration = time.time() - start_time
+        logger.info(f"🔄 [PERFORMANCE TEST] Historical recalculation completed in {historical_duration:.2f} seconds")
+        
+        # Calculate performance metrics
+        speed_improvement = historical_duration / targeted_duration if targeted_duration > 0 else 0
+        time_saved = historical_duration - targeted_duration
+        
+        return {
+            "test_status": "completed",
+            "portfolio_fund_id": portfolio_fund_id,
+            "portfolio_id": portfolio_id,
+            "activity_date_used": activity_date,
+            "performance_comparison": {
+                "targeted_method": {
+                    "duration_seconds": round(targeted_duration, 2),
+                    "dates_processed": targeted_result.get("dates_processed", 0),
+                    "method": "handle_activity_changes_batch",
+                    "efficiency": "high"
+                },
+                "historical_method": {
+                    "duration_seconds": round(historical_duration, 2),
+                    "dates_processed": historical_result.get("dates_processed", 0),
+                    "method": "handle_historical_changes",
+                    "efficiency": "low"
+                },
+                "performance_metrics": {
+                    "speed_improvement_factor": round(speed_improvement, 1),
+                    "time_saved_seconds": round(time_saved, 2),
+                    "efficiency_gain_percent": round(((historical_duration - targeted_duration) / historical_duration * 100), 1) if historical_duration > 0 else 0
+                }
+            },
+            "recommendation": {
+                "use_targeted_for": "Single activity changes, regular operations",
+                "use_historical_for": "Major historical corrections, data fixes",
+                "summary": f"Targeted method is {speed_improvement:.1f}x faster and saves {time_saved:.1f} seconds"
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in IRR performance comparison: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Performance test failed: {str(e)}")
 
 @router.post("/holding_activity_logs/recalculate_all_portfolio_irr")
 async def recalculate_all_portfolio_irr(
