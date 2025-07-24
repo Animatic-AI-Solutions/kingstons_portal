@@ -2450,11 +2450,11 @@ Please select a different valuation date or ensure all active funds have valuati
                 // Get the effective end date - use selected date or current date
                 const effectiveEndDate = selectedValuationDate || new Date().toISOString().split('T')[0];
                 
-                if (earliestDate) {
+                  if (earliestDate) {
                   const startDate = formatDateFallback(earliestDate);
                   const endDate = formatDateFallback(effectiveEndDate);
                   return `${startDate} to ${endDate}`;
-                } else {
+                  } else {
                   // If no earliest date found, show period ending with the effective date
                   return `Period ending ${formatDateFallback(effectiveEndDate)}`;
                 }
@@ -2518,11 +2518,11 @@ Please select a different valuation date or ensure all active funds have valuati
           // Get the effective end date - use selected date or current date
           const effectiveEndDate = selectedValuationDate || new Date().toISOString().split('T')[0];
           
-          if (earliestDate) {
+            if (earliestDate) {
             const startDate = formatDateFallback(earliestDate);
             const endDate = formatDateFallback(effectiveEndDate);
             return `${startDate} to ${endDate}`;
-          } else {
+            } else {
             // If no earliest date found, show period ending with the effective date
             return `Period ending ${formatDateFallback(effectiveEndDate)}`;
           }

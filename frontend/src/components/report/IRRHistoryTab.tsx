@@ -99,6 +99,20 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [showAllFunds, setShowAllFunds] = useState(false);
 
+  // Formatting services from Phase 1 (moved up to fix hooks ordering)
+  const { formatCurrencyWithZeroToggle, updateOptions } = useReportFormatter();
+
+  // MOVED: Memoize expensive prop calculations to prevent infinite re-renders (moved before early returns)
+  const memoizedProductIds = useMemo(
+    () => reportData?.productSummaries?.map(p => p.id) || [],
+    [reportData?.productSummaries]
+  );
+
+  const memoizedSelectedDates = useMemo(
+    () => reportData?.availableHistoricalIRRDates?.map(d => d.date) || [],
+    [reportData?.availableHistoricalIRRDates]
+  );
+
   // Add CSS for IRR history table column alignment and widths
   useEffect(() => {
     const style = document.createElement('style');
@@ -197,10 +211,16 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
     };
   }, []);
 
-  const loadingIrrHistory = loading.irrHistory;
+  // Update formatter options when hideZeros state changes (same pattern as SummaryTab)
+  useEffect(() => {
+    updateOptions({
+      hideZeros,
+      visualSigning: false, // IRRHistoryTab doesn't use visual signing
+      formatWithdrawalsAsNegative: false
+    });
+  }, [hideZeros, updateOptions]);
 
-  // Formatting services from Phase 1
-  const { formatCurrencyWithZeroToggle } = useReportFormatter();
+  const loadingIrrHistory = loading.irrHistory;
 
   // Get custom titles from state manager
   const {
@@ -709,17 +729,6 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       </div>
     );
   }
-
-  // Memoize expensive prop calculations to prevent infinite re-renders
-  const memoizedProductIds = useMemo(
-    () => reportData?.productSummaries?.map(p => p.id) || [],
-    [reportData?.productSummaries]
-  );
-
-  const memoizedSelectedDates = useMemo(
-    () => reportData?.availableHistoricalIRRDates?.map(d => d.date) || [],
-    [reportData?.availableHistoricalIRRDates]
-  );
 
   return (
     <div className="irr-history-section print:block print:mt-8 report-section" id="irr-history-tab-panel" role="tabpanel" aria-labelledby="history-tab">
