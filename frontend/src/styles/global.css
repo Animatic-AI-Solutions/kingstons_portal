@@ -246,7 +246,7 @@
   /* Ensure both report sections are visible in print */
   .irr-history-section {
     display: block !important;
-    page-break-before: auto;
+    page-break-before: always;
     page-break-inside: avoid;
   }
   
@@ -309,21 +309,27 @@
   /* Tighter spacing for IRR history section in print */
   .irr-history-section {
     margin-top: 0.5rem !important;
-    page-break-before: auto !important;
+    page-break-before: always !important;
     page-break-inside: avoid !important;
   }
   
   /* Keep History Summary title and table together when possible */
   .irr-history-section .product-card:last-child {
-    page-break-before: auto !important;
+    page-break-before: avoid !important;
     page-break-inside: avoid !important;
   }
   
   /* Optimize page breaks for History section content */
   .irr-history-section > div:first-child {
-    /* Allow the header/title to break to new page if needed, but prefer staying */
+    /* History title can break to new page if needed, but prefer staying */
     page-break-before: auto !important;
     page-break-after: avoid !important;
+  }
+  
+  /* Encourage History cards and summary to stay together as a group */
+  .irr-history-section > div:not(:first-child) {
+    page-break-before: avoid !important;
+    page-break-inside: auto !important;
   }
   
   /* Ensure individual History tables stay together */
@@ -354,7 +360,7 @@
   .irr-history-section h2 {
     margin-bottom: 0.5rem !important;
   }
-
+  
   /* Override base h2 styling for report section titles in print */
   .irr-history-section h2,
   .product-card h2,
@@ -671,24 +677,32 @@
     box-shadow: none !important;
   }
   
-  /* Force History section to NOT break to new page */
+  /* Force History section to ALWAYS break to new page, but allow History Summary to stay with History cards */
   .irr-history-section,
   div.irr-history-section,
   div[id*="irr-history"],
   div[id*="history-tab"] {
-    page-break-before: auto !important;
+    page-break-before: always !important;
     page-break-inside: avoid !important;
-    break-before: auto !important;
+    break-before: always !important;
     break-inside: avoid !important;
   }
   
-  /* Override any potential conflicting page break rules */
-  body .irr-history-section,
-  html body .irr-history-section,
-  * .irr-history-section {
-    page-break-before: auto !important;
+  /* Allow History Summary to stay with History cards when possible */
+  .irr-history-section .irr-history-section,
+  .irr-history-section .product-card:last-child {
+    page-break-before: avoid !important;
+    page-break-inside: avoid !important;
+    break-before: avoid !important;
+    break-inside: avoid !important;
+  }
+  
+  /* Override any potential conflicting page break rules for main History section only */
+  body .irr-history-section:first-child,
+  html body .irr-history-section:first-child {
+    page-break-before: always !important;
     page-break-after: auto !important;
-    break-before: auto !important;
+    break-before: always !important;
     break-after: auto !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
@@ -696,10 +710,46 @@
   
   /* Reset all page break properties on the specific element */
   #irr-history-tab-panel {
-    page-break-before: auto !important;
+    page-break-before: always !important;
     page-break-after: auto !important;
     page-break-inside: avoid !important;
-    break-before: auto !important;
+    break-before: always !important;
+    break-after: auto !important;
+    break-inside: avoid !important;
+  }
+  
+  /* Ensure nested History Summary (IRRHistorySummaryTable) stays with History cards */
+  .irr-history-section .irr-history-section.mt-8,
+  .irr-history-section > .irr-history-section:last-child,
+  div.irr-history-section div.irr-history-section {
+    page-break-before: avoid !important;
+    page-break-after: auto !important;
+    page-break-inside: avoid !important;
+    break-before: avoid !important;
+    break-after: auto !important;
+    break-inside: avoid !important;
+  }
+  
+  /* Higher specificity rules to override ID selector for nested History Summary */
+  #irr-history-tab-panel .irr-history-section.mt-8,
+  #irr-history-tab-panel > .irr-history-section:last-child,
+  div#irr-history-tab-panel div.irr-history-section,
+  .irr-history-section#irr-history-tab-panel .irr-history-section {
+    page-break-before: avoid !important;
+    page-break-after: auto !important;
+    page-break-inside: avoid !important;
+    break-before: avoid !important;
+    break-after: auto !important;
+    break-inside: avoid !important;
+  }
+  
+  /* Nuclear option: Force any IRRHistorySummaryTable inside History tab to avoid page breaks */
+  #irr-history-tab-panel .irr-history-section:not(#irr-history-tab-panel),
+  div[id="irr-history-tab-panel"] div[class*="irr-history-section"]:not([id]) {
+    page-break-before: avoid !important;
+    page-break-after: auto !important;
+    page-break-inside: avoid !important;
+    break-before: avoid !important;
     break-after: auto !important;
     break-inside: avoid !important;
   }

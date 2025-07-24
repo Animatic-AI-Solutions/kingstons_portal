@@ -191,7 +191,7 @@ async def get_irr_history_summary(
                 }
                 future.set_result(result)
                 return result
-        
+            
             product_irr_history = []
             portfolio_irr_history = []
             
@@ -312,58 +312,58 @@ async def get_irr_history_summary(
                     logger.warning(f"Product {product_id} not found in product info map, skipping")
                     continue
             
-            # Calculate individual product IRR history for each date
-            for product_id in request.product_ids:
-                if product_id not in product_info_map:
-                    continue
+                # Calculate individual product IRR history for each date
+                for product_id in request.product_ids:
+                    if product_id not in product_info_map:
+                        continue
+                        
+                    product_info = product_info_map[product_id]
+                    irr_data = []
                     
-                product_info = product_info_map[product_id]
-                irr_data = []
+                    for date_str in request.selected_dates:
+                        try:
+                            # Normalize date format to YYYY-MM-DD
+                            normalized_date = date_str.split('T')[0] if 'T' in date_str else date_str
+                            
+                            # Get IRR value for this product and date from portfolio_historical_irr table
+                            product_irr_response = db.table("portfolio_historical_irr") \
+                                .select("irr_result") \
+                                .eq("product_id", product_id) \
+                                .gte("irr_date", normalized_date) \
+                                .lt("irr_date", f"{normalized_date}T23:59:59") \
+                                .order("irr_date", desc=True) \
+                                .limit(1) \
+                                .execute()
+                            
+                            irr_value = None
+                            if product_irr_response.data and len(product_irr_response.data) > 0:
+                                irr_value = float(product_irr_response.data[0]["irr_result"])
+                                logger.info(f"📊 Product {product_id} IRR for {date_str}: {irr_value}%")
+                            else:
+                                logger.warning(f"⚠️ No IRR data found for product {product_id} on date {date_str}")
+                            
+                            irr_data.append({
+                                "date": date_str,
+                                "irr_value": irr_value
+                            })
+                            
+                        except Exception as product_date_error:
+                            logger.error(f"Error fetching IRR for product {product_id} on date {date_str}: {str(product_date_error)}")
+                            irr_data.append({
+                                "date": date_str,
+                                "irr_value": None
+                            })
+                    
+                    # Add product to history
+                    product_irr_history.append({
+                        "product_id": product_id,
+                        "product_name": product_info["product_name"],
+                        "provider_name": product_info["provider_name"],
+                        "provider_theme_color": product_info["provider_theme_color"],
+                        "status": product_info["status"],
+                        "irr_data": irr_data
+                    })
                 
-                for date_str in request.selected_dates:
-                    try:
-                        # Normalize date format to YYYY-MM-DD
-                        normalized_date = date_str.split('T')[0] if 'T' in date_str else date_str
-                        
-                        # Get IRR value for this product and date from portfolio_historical_irr table
-                        product_irr_response = db.table("portfolio_historical_irr") \
-                            .select("irr_result") \
-                            .eq("product_id", product_id) \
-                            .gte("irr_date", normalized_date) \
-                            .lt("irr_date", f"{normalized_date}T23:59:59") \
-                            .order("irr_date", desc=True) \
-                            .limit(1) \
-                            .execute()
-                        
-                        irr_value = None
-                        if product_irr_response.data and len(product_irr_response.data) > 0:
-                            irr_value = float(product_irr_response.data[0]["irr_result"])
-                            logger.info(f"📊 Product {product_id} IRR for {date_str}: {irr_value}%")
-                        else:
-                            logger.warning(f"⚠️ No IRR data found for product {product_id} on date {date_str}")
-                        
-                        irr_data.append({
-                            "date": date_str,
-                            "irr_value": irr_value
-                        })
-                        
-                    except Exception as product_date_error:
-                        logger.error(f"Error fetching IRR for product {product_id} on date {date_str}: {str(product_date_error)}")
-                        irr_data.append({
-                            "date": date_str,
-                            "irr_value": None
-                        })
-                
-                # Add product to history
-                product_irr_history.append({
-                    "product_id": product_id,
-                    "product_name": product_info["product_name"],
-                    "provider_name": product_info["provider_name"],
-                    "provider_theme_color": product_info["provider_theme_color"],
-                    "status": product_info["status"],
-                    "irr_data": irr_data
-                })
-            
             # Calculate portfolio totals for each date using proper portfolio IRR calculation
             for date_str in request.selected_dates:
                 try:
@@ -470,7 +470,7 @@ async def get_irr_history_summary(
             }
             future.set_result(result)
             return result
-            
+                
         except Exception as e:
             logger.error(f"Error processing IRR history summary request {request_key}: {str(e)}")
             result = {"success": False, "detail": f"Failed to process IRR history summary: {str(e)}"}
@@ -480,7 +480,7 @@ async def get_irr_history_summary(
             # Clean up the active request entry
             if request_key in _active_requests:
                 del _active_requests[request_key]
-            
+        
     except Exception as e:
         logger.error(f"Error fetching IRR history summary: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch IRR history summary: {str(e)}")

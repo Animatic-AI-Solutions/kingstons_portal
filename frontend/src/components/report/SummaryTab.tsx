@@ -163,7 +163,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
       <div className="mb-2 bg-white px-2 py-2 product-card print-clean investment-performance-container">
         <h2 className="text-lg font-semibold text-gray-900 mb-3 print-hide">Investment Performance</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 portfolio-performance-grid">
-          
+
           {/* Total Portfolio Value */}
           {reportData.totalValuation !== null && (
             <div className="bg-green-50 rounded-lg p-3 portfolio-performance-card relative flex flex-col justify-center items-center h-24">

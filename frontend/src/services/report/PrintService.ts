@@ -161,10 +161,16 @@ export class PrintService implements IPrintService {
           display: none !important;
         }
         
-        /* Force page break before IRR History */
-        .irr-history-section {
+        /* Force page break before main IRR History section only, not nested ones */
+        .irr-history-section:not(.irr-history-section .irr-history-section) {
           page-break-before: always;
           break-before: page;
+        }
+        
+        /* Keep History Summary with History cards */
+        .irr-history-section .irr-history-section {
+          page-break-before: avoid !important;
+          break-before: avoid !important;
         }
         
         /* Prevent page breaks inside product cards */
