@@ -40,6 +40,7 @@ class TransactionCoordinator:
             "activities_saved": 0,
             "valuations_saved": 0,
             "irr_calculations": 0,
+            "portfolio_irr_recalculations": 0,
             "errors": []
         }
         
@@ -62,15 +63,38 @@ class TransactionCoordinator:
                     result["valuations_saved"] += 1
                 logger.info(f"✅ Phase 2 Complete: {result['valuations_saved']} valuations saved")
             
-            # Phase 3: Trigger IRR recalculation for affected funds
+            # Phase 3: Trigger IRR recalculation for affected funds (both fund-level and portfolio-level)
             affected_funds = self._get_affected_funds(activities, valuations)
+            affected_portfolios = set()  # Track portfolios that need IRR recalculation
+            
             if affected_funds:
-                logger.info("🧮 Phase 3: Triggering IRR recalculations...")
+                logger.info("🧮 Phase 3: Triggering fund-level IRR recalculations...")
                 for fund_id, dates in affected_funds.items():
+                    # Get portfolio_id for this fund to track portfolio-level recalculation
+                    fund_info = self.db.table("portfolio_funds")\
+                        .select("portfolio_id")\
+                        .eq("id", fund_id)\
+                        .execute()
+                    
+                    if fund_info.data:
+                        portfolio_id = fund_info.data[0]["portfolio_id"]
+                        affected_portfolios.add(portfolio_id)
+                    
                     for date in dates:
-                        await self._recalculate_irr(fund_id, date)
+                        await self._recalculate_fund_irr(fund_id, date)
                         result["irr_calculations"] += 1
-                logger.info(f"✅ Phase 3 Complete: {result['irr_calculations']} IRR calculations triggered")
+                logger.info(f"✅ Phase 3 Complete: {result['irr_calculations']} fund IRR calculations triggered")
+                
+                # Phase 4: Trigger portfolio-level IRR recalculation for affected portfolios
+                if affected_portfolios:
+                    logger.info("🏢 Phase 4: Triggering portfolio-level IRR recalculations...")
+                    for portfolio_id in affected_portfolios:
+                        # Find the earliest date affected for this portfolio
+                        earliest_date = self._get_earliest_date_for_portfolio(portfolio_id, affected_funds)
+                        if earliest_date:
+                            portfolio_irr_count = await self._recalculate_portfolio_irr(portfolio_id, earliest_date)
+                            result["portfolio_irr_recalculations"] += portfolio_irr_count
+                    logger.info(f"✅ Phase 4 Complete: {result['portfolio_irr_recalculations']} portfolio IRR recalculations triggered")
             
             logger.info("🎉 Backend Transaction: All phases completed successfully")
             
@@ -137,10 +161,10 @@ class TransactionCoordinator:
             logger.error(f"❌ Failed to save valuation: {str(e)}")
             raise
     
-    async def _recalculate_irr(self, fund_id: int, date: str) -> None:
+    async def _recalculate_fund_irr(self, fund_id: int, date: str) -> None:
         """Trigger IRR recalculation for a specific fund and date"""
         try:
-            logger.info(f"🧮 Recalculating IRR for fund {fund_id} on {date}")
+            logger.info(f"🧮 Recalculating fund IRR for fund {fund_id} on {date}")
             
             # Use the existing IRR calculation function
             irr_result = await calculate_single_portfolio_fund_irr(
@@ -150,13 +174,77 @@ class TransactionCoordinator:
             )
             
             if irr_result.get("success"):
-                logger.info(f"✅ IRR recalculated successfully for fund {fund_id}: {irr_result.get('irr_percentage', 0)}%")
+                logger.info(f"✅ Fund IRR recalculated successfully for fund {fund_id}: {irr_result.get('irr_percentage', 0)}%")
             else:
-                logger.warning(f"⚠️ IRR recalculation failed for fund {fund_id}: {irr_result.get('error', 'Unknown error')}")
+                logger.warning(f"⚠️ Fund IRR recalculation failed for fund {fund_id}: {irr_result.get('error', 'Unknown error')}")
                 
         except Exception as e:
-            logger.error(f"❌ IRR recalculation failed for fund {fund_id}: {str(e)}")
+            logger.error(f"❌ Fund IRR recalculation failed for fund {fund_id}: {str(e)}")
             # Don't raise - IRR calculation failure shouldn't fail the entire transaction
+
+    async def _recalculate_portfolio_irr(self, portfolio_id: int, start_date: str) -> int:
+        """
+        Trigger portfolio-level IRR recalculation from a start date onwards.
+        Uses the same logic as in holding_activity_logs.py
+        
+        Args:
+            portfolio_id: The portfolio ID
+            start_date: Only recalculate portfolio IRR values from this date onwards (YYYY-MM-DD format)
+            
+        Returns:
+            The number of portfolio IRR values processed (recalculated + created)
+        """
+        try:
+            logger.info(f"🏢 Recalculating portfolio-level IRR values for portfolio {portfolio_id} from {start_date} onwards")
+            
+            # Import the function from holding_activity_logs to avoid code duplication
+            from app.api.routes.holding_activity_logs import recalculate_portfolio_irr_values_from_date
+            
+            # Call the existing portfolio IRR recalculation function
+            portfolio_irr_count = await recalculate_portfolio_irr_values_from_date(
+                portfolio_id, start_date, self.db
+            )
+            
+            logger.info(f"✅ Portfolio IRR recalculation completed for portfolio {portfolio_id}: {portfolio_irr_count} values processed")
+            return portfolio_irr_count
+            
+        except Exception as e:
+            logger.error(f"❌ Portfolio IRR recalculation failed for portfolio {portfolio_id}: {str(e)}")
+            # Don't raise - IRR calculation failure shouldn't fail the entire transaction
+            return 0
+
+    def _get_earliest_date_for_portfolio(self, portfolio_id: int, affected_funds: Dict[int, List[str]]) -> Optional[str]:
+        """
+        Find the earliest date that affects a specific portfolio.
+        
+        Args:
+            portfolio_id: The portfolio ID to find dates for
+            affected_funds: Dictionary mapping fund_id to list of dates
+            
+        Returns:
+            The earliest date string (YYYY-MM-DD format) or None if no dates found
+        """
+        earliest_date = None
+        
+        # Get all funds for this portfolio
+        portfolio_funds = self.db.table("portfolio_funds")\
+            .select("id")\
+            .eq("portfolio_id", portfolio_id)\
+            .execute()
+        
+        if not portfolio_funds.data:
+            return None
+        
+        portfolio_fund_ids = [pf["id"] for pf in portfolio_funds.data]
+        
+        # Find the earliest date from affected funds that belong to this portfolio
+        for fund_id, dates in affected_funds.items():
+            if fund_id in portfolio_fund_ids:
+                for date in dates:
+                    if earliest_date is None or date < earliest_date:
+                        earliest_date = date
+        
+        return earliest_date
     
     def _get_affected_funds(self, activities: List[Dict[str, Any]], valuations: List[Dict[str, Any]]) -> Dict[int, List[str]]:
         """

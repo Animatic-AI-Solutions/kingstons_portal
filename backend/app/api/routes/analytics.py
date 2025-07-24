@@ -1072,13 +1072,14 @@ async def get_client_risks(db = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}") 
 
 @router.get("/analytics/portfolio/{portfolio_id}/irr")
-async def calculate_portfolio_irr(portfolio_id: int, db = Depends(get_db)):
+async def get_portfolio_irr(portfolio_id: int, db = Depends(get_db)):
     """
-    Calculate the weighted average IRR for a specific portfolio.
-    This is done by:
-    1. Finding all portfolio funds for the portfolio
-    2. For each portfolio fund, getting its most recent IRR value and amount invested
-    3. Calculating weighted average IRR using amount_invested as weights
+    Get the latest portfolio IRR from the portfolio_irr_values table.
+    This uses the correct aggregated cash flow analysis approach that considers
+    all portfolio funds together, rather than a weighted average of individual fund IRRs.
+    
+    The portfolio IRR values are calculated and stored by the portfolio IRR recalculation
+    process using the proper cash flow separation logic.
     """
     try:
         # Check if portfolio exists
@@ -1086,59 +1087,68 @@ async def calculate_portfolio_irr(portfolio_id: int, db = Depends(get_db)):
         if not portfolio_check.data:
             raise HTTPException(status_code=404, detail=f"Portfolio with ID {portfolio_id} not found")
         
-        # Get all portfolio funds for the portfolio
-        portfolio_funds_result = db.table("portfolio_funds").select("*").eq("portfolio_id", portfolio_id).execute()
+        # Get the latest portfolio IRR from the portfolio_irr_values table
+        logger.info(f"📊 [ANALYTICS DEBUG] Querying portfolio_irr_values for portfolio_id: {portfolio_id}")
         
-        if not portfolio_funds_result.data:
-            logger.info(f"No portfolio funds found for portfolio {portfolio_id}")
-            return {"portfolio_id": portfolio_id, "irr": 0}
-            
-        all_irr_values = []
-        all_weights = []  # Store amount_invested for each IRR value
-        portfolio_fund_count = len(portfolio_funds_result.data)
+        latest_irr_result = db.table("portfolio_irr_values")\
+            .select("irr_result, date")\
+            .eq("portfolio_id", portfolio_id)\
+            .order("date", desc=True)\
+            .limit(1)\
+            .execute()
         
-        # For each portfolio fund, get the latest IRR value
-        for fund in portfolio_funds_result.data:
-            try:
-                # Get the latest IRR value for this fund
-                irr_result = db.table("portfolio_fund_irr_values")\
-                    .select("irr_result")\
-                    .eq("fund_id", fund["id"])\
-                    .order("date", desc=True)\
-                    .limit(1)\
-                    .execute()
-                
-                if irr_result.data and irr_result.data[0]["irr_result"] is not None:
-                    irr_value = float(irr_result.data[0]["irr_result"])
-                    weight = float(fund["amount_invested"] or 0)
-                    
-                    all_irr_values.append(irr_value)
-                    all_weights.append(weight)
-            except Exception as e:
-                logger.error(f"Error getting IRR for fund {fund['id']}: {str(e)}")
-                continue
+        logger.info(f"📊 [ANALYTICS DEBUG] Query result: {latest_irr_result}")
+        logger.info(f"📊 [ANALYTICS DEBUG] Query data: {latest_irr_result.data}")
         
-        # Calculate weighted average IRR
-        if all_irr_values and all_weights:
-            total_weight = sum(all_weights)
-            if total_weight > 0:
-                weighted_irr = sum(irr * (weight / total_weight) 
-                                for irr, weight in zip(all_irr_values, all_weights))
-            else:
-                weighted_irr = 0
+        if latest_irr_result.data and latest_irr_result.data[0]["irr_result"] is not None:
+            irr_value = float(latest_irr_result.data[0]["irr_result"])
+            logger.info(f"📊 Retrieved portfolio IRR for portfolio {portfolio_id}: {irr_value}% from date {latest_irr_result.data[0]['date']}")
         else:
-            weighted_irr = 0
+            logger.warning(f"📊 [ANALYTICS DEBUG] No portfolio IRR found - data: {latest_irr_result.data}")
+            if latest_irr_result.data:
+                logger.warning(f"📊 [ANALYTICS DEBUG] First record irr_result: {latest_irr_result.data[0].get('irr_result', 'KEY_NOT_FOUND')}")
+            
+            # Fallback: If no portfolio IRR values exist, try to calculate using the correct method
+            logger.warning(f"No portfolio IRR values found for portfolio {portfolio_id}, attempting to calculate using aggregated approach")
+            
+            # Get all portfolio funds for the portfolio to calculate IRR
+            portfolio_funds_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
+            
+            if not portfolio_funds_result.data:
+                logger.info(f"No portfolio funds found for portfolio {portfolio_id}")
+                return {"portfolio_id": portfolio_id, "irr": 0}
+            
+            # Use the fixed calculate_multiple_portfolio_funds_irr function
+            from app.api.routes.portfolio_funds import calculate_multiple_portfolio_funds_irr
+            
+            fund_ids = [fund["id"] for fund in portfolio_funds_result.data]
+            try:
+                irr_calculation_result = await calculate_multiple_portfolio_funds_irr(
+                    portfolio_fund_ids=fund_ids,
+                    irr_date=None,  # Use latest date
+                    db=db
+                )
+                
+                if irr_calculation_result.get("success"):
+                    irr_value = irr_calculation_result.get("irr_percentage", 0)
+                    logger.info(f"📊 Calculated portfolio IRR for portfolio {portfolio_id}: {irr_value}% using aggregated method")
+                else:
+                    irr_value = 0
+                    logger.warning(f"Failed to calculate portfolio IRR for portfolio {portfolio_id}")
+            except Exception as calc_error:
+                logger.error(f"Error calculating portfolio IRR for portfolio {portfolio_id}: {str(calc_error)}")
+                irr_value = 0
         
         return {
             "portfolio_id": portfolio_id,
-            "irr": weighted_irr
+            "irr": irr_value
         }
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error calculating portfolio IRR: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error calculating portfolio IRR: {str(e)}") 
+        logger.error(f"Error getting portfolio IRR: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error getting portfolio IRR: {str(e)}") 
 
 @router.get("/analytics/portfolio_template_distribution")
 async def get_portfolio_template_distribution(

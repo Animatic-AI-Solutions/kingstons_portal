@@ -646,6 +646,29 @@ FROM
     LEFT JOIN client_products cp ON cp.id = pop.product_id;
 
 -- =========================================================
+-- ADVISOR CLIENT SUMMARY VIEW
+-- =========================================================
+
+-- View for advisor dropdown selection with client group and product counts
+CREATE OR REPLACE VIEW public.advisor_client_summary AS
+SELECT 
+    p.id AS advisor_id,
+    p.first_name,
+    p.last_name,
+    CONCAT(p.first_name, ' ', p.last_name) AS full_name,
+    p.email,
+    COUNT(DISTINCT cg.id) AS client_groups_count,
+    COUNT(DISTINCT cp.id) AS total_products_count
+FROM public.profiles p
+LEFT JOIN public.client_groups cg ON cg.advisor = p.id::text
+LEFT JOIN public.client_products cp ON cp.client_id = cg.id AND cp.status = 'active'
+WHERE p.first_name IS NOT NULL 
+  AND p.last_name IS NOT NULL
+  AND p.email IS NOT NULL
+GROUP BY p.id, p.first_name, p.last_name, p.email
+ORDER BY p.first_name, p.last_name;
+
+-- =========================================================
 -- PORTFOLIO-LEVEL PERFORMANCE VIEWS
 -- =========================================================
 
