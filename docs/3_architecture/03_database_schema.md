@@ -243,11 +243,12 @@ To enhance application performance, the database leverages numerous pre-aggregat
 
 Key views include:
 
+-   **`advisor_client_summary`**: Provides a summary of advisors with their client group counts and total product counts for dropdown selection and advisor management.
+-   **`client_group_complete_data`**: A wide, aggregated view that powers the main client dashboard, containing all products, total valuations, and calculated revenue for a client group.
+-   **`company_revenue_analytics`**: Pre-calculates revenue metrics across the entire business for analytics dashboards.
+-   **`complete_fund_data`**: A comprehensive view joining funds with their latest market value, IRR, and activity summary.
 -   **`latest_portfolio_fund_valuations`**: Provides only the most recent valuation for each fund in a portfolio.
 -   **`latest_portfolio_irr_values`**: Provides the most recently calculated IRR for each portfolio.
--   **`complete_fund_data`**: A comprehensive view joining funds with their latest market value, IRR, and activity summary.
--   **`client_group_complete_data`**: A wide, aggregated view that powers the main client dashboard, containing all products, total valuations, and calculated revenue for a client group.
 -   **`products_list_view`**: A detailed view for displaying all client products with associated owner and portfolio information.
--   **`company_revenue_analytics`**: Pre-calculates revenue metrics across the entire business for analytics dashboards.
 -   **`provider_revenue_breakdown`**: A summary view that calculates the total revenue generated per provider across all client products.
 -   **`template_generation_weighted_risk`**: Calculates the overall weighted risk factor for a portfolio template based on the funds it contains.

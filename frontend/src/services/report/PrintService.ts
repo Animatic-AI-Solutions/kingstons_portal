@@ -636,7 +636,7 @@ export class PrintService implements IPrintService {
     const pageOptions = options.pageNumbers;
     
     // Generate current date string
-    const currentDate = new Date().toLocaleDateString('en-US', {
+    const currentDate = new Date().toLocaleDateString('en-GB', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'

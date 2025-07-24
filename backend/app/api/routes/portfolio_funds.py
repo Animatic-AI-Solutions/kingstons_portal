@@ -352,6 +352,9 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
                 
             monthly_amounts[month_index] += amount  # Add to any existing amount for that month
         
+        # Round amounts below a pence to zero to handle floating point precision errors
+        monthly_amounts = [0.0 if abs(amount) < 0.01 else amount for amount in monthly_amounts]
+        
         # Validate cash flow sequence
         final_value = monthly_amounts[-1]
         
@@ -1891,6 +1894,9 @@ async def calculate_portfolio_fund_irr(
                 monthly_amounts[month_idx] += amounts[i]
                 logger.info(f"Mapping flow: date={dates[i]}, amount={amounts[i]}, month_index={month_idx}")
             
+            # Round amounts below a pence to zero to handle floating point precision errors
+            monthly_amounts = [0.0 if abs(amount) < 0.01 else amount for amount in monthly_amounts]
+            
             # Log the cash flow sequence
             logger.info("\nCash flow sequence:")
             logger.info(f"Start date: {base_date.year}-{base_date.month:02d}")
@@ -2138,61 +2144,73 @@ async def calculate_multiple_portfolio_funds_irr(
             if len(fund_activities) > 3:
                 logger.error(f"🔴     ... and {len(fund_activities) - 3} more activities")
         
-        # Aggregate cash flows by month
-        cash_flows = {}
+        # 🔧 FIXED: Separate cash flows for activities (start of month) and valuations (end of month)
+        # This ensures proper IRR calculation even when activities and valuations are in the same calendar month
+        cash_flows_by_date = {}
         
+        # Process activities - these happen at the START of the month (day 1)
         for activity in activities:
             activity_date = datetime.fromisoformat(activity["activity_timestamp"].replace('Z', '+00:00')).date()
-            month_key = activity_date.replace(day=1)
+            # Activities happen at START of month
+            activity_start_key = activity_date.replace(day=1)
             
-            if month_key not in cash_flows:
-                cash_flows[month_key] = 0.0
+            if activity_start_key not in cash_flows_by_date:
+                cash_flows_by_date[activity_start_key] = 0.0
             
             # Apply sign conventions based on activity type
             amount = float(activity["amount"])
             activity_type = activity["activity_type"]
             
             if any(keyword in activity_type.lower() for keyword in ["investment"]):
-                cash_flows[month_key] -= amount  # Negative for investments
+                cash_flows_by_date[activity_start_key] -= amount  # Negative for investments
             elif activity_type.lower() in ["taxuplift"]:
-                cash_flows[month_key] -= amount  # Tax uplift = negative (inflow)
+                cash_flows_by_date[activity_start_key] -= amount  # Tax uplift = negative (inflow)
             elif activity_type.lower() in ["productswitchin"]:
-                cash_flows[month_key] -= amount  # Product switch in = negative (money out)
+                cash_flows_by_date[activity_start_key] -= amount  # Product switch in = negative (money out)
             elif activity_type.lower() in ["fundswitchin"]:
-                cash_flows[month_key] -= amount  # Fund switch in = negative (money coming into fund)
+                cash_flows_by_date[activity_start_key] -= amount  # Fund switch in = negative (money coming into fund)
             elif any(keyword in activity_type.lower() for keyword in ["withdrawal"]):
-                cash_flows[month_key] += amount  # Positive for withdrawals
+                cash_flows_by_date[activity_start_key] += amount  # Positive for withdrawals
             elif activity_type.lower() in ["productswitchout"]:
-                cash_flows[month_key] += amount  # Product switch out = positive (money in)
+                cash_flows_by_date[activity_start_key] += amount  # Product switch out = positive (money in)
             elif activity_type.lower() in ["fundswitchout"]:
-                cash_flows[month_key] += amount  # Fund switch out = positive (money leaving fund)
+                cash_flows_by_date[activity_start_key] += amount  # Fund switch out = positive (money leaving fund)
             elif any(keyword in activity_type.lower() for keyword in ["fee", "charge", "expense"]):
-                cash_flows[month_key] += amount  # Positive for fees (money out)
+                cash_flows_by_date[activity_start_key] += amount  # Positive for fees (money out)
             elif any(keyword in activity_type.lower() for keyword in ["dividend", "interest", "capital gain"]):
-                cash_flows[month_key] -= amount  # Negative for reinvested gains
+                cash_flows_by_date[activity_start_key] -= amount  # Negative for reinvested gains
             else:
                 logger.warning(f"Unknown activity type: {activity['activity_type']}, treating as neutral (amount={amount})")
         
-        # Add final valuations to the VALUATION MONTH (representing end-of-month value)
-        # Valuations are assumed to represent the value at the end of the valuation month
-        # Activities are assumed to happen at the start of the month
-        # Both should be combined in the same month for correct IRR calculation
-        
+        # Process valuations - these happen at the END of the month (last day)
         # Calculate total valuation, treating None values as 0 for calculation purposes
         total_valuation = sum(v for v in fund_valuations.values() if v is not None)
         
         # EDGE CASE HANDLING: For zero total valuation, omit final valuations completely
         # This allows IRR calculation to proceed using only activities for fully exited funds
-        if total_valuation == 0:
-            pass  # Omit final valuations for fully exited funds
-        else:
-            # Add final valuations to the valuation month itself, not an artificial later period
-            # This ensures correct timing: activities at month start + valuation at month end = combined month cash flow
-            valuation_month_key = irr_date_obj.replace(day=1)
+        if total_valuation > 0:
+            # Valuations happen at END of month - use last day of the month for separation
+            valuation_month = irr_date_obj.replace(day=1)
+            # Find last day of the month
+            if valuation_month.month == 12:
+                next_month = valuation_month.replace(year=valuation_month.year + 1, month=1)
+            else:
+                next_month = valuation_month.replace(month=valuation_month.month + 1)
+            last_day_of_month = (next_month - timedelta(days=1))
             
-            if valuation_month_key not in cash_flows:
-                cash_flows[valuation_month_key] = 0.0
-            cash_flows[valuation_month_key] += total_valuation  # Include final value in the same month
+            # Use the last day as the key to ensure it's separate from start-of-month activities
+            valuation_end_key = last_day_of_month
+            
+            if valuation_end_key not in cash_flows_by_date:
+                cash_flows_by_date[valuation_end_key] = 0.0
+            cash_flows_by_date[valuation_end_key] += total_valuation  # Include final value at end of month
+        
+        logger.info(f"💰 DEBUG: Separated cash flows by date:")
+        for date_key, amount in sorted(cash_flows_by_date.items()):
+            logger.info(f"💰 DEBUG: {date_key}: £{amount}")
+            
+        # Convert to the format expected by IRR calculation
+        cash_flows = cash_flows_by_date
         
         # Check if we have no activities (only valuations)
         if len(activities) == 0:
@@ -2255,7 +2273,16 @@ async def calculate_multiple_portfolio_funds_irr(
             "days_in_period": days_in_period
         }
         
-        # Cache the result for future use
+
+        # 🔴 DEBUG: Final result
+        logger.error(f"🔴 ✅ MULTIPLE FUNDS IRR CALCULATION COMPLETE")
+        logger.error(f"🔴 🎯 FINAL RESULT: {result['irr_percentage']}%")
+        
+        # Cache the result for future use (include cash flows and fund valuations for uniqueness)
+        cash_flow_values = [cash_flows[month] for month in sorted(cash_flows.keys())]
+        # Round amounts below a pence to zero to handle floating point precision errors
+        cash_flow_values = [0.0 if abs(amount) < 0.01 else amount for amount in cash_flow_values]
+
         await _irr_cache.set(
             portfolio_fund_ids=portfolio_fund_ids,
             calculation_date=irr_date,
@@ -2659,6 +2686,8 @@ async def calculate_single_portfolio_fund_irr(
         
         # Cache the single fund IRR result for future use (include cash flows for uniqueness)
         cash_flow_values = [cash_flows[month] for month in sorted(cash_flows.keys())]
+        # Round amounts below a pence to zero to handle floating point precision errors
+        cash_flow_values = [0.0 if abs(amount) < 0.01 else amount for amount in cash_flow_values]
         await _irr_cache.set(
             portfolio_fund_ids=[portfolio_fund_id],
             result=final_result,
@@ -2670,6 +2699,8 @@ async def calculate_single_portfolio_fund_irr(
         
         # Cache the single fund IRR result for future use (include cash flows for uniqueness)
         cash_flow_values = [cash_flows[month] for month in sorted(cash_flows.keys())]
+        # Round amounts below a pence to zero to handle floating point precision errors
+        cash_flow_values = [0.0 if abs(amount) < 0.01 else amount for amount in cash_flow_values]
         await _irr_cache.set(
             portfolio_fund_ids=[portfolio_fund_id],
             result=final_result,

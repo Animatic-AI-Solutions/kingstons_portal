@@ -209,9 +209,13 @@ async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, acti
             common_dates = []
         
         # Step 7: Recalculate portfolio-level IRR values from the activity date onwards
+        logger.info(f"🏢 [MAIN RECALC] Step 7: Starting portfolio-level IRR recalculation for portfolio {portfolio_id} from {activity_date}")
+        
         portfolio_irr_recalculated = await recalculate_portfolio_irr_values_from_date(
             portfolio_id, activity_date, db
         )
+        
+        logger.info(f"🏢 [MAIN RECALC] Step 7 Complete: Portfolio IRR recalculation returned {portfolio_irr_recalculated} processed values")
         
         result = {
             "success": True,
@@ -224,7 +228,7 @@ async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, acti
             "common_dates_found": len(common_dates)
         }
         
-        # IRR recalculation completed successfully
+        logger.info(f"🎉 [MAIN RECALC] IRR recalculation completed successfully: {result}")
         return result
         
     except Exception as e:
@@ -354,6 +358,51 @@ async def find_common_valuation_dates_from_date(fund_ids: List[int], start_date:
         return []
 
 
+async def calculate_portfolio_valuation_for_date(portfolio_id: int, date: str, db) -> float:
+    """
+    Calculate total portfolio valuation for a specific date by summing fund valuations.
+    
+    Args:
+        portfolio_id: The portfolio ID
+        date: Date in YYYY-MM-DD format
+        db: Database connection
+    
+    Returns:
+        Total portfolio valuation as float, or 0.0 if no valuations found
+    """
+    try:
+        # Get all portfolio funds for this portfolio
+        portfolio_funds = db.table("portfolio_funds")\
+            .select("id")\
+            .eq("portfolio_id", portfolio_id)\
+            .execute()
+        
+        if not portfolio_funds.data:
+            logger.warning(f"No portfolio funds found for portfolio {portfolio_id}")
+            return 0.0
+        
+        fund_ids = [pf["id"] for pf in portfolio_funds.data]
+        
+        # Get fund valuations for this date
+        fund_valuations = db.table("portfolio_fund_valuations")\
+            .select("valuation")\
+            .in_("portfolio_fund_id", fund_ids)\
+            .eq("valuation_date", date)\
+            .execute()
+        
+        if not fund_valuations.data:
+            logger.warning(f"No fund valuations found for portfolio {portfolio_id} on {date}")
+            return 0.0
+        
+        total_valuation = sum(float(fv["valuation"]) for fv in fund_valuations.data)
+        logger.info(f"Calculated portfolio valuation for portfolio {portfolio_id} on {date}: {total_valuation}")
+        return total_valuation
+        
+    except Exception as e:
+        logger.error(f"Error calculating portfolio valuation for portfolio {portfolio_id} on {date}: {str(e)}")
+        return 0.0
+
+
 async def recalculate_portfolio_irr_values_from_date(portfolio_id: int, start_date: str, db) -> int:
     """
     Recalculate portfolio-level IRR values from a start date onwards.
@@ -368,7 +417,7 @@ async def recalculate_portfolio_irr_values_from_date(portfolio_id: int, start_da
         The number of portfolio IRR values processed (recalculated + created)
     """
     try:
-        logger.info(f"Recalculating portfolio-level IRR values for portfolio {portfolio_id} from {start_date} onwards")
+        logger.info(f"🏢 [PORTFOLIO IRR RECALC] Starting portfolio-level IRR recalculation for portfolio {portfolio_id} from {start_date} onwards")
         
         # Get all funds for this portfolio (active + inactive for historical accuracy)
         portfolio_funds = db.table("portfolio_funds")\
@@ -377,10 +426,11 @@ async def recalculate_portfolio_irr_values_from_date(portfolio_id: int, start_da
             .execute()
         
         if not portfolio_funds.data:
-            logger.warning(f"No portfolio funds found for portfolio {portfolio_id}")
+            logger.warning(f"🏢 [PORTFOLIO IRR RECALC] No portfolio funds found for portfolio {portfolio_id}")
             return 0
         
         all_fund_ids = [pf["id"] for pf in portfolio_funds.data]
+        logger.info(f"🏢 [PORTFOLIO IRR RECALC] Found {len(all_fund_ids)} funds for portfolio {portfolio_id}: {all_fund_ids}")
         
         # Get existing portfolio IRR values from start date onwards
         existing_portfolio_irr = db.table("portfolio_irr_values")\
@@ -390,11 +440,16 @@ async def recalculate_portfolio_irr_values_from_date(portfolio_id: int, start_da
             .order("date", desc=True)\
             .execute()
         
+        logger.info(f"🏢 [PORTFOLIO IRR RECALC] Found {len(existing_portfolio_irr.data) if existing_portfolio_irr.data else 0} existing portfolio IRR values from {start_date} onwards")
+        
         recalculated_count = 0
         
         # Recalculate each existing portfolio IRR value
         for portfolio_irr_record in existing_portfolio_irr.data:
             irr_date = portfolio_irr_record["date"].split('T')[0]  # Ensure YYYY-MM-DD format
+            old_irr_value = portfolio_irr_record["irr_result"]
+            
+            logger.info(f"🏢 [PORTFOLIO IRR RECALC] Recalculating existing portfolio IRR for date {irr_date} (current value: {old_irr_value}%)")
             
             # Calculate new portfolio IRR using multiple funds endpoint
             portfolio_irr_result = await calculate_multiple_portfolio_funds_irr(
@@ -412,15 +467,15 @@ async def recalculate_portfolio_irr_values_from_date(portfolio_id: int, start_da
                     .eq("id", portfolio_irr_record["id"])\
                     .execute()
                 
-                logger.info(f"Updated portfolio IRR for date {irr_date}: {new_portfolio_irr}%")
+                logger.info(f"🏢 [PORTFOLIO IRR RECALC] ✅ Updated portfolio IRR for date {irr_date}: {old_irr_value}% → {new_portfolio_irr}%")
                 recalculated_count += 1
             else:
-                logger.warning(f"Failed to recalculate portfolio IRR for date {irr_date}")
+                logger.warning(f"🏢 [PORTFOLIO IRR RECALC] ⚠️ Failed to recalculate portfolio IRR for date {irr_date}: {portfolio_irr_result.get('error', 'Unknown error')}")
         
         # NEW: Find common valuation dates and create portfolio IRR entries where they don't exist
         if len(all_fund_ids) > 1:
             common_dates = await find_common_valuation_dates_from_date(all_fund_ids, start_date, db)
-            logger.info(f"Found {len(common_dates)} common valuation dates from {start_date} onwards: {common_dates}")
+            logger.info(f"🏢 [PORTFOLIO IRR RECALC] Found {len(common_dates)} common valuation dates from {start_date} onwards: {common_dates}")
             
             created_count = 0
             for common_date in common_dates:
@@ -432,6 +487,8 @@ async def recalculate_portfolio_irr_values_from_date(portfolio_id: int, start_da
                     .execute()
                 
                 if not existing_check.data:
+                    logger.info(f"🏢 [PORTFOLIO IRR RECALC] Creating new portfolio IRR entry for common date {common_date}")
+                    
                     # Create new portfolio IRR entry for this common date
                     portfolio_irr_result = await calculate_multiple_portfolio_funds_irr(
                         portfolio_fund_ids=all_fund_ids,
@@ -451,30 +508,57 @@ async def recalculate_portfolio_irr_values_from_date(portfolio_id: int, start_da
                         
                         portfolio_valuation_id = portfolio_valuation_result.data[0]["id"] if portfolio_valuation_result.data else None
                         
+                        # VALIDATION: Don't create IRR without portfolio valuation
+                        if portfolio_valuation_id is None:
+                            logger.warning(f"🏢 [PORTFOLIO IRR RECALC] No portfolio valuation found for portfolio {portfolio_id} on {common_date}. Creating portfolio valuation first...")
+                            
+                            # Calculate portfolio valuation by summing fund valuations
+                            total_valuation = await calculate_portfolio_valuation_for_date(portfolio_id, common_date, db)
+                            
+                            if total_valuation > 0:
+                                portfolio_valuation_data = {
+                                    "portfolio_id": portfolio_id,
+                                    "valuation_date": common_date,
+                                    "valuation": total_valuation
+                                }
+                                
+                                valuation_create_result = db.table("portfolio_valuations").insert(portfolio_valuation_data).execute()
+                                if valuation_create_result.data:
+                                    portfolio_valuation_id = valuation_create_result.data[0]["id"]
+                                    logger.info(f"🏢 [PORTFOLIO IRR RECALC] Created missing portfolio valuation {portfolio_valuation_id} for portfolio {portfolio_id}")
+                                else:
+                                    logger.error(f"🏢 [PORTFOLIO IRR RECALC] Failed to create portfolio valuation for portfolio {portfolio_id} on {common_date}")
+                                    continue  # Skip IRR creation if we can't create valuation
+                            else:
+                                logger.error(f"🏢 [PORTFOLIO IRR RECALC] Cannot calculate portfolio valuation for portfolio {portfolio_id} on {common_date} - no fund valuations found")
+                                continue  # Skip IRR creation
+                        
                         portfolio_irr_data = {
                             "portfolio_id": portfolio_id,
                             "irr_result": float(portfolio_irr_percentage),
                             "date": common_date,
-                            "portfolio_valuation_id": portfolio_valuation_id
+                            "portfolio_valuation_id": portfolio_valuation_id  # Now guaranteed to be not None
                         }
                         
                         db.table("portfolio_irr_values").insert(portfolio_irr_data).execute()
-                        logger.info(f"Created new portfolio IRR entry for date {common_date}: {portfolio_irr_percentage}%")
+                        logger.info(f"🏢 [PORTFOLIO IRR RECALC] ✅ Created new portfolio IRR entry for date {common_date}: {portfolio_irr_percentage}%")
                         created_count += 1
                     else:
-                        logger.warning(f"Failed to calculate portfolio IRR for common date {common_date}")
+                        logger.warning(f"🏢 [PORTFOLIO IRR RECALC] ⚠️ Failed to calculate portfolio IRR for common date {common_date}: {portfolio_irr_result.get('error', 'Unknown error')}")
                 else:
-                    logger.info(f"Portfolio IRR already exists for date {common_date}, skipping creation")
+                    logger.info(f"🏢 [PORTFOLIO IRR RECALC] Portfolio IRR already exists for date {common_date}, skipping creation")
             
             total_processed = recalculated_count + created_count
-            logger.info(f"Portfolio IRR processing complete: {recalculated_count} recalculated, {created_count} created, {total_processed} total")
+            logger.info(f"🏢 [PORTFOLIO IRR RECALC] ✅ Portfolio IRR processing complete: {recalculated_count} recalculated, {created_count} created, {total_processed} total")
             return total_processed
         else:
-            logger.info(f"Only {len(all_fund_ids)} funds, skipping portfolio IRR creation for common dates")
+            logger.info(f"🏢 [PORTFOLIO IRR RECALC] Only {len(all_fund_ids)} funds, skipping portfolio IRR creation for common dates")
             return recalculated_count
         
     except Exception as e:
-        logger.error(f"Error recalculating portfolio IRR values from date: {str(e)}")
+        logger.error(f"🏢 [PORTFOLIO IRR RECALC] ❌ Error recalculating portfolio IRR values from date: {str(e)}")
+        import traceback
+        logger.error(f"🏢 [PORTFOLIO IRR RECALC] Traceback: {traceback.format_exc()}")
         return 0
 
 router = APIRouter()

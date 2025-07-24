@@ -1854,8 +1854,12 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   const calculateActivityTypeTotalAllTime = (activityType: string, month: string): number => {
     let total = 0;
     
-    // Include activities from displayed funds
+    // Include activities from displayed funds (excluding virtual "Previous Funds" entry)
     funds.forEach(fund => {
+      // Skip virtual "Previous Funds" entry (id: -1) to avoid double counting
+      // The actual inactive fund activities are processed separately via inactiveFundsForTotals
+      if (fund.id === -1) return;
+      
       const cellKey = `${fund.id}-${month}-${activityType}`;
       const cellValue = cellValuesCache.get(cellKey) || '';
       const numericValue = parseFloat(cellValue.replace(/,/g, '')) || 0;

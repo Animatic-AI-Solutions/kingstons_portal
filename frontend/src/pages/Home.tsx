@@ -221,6 +221,7 @@ const Home: React.FC = () => {
                   <DataTable
                   title="Top Funds"
                   data={funds?.slice(0, 5) || []}
+                  totalAmount={funds?.reduce((sum, fund) => sum + fund.amount, 0) || 0}
                   />
               </div>
               
@@ -229,6 +230,7 @@ const Home: React.FC = () => {
                 <DataTable
                   title="Top Providers"
                   data={providers?.slice(0, 5) || []}
+                  totalAmount={providers?.reduce((sum, provider) => sum + provider.amount, 0) || 0}
                 />
               </div>
               
@@ -237,6 +239,7 @@ const Home: React.FC = () => {
                   <DataTable
                   title="Top Templates"
                   data={templates?.slice(0, 5) || []}
+                  totalAmount={templates?.reduce((sum, template) => sum + template.amount, 0) || 0}
                 />
               </div>
             </div>

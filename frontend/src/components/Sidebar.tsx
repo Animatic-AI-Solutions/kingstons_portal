@@ -111,6 +111,7 @@ const Sidebar: React.FC = () => {
         </svg>
       )
     },
+
     {
       type: 'link',
       path: '/report-generator',

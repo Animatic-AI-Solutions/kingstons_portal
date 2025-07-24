@@ -1072,13 +1072,14 @@ async def get_client_risks(db = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}") 
 
 @router.get("/analytics/portfolio/{portfolio_id}/irr")
-async def calculate_portfolio_irr(portfolio_id: int, db = Depends(get_db)):
+async def get_portfolio_irr(portfolio_id: int, db = Depends(get_db)):
     """
-    Calculate the weighted average IRR for a specific portfolio.
-    This is done by:
-    1. Finding all portfolio funds for the portfolio
-    2. For each portfolio fund, getting its most recent IRR value and amount invested
-    3. Calculating weighted average IRR using amount_invested as weights
+    Get the latest portfolio IRR from the portfolio_irr_values table.
+    This uses the correct aggregated cash flow analysis approach that considers
+    all portfolio funds together, rather than a weighted average of individual fund IRRs.
+    
+    The portfolio IRR values are calculated and stored by the portfolio IRR recalculation
+    process using the proper cash flow separation logic.
     """
     try:
         # Check if portfolio exists
@@ -1086,59 +1087,68 @@ async def calculate_portfolio_irr(portfolio_id: int, db = Depends(get_db)):
         if not portfolio_check.data:
             raise HTTPException(status_code=404, detail=f"Portfolio with ID {portfolio_id} not found")
         
-        # Get all portfolio funds for the portfolio
-        portfolio_funds_result = db.table("portfolio_funds").select("*").eq("portfolio_id", portfolio_id).execute()
+        # Get the latest portfolio IRR from the portfolio_irr_values table
+        logger.info(f"📊 [ANALYTICS DEBUG] Querying portfolio_irr_values for portfolio_id: {portfolio_id}")
         
-        if not portfolio_funds_result.data:
-            logger.info(f"No portfolio funds found for portfolio {portfolio_id}")
-            return {"portfolio_id": portfolio_id, "irr": 0}
-            
-        all_irr_values = []
-        all_weights = []  # Store amount_invested for each IRR value
-        portfolio_fund_count = len(portfolio_funds_result.data)
+        latest_irr_result = db.table("portfolio_irr_values")\
+            .select("irr_result, date")\
+            .eq("portfolio_id", portfolio_id)\
+            .order("date", desc=True)\
+            .limit(1)\
+            .execute()
         
-        # For each portfolio fund, get the latest IRR value
-        for fund in portfolio_funds_result.data:
-            try:
-                # Get the latest IRR value for this fund
-                irr_result = db.table("portfolio_fund_irr_values")\
-                    .select("irr_result")\
-                    .eq("fund_id", fund["id"])\
-                    .order("date", desc=True)\
-                    .limit(1)\
-                    .execute()
-                
-                if irr_result.data and irr_result.data[0]["irr_result"] is not None:
-                    irr_value = float(irr_result.data[0]["irr_result"])
-                    weight = float(fund["amount_invested"] or 0)
-                    
-                    all_irr_values.append(irr_value)
-                    all_weights.append(weight)
-            except Exception as e:
-                logger.error(f"Error getting IRR for fund {fund['id']}: {str(e)}")
-                continue
+        logger.info(f"📊 [ANALYTICS DEBUG] Query result: {latest_irr_result}")
+        logger.info(f"📊 [ANALYTICS DEBUG] Query data: {latest_irr_result.data}")
         
-        # Calculate weighted average IRR
-        if all_irr_values and all_weights:
-            total_weight = sum(all_weights)
-            if total_weight > 0:
-                weighted_irr = sum(irr * (weight / total_weight) 
-                                for irr, weight in zip(all_irr_values, all_weights))
-            else:
-                weighted_irr = 0
+        if latest_irr_result.data and latest_irr_result.data[0]["irr_result"] is not None:
+            irr_value = float(latest_irr_result.data[0]["irr_result"])
+            logger.info(f"📊 Retrieved portfolio IRR for portfolio {portfolio_id}: {irr_value}% from date {latest_irr_result.data[0]['date']}")
         else:
-            weighted_irr = 0
+            logger.warning(f"📊 [ANALYTICS DEBUG] No portfolio IRR found - data: {latest_irr_result.data}")
+            if latest_irr_result.data:
+                logger.warning(f"📊 [ANALYTICS DEBUG] First record irr_result: {latest_irr_result.data[0].get('irr_result', 'KEY_NOT_FOUND')}")
+            
+            # Fallback: If no portfolio IRR values exist, try to calculate using the correct method
+            logger.warning(f"No portfolio IRR values found for portfolio {portfolio_id}, attempting to calculate using aggregated approach")
+            
+            # Get all portfolio funds for the portfolio to calculate IRR
+            portfolio_funds_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
+            
+            if not portfolio_funds_result.data:
+                logger.info(f"No portfolio funds found for portfolio {portfolio_id}")
+                return {"portfolio_id": portfolio_id, "irr": 0}
+            
+            # Use the fixed calculate_multiple_portfolio_funds_irr function
+            from app.api.routes.portfolio_funds import calculate_multiple_portfolio_funds_irr
+            
+            fund_ids = [fund["id"] for fund in portfolio_funds_result.data]
+            try:
+                irr_calculation_result = await calculate_multiple_portfolio_funds_irr(
+                    portfolio_fund_ids=fund_ids,
+                    irr_date=None,  # Use latest date
+                    db=db
+                )
+                
+                if irr_calculation_result.get("success"):
+                    irr_value = irr_calculation_result.get("irr_percentage", 0)
+                    logger.info(f"📊 Calculated portfolio IRR for portfolio {portfolio_id}: {irr_value}% using aggregated method")
+                else:
+                    irr_value = 0
+                    logger.warning(f"Failed to calculate portfolio IRR for portfolio {portfolio_id}")
+            except Exception as calc_error:
+                logger.error(f"Error calculating portfolio IRR for portfolio {portfolio_id}: {str(calc_error)}")
+                irr_value = 0
         
         return {
             "portfolio_id": portfolio_id,
-            "irr": weighted_irr
+            "irr": irr_value
         }
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error calculating portfolio IRR: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error calculating portfolio IRR: {str(e)}") 
+        logger.error(f"Error getting portfolio IRR: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error getting portfolio IRR: {str(e)}") 
 
 @router.get("/analytics/portfolio_template_distribution")
 async def get_portfolio_template_distribution(
@@ -1293,10 +1303,11 @@ async def get_dashboard_all_data(
             .execute()
         
         # 3. Get ALL reference data in parallel batch queries
-        funds_task = db.table("available_funds").select("id, fund_name").execute()
-        providers_task = db.table("available_providers").select("id, name").execute()
-        portfolios_task = db.table("portfolios").select("id, template_generation_id").execute()
-        templates_task = db.table("template_portfolio_generations").select("id, generation_name").execute()
+        # FIXED: Include ALL funds regardless of status to prevent exclusions
+        funds_task = db.table("available_funds").select("id, fund_name, status").execute()
+        providers_task = db.table("available_providers").select("id, name, status").execute()
+        portfolios_task = db.table("portfolios").select("id, template_generation_id, status").execute()
+        templates_task = db.table("template_portfolio_generations").select("id, generation_name, status").execute()
         client_products_task = db.table("client_products").select("id, portfolio_id, provider_id, status").eq("status", "active").execute()
         
         # Execute queries in parallel
@@ -1313,11 +1324,19 @@ async def get_dashboard_all_data(
         total_fum = 0
         total_from_investments = 0
         
-        # Create lookup dictionaries for O(1) access
+        # Create lookup dictionaries for O(1) access (FIXED: Include ALL funds/providers regardless of status)
         funds_lookup = {f["id"]: f["fund_name"] for f in funds_result.data} if funds_result.data else {}
         providers_lookup = {p["id"]: p["name"] for p in providers_result.data} if providers_result.data else {}
         templates_lookup = {t["id"]: t["generation_name"] for t in templates_result.data} if templates_result.data else {}
         portfolios_lookup = {p["id"]: p["template_generation_id"] for p in portfolios_result.data} if portfolios_result.data else {}
+        
+        # DEBUGGING: Log lookup sizes to identify the data inconsistency
+        logger.info(f"🔍 Lookup Dictionary Sizes:")
+        logger.info(f"   Funds Lookup: {len(funds_lookup)} funds")
+        logger.info(f"   Providers Lookup: {len(providers_lookup)} providers")
+        logger.info(f"   Templates Lookup: {len(templates_lookup)} templates")
+        logger.info(f"   Portfolios Lookup: {len(portfolios_lookup)} portfolios")
+        logger.info(f"   Portfolio Funds to Process: {len(portfolio_funds_result.data) if portfolio_funds_result.data else 0}")
         
         # Group client products by portfolio and provider for O(1) lookup
         portfolio_to_provider = {}
@@ -1327,29 +1346,54 @@ async def get_dashboard_all_data(
                     portfolio_to_provider[cp["portfolio_id"]] = cp["provider_id"]
         
         # 5. Process all portfolio funds in one pass (instead of nested loops)
+        # FIXED: Ensure consistent FUM totals across all distributions by including ALL valid portfolio funds
+        
+        # DEBUGGING: Track fund distribution issues
+        portfolio_funds_with_values = 0
+        portfolio_funds_with_fund_ids = 0
+        portfolio_funds_missing_fund_ids = 0
+        
         if portfolio_funds_result.data:
             for pf in portfolio_funds_result.data:
                 # Get current value (valuation preferred, amount_invested as fallback)
                 current_value = valuations_lookup.get(pf["id"]) or pf["amount_invested"] or 0
                 
                 if current_value > 0:
+                    portfolio_funds_with_values += 1
+                    
+                    # Track fund ID statistics
+                    if pf["available_funds_id"]:
+                        portfolio_funds_with_fund_ids += 1
+                    else:
+                        portfolio_funds_missing_fund_ids += 1
                     total_fum += current_value
                     
                     # Track amount_invested separately for fallback calculations
                     if pf["amount_invested"]:
                         total_from_investments += pf["amount_invested"]
                     
-                    # Aggregate by fund
+                    # Aggregate by fund (FIXED: Include ALL funds, even if missing from lookup)
                     fund_id = pf["available_funds_id"]
                     if fund_id and fund_id in funds_lookup:
                         fund_totals[fund_id] = fund_totals.get(fund_id, 0) + current_value
+                    else:
+                        # Include orphaned/unknown funds to maintain total consistency
+                        fund_totals["unknown_fund"] = fund_totals.get("unknown_fund", 0) + current_value
+                        # DEBUGGING: Log which portfolio funds are missing fund references
+                        if fund_id:
+                            logger.warning(f"🔍 Portfolio Fund {pf['id']} references missing fund_id: {fund_id} (£{current_value:,.2f})")
+                        else:
+                            logger.warning(f"🔍 Portfolio Fund {pf['id']} has NULL fund_id (£{current_value:,.2f})")
                     
-                    # Aggregate by provider
+                    # Aggregate by provider (FIXED: Include ALL funds, even if missing provider mapping)
                     provider_id = portfolio_to_provider.get(pf["portfolio_id"])
                     if provider_id and provider_id in providers_lookup:
                         provider_totals[provider_id] = provider_totals.get(provider_id, 0) + current_value
+                    else:
+                        # Include funds without provider mapping to maintain total consistency
+                        provider_totals["unassigned_provider"] = provider_totals.get("unassigned_provider", 0) + current_value
                     
-                    # Aggregate by template
+                    # Aggregate by template (FIXED: Include ALL funds, even if missing template mapping)
                     portfolio_id = pf["portfolio_id"]
                     if portfolio_id in portfolios_lookup:
                         template_id = portfolios_lookup[portfolio_id]
@@ -1357,6 +1401,12 @@ async def get_dashboard_all_data(
                             template_totals[template_id] = template_totals.get(template_id, 0) + current_value
                         elif not template_id:  # Bespoke portfolios (null template_id)
                             template_totals["bespoke"] = template_totals.get("bespoke", 0) + current_value
+                        else:
+                            # Template ID exists but not found in templates_lookup
+                            template_totals["unknown_template"] = template_totals.get("unknown_template", 0) + current_value
+                    else:
+                        # Portfolio not found in portfolios lookup
+                        template_totals["unassigned_template"] = template_totals.get("unassigned_template", 0) + current_value
         
         # 6. Calculate company IRR using optimized function (eliminates N+1 queries)
         company_irr = await calculate_company_irr(db)
@@ -1368,22 +1418,30 @@ async def get_dashboard_all_data(
         product_count_result = db.table("client_products").select("id").eq("status", "active").execute()
         total_products = len(product_count_result.data) if product_count_result.data else 0
         
-        # 7. Format response data efficiently
-        funds_list = [
-            {"id": str(fund_id), "name": funds_lookup[fund_id], "amount": amount}
-            for fund_id, amount in sorted(fund_totals.items(), key=lambda x: x[1], reverse=True)[:fund_limit]
-        ]
+        # 7. Format response data efficiently (FIXED: Handle unknown/unassigned categories)
+        funds_list = []
+        for fund_id, amount in sorted(fund_totals.items(), key=lambda x: x[1], reverse=True)[:fund_limit]:
+            if fund_id == "unknown_fund":
+                funds_list.append({"id": "unknown_fund", "name": "Unknown/Orphaned Funds", "amount": amount})
+            else:
+                funds_list.append({"id": str(fund_id), "name": funds_lookup[fund_id], "amount": amount})
         
-        providers_list = [
-            {"id": str(provider_id), "name": providers_lookup[provider_id], "amount": amount}
-            for provider_id, amount in sorted(provider_totals.items(), key=lambda x: x[1], reverse=True)[:provider_limit]
-        ]
+        providers_list = []
+        for provider_id, amount in sorted(provider_totals.items(), key=lambda x: x[1], reverse=True)[:provider_limit]:
+            if provider_id == "unassigned_provider":
+                providers_list.append({"id": "unassigned_provider", "name": "Unassigned Provider", "amount": amount})
+            else:
+                providers_list.append({"id": str(provider_id), "name": providers_lookup[provider_id], "amount": amount})
         
-        # Handle templates including bespoke
+        # Handle templates including bespoke and unknown categories (FIXED)
         template_items = []
         for template_id, amount in template_totals.items():
             if template_id == "bespoke":
                 template_items.append(("bespoke", "Bespoke Portfolios", amount))
+            elif template_id == "unknown_template":
+                template_items.append(("unknown_template", "Unknown Template", amount))
+            elif template_id == "unassigned_template":
+                template_items.append(("unassigned_template", "Unassigned Template", amount))
             elif template_id in templates_lookup:
                 template_items.append((template_id, templates_lookup[template_id], amount))
         
@@ -1396,6 +1454,34 @@ async def get_dashboard_all_data(
         
         # 8. Use total_fum from valuations, fallback to investments if needed
         final_fum = total_fum if total_fum > 0 else total_from_investments
+        
+        # FIXED: Log data consistency information for debugging
+        fund_distribution_total = sum(fund_totals.values())
+        provider_distribution_total = sum(provider_totals.values())
+        template_distribution_total = sum(template_totals.values())
+        
+        logger.info(f"📊 FUM Distribution Consistency Check:")
+        logger.info(f"   Total FUM: £{final_fum:,.2f}")
+        logger.info(f"   Fund Distribution Total: £{fund_distribution_total:,.2f}")
+        logger.info(f"   Provider Distribution Total: £{provider_distribution_total:,.2f}")
+        logger.info(f"   Template Distribution Total: £{template_distribution_total:,.2f}")
+        
+        # DEBUGGING: Log portfolio fund processing statistics
+        logger.info(f"🔍 Portfolio Fund Processing Statistics:")
+        logger.info(f"   Portfolio Funds with Values: {portfolio_funds_with_values}")
+        logger.info(f"   Portfolio Funds with Fund IDs: {portfolio_funds_with_fund_ids}")
+        logger.info(f"   Portfolio Funds missing Fund IDs: {portfolio_funds_missing_fund_ids}")
+        logger.info(f"   Fund Categories in totals: {len(fund_totals)}")
+        
+        # Log any unknown/unassigned categories for debugging
+        if "unknown_fund" in fund_totals:
+            logger.warning(f"⚠️  Unknown/Orphaned Funds: £{fund_totals['unknown_fund']:,.2f}")
+        if "unassigned_provider" in provider_totals:
+            logger.warning(f"⚠️  Unassigned Provider: £{provider_totals['unassigned_provider']:,.2f}")
+        if "unknown_template" in template_totals or "unassigned_template" in template_totals:
+            unknown_amt = template_totals.get('unknown_template', 0)
+            unassigned_amt = template_totals.get('unassigned_template', 0)
+            logger.warning(f"⚠️  Template Issues - Unknown: £{unknown_amt:,.2f}, Unassigned: £{unassigned_amt:,.2f}")
         
         response = {
             "metrics": {

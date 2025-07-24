@@ -5,7 +5,9 @@ from app.db.database import get_db
 from app.models.fund_valuation import FundValuationCreate, FundValuationUpdate, FundValuation, LatestFundValuationViewItem
 import logging
 
-# Import the IRR recalculation function
+# Import the IRR cascade service for comprehensive IRR management
+from app.services.irr_cascade_service import IRRCascadeService
+# Import the legacy IRR recalculation function (will be deprecated)
 from app.api.routes.holding_activity_logs import recalculate_irr_after_activity_change
 
 router = APIRouter()
@@ -154,134 +156,30 @@ async def create_fund_valuation(
                 updated_valuation = update_result.data[0]
                 
                 # ========================================================================
-                # NEW: Automatically recalculate IRR after updating existing valuation
+                # ENHANCED: Use comprehensive IRR cascade service for valuation updates
                 # ========================================================================
-                logger.info(f"🔍 VALUATION DEBUG (UPDATE): ===== ATTEMPTING IRR CALCULATION FOR UPDATE =====")
-                logger.info(f"🔍 VALUATION DEBUG (UPDATE): About to enter IRR calculation try block for fund {fund_valuation.portfolio_fund_id}")
+                logger.info(f"📈 [IRR CASCADE INTEGRATION] Triggering IRR calculation for existing valuation update")
                 
                 try:
                     # Get the valuation date for IRR recalculation
                     valuation_date = fund_valuation.valuation_date.isoformat().split('T')[0]
                     
-                    logger.info(f"🔍 VALUATION DEBUG (UPDATE): About to check for existing IRR for fund {fund_valuation.portfolio_fund_id}, date {valuation_date}")
+                    logger.info(f"📈 [IRR CASCADE] Using cascade service for fund {fund_valuation.portfolio_fund_id}, date {valuation_date}")
                     
-                    # ========================================================================
-                    # IMPORTANT: For proper IRR calculation, activities should be saved BEFORE valuations
-                    # This ensures the IRR calculation always has complete activity data
-                    # TODO: Consider adding transaction-level coordination to prevent race conditions
-                    # ========================================================================
+                    # Use the comprehensive cascade service for IRR calculation
+                    irr_service = IRRCascadeService(db)
+                    irr_result = await irr_service.handle_fund_valuation_creation_edit(
+                        fund_valuation.portfolio_fund_id, valuation_date
+                    )
                     
-                    # Check if IRR already exists for this fund and date
-                    existing_irr = db.table("portfolio_fund_irr_values")\
-                        .select("*")\
-                        .eq("fund_id", fund_valuation.portfolio_fund_id)\
-                        .eq("date", valuation_date)\
-                        .execute()
-                    
-                    logger.info(f"🔍 VALUATION DEBUG (UPDATE): Found {len(existing_irr.data) if existing_irr.data else 0} existing IRR records")
-                    
-                    if not existing_irr.data or len(existing_irr.data) == 0:
-                        logger.info(f"🔍 VALUATION DEBUG (UPDATE): ===== CREATING NEW IRR FOR UPDATE =====")
-                        logger.info(f"🔍 VALUATION DEBUG (UPDATE): About to create new IRR for fund {fund_valuation.portfolio_fund_id}")
-                        
-                        # Calculate IRR for this fund and date
-                        from app.api.routes.portfolio_funds import calculate_single_portfolio_fund_irr
-                        irr_result = await calculate_single_portfolio_fund_irr(
-                            portfolio_fund_id=fund_valuation.portfolio_fund_id,
-                            irr_date=valuation_date,
-                            db=db
-                        )
-                        
-                        if irr_result.get("success"):
-                            new_irr = irr_result.get("irr_percentage", 0.0)
-                            
-                            irr_data = {
-                                "fund_id": fund_valuation.portfolio_fund_id,
-                                "irr_result": float(new_irr),
-                                "date": valuation_date,
-                                "fund_valuation_id": updated_valuation.get("id")
-                            }
-                            
-                            logger.info(f"🔍 VALUATION DEBUG (UPDATE): About to insert IRR data: {irr_data}")
-                            insert_result = db.table("portfolio_fund_irr_values").insert(irr_data).execute()
-                            logger.info(f"🔍 VALUATION DEBUG (UPDATE): Successfully created new IRR: {insert_result.data}")
-                        else:
-                            logger.error(f"🔍 VALUATION DEBUG (UPDATE): IRR calculation failed: {irr_result}")
+                    if irr_result.get("success"):
+                        logger.info(f"📈 [IRR CASCADE] ✅ IRR calculation completed: {irr_result}")
                     else:
-                        logger.info(f"🔍 VALUATION DEBUG (UPDATE): ===== UPDATING EXISTING IRR FOR UPDATE =====")
-                        logger.info(f"🔍 VALUATION DEBUG (UPDATE): IRR already exists for {valuation_date}, updating existing IRR with new valuation data")
+                        logger.warning(f"📈 [IRR CASCADE] ⚠️ IRR calculation had issues: {irr_result}")
                         
-                        # Verify existing_irr.data is not empty and has expected structure
-                        if not existing_irr.data or len(existing_irr.data) == 0:
-                            logger.error(f"🔍 VALUATION DEBUG (UPDATE): Expected existing IRR data but found none")
-                        else:
-                            existing_irr_id = existing_irr.data[0].get("id")
-                            if not existing_irr_id:
-                                logger.error(f"🔍 VALUATION DEBUG (UPDATE): Existing IRR record has no ID")
-                            else:
-                                # Enhanced logging to track the fix
-                                logger.info(f"🔍 VALUATION DEBUG (UPDATE): Found existing IRR record with ID {existing_irr_id}")
-                                logger.info(f"🔍 VALUATION DEBUG (UPDATE): Current IRR value: {existing_irr.data[0].get('irr_result', 'Unknown')}%")
-                                logger.info(f"🔍 VALUATION DEBUG (UPDATE): About to recalculate IRR with new valuation: £{fund_valuation.valuation}")
-                                
-                                # Update existing IRR with new valuation data (mirror CREATE path logic)
-                                from app.api.routes.portfolio_funds import calculate_single_portfolio_fund_irr
-                                irr_result = await calculate_single_portfolio_fund_irr(
-                                    portfolio_fund_id=fund_valuation.portfolio_fund_id,
-                                    irr_date=valuation_date,
-                                    db=db
-                                )
-                                
-                                if irr_result.get("success"):
-                                    new_irr = irr_result.get("irr_percentage", 0.0)
-                                    update_result = db.table("portfolio_fund_irr_values")\
-                                        .update({"irr_result": float(new_irr)})\
-                                        .eq("id", existing_irr_id)\
-                                        .execute()
-                                    logger.info(f"🔍 VALUATION DEBUG (UPDATE): Updated existing IRR for {valuation_date}: {new_irr}%")
-                                    logger.info(f"🔍 VALUATION DEBUG (UPDATE): Update result: {update_result}")
-                                else:
-                                    logger.warning(f"🔍 VALUATION DEBUG (UPDATE): Failed to recalculate IRR for existing record: {irr_result.get('error', 'Unknown error')}")
-                
                 except Exception as e:
-                    # Don't fail the valuation update if IRR recalculation fails
-                    logger.error(f"🔍 VALUATION DEBUG (UPDATE): ===== IRR CALCULATION EXCEPTION FOR UPDATE =====")
-                    logger.error(f"🔍 VALUATION DEBUG (UPDATE): IRR calculation failed after valuation update: {str(e)}")
-                    logger.error(f"🔍 VALUATION DEBUG (UPDATE): Exception type: {type(e).__name__}")
-                    import traceback
-                    logger.error(f"🔍 VALUATION DEBUG (UPDATE): Traceback: {traceback.format_exc()}")
-                # ========================================================================
-                
-                logger.info(f"🔍 VALUATION DEBUG (UPDATE): ===== IRR CALCULATION END FOR UPDATE =====")
-                
-                # ========================================================================
-                # NEW: Check if this creates a common valuation date that needs portfolio IRR
-                # ========================================================================
-                logger.info(f"🔍 VALUATION DEBUG (UPDATE): ===== CHECKING PORTFOLIO IRR NEED =====")
-                try:
-                    # Get the portfolio ID for this fund
-                    portfolio_fund_result = db.table("portfolio_funds").select("portfolio_id").eq("id", fund_valuation.portfolio_fund_id).execute()
-                    if portfolio_fund_result.data:
-                        portfolio_id = portfolio_fund_result.data[0]["portfolio_id"]
-                        valuation_date = fund_valuation.valuation_date.isoformat().split('T')[0]
-                        
-                        logger.info(f"🔍 PORTFOLIO IRR (UPDATE): Checking if portfolio IRR should be recalculated for portfolio {portfolio_id} on date {valuation_date}")
-                        
-                        # Check if portfolio IRR should be recalculated for this date
-                        if await should_recalculate_portfolio_irr(portfolio_id, valuation_date, db):
-                            logger.info(f"🔍 PORTFOLIO IRR (UPDATE): Portfolio IRR recalculation needed for portfolio {portfolio_id} on date {valuation_date}")
-                            
-                            # Import and call the portfolio IRR calculation function
-                            from app.api.routes.portfolios import calculate_portfolio_irr
-                            portfolio_irr_result = await calculate_portfolio_irr(portfolio_id=portfolio_id, db=db)
-                            logger.info(f"🔍 PORTFOLIO IRR (UPDATE): Portfolio IRR calculation completed: {portfolio_irr_result.get('portfolio_irr', {}).get('calculated', False)}")
-                        else:
-                            logger.info(f"🔍 PORTFOLIO IRR (UPDATE): No portfolio IRR calculation needed for portfolio {portfolio_id} on date {valuation_date}")
-                    else:
-                        logger.error(f"🔍 PORTFOLIO IRR (UPDATE): Could not find portfolio for fund {fund_valuation.portfolio_fund_id}")
-                except Exception as e:
-                    # Don't fail the valuation update if portfolio IRR calculation fails
-                    logger.error(f"🔍 PORTFOLIO IRR (UPDATE): Portfolio IRR calculation failed after valuation update: {str(e)}")
+                    # Don't fail the valuation update if IRR calculation fails
+                    logger.error(f"📈 [IRR CASCADE] ❌ IRR calculation failed for existing valuation update: {str(e)}")
                 # ========================================================================
                 
                 logger.info(f"🔍 VALUATION EXIT (UPDATE): ===== UPDATE PATH COMPLETE =====")
@@ -312,145 +210,30 @@ async def create_fund_valuation(
         logger.info(f"🔍 VALUATION ENTRY: Successfully created fund valuation with ID {created_valuation.get('id')}")
         
         # ========================================================================
-        # NEW: Automatically create IRR after creating fund valuation
+        # ENHANCED: Use comprehensive IRR cascade service for new valuation creation
         # ========================================================================
-        logger.info(f"🔍 VALUATION DEBUG: ===== ATTEMPTING IRR CALCULATION =====")
-        logger.info(f"🔍 VALUATION DEBUG: About to enter IRR calculation try block for fund {fund_valuation.portfolio_fund_id}")
+        logger.info(f"📈 [IRR CASCADE INTEGRATION] Triggering IRR calculation for new valuation creation")
         
         try:
             # Get the valuation date for IRR calculation
             valuation_date = fund_valuation.valuation_date.isoformat().split('T')[0]
             
-            logger.info(f"🔍 VALUATION DEBUG: ===== IRR CALCULATION START =====")
-            logger.info(f"🔍 VALUATION DEBUG: ===== TRANSACTION COORDINATOR IRR CALCULATION =====")
-            logger.info(f"🔍 VALUATION DEBUG: About to check for existing IRR for fund {fund_valuation.portfolio_fund_id}, date {valuation_date}")
-            logger.info(f"🔍 VALUATION DEBUG: This is the definitive IRR calculation after both activity and valuation have been saved")
+            logger.info(f"📈 [IRR CASCADE] Using cascade service for fund {fund_valuation.portfolio_fund_id}, date {valuation_date}")
             
-            # ========================================================================
-            # TRANSACTION COORDINATION: Individual fund IRR calculation
-            # 
-            # With Transaction Coordinator implemented:
-            # 1. Activities are ALWAYS saved first (with skip_irr_calculation=true)
-            # 2. Valuations are saved second (this triggers the definitive IRR calculation)
-            # 3. This ensures IRR calculation always has complete activity AND valuation data
-            # ========================================================================
+            # Use the comprehensive cascade service for IRR calculation
+            irr_service = IRRCascadeService(db)
+            irr_result = await irr_service.handle_fund_valuation_creation_edit(
+                fund_valuation.portfolio_fund_id, valuation_date
+            )
             
-            # Check if IRR already exists for this fund and date
-            logger.info(f"🔍 VALUATION DEBUG: Querying existing IRR values for fund {fund_valuation.portfolio_fund_id}, date {valuation_date}")
-            existing_irr = db.table("portfolio_fund_irr_values")\
-                .select("*")\
-                .eq("fund_id", fund_valuation.portfolio_fund_id)\
-                .eq("date", valuation_date)\
-                .execute()
-            
-            logger.info(f"🔍 VALUATION DEBUG: Found {len(existing_irr.data) if existing_irr.data else 0} existing IRR records")
-            logger.info(f"🔍 VALUATION DEBUG: Existing IRR data: {existing_irr.data if existing_irr.data else 'None'}")
-            
-            if not existing_irr.data:
-                logger.info(f"🔍 VALUATION DEBUG: ===== CREATING NEW IRR =====")
-                logger.info(f"🔍 VALUATION DEBUG: About to create new IRR for fund {fund_valuation.portfolio_fund_id}")
-                # Create new IRR
-                from app.api.routes.portfolio_funds import calculate_single_portfolio_fund_irr
-                
-                logger.info(f"🔍 VALUATION DEBUG: Calling calculate_single_portfolio_fund_irr with fund_id={fund_valuation.portfolio_fund_id}, date={valuation_date}")
-                irr_result = await calculate_single_portfolio_fund_irr(
-                    portfolio_fund_id=fund_valuation.portfolio_fund_id,
-                    irr_date=valuation_date,
-                    db=db
-                )
-                
-                logger.info(f"🔍 VALUATION DEBUG: IRR calculation result: {irr_result}")
-                
-                if irr_result.get("success"):
-                    new_irr = irr_result.get("irr_percentage", 0.0)
-                    
-                    irr_data = {
-                        "fund_id": fund_valuation.portfolio_fund_id,
-                        "irr_result": float(new_irr),
-                        "date": valuation_date,
-                        "fund_valuation_id": created_valuation["id"]
-                    }
-                    
-                    logger.info(f"🔍 VALUATION DEBUG: About to insert IRR data: {irr_data}")
-                    insert_result = db.table("portfolio_fund_irr_values").insert(irr_data).execute()
-                    logger.info(f"🔍 VALUATION DEBUG: Successfully created new IRR: {insert_result.data}")
-                else:
-                    logger.error(f"🔍 VALUATION DEBUG: IRR calculation failed: {irr_result}")
+            if irr_result.get("success"):
+                logger.info(f"📈 [IRR CASCADE] ✅ IRR calculation completed: {irr_result}")
             else:
-                logger.info(f"🔍 VALUATION DEBUG: ===== UPDATING EXISTING IRR =====")
-                logger.info(f"🔍 VALUATION DEBUG: IRR already exists for {valuation_date}, updating existing IRR with new valuation data")
+                logger.warning(f"📈 [IRR CASCADE] ⚠️ IRR calculation had issues: {irr_result}")
                 
-                # Verify existing_irr.data is not empty and has expected structure
-                if not existing_irr.data or len(existing_irr.data) == 0:
-                    logger.error(f"🔍 VALUATION DEBUG: Expected existing IRR data but found none")
-                else:
-                    existing_irr_id = existing_irr.data[0].get("id")
-                    if not existing_irr_id:
-                        logger.error(f"🔍 VALUATION DEBUG: Existing IRR record has no ID")
-                    else:
-                        # Enhanced logging to track the fix
-                        logger.info(f"🔍 VALUATION DEBUG: Found existing IRR record with ID {existing_irr_id}")
-                        logger.info(f"🔍 VALUATION DEBUG: Current IRR value: {existing_irr.data[0].get('irr_result', 'Unknown')}%")
-                        logger.info(f"🔍 VALUATION DEBUG: About to recalculate IRR with new valuation: £{fund_valuation.valuation}")
-                        
-                        # Update existing IRR with new valuation data (mirror UPDATE path logic)
-                        from app.api.routes.portfolio_funds import calculate_single_portfolio_fund_irr
-                        irr_result = await calculate_single_portfolio_fund_irr(
-                            portfolio_fund_id=fund_valuation.portfolio_fund_id,
-                            irr_date=valuation_date,
-                            db=db
-                        )
-                        
-                        if irr_result.get("success"):
-                            new_irr = irr_result.get("irr_percentage", 0.0)
-                            update_result = db.table("portfolio_fund_irr_values")\
-                                .update({"irr_result": float(new_irr)})\
-                                .eq("id", existing_irr_id)\
-                                .execute()
-                            logger.info(f"🔍 VALUATION DEBUG: Updated existing IRR for {valuation_date}: {new_irr}%")
-                            logger.info(f"🔍 VALUATION DEBUG: Update result: {update_result}")
-                        else:
-                            logger.warning(f"🔍 VALUATION DEBUG: Failed to recalculate IRR for existing record: {irr_result.get('error', 'Unknown error')}")
         except Exception as e:
             # Don't fail the valuation creation if IRR calculation fails
-            logger.error(f"🔍 VALUATION DEBUG: ===== IRR CALCULATION EXCEPTION =====")
-            logger.error(f"🔍 VALUATION DEBUG: IRR calculation failed after valuation creation: {str(e)}")
-            logger.error(f"🔍 VALUATION DEBUG: Exception type: {type(e).__name__}")
-            import traceback
-            logger.error(f"🔍 VALUATION DEBUG: Traceback: {traceback.format_exc()}")
-        # ========================================================================
-        
-        logger.info(f"🔍 VALUATION DEBUG: ===== IRR CALCULATION END =====")
-        logger.info(f"🔍 VALUATION DEBUG: IRR calculation section completed for fund {fund_valuation.portfolio_fund_id}")
-        
-        # ========================================================================
-        # NEW: Check if this creates a common valuation date that needs portfolio IRR
-        # ========================================================================
-        logger.info(f"🔍 VALUATION DEBUG: ===== CHECKING PORTFOLIO IRR NEED =====")
-        try:
-            # Get the portfolio ID for this fund
-            portfolio_fund_result = db.table("portfolio_funds").select("portfolio_id").eq("id", fund_valuation.portfolio_fund_id).execute()
-            if portfolio_fund_result.data:
-                portfolio_id = portfolio_fund_result.data[0]["portfolio_id"]
-                valuation_date = fund_valuation.valuation_date.isoformat().split('T')[0]
-                
-                logger.info(f"🔍 PORTFOLIO IRR: Checking if portfolio IRR should be recalculated for portfolio {portfolio_id} on date {valuation_date}")
-                
-                # Check if portfolio IRR should be recalculated for this date
-                if await should_recalculate_portfolio_irr(portfolio_id, valuation_date, db):
-                    logger.info(f"🔍 PORTFOLIO IRR: Portfolio IRR recalculation needed for portfolio {portfolio_id} on date {valuation_date}")
-                    
-                    # Import and call the portfolio IRR calculation function
-                    from app.api.routes.portfolios import calculate_portfolio_irr
-                    portfolio_irr_result = await calculate_portfolio_irr(portfolio_id=portfolio_id, db=db)
-                    logger.info(f"🔍 PORTFOLIO IRR: Portfolio IRR calculation completed: {portfolio_irr_result.get('portfolio_irr', {}).get('calculated', False)}")
-                else:
-                    logger.info(f"🔍 PORTFOLIO IRR: No portfolio IRR calculation needed for portfolio {portfolio_id} on date {valuation_date}")
-            else:
-                logger.error(f"🔍 PORTFOLIO IRR: Could not find portfolio for fund {fund_valuation.portfolio_fund_id}")
-        except Exception as e:
-            # Don't fail the valuation creation if portfolio IRR calculation fails
-            logger.error(f"🔍 PORTFOLIO IRR: Portfolio IRR calculation failed after valuation creation: {str(e)}")
+            logger.error(f"📈 [IRR CASCADE] ❌ IRR calculation failed for new valuation creation: {str(e)}")
         # ========================================================================
             
         logger.info(f"🔍 VALUATION EXIT: ===== CREATE PATH COMPLETE =====")
@@ -618,49 +401,40 @@ async def update_fund_valuation(
         
         # Check if value is empty string and delete if so
         if hasattr(fund_valuation, 'valuation') and isinstance(fund_valuation.valuation, str) and fund_valuation.valuation.strip() == "":
-            logger.info(f"Deleting fund valuation {valuation_id} due to empty value")
-            
-            # Get portfolio_fund_id before deletion for IRR recalculation
-            portfolio_fund_id = existing_result.data[0]["portfolio_fund_id"]
+            logger.info(f"🗑️ [IRR CASCADE INTEGRATION] Deleting fund valuation {valuation_id} due to empty value")
             
             # ========================================================================
-            # NEW: Clean up related IRR records before deleting valuation
+            # ENHANCED: Use comprehensive IRR cascade service for deletion
             # ========================================================================
             try:
-                # Delete any IRR records that reference this valuation
-                irr_cleanup_result = db.table("portfolio_fund_irr_values")\
-                    .delete()\
-                    .eq("fund_valuation_id", valuation_id)\
-                    .execute()
+                irr_service = IRRCascadeService(db)
                 
-                if irr_cleanup_result.data:
-                    logger.info(f"Cleaned up {len(irr_cleanup_result.data)} related IRR records before deleting valuation {valuation_id}")
+                # Use the comprehensive cascade deletion
+                cascade_result = await irr_service.handle_fund_valuation_deletion(valuation_id)
+                
+                if not cascade_result.get("success"):
+                    error_msg = cascade_result.get("error", "Unknown cascade deletion error")
+                    logger.error(f"🗑️ [IRR CASCADE] Cascade deletion failed: {error_msg}")
+                    raise HTTPException(status_code=500, detail=f"IRR cascade deletion failed: {error_msg}")
+                
+                logger.info(f"🗑️ [IRR CASCADE] ✅ Deletion cascade completed successfully: {cascade_result}")
+                
+                # Return the deleted record information
+                return {
+                    "message": f"Fund valuation {valuation_id} deleted successfully with IRR cascade",
+                    "valuation_deleted": cascade_result.get("valuation_deleted", False),
+                    "fund_irr_deleted": cascade_result.get("fund_irr_deleted", False), 
+                    "portfolio_irr_deleted": cascade_result.get("portfolio_irr_deleted", False),
+                    "portfolio_valuation_deleted": cascade_result.get("portfolio_valuation_deleted", False),
+                    "completeness_maintained": cascade_result.get("completeness_maintained", False)
+                }
+                
+            except HTTPException:
+                raise  # Re-raise HTTP exceptions as-is
             except Exception as e:
-                logger.warning(f"Failed to clean up related IRR records for valuation {valuation_id}: {str(e)}")
+                logger.error(f"🗑️ [IRR CASCADE] ❌ Unexpected error in cascade deletion: {str(e)}")
+                raise HTTPException(status_code=500, detail=f"Unexpected error during cascade deletion: {str(e)}")
             # ========================================================================
-            
-            delete_result = db.table("portfolio_fund_valuations").delete().eq("id", valuation_id).execute()
-            
-            if not delete_result.data:
-                raise HTTPException(status_code=500, detail="Failed to delete fund valuation")
-                
-            # ========================================================================
-            # NEW: Automatically recalculate IRR after deleting valuation
-            # ========================================================================
-            try:
-                # Get the valuation date for sophisticated recalculation
-                valuation_date = existing_result.data[0].get("valuation_date", "").split('T')[0]
-                
-                logger.info(f"Triggering sophisticated IRR recalculation after deleting valuation for portfolio fund {portfolio_fund_id} on date {valuation_date}")
-                irr_recalc_result = await recalculate_irr_after_activity_change(portfolio_fund_id, db, valuation_date)
-                logger.info(f"Sophisticated IRR recalculation result: {irr_recalc_result}")
-            except Exception as e:
-                # Don't fail the valuation deletion if IRR recalculation fails
-                logger.error(f"IRR recalculation failed after valuation deletion: {str(e)}")
-            # ========================================================================
-                
-            # Return the deleted record
-            return existing_result.data[0]
             
         # Prepare update data (only include fields that are provided)
         update_data = {}  # Removed updated_at as it doesn't exist in the schema
@@ -692,7 +466,7 @@ async def update_fund_valuation(
         updated_valuation = result.data[0]
         
         # ========================================================================
-        # NEW: Automatically update IRR after updating fund valuation
+        # ENHANCED: Use comprehensive IRR cascade service for valuation updates
         # ========================================================================
         try:
             # Get portfolio_fund_id from the updated record or existing record
@@ -703,83 +477,22 @@ async def update_fund_valuation(
             if isinstance(valuation_date, str):
                 valuation_date = valuation_date.split('T')[0]
             
-            # Find existing IRR for this fund and date
-            existing_irr = db.table("portfolio_fund_irr_values")\
-                .select("*")\
-                .eq("fund_id", portfolio_fund_id)\
-                .eq("date", valuation_date)\
-                .execute()
+            logger.info(f"📈 [IRR CASCADE INTEGRATION] Triggering IRR calculation for fund {portfolio_fund_id}, date {valuation_date}")
             
-            if existing_irr.data:
-                # Update existing IRR
-                from app.api.routes.portfolio_funds import calculate_single_portfolio_fund_irr
-                irr_result = await calculate_single_portfolio_fund_irr(
-                    portfolio_fund_id=portfolio_fund_id,
-                    irr_date=valuation_date,
-                    db=db
-                )
-                
-                if irr_result.get("success"):
-                    new_irr = irr_result.get("irr_percentage", 0.0)
-                    db.table("portfolio_fund_irr_values")\
-                        .update({"irr_result": float(new_irr)})\
-                        .eq("id", existing_irr.data[0]["id"])\
-                        .execute()
-                    logger.info(f"Updated existing IRR for {valuation_date}: {new_irr}%")
+            # Use the comprehensive cascade service for IRR calculation
+            irr_service = IRRCascadeService(db)
+            irr_result = await irr_service.handle_fund_valuation_creation_edit(
+                portfolio_fund_id, valuation_date
+            )
+            
+            if irr_result.get("success"):
+                logger.info(f"📈 [IRR CASCADE] ✅ IRR calculation completed: {irr_result}")
             else:
-                # Create new IRR if none exists
-                from app.api.routes.portfolio_funds import calculate_single_portfolio_fund_irr
-                irr_result = await calculate_single_portfolio_fund_irr(
-                    portfolio_fund_id=portfolio_fund_id,
-                    irr_date=valuation_date,
-                    db=db
-                )
-                
-                if irr_result.get("success"):
-                    new_irr = irr_result.get("irr_percentage", 0.0)
-                    
-                    irr_data = {
-                        "fund_id": portfolio_fund_id,
-                        "irr_result": float(new_irr),
-                        "date": valuation_date,
-                        "fund_valuation_id": valuation_id
-                    }
-                    
-                    db.table("portfolio_fund_irr_values").insert(irr_data).execute()
-                    logger.info(f"Created new IRR for {valuation_date}: {new_irr}%")
+                logger.warning(f"📈 [IRR CASCADE] ⚠️ IRR calculation had issues: {irr_result}")
                     
         except Exception as e:
             # Don't fail the valuation update if IRR update fails
-            logger.error(f"IRR update failed after valuation update: {str(e)}")
-        # ========================================================================
-        
-        # ========================================================================
-        # NEW: Check if this creates a common valuation date that needs portfolio IRR
-        # ========================================================================
-        try:
-            # Get the portfolio ID for this fund
-            portfolio_fund_result = db.table("portfolio_funds").select("portfolio_id").eq("id", updated_valuation.get("portfolio_fund_id") or existing_result.data[0]["portfolio_fund_id"]).execute()
-            if portfolio_fund_result.data:
-                portfolio_id = portfolio_fund_result.data[0]["portfolio_id"]
-                
-                # Get the valuation date (use updated date if provided, otherwise existing)
-                valuation_date = updated_valuation.get("valuation_date") or existing_result.data[0]["valuation_date"]
-                if isinstance(valuation_date, str):
-                    valuation_date = valuation_date.split('T')[0]
-                
-                # Check if portfolio IRR should be recalculated for this date
-                if await should_recalculate_portfolio_irr(portfolio_id, valuation_date, db):
-                    logger.info(f"🔍 PORTFOLIO IRR: Portfolio IRR recalculation needed for portfolio {portfolio_id} on date {valuation_date}")
-                    
-                    # Import and call the portfolio IRR calculation function
-                    from app.api.routes.portfolios import calculate_portfolio_irr
-                    portfolio_irr_result = await calculate_portfolio_irr(portfolio_id=portfolio_id, db=db)
-                    logger.info(f"🔍 PORTFOLIO IRR: Portfolio IRR calculation completed: {portfolio_irr_result.get('portfolio_irr', {}).get('calculated', False)}")
-                else:
-                    logger.info(f"🔍 PORTFOLIO IRR: No portfolio IRR calculation needed for portfolio {portfolio_id} on date {valuation_date}")
-        except Exception as e:
-            # Don't fail the valuation update if portfolio IRR calculation fails
-            logger.error(f"🔍 PORTFOLIO IRR: Portfolio IRR calculation failed after valuation update: {str(e)}")
+            logger.error(f"📈 [IRR CASCADE] ❌ IRR calculation failed after valuation update: {str(e)}")
         # ========================================================================
             
         return updated_valuation
@@ -795,291 +508,76 @@ async def delete_fund_valuation(
     db = Depends(get_db)
 ):
     """
-    Delete a fund valuation with cascade deletion logic.
+    Delete a fund valuation with comprehensive IRR cascade deletion logic.
     
-    When a fund valuation is deleted:
-    1. Delete the fund-level IRR that was based on that valuation
-    2. Check if this deletion breaks common valuation dates across the portfolio
-    3. If so, delete the portfolio-level IRR and valuation for that date
+    Uses the IRR cascade service to handle:
+    1. Deleting the fund-level IRR that was based on that valuation
+    2. Checking if this deletion breaks common valuation dates across the portfolio
+    3. If so, deleting the portfolio-level IRR and valuation for that date
+    4. Deleting the original fund valuation
     """
     try:
-        logger.info(f"Attempting to delete fund valuation with ID: {valuation_id}")
+        logger.info(f"🗑️ [IRR CASCADE INTEGRATION] Attempting to delete fund valuation with ID: {valuation_id}")
         
-        # Check if fund valuation exists and get its details
+        # Check if fund valuation exists
         existing_result = db.table("portfolio_fund_valuations").select("*").eq("id", valuation_id).execute()
         
         if not existing_result.data or len(existing_result.data) == 0:
-            logger.warning(f"Fund valuation with ID {valuation_id} not found, but treating as success")
+            logger.warning(f"🗑️ [IRR CASCADE] Fund valuation with ID {valuation_id} not found, but treating as success")
             return {"message": f"Fund valuation with ID {valuation_id} doesn't exist", "status": "success"}
         
-        # Get details of the valuation being deleted
-        valuation_to_delete = existing_result.data[0]
-        portfolio_fund_id = valuation_to_delete["portfolio_fund_id"]
-        valuation_date = valuation_to_delete["valuation_date"]
-        
-        # Extract just the date part (YYYY-MM-DD) for comparison
-        if isinstance(valuation_date, str):
-            valuation_date_only = valuation_date.split('T')[0]
-        else:
-            valuation_date_only = valuation_date.strftime('%Y-%m-%d')
-        
-        logger.info(f"Deleting fund valuation for portfolio fund {portfolio_fund_id} on date {valuation_date_only}")
-        
-        # Get the portfolio ID for this fund
-        portfolio_fund_result = db.table("portfolio_funds")\
-            .select("portfolio_id")\
-            .eq("id", portfolio_fund_id)\
-            .execute()
-        
-        if not portfolio_fund_result.data:
-            raise HTTPException(status_code=404, detail=f"Portfolio fund {portfolio_fund_id} not found")
-        
-        portfolio_id = portfolio_fund_result.data[0]["portfolio_id"]
-        
         # ========================================================================
-        # Step 1: Clean up related fund-level IRR records before deleting valuation
+        # ENHANCED: Use comprehensive IRR cascade service for deletion
         # ========================================================================
         try:
-            # Delete any IRR records that reference this valuation
-            irr_cleanup_result = db.table("portfolio_fund_irr_values")\
-                .delete()\
-                .eq("fund_valuation_id", valuation_id)\
-                .execute()
+            irr_service = IRRCascadeService(db)
             
-            if irr_cleanup_result.data:
-                logger.info(f"Cleaned up {len(irr_cleanup_result.data)} fund-level IRR records before deleting valuation {valuation_id}")
-                
-            # Also delete any fund-level IRRs for this fund on the same date (even if not linked by valuation_id)
-            # Use date range instead of LIKE for timestamp comparison
-            date_start = f"{valuation_date_only}T00:00:00"
-            date_end = f"{valuation_date_only}T23:59:59"
+            # Use the comprehensive cascade deletion
+            cascade_result = await irr_service.handle_fund_valuation_deletion(valuation_id)
             
-            fund_irr_cleanup_result = db.table("portfolio_fund_irr_values")\
-                .delete()\
-                .eq("fund_id", portfolio_fund_id)\
-                .gte("date", date_start)\
-                .lte("date", date_end)\
-                .execute()
-                
-            if fund_irr_cleanup_result.data:
-                logger.info(f"Cleaned up {len(fund_irr_cleanup_result.data)} additional fund-level IRR records for date {valuation_date_only}")
-                
+            if not cascade_result.get("success"):
+                error_msg = cascade_result.get("error", "Unknown cascade deletion error")
+                logger.error(f"🗑️ [IRR CASCADE] Cascade deletion failed: {error_msg}")
+                raise HTTPException(status_code=500, detail=f"IRR cascade deletion failed: {error_msg}")
+            
+            logger.info(f"🗑️ [IRR CASCADE] ✅ Deletion cascade completed successfully: {cascade_result}")
+            
+            # Format cascade deletion details for response
+            cascade_details = []
+            if cascade_result.get("fund_irr_deleted"):
+                cascade_details.append("Fund IRR deleted")
+            if cascade_result.get("portfolio_irr_deleted"):
+                cascade_details.append("Portfolio IRR deleted") 
+            if cascade_result.get("portfolio_valuation_deleted"):
+                cascade_details.append("Portfolio valuation deleted")
+            
+            response_message = f"Fund valuation with ID {valuation_id} deleted successfully with IRR cascade"
+            if cascade_details:
+                response_message += f". Cascade actions: {'; '.join(cascade_details)}"
+            
+            return {
+                "message": response_message,
+                "status": "success",
+                "valuation_deleted": cascade_result.get("valuation_deleted", False),
+                "fund_irr_deleted": cascade_result.get("fund_irr_deleted", False),
+                "portfolio_irr_deleted": cascade_result.get("portfolio_irr_deleted", False),
+                "portfolio_valuation_deleted": cascade_result.get("portfolio_valuation_deleted", False),
+                "completeness_maintained": cascade_result.get("completeness_maintained", False),
+                "affected_date": cascade_result.get("date"),
+                "cascade_details": cascade_details
+            }
+            
+        except HTTPException:
+            raise  # Re-raise HTTP exceptions as-is
         except Exception as e:
-            logger.warning(f"Failed to clean up related IRR records for valuation {valuation_id}: {str(e)}")
-        
-        # ========================================================================
-        # Step 2: Check if deleting this valuation breaks common valuation dates
+            logger.error(f"🗑️ [IRR CASCADE] ❌ Unexpected error in cascade deletion: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Unexpected error during cascade deletion: {str(e)}")
         # ========================================================================
         
-        # Get ALL portfolio funds in this portfolio (both active and inactive)
-        # IRR calculations should include all funds for historical accuracy
-        all_portfolio_funds_result = db.table("portfolio_funds")\
-            .select("id, status")\
-            .eq("portfolio_id", portfolio_id)\
-            .execute()
-        
-        all_portfolio_fund_ids = [pf["id"] for pf in all_portfolio_funds_result.data] if all_portfolio_funds_result.data else []
-        
-        # Check if after deleting this valuation, ALL funds still have valuations on this date
-        # For active funds: Must have actual valuations on that date
-        # For inactive funds: Either have actual valuations on that date, OR the date is after their latest valuation date
-        common_date_still_exists = True
-        
-        if len(all_portfolio_fund_ids) > 0:
-            # Separate active and inactive funds
-            active_funds = [pf["id"] for pf in all_portfolio_funds_result.data if pf.get("status", "active") == "active"]
-            inactive_funds = [pf["id"] for pf in all_portfolio_funds_result.data if pf.get("status", "active") != "active"]
-            
-            # Check active funds first
-            for fund_id in active_funds:
-                # Check if this fund has a valuation on the same date using date range
-                date_start = f"{valuation_date_only}T00:00:00"
-                date_end = f"{valuation_date_only}T23:59:59"
-                
-                fund_valuation_check = db.table("portfolio_fund_valuations")\
-                    .select("id")\
-                    .eq("portfolio_fund_id", fund_id)\
-                    .gte("valuation_date", date_start)\
-                    .lte("valuation_date", date_end)\
-                    .execute()
-                
-                # IMPORTANT: For the fund we're deleting from, we need to check if there are 
-                # OTHER valuations on this date (since we're about to delete one)
-                if fund_id == portfolio_fund_id:
-                    # For the fund we're deleting from, check if there are other valuations on this date
-                    # (excluding the one we're about to delete)
-                    remaining_valuations = [v for v in fund_valuation_check.data if v["id"] != valuation_id] if fund_valuation_check.data else []
-                    if not remaining_valuations:
-                        # This active fund will have no valuations left on this date after deletion
-                        common_date_still_exists = False
-                        logger.info(f"Active fund {fund_id} will have no valuations on {valuation_date_only} after deleting valuation {valuation_id}")
-                        break
-                else:
-                    # For other active funds, just check if they have any valuation on this date
-                    if not fund_valuation_check.data:
-                        # This active fund doesn't have a valuation on this date, so common date is broken
-                        common_date_still_exists = False
-                        logger.info(f"Active fund {fund_id} has no valuations on {valuation_date_only}")
-                        break
-            
-            # Check inactive funds if active funds all passed
-            if common_date_still_exists:
-                for fund_id in inactive_funds:
-                    # Check if this inactive fund has a valuation on the same date using date range
-                    date_start = f"{valuation_date_only}T00:00:00"
-                    date_end = f"{valuation_date_only}T23:59:59"
-                    
-                    fund_valuation_check = db.table("portfolio_fund_valuations")\
-                        .select("id")\
-                        .eq("portfolio_fund_id", fund_id)\
-                        .gte("valuation_date", date_start)\
-                        .lte("valuation_date", date_end)\
-                        .execute()
-                    
-                    # IMPORTANT: For the fund we're deleting from, we need to check if there are 
-                    # OTHER valuations on this date (since we're about to delete one)
-                    if fund_id == portfolio_fund_id:
-                        # For the fund we're deleting from, check if there are other valuations on this date
-                        # (excluding the one we're about to delete)
-                        remaining_valuations = [v for v in fund_valuation_check.data if v["id"] != valuation_id] if fund_valuation_check.data else []
-                        if not remaining_valuations:
-                            # This inactive fund will have no valuations left on this date after deletion
-                            # Check if the date is after its latest valuation date
-                            latest_valuation = db.table("portfolio_fund_valuations")\
-                                .select("valuation_date")\
-                                .eq("portfolio_fund_id", fund_id)\
-                                .order("valuation_date", desc=True)\
-                                .limit(1)\
-                                .execute()
-                            
-                            if latest_valuation.data:
-                                latest_date = latest_valuation.data[0]["valuation_date"].split('T')[0]
-                                if valuation_date_only <= latest_date:
-                                    # The date is not after the latest valuation date, so common date is broken
-                                    common_date_still_exists = False
-                                    logger.info(f"Inactive fund {fund_id} will have no valuations on {valuation_date_only} after deletion and date is not after latest valuation date")
-                                    break
-                            else:
-                                # No valuations found for this inactive fund, so common date is broken
-                                common_date_still_exists = False
-                                logger.info(f"Inactive fund {fund_id} has no valuations at all")
-                                break
-                    else:
-                        # For other inactive funds, check if they have any valuation on this date
-                        if not fund_valuation_check.data:
-                            # This inactive fund doesn't have a valuation on this date
-                            # Check if the date is after its latest valuation date
-                            latest_valuation = db.table("portfolio_fund_valuations")\
-                                .select("valuation_date")\
-                                .eq("portfolio_fund_id", fund_id)\
-                                .order("valuation_date", desc=True)\
-                                .limit(1)\
-                                .execute()
-                            
-                            if latest_valuation.data:
-                                latest_date = latest_valuation.data[0]["valuation_date"].split('T')[0]
-                                if valuation_date_only <= latest_date:
-                                    # The date is not after the latest valuation date, so common date is broken
-                                    common_date_still_exists = False
-                                    logger.info(f"Inactive fund {fund_id} has no valuations on {valuation_date_only} and date is not after latest valuation date")
-                                    break
-                            else:
-                                # No valuations found for this inactive fund, so common date is broken
-                                common_date_still_exists = False
-                                logger.info(f"Inactive fund {fund_id} has no valuations at all")
-                                break
-            
-            logger.info(f"Common valuation date {valuation_date_only} still exists after deletion: {common_date_still_exists}")
-        else:
-            # If there are no portfolio funds, then there's no common date
-            common_date_still_exists = False
-            logger.info(f"No portfolio funds found, common date will be broken")
-        
-        # ========================================================================
-        # Step 3: Delete the fund valuation
-        # ========================================================================
-        result = db.table("portfolio_fund_valuations").delete().eq("id", valuation_id).execute()
-        
-        if not result or not hasattr(result, 'data') or not result.data:
-            logger.error(f"Failed to delete fund valuation with ID {valuation_id}")
-            raise HTTPException(status_code=500, detail="Failed to delete fund valuation")
-            
-        logger.info(f"Successfully deleted fund valuation with ID {valuation_id}")
-        
-        # ========================================================================
-        # Step 4: If common date is broken, delete portfolio-level IRR and valuation for that date
-        # ========================================================================
-        cascade_deletions = []
-        
-        if not common_date_still_exists:
-            logger.info(f"Common valuation date {valuation_date_only} is broken, performing cascade deletions")
-            
-            # Delete portfolio-level IRR values for this date using date range
-            try:
-                date_start = f"{valuation_date_only}T00:00:00"
-                date_end = f"{valuation_date_only}T23:59:59"
-                
-                portfolio_irr_delete_result = db.table("portfolio_irr_values")\
-                    .delete()\
-                    .eq("portfolio_id", portfolio_id)\
-                    .gte("date", date_start)\
-                    .lte("date", date_end)\
-                    .execute()
-                
-                if portfolio_irr_delete_result.data:
-                    logger.info(f"Deleted {len(portfolio_irr_delete_result.data)} portfolio IRR records for date {valuation_date_only}")
-                    cascade_deletions.append(f"Deleted {len(portfolio_irr_delete_result.data)} portfolio IRR records")
-                
-            except Exception as e:
-                logger.warning(f"Failed to delete portfolio IRR records for date {valuation_date_only}: {str(e)}")
-            
-            # Delete portfolio-level valuation for this date using date range
-            try:
-                date_start = f"{valuation_date_only}T00:00:00"
-                date_end = f"{valuation_date_only}T23:59:59"
-                
-                portfolio_valuation_delete_result = db.table("portfolio_valuations")\
-                    .delete()\
-                    .eq("portfolio_id", portfolio_id)\
-                    .gte("valuation_date", date_start)\
-                    .lte("valuation_date", date_end)\
-                    .execute()
-                
-                if portfolio_valuation_delete_result.data:
-                    logger.info(f"Deleted {len(portfolio_valuation_delete_result.data)} portfolio valuation records for date {valuation_date_only}")
-                    cascade_deletions.append(f"Deleted {len(portfolio_valuation_delete_result.data)} portfolio valuation records")
-                
-            except Exception as e:
-                logger.warning(f"Failed to delete portfolio valuation records for date {valuation_date_only}: {str(e)}")
-        
-        # ========================================================================
-        # Step 5: Trigger IRR recalculation for remaining data
-        # ========================================================================
-        try:
-            logger.info(f"Triggering sophisticated IRR recalculation after deleting valuation for portfolio fund {portfolio_fund_id}")
-            irr_recalc_result = await recalculate_irr_after_activity_change(portfolio_fund_id, db, valuation_date_only)
-            logger.info(f"Sophisticated IRR recalculation result: {irr_recalc_result}")
-        except Exception as e:
-            # Don't fail the valuation deletion if IRR recalculation fails
-            logger.error(f"IRR recalculation failed after valuation deletion: {str(e)}")
-        
-        # ========================================================================
-        # Return success with cascade deletion details
-        # ========================================================================
-        response_message = f"Fund valuation with ID {valuation_id} deleted successfully"
-        if cascade_deletions:
-            response_message += f". Cascade deletions: {'; '.join(cascade_deletions)}"
-        
-        return {
-            "message": response_message,
-            "status": "success",
-            "cascade_deletions": cascade_deletions,
-            "common_date_broken": not common_date_still_exists,
-            "affected_date": valuation_date_only
-        }
-        
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error deleting fund valuation: {str(e)}")
+        logger.error(f"🗑️ [IRR CASCADE] Error deleting fund valuation: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.get("/fund_valuations/latest-date")

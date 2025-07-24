@@ -118,15 +118,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Only redirect if:
     // 1. User is authenticated
-    // 2. Has a preferred landing page
-    // 3. Is on the login page (not homepage)
+    // 2. Has a preferred landing page  
+    // 3. We're on home page (/) - which is where LoginForm redirects
     // 4. Hasn't been redirected before in this session
+    // 5. User has a preference other than home
     if (isAuthenticated && 
         user?.preferred_landing_page && 
-        location.pathname === '/login' &&
-        !sessionStorage.getItem('hasRedirected')) {
+        location.pathname === '/' &&
+        !sessionStorage.getItem('hasRedirected') &&
+        user.preferred_landing_page !== '/') {
       sessionStorage.setItem('hasRedirected', 'true');
-      navigate(user.preferred_landing_page);
+      
+      // Valid landing pages - fallback to home if user has invalid preference
+      const validLandingPages = ['/', '/client_groups'];
+      const landingPage = validLandingPages.includes(user.preferred_landing_page) 
+        ? user.preferred_landing_page 
+        : '/';
+      
+      navigate(landingPage);
     }
   }, [isAuthenticated, user, navigate, location.pathname]);
 
@@ -162,10 +171,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await authService.logout();
       setIsAuthenticated(false);
       setUser(null);
+      // Clear redirect flag so preferred landing page works on next login
+      sessionStorage.removeItem('hasRedirected');
     } catch (error) {
       // Still clear the auth state even if the API call fails
       setIsAuthenticated(false);
       setUser(null);
+      // Clear redirect flag even if logout fails
+      sessionStorage.removeItem('hasRedirected');
       throw error;
     } finally {
       setIsLoading(false);

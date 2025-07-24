@@ -5,6 +5,7 @@ import { usePortfolioTemplateDetails } from '../hooks/usePortfolioTemplates';
 import DynamicPageContainer from '../components/DynamicPageContainer';
 import StandardTable, { ColumnConfig } from '../components/StandardTable';
 import { Button, DeleteButton, ActionButton, AddButton, EditButton } from '../components/ui';
+import toast from 'react-hot-toast';
 
 interface PortfolioTemplate {
   id: number;
@@ -117,13 +118,15 @@ const PortfolioTemplateDetails: React.FC = () => {
   const [productsCount] = useState(0); // Placeholder for products count
   const [hasProductsUsingTemplate, setHasProductsUsingTemplate] = useState(false);
   const [isCheckingProducts, setIsCheckingProducts] = useState(false);
-  const [showDeleteGenerationConfirm, setShowDeleteGenerationConfirm] = useState(false);
-  const [generationToDelete, setGenerationToDelete] = useState<Generation | null>(null);
-  const [isDeletingGeneration, setIsDeletingGeneration] = useState(false);
   const [generationProductCounts, setGenerationProductCounts] = useState<Record<number, number>>({});
   const [migrationNotes, setMigrationNotes] = useState<Record<number, string>>({});
   const [expandedArchivedGenerations, setExpandedArchivedGenerations] = useState<Set<number>>(new Set<number>());
   const [isMigrationChecklistExpanded, setIsMigrationChecklistExpanded] = useState(false);
+  
+  // New state for optimistic updates
+  const [localGenerations, setLocalGenerations] = useState<Generation[]>([]);
+  const [deletingGenerationIds, setDeletingGenerationIds] = useState<Set<number>>(new Set());
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Simplified refresh function using the custom hook
   const refreshAllData = useCallback(async () => {
@@ -139,6 +142,13 @@ const PortfolioTemplateDetails: React.FC = () => {
       setError('Failed to refresh data');
     }
   }, [portfolioId, refetchPortfolioData]);
+
+  // Sync local state with React Query data
+  useEffect(() => {
+    if (generations && generations.length > 0) {
+      setLocalGenerations(generations);
+    }
+  }, [generations]);
 
   // Check for refresh needed when location state indicates return from edit
   useEffect(() => {
@@ -196,10 +206,10 @@ const PortfolioTemplateDetails: React.FC = () => {
 
   // When a generation is selected, fetch the funds for that generation
   useEffect(() => {
-    if (selectedGeneration && selectedGeneration.id) {
+    if (selectedGeneration && selectedGeneration.id && !deletingGenerationIds.has(selectedGeneration.id)) {
       fetchFundsForGeneration(selectedGeneration.id);
     }
-  }, [selectedGeneration]);
+  }, [selectedGeneration, deletingGenerationIds]);
 
   // Function to check if any products are using any generation of this template
   const checkForProductsUsingTemplate = useCallback(async () => {
@@ -540,7 +550,7 @@ const PortfolioTemplateDetails: React.FC = () => {
 
   // Helper functions for archived generations and migration tracking
   const getArchivedGenerations = () => {
-    return generations.filter(gen => gen.status !== 'active');
+    return localGenerations.filter(gen => gen.status !== 'active');
   };
 
   const getProductsForGeneration = (generationId: number) => {
@@ -596,64 +606,145 @@ const PortfolioTemplateDetails: React.FC = () => {
     }
   };
 
-  const handleDeleteGenerationClick = (generation: Generation) => {
+  const handleDeleteGenerationClick = async (generation: Generation) => {
+    // Check if generation has linked products
     const productCount = generationProductCounts[generation.id] || 0;
-    
     if (productCount > 0) {
-              setError(`Cannot delete generation "${generation.generation_name || 'Unnamed Generation'}" - ${productCount} product${productCount === 1 ? '' : 's'} are using this generation.`);
+      setError(`Cannot delete generation "${generation.generation_name || 'Unnamed Generation'}" - ${productCount} product${productCount === 1 ? '' : 's'} are using this generation.`);
       return;
     }
     
-    setGenerationToDelete(generation);
-    setShowDeleteGenerationConfirm(true);
-    setError(null); // Clear any existing errors
+    // Show confirmation toast
+    toast((t) => (
+      <div className="flex items-center space-x-3 p-2">
+        <div className="flex-1">
+          <p className="text-sm font-medium text-gray-900">
+            Delete "{generation.generation_name}"?
+          </p>
+          <p className="text-xs text-gray-500">This action cannot be undone</p>
+        </div>
+        <button
+          className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors"
+          onClick={() => {
+            toast.dismiss(t.id);
+            handleOptimisticDelete(generation);
+          }}
+        >
+          Delete
+        </button>
+        <button
+          className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1.5 rounded text-sm font-medium transition-colors"
+          onClick={() => toast.dismiss(t.id)}
+        >
+          Cancel
+        </button>
+      </div>
+    ), { 
+      duration: 6000,
+      position: 'top-center',
+      style: {
+        background: '#fff',
+        border: '1px solid #e5e7eb',
+        borderRadius: '8px',
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+      }
+    });
   };
 
-  const handleCancelDeleteGeneration = () => {
-    setShowDeleteGenerationConfirm(false);
-    setGenerationToDelete(null);
-  };
-
-  const handleConfirmDeleteGeneration = async () => {
-    if (!generationToDelete) return;
+  // Add optimistic delete function
+  const handleOptimisticDelete = async (generation: Generation) => {
+    // Store original state for rollback
+    const originalGenerations = [...localGenerations];
+    const originalSelected = selectedGeneration;
     
     try {
-      setIsDeletingGeneration(true);
-      setError(null);
+      // 1. IMMEDIATE UI UPDATE - Add to deleting set for visual feedback
+      setDeletingGenerationIds(prev => new Set([...prev, generation.id]));
       
-      // Call the API to delete the generation
-      await api.delete(`/available_portfolios/${portfolioId}/generations/${generationToDelete.id}`);
+      // 2. Remove from local state optimistically
+      const updatedGenerations = localGenerations.filter(g => g.id !== generation.id);
+      setLocalGenerations(updatedGenerations);
       
-      // Refresh the generations list
-      await refreshAllData();
-      
-      // If the deleted generation was selected, select the first available generation
-      if (selectedGeneration?.id === generationToDelete.id) {
-        const remainingGenerations = generations.filter(g => g.id !== generationToDelete.id);
-        if (remainingGenerations.length > 0) {
-          setSelectedGeneration(remainingGenerations[0]);
-        } else {
-          setSelectedGeneration(null);
-        }
+      // 3. Handle selection update if deleted generation was selected
+      if (selectedGeneration?.id === generation.id) {
+        // Find the first active generation that isn't being deleted
+        const newSelection = updatedGenerations.find(g => 
+          g.status === 'active' && !deletingGenerationIds.has(g.id)
+        ) || updatedGenerations[0] || null;
+        setSelectedGeneration(newSelection);
       }
       
-      console.log('Generation deleted successfully');
+      // 4. Show success toast with undo option
+      const undoToastId = toast.success(
+        (t) => (
+          <div className="flex items-center space-x-3">
+            <span className="text-sm">Generation "{generation.generation_name}" deleted</span>
+            <button
+              className="underline text-blue-600 hover:text-blue-800 text-sm font-medium"
+              onClick={() => {
+                // Rollback changes
+                setLocalGenerations(originalGenerations);
+                setSelectedGeneration(originalSelected);
+                setDeletingGenerationIds(prev => {
+                  const newSet = new Set(prev);
+                  newSet.delete(generation.id);
+                  return newSet;
+                });
+                toast.dismiss(t.id);
+                toast('Deletion cancelled', { duration: 2000, icon: 'ℹ️' });
+              }}
+            >
+              Undo
+            </button>
+          </div>
+        ),
+        { duration: 5000 }
+      );
+
+      // 5. Background API call
+      await api.delete(`/available_portfolios/${portfolioId}/generations/${generation.id}`);
+      
+      // 6. Success - remove from deleting set and sync with server
+      setDeletingGenerationIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(generation.id);
+        return newSet;
+      });
+      
+      // 7. Optional: Soft refresh to ensure data consistency (non-blocking)
+      setTimeout(() => {
+        refetchPortfolioData();
+      }, 1000);
+      
+      console.log('✅ Generation deleted successfully');
       
     } catch (err: any) {
-      console.error('Error deleting generation:', err);
-      if (err.response?.data?.detail) {
-        setError(typeof err.response.data.detail === 'string' 
-          ? err.response.data.detail 
-          : 'Failed to delete generation');
-      } else {
-        setError('Failed to delete generation');
-      }
-    } finally {
-      setIsDeletingGeneration(false);
-      setShowDeleteGenerationConfirm(false);
-      setGenerationToDelete(null);
+      // ROLLBACK on API failure
+      console.error('❌ Failed to delete generation:', err);
+      
+      // Restore original state
+      setLocalGenerations(originalGenerations);
+      setSelectedGeneration(originalSelected);
+      setDeletingGenerationIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(generation.id);
+        return newSet;
+      });
+      
+      // Clear any error state
+      setError(null);
+      
+      // Show error toast
+      toast.error(
+        `Failed to delete "${generation.generation_name}". Please try again.`,
+        { duration: 4000 }
+      );
+      
+      setError('Failed to delete generation. Please try again.');
     }
   };
+
+
 
   // Column configuration for StandardTable
   const fundsColumns: ColumnConfig[] = [
@@ -1206,7 +1297,7 @@ const PortfolioTemplateDetails: React.FC = () => {
       )}
 
       {/* Generations Section */}
-      {generations.length > 0 && (
+              {localGenerations.length > 0 && (
         <div className="bg-white shadow-sm rounded-lg border border-gray-100 mb-4">
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex justify-between items-center">
@@ -1222,26 +1313,50 @@ const PortfolioTemplateDetails: React.FC = () => {
           <div className="p-6">
             <div className="mb-4">
               <nav className="flex space-x-2 px-2 py-2 bg-gray-50 rounded-lg" role="tablist">
-                {generations.map((generation) => (
-                  <button
+                {localGenerations.map((generation) => (
+                  <div
                     key={generation.id}
-                    onClick={() => handleGenerationSelect(generation)}
-                    className={`${
-                      selectedGeneration?.id === generation.id
-                        ? 'bg-teal-600 text-white shadow-sm'
-                        : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
-                    } rounded-lg px-4 py-2 font-medium text-sm transition-all duration-200 ease-in-out`}
-                    role="tab"
+                    className={`relative transition-all duration-300 ${
+                      deletingGenerationIds.has(generation.id) 
+                        ? 'opacity-50 scale-95' 
+                        : 'opacity-100 scale-100'
+                    }`}
                   >
-                    {generation.generation_name || 'Unnamed Generation'}
-                    {generation.status !== 'active' && (
-                      <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
-                        generation.status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {generation.status}
-                      </span>
-                    )}
-                  </button>
+                    <button
+                      onClick={() => handleGenerationSelect(generation)}
+                      disabled={deletingGenerationIds.has(generation.id)}
+                      className={`${
+                        selectedGeneration?.id === generation.id
+                          ? 'bg-teal-600 text-white shadow-sm'
+                          : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                      } ${
+                        deletingGenerationIds.has(generation.id)
+                          ? 'cursor-not-allowed bg-red-50 text-red-700'
+                          : ''
+                      } rounded-lg px-4 py-2 font-medium text-sm transition-all duration-200 ease-in-out relative`}
+                      role="tab"
+                    >
+                      {generation.generation_name || 'Unnamed Generation'}
+                      {generation.status !== 'active' && !deletingGenerationIds.has(generation.id) && (
+                        <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
+                          generation.status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {generation.status}
+                        </span>
+                      )}
+                      {deletingGenerationIds.has(generation.id) && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-red-100 bg-opacity-75 rounded-lg">
+                          <div className="flex items-center space-x-1 text-red-700">
+                            <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                            <span className="text-xs font-medium">Deleting...</span>
+                          </div>
+                        </div>
+                      )}
+                    </button>
+                  </div>
                 ))}
               </nav>
             </div>
@@ -1399,58 +1514,7 @@ const PortfolioTemplateDetails: React.FC = () => {
         </div>
       )}
 
-      {/* Delete Generation Confirmation Modal */}
-      {showDeleteGenerationConfirm && generationToDelete && (
-        <div className="fixed inset-0 z-10 overflow-y-auto">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
-              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
-            </div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="sm:flex sm:items-start">
-                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                    <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                  </div>
-                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900">Delete Generation</h3>
-                    <div className="mt-2">
-                      <p className="text-sm text-gray-500">
-                        Are you sure you want to delete generation "{generationToDelete.generation_name || 'Unnamed Generation'}"? This action cannot be undone.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <Button
-                  type="button"
-                  onClick={handleConfirmDeleteGeneration}
-                  disabled={isDeletingGeneration}
-                  variant="danger"
-                  size="sm"
-                  className="w-full sm:ml-3 sm:w-auto"
-                >
-                  {isDeletingGeneration ? 'Deleting...' : 'Delete'}
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleCancelDeleteGeneration}
-                  disabled={isDeletingGeneration}
-                  variant="secondary"
-                  size="sm"
-                  className="mt-3 w-full sm:mt-0 sm:ml-3 sm:w-auto"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+
     </DynamicPageContainer>
   );
 };
