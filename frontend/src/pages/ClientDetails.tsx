@@ -243,7 +243,8 @@ const PreviousFundsIRRDisplay: React.FC<{ inactiveFundIds: number[] }> = ({ inac
 const ClientHeader = ({ 
   client, 
   totalValue, 
-  totalIRR, 
+  totalIRR,
+  totalRevenue,
   onEditClick,
   isEditing,
   editData,
@@ -257,6 +258,7 @@ const ClientHeader = ({
   client: Client; 
   totalValue: number;
   totalIRR: number | string;
+  totalRevenue: number;
   onEditClick: () => void;
   isEditing: boolean;
   editData: ClientFormData;
@@ -646,6 +648,16 @@ const ClientHeader = ({
                         totalIRR >= 0 ? 'bg-green-500' : 'bg-red-500'
                       }`} />
                     )}
+                  </div>
+                </div>
+
+                {/* Total Revenue */}
+                <div>
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                    Total Revenue
+                  </div>
+                  <div className="text-2xl font-bold text-blue-600 tracking-tight">
+                    {formatCurrency(totalRevenue)}
                   </div>
                 </div>
               </div>
@@ -1175,6 +1187,36 @@ const ClientDetails: React.FC = () => {
   const totalFundsUnderManagement = clientAccounts.reduce((sum: number, product: any) => {
     return sum + (product.total_value || 0);
   }, 0);
+
+  // Calculate total revenue across all products
+  const totalRevenue = clientAccounts.reduce((sum: number, product: any) => {
+    const fixedCost = product.fixed_cost || 0;
+    const percentageFee = product.percentage_fee || 0;
+    const portfolioValue = product.total_value || 0;
+    
+    // If neither cost type is set, add 0 to sum
+    if (!fixedCost && !percentageFee) {
+      return sum;
+    }
+    
+    // If only fixed cost is set (no percentage fee)
+    if (fixedCost && !percentageFee) {
+      return sum + fixedCost;
+    }
+    
+    // If percentage fee is involved (with or without fixed cost)
+    if (percentageFee > 0 && portfolioValue > 0) {
+      const productRevenue = fixedCost + ((portfolioValue * percentageFee) / 100);
+      return sum + productRevenue;
+    }
+    
+    // If percentage fee but no valuation, just add fixed cost if any
+    if (percentageFee > 0 && (!portfolioValue || portfolioValue <= 0)) {
+      return sum + fixedCost;
+    }
+    
+    return sum;
+  }, 0);
   
   // Debug logging for product owners
   console.log('DEBUG: Client data:', {
@@ -1634,6 +1676,7 @@ const ClientDetails: React.FC = () => {
         client={client}
         totalValue={totalFundsUnderManagement}
         totalIRR={totalIRR}
+        totalRevenue={totalRevenue}
         onEditClick={startCorrection}
         isEditing={isCorrecting}
         editData={formData}
@@ -2058,10 +2101,12 @@ const RevenueAssignmentModal: React.FC<{
                        {totalValue > 0 ? formatCurrency(totalValue) : 'No valuation'}
                      </td>
                      <td className="px-4 py-2 whitespace-nowrap text-right text-xs">
-                       {productData.percentage_fee && parseFloat(productData.percentage_fee) > 0 ? (
-                         <span className="font-medium text-green-600">{parseFloat(productData.percentage_fee).toFixed(2)}%</span>
+                       {typeof percentageRevenue === 'number' ? (
+                         <span className="font-medium text-blue-600">{formatCurrency(percentageRevenue)}</span>
+                       ) : percentageRevenue === 'Latest valuation needed' ? (
+                         <span className="text-orange-600">{percentageRevenue}</span>
                        ) : (
-                         <span className="text-gray-400">0.00%</span>
+                         <span className="text-gray-500">{percentageRevenue}</span>
                        )}
                      </td>
                      <td className="px-4 py-2 whitespace-nowrap text-right text-xs">

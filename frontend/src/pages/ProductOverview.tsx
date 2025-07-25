@@ -553,7 +553,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           console.log('🚀 Fetching stored portfolio IRR for portfolio:', completeData.portfolio_id);
           
           // Use the optimized endpoint to get stored IRR from latest_portfolio_irr_values view
-          const irrResponse = await api.get(`/api/portfolios/${completeData.portfolio_id}/latest_irr`);
+          const irrResponse = await api.get(`/api/portfolios/${completeData.portfolio_id}/latest-irr`);
           
           console.log('✅ Stored IRR response:', irrResponse.data);
           
@@ -2068,6 +2068,12 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                                 <span className="text-gray-500 text-sm">%</span>
                               </div>
                             </div>
+                            {/* Show calculated percentage fee amount in edit mode */}
+                            {editFormData.percentage_fee && parseFloat(editFormData.percentage_fee) > 0 && portfolioTotalValue > 0 && (
+                              <div className="text-xs text-blue-600 font-medium">
+                                = {formatCurrency((portfolioTotalValue * parseFloat(editFormData.percentage_fee)) / 100)} annually
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <>
@@ -2075,6 +2081,12 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             <div className="text-sm font-medium text-gray-900">
                               {account.percentage_fee !== null && account.percentage_fee !== undefined ? `${account.percentage_fee}%` : 'Not set'}
                             </div>
+                            {/* Show calculated percentage fee amount in view mode */}
+                            {account.percentage_fee && account.percentage_fee > 0 && portfolioTotalValue > 0 && (
+                              <div className="text-xs text-blue-600 font-medium mt-1">
+                                = {formatCurrency((portfolioTotalValue * account.percentage_fee) / 100)} annually
+                              </div>
+                            )}
                           </>
                         )}
                       </div>
