@@ -555,28 +555,24 @@ const ProductOwnerDetails: React.FC = () => {
                     key={product.id}
                     className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1 cursor-pointer" onClick={() => navigate(`/products/${product.id}`)}>
-                        <div className="font-medium text-sm text-gray-900 truncate">
-                          {product.product_name}
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          {product.client_name}
-                        </div>
-                        <div className="flex items-center justify-between mt-2">
-                          <span className="text-xs text-gray-500">
-                            {product.provider_name}
-                          </span>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                            product.status === 'active' 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {product.status}
-                          </span>
-                        </div>
-                      </div>
-                      <button
+                                         <div className="flex items-center justify-between">
+                       <div className="flex-1 cursor-pointer" onClick={() => navigate(`/products/${product.id}`)}>
+                         <div className="font-medium text-sm text-gray-900 truncate">
+                           {product.client_name}
+                         </div>
+                         <div className="text-sm text-gray-700 mt-1 truncate">
+                           {product.product_name}
+                         </div>
+                       </div>
+                      <div className="flex items-center space-x-3">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                          product.status === 'active' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {product.status}
+                        </span>
+                        <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleRemoveProduct(product.id);
@@ -599,7 +595,8 @@ const ProductOwnerDetails: React.FC = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
                         )}
-                      </button>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}

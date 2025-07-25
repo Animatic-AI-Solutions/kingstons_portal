@@ -177,7 +177,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   
   // Edit mode state and form data
   const [isEditMode, setIsEditMode] = useState(false);
-  const [isEditOwnersMode, setIsEditOwnersMode] = useState(false);
+  // const [isEditOwnersMode, setIsEditOwnersMode] = useState(false); // No longer needed - owners editing integrated into main edit mode
   const [providers, setProviders] = useState<Provider[]>([]);
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [allProductOwners, setAllProductOwners] = useState<ProductOwner[]>([]);
@@ -553,7 +553,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           console.log('🚀 Fetching stored portfolio IRR for portfolio:', completeData.portfolio_id);
           
           // Use the optimized endpoint to get stored IRR from latest_portfolio_irr_values view
-          const irrResponse = await api.get(`/api/portfolios/${completeData.portfolio_id}/latest_irr`);
+          const irrResponse = await api.get(`/api/portfolios/${completeData.portfolio_id}/latest-irr`);
           
           console.log('✅ Stored IRR response:', irrResponse.data);
           
@@ -1591,27 +1591,34 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         fixed_cost: account.fixed_cost?.toString() ?? '',
         percentage_fee: account.percentage_fee?.toString() ?? ''
       });
-    } else {
-      // Exiting edit mode - clear any errors
-      setFormError(null);
-    }
-    setIsEditMode(!isEditMode);
-  };
-
-  // Toggle edit owners mode and populate form data
-  const toggleEditOwnersMode = () => {
-    if (!isEditOwnersMode && account) {
-      // Entering edit mode - populate form with current data
+      
+      // Also populate product owners form data
       setEditOwnersFormData({
         portfolio_id: account.portfolio_id?.toString() || '',
         selected_owner_ids: productOwners.map(owner => owner.id)
       });
     } else {
       // Exiting edit mode - clear any errors
+      setFormError(null);
       setOwnersFormError(null);
     }
-    setIsEditOwnersMode(!isEditOwnersMode);
+    setIsEditMode(!isEditMode);
   };
+
+  // Toggle edit owners mode and populate form data
+  // const toggleEditOwnersMode = () => {
+  //   if (!isEditOwnersMode && account) {
+  //     // Entering edit mode - populate form with current data
+  //     setEditOwnersFormData({
+  //       portfolio_id: account.portfolio_id?.toString() || '',
+  //       selected_owner_ids: productOwners.map(owner => owner.id)
+  //     });
+  //   } else {
+  //     // Exiting edit mode - clear any errors
+  //     setOwnersFormError(null);
+  //   }
+  //   setIsEditOwnersMode(!isEditOwnersMode);
+  // };
 
   // Handle form input changes for product details
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -1725,6 +1732,22 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
 
       await api.patch(`/api/client_products/${accountId}`, updateData);
       
+      // Also update product owners if they have been modified
+      if (editOwnersFormData.selected_owner_ids !== undefined) {
+        try {
+          // Update product owners
+          const ownersUpdateData = {
+            portfolio_id: account.portfolio_id,  // Keep existing portfolio
+            selected_owner_ids: editOwnersFormData.selected_owner_ids
+          };
+
+          await api.patch(`/api/client_products/${accountId}/owners`, ownersUpdateData);
+        } catch (ownersErr: any) {
+          console.error('Error updating product owners:', ownersErr);
+          // Don't fail the whole update if only owners update fails
+        }
+      }
+      
       // Refresh the data
       await fetchData(accountId);
       
@@ -1740,67 +1763,67 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   };
 
   // Handle product owners form submission
-  const handleOwnersSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!accountId || !account) return;
+  // const handleOwnersSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   if (!accountId || !account) return;
 
-    setIsSubmittingOwners(true);
-    setOwnersFormError(null);
+  //   setIsSubmittingOwners(true);
+  //   setOwnersFormError(null);
 
-    try {
-      const updateData: any = {};
+  //   try {
+  //     const updateData: any = {};
 
-      // Only include portfolio_id if a value is selected
-      if (editOwnersFormData.portfolio_id) {
-        updateData.portfolio_id = parseInt(editOwnersFormData.portfolio_id);
-      }
+  //     // Only include portfolio_id if a value is selected
+  //     if (editOwnersFormData.portfolio_id) {
+  //       updateData.portfolio_id = parseInt(editOwnersFormData.portfolio_id);
+  //     }
 
-      // Update product details if portfolio changed
-      if (Object.keys(updateData).length > 0) {
-        await api.patch(`/api/client_products/${accountId}`, updateData);
-      }
+  //     // Update product details if portfolio changed
+  //     if (Object.keys(updateData).length > 0) {
+  //       await api.patch(`/api/client_products/${accountId}`, updateData);
+  //     }
 
-      // Update product owners associations
-      // First, get current associations
-      const currentOwnerIds = productOwners.map(owner => owner.id);
-      const newOwnerIds = editOwnersFormData.selected_owner_ids;
+  //     // Update product owners associations
+  //     // First, get current associations
+  //     const currentOwnerIds = productOwners.map(owner => owner.id);
+  //     const newOwnerIds = editOwnersFormData.selected_owner_ids;
 
-      // Remove owners that are no longer selected
-      const ownersToRemove = currentOwnerIds.filter(id => !newOwnerIds.includes(id));
-      for (const ownerId of ownersToRemove) {
-        try {
-          await api.delete(`/api/product_owner_products/${ownerId}/${accountId}`);
-        } catch (err) {
-          console.error(`Error removing product owner ${ownerId}:`, err);
-        }
-      }
+  //     // Remove owners that are no longer selected
+  //     const ownersToRemove = currentOwnerIds.filter(id => !newOwnerIds.includes(id));
+  //     for (const ownerId of ownersToRemove) {
+  //       try {
+  //         await api.delete(`/api/product_owner_products/${ownerId}/${accountId}`);
+  //       } catch (err) {
+  //         console.error(`Error removing product owner ${ownerId}:`, err);
+  //       }
+  //     }
 
-      // Add new owners
-      const ownersToAdd = newOwnerIds.filter(id => !currentOwnerIds.includes(id));
-      for (const ownerId of ownersToAdd) {
-        try {
-          await api.post('/api/product_owner_products', {
-            product_owner_id: ownerId,
-            product_id: parseInt(accountId)
-          });
-        } catch (err) {
-          console.error(`Error adding product owner ${ownerId}:`, err);
-        }
-      }
+  //     // Add new owners
+  //     const ownersToAdd = newOwnerIds.filter(id => !currentOwnerIds.includes(id));
+  //     for (const ownerId of ownersToAdd) {
+  //       try {
+  //         await api.post('/api/product_owner_products', {
+  //           product_owner_id: ownerId,
+  //           product_id: parseInt(accountId)
+  //         });
+  //       } catch (err) {
+  //         console.error(`Error adding product owner ${ownerId}:`, err);
+  //       }
+  //     }
       
-      // Refresh the data
-      await fetchData(accountId);
+  //     // Refresh the data
+  //     await fetchData(accountId);
       
-      // Exit edit mode
-      setIsEditOwnersMode(false);
-      setOwnersFormError(null);
-    } catch (err: any) {
-      console.error('Error updating product owners:', err);
-      setOwnersFormError(err.response?.data?.message || err.response?.data?.detail || 'Failed to update product owners');
-    } finally {
-      setIsSubmittingOwners(false);
-    }
-  };
+  //     // Exit edit mode
+  //     setIsEditOwnersMode(false);
+  //     setOwnersFormError(null);
+  //   } catch (err: any) {
+  //     console.error('Error updating product owners:', err);
+  //     setOwnersFormError(err.response?.data?.message || err.response?.data?.detail || 'Failed to update product owners');
+  //   } finally {
+  //     setIsSubmittingOwners(false);
+  //   }
+  // };
 
   if (isLoading) {
     return (
@@ -1982,8 +2005,57 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                   <div>
                     <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Portfolio Template</div>
                     <div className="text-sm font-medium text-gray-900">
-                      {account.template_info?.generation_name || account.template_info?.name || (account.template_generation_id ? 'Template' : 'Bespoke')}
+                      {account.template_info?.generation_name || 'Bespoke'}
                     </div>
+                  </div>
+
+                  {/* Product Owners - Editable in edit mode */}
+                  <div className="sm:col-span-2">
+                    {isEditMode ? (
+                      <div>
+                        <label htmlFor="product-owners-select" className="block text-xs font-medium text-gray-700 mb-1">
+                          Product Owners
+                        </label>
+                        <MultiSelectDropdown
+                          label=""
+                          options={allProductOwners.map(owner => ({
+                            value: owner.id,
+                            label: getProductOwnerDisplayName(owner)
+                          }))}
+                          values={editOwnersFormData.selected_owner_ids}
+                          onChange={(values) => setEditOwnersFormData(prev => ({
+                            ...prev,
+                            selected_owner_ids: values as number[]
+                          }))}
+                          placeholder="Search and select product owners"
+                          size="sm"
+                          searchable={true}
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Product Owners</div>
+                        {productOwners.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {productOwners.map(owner => (
+                              <span
+                                key={owner.id}
+                                className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
+                              >
+                                <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                {getProductOwnerDisplayName(owner)}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-gray-500 italic">
+                            No product owners assigned
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
 
                   {/* Start Date - Inline Editable */}
@@ -2068,6 +2140,12 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                                 <span className="text-gray-500 text-sm">%</span>
                               </div>
                             </div>
+                            {/* Show calculated percentage fee amount in edit mode */}
+                            {editFormData.percentage_fee && parseFloat(editFormData.percentage_fee) > 0 && portfolioTotalValue > 0 && (
+                              <div className="text-xs text-blue-600 font-medium">
+                                = {formatCurrency((portfolioTotalValue * parseFloat(editFormData.percentage_fee)) / 100)} annually
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <>
@@ -2075,6 +2153,12 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             <div className="text-sm font-medium text-gray-900">
                               {account.percentage_fee !== null && account.percentage_fee !== undefined ? `${account.percentage_fee}%` : 'Not set'}
                             </div>
+                            {/* Show calculated percentage fee amount in view mode */}
+                            {account.percentage_fee && account.percentage_fee > 0 && portfolioTotalValue > 0 && (
+                              <div className="text-xs text-blue-600 font-medium mt-1">
+                                = {formatCurrency((portfolioTotalValue * account.percentage_fee) / 100)} annually
+                              </div>
+                            )}
                           </>
                         )}
                       </div>
@@ -2121,152 +2205,9 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
 
             </div>
 
-            {/* Right Side - Product Owners & Portfolio (Top) + Product Summary & Risk (Bottom) */}
-            <div className="p-6 space-y-8">
-              {/* Product Owners Section - Moved to Top Right */}
-              <div>
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-md font-semibold text-gray-900 flex items-center">
-                    <svg className="h-4 w-4 text-indigo-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    Product Owners & Portfolio
-                  </h3>
-                  <div className="flex space-x-2">
-                    {isEditOwnersMode ? (
-                      <ActionButton
-                        variant="cancel"
-                        size="xs"
-                        onClick={toggleEditOwnersMode}
-                      />
-                    ) : (
-                      <ActionButton
-                        variant="edit"
-                        size="xs"
-                        onClick={toggleEditOwnersMode}
-                      />
-                    )}
-                  </div>
-                </div>
-
-                {isEditOwnersMode ? (
-                  // Compact Edit Product Owners Form
-                  <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    {ownersFormError && (
-                      <div className="mb-2 p-2 text-xs text-red-700 bg-red-50 rounded border border-red-200">
-                        {ownersFormError}
-                      </div>
-                    )}
-
-                    <form onSubmit={handleOwnersSubmit} className="space-y-3">
-                      <div className="grid grid-cols-1 gap-3">
-                        <div>
-                          <BaseDropdown
-                            label="Portfolio Assignment"
-                            options={[
-                              { value: '', label: 'Select Portfolio' },
-                              ...portfolios.map(portfolio => ({
-                                value: portfolio.id.toString(),
-                                label: portfolio.portfolio_name
-                              }))
-                            ]}
-                            value={editOwnersFormData.portfolio_id}
-                            onChange={(value) => setEditOwnersFormData(prev => ({
-                              ...prev,
-                              portfolio_id: typeof value === 'string' ? value : String(value)
-                            }))}
-                            size="sm"
-                            className="text-xs"
-                          />
-                        </div>
-                        
-                        <div>
-                          <label htmlFor="product-owners-select" className="block text-xs font-medium text-gray-700 mb-1">
-                            Product Owners
-                          </label>
-                          <MultiSelectDropdown
-                            label=""
-                            options={allProductOwners.map(owner => ({
-                              value: owner.id,
-                              label: getProductOwnerDisplayName(owner)
-                            }))}
-                            values={editOwnersFormData.selected_owner_ids}
-                            onChange={(values) => setEditOwnersFormData(prev => ({
-                              ...prev,
-                              selected_owner_ids: values as number[]
-                            }))}
-                            placeholder="Search and select product owners"
-                            size="sm"
-                            searchable={true}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex justify-end space-x-2 pt-2">
-                        <ActionButton
-                          variant="cancel"
-                          size="xs"
-                          onClick={toggleEditOwnersMode}
-                        />
-                        <ActionButton
-                          variant="save"
-                          size="xs"
-                          type="submit"
-                          disabled={isSubmittingOwners}
-                          loading={isSubmittingOwners}
-                        />
-                      </div>
-                    </form>
-                  </div>
-                ) : (
-                  // Compact Display
-                  <div className="space-y-3">
-                    {/* Portfolio Info - Inline */}
-                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                      <div>
-                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Portfolio</div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {account.portfolio_details?.portfolio_name || 'No portfolio assigned'}
-                        </div>
-                      </div>
-                      {account.portfolio_details?.start_date && (
-                        <div className="text-right">
-                          <div className="text-xs text-gray-500">Assigned</div>
-                          <div className="text-xs font-medium text-gray-700">
-                            {formatDate(account.portfolio_details.start_date)}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Product Owners - Compact Chips */}
-                    <div>
-                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Product Owners</div>
-                      {productOwners.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {productOwners.map(owner => (
-                            <span
-                              key={owner.id}
-                              className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
-                            >
-                              <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                              </svg>
-                              {getProductOwnerDisplayName(owner)}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-xs text-gray-500 italic p-2 bg-gray-50 rounded">
-                          No product owners assigned
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-            </div>
-
-              {/* Product Summary Section - Moved to Bottom Right */}
+            {/* Right Side - Product Summary & Risk */}
+            <div className="p-6">
+              {/* Product Summary Section */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <svg className="h-5 w-5 text-indigo-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2407,11 +2348,11 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                 <h3 className="text-lg font-medium text-gray-900">Portfolio Fund Summary</h3>
               </div>
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                account?.template_generation_id 
+                account?.template_info?.generation_name 
                   ? 'bg-blue-100 text-blue-800' 
                   : 'bg-green-100 text-green-800'
               }`}>
-                {account?.template_generation_id ? 'Template Portfolio' : 'Bespoke Portfolio'}
+                {account?.template_info?.generation_name || 'Bespoke'}
               </span>
             </div>
             
@@ -2872,7 +2813,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                 </svg>
                 <h3 className="mt-2 text-sm font-medium text-gray-900">No active funds in portfolio</h3>
                 <p className="mt-1 text-sm text-gray-500">
-                  {account?.template_generation_id 
+                  {account?.template_info?.generation_name 
                     ? 'This template portfolio has no funds configured, but you can customize it by adding funds.'
                     : 'Get started by adding funds to this bespoke portfolio.'
                   }

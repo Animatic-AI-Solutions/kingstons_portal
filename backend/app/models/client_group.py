@@ -37,6 +37,7 @@ class ClientGroupUpdate(BaseModel):
     name: Optional[str] = None
     status: Optional[str] = None
     type: Optional[str] = None
+    created_at: Optional[str] = None  # Allow updating client start date
     advisor_id: Optional[int] = None  # Can update advisor assignment
     advisor: Optional[str] = None  # Legacy field
 
