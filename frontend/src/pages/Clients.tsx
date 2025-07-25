@@ -135,13 +135,14 @@ const Clients: React.FC = () => {
       alignment: 'left',
       control: 'filter'
     },
-    {
-      key: 'fum',
-      label: 'FUM', 
-      dataType: 'currency',
-      alignment: 'left',
-      control: 'sort'
-    },
+    // FUM column removed for performance - was causing 30s load times
+    // {
+    //   key: 'fum',
+    //   label: 'FUM', 
+    //   dataType: 'currency',
+    //   alignment: 'left',
+    //   control: 'sort'
+    // },
     {
       key: 'advisor_name', // Use the new advisor_name field instead of legacy advisor
       label: 'Advisor',
