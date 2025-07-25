@@ -288,9 +288,9 @@ async def get_product_owner_products(
         # Get the product IDs
         product_ids = [assoc["product_id"] for assoc in associations_result.data]
         
-        # Get the product details with provider information
+        # Get the product details with provider and client group information
         products_result = db.table("client_products") \
-            .select("*, available_providers(name, theme_color)") \
+            .select("*, available_providers(name, theme_color), client_groups(name)") \
             .in_("id", product_ids) \
             .execute()
         
@@ -329,17 +329,25 @@ async def get_product_owner_products(
                 provider_name = product["available_providers"]["name"]
                 provider_theme_color = product["available_providers"]["theme_color"]
             
+            # Add client group information if available
+            client_name = None
+            if product.get("client_groups"):
+                client_name = product["client_groups"]["name"]
+            
             # Create enriched product object
             enriched_product = {
                 **product,
                 "product_owners": product_owners,
                 "provider_name": provider_name,
-                "provider_theme_color": provider_theme_color
+                "provider_theme_color": provider_theme_color,
+                "client_name": client_name
             }
             
-            # Remove the nested provider object to avoid confusion
+            # Remove the nested objects to avoid confusion
             if "available_providers" in enriched_product:
                 del enriched_product["available_providers"]
+            if "client_groups" in enriched_product:
+                del enriched_product["client_groups"]
             
             enriched_products.append(enriched_product)
         

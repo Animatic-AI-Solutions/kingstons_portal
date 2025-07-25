@@ -60,28 +60,49 @@ const ProviderDetails: React.FC = () => {
     try {
       setIsLoadingColors(true);
       
-      // Use a comprehensive set of colors (15 colors)
+      // Use a comprehensive set of colors (30 colors)
       const comprehensiveColors = [
-        // Vibrant / Pure Colors
+        // Vibrant / Primary Colors (Row 1)
         {name: 'Blue', value: '#2563EB'},         // Bright Blue
         {name: 'Red', value: '#DC2626'},          // Pure Red
         {name: 'Green', value: '#16A34A'},        // Bright Green
         {name: 'Purple', value: '#8B5CF6'},       // Vibrant Purple
         {name: 'Orange', value: '#F97316'},       // Bright Orange
         
-        // Light / Soft Colors
+        // Extended Primary Colors (Row 2)
+        {name: 'Cyan', value: '#0891B2'},         // Cyan
+        {name: 'Pink', value: '#EC4899'},         // Hot Pink
+        {name: 'Yellow', value: '#EAB308'},       // Bright Yellow
+        {name: 'Teal', value: '#0D9488'},         // Teal
+        {name: 'Emerald', value: '#059669'},      // Emerald
+        
+        // Light / Soft Colors (Row 3)
         {name: 'Sky Blue', value: '#38BDF8'},     // Light Blue
         {name: 'Mint', value: '#4ADE80'},         // Light Green
         {name: 'Lavender', value: '#C4B5FD'},     // Soft Purple
         {name: 'Peach', value: '#FDBA74'},        // Soft Orange
         {name: 'Rose', value: '#FDA4AF'},         // Soft Pink
         
-        // Deep / Dark Colors
+        // Additional Light Colors (Row 4)
+        {name: 'Light Cyan', value: '#67E8F9'},   // Light Cyan
+        {name: 'Coral', value: '#FCA5A5'},        // Light Coral
+        {name: 'Lime', value: '#84CC16'},         // Light Lime
+        {name: 'Soft Teal', value: '#5EEAD4'},    // Soft Teal
+        {name: 'Amber', value: '#FBBF24'},        // Light Amber
+        
+        // Deep / Dark Colors (Row 5)
         {name: 'Navy', value: '#1E40AF'},         // Deep Blue
         {name: 'Forest', value: '#15803D'},       // Forest Green
         {name: 'Maroon', value: '#9F1239'},       // Deep Red
         {name: 'Indigo', value: '#4338CA'},       // Deep Purple
         {name: 'Slate', value: '#334155'},        // Dark Slate
+        
+        // Extended Dark Colors (Row 6)
+        {name: 'Deep Teal', value: '#0F766E'},    // Deep Teal
+        {name: 'Burgundy', value: '#991B1B'},     // Burgundy
+        {name: 'Olive', value: '#65A30D'},        // Olive Green
+        {name: 'Midnight', value: '#1E293B'},     // Midnight Blue
+        {name: 'Chocolate', value: '#92400E'},    // Dark Brown
       ];
       
       // If the provider already has a color that's not in our list, add it
@@ -104,26 +125,47 @@ const ProviderDetails: React.FC = () => {
 
   const getColorNameByValue = (value: string): string | undefined => {
     const colorNames: Record<string, string> = {
-      // Vibrant / Pure Colors
+      // Vibrant / Primary Colors (Row 1)
       '#2563EB': 'Blue',
       '#DC2626': 'Red',
       '#16A34A': 'Green',
       '#8B5CF6': 'Purple',
       '#F97316': 'Orange',
       
-      // Light / Soft Colors
+      // Extended Primary Colors (Row 2)
+      '#0891B2': 'Cyan',
+      '#EC4899': 'Pink',
+      '#EAB308': 'Yellow',
+      '#0D9488': 'Teal',
+      '#059669': 'Emerald',
+      
+      // Light / Soft Colors (Row 3)
       '#38BDF8': 'Sky Blue',
       '#4ADE80': 'Mint',
       '#C4B5FD': 'Lavender',
       '#FDBA74': 'Peach',
       '#FDA4AF': 'Rose',
       
-      // Deep / Dark Colors
+      // Additional Light Colors (Row 4)
+      '#67E8F9': 'Light Cyan',
+      '#FCA5A5': 'Coral',
+      '#84CC16': 'Lime',
+      '#5EEAD4': 'Soft Teal',
+      '#FBBF24': 'Amber',
+      
+      // Deep / Dark Colors (Row 5)
       '#1E40AF': 'Navy',
       '#15803D': 'Forest',
       '#9F1239': 'Maroon',
       '#4338CA': 'Indigo',
       '#334155': 'Slate',
+      
+      // Extended Dark Colors (Row 6)
+      '#0F766E': 'Deep Teal',
+      '#991B1B': 'Burgundy',
+      '#65A30D': 'Olive',
+      '#1E293B': 'Midnight',
+      '#92400E': 'Chocolate',
       
       // Legacy colors (for backward compatibility)
       '#4F46E5': 'Blue (Legacy)',
@@ -495,7 +537,7 @@ const ProviderDetails: React.FC = () => {
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-5 gap-1">
+                  <div className="grid grid-cols-6 gap-1">
                     {availableColors.map((color) => (
                       <button
                         key={color.value}
