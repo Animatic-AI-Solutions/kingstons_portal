@@ -872,10 +872,10 @@ const ProductCard: React.FC<{
             <div className="text-xl font-light text-gray-900">
               {formatCurrency(displayValue)}
             </div>
-            {account.irr !== undefined && account.irr !== null && (
+            {account.irr !== undefined && account.irr !== null && account.irr !== "-" && typeof account.irr === 'number' && (
               <div className="flex items-center justify-end mt-1">
                 <span className={`text-sm font-medium ${
-                  typeof account.irr === 'number' && account.irr >= 0 ? 'text-green-600' : 'text-red-600'
+                  account.irr >= 0 ? 'text-green-600' : 'text-red-600'
                 }`}>
                   {formatPercentage(account.irr)}
                 </span>
@@ -1070,15 +1070,13 @@ const ProductCard: React.FC<{
                         {fund.is_virtual_entry ? (
                           <PreviousFundsIRRDisplay inactiveFundIds={fund.inactive_fund_ids || []} />
                         ) : (
-                          fund.irr !== undefined && fund.irr !== null ? (
+                          fund.irr !== undefined && fund.irr !== null && fund.irr !== "-" ? (
                             typeof fund.irr === 'number' ? (
                               <span className={`font-medium ${
                                 fund.irr >= 0 ? 'text-green-600' : 'text-red-600'
                               }`}>
                                 {formatPercentage(fund.irr)}
                               </span>
-                            ) : fund.irr === "-" ? (
-                              <span className="text-gray-500 font-medium">-</span>
                             ) : (
                               <span className="text-gray-500 font-medium">{fund.irr}</span>
                             )
@@ -1115,15 +1113,13 @@ const ProductCard: React.FC<{
                       {formatCurrencyWithZeroHandling(funds.filter(fund => !fund.is_virtual_entry).reduce((sum, fund) => sum + (fund.market_value || 0), 0), true)}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
-                      {account.irr !== undefined && account.irr !== null ? (
+                      {account.irr !== undefined && account.irr !== null && account.irr !== "-" ? (
                         typeof account.irr === 'number' ? (
                           <span className={`font-medium ${
                             account.irr >= 0 ? 'text-green-600' : 'text-red-600'
                           }`}>
                             {formatPercentage(account.irr)}
                           </span>
-                        ) : account.irr === "-" ? (
-                          <span className="text-gray-500 font-medium">-</span>
                         ) : (
                           <span className="text-gray-500 font-medium">{account.irr}</span>
                         )

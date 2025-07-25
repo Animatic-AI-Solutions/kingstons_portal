@@ -1072,22 +1072,31 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     return fundValuationsIndex.get(key);
   };
 
-  // Format activity type for display - convert camelCase or snake_case to spaces
+  // Format activity type for display - use abbreviated versions to save space
   const formatActivityType = (activityType: string): string => {
     if (!activityType) return '';
     
-    // Handle specific case for Current Value -> Valuation
-    if (activityType === 'Current Value') {
-      return 'Valuation';
+    // Abbreviation mapping for period overview table
+    const abbreviations: { [key: string]: string } = {
+      'Investment': 'Inv.',
+      'RegularInvestment': 'Reg. Inv.',
+      'TaxUplift': 'Tax',
+      'ProductSwitchIn': 'Prod. In',
+      'ProductSwitchOut': 'Prod. Out', 
+      'FundSwitchIn': 'Fund In',
+      'FundSwitchOut': 'Fund Out',
+      'Withdrawal': 'With.',
+      'Current Value': 'Valuation'
+    };
+    
+    // Return abbreviation if available, otherwise format normally
+    if (abbreviations[activityType]) {
+      return abbreviations[activityType];
     }
     
-    // Replace underscores with spaces
+    // Fallback to original formatting for any new activity types
     let formatted = activityType.replace(/_/g, ' ');
-    
-    // Add spaces between camelCase words
     formatted = formatted.replace(/([a-z])([A-Z])/g, '$1 $2');
-    
-    // Capitalize first letter of each word
     return formatted
       .split(' ')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
