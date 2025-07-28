@@ -120,7 +120,7 @@ const Products: React.FC = () => {
       dataType: 'text',
       alignment: 'left',
       control: 'sort',
-      width: 'fixed'
+      width: 'auto'
     },
     {
       key: 'provider_name',
@@ -128,7 +128,7 @@ const Products: React.FC = () => {
       dataType: 'provider',
       alignment: 'left',
       control: 'filter',
-      width: 'fixed'
+      width: 'auto'
     },
     {
       key: 'product_owners',
@@ -136,7 +136,7 @@ const Products: React.FC = () => {
       dataType: 'text',
       alignment: 'left',
       control: 'none',
-      width: 'fixed',
+      width: 'auto',
       format: (value: any) => {
         if (value && value.length > 0) {
           if (value.length === 1) {
@@ -164,7 +164,7 @@ const Products: React.FC = () => {
       dataType: 'currency',
       alignment: 'right',
       control: 'sort',
-      width: 'fixed'
+      width: 'auto'
     },
     {
       key: 'irr',
@@ -172,7 +172,7 @@ const Products: React.FC = () => {
       dataType: 'text',
       alignment: 'right',
       control: 'sort',
-      width: 'fixed',
+      width: 'auto',
       format: (value: any, row: any) => {
         if (value !== undefined && value !== null && typeof value === 'number') {
           const irrPercentage = `${value.toFixed(1)}%`;
@@ -244,7 +244,7 @@ const Products: React.FC = () => {
 
   return (
     <DynamicPageContainer 
-      maxWidth="2800px"
+      maxWidth="1400px"
       className="py-3"
     >
       <div className="flex justify-between items-center mb-3">
@@ -260,7 +260,7 @@ const Products: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white shadow rounded-lg p-4 overflow-visible">
+      <div className="bg-white shadow rounded-lg p-4">
         {/* Search Control */}
         <div className="flex flex-col gap-3 mb-2">
           {/* Search Bar */}
@@ -280,7 +280,7 @@ const Products: React.FC = () => {
         </div>
 
         {/* Products Table */}
-        <div className="mt-2">
+        <div className="mt-2 overflow-x-auto">
           {isLoading ? (
             <div className="flex justify-center items-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
@@ -291,9 +291,7 @@ const Products: React.FC = () => {
             <StandardTable
               data={finalFilteredData}
               columns={tableColumns}
-              className="compact-products-table text-xs"
-              maxWidth={900}
-              minFontSize={7}
+              className="compact-products-table"
               onRowClick={(row) => handleProductClick(row)}
             />
           )}
