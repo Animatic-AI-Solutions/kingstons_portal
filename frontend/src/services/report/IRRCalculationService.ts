@@ -132,25 +132,9 @@ export class IRRCalculationService implements IIRRCalculationService {
       this.log(`Product ${productId} maps to portfolio ${portfolioId}`);
       
       // Test both endpoints to see which one works
-      this.log(`Testing both IRR endpoints for portfolio ${portfolioId}...`);
+              this.log(`Fetching IRR for portfolio ${portfolioId}...`);
       
-      // Test endpoint 1 (hyphen)
-      try {
-        const response1 = await this.api.get(`/api/portfolios/${portfolioId}/latest-irr`);
-        this.log(`Endpoint 1 (/latest-irr) response:`, response1.data);
-      } catch (error1) {
-        this.log(`Endpoint 1 (/latest-irr) failed:`, error1);
-      }
-      
-      // Test endpoint 2 (underscore)
-      try {
-        const response2 = await this.api.get(`/api/portfolios/${portfolioId}/latest_irr`);
-        this.log(`Endpoint 2 (/latest_irr) response:`, response2.data);
-      } catch (error2) {
-        this.log(`Endpoint 2 (/latest_irr) failed:`, error2);
-      }
-      
-      // Use the working endpoint
+      // Use the correct endpoint (hyphen, not underscore)
       const response = await this.api.get(`/api/portfolios/${portfolioId}/latest-irr`);
       // Fix: Properly handle zero values - only convert undefined to null
       const irrValue = response.data?.irr_result !== undefined ? response.data.irr_result : null;

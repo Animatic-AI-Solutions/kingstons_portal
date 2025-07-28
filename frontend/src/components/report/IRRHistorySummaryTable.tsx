@@ -37,6 +37,9 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const currentRequestRef = useRef<string>('');
+  const completedRequestsRef = useRef<Set<string>>(new Set());
+  const dataCache = useRef<Map<string, SummaryTableData>>(new Map());
+  const isRequestInProgressRef = useRef<boolean>(false);
 
   // Generate a key for request deduplication
   const generateRequestKey = (productIds: number[], selectedDates: string[]) => {
@@ -161,6 +164,14 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
 
   // Fetch IRR history summary data
   useEffect(() => {
+    console.log('🔄 [IRR SUMMARY TABLE] useEffect triggered:', {
+      productIdsLength: productIds.length,
+      selectedDatesLength: selectedDates.length,
+      clientGroupIds,
+      productIds: productIds.slice(0, 3),
+      selectedDates: selectedDates.slice(0, 2)
+    });
+    
     const fetchSummaryData = async () => {
       if (productIds.length === 0 || selectedDates.length === 0) {
         console.log('⚠️ [IRR SUMMARY TABLE] Early return - empty productIds or selectedDates');
@@ -171,11 +182,22 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
       // Generate request key for deduplication
       const requestKey = generateRequestKey(productIds, selectedDates);
       
-      // If the same request is already in progress, skip
-      if (currentRequestRef.current === requestKey && isLoading) {
-        console.log('⚠️ [IRR SUMMARY TABLE] Request already in progress, skipping:', requestKey);
+      // SYNCHRONOUS BLOCKING: Prevent race conditions
+      if (isRequestInProgressRef.current) {
+        console.log('⚠️ [IRR SUMMARY TABLE] Request already in progress (synchronous check), skipping:', requestKey);
         return;
       }
+      
+      // Check if we already have cached data for this request
+      if (dataCache.current.has(requestKey)) {
+        console.log('⚠️ [IRR SUMMARY TABLE] Using cached data for request:', requestKey);
+        const cachedData = dataCache.current.get(requestKey)!;
+        setTableData(cachedData);
+        return;
+      }
+      
+      // Set the flag immediately to block subsequent calls
+      isRequestInProgressRef.current = true;
 
       console.log('🔍 [IRR SUMMARY TABLE] Starting new request:', {
         requestKey,
@@ -188,24 +210,65 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
       setError(null);
 
       try {
+        // Debug: Check for duplicate product IDs
+        const uniqueProductIds = [...new Set(productIds)];
+        if (uniqueProductIds.length !== productIds.length) {
+          console.warn('⚠️ [IRR SUMMARY TABLE] Duplicate product IDs detected!', {
+            original: productIds,
+            unique: uniqueProductIds,
+            duplicateCount: productIds.length - uniqueProductIds.length
+          });
+        }
+
+        console.log('🔍 [IRR SUMMARY TABLE] Request details:', {
+          productIds: productIds,
+          uniqueProductIds: uniqueProductIds,
+          selectedDates: selectedDates.sort(),
+          clientGroupIds
+        });
+
         const request: IRRHistorySummaryRequest = {
-          product_ids: productIds,
+          product_ids: uniqueProductIds, // Use deduplicated product IDs
           selected_dates: selectedDates.sort(), // Sort dates chronologically
           client_group_ids: clientGroupIds
         };
 
         const response = await IRRHistorySummaryService.getIRRHistorySummary(request);
 
+        // Debug: Analyze the backend response for duplicates
+        console.log('🔍 [IRR SUMMARY TABLE] Backend response analysis:', {
+          productRowsCount: response.data.product_irr_history?.length || 0,
+          portfolioTotalsCount: response.data.portfolio_irr_history?.length || 0,
+          productRowsSample: response.data.product_irr_history?.slice(0, 3),
+          uniqueProductIdsInResponse: [...new Set(response.data.product_irr_history?.map((row: any) => row.product_id) || [])],
+          requestedProductIds: uniqueProductIds
+        });
+
         // Sort dates for consistent column ordering (most recent first)
         const sortedDates = [...selectedDates].sort((a, b) => b.localeCompare(a));
         
+        // Backend now returns flat rows (one per product-date combination)
+        const productRows = response.data.product_irr_history || [];
+        
+        // No need for deduplication since backend now returns correct flat structure
+        console.log('✅ [IRR SUMMARY TABLE] Received flat rows from backend:', {
+          totalRows: productRows.length,
+          expectedRows: uniqueProductIds.length * selectedDates.length,
+          structure: 'flat'
+        });
+
         const newTableData = {
-          productRows: response.data.product_irr_history,
+          productRows: productRows,
           portfolioTotals: response.data.portfolio_irr_history,
           dateHeaders: sortedDates
         };
         
         console.log('🔍 [IRR SUMMARY TABLE] Setting table data:', newTableData);
+        
+        // Cache the data and mark request as completed
+        dataCache.current.set(requestKey, newTableData);
+        completedRequestsRef.current.add(requestKey);
+        
         setTableData(newTableData);
       } catch (err: any) {
         console.error('❌ [IRR SUMMARY TABLE] Failed to fetch IRR history summary:', err);
@@ -213,16 +276,48 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
       } finally {
         setIsLoading(false);
         currentRequestRef.current = '';
+        isRequestInProgressRef.current = false;
       }
     };
 
     fetchSummaryData();
   }, [productIds, selectedDates, clientGroupIds]);
 
-  // Get IRR value for a specific product and date
-  const getIRRValueForProductAndDate = (product: ProductIRRHistory, date: string): number | null => {
-    const irrData = product.irr_data.find(data => data.date === date);
-    return irrData ? irrData.irr_value : null;
+  // Cleanup cache on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      dataCache.current.clear();
+      completedRequestsRef.current.clear();
+      isRequestInProgressRef.current = false;
+    };
+  }, []);
+
+  // Get IRR value for a specific product and date from flat rows
+  const getIRRValueForProductAndDate = (productId: number, date: string): number | null => {
+    const flatRow = tableData.productRows.find((row: any) => 
+      row.product_id === productId && row.irr_date === date
+    ) as any;
+    return flatRow ? flatRow.irr_result : null;
+  };
+
+  // Get unique products from flat rows
+  const getUniqueProducts = () => {
+    if (!tableData.productRows || tableData.productRows.length === 0) return [];
+    
+    const productMap = new Map();
+    tableData.productRows.forEach((row: any) => {
+      if (!productMap.has(row.product_id)) {
+        productMap.set(row.product_id, {
+          product_id: row.product_id,
+          product_name: row.product_name,
+          provider_name: row.provider_name,
+          provider_theme_color: row.provider_theme_color,
+          status: row.status
+        });
+      }
+    });
+    
+    return Array.from(productMap.values());
   };
 
   // Get portfolio IRR for a specific date
@@ -423,12 +518,12 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
               {/* Table Body */}
               <tbody className="bg-white divide-y divide-gray-200">
                 {/* Product Rows */}
-                {organizeProductsByType(tableData.productRows).map((product) => {
+                {organizeProductsByType(getUniqueProducts()).map((product, index) => {
                   // Determine if this product should be greyed out (same logic as SummaryTab)
                   const isLapsed = product.status === 'inactive' || product.status === 'lapsed';
                   
                   return (
-                    <tr key={product.product_id} className={`hover:bg-blue-50 ${isLapsed ? 'opacity-50 bg-gray-50' : ''}`}>
+                    <tr key={`product-${product.product_id}-${index}`} className={`hover:bg-blue-50 ${isLapsed ? 'opacity-50 bg-gray-50' : ''}`}>
                       {/* Product Name Cell */}
                       <td className={`text-left px-2 py-2 ${isLapsed ? 'text-gray-500' : 'text-gray-800'}`}>
                         <div className="flex items-start gap-1.5">
@@ -464,7 +559,7 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
 
                       {/* IRR Value Cells */}
                       {tableData.dateHeaders.map((date, index) => {
-                        const irrValue = getIRRValueForProductAndDate(product, date);
+                        const irrValue = getIRRValueForProductAndDate(product.product_id, date);
                         // Check if this is the most recent (first) date since dates are sorted newest first
                         const isCurrentYear = index === 0;
                         // Use 'total' format type for active products (1 decimal place), 'inactive' for inactive products (smart decimal places)
