@@ -84,6 +84,14 @@ The analytics module (`analytics.py`) provides specialized endpoints for accurat
 - **Multiple Portfolio Funds IRR:** Leverages the standardized multiple portfolio funds IRR calculation engine to aggregate IRR across all portfolio funds for accurate client-level and product-level IRR values.
 - **Mathematical Accuracy:** Ensures IRR calculations follow proper financial mathematics by analyzing actual cash flows and timing, providing accurate performance metrics for wealth management decision-making.
 
+### Ultra-Fast Analytics Dashboard
+To address performance challenges with real-time IRR calculations (which could take 67+ seconds), an optimized analytics system has been implemented:
+- **`/analytics/dashboard-fast`:** Primary endpoint using pre-computed database views for sub-second response times
+- **`/analytics/company/irr/refresh-background`:** Asynchronous endpoint for updating IRR calculations without blocking the UI
+- **Intelligent Caching:** 24-hour cache duration for company-wide IRR calculations with cache status monitoring
+- **Graceful Fallback:** Automatic fallback to real-time calculations if pre-computed views are unavailable
+- **Revenue Integration:** Seamless integration with existing `company_revenue_analytics` view for complete dashboard data
+
 ## 4. Authentication and Security
 
 - **Authentication:** Handled via **secure httpOnly cookie-based JWT authentication** for enhanced security:

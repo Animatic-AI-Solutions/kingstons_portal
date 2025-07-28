@@ -252,3 +252,17 @@ Key views include:
 -   **`products_list_view`**: A detailed view for displaying all client products with associated owner and portfolio information.
 -   **`provider_revenue_breakdown`**: A summary view that calculates the total revenue generated per provider across all client products.
 -   **`template_generation_weighted_risk`**: Calculates the overall weighted risk factor for a portfolio template based on the funds it contains.
+
+## 7. Ultra-Fast Analytics Views
+
+To address critical performance issues with the analytics dashboard (reducing load times from 67+ seconds to sub-second response), specialized analytics views have been implemented:
+
+-   **`company_irr_cache`**: Stores pre-computed company-wide IRR calculations with cache timestamps and 24-hour validity periods. Eliminates the need for real-time IRR computation on every dashboard load.
+    
+-   **`analytics_dashboard_summary`**: Aggregates key business metrics including total funds under management (FUM), company IRR, total clients, total accounts, and total funds managed. Provides instant access to critical dashboard KPIs.
+    
+-   **`fund_distribution_fast`**: Pre-computed view showing fund allocation across the business, including fund names, total holdings, and percentage distributions. Powers analytics charts without real-time aggregation.
+    
+-   **`provider_distribution_fast`**: Pre-computed provider allocation analytics showing provider names, total holdings, and distribution percentages. Enables instant provider analysis dashboards.
+
+These analytics views are specifically designed for the ultra-fast analytics endpoint (`/analytics/dashboard-fast`) and represent a critical performance optimization that transforms an unusably slow analytics page into a responsive, professional dashboard experience.

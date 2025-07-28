@@ -2130,23 +2130,27 @@ async def calculate_multiple_portfolio_funds_irr(
         
         activities = activities_response.data
         
-        # 🔴 DEBUG: Show activities found
-        logger.error(f"🔴 📊 ACTIVITIES FOUND: {len(activities)} activities")
-        logger.error(f"🔴 📊 ACTIVITIES BREAKDOWN BY FUND:")
-        activities_by_fund = {}
-        for activity in activities:
-            fund_id = activity["portfolio_fund_id"]
-            if fund_id not in activities_by_fund:
-                activities_by_fund[fund_id] = []
-            activities_by_fund[fund_id].append(activity)
+        # 📊 PERFORMANCE: Reduced logging - detailed debugging disabled for production speed
+        logger.info(f"📊 Processing {len(activities)} activities across {len(portfolio_fund_ids)} funds")
         
-        for fund_id in portfolio_fund_ids:
-            fund_activities = activities_by_fund.get(fund_id, [])
-            logger.error(f"🔴   Fund {fund_id}: {len(fund_activities)} activities")
-            for activity in fund_activities[:3]:  # Show first 3 activities per fund
-                logger.error(f"🔴     - {activity['activity_type']}: £{activity['amount']} on {activity['activity_timestamp'][:10]}")
-            if len(fund_activities) > 3:
-                logger.error(f"🔴     ... and {len(fund_activities) - 3} more activities")
+        # Verbose debugging can be enabled by setting DEBUG_IRR_VERBOSE=True in environment
+        import os
+        if os.getenv('DEBUG_IRR_VERBOSE', 'False').lower() == 'true':
+            logger.debug(f"🔴 📊 ACTIVITIES BREAKDOWN BY FUND:")
+            activities_by_fund = {}
+            for activity in activities:
+                fund_id = activity["portfolio_fund_id"]
+                if fund_id not in activities_by_fund:
+                    activities_by_fund[fund_id] = []
+                activities_by_fund[fund_id].append(activity)
+            
+            for fund_id in portfolio_fund_ids:
+                fund_activities = activities_by_fund.get(fund_id, [])
+                logger.debug(f"🔴   Fund {fund_id}: {len(fund_activities)} activities")
+                for activity in fund_activities[:3]:  # Show first 3 activities per fund
+                    logger.debug(f"🔴     - {activity['activity_type']}: £{activity['amount']} on {activity['activity_timestamp'][:10]}")
+                if len(fund_activities) > 3:
+                    logger.debug(f"🔴     ... and {len(fund_activities) - 3} more activities")
         
         # 🔧 FIXED: Separate cash flows for activities (start of month) and valuations (end of month)
         # This ensures proper IRR calculation even when activities and valuations are in the same calendar month
@@ -2251,16 +2255,20 @@ async def calculate_multiple_portfolio_funds_irr(
         irr_decimal = irr_result.get('period_irr', 0)
         days_in_period = irr_result.get('days_in_period', 0)
         
-        # 🔴 DEBUG: Show final calculation details
-        logger.error(f"🔴 💰 FINAL CASH FLOWS SUMMARY:")
-        logger.error(f"🔴   Cash Flows by Month: {len(cash_flows)} months")
-        for month, amount in sorted(cash_flows.items()):
-            logger.error(f"🔴     {month.strftime('%Y-%m')}: £{amount:,.2f}")
-        logger.error(f"🔴 📊 IRR CALCULATION RESULT:")
-        logger.error(f"🔴   IRR Decimal: {irr_decimal}")
-        logger.error(f"🔴   IRR Percentage: {round(irr_decimal * 100, 1)}%")
-        logger.error(f"🔴   Days in Period: {days_in_period}")
-        logger.error(f"🔴   Total Valuation: £{total_valuation}")
+        # 📊 PERFORMANCE: Summary logging only (detailed logging available via DEBUG_IRR_VERBOSE)
+        logger.info(f"📊 IRR Calculation Complete: {round(irr_decimal * 100, 1)}% over {days_in_period} days ({len(cash_flows)} cash flow periods)")
+        
+        # Detailed debugging available via environment variable
+        if os.getenv('DEBUG_IRR_VERBOSE', 'False').lower() == 'true':
+            logger.debug(f"🔴 💰 FINAL CASH FLOWS SUMMARY:")
+            logger.debug(f"🔴   Cash Flows by Month: {len(cash_flows)} months")
+            for month, amount in sorted(cash_flows.items()):
+                logger.debug(f"🔴     {month.strftime('%Y-%m')}: £{amount:,.2f}")
+            logger.debug(f"🔴 📊 IRR CALCULATION RESULT:")
+            logger.debug(f"🔴   IRR Decimal: {irr_decimal}")
+            logger.debug(f"🔴   IRR Percentage: {round(irr_decimal * 100, 1)}%")
+            logger.debug(f"🔴   Days in Period: {days_in_period}")
+            logger.debug(f"🔴   Total Valuation: £{total_valuation}")
         
         # Prepare the result to return
         result = {

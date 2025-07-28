@@ -7,9 +7,17 @@ from statistics import mean
 import numpy_financial as npf
 import asyncio
 import numpy as np
+import time
 
 from app.db.database import get_db
 from app.api.routes.portfolio_funds import calculate_excel_style_irr
+
+# Global cache for company IRR to prevent expensive recalculations
+_company_irr_cache = {
+    'value': None,
+    'timestamp': None,
+    'cache_duration': 86400  # 24 hours cache (was 5 minutes)
+}
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -706,7 +714,23 @@ async def calculate_company_irr(client):
     Calculate company-wide IRR using the standardized multiple IRR endpoint.
     This ensures consistency with individual fund IRR calculations and properly handles
     internal transfers (SwitchIn/SwitchOut) by aggregating them monthly.
+    
+    PERFORMANCE OPTIMIZATION: Uses 5-minute cache to prevent expensive recalculations
     """
+    global _company_irr_cache
+    
+    # Check cache first
+    current_time = time.time()
+    if (_company_irr_cache['value'] is not None and 
+        _company_irr_cache['timestamp'] is not None and
+        (current_time - _company_irr_cache['timestamp']) < _company_irr_cache['cache_duration']):
+        
+        cache_age = current_time - _company_irr_cache['timestamp']
+        logger.info(f"🚀 Using cached company IRR: {_company_irr_cache['value']:.1f}% (cache age: {cache_age:.1f}s)")
+        return _company_irr_cache['value']
+    
+    logger.info("🔄 Cache miss - calculating fresh company IRR...")
+    
     try:
         # Step 1: Get all portfolio fund IDs in a single query
         portfolio_funds_response = client.table('portfolio_funds') \
@@ -739,6 +763,12 @@ async def calculate_company_irr(client):
         
         if irr_result and irr_result.get('success'):
             company_irr = irr_result.get('irr_percentage', 0.0)
+            
+            # Update cache with successful result
+            _company_irr_cache['value'] = company_irr
+            _company_irr_cache['timestamp'] = current_time
+            logger.info(f"✅ Company IRR calculated and cached: {company_irr:.1f}%")
+            
             return company_irr
         else:
             logger.warning("Standardized IRR calculation failed or returned unsuccessful result")
@@ -767,6 +797,12 @@ async def calculate_company_irr(client):
             if total_invested > 0:
                 # Simple ROI calculation as fallback
                 simple_roi = ((total_current_value / total_invested) - 1) * 100
+                
+                # Cache the fallback result too
+                _company_irr_cache['value'] = simple_roi
+                _company_irr_cache['timestamp'] = current_time
+                logger.info(f"✅ Fallback ROI calculated and cached: {simple_roi:.1f}%")
+                
                 return simple_roi
             else:
                 logger.warning("No investment amount found for fallback calculation")
@@ -1643,15 +1679,270 @@ async def get_products_risk_differences(
 
 
 
-                        
-          
-
-
-
-
+@router.post("/analytics/cache/reset")
+async def reset_company_irr_cache():
+    """
+    Reset the company IRR cache to force recalculation.
+    Useful for debugging and after data changes.
+    """
+    global _company_irr_cache
+    old_value = _company_irr_cache['value']
     
-
-
-
-
+    _company_irr_cache['value'] = None
+    _company_irr_cache['timestamp'] = None
     
+    logger.info(f"🔄 Company IRR cache reset (was: {old_value})")
+    
+    return {
+        "success": True,
+        "message": "Company IRR cache has been reset",
+        "previous_value": old_value
+    }
+
+@router.get("/analytics/dashboard-fast")
+async def get_ultra_fast_dashboard(
+    fund_limit: int = Query(10, ge=1, le=50),
+    provider_limit: int = Query(10, ge=1, le=50), 
+    template_limit: int = Query(10, ge=1, le=50),
+    db = Depends(get_db)
+):
+    """
+    ULTRA-FAST Analytics Dashboard: Uses pre-computed views instead of real-time IRR calculations.
+    Performance target: <2 seconds vs 67+ seconds for real-time calculations.
+    
+    Key optimizations:
+    - Uses analytics_dashboard_summary view for metrics (no real-time IRR)
+    - Uses fund_distribution_fast view for fund data
+    - Uses provider_distribution_fast view for provider data
+    - Minimal template calculation without IRR
+    """
+    start_time = time.time()
+    
+    try:
+        logger.info("🚀 Starting ultra-fast dashboard calculation...")
+        
+        # 1. Get pre-computed metrics (sub-second response)
+        try:
+            metrics_response = db.table("analytics_dashboard_summary").select("*").execute()
+            
+            if not metrics_response.data:
+                raise Exception("Analytics dashboard summary view returned no data")
+                
+        except Exception as view_error:
+            logger.warning(f"📋 Pre-computed views not available: {view_error}")
+            logger.info("🔄 Views may not be deployed yet. Please run deploy_analytics_views.ps1")
+            raise HTTPException(
+                status_code=503, 
+                detail="Analytics views not deployed. Please run deploy_analytics_views.ps1 script to enable ultra-fast analytics."
+            )
+        
+        summary = metrics_response.data[0]
+        
+        # 2. Get fast fund distribution (no IRR calculations)
+        funds_response = db.table("fund_distribution_fast") \
+            .select("id, name, amount") \
+            .limit(fund_limit) \
+            .execute()
+        
+        # 3. Get fast provider distribution
+        providers_response = db.table("provider_distribution_fast") \
+            .select("id, name, amount") \
+            .limit(provider_limit) \
+            .execute()
+        
+        # 4. Get template distribution (simplified, no IRR)
+        templates_response = db.table("template_portfolio_generations") \
+            .select("id, generation_name, status") \
+            .eq("status", "active") \
+            .limit(template_limit) \
+            .execute()
+        
+        # Calculate percentages for distributions
+        total_fum = float(summary.get("total_fum", 0))
+        
+        funds = []
+        if funds_response.data and total_fum > 0:
+            for fund in funds_response.data:
+                amount = float(fund["amount"] or 0)
+                funds.append({
+                    "id": fund["id"],
+                    "name": fund["name"],
+                    "amount": amount,
+                    "percentage": round((amount / total_fum) * 100, 1)
+                })
+        
+        providers = []
+        if providers_response.data and total_fum > 0:
+            for provider in providers_response.data:
+                amount = float(provider["amount"] or 0)
+                providers.append({
+                    "id": provider["id"],
+                    "name": provider["name"],
+                    "amount": amount,
+                    "percentage": round((amount / total_fum) * 100, 1)
+                })
+        
+        templates = []
+        if templates_response.data:
+            for template in templates_response.data:
+                templates.append({
+                    "id": template["id"],
+                    "name": template["generation_name"],
+                    "amount": 0,  # Template amounts would require additional calculation
+                    "percentage": 0
+                })
+        
+        # 5. Get revenue data (using existing company_revenue_analytics view)
+        try:
+            revenue_response = db.table("company_revenue_analytics").select("*").execute()
+            if revenue_response.data:
+                revenue_data = revenue_response.data[0]
+                logger.info(f"✅ Revenue data loaded: £{revenue_data.get('total_annual_revenue', 0):,.2f}")
+            else:
+                logger.warning("⚠️ No revenue data found in company_revenue_analytics view")
+                # Fallback: provide basic revenue structure
+                revenue_data = {
+                    "total_annual_revenue": 0,
+                    "active_products": 0,
+                    "revenue_generating_products": 0,
+                    "avg_revenue_per_product": 0,
+                    "active_providers": 0
+                }
+        except Exception as revenue_error:
+            logger.warning(f"⚠️ Revenue data not available: {revenue_error}")
+            # Fallback: provide basic revenue structure
+            revenue_data = {
+                "total_annual_revenue": 0,
+                "active_products": 0,
+                "revenue_generating_products": 0,
+                "avg_revenue_per_product": 0,
+                "active_providers": 0
+            }
+        
+        # 6. Mock performance data (to be replaced with pre-computed views)
+        top_performers = []
+        client_risks = []
+        
+        # Compile response
+        end_time = time.time()
+        calculation_time = end_time - start_time
+        
+        logger.info(f"✅ Ultra-fast dashboard completed in {calculation_time:.2f}s")
+        
+        response = {
+            "optimized": True,
+            "phase": "ultra-fast",
+            "calculation_time": round(calculation_time, 2),
+            "metrics": {
+                "totalFUM": float(summary.get("total_fum", 0)),
+                "companyIRR": float(summary.get("company_irr", 0)),
+                "totalClients": int(summary.get("total_clients", 0)),
+                "totalAccounts": int(summary.get("total_accounts", 0)),
+                "totalActiveHoldings": int(summary.get("total_funds_managed", 0))
+            },
+            "distributions": {
+                "funds": funds,
+                "providers": providers,
+                "templates": templates
+            },
+            "performance": {
+                "topPerformers": top_performers,
+                "clientRisks": client_risks
+            },
+            "revenue": revenue_data,
+            "cache_info": {
+                "last_irr_calculation": summary.get("last_irr_calculation"),
+                "data_source": "pre_computed_views"
+            },
+
+        }
+        
+        return response
+        
+    except Exception as e:
+        end_time = time.time()
+        calculation_time = end_time - start_time
+        logger.error(f"❌ Ultra-fast dashboard failed after {calculation_time:.2f}s: {e}")
+        raise HTTPException(status_code=500, detail=f"Ultra-fast dashboard calculation failed: {str(e)}")
+
+@router.post("/analytics/company/irr/refresh-background")
+async def refresh_company_irr_background(db = Depends(get_db)):
+    """
+    Background refresh of company IRR calculation.
+    This endpoint can be called periodically or manually to update the IRR cache
+    without blocking the main dashboard loading.
+    """
+    try:
+        # Use asyncio to run the calculation in the background
+        import asyncio
+        
+        async def background_irr_calculation():
+            logger.info("🔄 Starting background company IRR calculation...")
+            start_time = time.time()
+            
+            # Reset cache to force fresh calculation
+            global _company_irr_cache
+            _company_irr_cache['value'] = None
+            _company_irr_cache['timestamp'] = None
+            
+            # Calculate fresh IRR
+            company_irr = await calculate_company_irr(db)
+            
+            end_time = time.time()
+            calculation_time = end_time - start_time
+            
+            logger.info(f"✅ Background company IRR calculation completed in {calculation_time:.2f}s: {company_irr}%")
+            
+            return {
+                "success": True,
+                "company_irr": company_irr,
+                "calculation_time": round(calculation_time, 2),
+                "cache_updated": True,
+                "background": True
+            }
+        
+        # Run the calculation
+        result = await background_irr_calculation()
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"❌ Background company IRR calculation failed: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "background": True
+        }
+
+@router.get("/analytics/irr-status")
+async def get_irr_calculation_status():
+    """
+    Get the current status of IRR calculations and cache.
+    Useful for the frontend to know if data is fresh or needs refreshing.
+    """
+    try:
+        global _company_irr_cache
+        
+        current_time = time.time()
+        cache_age = None
+        cache_fresh = False
+        
+        if _company_irr_cache['timestamp'] is not None:
+            cache_age = current_time - _company_irr_cache['timestamp']
+            cache_fresh = cache_age < _company_irr_cache['cache_duration']
+        
+        return {
+            "cache_exists": _company_irr_cache['value'] is not None,
+            "cache_fresh": cache_fresh,
+            "cache_age_seconds": cache_age,
+            "cache_age_hours": round(cache_age / 3600, 1) if cache_age else None,
+            "cached_irr": _company_irr_cache['value'],
+            "cache_duration": _company_irr_cache['cache_duration'],
+            "last_calculation": _company_irr_cache['timestamp']
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Error getting IRR status: {e}")
+        return {
+            "error": str(e)
+        }

@@ -471,7 +471,7 @@ const Reporting: React.FC = () => {
             color="purple"
           />
           <MetricCard
-            title="Active Holdings"
+            title="Total Funds Managed"
             value={metrics?.totalActiveHoldings || 0}
             icon={<PortfolioIcon />}
             color="orange"

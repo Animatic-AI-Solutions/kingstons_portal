@@ -314,6 +314,45 @@ const Analytics: React.FC = () => {
   // Filters
   const [selectedTimeframe, setSelectedTimeframe] = useState<'all' | 'ytd' | '12m' | '3y'>('all');
   const [refreshing, setRefreshing] = useState(false);
+  const [backgroundRefreshing, setBackgroundRefreshing] = useState(false);
+  const [irrStatus, setIrrStatus] = useState<any>(null);
+
+  // Check IRR calculation status
+  const checkIrrStatus = async () => {
+    try {
+      const response = await api.get('/api/analytics/irr-status');
+      setIrrStatus(response.data);
+    } catch (err) {
+      console.warn('Could not fetch IRR status:', err);
+    }
+  };
+
+  // Background IRR refresh
+  const refreshIrrBackground = async () => {
+    setBackgroundRefreshing(true);
+    try {
+      console.log('🔄 Starting background IRR refresh...');
+      const response = await api.post('/api/analytics/company/irr/refresh-background');
+      console.log('✅ Background IRR refresh completed:', response.data);
+      
+      // Update status after refresh
+      await checkIrrStatus();
+      
+      // Show success message
+      if (response.data.success) {
+        console.log(`✅ Company IRR updated to ${response.data.company_irr}% in ${response.data.calculation_time}s`);
+      }
+    } catch (err) {
+      console.error('❌ Background IRR refresh failed:', err);
+    } finally {
+      setBackgroundRefreshing(false);
+    }
+  };
+
+  // Load IRR status on component mount
+  useEffect(() => {
+    checkIrrStatus();
+  }, []);
 
   const fetchAnalyticsData = async () => {
     try {
@@ -483,6 +522,39 @@ const Analytics: React.FC = () => {
               <RefreshIcon />
               <span className="ml-2">{refreshing ? 'Refreshing...' : 'Refresh'}</span>
             </button>
+
+            {/* Background IRR Refresh */}
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={refreshIrrBackground}
+                disabled={backgroundRefreshing}
+                className="inline-flex items-center px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors text-sm"
+                title="Refresh company IRR calculation in background"
+              >
+                {backgroundRefreshing ? (
+                  <svg className="animate-spin h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                )}
+                <span>{backgroundRefreshing ? 'Calculating...' : 'Update IRR'}</span>
+              </button>
+              
+              {/* IRR Status Indicator */}
+              {irrStatus && (
+                <div className="text-xs text-gray-500">
+                  {irrStatus.cache_fresh ? (
+                    <span className="text-green-600">✓ Fresh ({irrStatus.cache_age_hours}h old)</span>
+                  ) : (
+                    <span className="text-orange-600">⚠ Stale ({irrStatus.cache_age_hours}h old)</span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -507,7 +579,7 @@ const Analytics: React.FC = () => {
             color="purple"
           />
           <MetricCard
-            title="Active Holdings"
+            title="Total Funds Managed"
             value={metrics?.totalActiveHoldings || 0}
             icon={<PortfolioIcon />}
             color="orange"

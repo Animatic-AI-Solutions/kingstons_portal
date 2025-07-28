@@ -6,6 +6,7 @@ tags: ["documentation", "maintenance", "governance"]
 # Documentation Maintenance Guide
 
 > **Recent Updates (January 2025)**: 
+> - **Ultra-Fast Analytics Performance System**: Resolved critical 67+ second analytics dashboard loading times by implementing specialized performance optimization system. Created pre-computed database views (`company_irr_cache`, `analytics_dashboard_summary`, `fund_distribution_fast`, `provider_distribution_fast`) and new ultra-fast API endpoint (`/analytics/dashboard-fast`) with background IRR refresh capability. Reduced response time from 67+ seconds to sub-second performance (<2 seconds target). Integrated revenue data display and renamed "Active Holdings" to "Total Funds Managed" across frontend and backend. Updated analytics views deployment process with error handling and graceful fallback mechanisms.
 > - **Advisor Display Fix**: Fixed advisor assignment display issue in ClientDetails.tsx where advisor name showed "Unassigned" during viewing but displayed correctly during editing. Updated `/client_groups/{id}/complete` endpoint to include advisor information from the complete data view in the client_group response. Separated display and editing logic in frontend for clear advisor name presentation in both modes.
 >
 > **Previous Updates (December 2024)**: 

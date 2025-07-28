@@ -860,7 +860,7 @@ export const refreshRevenueRateCache = async () => {
   return api.post('/revenue/rate/refresh');
 };
 
-// ⚡ PHASE 1 OPTIMIZATION: Analytics Dashboard Service
+// ⚡ ULTRA-FAST PHASE: Analytics Dashboard Service  
 export const getOptimizedAnalyticsDashboard = async (
   fundLimit: number = 10,
   providerLimit: number = 10,
@@ -869,9 +869,9 @@ export const getOptimizedAnalyticsDashboard = async (
   const startTime = Date.now();
   
   try {
-    console.log('🚀 Phase 1: Fetching optimized analytics dashboard...');
+    console.log('🚀 Ultra-Fast Phase: Fetching analytics dashboard with pre-computed views...');
     
-    // Single aggregated call using database views
+    // Primary: Use ultra-fast endpoint with pre-computed views
     const response = await api.get('/analytics/dashboard-fast', {
       params: { 
         fund_limit: fundLimit, 
@@ -883,8 +883,8 @@ export const getOptimizedAnalyticsDashboard = async (
     const endTime = Date.now();
     const loadTime = (endTime - startTime) / 1000;
     
-    console.log(`✅ Phase 1 optimization completed in ${loadTime.toFixed(2)}s`);
-    console.log('📊 Optimized data structure:', {
+    console.log(`✅ Ultra-fast analytics completed in ${loadTime.toFixed(2)}s (target: <2s)`);
+    console.log('📊 Pre-computed data structure:', {
       metrics: response.data.metrics,
       distributions: {
         funds: response.data.distributions?.funds?.length || 0,
@@ -895,22 +895,54 @@ export const getOptimizedAnalyticsDashboard = async (
         topPerformers: response.data.performance?.topPerformers?.length || 0,
         clientRisks: response.data.performance?.clientRisks?.length || 0
       },
-      revenue: response.data.revenue ? 'Available' : 'Not Available',
-      optimized: response.data.optimized,
-      phase: response.data.phase
+      phase: response.data.phase,
+      dataSource: response.data.cache_info?.data_source
     });
 
     return {
       data: response.data,
       loadTime,
-      optimized: true
+      optimized: true,
+      ultraFast: true
     };
   } catch (error) {
     const endTime = Date.now();
     const loadTime = (endTime - startTime) / 1000;
     
-    console.error(`❌ Phase 1 optimization failed after ${loadTime.toFixed(2)}s:`, error);
-    throw error;
+    console.warn(`⚠️ Ultra-fast endpoint failed after ${loadTime.toFixed(2)}s:`, error);
+    
+    // Check if it's a views not deployed error
+    if (error.response?.status === 503) {
+      console.log('📋 Analytics views not deployed yet. Using fallback endpoint.');
+      console.log('💡 To enable ultra-fast analytics, run: deploy_analytics_views.ps1');
+    }
+    
+    // Fallback to original optimized endpoint
+    try {
+      const response = await api.get('/analytics/dashboard_all', {
+        params: { 
+          fund_limit: fundLimit, 
+          provider_limit: providerLimit, 
+          template_limit: templateLimit 
+        }
+      });
+
+      const fallbackEndTime = Date.now();
+      const fallbackLoadTime = (fallbackEndTime - startTime) / 1000;
+      
+      console.log(`✅ Fallback optimization completed in ${fallbackLoadTime.toFixed(2)}s`);
+
+      return {
+        data: response.data,
+        loadTime: fallbackLoadTime,
+        optimized: true,
+        ultraFast: false,
+        fallback: true
+      };
+    } catch (fallbackError) {
+      console.error(`❌ Both ultra-fast and fallback failed:`, fallbackError);
+      throw fallbackError;
+    }
   }
 };
 
