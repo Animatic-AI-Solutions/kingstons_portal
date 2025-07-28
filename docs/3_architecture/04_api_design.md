@@ -86,9 +86,17 @@ The analytics module (`analytics.py`) provides specialized endpoints for accurat
 
 ## 4. Authentication and Security
 
-- **Authentication:** Handled via JWT (JSON Web Tokens). The client receives a token upon successful login, which must be included in the `Authorization` header of subsequent requests.
-- **Authorization:** The `get_current_user` dependency protects routes, ensuring that only authenticated users can access them.
-- **CORS:** The API is configured with CORS (Cross-Origin Resource Sharing) middleware to securely allow requests from the frontend application's domain.
+- **Authentication:** Handled via **secure httpOnly cookie-based JWT authentication** for enhanced security:
+  - **Primary Method:** JWT tokens are set as httpOnly cookies (`access_token`) that cannot be accessed by JavaScript, protecting against XSS attacks.
+  - **Automatic Transmission:** Browsers automatically include authentication cookies in API requests, eliminating manual token management.
+  - **Fallback Support:** The system also supports traditional `Authorization: Bearer <token>` headers for API clients and backward compatibility.
+  - **Session Management:** Additional `session_id` cookie provides session tracking and management capabilities.
+- **Authorization:** The `get_current_user` dependency protects routes using a **triple-layer authentication approach**:
+  1. **Cookie-based JWT** (primary, most secure)
+  2. **Authorization header JWT** (fallback for API clients)
+  3. **Session cookie** (additional session validation)
+- **CORS:** The API is configured with CORS (Cross-Origin Resource Sharing) middleware with `allow_credentials=True` to securely support httpOnly cookie transmission from the frontend application's domain.
+- **XSS Protection:** HttpOnly cookies prevent JavaScript access to authentication tokens, providing strong protection against Cross-Site Scripting attacks.
 
 ## 5. Error Handling
 

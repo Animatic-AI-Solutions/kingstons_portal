@@ -52,5 +52,7 @@ For client-only state, we use React's built-in state management tools.
 ### `useContext`
 - **For Global UI State:** For state that needs to be shared across many components at different levels of the component tree, we use the `useContext` hook. This is used sparingly to avoid unnecessary re-renders.
 - **Primary Use Case:** Our primary use case for `useContext` is for **Authentication State** (`AuthContext.tsx`). This context provides information about the current user and authentication status to all components in the application.
+  - **Security Enhancement:** The authentication system uses httpOnly cookies for token storage, eliminating the need for manual token management in the frontend state.
+  - **Automatic Authentication:** The browser automatically handles authentication cookies, and the AuthContext checks authentication status via API calls rather than localStorage token validation.
 
 By using this combination of tools, we can manage state in a way that is both powerful and maintainable, using the simplest effective tool for each specific use case. 

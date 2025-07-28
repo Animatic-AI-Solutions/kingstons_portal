@@ -4,6 +4,10 @@ Welcome to the official documentation for the Kingston's Portal project. This si
 
 Whether you are a new developer getting started or an experienced team member looking for specific architectural details, this documentation is your single source of truth.
 
+## 🛡️ Recent Security Enhancement
+
+**HttpOnly Cookie Authentication Implemented** - The application now uses secure httpOnly cookies for JWT token storage, providing enhanced protection against XSS attacks while maintaining seamless user experience. This represents a major security milestone for the financial data management system. See [Security Considerations](./6_advanced/01_security_considerations.md) and [API Design](./3_architecture/04_api_design.md) for technical details.
+
 ## Documentation Sections
 
 This documentation is organized into six main sections, designed to be read sequentially if you are new to the project.
@@ -39,6 +43,7 @@ This documentation is organized into six main sections, designed to be read sequ
 *   [**02: Performance Optimizations**](./6_advanced/02_performance_optimizations.md) - A look at the techniques we use to keep the application fast and responsive.
 *   [**03: Deployment Process**](./6_advanced/03_deployment_process.md) - How to build and deploy the application to a production environment.
 *   [**04: Database Migration Strategy**](./6_advanced/04_database_migration_strategy.md) - Planned migration from Supabase to in-house PostgreSQL for enhanced security and compliance.
+*   [**05: Security Changelog**](./6_advanced/05_security_changelog.md) - Record of major security enhancements and implementations, including the recent httpOnly cookie authentication upgrade.
 ---
 
 ## Documentation Governance

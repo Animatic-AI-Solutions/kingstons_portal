@@ -11,7 +11,7 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 import os
 import logging
-from fastapi import Depends, HTTPException, Cookie
+from fastapi import Depends, HTTPException, Cookie, Request
 from typing import Optional
 from app.db.database import get_db
 
@@ -50,6 +50,55 @@ def decode_token(token: str) -> dict:
     except JWTError as e:
         logger.error(f"Token validation error: {str(e)}")
         return None
+
+def decode_token_from_cookie(access_token: Optional[str] = Cookie(None)) -> dict:
+    """Decode and validate a JWT token from httpOnly cookie"""
+    if not access_token:
+        return None
+    
+    try:
+        payload = jwt.decode(access_token, os.getenv("JWT_SECRET"), algorithms=["HS256"])
+        return payload
+    except JWTError as e:
+        logger.error(f"Cookie token validation error: {str(e)}")
+        return None
+
+def get_user_from_token_cookie(
+    access_token: Optional[str] = Cookie(None),
+    db = Depends(get_db)
+):
+    """
+    Validates the JWT token from httpOnly cookie and returns the associated user.
+    
+    Args:
+        access_token: JWT token from httpOnly cookie
+        db: Database connection
+        
+    Returns:
+        User object if token is valid
+        
+    Raises:
+        HTTPException: If token is invalid or expired
+    """
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Not authenticated - no token cookie")
+    
+    # Decode and validate token
+    payload = decode_token_from_cookie(access_token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token payload")
+    
+    # Get user profile
+    user_result = db.table("profiles").select("*").eq("id", int(user_id)).execute()
+    
+    if not user_result.data or len(user_result.data) == 0:
+        raise HTTPException(status_code=401, detail="User not found")
+    
+    return user_result.data[0]
 
 async def get_user_from_session(
     session_id: Optional[str] = Cookie(None),

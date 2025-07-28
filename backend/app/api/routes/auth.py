@@ -1,9 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends, Response, Cookie, Request
+from fastapi import APIRouter, HTTPException, Depends, Response, Cookie, Request, Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from datetime import datetime, timedelta
 from typing import Optional, List
 import logging
 import uuid
+import os
 
 from app.models.auth import (
     LoginRequest, SignUpRequest, LoginResponse, LogoutResponse,
@@ -175,10 +176,23 @@ async def login(
         )
         logger.info(f"Set session_id cookie to {session_id}")
 
-        # Return response with token and user info
+        # Set JWT token as httpOnly cookie
+        token_expire_minutes = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 1440))
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=False,  # Set to False for local development, True for production
+            samesite="lax",
+            max_age=token_expire_minutes * 60,  # Convert minutes to seconds
+            domain=None  # Remove domain restriction for local development
+        )
+        logger.info(f"Set access_token cookie for user {profile['id']}")
+
+        # Return response without token (token is now in httpOnly cookie)
         return LoginResponse(
             message="Login successful",
-            access_token=access_token,
+            access_token="",  # Empty token as it's now in cookie
             token_type="bearer",
             user=profile
         )
@@ -211,9 +225,15 @@ async def logout(
             db.table("session").delete().eq("session_id", session_id).execute()
             logger.info(f"Deleted session {session_id} from database")
 
-        # Remove the cookie regardless of whether we found the session
+        # Remove the cookies regardless of whether we found the session
         response.delete_cookie(
             key="session_id",
+            httponly=True,
+            secure=False,  # Set to False for local development
+            samesite="lax"
+        )
+        response.delete_cookie(
+            key="access_token",
             httponly=True,
             secure=False,  # Set to False for local development
             samesite="lax"
@@ -344,26 +364,46 @@ async def reset_password(reset_data: PasswordReset, db = Depends(get_db)):
 
 async def get_current_user(
     request: Request,
-    token: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    access_token: Optional[str] = Cookie(None),
     session_id: Optional[str] = Cookie(None),
+    authorization: Optional[str] = Header(None),
     db = Depends(get_db)
 ):
     """
-    What it does: Validates either JWT token or session cookie and returns the current user.
+    What it does: Validates JWT token from cookie, Authorization header, or session cookie and returns the current user.
     Why it's needed: Used as a dependency for protected routes.
     How it works:
-        1. First tries to validate using JWT token from Authorization header
-        2. If that fails, tries to validate using session cookie
-        3. Returns the user if either method succeeds
+        1. First tries to validate using JWT token from httpOnly cookie
+        2. Falls back to JWT token from Authorization header  
+        3. Finally tries to validate using session cookie
+        4. Returns the user if any method succeeds
     Expected output: User object if authentication is valid
     """
-    logger.info(f"Authentication attempt - Token: {bool(token)}, Session: {bool(session_id)}")
+    logger.info(f"Authentication attempt - Cookie Token: {bool(access_token)}, Header Token: {bool(authorization)}, Session: {bool(session_id)}")
     
-    # Try token authentication first
-    if token:
+    # Try cookie-based JWT authentication first (most secure)
+    if access_token:
         try:
-            # Extract token from credentials
-            token_str = token.credentials if isinstance(token, HTTPAuthorizationCredentials) else token
+            # Decode and validate token from cookie
+            payload = decode_token(access_token)
+            if payload is not None:
+                user_id = payload.get("sub")
+                if user_id is not None:
+                    # Get user from database
+                    user_result = db.table("profiles").select("*").eq("id", int(user_id)).execute()
+                    
+                    if user_result.data and len(user_result.data) > 0:
+                        logger.info(f"User authenticated via cookie token: {user_id}")
+                        return user_result.data[0]
+        except Exception as e:
+            logger.warning(f"Cookie token authentication failed: {str(e)}")
+            # Continue to try header token authentication
+    
+    # Try authorization header token authentication (fallback for API clients)
+    if authorization and authorization.startswith("Bearer "):
+        try:
+            # Extract token from Bearer header
+            token_str = authorization.replace("Bearer ", "", 1)
             
             # Decode and validate token
             payload = decode_token(token_str)
@@ -374,10 +414,10 @@ async def get_current_user(
                     user_result = db.table("profiles").select("*").eq("id", int(user_id)).execute()
                     
                     if user_result.data and len(user_result.data) > 0:
-                        logger.info(f"User authenticated via token: {user_id}")
+                        logger.info(f"User authenticated via header token: {user_id}")
                         return user_result.data[0]
         except Exception as e:
-            logger.warning(f"Token authentication failed: {str(e)}")
+            logger.warning(f"Header token authentication failed: {str(e)}")
             # Continue to try session authentication
     
     # Try session authentication if token auth failed or no token provided
@@ -410,8 +450,8 @@ async def get_current_user(
             logger.warning(f"Session authentication failed: {str(e)}")
             # Both auth methods failed, continue to exception
     
-    # If we get here, both authentication methods failed
-    logger.warning("Authentication failed - both token and session invalid")
+    # If we get here, all authentication methods failed
+    logger.warning("Authentication failed - cookie token, authorization header, and session all invalid")
     raise HTTPException(
         status_code=401,
         detail="Not authenticated",
@@ -505,3 +545,5 @@ async def update_profile(
     except Exception as e:
         logger.error(f"Unexpected error during profile update: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Profile update error: {str(e)}") 
+
+ 

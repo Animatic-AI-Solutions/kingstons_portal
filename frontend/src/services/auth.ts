@@ -26,19 +26,18 @@ export const authService = {
    * 
    * @param email - User's email address
    * @param password - User's password
-   * @returns Token and user data
+   * @returns User data (token is now in httpOnly cookie)
    */
   login: async (email: string, password: string) => {
     try {
       const response = await axios.post(
         `${getApiBaseUrl()}/api/auth/login`, 
         { email, password },
-        { withCredentials: true } // Include this option to allow cookies to be set
+        { withCredentials: true } // Required to allow httpOnly cookies to be set
       );
       
-      if (response.data.access_token) {
-        localStorage.setItem('token', response.data.access_token);
-      }
+      // Token is now set as httpOnly cookie by the server
+      // No need to store anything in localStorage
       
       return response.data;
     } catch (error) {
@@ -49,27 +48,21 @@ export const authService = {
   /**
    * Log out the current user
    * 
-   * Removes the token from localStorage and makes a logout request to the server
+   * Makes a logout request to the server to clear httpOnly cookies
    */
   logout: async () => {
     try {
-      // Get the current token
-      const token = localStorage.getItem('token');
-      
       // Configure request with credentials to include cookies
       const config = {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
         withCredentials: true
       };
       
-      // Make the logout request - this will clear the session cookie on the server
+      // Make the logout request - this will clear httpOnly cookies on the server
       await axios.post(`${getApiBaseUrl()}/api/auth/logout`, {}, config);
-      
-      // Remove the token from localStorage
-      localStorage.removeItem('token');
     } catch (error) {
-      // Still remove the token even if the request fails
-      localStorage.removeItem('token');
+      // If logout request fails, the cookies may still be cleared by the server
+      // or will expire naturally
+      console.warn('Logout request failed:', error);
     }
   },
 
@@ -129,16 +122,8 @@ export const authService = {
    */
   getProfile: async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-      
       const response = await axios.get(`${getApiBaseUrl()}/api/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
-        withCredentials: true
+        withCredentials: true // httpOnly cookie will be sent automatically
       });
       
       return response.data;
@@ -150,19 +135,21 @@ export const authService = {
   /**
    * Get the current authentication token
    * 
-   * @returns JWT token or null if not authenticated
+   * @returns Always null since tokens are now in httpOnly cookies
+   * @deprecated Use cookie-based authentication instead
    */
   getToken: () => {
-    return localStorage.getItem('token');
+    return null; // Tokens are now in httpOnly cookies, not accessible to JavaScript
   },
 
   /**
    * Check if the user is authenticated
    * 
-   * @returns True if authenticated, false otherwise
+   * @returns False since authentication state should be checked via API call
+   * @deprecated Use getProfile() or API calls to check authentication
    */
   isAuthenticated: () => {
-    return !!localStorage.getItem('token');
+    return false; // Cannot check httpOnly cookies from JavaScript
   },
 
   /**
@@ -214,13 +201,10 @@ export const createAuthenticatedApi = () => {
       withCredentials: true
     });
   
-    // Add request interceptor for authentication and URL fixing
+    // Add request interceptor for URL fixing and credentials
     api.interceptors.request.use(config => {
-      // Add auth token
-      const token = authService.getToken();
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
+      // Ensure credentials are included for httpOnly cookies
+      config.withCredentials = true;
       
       // Fix URL paths for consistent /api prefix
       if (config.url) {
@@ -267,12 +251,12 @@ export const createAuthenticatedApi = () => {
         
         // Only handle authentication errors specifically
         if (error.response?.status === 401) {
-          console.warn('Authentication token may be expired or invalid');
-          // Clear invalid token on actual authentication failures
+          console.warn('Authentication may be expired or invalid');
+          // Redirect to login for authentication failures
           if (error.config?.url?.includes('/auth/') || 
               (error.response?.data?.detail && 
                error.response.data.detail.toLowerCase().includes('authentication'))) {
-            localStorage.removeItem('token');
+            // Cookies will be cleared by the server or expire naturally
             // Only redirect to login for actual authentication errors
             window.location.href = '/login';
           }

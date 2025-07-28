@@ -75,7 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   /**
    * Check authentication on component mount
-   * Verifies if the user has a valid authentication token
+   * Verifies if the user has valid authentication cookies
    * and retrieves user profile data if authenticated
    */
   useEffect(() => {
@@ -83,27 +83,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         setIsLoading(true);
         
-        // Check if token exists in local storage
-        const token = localStorage.getItem('token');
-        if (!token) {
-          setIsAuthenticated(false);
-          setUser(null);
-          return;
-        }
-        
-        // Validate token by requesting user profile
+        // Validate authentication by requesting user profile
+        // The httpOnly cookie will be sent automatically
         const userResponse = await axios.get(`${getApiBaseUrl()}/api/auth/me`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          },
           withCredentials: true
         });
         
         setIsAuthenticated(true);
         setUser(userResponse.data);
       } catch (error) {
-        // Clear invalid token
-        localStorage.removeItem('token');
+        // Authentication failed - cookies are invalid or expired
         setIsAuthenticated(false);
         setUser(null);
       } finally {
