@@ -105,15 +105,33 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
   const { formatCurrencyWithZeroToggle, updateOptions } = useReportFormatter();
 
   // MOVED: Memoize expensive prop calculations to prevent infinite re-renders (moved before early returns)
-  // Using JSON.stringify to ensure stability when array contents are same but references differ
+  // Using stable dependencies instead of JSON.stringify to prevent unnecessary re-computations
   const memoizedProductIds = useMemo(
     () => reportData?.productSummaries?.map(p => p.id) || [],
-    [JSON.stringify(reportData?.productSummaries?.map(p => p.id))]
+    [
+      reportData?.productSummaries?.length,
+      reportData?.productSummaries?.[0]?.id,
+      reportData?.productSummaries?.[reportData.productSummaries.length - 1]?.id
+    ]
   );
 
   const memoizedSelectedDates = useMemo(
     () => reportData?.availableHistoricalIRRDates?.map(d => d.date) || [],
-    [JSON.stringify(reportData?.availableHistoricalIRRDates?.map(d => d.date))]
+    [
+      reportData?.availableHistoricalIRRDates?.length,
+      reportData?.availableHistoricalIRRDates?.[0]?.date,
+      reportData?.availableHistoricalIRRDates?.[reportData.availableHistoricalIRRDates.length - 1]?.date
+    ]
+  );
+
+  // Memoize reportData to prevent unnecessary prop changes
+  const memoizedReportData = useMemo(
+    () => reportData,
+    [
+      reportData?.productSummaries?.length,
+      reportData?.availableHistoricalIRRDates?.length,
+      reportData?.productOwnerOrder?.length
+    ]
   );
 
   // Memoize totalIRR to prevent unnecessary prop changes
@@ -2049,7 +2067,7 @@ Available database dates: ${productHistory.portfolio_historical_irr.map((r: any)
           selectedDates={memoizedSelectedDates}
           clientGroupIds={undefined}
           realTimeTotalIRR={memoizedTotalIRR}
-          reportData={reportData}
+          reportData={memoizedReportData}
           className="mt-8"
         />
       </div>

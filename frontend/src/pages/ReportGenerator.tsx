@@ -419,6 +419,9 @@ const ReportGenerator: React.FC = () => {
   // New state for product owner ordering
   const [productOwnerOrder, setProductOwnerOrder] = useState<string[]>([]);
 
+  // Cache for historical IRR data to avoid duplicate API calls
+  const [historicalIRRCache, setHistoricalIRRCache] = useState<Map<number, any>>(new Map());
+
   // Add new state for tracking the date selection limit
   const MAX_IRR_DATES = 8;
 
@@ -1040,8 +1043,18 @@ const ReportGenerator: React.FC = () => {
       // Fetch historical IRR data for each product (no limit to get all dates)
       for (const productId of productIds) {
         try {
-          console.log(`📊 Fetching historical IRR data for product ${productId}`);
-          const response = await historicalIRRService.getCombinedHistoricalIRR(productId, 1000); // Large limit to get all data
+          // Check cache first, fallback to API call if not cached
+          let response = historicalIRRCache.get(productId);
+          if (response) {
+            console.log(`🎯 [CACHE HIT] Using cached historical IRR data for product ${productId}, avoiding duplicate API call in fetchAvailableIRRDates`);
+          } else {
+            console.log(`📊 Fetching historical IRR data for product ${productId}`);
+            response = await historicalIRRService.getCombinedHistoricalIRR(productId, 1000); // Large limit to get all data
+            
+            // Cache the response for later use to avoid duplicate API calls
+            setHistoricalIRRCache(prev => new Map(prev.set(productId, response)));
+            console.log(`🎯 [CACHE] Stored historical IRR data for product ${productId} in cache`);
+          }
           
           console.log(`📊 Response for product ${productId}:`, {
             portfolio_count: response.portfolio_count || 0,
@@ -1138,8 +1151,12 @@ const ReportGenerator: React.FC = () => {
   const fetchAllHistoricalIRRData = async (
     productIds: number[], 
     selectedDates: ProductIRRSelections
-  ): Promise<Map<number, number[]>> => {
+  ): Promise<{ 
+    historicalIRRMap: Map<number, number[]>,
+    rawHistoricalIRRData: Map<number, any>
+  }> => {
     const fundHistoricalIRRMap = new Map<number, number[]>();
+    const rawHistoricalIRRData = new Map<number, any>(); // Store raw API responses
     let globalSelectedMonths: string[] = [];
     
     try {
@@ -1151,8 +1168,18 @@ const ReportGenerator: React.FC = () => {
           continue;
         }
         
-        // Fetch all historical IRR data for this product
-        const response = await historicalIRRService.getCombinedHistoricalIRR(productId, 1000);
+        // Check cache first, fallback to API call if not cached
+        let response = historicalIRRCache.get(productId);
+        if (response) {
+          console.log(`🎯 [CACHE HIT] Using cached historical IRR data for product ${productId}, avoiding duplicate API call`);
+        } else {
+          console.log(`⚠️ [CACHE MISS] Product ${productId} not in cache, making API call`);
+          response = await historicalIRRService.getCombinedHistoricalIRR(productId, 1000);
+          setHistoricalIRRCache(prev => new Map(prev.set(productId, response)));
+        }
+        
+        // Store the raw response for later use in ReportDisplayPage
+        rawHistoricalIRRData.set(productId, response);
         
         if (!response.funds_historical_irr || response.funds_historical_irr.length === 0) {
           continue;
@@ -1237,7 +1264,10 @@ const ReportGenerator: React.FC = () => {
       console.error('Error fetching historical IRR data:', error);
     }
 
-    return fundHistoricalIRRMap;
+    return {
+      historicalIRRMap: fundHistoricalIRRMap,
+      rawHistoricalIRRData: rawHistoricalIRRData
+    };
   };
 
   // Function to find the latest common date among all selected IRR dates
@@ -1415,7 +1445,7 @@ const ReportGenerator: React.FC = () => {
 
       // Fetch historical IRR data for all products
       console.log("Fetching historical IRR data for products:", uniqueProductIds);
-      const historicalIRRMap = await fetchAllHistoricalIRRData(uniqueProductIds, finalIRRDates);
+      const { historicalIRRMap, rawHistoricalIRRData } = await fetchAllHistoricalIRRData(uniqueProductIds, finalIRRDates);
       console.log("Historical IRR data fetched:", historicalIRRMap.size, "funds with historical data");
 
       // --- Step 2: Get Portfolio IDs for all selected products ---
@@ -2525,7 +2555,10 @@ Please select a different valuation date or ensure all active funds have valuati
               })(),
               // Report settings
               showInactiveProducts,
-              showPreviousFunds
+              showPreviousFunds,
+              selectedHistoricalIRRDates: selectedIRRDates,
+              availableHistoricalIRRDates: availableIRRDates,
+              rawHistoricalIRRData: rawHistoricalIRRData // Pre-fetched historical IRR data to avoid duplicate API calls
             };
 
             // Navigate to the report display page
@@ -2596,7 +2629,8 @@ Please select a different valuation date or ensure all active funds have valuati
         showPreviousFunds,
         showInactiveProductDetails: Array.from(showInactiveProductDetails),
         selectedHistoricalIRRDates: selectedIRRDates,
-        availableHistoricalIRRDates: availableIRRDates
+        availableHistoricalIRRDates: availableIRRDates,
+        rawHistoricalIRRData: rawHistoricalIRRData // Pre-fetched historical IRR data to avoid duplicate API calls
       };
 
       // Navigate to the report display page
