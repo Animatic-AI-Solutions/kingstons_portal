@@ -9,6 +9,11 @@ interface NotificationState {
   timestamp: number;
 }
 
+interface UserInfo {
+  name: string;
+  avatar?: string;
+}
+
 interface UsePresenceWithNotificationsOptions {
   pageIdentifier: string;
   enabled?: boolean;
@@ -25,6 +30,7 @@ export const usePresenceWithNotifications = ({
   const presenceData = usePresence({ pageIdentifier, enabled });
   const [notifications, setNotifications] = useState<NotificationState[]>([]);
   const previousUsersRef = useRef<Set<number>>(new Set());
+  const userInfoCacheRef = useRef<Map<number, UserInfo>>(new Map());
   const isInitialLoadRef = useRef(true);
 
   // Track user changes and create notifications
@@ -35,6 +41,14 @@ export const usePresenceWithNotifications = ({
 
     const currentUserIds = new Set(presenceData.users.map(user => user.user_id));
     const previousUserIds = previousUsersRef.current;
+
+    // Update user info cache with current users
+    presenceData.users.forEach(user => {
+      userInfoCacheRef.current.set(user.user_id, {
+        name: user.user_info.name,
+        avatar: user.user_info.avatar
+      });
+    });
 
     // Skip notifications on initial load
     if (isInitialLoadRef.current) {
@@ -65,12 +79,14 @@ export const usePresenceWithNotifications = ({
     // Check for users who left
     const leftUserIds = Array.from(previousUserIds).filter(userId => !currentUserIds.has(userId));
     
-    // We don't have user info for left users, so we'll show a generic message
+    // Use cached user info for left users
     leftUserIds.forEach(userId => {
+      const cachedUserInfo = userInfoCacheRef.current.get(userId);
       const notification: NotificationState = {
         id: `left-${userId}-${Date.now()}`,
         type: 'user_left',
-        userName: 'A user',
+        userName: cachedUserInfo?.name || 'A user',
+        userAvatar: cachedUserInfo?.avatar,
         timestamp: Date.now()
       };
       
@@ -80,6 +96,9 @@ export const usePresenceWithNotifications = ({
       setTimeout(() => {
         setNotifications(prev => prev.filter(n => n.id !== notification.id));
       }, notificationDuration);
+
+      // Clean up cache entry for left user to avoid memory leaks
+      userInfoCacheRef.current.delete(userId);
     });
 
     // Update previous users reference

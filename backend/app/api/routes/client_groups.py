@@ -1057,8 +1057,8 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                     
                     if portfolio_irr_result.data and portfolio_irr_result.data[0].get("irr_result") is not None:
                         irr_value = portfolio_irr_result.data[0].get("irr_result")
-                        # Display '-' if IRR is exactly 0%
-                        processed_product["irr"] = "-" if irr_value == 0 else irr_value
+                        # Return the actual IRR value (including 0) - let frontend handle display formatting
+                        processed_product["irr"] = irr_value
                         
                         logger.info(f"Retrieved latest portfolio IRR for product {product['product_id']} (portfolio {portfolio_id}): {processed_product['irr']}%")
                     else:
