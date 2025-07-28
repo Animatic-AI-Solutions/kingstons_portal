@@ -36,12 +36,14 @@ const ReportDisplayPage: React.FC = () => {
   
   // IRR calculation service
   const {
-    fetchPortfolioIrrValues,
     processHistoricalIRRData
   } = useIRRCalculationService(api);
 
   // Flag to track if data has been initialized
   const hasInitialized = useRef(false);
+
+  // Memoize reportData to prevent unnecessary re-renders of child components
+  const memoizedReportData = useMemo(() => reportData, [reportData]);
 
   // Initialize report data from location state (fixed to prevent infinite loop)
   useEffect(() => {
@@ -69,8 +71,14 @@ const ReportDisplayPage: React.FC = () => {
       // Initialize IRR data loading (background processes)
       if (data.productSummaries?.length > 0) {
         try {
-          // Load portfolio IRR values
-          const portfolioIrrValues = await fetchPortfolioIrrValues(data.productSummaries);
+          // Extract portfolio IRR values directly from reportData (already fetched in ReportGenerator)
+          const portfolioIrrValues = new Map<number, number>();
+          data.productSummaries.forEach(product => {
+            if (product.irr !== null && product.irr !== undefined) {
+              portfolioIrrValues.set(product.id, product.irr);
+            }
+          });
+          console.log('🎯 [OPTIMIZATION] Using pre-fetched portfolio IRR values from reportData:', Object.fromEntries(portfolioIrrValues));
           setPortfolioIrrValues(portfolioIrrValues);
           
           // Process historical IRR data if available
@@ -179,12 +187,12 @@ const ReportDisplayPage: React.FC = () => {
       <ReportContainer reportData={reportData}>
         {/* Summary Tab - Always rendered for print, conditionally displayed for screen */}
         <div className={`${activeTab === REPORT_TABS.SUMMARY ? '' : 'hidden print:block'}`}>
-          <SummaryTab reportData={reportData} />
+          <SummaryTab reportData={memoizedReportData} />
         </div>
         
         {/* IRR History Tab - Always rendered for print, conditionally displayed for screen */}
         <div className={`${activeTab === REPORT_TABS.IRR_HISTORY ? '' : 'hidden print:block'}`}>
-          <IRRHistoryTab reportData={reportData} />
+          <IRRHistoryTab reportData={memoizedReportData} />
         </div>
       </ReportContainer>
     </ReportErrorBoundary>

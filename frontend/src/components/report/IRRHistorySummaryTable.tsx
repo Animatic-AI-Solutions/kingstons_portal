@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useReportStateManager } from '../../hooks/report/useReportStateManager';
 import { IRRHistorySummaryService, type IRRHistorySummaryRequest, type ProductIRRHistory, type PortfolioIRRHistory } from '../../services/irrHistorySummaryService';
 import { formatWeightedRisk } from '../../utils/reportFormatters';
 import { generateEffectiveProductTitle, sortProductsByOwnerOrder } from '../../utils/productTitleUtils';
 import { normalizeProductType, PRODUCT_TYPE_ORDER } from '../../utils/reportConstants';
 import type { ReportData, ProductPeriodSummary } from '../../types/reportTypes';
+import api from '../../services/api';
 
 interface IRRHistorySummaryTableProps {
   productIds: number[];
@@ -36,12 +37,42 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const currentRequestRef = useRef<string>('');
 
-  // Generate a key for request deduplication
-  const generateRequestKey = (productIds: number[], selectedDates: string[]) => {
-    return `${productIds.sort().join(',')}|${selectedDates.sort().join(',')}`;
-  };
+  // Create service instance once
+  const irrSummaryService = useMemo(() => new IRRHistorySummaryService(api), []);
+
+  // INTERNAL MEMOIZATION: Stabilize props to prevent duplicate useEffect triggers
+  const memoizedProductIds = useMemo(
+    () => productIds,
+    [productIds.length, productIds.join(',')]
+  );
+
+  const memoizedSelectedDates = useMemo(
+    () => selectedDates,
+    [selectedDates.length, selectedDates.join(',')]
+  );
+
+  const memoizedClientGroupIds = useMemo(
+    () => clientGroupIds,
+    [clientGroupIds?.length, clientGroupIds?.join(',')]
+  );
+
+  // Debug: Track memoization effectiveness
+  useEffect(() => {
+    console.log('🎯 [IRR SUMMARY MEMOIZATION] ProductIds memoized:', {
+      rawLength: productIds.length,
+      memoizedLength: memoizedProductIds.length,
+      sameReference: productIds === memoizedProductIds
+    });
+  }, [memoizedProductIds]);
+
+  useEffect(() => {
+    console.log('🎯 [IRR SUMMARY MEMOIZATION] SelectedDates memoized:', {
+      rawLength: selectedDates.length,
+      memoizedLength: memoizedSelectedDates.length,
+      sameReference: selectedDates === memoizedSelectedDates
+    });
+  }, [memoizedSelectedDates]);
 
   // Get custom titles from state manager
   const {
@@ -161,68 +192,119 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
 
   // Fetch IRR history summary data
   useEffect(() => {
+    console.log('🔄 [IRR SUMMARY TABLE] useEffect triggered:', {
+      productIdsLength: memoizedProductIds.length,
+      selectedDatesLength: memoizedSelectedDates.length,
+      clientGroupIds: memoizedClientGroupIds,
+      productIds: memoizedProductIds.slice(0, 3),
+      selectedDates: memoizedSelectedDates.slice(0, 2)
+    });
+    
     const fetchSummaryData = async () => {
-      if (productIds.length === 0 || selectedDates.length === 0) {
+      if (memoizedProductIds.length === 0 || memoizedSelectedDates.length === 0) {
         console.log('⚠️ [IRR SUMMARY TABLE] Early return - empty productIds or selectedDates');
         setTableData({ productRows: [], portfolioTotals: [], dateHeaders: [] });
         return;
       }
 
-      // Generate request key for deduplication
-      const requestKey = generateRequestKey(productIds, selectedDates);
-      
-      // If the same request is already in progress, skip
-      if (currentRequestRef.current === requestKey && isLoading) {
-        console.log('⚠️ [IRR SUMMARY TABLE] Request already in progress, skipping:', requestKey);
-        return;
-      }
-
-      console.log('🔍 [IRR SUMMARY TABLE] Starting new request:', {
-        requestKey,
-        productIds: productIds.length,
-        selectedDates: selectedDates.length
-      });
-
-      currentRequestRef.current = requestKey;
       setIsLoading(true);
       setError(null);
 
       try {
+        // Debug: Check for duplicate product IDs
+        const uniqueProductIds = [...new Set(memoizedProductIds)];
+        if (uniqueProductIds.length !== memoizedProductIds.length) {
+          console.warn('⚠️ [IRR SUMMARY TABLE] Duplicate product IDs detected!', {
+            original: memoizedProductIds,
+            unique: uniqueProductIds,
+            duplicateCount: memoizedProductIds.length - uniqueProductIds.length
+          });
+        }
+
+        console.log('🔍 [IRR SUMMARY TABLE] Request details:', {
+          productIds: memoizedProductIds,
+          uniqueProductIds: uniqueProductIds,
+          selectedDates: memoizedSelectedDates.sort(),
+          clientGroupIds: memoizedClientGroupIds
+        });
+
         const request: IRRHistorySummaryRequest = {
-          product_ids: productIds,
-          selected_dates: selectedDates.sort(), // Sort dates chronologically
-          client_group_ids: clientGroupIds
+          product_ids: uniqueProductIds, // Use deduplicated product IDs
+          selected_dates: memoizedSelectedDates.sort(), // Sort dates chronologically
+          client_group_ids: memoizedClientGroupIds
         };
 
-        const response = await IRRHistorySummaryService.getIRRHistorySummary(request);
+        console.log('🔍 [IRR HISTORY SUMMARY] Fetching data with request:', request);
+
+        const response = await irrSummaryService.getIRRHistorySummary(request);
+
+        console.log('🔍 [IRR SUMMARY TABLE] Backend response analysis:', {
+          productRowsCount: response.data.product_irr_history.length,
+          portfolioTotalsCount: response.data.portfolio_irr_history.length,
+          productRowsSample: response.data.product_irr_history.slice(0, 3),
+          uniqueProductIdsInResponse: [...new Set(response.data.product_irr_history.map(row => row.product_id))],
+          requestedProductIds: uniqueProductIds
+        });
 
         // Sort dates for consistent column ordering (most recent first)
-        const sortedDates = [...selectedDates].sort((a, b) => b.localeCompare(a));
+        const sortedDates = [...memoizedSelectedDates].sort((a, b) => b.localeCompare(a));
         
+        // Backend now returns flat rows (one per product-date combination)
+        const productRows = response.data.product_irr_history || [];
+        
+        // No need for deduplication since backend now returns correct flat structure
+        console.log('✅ [IRR SUMMARY TABLE] Received flat rows from backend:', {
+          totalRows: productRows.length,
+          expectedRows: uniqueProductIds.length * memoizedSelectedDates.length,
+          structure: 'flat'
+        });
+
         const newTableData = {
-          productRows: response.data.product_irr_history,
+          productRows: productRows,
           portfolioTotals: response.data.portfolio_irr_history,
           dateHeaders: sortedDates
         };
         
         console.log('🔍 [IRR SUMMARY TABLE] Setting table data:', newTableData);
+        
         setTableData(newTableData);
       } catch (err: any) {
         console.error('❌ [IRR SUMMARY TABLE] Failed to fetch IRR history summary:', err);
         setError(err.message || 'Failed to load IRR history summary');
       } finally {
         setIsLoading(false);
-        currentRequestRef.current = '';
       }
     };
 
     fetchSummaryData();
-  }, [productIds, selectedDates, clientGroupIds]);
+  }, [memoizedProductIds, memoizedSelectedDates, memoizedClientGroupIds, irrSummaryService]);
 
-  // Get IRR value for a specific product and date
-  const getIRRValueForProductAndDate = (product: ProductIRRHistory, date: string): number | null => {
-    const irrData = product.irr_data.find(data => data.date === date);
-    return irrData ? irrData.irr_value : null;
+  // Get IRR value for a specific product and date from flat rows
+  const getIRRValueForProductAndDate = (productId: number, date: string): number | null => {
+    const flatRow = tableData.productRows.find((row: any) => 
+      row.product_id === productId && row.irr_date === date
+    ) as any;
+    return flatRow ? flatRow.irr_result : null;
+  };
+
+  // Get unique products from flat rows
+  const getUniqueProducts = () => {
+    if (!tableData.productRows || tableData.productRows.length === 0) return [];
+    
+    const productMap = new Map();
+    tableData.productRows.forEach((row: any) => {
+      if (!productMap.has(row.product_id)) {
+        productMap.set(row.product_id, {
+          product_id: row.product_id,
+          product_name: row.product_name,
+          provider_name: row.provider_name,
+          provider_theme_color: row.provider_theme_color,
+          status: row.status
+        });
+      }
+    });
+    
+    return Array.from(productMap.values());
   };
 
   // Get portfolio IRR for a specific date
@@ -260,7 +342,7 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
     
     // Get products that are in the current table
     const relevantProducts = reportData.productSummaries.filter(p => 
-      productIds.includes(p.id)
+      memoizedProductIds.includes(p.id)
     );
     
     let totalValue = 0;
@@ -344,18 +426,18 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
             No IRR History Data Available
           </div>
           <p className="text-sm text-gray-500 mb-4">
-            {productIds.length === 0 && selectedDates.length === 0 
+            {memoizedProductIds.length === 0 && memoizedSelectedDates.length === 0 
               ? "Select products and historical IRR dates to view the summary table."
-              : productIds.length === 0 
+              : memoizedProductIds.length === 0 
                 ? "No products selected for the report."
-                : selectedDates.length === 0
+                : memoizedSelectedDates.length === 0
                   ? "No historical IRR dates selected."
                   : "No IRR data found for the selected products and dates."
             }
           </p>
           <div className="text-xs text-gray-400">
             <p>Debug Info:</p>
-            <p>Products: {productIds.length} | Dates: {selectedDates.length}</p>
+            <p>Products: {memoizedProductIds.length} | Dates: {memoizedSelectedDates.length}</p>
           </div>
         </div>
       </div>
@@ -423,12 +505,12 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
               {/* Table Body */}
               <tbody className="bg-white divide-y divide-gray-200">
                 {/* Product Rows */}
-                {organizeProductsByType(tableData.productRows).map((product) => {
+                {organizeProductsByType(getUniqueProducts()).map((product, index) => {
                   // Determine if this product should be greyed out (same logic as SummaryTab)
                   const isLapsed = product.status === 'inactive' || product.status === 'lapsed';
                   
                   return (
-                    <tr key={product.product_id} className={`hover:bg-blue-50 ${isLapsed ? 'opacity-50 bg-gray-50' : ''}`}>
+                    <tr key={`product-${product.product_id}-${index}`} className={`hover:bg-blue-50 ${isLapsed ? 'opacity-50 bg-gray-50' : ''}`}>
                       {/* Product Name Cell */}
                       <td className={`text-left px-2 py-2 ${isLapsed ? 'text-gray-500' : 'text-gray-800'}`}>
                         <div className="flex items-start gap-1.5">
@@ -464,7 +546,7 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
 
                       {/* IRR Value Cells */}
                       {tableData.dateHeaders.map((date, index) => {
-                        const irrValue = getIRRValueForProductAndDate(product, date);
+                        const irrValue = getIRRValueForProductAndDate(product.product_id, date);
                         // Check if this is the most recent (first) date since dates are sorted newest first
                         const isCurrentYear = index === 0;
                         // Use 'total' format type for active products (1 decimal place), 'inactive' for inactive products (smart decimal places)

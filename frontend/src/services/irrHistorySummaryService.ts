@@ -71,34 +71,117 @@ export interface IRRHistorySummaryResponse {
   };
 }
 
-/**
- * Service for managing IRR History Summary API calls
- */
-export class IRRHistorySummaryService {
-  /**
-   * Fetch IRR history summary data for multiple products across selected dates
-   */
-  static async getIRRHistorySummary(
-    request: IRRHistorySummaryRequest
-  ): Promise<IRRHistorySummaryResponse> {
-    try {
-      console.log('🔍 [IRR HISTORY SUMMARY] Fetching data with request:', request);
-      
-      const response = await api.post('/historical-irr/summary', request);
-      
-      if (response.data && response.data.success) {
-        console.log('✅ [IRR HISTORY SUMMARY] Data fetched successfully:', response.data);
-        return response.data;
+// Global request cache and deduplication
+interface CachedRequest {
+  promise: Promise<any>;
+  timestamp: number;
+  data?: any;
+}
+
+class IRRHistoryRequestManager {
+  private activeRequests = new Map<string, CachedRequest>();
+  private cache = new Map<string, any>();
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
+
+  generateRequestKey(request: IRRHistorySummaryRequest): string {
+    const productIds = request.product_ids.sort().join(',');
+    const dates = request.selected_dates.sort().join(',');
+    const clientGroups = request.client_group_ids?.sort().join(',') || 'none';
+    return `irr_summary_${productIds}_${dates}_${clientGroups}`;
+  }
+
+  async executeRequest(request: IRRHistorySummaryRequest): Promise<any> {
+    const requestKey = this.generateRequestKey(request);
+    
+    console.log('🔍 [GLOBAL IRR REQUEST MANAGER] Processing request:', requestKey);
+
+    // Check cache first
+    if (this.cache.has(requestKey)) {
+      const cached = this.cache.get(requestKey);
+      if (Date.now() - cached.timestamp < this.CACHE_TTL) {
+        console.log('✅ [GLOBAL IRR REQUEST MANAGER] Using cached data for:', requestKey);
+        return cached.data;
       } else {
-        throw new Error('Invalid response format from IRR history summary API');
+        console.log('⏰ [GLOBAL IRR REQUEST MANAGER] Cache expired for:', requestKey);
+        this.cache.delete(requestKey);
       }
+    }
+
+    // Check if request is already in progress
+    if (this.activeRequests.has(requestKey)) {
+      console.log('🔄 [GLOBAL IRR REQUEST MANAGER] Request already in progress, waiting for existing request:', requestKey);
+      const activeRequest = this.activeRequests.get(requestKey)!;
+      return activeRequest.promise;
+    }
+
+    // Create new request
+    console.log('🚀 [GLOBAL IRR REQUEST MANAGER] Starting new request:', requestKey);
+    const promise = this.performActualRequest(request).then(
+      (data) => {
+        // Cache successful response
+        this.cache.set(requestKey, { data, timestamp: Date.now() });
+        this.activeRequests.delete(requestKey);
+        console.log('✅ [GLOBAL IRR REQUEST MANAGER] Request completed successfully:', requestKey);
+        return data;
+      },
+      (error) => {
+        // Remove from active requests on error
+        this.activeRequests.delete(requestKey);
+        console.error('❌ [GLOBAL IRR REQUEST MANAGER] Request failed:', requestKey, error);
+        throw error;
+      }
+    );
+
+    this.activeRequests.set(requestKey, { promise, timestamp: Date.now() });
+    return promise;
+  }
+
+  private async performActualRequest(request: IRRHistorySummaryRequest): Promise<any> {
+    const response = await api.post('/historical-irr/summary', request);
+    
+    if (response.data && response.data.success) {
+      return response.data.data; // Return just the data portion
+    } else {
+      throw new Error('Invalid response format from IRR history summary API');
+    }
+  }
+
+  clearCache(): void {
+    this.activeRequests.clear();
+    this.cache.clear();
+    console.log('🧹 [GLOBAL IRR REQUEST MANAGER] Cache cleared');
+  }
+}
+
+// Global instance
+const requestManager = new IRRHistoryRequestManager();
+
+export class IRRHistorySummaryService {
+  private api: any;
+
+  constructor(api: any) {
+    this.api = api;
+  }
+
+  async getIRRHistorySummary(request: IRRHistorySummaryRequest): Promise<IRRHistorySummaryResponse> {
+    console.log('🔍 [IRR HISTORY SUMMARY] Fetching data with request:', request);
+    
+    try {
+      // Use global request manager for deduplication
+      const response = await requestManager.executeRequest(request);
+      
+      console.log('✅ [IRR HISTORY SUMMARY] Data fetched successfully:', {
+        success: true,
+        data: response
+      });
+      
+      return {
+        success: true,
+        data: response
+      };
     } catch (error: any) {
-      console.error('❌ [IRR HISTORY SUMMARY] Error fetching data:', error);
-      throw new Error(
-        error.response?.data?.detail || 
-        error.message || 
-        'Failed to fetch IRR history summary data'
-      );
+      console.error('❌ [IRR HISTORY SUMMARY] Failed to fetch IRR history summary:', error);
+      throw new Error(error.message || 'Failed to fetch IRR history summary');
     }
   }
 

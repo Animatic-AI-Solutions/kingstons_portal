@@ -82,16 +82,18 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
   const [previousFundsIRRData, setPreviousFundsIRRData] = useState<Map<string, Map<string, number | null>>>(new Map());
   const [previousFundsCalculationComplete, setPreviousFundsCalculationComplete] = useState<Set<number>>(new Set());
 
-  // Debug logging to understand data state
-  console.log('🔍 [IRR HISTORY DEBUG] Component loaded with:', {
-    hasReportData: !!reportData,
-    productCount: reportData?.productSummaries?.length || 0,
-    hasIrrHistoryData: !!irrHistoryData,
-    irrHistoryDataLength: irrHistoryData?.length || 0,
-    loadingState: loading,
-    firstProductSample: reportData?.productSummaries?.[0],
-    irrHistoryDataSample: irrHistoryData?.[0]
-  });
+  // Debug logging to understand data state (memoized to reduce spam)
+  useEffect(() => {
+    console.log('🔍 [IRR HISTORY DEBUG] Component loaded with:', {
+      hasReportData: !!reportData,
+      productCount: reportData?.productSummaries?.length || 0,
+      hasIrrHistoryData: !!irrHistoryData,
+      irrHistoryDataLength: irrHistoryData?.length || 0,
+      loadingState: loading,
+      firstProductSample: reportData?.productSummaries?.[0],
+      irrHistoryDataSample: irrHistoryData?.[0]
+    });
+  }, [!!reportData, reportData?.productSummaries?.length, !!irrHistoryData, irrHistoryData?.length, loading]);
 
   // Local state for Phase 2 enhancements
   const [viewMode, setViewMode] = useState<ViewMode>('table');
@@ -103,15 +105,49 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
   const { formatCurrencyWithZeroToggle, updateOptions } = useReportFormatter();
 
   // MOVED: Memoize expensive prop calculations to prevent infinite re-renders (moved before early returns)
+  // Using stable dependencies instead of JSON.stringify to prevent unnecessary re-computations
   const memoizedProductIds = useMemo(
     () => reportData?.productSummaries?.map(p => p.id) || [],
-    [reportData?.productSummaries]
+    [
+      reportData?.productSummaries?.length,
+      reportData?.productSummaries?.[0]?.id,
+      reportData?.productSummaries?.[reportData.productSummaries.length - 1]?.id
+    ]
   );
 
   const memoizedSelectedDates = useMemo(
     () => reportData?.availableHistoricalIRRDates?.map(d => d.date) || [],
-    [reportData?.availableHistoricalIRRDates]
+    [
+      reportData?.availableHistoricalIRRDates?.length,
+      reportData?.availableHistoricalIRRDates?.[0]?.date,
+      reportData?.availableHistoricalIRRDates?.[reportData.availableHistoricalIRRDates.length - 1]?.date
+    ]
   );
+
+  // Memoize reportData to prevent unnecessary prop changes
+  const memoizedReportData = useMemo(
+    () => reportData,
+    [
+      reportData?.productSummaries?.length,
+      reportData?.availableHistoricalIRRDates?.length,
+      reportData?.productOwnerOrder?.length
+    ]
+  );
+
+  // Memoize totalIRR to prevent unnecessary prop changes
+  const memoizedTotalIRR = useMemo(
+    () => reportData?.totalIRR,
+    [reportData?.totalIRR]
+  );
+
+  // Debug: Track when memoized values change
+  useEffect(() => {
+    console.log('🔧 [MEMOIZATION DEBUG] ProductIds changed:', memoizedProductIds);
+  }, [memoizedProductIds]);
+
+  useEffect(() => {
+    console.log('🔧 [MEMOIZATION DEBUG] SelectedDates changed:', memoizedSelectedDates);
+  }, [memoizedSelectedDates]);
 
   // Add CSS for IRR history table column alignment and widths
   useEffect(() => {
@@ -701,6 +737,88 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
     calculateAllPreviousFundsIRR();
   }, [irrHistoryData]); // Only depend on irrHistoryData
 
+  // Memoize the expensive table processing to prevent multiple renders
+  const memoizedTableData = useMemo(() => {
+    if (!reportData?.productSummaries || !irrHistoryData) {
+      return [];
+    }
+
+    // Organize products by type function (moved from IIFE)
+    const organizeProductsByType = (products: ProductPeriodSummary[]) => {
+      const groupedProducts: { [key: string]: ProductPeriodSummary[] } = {};
+      
+      products.forEach(product => {
+        const normalizedType = normalizeProductType(product.product_type);
+        if (!groupedProducts[normalizedType]) {
+          groupedProducts[normalizedType] = [];
+        }
+        groupedProducts[normalizedType].push(product);
+      });
+
+      Object.keys(groupedProducts).forEach(type => {
+        if (type === 'ISAs') {
+          groupedProducts[type].sort((a, b) => {
+            const typeA = a.product_type?.toLowerCase().trim() || '';
+            const typeB = b.product_type?.toLowerCase().trim() || '';
+            
+            const isJISA_A = typeA === 'jisa';
+            const isJISA_B = typeB === 'jisa';
+            
+            if (isJISA_A && !isJISA_B) return 1;
+            if (!isJISA_A && isJISA_B) return -1;
+            
+            return 0;
+          });
+          
+          groupedProducts[type] = sortProductsByOwnerOrder(groupedProducts[type], reportData.productOwnerOrder || []);
+        } else {
+          groupedProducts[type] = sortProductsByOwnerOrder(groupedProducts[type], reportData.productOwnerOrder || []);
+        }
+      });
+
+      const orderedProducts: ProductPeriodSummary[] = [];
+      
+      PRODUCT_TYPE_ORDER.forEach(type => {
+        if (groupedProducts[type]) {
+          orderedProducts.push(...groupedProducts[type]);
+        }
+      });
+
+      const activeProducts = orderedProducts.filter(product => 
+        product.status !== 'inactive' && product.status !== 'lapsed'
+      );
+      const inactiveProducts = orderedProducts.filter(product => 
+        product.status === 'inactive' || product.status === 'lapsed'
+      );
+      
+      return [...activeProducts, ...inactiveProducts];
+    };
+
+    const organizedProducts = organizeProductsByType(reportData.productSummaries);
+    
+    const filteredProducts = organizedProducts.filter(product => {
+      if (product.status === 'inactive') {
+        return reportData.showInactiveProducts || showInactiveProductDetails.has(product.id);
+      }
+      return true;
+    });
+
+    console.log(`📊 [IRR HISTORY DEBUG] Memoized processing:`, {
+      totalProducts: organizedProducts.length,
+      filteredProducts: filteredProducts.length,
+      inactiveProducts: organizedProducts.filter(p => p.status === 'inactive').length,
+    });
+
+    return filteredProducts;
+  }, [
+    reportData?.productSummaries, 
+    irrHistoryData, 
+    showInactiveProductDetails, 
+    reportData?.showInactiveProducts, 
+    reportData?.productOwnerOrder,
+    loading.portfolioIRR
+  ]);
+
   // Show loading state if data is being loaded
   if (loadingIrrHistory) {
     return (
@@ -932,104 +1050,8 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       {/* Table View */}
       <div className={`mb-8 irr-history-table ${viewMode === 'table' ? '' : 'hidden print:block'}`}>
         {(() => {
-          // Organize products by type in the specified order, with inactive/lapsed products at the bottom
-          const organizeProductsByType = (products: ProductPeriodSummary[]) => {
-            // Group products by normalized type
-            const groupedProducts: { [key: string]: ProductPeriodSummary[] } = {};
-            
-            products.forEach(product => {
-              const normalizedType = normalizeProductType(product.product_type);
-              if (!groupedProducts[normalizedType]) {
-                groupedProducts[normalizedType] = [];
-              }
-              groupedProducts[normalizedType].push(product);
-            });
-
-            // Sort products within each type by custom product owner order, with special ordering for ISAs
-            Object.keys(groupedProducts).forEach(type => {
-              if (type === 'ISAs') {
-                // Special sorting for ISAs: ISA products first, then JISA products, then by custom owner order
-                groupedProducts[type].sort((a, b) => {
-                  const typeA = a.product_type?.toLowerCase().trim() || '';
-                  const typeB = b.product_type?.toLowerCase().trim() || '';
-                  
-                  // Check if products are JISA
-                  const isJISA_A = typeA === 'jisa';
-                  const isJISA_B = typeB === 'jisa';
-                  
-                  // If one is JISA and the other is not, non-JISA comes first
-                  if (isJISA_A && !isJISA_B) return 1;
-                  if (!isJISA_A && isJISA_B) return -1;
-                  
-                  // If both are same type (both JISA or both ISA), sort by custom product owner order
-                  return 0; // Will be handled by the custom owner order sort below
-                });
-                
-                // Apply custom owner order after ISA/JISA sorting
-                groupedProducts[type] = sortProductsByOwnerOrder(groupedProducts[type], reportData.productOwnerOrder || []);
-              } else {
-                // Standard sorting by custom product owner order for other product types
-                groupedProducts[type] = sortProductsByOwnerOrder(groupedProducts[type], reportData.productOwnerOrder || []);
-              }
-            });
-
-            // Return products in the specified order
-            const orderedProducts: ProductPeriodSummary[] = [];
-            
-            PRODUCT_TYPE_ORDER.forEach(type => {
-              if (groupedProducts[type]) {
-                orderedProducts.push(...groupedProducts[type]);
-              }
-            });
-
-            // Apply status-based sorting: active products first, then inactive/lapsed at the bottom
-            // while maintaining original relative order within each group
-            const activeProducts = orderedProducts.filter(product => 
-              product.status !== 'inactive' && product.status !== 'lapsed'
-            );
-            const inactiveProducts = orderedProducts.filter(product => 
-              product.status === 'inactive' || product.status === 'lapsed'
-            );
-            
-            // Return active products first, then inactive/lapsed products
-            return [...activeProducts, ...inactiveProducts];
-          };
-          
-          // Use the same organization as SummaryTab
-          const organizedProducts = organizeProductsByType(reportData.productSummaries);
-          
-          // Filter out inactive products when checkbox is unchecked
-          const filteredProducts = organizedProducts.filter(product => {
-            if (product.status === 'inactive') {
-              // Only show inactive products if:
-              // 1. showInactiveProducts is true globally, OR
-              // 2. this specific product is checked in showInactiveProductDetails
-              const shouldShow = reportData.showInactiveProducts || showInactiveProductDetails.has(product.id);
-              
-              console.log(`🔍 [IRR HISTORY FILTER DEBUG] Product ${product.id} (${product.product_name}):`, {
-                status: product.status,
-                showInactiveProducts: reportData.showInactiveProducts,
-                hasInShowInactiveProductDetails: showInactiveProductDetails.has(product.id),
-                showInactiveProductDetailsSet: Array.from(showInactiveProductDetails),
-                shouldShow,
-                reportDataShowInactiveProductDetails: reportData.showInactiveProductDetails
-              });
-              
-              return shouldShow;
-            }
-            // Always show active products
-            return true;
-          });
-          
-          console.log(`📊 [IRR HISTORY DEBUG] Filtered products:`, {
-            totalProducts: organizedProducts.length,
-            filteredProducts: filteredProducts.length,
-            inactiveProducts: organizedProducts.filter(p => p.status === 'inactive').length,
-            showInactiveProducts: reportData.showInactiveProducts,
-            showInactiveProductDetails: Array.from(showInactiveProductDetails),
-            originalIds: organizedProducts.map(p => p.id),
-            filteredIds: filteredProducts.map(p => p.id)
-          });
+          // Use the memoized filtered products to avoid expensive recalculation
+          const filteredProducts = memoizedTableData;
           
           // ✅ GLOBAL DATE CALCULATION - Calculate dates across ALL products first
           const globalAllDates = new Set<string>();
@@ -2044,8 +2066,8 @@ Available database dates: ${productHistory.portfolio_historical_irr.map((r: any)
           productIds={memoizedProductIds}
           selectedDates={memoizedSelectedDates}
           clientGroupIds={undefined}
-          realTimeTotalIRR={reportData?.totalIRR}
-          reportData={reportData}
+          realTimeTotalIRR={memoizedTotalIRR}
+          reportData={memoizedReportData}
           className="mt-8"
         />
       </div>

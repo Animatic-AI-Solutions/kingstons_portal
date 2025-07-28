@@ -1434,3 +1434,35 @@ LEFT JOIN client_products cp ON cg.id = cp.client_id AND cp.status = 'active'
 LEFT JOIN portfolio_funds pf ON cp.portfolio_id = pf.portfolio_id AND pf.status = 'active'
 LEFT JOIN latest_portfolio_fund_valuations lfv ON pf.id = lfv.portfolio_fund_id
 WHERE cg.status IN ('active', 'dormant');
+
+-- =========================================================
+-- ULTRA-MINIMAL CLIENT GROUPS VIEW - ONLY ESSENTIAL COLUMNS
+-- Just what's needed for the Clients.tsx page table
+-- =========================================================
+
+CREATE OR REPLACE VIEW public.client_groups_summary AS
+SELECT 
+    cg.id as client_group_id,
+    cg.name as client_group_name,
+    cg.status as client_group_status,
+    cg.type,
+    cg.advisor as advisor_name
+
+FROM client_groups cg
+
+-- Only include non-deleted client groups  
+WHERE cg.status != 'deleted'
+
+-- Order by name for consistent results
+ORDER BY cg.name ASC NULLS LAST;
+
+-- =========================================================
+-- INDEXES FOR CLIENT GROUPS SUMMARY VIEW PERFORMANCE
+-- =========================================================
+
+-- Index on client_groups for the minimal view (only one needed now)
+CREATE INDEX IF NOT EXISTS idx_client_groups_summary_status ON client_groups(status) WHERE status != 'deleted';
+
+-- Removed complex indexes - no longer needed for minimal view:
+-- - idx_client_products_summary (no longer joining to client_products)  
+-- - idx_portfolio_funds_summary (no longer joining to portfolio_funds)

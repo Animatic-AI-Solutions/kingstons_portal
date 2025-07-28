@@ -132,25 +132,9 @@ export class IRRCalculationService implements IIRRCalculationService {
       this.log(`Product ${productId} maps to portfolio ${portfolioId}`);
       
       // Test both endpoints to see which one works
-      this.log(`Testing both IRR endpoints for portfolio ${portfolioId}...`);
+              this.log(`Fetching IRR for portfolio ${portfolioId}...`);
       
-      // Test endpoint 1 (hyphen)
-      try {
-        const response1 = await this.api.get(`/api/portfolios/${portfolioId}/latest-irr`);
-        this.log(`Endpoint 1 (/latest-irr) response:`, response1.data);
-      } catch (error1) {
-        this.log(`Endpoint 1 (/latest-irr) failed:`, error1);
-      }
-      
-      // Test endpoint 2 (underscore)
-      try {
-        const response2 = await this.api.get(`/api/portfolios/${portfolioId}/latest_irr`);
-        this.log(`Endpoint 2 (/latest_irr) response:`, response2.data);
-      } catch (error2) {
-        this.log(`Endpoint 2 (/latest_irr) failed:`, error2);
-      }
-      
-      // Use the working endpoint
+      // Use the correct endpoint (hyphen, not underscore)
       const response = await this.api.get(`/api/portfolios/${portfolioId}/latest-irr`);
       // Fix: Properly handle zero values - only convert undefined to null
       const irrValue = response.data?.irr_result !== undefined ? response.data.irr_result : null;
@@ -189,17 +173,35 @@ export class IRRCalculationService implements IIRRCalculationService {
       this.log('Selected dates:', reportData.selectedHistoricalIRRDates);
       this.log('Available dates:', reportData.availableHistoricalIRRDates);
       
-      // Create the IRR history data structure that matches what the table expects
-      const irrHistoryPromises = reportData.productSummaries.map(product => {
-        return this.processProductHistoricalIRR(product, reportData.selectedHistoricalIRRDates!);
-      });
-      
-      const irrHistoryResults = await Promise.all(irrHistoryPromises);
-      
-      this.log('Final processed historical IRR data:', irrHistoryResults);
-      return irrHistoryResults;
-      
+      // Check if we have pre-fetched raw historical IRR data to avoid duplicate API calls
+      if (reportData.rawHistoricalIRRData) {
+        this.log('🎯 [OPTIMIZATION] Using pre-fetched historical IRR data, avoiding duplicate API calls');
+        
+        // Create the IRR history data structure using pre-fetched data
+        const irrHistoryPromises = reportData.productSummaries.map(product => {
+          const rawHistoricalData = reportData.rawHistoricalIRRData!.get(product.id);
+          return this.processProductHistoricalIRRWithRawData(product, reportData.selectedHistoricalIRRDates!, rawHistoricalData);
+        });
+        
+        const irrHistoryResults = await Promise.all(irrHistoryPromises);
+        
+        this.log('🎯 [OPTIMIZATION] Processed historical IRR data using pre-fetched data - no API calls made');
+        return irrHistoryResults;
+      } else {
+        this.log('⚠️ No pre-fetched historical IRR data available, falling back to API calls');
+        
+        // Fallback to original method with API calls
+        const irrHistoryPromises = reportData.productSummaries.map(product => {
+          return this.processProductHistoricalIRR(product, reportData.selectedHistoricalIRRDates!);
+        });
+        
+        const irrHistoryResults = await Promise.all(irrHistoryPromises);
+        
+        this.log('Final processed historical IRR data:', irrHistoryResults);
+        return irrHistoryResults;
+      }
     } catch (error) {
+      // Handle any errors during historical IRR processing
       console.error('Error processing historical IRR data:', error);
       return [];
     }
@@ -325,6 +327,125 @@ export class IRRCalculationService implements IIRRCalculationService {
     };
     
     this.log(`Created data structure for product ${product.id}:`, result);
+    return result;
+  }
+
+  /**
+   * Process historical IRR data for a single product using pre-fetched raw data
+   * Optimized version that avoids duplicate API calls
+   */
+  private async processProductHistoricalIRRWithRawData(
+    product: ProductPeriodSummary, 
+    selectedHistoricalIRRDates: Record<number, string[]>,
+    rawHistoricalData: any
+  ): Promise<IRRHistoryData> {
+    const selectedDates = selectedHistoricalIRRDates[product.id] || [];
+    this.log(`🎯 [OPTIMIZATION] Product ${product.id} (${product.product_name}) using pre-fetched data for dates:`, selectedDates);
+    
+    let portfolioHistoricalIrr: any[] = [];
+    
+    try {
+      if (rawHistoricalData && rawHistoricalData.portfolio_historical_irr) {
+        this.log(`🎯 [OPTIMIZATION] Using ${rawHistoricalData.portfolio_historical_irr.length} pre-fetched portfolio IRR records for product ${product.id}`);
+        
+        // Create portfolio historical IRR data based on pre-fetched values
+        portfolioHistoricalIrr = selectedDates.map(dateStr => {
+          // Convert YYYY-MM format to YYYY-MM-DD format for comparison
+          const targetMonth = dateStr.length === 7 ? dateStr : dateStr.substring(0, 7);
+          
+          // Find the closest historical IRR record for this month
+          const matchingRecord = rawHistoricalData.portfolio_historical_irr.find((record: any) => {
+            const recordMonth = record.irr_date.substring(0, 7); // Extract YYYY-MM from the date
+            return recordMonth === targetMonth;
+          });
+          
+          const fullDate = dateStr.length === 7 ? `${dateStr}-01` : dateStr;
+          
+          return {
+            irr_id: matchingRecord?.irr_id || null,
+            portfolio_id: matchingRecord?.portfolio_id || null,
+            irr_date: fullDate,
+            irr_result: matchingRecord && matchingRecord.irr_result !== null ? parseFloat(String(matchingRecord.irr_result)) : null,
+            portfolio_valuation_id: matchingRecord?.portfolio_valuation_id || null,
+            portfolio_name: matchingRecord?.portfolio_name || null,
+            product_name: matchingRecord?.product_name || product.product_name,
+            provider_name: matchingRecord?.provider_name || null
+          };
+        });
+        
+        this.log(`🎯 [OPTIMIZATION] Created ${portfolioHistoricalIrr.length} portfolio historical IRR records for product ${product.id} using pre-fetched data`);
+      } else {
+        this.log(`⚠️ No pre-fetched historical IRR data found for product ${product.id}, using current IRR as fallback`);
+        // Fallback to current IRR if no historical data available
+        portfolioHistoricalIrr = selectedDates.map(dateStr => {
+          const fullDate = dateStr.length === 7 ? `${dateStr}-01` : dateStr;
+          return {
+            irr_date: fullDate,
+            irr_result: product.irr
+          };
+        });
+      }
+    } catch (error) {
+      console.error(`Error processing pre-fetched historical IRR data for product ${product.id}:`, error);
+      // Fallback to current IRR
+      portfolioHistoricalIrr = selectedDates.map(dateStr => {
+        const fullDate = dateStr.length === 7 ? `${dateStr}-01` : dateStr;
+        return {
+          irr_date: fullDate,
+          irr_result: product.irr
+        };
+      });
+    }
+
+    // Create funds historical IRR data using pre-fetched data
+    const fundsHistoricalIrr = rawHistoricalData?.funds_historical_irr?.map((fund: any) => {
+      const fundHistoricalRecords = selectedDates.map(dateStr => {
+        let irrValue: number | null = null;
+        
+        // Find matching IRR value for this date
+        if (fund.historical_irr && fund.historical_irr.length > 0) {
+          const dateIndex = fund.historical_irr.findIndex((record: any) => {
+            const histDate = record.irr_date;
+            // Handle both YYYY-MM and YYYY-MM-DD formats
+            const normalizedHistDate = histDate.length === 7 ? histDate : histDate.substring(0, 7);
+            const normalizedSelectedDate = dateStr.length === 7 ? dateStr : dateStr.substring(0, 7);
+            return normalizedHistDate === normalizedSelectedDate;
+          });
+          
+          if (dateIndex >= 0 && fund.historical_irr[dateIndex] !== undefined) {
+            irrValue = fund.historical_irr[dateIndex].irr_result;
+          }
+        }
+        
+        // Convert YYYY-MM format to YYYY-MM-DD format for consistency
+        const fullDate = dateStr.length === 7 ? `${dateStr}-01` : dateStr;
+        
+        return {
+          irr_date: fullDate,
+          irr_result: irrValue
+        };
+      });
+      
+      return {
+        portfolio_fund_id: fund.portfolio_fund_id,
+        fund_name: fund.fund_name,
+        fund_status: fund.fund_status || 'active',
+        risk_factor: fund.risk_factor ?? null,
+        isin_number: fund.isin_number ?? null,
+        historical_irr: fundHistoricalRecords,
+        isVirtual: fund.isVirtual,
+        inactiveFundCount: fund.inactiveFundCount
+      };
+    }) || [];
+
+    const result: IRRHistoryData = {
+      product_id: product.id,
+      product_name: product.product_name,
+      portfolio_historical_irr: portfolioHistoricalIrr,
+      funds_historical_irr: fundsHistoricalIrr
+    };
+    
+    this.log(`🎯 [OPTIMIZATION] Created data structure for product ${product.id} using pre-fetched data:`, result);
     return result;
   }
 

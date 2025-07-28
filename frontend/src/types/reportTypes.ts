@@ -84,6 +84,8 @@ export interface ReportData {
   showInactiveProductDetails?: number[];
   selectedHistoricalIRRDates?: ProductIRRSelections;
   availableHistoricalIRRDates?: SelectedIRRDate[];
+  // Pre-fetched historical IRR data to avoid duplicate API calls
+  rawHistoricalIRRData?: Map<number, any>; // productId -> getCombinedHistoricalIRR response
 }
 
 // Generator-specific interfaces
