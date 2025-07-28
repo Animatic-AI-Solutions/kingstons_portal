@@ -615,19 +615,19 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                         <>
                           {product.funds
                             .sort((a, b) => {
-                              // First: Check if either is "Previous Funds" (virtual) - these go last
-                              if (a.isVirtual && !b.isVirtual) return 1;
-                              if (!a.isVirtual && b.isVirtual) return -1;
-                              if (a.isVirtual && b.isVirtual) return 0;
+                              const nameA = a.fund_name || '';
+                              const nameB = b.fund_name || '';
                               
-                              // Second: Check if either is "Cash" - cash goes after regular funds but before Previous Funds
-                              const aIsCash = a.fund_name.toLowerCase().includes('cash');
-                              const bIsCash = b.fund_name.toLowerCase().includes('cash');
-                              if (aIsCash && !bIsCash) return 1;
-                              if (!aIsCash && bIsCash) return -1;
+                              // Previous Funds always last
+                              if (nameA === 'Previous Funds') return 1;
+                              if (nameB === 'Previous Funds') return -1;
                               
-                              // Third: Regular funds in alphabetical order
-                              return a.fund_name.localeCompare(b.fund_name);
+                              // Cash always second to last (but before Previous Funds)
+                              if (nameA === 'Cash') return 1;
+                              if (nameB === 'Cash') return -1;
+                              
+                              // All others alphabetical
+                              return nameA.localeCompare(nameB);
                             })
                             .map(fund => {
                               const fundGains = (fund.current_valuation || 0) + (fund.total_withdrawal || 0) + (fund.total_product_switch_out || 0) + (fund.total_fund_switch_out || 0);

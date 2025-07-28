@@ -1667,7 +1667,24 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                             }
                           }
                           
-                          const fundRows = processedFunds.map((fund: any, fundIndex: number) => {
+                          // Custom sorting: alphabetical, but Cash second to last, Previous Funds last
+                          const sortedFunds = [...processedFunds].sort((a, b) => {
+                            const nameA = a.fund_name || '';
+                            const nameB = b.fund_name || '';
+                            
+                            // Previous Funds always last
+                            if (nameA === 'Previous Funds') return 1;
+                            if (nameB === 'Previous Funds') return -1;
+                            
+                            // Cash always second to last (but before Previous Funds)
+                            if (nameA === 'Cash') return 1;
+                            if (nameB === 'Cash') return -1;
+                            
+                            // All others alphabetical
+                            return nameA.localeCompare(nameB);
+                          });
+                          
+                          const fundRows = sortedFunds.map((fund: any, fundIndex: number) => {
                             // For Previous Funds, use previousFundsIRRData state; for regular funds, use fundIrrMaps
                             let fundIrrMap: Map<string, number>;
                             if (fund.isVirtual && fund.fund_name === 'Previous Funds') {
