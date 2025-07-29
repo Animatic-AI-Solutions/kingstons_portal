@@ -1194,6 +1194,14 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
 
                 <div className="overflow-x-auto product-table">
                   <table className="w-full table-fixed divide-y divide-gray-300 landscape-table irr-history-table">
+                    <colgroup>
+                      <col className="w-[30%]" />
+                      <col className="w-[10%]" />
+                      <col className="w-[15%]" />
+                      {sortedDates.map((_, index) => (
+                        <col key={index} className="w-[15%]" />
+                      ))}
+                    </colgroup>
                     <thead className="bg-gray-100">
                       <tr>
                         <th scope="col" className="px-2 py-2 text-left text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
