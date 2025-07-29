@@ -116,11 +116,25 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
   );
 
   const memoizedSelectedDates = useMemo(
-    () => reportData?.availableHistoricalIRRDates?.map(d => d.date) || [],
+    () => {
+      // Extract unique dates that were actually selected by the user
+      if (!reportData?.selectedHistoricalIRRDates) {
+        return [];
+      }
+      
+      const allSelectedDates = new Set<string>();
+      Object.values(reportData.selectedHistoricalIRRDates).forEach(dates => {
+        dates.forEach(date => allSelectedDates.add(date));
+      });
+      
+      const uniqueSelectedDates = Array.from(allSelectedDates).sort();
+      console.log('🎯 [IRR HISTORY] Using actual user-selected dates:', uniqueSelectedDates);
+      return uniqueSelectedDates;
+    },
     [
-      reportData?.availableHistoricalIRRDates?.length,
-      reportData?.availableHistoricalIRRDates?.[0]?.date,
-      reportData?.availableHistoricalIRRDates?.[reportData.availableHistoricalIRRDates.length - 1]?.date
+      reportData?.selectedHistoricalIRRDates,
+      // Create a stable dependency by stringifying the selections
+      JSON.stringify(reportData?.selectedHistoricalIRRDates)
     ]
   );
 
@@ -130,6 +144,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
     [
       reportData?.productSummaries?.length,
       reportData?.availableHistoricalIRRDates?.length,
+      reportData?.selectedHistoricalIRRDates,
       reportData?.productOwnerOrder?.length
     ]
   );

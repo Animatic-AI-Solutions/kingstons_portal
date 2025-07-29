@@ -406,9 +406,40 @@ async def get_irr_history_summary(
                         })
                         continue
                     
-                    logger.debug(f"Calculating portfolio IRR for date {date_str} with {len(portfolio_fund_ids)} funds")
+                    logger.debug(f"📊 Calculating portfolio IRR for date {date_str} with {len(portfolio_fund_ids)} funds: {portfolio_fund_ids}")
                     
-                    # Use the proper portfolio IRR calculation function
+                    # Before calculating IRR, check if all portfolio funds have valuations for this date
+                    # This prevents IRR calculation failures due to incomplete data
+                    logger.debug(f"🔍 Checking valuation availability for {len(portfolio_fund_ids)} funds on {normalized_date}")
+                    
+                    valuation_check_response = db.table("portfolio_fund_valuations") \
+                        .select("portfolio_fund_id, valuation") \
+                        .in_("portfolio_fund_id", portfolio_fund_ids) \
+                        .lte("valuation_date", normalized_date) \
+                        .order("valuation_date", desc=True) \
+                        .execute()
+                    
+                    # Group by portfolio_fund_id to get the latest valuation for each fund
+                    fund_valuations = {}
+                    for row in valuation_check_response.data:
+                        fund_id = row["portfolio_fund_id"]
+                        if fund_id not in fund_valuations:
+                            fund_valuations[fund_id] = row["valuation"]
+                    
+                    # Check if all funds have valuations
+                    missing_valuations = [fund_id for fund_id in portfolio_fund_ids if fund_id not in fund_valuations or fund_valuations[fund_id] is None]
+                    
+                    if missing_valuations:
+                        logger.warning(f"⚠️ Missing valuations for funds {missing_valuations} as of {normalized_date}. Cannot calculate accurate IRR - returning N/A")
+                        portfolio_irr_history.append({
+                            "date": date_str,
+                            "portfolio_irr": None  # N/A when data is incomplete
+                        })
+                        continue
+                    
+                    logger.debug(f"✅ All {len(portfolio_fund_ids)} funds have valuations for {normalized_date}")
+                    
+                    # Use the proper portfolio IRR calculation function - this is the ONLY method we should use
                     try:
                         portfolio_irr_result = await calculate_multiple_portfolio_funds_irr(
                             portfolio_fund_ids=portfolio_fund_ids,
@@ -419,34 +450,16 @@ async def get_irr_history_summary(
                         portfolio_irr = None
                         if portfolio_irr_result and portfolio_irr_result.get("success"):
                             portfolio_irr = portfolio_irr_result.get("irr_percentage")
-                            logger.debug(f"✅ Portfolio IRR for {date_str}: {portfolio_irr}%")
-                            
+                            logger.info(f"✅ Portfolio IRR for {date_str}: {portfolio_irr}% using proper cash flow methodology")
                         else:
-                            logger.warning(f"⚠️ Portfolio IRR calculation unsuccessful for {date_str}")
+                            logger.warning(f"⚠️ Portfolio IRR calculation returned unsuccessful result for {date_str}: {portfolio_irr_result}")
                             
                     except Exception as calc_error:
-                        logger.warning(f"❌ Portfolio IRR calculation failed for {date_str}: {str(calc_error)}")
+                        logger.error(f"❌ Portfolio IRR calculation failed for {date_str}: {str(calc_error)}")
                         portfolio_irr = None
                     
-                    # Fallback: If portfolio IRR calculation failed, use simple average of individual product IRRs
-                    if portfolio_irr is None:
-                        logger.debug(f"🔄 Using fallback average for date {date_str}")
-                        try:
-                            portfolio_irr_response = db.table("portfolio_historical_irr") \
-                                .select("irr_result, portfolio_valuation_id") \
-                                .in_("product_id", request.product_ids) \
-                                .gte("irr_date", normalized_date) \
-                                .lt("irr_date", f"{normalized_date}T23:59:59") \
-                                .execute()
-                            
-                            if portfolio_irr_response.data and len(portfolio_irr_response.data) > 0:
-                                irr_values = [float(row["irr_result"]) for row in portfolio_irr_response.data if row["irr_result"] is not None]
-                                portfolio_irr = sum(irr_values) / len(irr_values) if irr_values else None
-                                if portfolio_irr is not None:
-                                    logger.debug(f"📊 Fallback average IRR for {date_str}: {portfolio_irr}%")
-                        except Exception as fallback_error:
-                            logger.error(f"❌ Fallback calculation failed for {date_str}: {str(fallback_error)}")
-                            portfolio_irr = None
+                    # No fallback averaging - if the proper calculation fails, we return None
+                    # This ensures mathematical accuracy by only using cash flow-based IRR calculations
                     
                     portfolio_irr_history.append({
                         "date": date_str,
