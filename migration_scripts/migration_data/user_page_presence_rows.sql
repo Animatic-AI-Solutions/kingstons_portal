@@ -1,0 +1,2 @@
+-- No data to export for user_page_presence table (empty table)
+-- This table tracks real-time user presence and is typically empty when exported

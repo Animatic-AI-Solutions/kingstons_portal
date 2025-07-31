@@ -4,10 +4,30 @@
 # =========================================================
 
 # IMPORTANT: Replace [YOUR-PASSWORD] with your actual Supabase password
-$SUPABASE_CONNECTION = "postgresql://postgres:[hiFGH#1874]@db.oixpqxxnhxtxwkeigjka.supabase.co:5432/postgres"
+$SUPABASE_CONNECTION = "postgresql://postgres:hiFGH#1874@db.oixpqxxnhxtxwkeigjka.supabase.co:5432/postgres"
 
 Write-Host "Kingston's Portal - Supabase Data Export" -ForegroundColor Green
 Write-Host "=========================================" -ForegroundColor Green
+
+# Set PostgreSQL tools path
+$pgPath = "C:\Program Files\PostgreSQL\17\bin"
+$psqlPath = "$pgPath\psql.exe"
+$pgDumpPath = "$pgPath\pg_dump.exe"
+
+# Verify PostgreSQL tools exist
+if (!(Test-Path $psqlPath)) {
+    Write-Host "❌ psql not found at: $psqlPath" -ForegroundColor Red
+    Write-Host "Please check your PostgreSQL installation path." -ForegroundColor Yellow
+    exit 1
+}
+
+if (!(Test-Path $pgDumpPath)) {
+    Write-Host "❌ pg_dump not found at: $pgDumpPath" -ForegroundColor Red
+    Write-Host "Please check your PostgreSQL installation path." -ForegroundColor Yellow
+    exit 1
+}
+
+Write-Host "✅ PostgreSQL tools found" -ForegroundColor Green
 
 # Create export directory
 $exportDir = "migration_data"
@@ -21,8 +41,8 @@ $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
 
 Write-Host "`nStep 1: Testing Supabase connection..." -ForegroundColor Cyan
 # Test connection first
-$env:PGPASSWORD = "[hiFGH#1874]"
-$testResult = psql $SUPABASE_CONNECTION -c "SELECT version();" 2>&1
+$env:PGPASSWORD = "hiFGH#1874"
+$testResult = & $psqlPath $SUPABASE_CONNECTION -c "SELECT version();" 2>&1
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "✅ Connection successful!" -ForegroundColor Green
@@ -38,7 +58,7 @@ Write-Host "`nStep 2: Exporting complete database schema and data..." -Foregroun
 $fullExportFile = "$exportDir\kingston_portal_full_backup_$timestamp.sql"
 Write-Host "Exporting to: $fullExportFile" -ForegroundColor Yellow
 
-pg_dump $SUPABASE_CONNECTION `
+& $pgDumpPath $SUPABASE_CONNECTION `
     --schema=public `
     --data-only `
     --inserts `
@@ -89,7 +109,7 @@ foreach ($table in $tables) {
     
     $tableFile = "$exportDir\$table" + "_data.sql"
     
-    pg_dump $SUPABASE_CONNECTION `
+    & $pgDumpPath $SUPABASE_CONNECTION `
         --schema=public `
         --data-only `
         --inserts `
@@ -120,7 +140,7 @@ foreach ($table in $tables) {
     Write-Host "Counting rows in: $table" -ForegroundColor Yellow
     
     $countQuery = "SELECT COUNT(*) FROM $table;"
-    $rowCount = psql $SUPABASE_CONNECTION -t -c $countQuery 2>$null
+    $rowCount = & $psqlPath $SUPABASE_CONNECTION -t -c $countQuery 2>$null
     
     if ($LASTEXITCODE -eq 0) {
         $cleanCount = $rowCount.Trim()
