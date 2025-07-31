@@ -1,0 +1,19 @@
+﻿Missing Products Analysis Results (Corrected)
+============================================
+Date: 07/31/2025 11:31:21
+
+Existing Product IDs (43):
+121 122 123 160 167 168 169 170 171 172 173 177 179 181 182 183 184 185 187 189 190 191 192 193 195 196 197 198 199 201 202 203 204 205 206 207 208 209 210 212 215 217 218
+
+Referenced Product IDs (43):
+98 105 119 121 122 123 160 167 168 169 170 171 172 173 177 179 181 182 183 184 185 187 189 190 191 192 193 196 197 198 201 202 204 205 206 207 208 209 210 212 215 217 218
+
+Missing Product IDs (3):
+98, 105, 119
+
+Activity Entries Affected: 9
+
+Next Steps:
+1. Create the missing client_products entries
+2. Retry the holding_activity_log import
+3. Verify all data imports successfully
