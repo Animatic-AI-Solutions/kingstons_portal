@@ -500,7 +500,7 @@ export const getClientGroupFUMSummary = () => {
  * @returns {Promise} - API response with client groups including products, FUM, and metadata
  */
 export const getBulkClientData = () => {
-  return api.get('bulk_client_data');
+  return api.get('client_groups/bulk_client_data');
 };
 
 /**
@@ -510,7 +510,7 @@ export const getBulkClientData = () => {
  * @returns {Promise} - API response with aggregated client groups data
  */
 export const getBulkClientDataOptimized = () => {
-  return api.get('bulk_client_data_optimized');
+  return api.get('client_groups/bulk_client_data_optimized');
 };
 
 /**
@@ -519,7 +519,7 @@ export const getBulkClientDataOptimized = () => {
  * @returns {Promise} - API response with client groups data
  */
 export const getBulkClientDataWithOption = (useOptimized: boolean = false) => {
-  return api.get(`bulk_client_data?use_optimized=${useOptimized}`);
+  return api.get(`client_groups/bulk_client_data?use_optimized=${useOptimized}`);
 };
 
 /**

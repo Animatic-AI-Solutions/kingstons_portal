@@ -44,23 +44,38 @@ async def get_portfolios(
     Expected output: A JSON array of portfolio objects with all their details or a count
     """
     try:
-        # Start building the query
-        if count_only:
-            query = db.table("portfolios").select("id")
-        else:
-            query = db.table("portfolios").select("*")
+        # Build dynamic query with filters
+        where_clauses = []
+        params = []
+        param_count = 1
         
         # Apply filters
         if status is not None:
-            query = query.eq("status", status)
+            where_clauses.append(f"status = ${param_count}")
+            params.append(status)
+            param_count += 1
             
         if template_generation_id is not None:
-            query = query.eq("template_generation_id", template_generation_id)
+            where_clauses.append(f"template_generation_id = ${param_count}")
+            params.append(template_generation_id)
+            param_count += 1
+        
+        # Build base query
+        if count_only:
+            base_query = "SELECT COUNT(*) as count FROM portfolios"
+        else:
+            base_query = "SELECT * FROM portfolios"
+        
+        # Add WHERE clause if filters exist
+        if where_clauses:
+            query = f"{base_query} WHERE {' AND '.join(where_clauses)}"
+        else:
+            query = base_query
         
         # If count_only is True, return just the count
         if count_only:
-            result = query.execute()
-            return {"count": len(result.data) if result.data else 0}
+            result = await db.fetchrow(query, *params)
+            return {"count": result["count"] if result else 0}
         
         # Otherwise, apply pagination and return the data
         # Extract values from Query objects
@@ -70,9 +85,12 @@ async def get_portfolios(
             skip_val = skip.default
         if hasattr(limit, 'default'):
             limit_val = limit.default
-            
-        result = query.range(skip_val, skip_val + limit_val - 1).execute()
-        return result.data
+        
+        # Add LIMIT and OFFSET for pagination
+        query += f" LIMIT {limit_val} OFFSET {skip_val}"
+        
+        result = await db.fetch(query, *params)
+        return [dict(row) for row in result] if result else []
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
@@ -89,33 +107,37 @@ async def create_portfolio(portfolio: PortfolioCreate, db = Depends(get_db)):
     Expected output: A JSON object containing the created portfolio with all fields including ID and created_at timestamp
     """
     try:
-        # Explicitly handle date serialization
+        # Handle date fields - keep as date objects for PostgreSQL
         data_dict = portfolio.model_dump()
         
         # Set start_date to today if not provided
         if 'start_date' not in data_dict or data_dict['start_date'] is None:
-            data_dict['start_date'] = date.today().isoformat()
-        elif data_dict['start_date'] is not None:
-            data_dict['start_date'] = data_dict['start_date'].isoformat()
+            data_dict['start_date'] = date.today()
         
-        if 'end_date' in data_dict and data_dict['end_date'] is not None:
-            data_dict['end_date'] = data_dict['end_date'].isoformat()
+        # For AsyncPG, we can pass date objects directly - no need to convert to strings
         
-        result = db.table("portfolios").insert(data_dict).execute()
-        if result.data and len(result.data) > 0:
-            new_portfolio = result.data[0]
+        # Build dynamic INSERT query
+        columns = list(data_dict.keys())
+        values = list(data_dict.values())
+        placeholders = [f"${i+1}" for i in range(len(values))]
+        
+        query = f"INSERT INTO portfolios ({', '.join(columns)}) VALUES ({', '.join(placeholders)}) RETURNING *"
+        result = await db.fetchrow(query, *values)
+        
+        if result:
+            new_portfolio = dict(result)
             
             # Always add the Cash fund to every new portfolio
             logger.info(f"Adding Cash fund to portfolio {new_portfolio['id']}")
             
             # Find the Cash fund
-            cash_fund_result = db.table("available_funds").select("*") \
-                                 .eq("fund_name", "Cash") \
-                                 .eq("isin_number", "N/A") \
-                                 .limit(1).execute()
+            cash_fund_result = await db.fetchrow(
+                "SELECT * FROM available_funds WHERE fund_name = $1 AND isin_number = $2 LIMIT 1",
+                "Cash", "N/A"
+            )
             
-            if cash_fund_result.data and len(cash_fund_result.data) > 0:
-                cash_fund = cash_fund_result.data[0]
+            if cash_fund_result:
+                cash_fund = dict(cash_fund_result)
                 logger.info(f"Found Cash fund with ID {cash_fund['id']}")
                 
                 # Get the same start date as the portfolio
@@ -130,8 +152,15 @@ async def create_portfolio(portfolio: PortfolioCreate, db = Depends(get_db)):
                     "amount_invested": 0  # No initial investment
                 }
                 
-                cash_add_result = db.table("portfolio_funds").insert(cash_fund_data).execute()
-                if cash_add_result.data and len(cash_add_result.data) > 0:
+                # Build dynamic INSERT for cash fund
+                columns = list(cash_fund_data.keys())
+                values = list(cash_fund_data.values())
+                placeholders = [f"${i+1}" for i in range(len(values))]
+                
+                query = f"INSERT INTO portfolio_funds ({', '.join(columns)}) VALUES ({', '.join(placeholders)}) RETURNING *"
+                cash_add_result = await db.fetchrow(query, *values)
+                
+                if cash_add_result:
                     logger.info(f"Successfully added Cash fund to portfolio {new_portfolio['id']}")
                 else:
                     logger.warning(f"Failed to add Cash fund to portfolio {new_portfolio['id']}")
@@ -147,6 +176,85 @@ async def create_portfolio(portfolio: PortfolioCreate, db = Depends(get_db)):
         logger.error(f"Error creating portfolio: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
+@router.get("/portfolios/with-template", response_model=List[PortfolioWithTemplate])
+async def get_portfolios_with_template(
+    skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
+    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
+    status: Optional[str] = None,
+    db = Depends(get_db)
+):
+    """
+    What it does: Retrieves a paginated list of portfolios with template information.
+    Why it's needed: Provides a way to view and filter investment portfolios with their template origins.
+    How it works:
+        1. Connects to the Supabase database
+        2. Builds a query to the 'portfolios' table with optional filters
+        3. Applies pagination parameters to limit result size
+        4. For each portfolio with a template_generation_id, fetches the template info
+        5. Returns the data as a list of PortfolioWithTemplate objects
+    Expected output: A JSON array of portfolio objects with template details where applicable
+    """
+    try:
+        # Build dynamic query with filters
+        where_clauses = []
+        params = []
+        param_count = 1
+        
+        if status is not None:
+            where_clauses.append(f"status = ${param_count}")
+            params.append(status)
+            param_count += 1
+            
+        # Build base query
+        base_query = "SELECT * FROM portfolios"
+        
+        # Add WHERE clause if filters exist
+        if where_clauses:
+            query = f"{base_query} WHERE {' AND '.join(where_clauses)}"
+        else:
+            query = base_query
+            
+        # Extract values from Query objects
+        skip_val = skip
+        limit_val = limit
+        if hasattr(skip, 'default'):
+            skip_val = skip.default
+        if hasattr(limit, 'default'):
+            limit_val = limit.default
+            
+        # Add LIMIT and OFFSET for pagination
+        query += f" LIMIT {limit_val} OFFSET {skip_val}"
+        
+        result = await db.fetch(query, *params)
+        
+        # If no portfolios found, return empty list
+        if not result:
+            return []
+        
+        portfolios = [dict(row) for row in result]
+        
+        # Get unique template IDs from portfolios that have them
+        template_ids = {p["template_generation_id"] for p in portfolios if p.get("template_generation_id")}
+        
+        # Fetch all templates in one query if there are any
+        templates_dict = {}
+        if template_ids:
+            templates_result = await db.fetch(
+                "SELECT * FROM template_portfolio_generations WHERE id = ANY($1::int[])",
+                list(template_ids)
+            )
+            templates_dict = {t["id"]: t for t in templates_result}
+        
+        # Add template info to each portfolio
+        for portfolio in portfolios:
+            if portfolio.get("template_generation_id") and portfolio["template_generation_id"] in templates_dict:
+                portfolio["template_info"] = templates_dict[portfolio["template_generation_id"]]
+        
+        return portfolios
+    except Exception as e:
+        logger.error(f"Error fetching portfolios with template: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
 @router.get("/portfolios/{portfolio_id}", response_model=PortfolioWithTemplate)
 async def get_portfolio(portfolio_id: int, db = Depends(get_db)):
     """
@@ -160,21 +268,21 @@ async def get_portfolio(portfolio_id: int, db = Depends(get_db)):
     Expected output: A JSON object containing the requested portfolio's details with template info
     """
     try:
-        result = db.table("portfolios").select("*").eq("id", portfolio_id).execute()
-        if not result.data or len(result.data) == 0:
+        result = await db.fetchrow("SELECT * FROM portfolios WHERE id = $1", portfolio_id)
+        if not result:
             raise HTTPException(status_code=404, detail=f"Portfolio with ID {portfolio_id} not found")
         
-        portfolio = result.data[0]
+        portfolio = dict(result)
         
         # If portfolio has a template_generation_id, get the template info
         if portfolio.get("template_generation_id"):
-            template_result = db.table("template_portfolio_generations") \
-                .select("*") \
-                .eq("id", portfolio["template_generation_id"]) \
-                .execute()
+            template_result = await db.fetchrow(
+                "SELECT * FROM template_portfolio_generations WHERE id = $1",
+                portfolio["template_generation_id"]
+            )
                 
-            if template_result.data and len(template_result.data) > 0:
-                portfolio["template_info"] = template_result.data[0]
+            if template_result:
+                portfolio["template_info"] = dict(template_result)
         
         return portfolio
     except HTTPException:
@@ -204,22 +312,29 @@ async def update_portfolio(portfolio_id: int, portfolio_update: PortfolioUpdate,
     
     try:
         # Check if portfolio exists
-        check_result = db.table("portfolios").select("id").eq("id", portfolio_id).execute()
-        if not check_result.data or len(check_result.data) == 0:
+        check_result = await db.fetchrow("SELECT id FROM portfolios WHERE id = $1", portfolio_id)
+        if not check_result:
             raise HTTPException(status_code=404, detail=f"Portfolio with ID {portfolio_id} not found")
         
-        # Convert date objects to ISO format strings
-        if 'start_date' in update_data and update_data['start_date'] is not None:
-            update_data['start_date'] = update_data['start_date'].isoformat()
+        # For AsyncPG, we can pass date objects directly - no need to convert to strings
         
-        if 'end_date' in update_data and update_data['end_date'] is not None:
-            update_data['end_date'] = update_data['end_date'].isoformat()
+        # Update the portfolio - Build dynamic query
+        set_clauses = []
+        params = []
+        param_count = 1
         
-        # Update the portfolio
-        result = db.table("portfolios").update(update_data).eq("id", portfolio_id).execute()
+        for key, value in update_data.items():
+            set_clauses.append(f"{key} = ${param_count}")
+            params.append(value)
+            param_count += 1
         
-        if result.data and len(result.data) > 0:
-            return result.data[0]
+        params.append(portfolio_id)  # For WHERE clause
+        
+        query = f"UPDATE portfolios SET {', '.join(set_clauses)} WHERE id = ${param_count} RETURNING *"
+        result = await db.fetchrow(query, *params)
+        
+        if result:
+            return dict(result)
         
         raise HTTPException(status_code=400, detail="Failed to update portfolio")
     except HTTPException:
@@ -240,63 +355,58 @@ async def delete_portfolio(portfolio_id: int, db = Depends(get_db)):
            - Deletes all IRR values associated with the fund
            - Deletes all holding activity logs associated with the fund
         4. Deletes all portfolio_funds associated with this portfolio
-        5. Updates product_holdings to remove references to this portfolio
-        6. Deletes the portfolio record
+        5. Deletes the portfolio record
         7. Returns a success message
     Expected output: A JSON object with a success message confirmation and deletion counts
     """
     try:
         # Check if portfolio exists
-        check_result = db.table("portfolios").select("id").eq("id", portfolio_id).execute()
-        if not check_result.data or len(check_result.data) == 0:
+        check_result = await db.fetchrow("SELECT id FROM portfolios WHERE id = $1", portfolio_id)
+        if not check_result:
             raise HTTPException(status_code=404, detail=f"Portfolio with ID {portfolio_id} not found")
         
         logger.info(f"Deleting portfolio with ID: {portfolio_id} and all related data")
         
         # Get all portfolio_funds for this portfolio
-        portfolio_funds = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
+        portfolio_funds = await db.fetch("SELECT id FROM portfolio_funds WHERE portfolio_id = $1", portfolio_id)
         
         # Track deletion counts
         irr_values_deleted = 0
         activity_logs_deleted = 0
-        portfolio_funds_deleted = len(portfolio_funds.data) if portfolio_funds.data else 0
+        portfolio_funds_deleted = len(portfolio_funds) if portfolio_funds else 0
         
         # Handle dependent records for each portfolio fund
-        if portfolio_funds.data:
-            for fund in portfolio_funds.data:
+        if portfolio_funds:
+            for fund in portfolio_funds:
                 fund_id = fund["id"]
                 
                 # Delete IRR values for this fund
-                irr_result = db.table("portfolio_fund_irr_values").delete().eq("fund_id", fund_id).execute()
-                deleted_count = len(irr_result.data) if irr_result.data else 0
+                irr_result = await db.fetch("DELETE FROM portfolio_fund_irr_values WHERE fund_id = $1 RETURNING *", fund_id)
+                deleted_count = len(irr_result) if irr_result else 0
                 irr_values_deleted += deleted_count
                 logger.info(f"Deleted {deleted_count} IRR values for portfolio fund {fund_id}")
                 
                 # Delete activity logs for this fund
-                activity_result = db.table("holding_activity_log").delete().eq("portfolio_fund_id", fund_id).execute()
-                deleted_count = len(activity_result.data) if activity_result.data else 0
+                activity_result = await db.fetch("DELETE FROM holding_activity_log WHERE portfolio_fund_id = $1 RETURNING *", fund_id)
+                deleted_count = len(activity_result) if activity_result else 0
                 activity_logs_deleted += deleted_count
                 logger.info(f"Deleted {deleted_count} activity logs for portfolio fund {fund_id}")
         
         # Now delete all portfolio_funds
-        db.table("portfolio_funds").delete().eq("portfolio_id", portfolio_id).execute()
+        await db.execute("DELETE FROM portfolio_funds WHERE portfolio_id = $1", portfolio_id)
         logger.info(f"Deleted {portfolio_funds_deleted} portfolio funds for portfolio {portfolio_id}")
         
-        # Update product_holdings to remove references to this portfolio
-        holdings_result = db.table("product_holdings").update({"portfolio_id": None}).eq("portfolio_id", portfolio_id).execute()
-        holdings_updated = len(holdings_result.data) if holdings_result.data else 0
-        logger.info(f"Updated {holdings_updated} product holdings to remove portfolio reference")
+
         
         # Delete the portfolio
-        result = db.table("portfolios").delete().eq("id", portfolio_id).execute()
+        result = await db.fetchrow("DELETE FROM portfolios WHERE id = $1 RETURNING *", portfolio_id)
         
         return {
             "message": f"Portfolio with ID {portfolio_id} deleted successfully",
             "details": {
                 "portfolio_funds_deleted": portfolio_funds_deleted,
                 "irr_values_deleted": irr_values_deleted,
-                "activity_logs_deleted": activity_logs_deleted,
-                "holdings_updated": holdings_updated
+                "activity_logs_deleted": activity_logs_deleted
             }
         }
     except HTTPException:
@@ -322,72 +432,75 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
         logger.info(f"Creating portfolio from template {template_data.template_id} with generation {template_data.generation_id}")
         
         # Get template details
-        template_response = db.table("available_portfolios") \
-            .select("*") \
-            .eq("id", template_data.template_id) \
-            .execute()
+        template_response = await db.fetchrow(
+            "SELECT * FROM available_portfolios WHERE id = $1",
+            template_data.template_id
+        )
             
-        if not template_response.data or len(template_response.data) == 0:
+        if not template_response:
             raise HTTPException(status_code=404, detail=f"Template with ID {template_data.template_id} not found")
         
-        template = template_response.data[0]
+        template = dict(template_response)
         generation = None
         
         # Get the specific generation if provided, otherwise get the latest active generation
         if template_data.generation_id:
-            generation_response = db.table("template_portfolio_generations") \
-                .select("*") \
-                .eq("id", template_data.generation_id) \
-                .execute()
+            generation_response = await db.fetchrow(
+                "SELECT * FROM template_portfolio_generations WHERE id = $1",
+                template_data.generation_id
+            )
                 
-            if not generation_response.data or len(generation_response.data) == 0:
+            if not generation_response:
                 raise HTTPException(status_code=404, detail=f"Generation with ID {template_data.generation_id} not found")
             
-            generation = generation_response.data[0]
+            generation = dict(generation_response)
             logger.info(f"Using specified generation: {generation['id']}")
         else:
             # Get the latest active generation of this template
-            latest_generation_response = db.table("template_portfolio_generations") \
-                .select("*") \
-                .eq("available_portfolio_id", template_data.template_id) \
-                .eq("status", "active") \
-                .order("created_at", desc=True) \
-                .limit(1) \
-                .execute()
+            latest_generation_response = await db.fetchrow(
+                "SELECT * FROM template_portfolio_generations WHERE available_portfolio_id = $1 AND status = $2 ORDER BY created_at DESC LIMIT 1",
+                template_data.template_id, "active"
+            )
                 
-            if not latest_generation_response.data or len(latest_generation_response.data) == 0:
+            if not latest_generation_response:
                 raise HTTPException(status_code=404, detail="No active generations found for this template")
             
-            generation = latest_generation_response.data[0]
+            generation = dict(latest_generation_response)
             logger.info(f"Using latest generation: {generation['id']}")
         
         # Create the portfolio with template reference
         portfolio_data = {
             "portfolio_name": f"{template['name']} - {generation['generation_name']}",
             "status": "active",
-            "start_date": date.today().isoformat(),
+            "start_date": date.today(),  # Use date object for PostgreSQL
             "template_generation_id": generation['id']  # Use generation ID instead of template ID
         }
         
-        portfolio_result = db.table("portfolios").insert(portfolio_data).execute()
+        # Build dynamic INSERT query
+        columns = list(portfolio_data.keys())
+        values = list(portfolio_data.values())
+        placeholders = [f"${i+1}" for i in range(len(values))]
         
-        if not portfolio_result.data or len(portfolio_result.data) == 0:
+        query = f"INSERT INTO portfolios ({', '.join(columns)}) VALUES ({', '.join(placeholders)}) RETURNING *"
+        portfolio_result = await db.fetchrow(query, *values)
+        
+        if not portfolio_result:
             raise HTTPException(status_code=500, detail="Failed to create portfolio from template")
             
-        new_portfolio = portfolio_result.data[0]
+        new_portfolio = dict(portfolio_result)
         
         # Get the template's funds from the generation
-        template_funds_response = db.table("available_portfolio_funds") \
-            .select("*") \
-            .eq("template_portfolio_generation_id", generation["id"]) \
-            .execute()
+        template_funds_response = await db.fetch(
+            "SELECT * FROM available_portfolio_funds WHERE template_portfolio_generation_id = $1",
+            generation["id"]
+        )
             
-        if not template_funds_response.data:
+        if not template_funds_response:
             # No funds in template, just return the empty portfolio
             return new_portfolio
             
         # Check for duplicate funds in the template and log them
-        fund_ids = [fund["fund_id"] for fund in template_funds_response.data]
+        fund_ids = [fund["fund_id"] for fund in template_funds_response]
         unique_fund_ids = set(fund_ids)
         if len(fund_ids) != len(unique_fund_ids):
             # There are duplicates - log them for debugging
@@ -404,15 +517,15 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
             
             # Get fund names for better logging
             for fund_id in duplicates.keys():
-                fund_details = db.table("available_funds").select("fund_name").eq("id", fund_id).execute()
-                if fund_details.data and len(fund_details.data) > 0:
-                    logger.warning(f"Fund ID {fund_id} ({fund_details.data[0].get('fund_name', 'Unknown')}) appears {duplicates[fund_id]} times in template")
+                fund_details = await db.fetchrow("SELECT fund_name FROM available_funds WHERE id = $1", fund_id)
+                if fund_details:
+                    logger.warning(f"Fund ID {fund_id} ({fund_details.get('fund_name', 'Unknown')}) appears {duplicates[fund_id]} times in template")
         
         # Use a set to track which funds we've already added to avoid duplicates
         added_fund_ids = set()
             
         # Create funds in the new portfolio based on template 
-        for fund in template_funds_response.data:
+        for fund in template_funds_response:
             fund_id = fund["fund_id"]
             
             # Skip duplicate funds
@@ -424,21 +537,27 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
                 "portfolio_id": new_portfolio["id"],
                 "available_funds_id": fund_id,
                 "target_weighting": fund["target_weighting"],
-                "start_date": date.today().isoformat(),  # Use the same start_date as the portfolio
+                "start_date": date.today(),  # Use date object for PostgreSQL
                 "amount_invested": 0  # Initial amount is zero
             }
             
-            db.table("portfolio_funds").insert(fund_data).execute()
+            # Build dynamic INSERT for portfolio fund
+            columns = list(fund_data.keys())
+            values = list(fund_data.values())
+            placeholders = [f"${i+1}" for i in range(len(values))]
+            
+            query = f"INSERT INTO portfolio_funds ({', '.join(columns)}) VALUES ({', '.join(placeholders)}) RETURNING *"
+            await db.fetchrow(query, *values)
             added_fund_ids.add(fund_id)  # Mark as added
         
         # Always add the Cash fund if it's not already included in the template
         # Find if Cash is already added
         cash_fund_included = False
-        for fund in template_funds_response.data:
+        for fund in template_funds_response:
             # Get fund details to check if it's the Cash fund
-            fund_details = db.table("available_funds").select("*").eq("id", fund["fund_id"]).execute()
-            if fund_details.data and len(fund_details.data) > 0:
-                if fund_details.data[0].get("fund_name") == "Cash":
+            fund_details = await db.fetchrow("SELECT * FROM available_funds WHERE id = $1", fund["fund_id"])
+            if fund_details:
+                if fund_details.get("fund_name") == "Cash":
                     cash_fund_included = True
                     logger.info(f"Cash fund already included in template {template_data.template_id}")
                     break
@@ -447,13 +566,13 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
         if not cash_fund_included:
             logger.info(f"Adding Cash fund to portfolio {new_portfolio['id']}")
             # Find the Cash fund
-            cash_fund_result = db.table("available_funds").select("*") \
-                                 .eq("fund_name", "Cash") \
-                                 .eq("isin_number", "N/A") \
-                                 .limit(1).execute()
+            cash_fund_result = await db.fetchrow(
+                "SELECT * FROM available_funds WHERE fund_name = $1 AND isin_number = $2 LIMIT 1",
+                "Cash", "N/A"
+            )
             
-            if cash_fund_result.data and len(cash_fund_result.data) > 0:
-                cash_fund = cash_fund_result.data[0]
+            if cash_fund_result:
+                cash_fund = dict(cash_fund_result)
                 logger.info(f"Found Cash fund with ID {cash_fund['id']}")
                 
                 # Add Cash fund with null weighting (no weighting set initially)
@@ -461,12 +580,19 @@ async def create_portfolio_from_template(template_data: PortfolioFromTemplate, d
                     "portfolio_id": new_portfolio["id"],
                     "available_funds_id": cash_fund["id"],
                     "target_weighting": None,  # null weighting for flexible system
-                    "start_date": date.today().isoformat(),
+                    "start_date": date.today(),  # Use date object for PostgreSQL
                     "amount_invested": 0  # No initial investment
                 }
                 
-                cash_add_result = db.table("portfolio_funds").insert(cash_fund_data).execute()
-                if cash_add_result.data and len(cash_add_result.data) > 0:
+                # Build dynamic INSERT for cash fund
+                columns = list(cash_fund_data.keys())
+                values = list(cash_fund_data.values())
+                placeholders = [f"${i+1}" for i in range(len(values))]
+                
+                query = f"INSERT INTO portfolio_funds ({', '.join(columns)}) VALUES ({', '.join(placeholders)}) RETURNING *"
+                cash_add_result = await db.fetchrow(query, *values)
+                
+                if cash_add_result:
                     logger.info(f"Successfully added Cash fund to portfolio {new_portfolio['id']}")
                 else:
                     logger.warning(f"Failed to add Cash fund to portfolio {new_portfolio['id']}")
@@ -500,16 +626,16 @@ async def calculate_portfolio_irr(
     logger.info(f"🔍 DEBUG: calculate_portfolio_irr CALLED for portfolio {portfolio_id}")
     try:
         # Check if portfolio exists
-        portfolio_result = db.table("portfolios").select("*").eq("id", portfolio_id).execute()
-        if not portfolio_result.data or len(portfolio_result.data) == 0:
+        portfolio_result = await db.fetchrow("SELECT * FROM portfolios WHERE id = $1", portfolio_id)
+        if not portfolio_result:
             raise HTTPException(status_code=404, detail=f"Portfolio with ID {portfolio_id} not found")
 
         # Get all portfolio funds in this portfolio
-        portfolio_funds_result = db.table("portfolio_funds").select("*").eq("portfolio_id", portfolio_id).execute()
-        if not portfolio_funds_result.data or len(portfolio_funds_result.data) == 0:
+        portfolio_funds_result = await db.fetch("SELECT * FROM portfolio_funds WHERE portfolio_id = $1", portfolio_id)
+        if not portfolio_funds_result:
             raise HTTPException(status_code=404, detail="No portfolio funds found in this portfolio")
         
-        portfolio_funds = portfolio_funds_result.data
+        portfolio_funds = [dict(row) for row in portfolio_funds_result]
         logger.info(f"Found {len(portfolio_funds)} funds in portfolio {portfolio_id}")
         
         # 🔍 DEBUG: Log fund statuses to understand the filtering issue
@@ -531,14 +657,12 @@ async def calculate_portfolio_irr(
             
             if fund_status == "active":
                 # Get the most recent valuation for active funds
-                latest_valuation = db.table("portfolio_fund_valuations")\
-                    .select("*")\
-                    .eq("portfolio_fund_id", fund_id)\
-                    .order("valuation_date", desc=True)\
-                    .limit(1)\
-                    .execute()
+                latest_valuation = await db.fetchrow(
+                    "SELECT * FROM portfolio_fund_valuations WHERE portfolio_fund_id = $1 ORDER BY valuation_date DESC LIMIT 1",
+                    fund_id
+                )
                     
-                if not latest_valuation.data or len(latest_valuation.data) == 0:
+                if not latest_valuation:
                     logger.error(f"Active fund {fund_id} has no valuations - this is required for portfolio valuation")
                     raise HTTPException(
                         status_code=400, 
@@ -547,15 +671,15 @@ async def calculate_portfolio_irr(
                 else:
                     # Add active fund with actual valuation
                     from datetime import datetime as dt
-                    valuation_date = dt.fromisoformat(latest_valuation.data[0]["valuation_date"])
+                    valuation_date = dt.fromisoformat(latest_valuation["valuation_date"])
                     active_funds_with_valuations.append({
                         "portfolio_fund_id": fund_id,
                         "date": valuation_date,
-                        "valuation": latest_valuation.data[0]["valuation"],
-                        "valuation_id": latest_valuation.data[0]["id"],
+                        "valuation": latest_valuation["valuation"],
+                        "valuation_id": latest_valuation["id"],
                         "status": fund_status
                     })
-                    logger.info(f"Active fund {fund_id} has valuation {latest_valuation.data[0]['valuation']} on {valuation_date.isoformat()}")
+                    logger.info(f"Active fund {fund_id} has valuation {latest_valuation['valuation']} on {valuation_date.isoformat()}")
             else:
                 # Inactive fund - assume zero valuation but still include for IRR calculation
                 logger.info(f"Inactive fund {fund_id} - assuming zero valuation but including for IRR calculation")
@@ -616,13 +740,12 @@ async def calculate_portfolio_irr(
             logger.info(f"Checking fund {portfolio_fund_id} for IRR calculation, valuation: {valuation}")
             
             # Check if IRR already exists for this date - use consistent string format for comparison
-            existing_irr = db.table("portfolio_fund_irr_values")\
-                .select("*")\
-                .eq("fund_id", portfolio_fund_id)\
-                .eq("date", common_date_iso)\
-                .execute()
+            existing_irr = await db.fetchrow(
+                "SELECT * FROM portfolio_fund_irr_values WHERE fund_id = $1 AND date = $2",
+                portfolio_fund_id, common_date_iso
+            )
             
-            logger.info(f"Found {len(existing_irr.data) if existing_irr.data else 0} existing IRR record(s) for fund {portfolio_fund_id}")
+            logger.info(f"Found {1 if existing_irr else 0} existing IRR record(s) for fund {portfolio_fund_id}")
             
             # Handle zero valuations using the proper standardized calculation (exclude from final valuation)
             # No special hardcoding - let the standardized endpoint handle the £0 edge case
@@ -637,9 +760,9 @@ async def calculate_portfolio_irr(
                 })
                 continue
             
-            if existing_irr.data and len(existing_irr.data) > 0:
+            if existing_irr:
                 # IRR already exists for this fund on this date - check if it was recently updated
-                existing_record = existing_irr.data[0]
+                existing_record = dict(existing_irr)
                 created_at = existing_record.get("created_at", "")
                 updated_recently = False
                 
@@ -708,22 +831,25 @@ async def calculate_portfolio_irr(
                     }
                     
                     # Check if IRR already exists and update or insert
-                    existing_irr = db.table("portfolio_fund_irr_values")\
-                        .select("*")\
-                        .eq("fund_id", portfolio_fund_id)\
-                        .eq("date", common_date_iso)\
-                        .execute()
+                    existing_irr = await db.fetchrow(
+                        "SELECT * FROM portfolio_fund_irr_values WHERE fund_id = $1 AND date = $2",
+                        portfolio_fund_id, common_date_iso
+                    )
                     
-                    if existing_irr.data and len(existing_irr.data) > 0:
+                    if existing_irr:
                         # Update existing
-                        irr_id = existing_irr.data[0]["id"]
-                        db.table("portfolio_fund_irr_values")\
-                            .update({"irr_result": float(irr_percentage)})\
-                            .eq("id", irr_id)\
-                            .execute()
+                        await db.execute(
+                            "UPDATE portfolio_fund_irr_values SET irr_result = $1 WHERE id = $2",
+                            float(irr_percentage), existing_irr["id"]
+                        )
                     else:
-                        # Insert new
-                        db.table("portfolio_fund_irr_values").insert(irr_value_data).execute()
+                        # Insert new - Build dynamic INSERT query
+                        columns = list(irr_value_data.keys())
+                        values = list(irr_value_data.values())
+                        placeholders = [f"${i+1}" for i in range(len(values))]
+                        
+                        query = f"INSERT INTO portfolio_fund_irr_values ({', '.join(columns)}) VALUES ({', '.join(placeholders)}) RETURNING *"
+                        await db.fetchrow(query, *values)
                     
                     calculation_results.append({
                         "portfolio_fund_id": portfolio_fund_id,
@@ -804,26 +930,26 @@ async def calculate_portfolio_irr(
                 }
                 
                 # Check if portfolio valuation already exists for this date
-                existing_portfolio_valuation = db.table("portfolio_valuations")\
-                    .select("id")\
-                    .eq("portfolio_id", portfolio_id)\
-                    .eq("valuation_date", common_date_iso)\
-                    .execute()
+                existing_portfolio_valuation = await db.fetchrow(
+                    "SELECT id FROM portfolio_valuations WHERE portfolio_id = $1 AND valuation_date = $2",
+                    portfolio_id, common_date_iso
+                )
                 
-                if existing_portfolio_valuation.data:
+                if existing_portfolio_valuation:
                     # Update existing portfolio valuation
-                    portfolio_valuation_result = db.table("portfolio_valuations")\
-                        .update({"valuation": total_portfolio_value})\
-                        .eq("id", existing_portfolio_valuation.data[0]["id"])\
-                        .execute()
-                    portfolio_valuation_id = existing_portfolio_valuation.data[0]["id"]
+                    await db.execute(
+                        "UPDATE portfolio_valuations SET valuation = $1 WHERE id = $2",
+                        total_portfolio_value, existing_portfolio_valuation["id"]
+                    )
+                    portfolio_valuation_id = existing_portfolio_valuation["id"]
                     logger.info(f"Updated existing portfolio valuation for {portfolio_id}")
                 else:
                     # Create new portfolio valuation
-                    portfolio_valuation_result = db.table("portfolio_valuations")\
-                        .insert(portfolio_valuation_data)\
-                        .execute()
-                    portfolio_valuation_id = portfolio_valuation_result.data[0]["id"] if portfolio_valuation_result.data else None
+                    portfolio_valuation_result = await db.fetchrow(
+                        "INSERT INTO portfolio_valuations (portfolio_id, valuation_date, valuation) VALUES ($1, $2, $3) RETURNING id",
+                        portfolio_id, common_date_iso, total_portfolio_value
+                    )
+                    portfolio_valuation_id = portfolio_valuation_result["id"] if portfolio_valuation_result else None
                     logger.info(f"Created new portfolio valuation for {portfolio_id}")
                 
                 # Step 3: Calculate portfolio-level IRR using ALL funds (active + inactive) for historical accuracy
@@ -852,27 +978,26 @@ async def calculate_portfolio_irr(
                     }
                     
                     # Check if portfolio IRR already exists for this date
-                    existing_portfolio_irr = db.table("portfolio_irr_values")\
-                        .select("id")\
-                        .eq("portfolio_id", portfolio_id)\
-                        .eq("date", common_date_iso)\
-                        .execute()
+                    existing_portfolio_irr = await db.fetchrow(
+                        "SELECT id FROM portfolio_irr_values WHERE portfolio_id = $1 AND date = $2",
+                        portfolio_id, common_date_iso
+                    )
                     
-                    if existing_portfolio_irr.data:
+                    if existing_portfolio_irr:
                         # Update existing portfolio IRR
-                        portfolio_irr_result = db.table("portfolio_irr_values")\
-                            .update({
-                                "irr_result": portfolio_irr_percentage,
-                                "portfolio_valuation_id": portfolio_valuation_id
-                            })\
-                            .eq("id", existing_portfolio_irr.data[0]["id"])\
-                            .execute()
+                        await db.execute(
+                            "UPDATE portfolio_irr_values SET irr_result = $1, portfolio_valuation_id = $2 WHERE id = $3",
+                            portfolio_irr_percentage, portfolio_valuation_id, existing_portfolio_irr["id"]
+                        )
                         logger.info(f"Updated existing portfolio IRR for {portfolio_id}")
                     else:
-                        # Create new portfolio IRR
-                        portfolio_irr_result = db.table("portfolio_irr_values")\
-                            .insert(portfolio_irr_data)\
-                            .execute()
+                        # Create new portfolio IRR - Build dynamic INSERT
+                        columns = list(portfolio_irr_data.keys())
+                        values = list(portfolio_irr_data.values())
+                        placeholders = [f"${i+1}" for i in range(len(values))]
+                        
+                        query = f"INSERT INTO portfolio_irr_values ({', '.join(columns)}) VALUES ({', '.join(placeholders)}) RETURNING *"
+                        await db.fetchrow(query, *values)
                         logger.info(f"Created new portfolio IRR for {portfolio_id}")
                 else:
                     logger.warning(f"Portfolio IRR calculation failed: {portfolio_irr_response}")
@@ -953,20 +1078,20 @@ async def calculate_portfolio_irr_for_date(
         month = calculation_date.month
         
         # Check if portfolio exists
-        portfolio = db.table("portfolios").select("*").eq("id", portfolio_id).execute()
-        if not portfolio.data:
+        portfolio = await db.fetchrow("SELECT * FROM portfolios WHERE id = $1", portfolio_id)
+        if not portfolio:
             raise HTTPException(status_code=404, detail=f"Portfolio {portfolio_id} not found")
             
         # Get all funds in the portfolio
-        portfolio_funds = db.table("portfolio_funds").select("*").eq("portfolio_id", portfolio_id).execute()
-        if not portfolio_funds.data:
+        portfolio_funds = await db.fetch("SELECT * FROM portfolio_funds WHERE portfolio_id = $1", portfolio_id)
+        if not portfolio_funds:
             raise HTTPException(status_code=404, detail=f"No funds found in portfolio {portfolio_id}")
             
         # Check if all funds have valuations for the specified date
         missing_valuations = []
         funds_with_valuations = []
         
-        for fund in portfolio_funds.data:
+        for fund in portfolio_funds:
             fund_id = fund["id"]
             
             # Try to find a valuation for the specific date
@@ -975,26 +1100,24 @@ async def calculate_portfolio_irr_for_date(
             
             logger.info(f"Looking for valuation for fund {fund_id} between {valuation_date_start} and {valuation_date_end}")
             
-            valuation = db.table("portfolio_fund_valuations")\
-                .select("*")\
-                .eq("portfolio_fund_id", fund_id)\
-                .gte("valuation_date", valuation_date_start)\
-                .lte("valuation_date", valuation_date_end)\
-                .execute()
+            valuation = await db.fetchrow(
+                "SELECT * FROM portfolio_fund_valuations WHERE portfolio_fund_id = $1 AND valuation_date >= $2 AND valuation_date <= $3 LIMIT 1",
+                fund_id, valuation_date_start, valuation_date_end
+            )
                 
-            if not valuation.data:
+            if not valuation:
                 missing_valuations.append({
                     "portfolio_fund_id": fund_id,
                     "fund_name": fund.get("name", f"Fund {fund_id}")
                 })
                 logger.info(f"No valuation found for fund {fund_id} on date {date}")
             else:
-                logger.info(f"Found valuation for fund {fund_id}: {valuation.data[0]}")
+                logger.info(f"Found valuation for fund {fund_id}: {dict(valuation)}")
                 funds_with_valuations.append({
                     "portfolio_fund_id": fund_id,
-                    "valuation": float(valuation.data[0]["valuation"]),
-                    "valuation_id": valuation.data[0]["id"],
-                    "valuation_date": valuation.data[0]["valuation_date"]
+                    "valuation": float(valuation["valuation"]),
+                    "valuation_id": valuation["id"],
+                    "valuation_date": valuation["valuation_date"]
                 })
                 
         # Check if we have any funds with valuations
@@ -1055,22 +1178,25 @@ async def calculate_portfolio_irr_for_date(
                     }
                     
                     # Check if IRR already exists and update or insert
-                    existing_irr = db.table("portfolio_fund_irr_values")\
-                        .select("*")\
-                        .eq("fund_id", portfolio_fund_id)\
-                        .eq("date", calculation_date.isoformat())\
-                        .execute()
+                    existing_irr = await db.fetchrow(
+                        "SELECT * FROM portfolio_fund_irr_values WHERE fund_id = $1 AND date = $2",
+                        portfolio_fund_id, calculation_date.isoformat()
+                    )
                     
-                    if existing_irr.data and len(existing_irr.data) > 0:
+                    if existing_irr:
                         # Update existing
-                        irr_id = existing_irr.data[0]["id"]
-                        db.table("portfolio_fund_irr_values")\
-                            .update({"irr_result": float(irr_percentage)})\
-                            .eq("id", irr_id)\
-                            .execute()
+                        await db.execute(
+                            "UPDATE portfolio_fund_irr_values SET irr_result = $1 WHERE id = $2",
+                            float(irr_percentage), existing_irr["id"]
+                        )
                     else:
-                        # Insert new
-                        db.table("portfolio_fund_irr_values").insert(irr_value_data).execute()
+                        # Insert new - Build dynamic INSERT query
+                        columns = list(irr_value_data.keys())
+                        values = list(irr_value_data.values())
+                        placeholders = [f"${i+1}" for i in range(len(values))]
+                        
+                        query = f"INSERT INTO portfolio_fund_irr_values ({', '.join(columns)}) VALUES ({', '.join(placeholders)}) RETURNING *"
+                        await db.fetchrow(query, *values)
                     
                     calculation_results.append({
                         "portfolio_fund_id": portfolio_fund_id,
@@ -1115,65 +1241,6 @@ async def calculate_portfolio_irr_for_date(
         logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Failed to calculate IRR: {str(e)}")
 
-@router.get("/portfolios/with-template", response_model=List[PortfolioWithTemplate])
-async def get_portfolios_with_template(
-    skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
-    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
-    status: Optional[str] = None,
-    db = Depends(get_db)
-):
-    """
-    What it does: Retrieves a paginated list of portfolios with template information.
-    Why it's needed: Provides a way to view and filter investment portfolios with their template origins.
-    How it works:
-        1. Connects to the Supabase database
-        2. Builds a query to the 'portfolios' table with optional filters
-        3. Applies pagination parameters to limit result size
-        4. For each portfolio with a template_generation_id, fetches the template info
-        5. Returns the data as a list of PortfolioWithTemplate objects
-    Expected output: A JSON array of portfolio objects with template details where applicable
-    """
-    try:
-        query = db.table("portfolios").select("*")
-        
-        if status is not None:
-            query = query.eq("status", status)
-            
-        # Extract values from Query objects
-        skip_val = skip
-        limit_val = limit
-        if hasattr(skip, 'default'):
-            skip_val = skip.default
-        if hasattr(limit, 'default'):
-            limit_val = limit.default
-            
-        result = query.range(skip_val, skip_val + limit_val - 1).execute()
-        
-        # If no portfolios found, return empty list
-        if not result.data:
-            return []
-        
-        portfolios = result.data
-        
-        # Get unique template IDs from portfolios that have them
-        template_ids = {p["template_generation_id"] for p in portfolios if p.get("template_generation_id")}
-        
-        # Fetch all templates in one query if there are any
-        templates_dict = {}
-        if template_ids:
-            templates_result = db.table("template_portfolio_generations").select("*").in_("id", list(template_ids)).execute()
-            templates_dict = {t["id"]: t for t in templates_result.data}
-        
-        # Add template info to each portfolio
-        for portfolio in portfolios:
-            if portfolio.get("template_generation_id") and portfolio["template_generation_id"] in templates_dict:
-                portfolio["template_info"] = templates_dict[portfolio["template_generation_id"]]
-        
-        return portfolios
-    except Exception as e:
-        logger.error(f"Error fetching portfolios with template: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-
 @router.post("/portfolios/{portfolio_id}/calculate-total-irr", response_model=dict)
 async def calculate_portfolio_total_irr(
     portfolio_id: int,
@@ -1191,17 +1258,17 @@ async def calculate_portfolio_total_irr(
     """
     try:
         # Check if portfolio exists
-        portfolio_result = db.table("portfolios").select("id").eq("id", portfolio_id).execute()
-        if not portfolio_result.data or len(portfolio_result.data) == 0:
+        portfolio_result = await db.fetchrow("SELECT id FROM portfolios WHERE id = $1", portfolio_id)
+        if not portfolio_result:
             raise HTTPException(status_code=404, detail=f"Portfolio with ID {portfolio_id} not found")
 
         # Get the latest portfolio IRR from the view
-        portfolio_irr_result = db.table("latest_portfolio_irr_values")\
-            .select("irr_result, irr_date")\
-            .eq("portfolio_id", portfolio_id)\
-            .execute()
+        portfolio_irr_result = await db.fetchrow(
+            "SELECT irr_result, date FROM latest_portfolio_irr_values WHERE portfolio_id = $1",
+            portfolio_id
+        )
         
-        if not portfolio_irr_result.data or len(portfolio_irr_result.data) == 0:
+        if not portfolio_irr_result:
             # No IRR found for this portfolio
             logger.info(f"No portfolio IRR found for portfolio {portfolio_id}")
             return {
@@ -1213,9 +1280,8 @@ async def calculate_portfolio_total_irr(
             }
         
         # Extract the IRR data
-        irr_data = portfolio_irr_result.data[0]
-        irr_percentage = float(irr_data.get("irr_result", 0))
-        irr_date = irr_data.get("irr_date")
+        irr_percentage = float(portfolio_irr_result.get("irr_result", 0))
+        irr_date = portfolio_irr_result.get("date")
         
         logger.info(f"Retrieved portfolio IRR for portfolio {portfolio_id}: {irr_percentage}%")
             
@@ -1253,42 +1319,36 @@ async def get_complete_portfolio(
 
         
         # Get portfolio details
-        portfolio_result = db.table("portfolios")\
-            .select("*")\
-            .eq("id", portfolio_id)\
-            .execute()
+        portfolio_result = await db.fetchrow("SELECT * FROM portfolios WHERE id = $1", portfolio_id)
         
-        if not portfolio_result.data:
+        if not portfolio_result:
             raise HTTPException(status_code=404, detail="Portfolio not found")
         
-        portfolio = portfolio_result.data[0]
+        portfolio = dict(portfolio_result)
         
         # Get template generation details
         template_generation = None
         if portfolio.get("template_generation_id") is not None:
-            template_result = db.table("template_portfolio_generations")\
-                .select("*")\
-                .eq("id", portfolio["template_generation_id"])\
-                .execute()
+            template_result = await db.fetchrow(
+                "SELECT * FROM template_portfolio_generations WHERE id = $1",
+                portfolio["template_generation_id"]
+            )
             
-            template_generation = template_result.data[0] if template_result.data else None
+            template_generation = dict(template_result) if template_result else None
         
         # Get portfolio funds
-        portfolio_funds_result = db.table("portfolio_funds")\
-            .select("*")\
-            .eq("portfolio_id", portfolio_id)\
-            .execute()
+        portfolio_funds_result = await db.fetch("SELECT * FROM portfolio_funds WHERE portfolio_id = $1", portfolio_id)
         
         # 🔍 DEBUG: Log all portfolio funds from database
         logger.info(f"🔍 DEBUG: get_complete_portfolio for portfolio {portfolio_id}")
-        if portfolio_funds_result.data:
-            logger.info(f"🔍 DEBUG: Found {len(portfolio_funds_result.data)} portfolio funds:")
-            for i, pf in enumerate(portfolio_funds_result.data):
+        if portfolio_funds_result:
+            logger.info(f"🔍 DEBUG: Found {len(portfolio_funds_result)} portfolio funds:")
+            for i, pf in enumerate(portfolio_funds_result):
                 logger.info(f"🔍 DEBUG: Fund {i+1}: ID={pf.get('id')}, AvailableFundID={pf.get('available_funds_id')}, Status={pf.get('status', 'active')}")
         else:
             logger.info("🔍 DEBUG: No portfolio funds found")
         
-        if not portfolio_funds_result.data:
+        if not portfolio_funds_result:
             # Return portfolio data even if no funds
             return {
                 "portfolio": portfolio,
@@ -1298,38 +1358,38 @@ async def get_complete_portfolio(
                 "irr_values": []
             }
         
-        portfolio_funds = portfolio_funds_result.data
+        portfolio_funds = [dict(row) for row in portfolio_funds_result]
         fund_ids = [pf["id"] for pf in portfolio_funds]
         
         # Get available fund details
         available_fund_ids = list(set([pf["available_funds_id"] for pf in portfolio_funds]))
-        available_funds_result = db.table("available_funds")\
-            .select("*")\
-            .in_("id", available_fund_ids)\
-            .execute()
+        available_funds_result = await db.fetch(
+            "SELECT * FROM available_funds WHERE id = ANY($1::int[])",
+            available_fund_ids
+        )
         
-        available_funds_lookup = {af["id"]: af for af in available_funds_result.data} if available_funds_result.data else {}
+        available_funds_lookup = {af["id"]: dict(af) for af in available_funds_result} if available_funds_result else {}
         
         # Get latest valuations
-        valuations_result = db.table("latest_portfolio_fund_valuations")\
-            .select("*")\
-            .in_("portfolio_fund_id", fund_ids)\
-            .execute()
+        valuations_result = await db.fetch(
+            "SELECT * FROM latest_portfolio_fund_valuations WHERE portfolio_fund_id = ANY($1::int[])",
+            fund_ids
+        )
         
         # Get latest IRR values
-        irr_result = db.table("latest_portfolio_fund_irr_values")\
-            .select("*")\
-            .in_("fund_id", fund_ids)\
-            .execute()
+        irr_result = await db.fetch(
+            "SELECT * FROM latest_portfolio_fund_irr_values WHERE fund_id = ANY($1::int[])",
+            fund_ids
+        )
         
-        if not irr_result.data:
+        if not irr_result:
             irr_values = []
         else:
-            irr_values = irr_result.data
+            irr_values = [dict(row) for row in irr_result]
         
-        # Create lookup maps for enhanced fund data
-        valuations_lookup = {val["portfolio_fund_id"]: val for val in (valuations_result.data or [])}
-        irr_lookup = {irr["fund_id"]: irr for irr in irr_values}
+        # Create lookup maps for enhanced fund data - Convert AsyncPG Records to dicts
+        valuations_lookup = {val["portfolio_fund_id"]: dict(val) for val in (valuations_result or [])}
+        irr_lookup = {irr["fund_id"]: irr for irr in irr_values}  # Already converted above
         
         # Enhance portfolio funds with related data
         for fund in portfolio_funds:
@@ -1355,7 +1415,7 @@ async def get_complete_portfolio(
             if fund_id in irr_lookup:
                 irr_data = irr_lookup[fund_id]
                 fund["irr_result"] = irr_data.get("irr_result")
-                fund["irr_date"] = irr_data.get("irr_date")
+                fund["irr_date"] = irr_data.get("date")
             else:
                 fund["irr_result"] = None
                 fund["irr_date"] = None
@@ -1374,7 +1434,19 @@ async def get_complete_portfolio(
         for i, pf in enumerate(portfolio_funds):
             logger.info(f"🔍 DEBUG: Response Fund {i+1}: ID={pf.get('id')}, Name={pf.get('fund_name')}, Status={pf.get('status', 'active')}")
         
-        return response
+        # Ensure all AsyncPG Records are converted to dicts for serialization
+        def convert_records_to_dicts(obj):
+            if hasattr(obj, '__class__') and 'asyncpg' in str(obj.__class__):
+                return dict(obj)
+            elif isinstance(obj, dict):
+                return {k: convert_records_to_dicts(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_records_to_dicts(item) for item in obj]
+            else:
+                return obj
+        
+        safe_response = convert_records_to_dicts(response)
+        return safe_response
     except HTTPException:
         raise
     except Exception as e:
@@ -1389,17 +1461,24 @@ async def get_latest_portfolio_irr(portfolio_id: int, db = Depends(get_db)):
     """
     try:
         # Query the latest_portfolio_irr_values view
-        result = db.table("latest_portfolio_irr_values") \
-                   .select("portfolio_id, irr_result, irr_date") \
-                   .eq("portfolio_id", portfolio_id) \
-                   .execute()
+        result = await db.fetchrow(
+            "SELECT portfolio_id, irr_result, date FROM latest_portfolio_irr_values WHERE portfolio_id = $1",
+            portfolio_id
+        )
         
-        if result.data and len(result.data) > 0:
-            irr_data = result.data[0]
+        if result:
+            # Convert IRR result to float for frontend compatibility
+            irr_value = None
+            if result["irr_result"] is not None:
+                try:
+                    irr_value = float(result["irr_result"])
+                except (ValueError, TypeError):
+                    irr_value = None
+            
             response_data = {
                 "portfolio_id": portfolio_id,
-                "irr_result": irr_data["irr_result"],
-                "irr_date": irr_data["irr_date"],
+                "irr_result": irr_value,
+                "irr_date": result["date"],
                 "source": "stored"
             }
             return response_data
@@ -1427,17 +1506,15 @@ async def get_portfolio_irr_history(
     """
     try:
         # Query historical IRR values from portfolio_irr_values table
-        result = db.table("portfolio_irr_values") \
-                   .select("irr_result, date, calculation_method") \
-                   .eq("portfolio_id", portfolio_id) \
-                   .order("date", desc=True) \
-                   .limit(months) \
-                   .execute()
+        result = await db.fetch(
+            "SELECT irr_result, date FROM portfolio_irr_values WHERE portfolio_id = $1 ORDER BY date DESC LIMIT $2",
+            portfolio_id, months
+        )
         
         return {
             "portfolio_id": portfolio_id,
-            "history": result.data or [],
-            "count": len(result.data) if result.data else 0
+            "history": [dict(row) for row in result] if result else [],
+            "count": len(result) if result else 0
         }
     except Exception as e:
         logger.error(f"Error fetching IRR history for portfolio {portfolio_id}: {str(e)}")
@@ -1466,47 +1543,61 @@ async def get_portfolio_activity_logs(
 
         
         # First check if the portfolio exists
-        portfolio_result = db.table("portfolios").select("id").eq("id", portfolio_id).execute()
-        if not portfolio_result.data or len(portfolio_result.data) == 0:
+        portfolio_result = await db.fetchrow("SELECT id FROM portfolios WHERE id = $1", portfolio_id)
+        if not portfolio_result:
             raise HTTPException(status_code=404, detail=f"Portfolio with ID {portfolio_id} not found")
         
         # Get all portfolio funds
-        portfolio_funds_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
-        if not portfolio_funds_result.data:
+        portfolio_funds_result = await db.fetch("SELECT id FROM portfolio_funds WHERE portfolio_id = $1", portfolio_id)
+        if not portfolio_funds_result:
             return {"activity_logs": [], "summary": {}}
         
         # Extract portfolio fund IDs
-        portfolio_fund_ids = [fund["id"] for fund in portfolio_funds_result.data]
+        portfolio_fund_ids = [fund["id"] for fund in portfolio_funds_result]
         
-        # Build the activity logs query
-        query = db.table("holding_activity_log").select("*").in_("portfolio_fund_id", portfolio_fund_ids)
+        # Build the activity logs query dynamically
+        where_clauses = ["portfolio_fund_id = ANY($1::int[])"]
+        params = [portfolio_fund_ids]
+        param_count = 2
         
         # Apply filters if provided
         if year:
-            # Filter by year
-            start_date = datetime(year, 1, 1).isoformat()
-            end_date = datetime(year + 1, 1, 1).isoformat()
-            query = query.gte("activity_timestamp", start_date).lt("activity_timestamp", end_date)
+            # Filter by year - Use datetime objects for PostgreSQL
+            start_date = datetime(year, 1, 1)
+            end_date = datetime(year + 1, 1, 1)
+            where_clauses.append(f"activity_timestamp >= ${param_count}")
+            where_clauses.append(f"activity_timestamp < ${param_count + 1}")
+            params.extend([start_date, end_date])
+            param_count += 2
         
         if month and year:
-            # Filter by specific month
-            start_date = datetime(year, month, 1).isoformat()
+            # Filter by specific month (overrides year filter - remove previous year filters)
+            if year and not month:
+                # Remove the year filters we just added
+                where_clauses = where_clauses[:-2]
+                params = params[:-2]
+                param_count -= 2
+                
+            start_date = datetime(year, month, 1)
             # Calculate end date (handle December)
             if month == 12:
-                end_date = datetime(year + 1, 1, 1).isoformat()
+                end_date = datetime(year + 1, 1, 1)
             else:
-                end_date = datetime(year, month + 1, 1).isoformat()
-            query = query.gte("activity_timestamp", start_date).lt("activity_timestamp", end_date)
+                end_date = datetime(year, month + 1, 1)
+            where_clauses.append(f"activity_timestamp >= ${param_count}")
+            where_clauses.append(f"activity_timestamp < ${param_count + 1}")
+            params.extend([start_date, end_date])
+            param_count += 2
         
         if activity_type:
-            query = query.eq("activity_type", activity_type)
+            where_clauses.append(f"activity_type = ${param_count}")
+            params.append(activity_type)
+            param_count += 1
         
-        # Order by timestamp descending
-        query = query.order("activity_timestamp", desc=True)
-        
-        # Execute the query
-        activity_result = query.execute()
-        activity_logs = activity_result.data or []
+        # Build and execute the query
+        query = f"SELECT * FROM holding_activity_log WHERE {' AND '.join(where_clauses)} ORDER BY activity_timestamp DESC"
+        activity_result = await db.fetch(query, *params)
+        activity_logs = [dict(row) for row in activity_result] if activity_result else []
 
         
         # Prepare the response

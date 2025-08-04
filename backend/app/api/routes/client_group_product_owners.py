@@ -24,20 +24,30 @@ async def get_client_group_product_owners(
     try:
         logger.info(f"Retrieving client_group_product_owners with filters: client_group_id={client_group_id}, product_owner_id={product_owner_id}")
         
-        # Build the query
-        query = db.table("client_group_product_owners").select("*")
+        # Build the SQL query with optional filters
+        base_query = "SELECT * FROM client_group_product_owners"
+        conditions = []
+        params = []
         
         # Apply filters if provided
         if client_group_id is not None:
-            query = query.eq("client_group_id", client_group_id)
+            conditions.append("client_group_id = $" + str(len(params) + 1))
+            params.append(client_group_id)
         
         if product_owner_id is not None:
-            query = query.eq("product_owner_id", product_owner_id)
+            conditions.append("product_owner_id = $" + str(len(params) + 1))
+            params.append(product_owner_id)
+        
+        # Construct final query
+        if conditions:
+            query = base_query + " WHERE " + " AND ".join(conditions)
+        else:
+            query = base_query
         
         # Execute the query
-        result = query.execute()
+        result = await db.fetch(query, *params)
         
-        return result.data or []
+        return [dict(row) for row in result] or []
     
     except Exception as e:
         logger.error(f"Error retrieving client_group_product_owners: {str(e)}")
@@ -57,40 +67,44 @@ async def create_client_group_product_owner(
         logger.info(f"Creating association between client group {client_group_id} and product owner {product_owner_id}")
         
         # Check if client group exists
-        client_group_result = db.table("client_groups").select("id").eq("id", client_group_id).execute()
+        client_group_result = await db.fetchrow(
+            "SELECT id FROM client_groups WHERE id = $1", 
+            client_group_id
+        )
         
-        if not client_group_result.data:
+        if not client_group_result:
             raise HTTPException(status_code=404, detail=f"Client group with ID {client_group_id} not found")
         
         # Check if product owner exists
-        product_owner_result = db.table("product_owners").select("id").eq("id", product_owner_id).execute()
+        product_owner_result = await db.fetchrow(
+            "SELECT id FROM product_owners WHERE id = $1", 
+            product_owner_id
+        )
         
-        if not product_owner_result.data:
+        if not product_owner_result:
             raise HTTPException(status_code=404, detail=f"Product owner with ID {product_owner_id} not found")
         
         # Check if the association already exists
-        existing_result = db.table("client_group_product_owners") \
-            .select("*") \
-            .eq("client_group_id", client_group_id) \
-            .eq("product_owner_id", product_owner_id) \
-            .execute()
+        existing_result = await db.fetchrow(
+            "SELECT * FROM client_group_product_owners WHERE client_group_id = $1 AND product_owner_id = $2",
+            client_group_id, product_owner_id
+        )
         
-        if existing_result.data:
+        if existing_result:
             # Association already exists, return it
-            return existing_result.data[0]
+            return dict(existing_result)
         
         # Create the association
-        new_association = {
-            "client_group_id": client_group_id,
-            "product_owner_id": product_owner_id
-        }
+        result = await db.fetchrow(
+            """INSERT INTO client_group_product_owners (client_group_id, product_owner_id) 
+               VALUES ($1, $2) RETURNING *""",
+            client_group_id, product_owner_id
+        )
         
-        result = db.table("client_group_product_owners").insert(new_association).execute()
-        
-        if not result.data:
+        if not result:
             raise HTTPException(status_code=500, detail="Failed to create association")
         
-        return result.data[0]
+        return dict(result)
     
     except HTTPException:
         raise
@@ -110,13 +124,19 @@ async def delete_client_group_product_owner(
         logger.info(f"Deleting client group product owner association with ID: {association_id}")
         
         # Check if the association exists
-        check_result = db.table("client_group_product_owners").select("*").eq("id", association_id).execute()
+        check_result = await db.fetchrow(
+            "SELECT * FROM client_group_product_owners WHERE id = $1", 
+            association_id
+        )
         
-        if not check_result.data:
+        if not check_result:
             raise HTTPException(status_code=404, detail=f"Association with ID {association_id} not found")
         
         # Delete the association
-        db.table("client_group_product_owners").delete().eq("id", association_id).execute()
+        await db.execute(
+            "DELETE FROM client_group_product_owners WHERE id = $1", 
+            association_id
+        )
         
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     
@@ -139,24 +159,22 @@ async def delete_client_group_product_owner_by_ids(
         logger.info(f"Deleting association between client group {client_group_id} and product owner {product_owner_id}")
         
         # Check if the association exists
-        check_result = db.table("client_group_product_owners") \
-            .select("*") \
-            .eq("client_group_id", client_group_id) \
-            .eq("product_owner_id", product_owner_id) \
-            .execute()
+        check_result = await db.fetchrow(
+            "SELECT * FROM client_group_product_owners WHERE client_group_id = $1 AND product_owner_id = $2",
+            client_group_id, product_owner_id
+        )
         
-        if not check_result.data:
+        if not check_result:
             raise HTTPException(
                 status_code=404, 
                 detail=f"Association between client group {client_group_id} and product owner {product_owner_id} not found"
             )
         
         # Delete the association
-        db.table("client_group_product_owners") \
-            .delete() \
-            .eq("client_group_id", client_group_id) \
-            .eq("product_owner_id", product_owner_id) \
-            .execute()
+        await db.execute(
+            "DELETE FROM client_group_product_owners WHERE client_group_id = $1 AND product_owner_id = $2",
+            client_group_id, product_owner_id
+        )
         
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     

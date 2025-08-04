@@ -42,8 +42,8 @@ async def signup(
         
         # Check if email already exists
         logger.info("Checking if email exists...")
-        existing_user = db.table("profiles").select("*").eq("email", signup_data.email).execute()
-        if existing_user.data and len(existing_user.data) > 0:
+        existing_user = await db.fetch("SELECT * FROM profiles WHERE email = $1", signup_data.email)
+        if existing_user and len(existing_user) > 0:
             logger.warning(f"Email {signup_data.email} already exists")
             raise HTTPException(status_code=400, detail="Email already exists")
 
@@ -55,13 +55,16 @@ async def signup(
         }
         
         logger.info("Attempting to insert new profile into database...")
-        profile_result = db.table("profiles").insert(profile_data).execute()
+        profile_result = await db.fetchrow(
+            "INSERT INTO profiles (email, first_name, last_name) VALUES ($1, $2, $3) RETURNING *",
+            profile_data["email"], profile_data["first_name"], profile_data["last_name"]
+        )
         
-        if not profile_result.data or len(profile_result.data) == 0:
+        if not profile_result:
             logger.error("Database insert for profile returned no data")
             raise HTTPException(status_code=500, detail="Failed to create user profile")
 
-        profile_id = profile_result.data[0]["id"]
+        profile_id = profile_result["id"]
         logger.info(f"Profile created with ID: {profile_id}")
         
         # Hash the password and create authentication record
@@ -71,15 +74,18 @@ async def signup(
         auth_data = {
             "profiles_id": profile_id,
             "password_hash": password_hash,
-            "created_at": datetime.utcnow().isoformat(),
-            "updated_at": datetime.utcnow().isoformat()
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
         }
         
-        auth_result = db.table("authentication").insert(auth_data).execute()
+        auth_result = await db.fetchrow(
+            "INSERT INTO authentication (profiles_id, password_hash, created_at, updated_at) VALUES ($1, $2, $3, $4) RETURNING *",
+            auth_data["profiles_id"], auth_data["password_hash"], auth_data["created_at"], auth_data["updated_at"]
+        )
         
-        if not auth_result.data or len(auth_result.data) == 0:
+        if not auth_result:
             # Rollback profile creation if authentication fails
-            db.table("profiles").delete().eq("id", profile_id).execute()
+            await db.execute("DELETE FROM profiles WHERE id = $1", profile_id)
             logger.error("Failed to create authentication record")
             raise HTTPException(status_code=500, detail="Failed to create authentication record")
 
@@ -113,30 +119,32 @@ async def login(
         logger.info(f"Login attempt started for email: {login_data.email}")
         
         # Get user profile from database
-        profile_result = db.table("profiles").select("*").eq("email", login_data.email).execute()
-        if not profile_result.data or len(profile_result.data) == 0:
+        profile_result = await db.fetchrow("SELECT * FROM profiles WHERE email = $1", login_data.email)
+        if not profile_result:
             logger.warning(f"Login failed: User with email {login_data.email} not found")
             raise HTTPException(status_code=401, detail="Invalid email or password")
 
-        profile = profile_result.data[0]
+        profile = dict(profile_result)
         logger.info(f"Found profile with ID: {profile['id']}")
         
         # Get authentication record
-        auth_result = db.table("authentication").select("*").eq("profiles_id", profile["id"]).execute()
-        if not auth_result.data or len(auth_result.data) == 0:
+        auth_result = await db.fetchrow("SELECT * FROM authentication WHERE profiles_id = $1", profile["id"])
+        if not auth_result:
             logger.warning(f"Login failed: No authentication record for profile {profile['id']}")
             raise HTTPException(status_code=401, detail="Invalid email or password")
             
-        auth = auth_result.data[0]
+        auth = dict(auth_result)
         
         # Verify password
         if not verify_password(login_data.password, auth["password_hash"]):
             logger.warning(f"Login failed: Invalid password for email {login_data.email}")
             raise HTTPException(status_code=401, detail="Invalid email or password")
 
-        # Update last login time
-        db.table("authentication").update({"last_login": datetime.utcnow().isoformat()})\
-            .eq("auth_id", auth["auth_id"]).execute()
+        # Update last login time (last_login is TEXT field)
+        await db.execute(
+            "UPDATE authentication SET last_login = $1 WHERE auth_id = $2",
+            datetime.utcnow().isoformat(), auth["auth_id"]
+        )
         
         # Create JWT token
         token_data = {"sub": str(profile["id"])}
@@ -150,15 +158,19 @@ async def login(
         session_data = {
             "session_id": session_id,
             "profiles_id": profile["id"],
-            "created_at": datetime.utcnow().isoformat(),
-            "expires_at": expires_at.isoformat(),
-            "last_activity": datetime.utcnow().isoformat()
+            "created_at": datetime.utcnow(),
+            "expires_at": expires_at,
+            "last_activity": datetime.utcnow().isoformat()  # last_activity is TEXT field
         }
         
         logger.info(f"Creating new session with ID: {session_id} for user {profile['id']}")
-        session_result = db.table("session").insert(session_data).execute()
+        session_result = await db.fetchrow(
+            "INSERT INTO session (session_id, profiles_id, created_at, expires_at, last_activity) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+            session_data["session_id"], session_data["profiles_id"], session_data["created_at"], 
+            session_data["expires_at"], session_data["last_activity"]
+        )
         
-        if not session_result.data or len(session_result.data) == 0:
+        if not session_result:
             logger.error("Failed to create session")
             raise HTTPException(status_code=500, detail="Failed to create session")
 
@@ -222,7 +234,7 @@ async def logout(
     try:
         if session_id:
             # Delete the session from the database
-            db.table("session").delete().eq("session_id", session_id).execute()
+            await db.execute("DELETE FROM session WHERE session_id = $1", session_id)
             logger.info(f"Deleted session {session_id} from database")
 
         # Remove the cookies regardless of whether we found the session
@@ -257,23 +269,22 @@ async def forgot_password(reset_request: PasswordResetRequest, db = Depends(get_
     """
     try:
         # Check if email exists
-        profile_result = db.table("profiles").select("*").eq("email", reset_request.email).execute()
-        if not profile_result.data or len(profile_result.data) == 0:
+        profile_result = await db.fetchrow("SELECT * FROM profiles WHERE email = $1", reset_request.email)
+        if not profile_result:
             # Don't reveal if email exists or not for security
             return {"message": "If your email exists in our system, you will receive a password reset link"}
             
-        profile = profile_result.data[0]
+        profile = dict(profile_result)
         
         # Generate reset token
         reset_token = generate_reset_token()
         token_expiry = datetime.utcnow() + timedelta(minutes=30)
         
         # Store token in database - using authentication table to store reset token
-        db.table("authentication").update({
-            "reset_token": reset_token,
-            "reset_token_expires": token_expiry.isoformat(),
-            "updated_at": datetime.utcnow().isoformat()
-        }).eq("profiles_id", profile["id"]).execute()
+        await db.execute(
+            "UPDATE authentication SET reset_token = $1, reset_token_expires = $2, updated_at = $3 WHERE profiles_id = $4",
+            reset_token, token_expiry, datetime.utcnow(), profile["id"]
+        )
         
         # Send password reset email
         await send_password_reset_email(reset_request.email, reset_token)
@@ -295,12 +306,12 @@ async def verify_reset_token(token_data: PasswordResetTokenVerify, db = Depends(
     """
     try:
         # Find the token in the database
-        auth_result = db.table("authentication").select("*").eq("reset_token", token_data.token).execute()
+        auth_result = await db.fetchrow("SELECT * FROM authentication WHERE reset_token = $1", token_data.token)
         
-        if not auth_result.data or len(auth_result.data) == 0:
+        if not auth_result:
             raise HTTPException(status_code=400, detail="Invalid or expired reset token")
             
-        auth = auth_result.data[0]
+        auth = dict(auth_result)
         
         # Check if token has expired
         if "reset_token_expires" not in auth or not auth["reset_token_expires"]:
@@ -330,12 +341,12 @@ async def reset_password(reset_data: PasswordReset, db = Depends(get_db)):
     """
     try:
         # Find the token in the database
-        auth_result = db.table("authentication").select("*").eq("reset_token", reset_data.token).execute()
+        auth_result = await db.fetchrow("SELECT * FROM authentication WHERE reset_token = $1", reset_data.token)
         
-        if not auth_result.data or len(auth_result.data) == 0:
+        if not auth_result:
             raise HTTPException(status_code=400, detail="Invalid or expired reset token")
             
-        auth = auth_result.data[0]
+        auth = dict(auth_result)
         
         # Check if token has expired
         if "reset_token_expires" not in auth or not auth["reset_token_expires"]:
@@ -348,12 +359,10 @@ async def reset_password(reset_data: PasswordReset, db = Depends(get_db)):
         # Update password
         password_hash = get_password_hash(reset_data.new_password)
         
-        db.table("authentication").update({
-            "password_hash": password_hash,
-            "reset_token": None,
-            "reset_token_expires": None,
-            "updated_at": datetime.utcnow().isoformat()
-        }).eq("auth_id", auth["auth_id"]).execute()
+        await db.execute(
+            "UPDATE authentication SET password_hash = $1, reset_token = NULL, reset_token_expires = NULL, updated_at = $2 WHERE auth_id = $3",
+            password_hash, datetime.utcnow(), auth["auth_id"]
+        )
         
         return {"message": "Password has been reset successfully"}
     except HTTPException:
@@ -390,11 +399,11 @@ async def get_current_user(
                 user_id = payload.get("sub")
                 if user_id is not None:
                     # Get user from database
-                    user_result = db.table("profiles").select("*").eq("id", int(user_id)).execute()
+                    user_result = await db.fetchrow("SELECT * FROM profiles WHERE id = $1", int(user_id))
                     
-                    if user_result.data and len(user_result.data) > 0:
+                    if user_result:
                         logger.info(f"User authenticated via cookie token: {user_id}")
-                        return user_result.data[0]
+                        return dict(user_result)
         except Exception as e:
             logger.warning(f"Cookie token authentication failed: {str(e)}")
             # Continue to try header token authentication
@@ -411,11 +420,11 @@ async def get_current_user(
                 user_id = payload.get("sub")
                 if user_id is not None:
                     # Get user from database
-                    user_result = db.table("profiles").select("*").eq("id", int(user_id)).execute()
+                    user_result = await db.fetchrow("SELECT * FROM profiles WHERE id = $1", int(user_id))
                     
-                    if user_result.data and len(user_result.data) > 0:
+                    if user_result:
                         logger.info(f"User authenticated via header token: {user_id}")
-                        return user_result.data[0]
+                        return dict(user_result)
         except Exception as e:
             logger.warning(f"Header token authentication failed: {str(e)}")
             # Continue to try session authentication
@@ -423,10 +432,10 @@ async def get_current_user(
     # Try session authentication if token auth failed or no token provided
     if session_id:
         try:
-            session_result = db.table("session").select("*").eq("session_id", session_id).execute()
+            session_result = await db.fetchrow("SELECT * FROM session WHERE session_id = $1", session_id)
             
-            if session_result.data and len(session_result.data) > 0:
-                session = session_result.data[0]
+            if session_result:
+                session = dict(session_result)
                 
                 # Check if session is expired
                 if "expires_at" in session and session["expires_at"]:
@@ -436,16 +445,17 @@ async def get_current_user(
                         raise HTTPException(status_code=401, detail="Session expired")
                 
                 # Get user from database
-                user_result = db.table("profiles").select("*").eq("id", session["profiles_id"]).execute()
+                user_result = await db.fetchrow("SELECT * FROM profiles WHERE id = $1", session["profiles_id"])
         
-                if user_result.data and len(user_result.data) > 0:
-                    # Update last activity
-                    db.table("session").update({
-                        "last_activity": datetime.utcnow().isoformat()
-                    }).eq("session_id", session_id).execute()
+                if user_result:
+                    # Update last activity (last_activity is TEXT field)
+                    await db.execute(
+                        "UPDATE session SET last_activity = $1 WHERE session_id = $2",
+                        datetime.utcnow().isoformat(), session_id
+                    )
                     
                     logger.info(f"User authenticated via session: {session['profiles_id']}")
-                    return user_result.data[0]
+                    return dict(user_result)
         except Exception as e:
             logger.warning(f"Session authentication failed: {str(e)}")
             # Both auth methods failed, continue to exception
@@ -516,28 +526,35 @@ async def update_profile(
         logger.info(f"Updating profile for user ID: {current_user['id']} with data: {update_data}")
         
         try:
-            update_result = db.table("profiles").update(update_data).eq("id", current_user["id"]).execute()
+            # Create dynamic UPDATE query
+            set_clauses = []
+            params = []
+            param_index = 1
+            
+            for key, value in update_data.items():
+                set_clauses.append(f"{key} = ${param_index}")
+                params.append(value)
+                param_index += 1
+            
+            params.append(current_user["id"])  # Add user ID for WHERE clause
+            
+            update_query = f"UPDATE profiles SET {', '.join(set_clauses)} WHERE id = ${param_index} RETURNING *"
+            update_result = await db.fetchrow(update_query, *params)
             logger.info(f"Update result: {update_result}")
             
-            if not update_result.data:
+            if not update_result:
                 logger.error(f"Profile update failed for user ID: {current_user['id']}")
                 raise HTTPException(status_code=500, detail="Failed to update profile")
         except Exception as db_error:
             logger.error(f"Database error: {str(db_error)}")
             raise HTTPException(status_code=500, detail=f"Database error: {str(db_error)}")
             
-        # Get updated user profile
-        updated_user = db.table("profiles").select("*").eq("id", current_user["id"]).execute()
-        
-        if not updated_user.data or len(updated_user.data) == 0:
-            logger.error(f"Could not retrieve updated profile for user ID: {current_user['id']}")
-            raise HTTPException(status_code=500, detail="Failed to retrieve updated profile")
-            
+        # Use the already updated profile from the UPDATE query
         logger.info(f"Profile successfully updated for user ID: {current_user['id']}")
         
         return {
             "message": "Profile updated successfully",
-            "user": updated_user.data[0]
+            "user": dict(update_result)
         }
     except HTTPException as he:
         logger.error(f"HTTP Exception: {str(he)}")
@@ -545,5 +562,7 @@ async def update_profile(
     except Exception as e:
         logger.error(f"Unexpected error during profile update: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Profile update error: {str(e)}") 
+
+
 
  

@@ -296,28 +296,29 @@ class IRRCascadeService:
     async def _get_fund_valuation_details(self, valuation_id: int) -> Optional[Dict]:
         """Get fund valuation details including portfolio_id"""
         try:
-            result = self.db.table("portfolio_fund_valuations")\
-                .select("portfolio_fund_id, valuation_date")\
-                .eq("id", valuation_id)\
-                .execute()
+            # Get fund valuation details
+            result = await self.db.fetchrow(
+                "SELECT portfolio_fund_id, valuation_date FROM portfolio_fund_valuations WHERE id = $1",
+                valuation_id
+            )
             
-            if not result.data:
+            if not result:
                 return None
             
-            valuation_data = result.data[0]
+            valuation_data = dict(result)
             
             # Get portfolio_id from portfolio_funds
-            portfolio_result = self.db.table("portfolio_funds")\
-                .select("portfolio_id")\
-                .eq("id", valuation_data["portfolio_fund_id"])\
-                .execute()
+            portfolio_result = await self.db.fetchrow(
+                "SELECT portfolio_id FROM portfolio_funds WHERE id = $1",
+                valuation_data["portfolio_fund_id"]
+            )
             
-            if not portfolio_result.data:
+            if not portfolio_result:
                 return None
             
             return {
                 "portfolio_fund_id": valuation_data["portfolio_fund_id"],
-                "portfolio_id": portfolio_result.data[0]["portfolio_id"],
+                "portfolio_id": portfolio_result["portfolio_id"],
                 "valuation_date": valuation_data["valuation_date"].split('T')[0] if 'T' in str(valuation_data["valuation_date"]) else str(valuation_data["valuation_date"])
             }
             
@@ -328,13 +329,19 @@ class IRRCascadeService:
     async def _delete_fund_irr_by_date(self, fund_id: int, date: str) -> bool:
         """Delete portfolio fund IRR for specific date"""
         try:
-            result = self.db.table("portfolio_fund_irr_values")\
-                .delete()\
-                .eq("fund_id", fund_id)\
-                .eq("date", date)\
-                .execute()
+            # Convert string date to date object for PostgreSQL comparison
+            from datetime import datetime
+            if isinstance(date, str):
+                date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+            else:
+                date_obj = date
+                
+            # Delete fund IRR records
+            deleted_count = await self.db.execute(
+                "DELETE FROM portfolio_fund_irr_values WHERE fund_id = $1 AND date = $2",
+                fund_id, date_obj
+            )
             
-            deleted_count = len(result.data) if result.data else 0
             logger.info(f"🗑️ Deleted {deleted_count} fund IRR records for fund {fund_id} on {date}")
             return deleted_count > 0
             
@@ -347,27 +354,25 @@ class IRRCascadeService:
         try:
             # FIXED: Get ALL active portfolio funds (including the one being deleted)
             # We need to check if ALL active funds will have valuations AFTER the deletion
-            all_active_funds = self.db.table("portfolio_funds")\
-                .select("id")\
-                .eq("portfolio_id", portfolio_id)\
-                .eq("status", "active")\
-                .execute()
+            all_active_funds = await self.db.fetch(
+                "SELECT id FROM portfolio_funds WHERE portfolio_id = $1 AND status = $2",
+                portfolio_id, "active"
+            )
             
-            if not all_active_funds.data:
+            if not all_active_funds:
                 logger.info(f"🔍 No active funds found in portfolio {portfolio_id}")
                 return False
             
-            all_fund_ids = [f["id"] for f in all_active_funds.data]
+            all_fund_ids = [f["id"] for f in all_active_funds]
             logger.info(f"🔍 Portfolio {portfolio_id} has {len(all_fund_ids)} active funds: {all_fund_ids}")
             
             # Get current valuations for this date (BEFORE deletion)
-            current_valuations = self.db.table("portfolio_fund_valuations")\
-                .select("portfolio_fund_id")\
-                .in_("portfolio_fund_id", all_fund_ids)\
-                .eq("valuation_date", date)\
-                .execute()
+            current_valuations = await self.db.fetch(
+                "SELECT portfolio_fund_id FROM portfolio_fund_valuations WHERE portfolio_fund_id = ANY($1::int[]) AND valuation_date = $2",
+                all_fund_ids, date
+            )
             
-            current_funds_with_valuations = set([v["portfolio_fund_id"] for v in current_valuations.data]) if current_valuations.data else set()
+            current_funds_with_valuations = set([v["portfolio_fund_id"] for v in current_valuations]) if current_valuations else set()
             
             # Simulate what will happen AFTER deleting the specified fund's valuation
             funds_with_valuations_after_deletion = current_funds_with_valuations.copy()
@@ -396,75 +401,55 @@ class IRRCascadeService:
     async def _delete_portfolio_irr_by_date(self, portfolio_id: int, date: str) -> bool:
         """Delete portfolio IRR for specific date with enhanced debugging and format handling"""
         try:
+            # Convert string date to date object for PostgreSQL comparison
+            from datetime import datetime
+            if isinstance(date, str):
+                date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+            else:
+                date_obj = date
+                
             # ENHANCED DEBUG: Check ALL portfolio IRR records to see what exists
-            all_records = self.db.table("portfolio_irr_values")\
-                .select("id, irr_result, date, created_at")\
-                .eq("portfolio_id", portfolio_id)\
-                .execute()
+            all_records = await self.db.fetch(
+                "SELECT id, irr_result, date, created_at FROM portfolio_irr_values WHERE portfolio_id = $1",
+                portfolio_id
+            )
             
-            logger.info(f"🔍 [PORTFOLIO IRR DELETE] Portfolio {portfolio_id} has {len(all_records.data) if all_records.data else 0} total IRR records")
+            logger.info(f"🔍 [PORTFOLIO IRR DELETE] Portfolio {portfolio_id} has {len(all_records)} total IRR records")
             
-            if all_records.data:
-                for record in all_records.data:
+            if all_records:
+                for record in all_records:
                     logger.info(f"🔍 [PORTFOLIO IRR DELETE] All records - ID {record['id']}: IRR={record.get('irr_result', 'N/A')}%, Date='{record['date']}'")
             
             # Check what records exist for the specific date
-            check_result = self.db.table("portfolio_irr_values")\
-                .select("id, irr_result, date, created_at")\
-                .eq("portfolio_id", portfolio_id)\
-                .eq("date", date)\
-                .execute()
+            check_result = await self.db.fetch(
+                "SELECT id, irr_result, date, created_at FROM portfolio_irr_values WHERE portfolio_id = $1 AND date = $2",
+                portfolio_id, date_obj
+            )
             
-            logger.info(f"🔍 [PORTFOLIO IRR DELETE] Targeting date '{date}': found {len(check_result.data) if check_result.data else 0} exact matches")
+            logger.info(f"🔍 [PORTFOLIO IRR DELETE] Targeting date '{date}': found {len(check_result)} exact matches")
             
-            if check_result.data:
-                for record in check_result.data:
+            if check_result:
+                for record in check_result:
                     logger.info(f"🔍 [PORTFOLIO IRR DELETE] Target match - ID {record['id']}: IRR={record.get('irr_result', 'N/A')}%, Date='{record['date']}'")
             
-            # Try alternative date formats if no exact match
-            if not check_result.data:
-                logger.warning(f"⚠️ [PORTFOLIO IRR DELETE] No exact date match for '{date}', trying alternative formats...")
-                
-                # Try with T00:00:00 suffix (common datetime format)
-                alt_date_formats = [
-                    f"{date}T00:00:00",
-                    f"{date}T00:00:00.000Z",
-                    f"{date} 00:00:00"
-                ]
-                
-                for alt_date in alt_date_formats:
-                    alt_check = self.db.table("portfolio_irr_values")\
-                        .select("id, irr_result, date")\
-                        .eq("portfolio_id", portfolio_id)\
-                        .eq("date", alt_date)\
-                        .execute()
-                    
-                    if alt_check.data:
-                        logger.info(f"🔍 [PORTFOLIO IRR DELETE] Found {len(alt_check.data)} records with alternative date format '{alt_date}'")
-                        date = alt_date  # Use the alternative format for deletion
-                        break
-            
-            # Delete the portfolio IRRs
-            result = self.db.table("portfolio_irr_values")\
-                .delete()\
-                .eq("portfolio_id", portfolio_id)\
-                .eq("date", date)\
-                .execute()
-            
-            deleted_count = len(result.data) if result.data else 0
+            # Delete the portfolio IRRs using the date object
+            deleted_count = await self.db.execute(
+                "DELETE FROM portfolio_irr_values WHERE portfolio_id = $1 AND date = $2",
+                portfolio_id, date_obj
+            )
             logger.info(f"🗑️ Deleted {deleted_count} portfolio IRR records for portfolio {portfolio_id} on '{date}'")
             
             # ENHANCED DEBUG: Double-check that records are actually gone
-            verify_result = self.db.table("portfolio_irr_values")\
-                .select("id, irr_result, date")\
-                .eq("portfolio_id", portfolio_id)\
-                .execute()
+            verify_result = await self.db.fetch(
+                "SELECT id, irr_result, date FROM portfolio_irr_values WHERE portfolio_id = $1",
+                portfolio_id
+            )
             
-            remaining_total = len(verify_result.data) if verify_result.data else 0
+            remaining_total = len(verify_result)
             logger.info(f"🔍 [PORTFOLIO IRR DELETE] After deletion, portfolio {portfolio_id} has {remaining_total} total IRR records remaining")
             
-            if verify_result.data:
-                for record in verify_result.data:
+            if verify_result:
+                for record in verify_result:
                     logger.info(f"🔍 [PORTFOLIO IRR DELETE] Remaining record ID {record['id']}: IRR={record.get('irr_result', 'N/A')}%, Date='{record['date']}'")
             
             return deleted_count > 0
@@ -477,30 +462,27 @@ class IRRCascadeService:
         """Delete portfolio valuation for specific date"""
         try:
             # First, check if any portfolio valuations exist for this date
-            check_result = self.db.table("portfolio_valuations")\
-                .select("id, valuation_date")\
-                .eq("portfolio_id", portfolio_id)\
-                .eq("valuation_date", date)\
-                .execute()
+            check_result = await self.db.fetch(
+                "SELECT id, valuation_date FROM portfolio_valuations WHERE portfolio_id = $1 AND valuation_date = $2",
+                portfolio_id, date
+            )
             
-            logger.info(f"🔍 [PORTFOLIO VALUATION] Checking portfolio {portfolio_id} on {date}: found {len(check_result.data) if check_result.data else 0} records")
+            logger.info(f"🔍 [PORTFOLIO VALUATION] Checking portfolio {portfolio_id} on {date}: found {len(check_result)} records")
             
-            if check_result.data:
-                for record in check_result.data:
+            if check_result:
+                for record in check_result:
                     logger.info(f"🔍 [PORTFOLIO VALUATION] Found record ID {record['id']} with date {record['valuation_date']}")
             
             # Delete the portfolio valuations
-            result = self.db.table("portfolio_valuations")\
-                .delete()\
-                .eq("portfolio_id", portfolio_id)\
-                .eq("valuation_date", date)\
-                .execute()
+            deleted_count = await self.db.execute(
+                "DELETE FROM portfolio_valuations WHERE portfolio_id = $1 AND valuation_date = $2",
+                portfolio_id, date
+            )
             
-            deleted_count = len(result.data) if result.data else 0
             logger.info(f"🗑️ Deleted {deleted_count} portfolio valuation records for portfolio {portfolio_id} on {date}")
             
-            if deleted_count == 0 and check_result.data:
-                logger.warning(f"⚠️ [PORTFOLIO VALUATION] Found {len(check_result.data)} records but deleted 0 - possible date format mismatch")
+            if deleted_count == 0 and check_result:
+                logger.warning(f"⚠️ [PORTFOLIO VALUATION] Found {len(check_result)} records but deleted 0 - possible date format mismatch")
             
             return deleted_count > 0
             
@@ -511,12 +493,11 @@ class IRRCascadeService:
     async def _delete_fund_valuation(self, valuation_id: int) -> bool:
         """Delete the original fund valuation"""
         try:
-            result = self.db.table("portfolio_fund_valuations")\
-                .delete()\
-                .eq("id", valuation_id)\
-                .execute()
+            deleted_count = await self.db.execute(
+                "DELETE FROM portfolio_fund_valuations WHERE id = $1",
+                valuation_id
+            )
             
-            deleted_count = len(result.data) if result.data else 0
             logger.info(f"🗑️ Deleted fund valuation {valuation_id}")
             return deleted_count > 0
             
@@ -527,27 +508,34 @@ class IRRCascadeService:
     async def _recalculate_all_fund_irrs_for_date(self, portfolio_id: int, date: str) -> int:
         """Recalculate all portfolio fund IRRs for a specific date"""
         try:
+            # Convert string date to date object for PostgreSQL comparison
+            from datetime import datetime
+            if isinstance(date, str):
+                date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+            else:
+                date_obj = date
+                
             # Get all portfolio funds for this portfolio that have valuations on this date
-            funds_with_valuations = self.db.table("portfolio_fund_valuations")\
-                .select("portfolio_fund_id")\
-                .eq("valuation_date", date)\
-                .execute()
+            funds_with_valuations = await self.db.fetch(
+                "SELECT portfolio_fund_id FROM portfolio_fund_valuations WHERE valuation_date = $1",
+                date_obj
+            )
             
-            if not funds_with_valuations.data:
+            if not funds_with_valuations:
                 logger.info(f"📊 No fund valuations found for portfolio {portfolio_id} on {date}")
                 return 0
             
             # Get portfolio funds that belong to this portfolio
-            portfolio_funds = self.db.table("portfolio_funds")\
-                .select("id")\
-                .eq("portfolio_id", portfolio_id)\
-                .execute()
+            portfolio_funds = await self.db.fetch(
+                "SELECT id FROM portfolio_funds WHERE portfolio_id = $1",
+                portfolio_id
+            )
             
-            portfolio_fund_ids = [pf["id"] for pf in portfolio_funds.data] if portfolio_funds.data else []
+            portfolio_fund_ids = [pf["id"] for pf in portfolio_funds] if portfolio_funds else []
             
             # Filter to only funds that belong to this portfolio and have valuations
             relevant_fund_ids = [
-                v["portfolio_fund_id"] for v in funds_with_valuations.data 
+                v["portfolio_fund_id"] for v in funds_with_valuations 
                 if v["portfolio_fund_id"] in portfolio_fund_ids
             ]
             
@@ -598,12 +586,12 @@ class IRRCascadeService:
     async def _get_portfolio_id_by_fund(self, portfolio_fund_id: int) -> Optional[int]:
         """Get portfolio ID from portfolio fund ID"""
         try:
-            result = self.db.table("portfolio_funds")\
-                .select("portfolio_id")\
-                .eq("id", portfolio_fund_id)\
-                .execute()
+            result = await self.db.fetchrow(
+                "SELECT portfolio_id FROM portfolio_funds WHERE id = $1",
+                portfolio_fund_id
+            )
             
-            return result.data[0]["portfolio_id"] if result.data else None
+            return result["portfolio_id"] if result else None
             
         except Exception as e:
             logger.error(f"Error getting portfolio ID: {str(e)}")
@@ -612,6 +600,12 @@ class IRRCascadeService:
     async def _calculate_and_store_fund_irr(self, portfolio_fund_id: int, date: str) -> bool:
         """Calculate and store portfolio fund IRR for specific date"""
         try:
+            # Convert string date to date object for PostgreSQL comparison
+            from datetime import datetime
+            if isinstance(date, str):
+                date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+            else:
+                date_obj = date
             # Import IRR calculation function
             from app.api.routes.portfolio_funds import calculate_single_portfolio_fund_irr
             
@@ -630,39 +624,45 @@ class IRRCascadeService:
             irr_percentage = irr_result.get("irr_percentage", 0.0)
             
             # Get fund valuation ID for this date
-            valuation_result = self.db.table("portfolio_fund_valuations")\
-                .select("id")\
-                .eq("portfolio_fund_id", portfolio_fund_id)\
-                .eq("valuation_date", date)\
-                .execute()
+            valuation_result = await self.db.fetchrow(
+                "SELECT id FROM portfolio_fund_valuations WHERE portfolio_fund_id = $1 AND valuation_date = $2",
+                portfolio_fund_id, date_obj
+            )
             
-            fund_valuation_id = valuation_result.data[0]["id"] if valuation_result.data else None
+            fund_valuation_id = valuation_result["id"] if valuation_result else None
             
             # Check if IRR already exists for this fund and date
-            existing_irr = self.db.table("portfolio_fund_irr_values")\
-                .select("id")\
-                .eq("fund_id", portfolio_fund_id)\
-                .eq("date", date)\
-                .execute()
+            existing_irr = await self.db.fetchrow(
+                "SELECT id FROM portfolio_fund_irr_values WHERE fund_id = $1 AND date = $2",
+                portfolio_fund_id, date_obj
+            )
             
-            if existing_irr.data:
+            if existing_irr:
                 # Update existing IRR
-                self.db.table("portfolio_fund_irr_values")\
-                    .update({"irr_result": float(irr_percentage)})\
-                    .eq("id", existing_irr.data[0]["id"])\
-                    .execute()
+                await self.db.execute(
+                    "UPDATE portfolio_fund_irr_values SET irr_result = $1, fund_valuation_id = $2 WHERE id = $3",
+                    float(irr_percentage), fund_valuation_id, existing_irr["id"]
+                )
                 logger.info(f"📊 Updated fund IRR for fund {portfolio_fund_id} on {date}: {irr_percentage}%")
             else:
                 # Create new IRR record
-                irr_data = {
-                    "fund_id": portfolio_fund_id,
-                    "irr_result": float(irr_percentage),
-                    "date": date,
-                    "fund_valuation_id": fund_valuation_id
-                }
-                
-                self.db.table("portfolio_fund_irr_values").insert(irr_data).execute()
-                logger.info(f"📊 Created fund IRR for fund {portfolio_fund_id} on {date}: {irr_percentage}%")
+                try:
+                    await self.db.execute(
+                        "INSERT INTO portfolio_fund_irr_values (fund_id, irr_result, date, fund_valuation_id) VALUES ($1, $2, $3, $4)",
+                        portfolio_fund_id, float(irr_percentage), date_obj, fund_valuation_id
+                    )
+                    logger.info(f"📊 Created fund IRR for fund {portfolio_fund_id} on {date}: {irr_percentage}%")
+                except Exception as insert_error:
+                    if "duplicate key" in str(insert_error).lower():
+                        # Race condition - record was inserted by another process, try to update
+                        logger.warning(f"Race condition detected, attempting update for fund {portfolio_fund_id} on {date}")
+                        await self.db.execute(
+                            "UPDATE portfolio_fund_irr_values SET irr_result = $1, fund_valuation_id = $2 WHERE fund_id = $3 AND date = $4",
+                            float(irr_percentage), fund_valuation_id, portfolio_fund_id, date_obj
+                        )
+                        logger.info(f"📊 Updated fund IRR (race condition) for fund {portfolio_fund_id} on {date}: {irr_percentage}%")
+                    else:
+                        raise insert_error
             
             # FIXED: Invalidate IRR cache for this fund to prevent stale cached results
             try:
@@ -684,26 +684,31 @@ class IRRCascadeService:
         try:
             # Get all active portfolio funds
             # FIXED: Use consistent "active" status filtering instead of end_date check
-            active_funds = self.db.table("portfolio_funds")\
-                .select("id")\
-                .eq("portfolio_id", portfolio_id)\
-                .eq("status", "active")\
-                .execute()
+            active_funds = await self.db.fetch(
+                "SELECT id FROM portfolio_funds WHERE portfolio_id = $1 AND status = $2",
+                portfolio_id, "active"
+            )
             
-            if not active_funds.data:
+            if not active_funds:
                 logger.info(f"🔍 No active funds found in portfolio {portfolio_id}")
                 return False
             
-            fund_ids = [f["id"] for f in active_funds.data]
+            fund_ids = [f["id"] for f in active_funds]
             
             # Check valuations for this date
-            valuations = self.db.table("portfolio_fund_valuations")\
-                .select("portfolio_fund_id")\
-                .in_("portfolio_fund_id", fund_ids)\
-                .eq("valuation_date", date)\
-                .execute()
+            # Convert string date to date object for PostgreSQL comparison
+            from datetime import datetime
+            if isinstance(date, str):
+                date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+            else:
+                date_obj = date
+                
+            valuations = await self.db.fetch(
+                "SELECT portfolio_fund_id FROM portfolio_fund_valuations WHERE portfolio_fund_id = ANY($1::int[]) AND valuation_date = $2",
+                fund_ids, date_obj
+            )
             
-            funds_with_valuations = len(set([v["portfolio_fund_id"] for v in valuations.data])) if valuations.data else 0
+            funds_with_valuations = len(set([v["portfolio_fund_id"] for v in valuations])) if valuations else 0
             
             is_complete = funds_with_valuations == len(fund_ids)
             logger.info(f"📊 Portfolio {portfolio_id} completeness for {date}: {funds_with_valuations}/{len(fund_ids)} = {is_complete}")
@@ -717,19 +722,25 @@ class IRRCascadeService:
     async def _calculate_and_store_portfolio_irr(self, portfolio_id: int, date: str) -> bool:
         """Calculate and store portfolio IRR for specific date"""
         try:
+            # Convert string date to date object for PostgreSQL comparison
+            from datetime import datetime
+            if isinstance(date, str):
+                date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+            else:
+                date_obj = date
             # Import portfolio IRR calculation function
             from app.api.routes.portfolio_funds import calculate_multiple_portfolio_funds_irr
             
             # Get all portfolio fund IDs for this portfolio
-            portfolio_funds = self.db.table("portfolio_funds")\
-                .select("id")\
-                .eq("portfolio_id", portfolio_id)\
-                .execute()
+            portfolio_funds = await self.db.fetch(
+                "SELECT id FROM portfolio_funds WHERE portfolio_id = $1",
+                portfolio_id
+            )
             
-            if not portfolio_funds.data:
+            if not portfolio_funds:
                 return False
             
-            fund_ids = [pf["id"] for pf in portfolio_funds.data]
+            fund_ids = [pf["id"] for pf in portfolio_funds]
             
             # FIXED: Clear ALL cache BEFORE calculation to ensure fresh data is used
             try:
@@ -765,39 +776,45 @@ class IRRCascadeService:
             irr_percentage = irr_result.get("irr_percentage", 0.0)
             
             # Get portfolio valuation ID for this date
-            valuation_result = self.db.table("portfolio_valuations")\
-                .select("id")\
-                .eq("portfolio_id", portfolio_id)\
-                .eq("valuation_date", date)\
-                .execute()
+            valuation_result = await self.db.fetchrow(
+                "SELECT id FROM portfolio_valuations WHERE portfolio_id = $1 AND valuation_date = $2",
+                portfolio_id, date_obj
+            )
             
-            portfolio_valuation_id = valuation_result.data[0]["id"] if valuation_result.data else None
+            portfolio_valuation_id = valuation_result["id"] if valuation_result else None
             
-                    # Check if portfolio IRR already exists
-            existing_irr = self.db.table("portfolio_irr_values")\
-                .select("id")\
-                .eq("portfolio_id", portfolio_id)\
-                .eq("date", date)\
-                .execute()
+            # Check if portfolio IRR already exists
+            existing_irr = await self.db.fetchrow(
+                "SELECT id FROM portfolio_irr_values WHERE portfolio_id = $1 AND date = $2",
+                portfolio_id, date_obj
+            )
             
-            if existing_irr.data:
+            if existing_irr:
                 # Update existing portfolio IRR
-                self.db.table("portfolio_irr_values")\
-                    .update({"irr_result": float(irr_percentage)})\
-                    .eq("id", existing_irr.data[0]["id"])\
-                    .execute()
+                await self.db.execute(
+                    "UPDATE portfolio_irr_values SET irr_result = $1, portfolio_valuation_id = $2 WHERE id = $3",
+                    float(irr_percentage), portfolio_valuation_id, existing_irr["id"]
+                )
                 logger.info(f"📊 Updated portfolio IRR for portfolio {portfolio_id} on {date}: {irr_percentage}%")
             else:
                 # Create new portfolio IRR record
-                irr_data = {
-                    "portfolio_id": portfolio_id,
-                    "irr_result": float(irr_percentage),
-                    "date": date,
-                    "portfolio_valuation_id": portfolio_valuation_id
-                }
-                
-                self.db.table("portfolio_irr_values").insert(irr_data).execute()
-                logger.info(f"📊 Created portfolio IRR for portfolio {portfolio_id} on {date}: {irr_percentage}%")
+                try:
+                    await self.db.execute(
+                        "INSERT INTO portfolio_irr_values (portfolio_id, irr_result, date, portfolio_valuation_id) VALUES ($1, $2, $3, $4)",
+                        portfolio_id, float(irr_percentage), date_obj, portfolio_valuation_id
+                    )
+                    logger.info(f"📊 Created portfolio IRR for portfolio {portfolio_id} on {date}: {irr_percentage}%")
+                except Exception as insert_error:
+                    if "duplicate key" in str(insert_error).lower():
+                        # Race condition - record was inserted by another process, try to update
+                        logger.warning(f"Race condition detected, attempting update for portfolio {portfolio_id} on {date}")
+                        await self.db.execute(
+                            "UPDATE portfolio_irr_values SET irr_result = $1, portfolio_valuation_id = $2 WHERE portfolio_id = $3 AND date = $4",
+                            float(irr_percentage), portfolio_valuation_id, portfolio_id, date_obj
+                        )
+                        logger.info(f"📊 Updated portfolio IRR (race condition) for portfolio {portfolio_id} on {date}: {irr_percentage}%")
+                    else:
+                        raise insert_error
             
             return True
             
@@ -809,31 +826,37 @@ class IRRCascadeService:
         """Find all fund valuation dates for this portfolio from start_date onwards"""
         try:
             # Get all portfolio funds for this portfolio
-            portfolio_funds = self.db.table("portfolio_funds")\
-                .select("id")\
-                .eq("portfolio_id", portfolio_id)\
-                .execute()
+            portfolio_funds = await self.db.fetch(
+                "SELECT id FROM portfolio_funds WHERE portfolio_id = $1",
+                portfolio_id
+            )
             
-            if not portfolio_funds.data:
+            if not portfolio_funds:
                 logger.info(f"🔍 No portfolio funds found for portfolio {portfolio_id}")
                 return []
             
-            fund_ids = [pf["id"] for pf in portfolio_funds.data]
+            fund_ids = [pf["id"] for pf in portfolio_funds]
             
             # Get all valuation dates for these funds from start_date onwards
-            valuations = self.db.table("portfolio_fund_valuations")\
-                .select("valuation_date")\
-                .in_("portfolio_fund_id", fund_ids)\
-                .gte("valuation_date", start_date)\
-                .execute()
+            # Convert string date to date object for PostgreSQL comparison
+            from datetime import datetime
+            if isinstance(start_date, str):
+                start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+            else:
+                start_date_obj = start_date
+                
+            valuations = await self.db.fetch(
+                "SELECT valuation_date FROM portfolio_fund_valuations WHERE portfolio_fund_id = ANY($1::int[]) AND valuation_date >= $2",
+                fund_ids, start_date_obj
+            )
             
-            if not valuations.data:
+            if not valuations:
                 logger.info(f"🔍 No fund valuations found for portfolio {portfolio_id} from {start_date} onwards")
                 return []
             
             # Deduplicate and sort dates
             unique_dates = set()
-            for record in valuations.data:
+            for record in valuations:
                 date_str = record["valuation_date"].split('T')[0] if 'T' in str(record["valuation_date"]) else str(record["valuation_date"])
                 unique_dates.add(date_str)
             
@@ -849,29 +872,35 @@ class IRRCascadeService:
     async def _find_irr_dates_from_date(self, portfolio_id: int, start_date: str) -> List[str]:
         """Find all dates with IRRs from start_date onwards"""
         try:
+            # Convert string date to date object for PostgreSQL comparison
+            from datetime import datetime
+            if isinstance(start_date, str):
+                start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+            else:
+                start_date_obj = start_date
+                
             # Get fund IRR dates
-            fund_irr_dates = self.db.table("portfolio_fund_irr_values")\
-                .select("date")\
-                .gte("date", start_date)\
-                .execute()
+            fund_irr_dates = await self.db.fetch(
+                "SELECT date FROM portfolio_fund_irr_values WHERE date >= $1",
+                start_date_obj
+            )
             
             # Get portfolio IRR dates
-            portfolio_irr_dates = self.db.table("portfolio_irr_values")\
-                .select("date")\
-                .eq("portfolio_id", portfolio_id)\
-                .gte("date", start_date)\
-                .execute()
+            portfolio_irr_dates = await self.db.fetch(
+                "SELECT date FROM portfolio_irr_values WHERE portfolio_id = $1 AND date >= $2",
+                portfolio_id, start_date_obj
+            )
             
             # Combine and deduplicate dates
             all_dates = set()
             
-            if fund_irr_dates.data:
-                for record in fund_irr_dates.data:
+            if fund_irr_dates:
+                for record in fund_irr_dates:
                     date_str = record["date"].split('T')[0] if 'T' in str(record["date"]) else str(record["date"])
                     all_dates.add(date_str)
             
-            if portfolio_irr_dates.data:
-                for record in portfolio_irr_dates.data:
+            if portfolio_irr_dates:
+                for record in portfolio_irr_dates:
                     date_str = record["date"].split('T')[0] if 'T' in str(record["date"]) else str(record["date"])
                     all_dates.add(date_str)
             

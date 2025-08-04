@@ -470,60 +470,74 @@ async def get_portfolio_funds(
     Expected output: A JSON array containing portfolio fund associations
     """
     try:
-        query = db.table("portfolio_funds").select("*")
+        # Build dynamic query with filters
+        base_query = "SELECT * FROM portfolio_funds"
+        where_conditions = []
+        params = []
+        param_counter = 1
         
         # Apply filters
         if portfolio_id is not None:
-            query = query.eq("portfolio_id", portfolio_id)
+            where_conditions.append(f"portfolio_id = ${param_counter}")
+            params.append(portfolio_id)
+            param_counter += 1
             
         if available_funds_id is not None:
-            query = query.eq("available_funds_id", available_funds_id)
-            
-        # Apply pagination
-        query = query.range(skip, skip + limit - 1)
+            where_conditions.append(f"available_funds_id = ${param_counter}")
+            params.append(available_funds_id)
+            param_counter += 1
         
-        # Execute the query
-        result = query.execute()
+        # Add WHERE clause if we have conditions
+        if where_conditions:
+            base_query += " WHERE " + " AND ".join(where_conditions)
         
-        if not result.data:
+        # Add pagination
+        base_query += f" ORDER BY id LIMIT ${param_counter} OFFSET ${param_counter + 1}"
+        params.extend([limit, skip])
+        
+        # Execute the main query
+        result = await db.fetch(base_query, *params)
+        
+        if not result:
             return []
+        
+        # Convert records to dicts
+        portfolio_funds = [dict(record) for record in result]
             
         # Get all fund IDs
-        fund_ids = [fund["id"] for fund in result.data]
+        fund_ids = [fund["id"] for fund in portfolio_funds]
         
         # Get the latest valuations for all funds in a single query if possible
         latest_valuations = {}
         
         if len(fund_ids) > 0:
             # Get the latest valuation for each fund from portfolio_fund_valuations
-            # This gets all valuations for all funds and groups them by fund ID
-            valuation_result = db.table("portfolio_fund_valuations")\
-                .select("valuation, valuation_date, portfolio_fund_id")\
-                .in_("portfolio_fund_id", fund_ids)\
-                .order("valuation_date", desc=True)\
-                .execute()
+            # Using DISTINCT ON to get the latest valuation per fund efficiently
+            valuation_query = """
+                SELECT DISTINCT ON (portfolio_fund_id) 
+                       valuation, valuation_date, portfolio_fund_id
+                FROM portfolio_fund_valuations
+                WHERE portfolio_fund_id = ANY($1::int[])
+                ORDER BY portfolio_fund_id, valuation_date DESC
+            """
+            
+            valuation_result = await db.fetch(valuation_query, fund_ids)
                 
             # Group valuations by portfolio_fund_id and keep only the latest for each
-            if valuation_result.data:
-                for val in valuation_result.data:
+            if valuation_result:
+                for val_record in valuation_result:
+                    val = dict(val_record)
                     fund_id = val.get("portfolio_fund_id")
-                    if fund_id not in latest_valuations:
-                        latest_valuations[fund_id] = val
-                    else:
-                        # Check if this valuation is more recent
-                        current_date = latest_valuations[fund_id].get("valuation_date")
-                        new_date = val.get("valuation_date")
-                        if new_date > current_date:
-                            latest_valuations[fund_id] = val
+                    latest_valuations[fund_id] = val
         
         # Add valuations to the portfolio funds
-        for fund in result.data:
+        for fund in portfolio_funds:
             fund_id = fund["id"]
             if fund_id in latest_valuations:
                 fund["market_value"] = float(latest_valuations[fund_id]["valuation"])
                 fund["valuation_date"] = latest_valuations[fund_id]["valuation_date"]
         
-        return result.data
+        return portfolio_funds
     except Exception as e:
         logger.error(f"Error retrieving portfolio funds: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
@@ -538,13 +552,13 @@ async def create_portfolio_fund(
     """
     try:
         # Validate portfolio exists
-        portfolio_result = db.table("portfolios").select("id").eq("id", portfolio_fund.portfolio_id).execute()
-        if not portfolio_result.data or len(portfolio_result.data) == 0:
+        portfolio_result = await db.fetchrow("SELECT id FROM portfolios WHERE id = $1", portfolio_fund.portfolio_id)
+        if not portfolio_result:
             raise HTTPException(status_code=404, detail="Portfolio not found")
         
         # Validate fund exists
-        fund_result = db.table("available_funds").select("id").eq("id", portfolio_fund.available_funds_id).execute()
-        if not fund_result.data or len(fund_result.data) == 0:
+        fund_result = await db.fetchrow("SELECT id FROM available_funds WHERE id = $1", portfolio_fund.available_funds_id)
+        if not fund_result:
             raise HTTPException(status_code=404, detail="Fund not found")
         
         # Step 1: Create the record with only the required fields (avoiding weighting due to schema cache issue)
@@ -554,8 +568,8 @@ async def create_portfolio_fund(
             "portfolio_id": portfolio_fund.portfolio_id,
             "available_funds_id": portfolio_fund.available_funds_id,
             "target_weighting": to_serializable(portfolio_fund.target_weighting),  # Allow None/NULL values
-            "start_date": portfolio_fund.start_date.isoformat(),
-            "end_date": portfolio_fund.end_date.isoformat() if portfolio_fund.end_date else None,
+            "start_date": portfolio_fund.start_date,  # Pass date object directly
+            "end_date": portfolio_fund.end_date if portfolio_fund.end_date else None,  # Pass date object directly
             "amount_invested": portfolio_fund.amount_invested,
             "status": portfolio_fund.status
 
@@ -567,13 +581,24 @@ async def create_portfolio_fund(
         
         logger.info(f"Creating portfolio fund with minimal data: {portfolio_fund_data}")
         
-        # Insert the record
-        result = db.table("portfolio_funds").insert(portfolio_fund_data).execute()
+        # Build dynamic INSERT query
+        columns = list(portfolio_fund_data.keys())
+        values = list(portfolio_fund_data.values())
+        placeholders = [f"${i+1}" for i in range(len(values))]
         
-        if not result.data or len(result.data) == 0:
+        insert_query = f"""
+            INSERT INTO portfolio_funds ({', '.join(columns)}) 
+            VALUES ({', '.join(placeholders)}) 
+            RETURNING *
+        """
+        
+        # Insert the record
+        result = await db.fetchrow(insert_query, *values)
+        
+        if not result:
             raise HTTPException(status_code=500, detail="Failed to create portfolio fund - no data returned")
         
-        created_fund = result.data[0]
+        created_fund = dict(result)
         created_fund_id = created_fund["id"]
         logger.info(f"Successfully created portfolio fund with ID: {created_fund_id}")
         
@@ -583,13 +608,14 @@ async def create_portfolio_fund(
                 logger.info(f"Updating weighting to {portfolio_fund.target_weighting} for fund ID {created_fund_id}")
                 
                 # Use the update endpoint to set the weighting
-                update_result = db.table("portfolio_funds").update({
-                    "target_weighting": float(portfolio_fund.target_weighting)
-                }).eq("id", created_fund_id).execute()
+                update_result = await db.fetchrow(
+                    "UPDATE portfolio_funds SET target_weighting = $1 WHERE id = $2 RETURNING *",
+                    float(portfolio_fund.target_weighting), created_fund_id
+                )
                 
-                if update_result.data and len(update_result.data) > 0:
+                if update_result:
                     # Use the updated data
-                    created_fund = update_result.data[0]
+                    created_fund = dict(update_result)
                     logger.info(f"Successfully updated weighting: {created_fund}")
                 else:
                     logger.warning("Weighting update didn't return data, but fund was created")
@@ -624,23 +650,24 @@ async def get_portfolio_fund(portfolio_fund_id: int, db = Depends(get_db)):
     Expected output: A JSON object containing the requested portfolio fund's details
     """
     try:
-        result = db.table("portfolio_funds").select("*").eq("id", portfolio_fund_id).execute()
-        if not result.data or len(result.data) == 0:
+        result = await db.fetchrow("SELECT * FROM portfolio_funds WHERE id = $1", portfolio_fund_id)
+        if not result:
             raise HTTPException(status_code=404, detail=f"Portfolio fund with ID {portfolio_fund_id} not found")
             
         # Get the portfolio fund data
-        portfolio_fund = result.data[0]
+        portfolio_fund = dict(result)
 
         # Get latest valuation for this fund from portfolio_fund_valuations
-        valuation_result = db.table("portfolio_fund_valuations")\
-            .select("valuation, valuation_date")\
-            .eq("portfolio_fund_id", portfolio_fund_id)\
-            .order("valuation_date", desc=True)\
-            .limit(1)\
-            .execute()
+        valuation_result = await db.fetchrow("""
+            SELECT valuation, valuation_date
+            FROM portfolio_fund_valuations
+            WHERE portfolio_fund_id = $1
+            ORDER BY valuation_date DESC
+            LIMIT 1
+        """, portfolio_fund_id)
             
-        if valuation_result.data and len(valuation_result.data) > 0:
-            latest_valuation = valuation_result.data[0]
+        if valuation_result:
+            latest_valuation = dict(valuation_result)
             portfolio_fund["market_value"] = float(latest_valuation["valuation"])
             portfolio_fund["valuation_date"] = latest_valuation["valuation_date"]
 
@@ -674,22 +701,42 @@ async def update_portfolio_fund(portfolio_fund_id: int, portfolio_fund_update: P
             update_data[key] = to_serializable(value)
         
         # Check if the portfolio fund exists
-        fund_response = db.table("portfolio_funds").select("*").eq("id", portfolio_fund_id).execute()
-        if not fund_response.data:
+        fund_result = await db.fetchrow("SELECT * FROM portfolio_funds WHERE id = $1", portfolio_fund_id)
+        if not fund_result:
             raise HTTPException(status_code=404, detail=f"Portfolio fund with id {portfolio_fund_id} not found")
+        
+        # Build dynamic UPDATE query
+        set_clauses = []
+        values = []
+        param_counter = 1
+        
+        for key, value in update_data.items():
+            set_clauses.append(f"{key} = ${param_counter}")
+            values.append(value)
+            param_counter += 1
+        
+        # Add portfolio_fund_id as the last parameter
+        values.append(portfolio_fund_id)
+        
+        update_query = f"""
+            UPDATE portfolio_funds 
+            SET {', '.join(set_clauses)} 
+            WHERE id = ${param_counter}
+            RETURNING *
+        """
         
         # Update the portfolio fund
         logger.info(f"Updating portfolio fund {portfolio_fund_id} with data: {update_data}")
-        response = db.table("portfolio_funds").update(update_data).eq("id", portfolio_fund_id).execute()
+        response = await db.fetchrow(update_query, *values)
         
-        if not response.data:
+        if not response:
             raise HTTPException(status_code=404, detail="Portfolio fund not found or no changes applied")
         
         # Invalidate IRR cache for this fund since data has changed
         await _irr_cache.invalidate_portfolio_funds([portfolio_fund_id])
         
         # Convert Decimal objects to float for JSON serialization with comprehensive handling
-        updated_fund = response.data[0]
+        updated_fund = dict(response)
         
         try:
             # Deep conversion of all values to ensure JSON serialization
@@ -739,30 +786,35 @@ async def delete_portfolio_fund(portfolio_fund_id: int, db = Depends(get_db)):
     """
     try:
         # Check if portfolio fund exists
-        check_result = db.table("portfolio_funds").select("id").eq("id", portfolio_fund_id).execute()
-        if not check_result.data or len(check_result.data) == 0:
+        check_result = await db.fetchrow("SELECT id FROM portfolio_funds WHERE id = $1", portfolio_fund_id)
+        if not check_result:
             raise HTTPException(status_code=404, detail=f"Portfolio fund with ID {portfolio_fund_id} not found")
         
         logger.info(f"Deleting portfolio fund with ID: {portfolio_fund_id} and all related data")
         
         # First, delete related IRR values
-        irr_result = db.table("portfolio_fund_irr_values").delete().eq("fund_id", portfolio_fund_id).execute()
-        irr_values_deleted = len(irr_result.data) if irr_result.data else 0
-        logger.info(f"Deleted {irr_values_deleted} IRR values for portfolio fund {portfolio_fund_id}")
+        irr_delete_query = "DELETE FROM portfolio_fund_irr_values WHERE fund_id = $1"
+        irr_values_deleted = await db.execute(irr_delete_query, portfolio_fund_id)
+        logger.info(f"Deleted {irr_values_deleted.split()[-1]} IRR values for portfolio fund {portfolio_fund_id}")
         
         # Second, delete related holding activity logs
-        activity_result = db.table("holding_activity_log").delete().eq("portfolio_fund_id", portfolio_fund_id).execute()
-        activity_logs_deleted = len(activity_result.data) if activity_result.data else 0
-        logger.info(f"Deleted {activity_logs_deleted} activity logs for portfolio fund {portfolio_fund_id}")
+        activity_delete_query = "DELETE FROM holding_activity_log WHERE portfolio_fund_id = $1"
+        activity_logs_deleted = await db.execute(activity_delete_query, portfolio_fund_id)
+        logger.info(f"Deleted {activity_logs_deleted.split()[-1]} activity logs for portfolio fund {portfolio_fund_id}")
         
         # Now it's safe to delete the portfolio fund
-        result = db.table("portfolio_funds").delete().eq("id", portfolio_fund_id).execute()
+        fund_delete_query = "DELETE FROM portfolio_funds WHERE id = $1"
+        await db.execute(fund_delete_query, portfolio_fund_id)
+        
+        # Extract deletion counts from execute results
+        irr_count = int(irr_values_deleted.split()[-1]) if irr_values_deleted.split()[-1].isdigit() else 0
+        activity_count = int(activity_logs_deleted.split()[-1]) if activity_logs_deleted.split()[-1].isdigit() else 0
         
         return {
             "message": f"Portfolio fund with ID {portfolio_fund_id} deleted successfully",
             "details": {
-                "irr_values_deleted": irr_values_deleted,
-                "activity_logs_deleted": activity_logs_deleted
+                "irr_values_deleted": irr_count,
+                "activity_logs_deleted": activity_count
             }
         }
     except Exception as e:
@@ -787,19 +839,21 @@ async def get_latest_fund_irrs(
             return {"fund_irrs": [], "count": 0}
         
         # Query the latest_portfolio_fund_irr_values view for multiple funds
-        result = db.table("latest_portfolio_fund_irr_values") \
-                   .select("fund_id, irr_result, irr_date") \
-                   .in_("fund_id", fund_id_list) \
-                   .execute()
+        result = await db.fetch("""
+            SELECT fund_id, irr_result, date 
+            FROM latest_portfolio_fund_irr_values 
+            WHERE fund_id = ANY($1::int[])
+        """, fund_id_list)
         
         # Transform the data to match expected format
         fund_irrs = []
-        if result.data:
-            for irr_record in result.data:
+        if result:
+            for irr_record in result:
+                irr_dict = dict(irr_record)
                 fund_irrs.append({
-                    "fund_id": irr_record["fund_id"],
-                    "irr_result": irr_record["irr_result"],
-                    "irr_date": irr_record["irr_date"]
+                    "fund_id": irr_dict["fund_id"],
+                    "irr_result": irr_dict["irr_result"],
+                    "irr_date": irr_dict["date"]
                 })
         
         return {
@@ -829,26 +883,27 @@ async def get_latest_irr(portfolio_fund_id: int, db = Depends(get_db)):
         logger.info(f"Fetching latest IRR for portfolio_fund_id: {portfolio_fund_id}")
 
         # Check if portfolio fund exists
-        check_result = db.table("portfolio_funds").select("*").eq("id", portfolio_fund_id).execute()
-        if not check_result.data or len(check_result.data) == 0:
+        check_result = await db.fetchrow("SELECT * FROM portfolio_funds WHERE id = $1", portfolio_fund_id)
+        if not check_result:
             logger.error(f"Portfolio fund not found with ID: {portfolio_fund_id}")
             raise HTTPException(status_code=404, detail=f"Portfolio fund with ID {portfolio_fund_id} not found")
 
-        logger.info(f"Found portfolio fund: {check_result.data[0]}")
+        logger.info(f"Found portfolio fund: {dict(check_result)}")
 
         # Get the latest IRR value for this fund using the optimized index
         logger.info("Querying irr_values table...")
-        query = db.table("portfolio_fund_irr_values")\
-            .select("*")\
-            .eq("fund_id", portfolio_fund_id)\
-            .order("date", desc=True)\
-            .limit(1)
+        irr_query = """
+            SELECT * FROM portfolio_fund_irr_values 
+            WHERE fund_id = $1 
+            ORDER BY date DESC 
+            LIMIT 1
+        """
             
-        logger.info(f"Executing query: {query}")
-        irr_result = query.execute()
-        logger.info(f"Query result: {irr_result.data}")
+        logger.info(f"Executing query with fund_id: {portfolio_fund_id}")
+        irr_result = await db.fetchrow(irr_query, portfolio_fund_id)
+        logger.info(f"Query result: {dict(irr_result) if irr_result else None}")
 
-        if not irr_result.data or len(irr_result.data) == 0:
+        if not irr_result:
             logger.warning(f"No IRR values found for portfolio_fund_id: {portfolio_fund_id}")
             return {
                 "portfolio_fund_id": portfolio_fund_id,
@@ -857,7 +912,7 @@ async def get_latest_irr(portfolio_fund_id: int, db = Depends(get_db)):
                 "fund_valuation_id": None
             }
 
-        latest_irr = irr_result.data[0]
+        latest_irr = dict(irr_result)
         logger.info(f"Found latest IRR value: {latest_irr}")
         
         # Ensure we're handling the IRR as a float
@@ -915,19 +970,19 @@ async def recalculate_all_irr_values(
         logger.info(f"Starting full IRR recalculation for portfolio_fund_id: {portfolio_fund_id}")
         
         # Check if portfolio fund exists
-        check_result = db.table("portfolio_funds").select("*").eq("id", portfolio_fund_id).execute()
-        if not check_result.data or len(check_result.data) == 0:
+        check_result = await db.fetchrow("SELECT * FROM portfolio_funds WHERE id = $1", portfolio_fund_id)
+        if not check_result:
             logger.error(f"Portfolio fund not found with ID: {portfolio_fund_id}")
             raise HTTPException(status_code=404, detail=f"Portfolio fund with ID {portfolio_fund_id} not found")
         
         # Get all existing IRR values for this fund
-        existing_irr_values = db.table("portfolio_fund_irr_values")\
-            .select("*")\
-            .eq("fund_id", portfolio_fund_id)\
-            .order("date")\
-            .execute()
+        existing_irr_values = await db.fetch("""
+            SELECT * FROM portfolio_fund_irr_values 
+            WHERE fund_id = $1 
+            ORDER BY date
+        """, portfolio_fund_id)
             
-        if not existing_irr_values.data:
+        if not existing_irr_values:
             logger.info(f"No existing IRR values found for portfolio_fund_id: {portfolio_fund_id}. Skipping initial IRR creation.")
             return {
                 "portfolio_fund_id": portfolio_fund_id,
@@ -937,8 +992,9 @@ async def recalculate_all_irr_values(
         
         # Recalculate IRR for each existing valuation date
         update_count = 0
-        for irr_value in existing_irr_values.data:
+        for irr_record in existing_irr_values:
             try:
+                irr_value = dict(irr_record)
                 # Parse date and extract month/year
                 valuation_date = datetime.fromisoformat(irr_value["date"])
 
@@ -946,13 +1002,12 @@ async def recalculate_all_irr_values(
                 
                 # Get the valuation amount from portfolio_fund_valuations table
                 if fund_valuation_id:
-                    valuation_result = db.table("portfolio_fund_valuations")\
-                        .select("valuation")\
-                        .eq("id", fund_valuation_id)\
-                        .execute()
+                    valuation_result = await db.fetchrow("""
+                        SELECT valuation FROM portfolio_fund_valuations WHERE id = $1
+                    """, fund_valuation_id)
                         
-                    if valuation_result.data and len(valuation_result.data) > 0:
-                        valuation_amount = float(valuation_result.data[0]["valuation"])
+                    if valuation_result:
+                        valuation_amount = float(dict(valuation_result)["valuation"])
                     else:
                         logger.warning(f"Fund valuation record with ID {fund_valuation_id} not found, skipping IRR recalculation")
                         continue
@@ -965,19 +1020,21 @@ async def recalculate_all_irr_values(
                     else:
                         next_month = month_start.replace(month=month_start.month + 1)
                     
-                    valuation_result = db.table("portfolio_fund_valuations")\
-                        .select("*")\
-                        .eq("portfolio_fund_id", portfolio_fund_id)\
-                        .gte("valuation_date", month_start.isoformat())\
-                        .lt("valuation_date", next_month.isoformat())\
-                        .execute()
+                    valuation_result = await db.fetchrow("""
+                        SELECT * FROM portfolio_fund_valuations 
+                        WHERE portfolio_fund_id = $1 
+                          AND valuation_date >= $2 
+                          AND valuation_date < $3
+                        ORDER BY valuation_date LIMIT 1
+                    """, portfolio_fund_id, month_start.isoformat(), next_month.isoformat())
                         
-                    if not valuation_result.data or len(valuation_result.data) == 0:
+                    if not valuation_result:
                         logger.warning(f"No valuation found for date {valuation_date.isoformat()}, skipping IRR recalculation")
                         continue
                         
-                    valuation_amount = float(valuation_result.data[0]["valuation"])
-                    fund_valuation_id = valuation_result.data[0]["id"]
+                    valuation_dict = dict(valuation_result)
+                    valuation_amount = float(valuation_dict["valuation"])
+                    fund_valuation_id = valuation_dict["id"]
 
                 
                 logger.info(f"Recalculating IRR for date: {valuation_date.isoformat()}, valuation: {valuation_amount}")
@@ -1036,22 +1093,23 @@ async def get_fund_irr_values(portfolio_fund_id: int, db = Depends(get_db)):
         logger.info(f"Fetching IRR values for portfolio_fund_id: {portfolio_fund_id}")
         
         # Check if portfolio fund exists
-        check_result = db.table("portfolio_funds").select("*").eq("id", portfolio_fund_id).execute()
-        if not check_result.data or len(check_result.data) == 0:
+        check_result = await db.fetchrow("SELECT * FROM portfolio_funds WHERE id = $1", portfolio_fund_id)
+        if not check_result:
             logger.error(f"Portfolio fund not found with ID: {portfolio_fund_id}")
             raise HTTPException(status_code=404, detail=f"Portfolio fund with ID {portfolio_fund_id} not found")
             
         # Get all IRR values
-        irr_values = db.table("portfolio_fund_irr_values")\
-            .select("*")\
-            .eq("fund_id", portfolio_fund_id)\
-            .order("date")\
-            .execute()
+        irr_values = await db.fetch("""
+            SELECT * FROM portfolio_fund_irr_values 
+            WHERE fund_id = $1 
+            ORDER BY date
+        """, portfolio_fund_id)
             
         result = []
         
-        if irr_values.data:
-            for irr in irr_values.data:
+        if irr_values:
+            for irr_record in irr_values:
+                irr = dict(irr_record)
                 # Format as needed for frontend
                 formatted_irr = {
                     "id": irr["id"],
@@ -1091,29 +1149,29 @@ async def get_batch_irr_values(
             return {"data": {}}
             
         # Check that all funds exist
-        funds_check = db.table("portfolio_funds")\
-            .select("id")\
-            .in_("id", fund_ids)\
-            .execute()
+        funds_check = await db.fetch("""
+            SELECT id FROM portfolio_funds WHERE id = ANY($1::int[])
+        """, fund_ids)
             
-        found_fund_ids = [fund["id"] for fund in funds_check.data] if funds_check.data else []
+        found_fund_ids = [dict(fund)["id"] for fund in funds_check] if funds_check else []
         missing_fund_ids = [fund_id for fund_id in fund_ids if fund_id not in found_fund_ids]
         
         if missing_fund_ids:
             logger.warning(f"Some portfolio funds not found: {missing_fund_ids}")
             
         # Get all IRR values for the valid funds in a single query
-        irr_values = db.table("portfolio_fund_irr_values")\
-            .select("*")\
-            .in_("fund_id", found_fund_ids)\
-            .order("date")\
-            .execute()
+        irr_values = await db.fetch("""
+            SELECT * FROM portfolio_fund_irr_values 
+            WHERE fund_id = ANY($1::int[]) 
+            ORDER BY date
+        """, found_fund_ids)
             
         # Group by fund_id
         result = {}
         
-        if irr_values.data:
-            for irr in irr_values.data:
+        if irr_values:
+            for irr_record in irr_values:
+                irr = dict(irr_record)
                 fund_id = irr["fund_id"]
                 
                 # Format as needed for frontend
@@ -1175,15 +1233,16 @@ async def get_batch_irr_values_by_date(
         
         # Query IRR values with date filtering using PostgreSQL date functions
         # Extract year and month from the date column and match target_year and target_month
-        irr_values = db.table("portfolio_fund_irr_values")\
-            .select("*")\
-            .in_("fund_id", found_fund_ids)\
-            .execute()
+        irr_values = await db.fetch("""
+            SELECT * FROM portfolio_fund_irr_values 
+            WHERE fund_id = ANY($1::int[])
+        """, found_fund_ids)
         
         # Filter results in Python to match the target month/year
         filtered_irr_values = []
-        if irr_values.data:
-            for irr in irr_values.data:
+        if irr_values:
+            for irr_record in irr_values:
+                irr = dict(irr_record)
                 try:
                     # Parse the date string to extract month and year
                     date_str = irr["date"]
@@ -1259,13 +1318,12 @@ async def get_aggregated_irr_history(
         
         # If portfolio_id is provided, get all funds in that portfolio
         if portfolio_id and not fund_ids:
-            portfolio_funds = db.table("portfolio_funds")\
-                .select("*")\
-                .eq("portfolio_id", portfolio_id)\
-                .execute()
+            portfolio_funds = await db.fetch("""
+                SELECT * FROM portfolio_funds WHERE portfolio_id = $1
+            """, portfolio_id)
             
-            if portfolio_funds.data:
-                fund_ids = [fund["id"] for fund in portfolio_funds.data]
+            if portfolio_funds:
+                fund_ids = [dict(fund)["id"] for fund in portfolio_funds]
                 logger.info(f"Found {len(fund_ids)} funds in portfolio {portfolio_id}")
             else:
                 logger.warning(f"No funds found in portfolio {portfolio_id}")
@@ -1279,13 +1337,12 @@ async def get_aggregated_irr_history(
             # Get the portfolio name for context
             portfolio_info = None
             try:
-                portfolio_result = db.table("portfolios")\
-                    .select("id, portfolio_name, target_risk_level")\
-                    .eq("id", portfolio_id)\
-                    .execute()
+                portfolio_result = await db.fetchrow("""
+                    SELECT id, portfolio_name, target_risk_level FROM portfolios WHERE id = $1
+                """, portfolio_id)
                 
-                if portfolio_result.data:
-                    portfolio_info = portfolio_result.data[0]
+                if portfolio_result:
+                    portfolio_info = dict(portfolio_result)
             except Exception as e:
                 logger.warning(f"Error fetching portfolio info: {str(e)}")
         
@@ -1300,16 +1357,16 @@ async def get_aggregated_irr_history(
         
         # Get fund details including names
         fund_details = {}
-        funds_data = db.table("portfolio_funds")\
-            .select("*")\
-            .in_("id", fund_ids)\
-            .execute()
+        funds_data = await db.fetch("""
+            SELECT * FROM portfolio_funds WHERE id = ANY($1::int[])
+        """, fund_ids)
         
         # Collect available_funds_ids
         available_fund_ids = []
         portfolio_fund_map = {}
         
-        for fund in funds_data.data if funds_data.data else []:
+        for fund_record in funds_data if funds_data else []:
+            fund = dict(fund_record)
             fund_id = fund["id"]
             available_fund_id = fund["available_funds_id"]
             available_fund_ids.append(available_fund_id)
@@ -1318,14 +1375,13 @@ async def get_aggregated_irr_history(
         # Get available fund details in a single query
         available_funds_map = {}
         if available_fund_ids:
-            available_funds = db.table("available_funds")\
-                .select("*")\
-                .in_("id", available_fund_ids)\
-                .execute()
+            available_funds = await db.fetch("""
+                SELECT * FROM available_funds WHERE id = ANY($1::int[])
+            """, available_fund_ids)
             
-            if available_funds.data:
+            if available_funds:
                 available_funds_map = {
-                    fund["id"]: fund for fund in available_funds.data
+                    dict(fund)["id"]: dict(fund) for fund in available_funds
                 }
         
         # Merge portfolio_funds with available_funds data
@@ -1351,13 +1407,13 @@ async def get_aggregated_irr_history(
             }
         
         # Get all IRR values for the specified funds
-        irr_values = db.table("portfolio_fund_irr_values")\
-            .select("*")\
-            .in_("fund_id", fund_ids)\
-            .order("date")\
-            .execute()
+        irr_values = await db.fetch("""
+            SELECT * FROM portfolio_fund_irr_values 
+            WHERE fund_id = ANY($1::int[]) 
+            ORDER BY date
+        """, fund_ids)
         
-        if not irr_values.data:
+        if not irr_values:
             logger.info("No IRR values found for the specified funds")
             return {
                 "columns": [],
@@ -1381,7 +1437,8 @@ async def get_aggregated_irr_history(
         funds_data = {}
         
         # Process all IRR values
-        for irr in irr_values.data:
+        for irr_record in irr_values:
+            irr = dict(irr_record)
             fund_id = irr["fund_id"]
             date_str = irr["date"]
             
@@ -1413,15 +1470,16 @@ async def get_aggregated_irr_history(
             logger.info(f"Fetching stored portfolio IRR values for {len(months_list)} months")
             
             # Get all stored portfolio IRR values for this portfolio
-            portfolio_irr_result = db.table("portfolio_irr_values")\
-                .select("irr_result, date")\
-                .eq("portfolio_id", portfolio_id)\
-                .order("date", desc=True)\
-                    .execute()
+            portfolio_irr_result = await db.fetch("""
+                SELECT irr_result, date FROM portfolio_irr_values 
+                WHERE portfolio_id = $1 
+                ORDER BY date DESC
+            """, portfolio_id)
                 
-            if portfolio_irr_result.data:
+            if portfolio_irr_result:
                 # Convert stored IRR values to month/year format and match with months_list
-                for irr_record in portfolio_irr_result.data:
+                for irr_record_row in portfolio_irr_result:
+                    irr_record = dict(irr_record_row)
                     try:
                         # Parse the IRR date
                         irr_date = datetime.fromisoformat(irr_record["date"].replace("Z", "+00:00"))
@@ -1495,12 +1553,12 @@ async def update_irr_value(
         logger.info(f"Updating IRR value with ID: {irr_value_id}, data: {data}")
         
         # Validate the IRR value exists
-        irr_check = db.table("portfolio_fund_irr_values").select("*").eq("id", irr_value_id).execute()
-        if not irr_check.data or len(irr_check.data) == 0:
+        irr_check = await db.fetchrow("SELECT * FROM portfolio_fund_irr_values WHERE id = $1", irr_value_id)
+        if not irr_check:
             logger.error(f"IRR value not found with ID: {irr_value_id}")
             raise HTTPException(status_code=404, detail=f"IRR value with ID {irr_value_id} not found")
             
-        irr_record = irr_check.data[0]
+        irr_record = dict(irr_check)
         logger.info(f"Found IRR record: {irr_record}")
         
         # Get fund_id for possible recalculation
@@ -1528,20 +1586,21 @@ async def update_irr_value(
             
             try:
                 # Get all activity logs for this portfolio fund
-                activity_logs = db.table("holding_activity_log")\
-                    .select("*")\
-                    .eq("portfolio_fund_id", fund_id)\
-                    .order("activity_timestamp")\
-                    .execute()
+                activity_logs = await db.fetch("""
+                    SELECT * FROM holding_activity_log 
+                    WHERE portfolio_fund_id = $1 
+                    ORDER BY activity_timestamp
+                """, fund_id)
                 
-                if activity_logs.data:
-                    logger.info(f"Found {len(activity_logs.data)} activity logs for recalculation")
+                if activity_logs:
+                    logger.info(f"Found {len(activity_logs)} activity logs for recalculation")
                     
                     # Prepare cash flows and dates
                     dates = []
                     amounts = []
                     
-                    for log in activity_logs.data:
+                    for log_record in activity_logs:
+                        log = dict(log_record)
                         amount = float(log["amount"])
                         # Apply sign convention - TaxUplift separated from investments
                         if log["activity_type"] in ["Investment", "RegularInvestment"]:
@@ -1567,24 +1626,22 @@ async def update_irr_value(
                 
                 if "fund_valuation_id" in data:
                     # Get the valuation amount from the fund_valuation record
-                    valuation_record = db.table("portfolio_fund_valuations")\
-                        .select("value")\
-                        .eq("id", data["fund_valuation_id"])\
-                        .execute()
-                    if valuation_record.data and len(valuation_record.data) > 0:
-                        valuation_amount = valuation_record.data[0]["valuation"]
+                    valuation_record = await db.fetchrow("""
+                        SELECT valuation FROM portfolio_fund_valuations WHERE id = $1
+                    """, data["fund_valuation_id"])
+                    if valuation_record:
+                        valuation_amount = dict(valuation_record)["valuation"]
                     else:
                         raise HTTPException(status_code=404, detail=f"Fund valuation with ID {data['fund_valuation_id']} not found")
                 else:
                     # Get the valuation amount from the existing fund_valuation record
                     existing_fund_valuation_id = irr_record["fund_valuation_id"]
                     if existing_fund_valuation_id:
-                        valuation_record = db.table("portfolio_fund_valuations")\
-                            .select("value")\
-                            .eq("id", existing_fund_valuation_id)\
-                            .execute()
-                        if valuation_record.data and len(valuation_record.data) > 0:
-                            valuation_amount = valuation_record.data[0]["valuation"]
+                        valuation_record = await db.fetchrow("""
+                            SELECT valuation FROM portfolio_fund_valuations WHERE id = $1
+                        """, existing_fund_valuation_id)
+                        if valuation_record:
+                            valuation_amount = dict(valuation_record)["valuation"]
                         else:
                             raise HTTPException(status_code=404, detail=f"Fund valuation with ID {existing_fund_valuation_id} not found")
                     else:
@@ -1617,11 +1674,33 @@ async def update_irr_value(
         # If we have updates to make
         if update_data:
             logger.info(f"Applying updates to IRR value: {update_data}")
-            result = db.table("portfolio_fund_irr_values").update(update_data).eq("id", irr_value_id).execute()
             
-            if result.data and len(result.data) > 0:
-                logger.info(f"Successfully updated IRR value: {result.data[0]}")
-                return result.data[0]
+            # Build dynamic UPDATE query
+            set_clauses = []
+            values = []
+            param_counter = 1
+            
+            for key, value in update_data.items():
+                set_clauses.append(f"{key} = ${param_counter}")
+                values.append(value)
+                param_counter += 1
+            
+            # Add irr_value_id as the last parameter
+            values.append(irr_value_id)
+            
+            update_query = f"""
+                UPDATE portfolio_fund_irr_values 
+                SET {', '.join(set_clauses)} 
+                WHERE id = ${param_counter}
+                RETURNING *
+            """
+            
+            result = await db.fetchrow(update_query, *values)
+            
+            if result:
+                updated_record = dict(result)
+                logger.info(f"Successfully updated IRR value: {updated_record}")
+                return updated_record
             else:
                 logger.error("Failed to update IRR value")
                 raise HTTPException(status_code=500, detail="Failed to update IRR value")
@@ -1648,13 +1727,13 @@ async def delete_irr_value(irr_value_id: int, db = Depends(get_db)):
         logger.info(f"Deleting IRR value with ID: {irr_value_id}")
         
         # Check if IRR value exists
-        check_result = db.table("portfolio_fund_irr_values").select("*").eq("id", irr_value_id).execute()
-        if not check_result.data or len(check_result.data) == 0:
+        check_result = await db.fetchrow("SELECT * FROM portfolio_fund_irr_values WHERE id = $1", irr_value_id)
+        if not check_result:
             logger.error(f"IRR value not found with ID: {irr_value_id}")
             raise HTTPException(status_code=404, detail=f"IRR value with ID {irr_value_id} not found")
             
         # Delete the record
-        db.table("portfolio_fund_irr_values").delete().eq("id", irr_value_id).execute()
+        await db.execute("DELETE FROM portfolio_fund_irr_values WHERE id = $1", irr_value_id)
         logger.info(f"Successfully deleted IRR value with ID: {irr_value_id}")
         
         return None
@@ -1685,8 +1764,8 @@ async def create_irr_value(
         logger.info(f"Creating IRR value for fund {fund_id}, date {date}, IRR {irr_result}%")
         
         # Validate portfolio fund exists
-        fund_check = db.table("portfolio_funds").select("id").eq("id", fund_id).execute()
-        if not fund_check.data or len(fund_check.data) == 0:
+        fund_check = await db.fetchrow("SELECT id FROM portfolio_funds WHERE id = $1", fund_id)
+        if not fund_check:
             raise HTTPException(status_code=404, detail=f"Portfolio fund with ID {fund_id} not found")
         
         # Validate date format
@@ -1701,11 +1780,10 @@ async def create_irr_value(
             irr_result = 99999.99 if irr_result > 0 else -99999.99
         
         # Check if IRR value already exists for this fund and date
-        existing_irr = db.table("portfolio_fund_irr_values")\
-            .select("*")\
-            .eq("fund_id", fund_id)\
-            .eq("date", date)\
-            .execute()
+        existing_irr = await db.fetchrow("""
+            SELECT * FROM portfolio_fund_irr_values 
+            WHERE fund_id = $1 AND date = $2
+        """, fund_id, date)
         
         irr_value_data = {
             "fund_id": fund_id,
@@ -1714,18 +1792,20 @@ async def create_irr_value(
             "fund_valuation_id": fund_valuation_id
         }
         
-        if existing_irr.data and len(existing_irr.data) > 0:
+        if existing_irr:
             # Update existing record
-            irr_id = existing_irr.data[0]["id"]
+            irr_id = existing_irr["id"]
             logger.info(f"Updating existing IRR record {irr_id}")
             
-            result = db.table("portfolio_fund_irr_values")\
-                .update({"irr_result": float(round(irr_result, 2)), "fund_valuation_id": fund_valuation_id})\
-                .eq("id", irr_id)\
-                .execute()
+            result = await db.fetchrow("""
+                UPDATE portfolio_fund_irr_values 
+                SET irr_result = $1, fund_valuation_id = $2 
+                WHERE id = $3 
+                RETURNING *
+            """, float(round(irr_result, 2)), fund_valuation_id, irr_id)
             
-            if result.data and len(result.data) > 0:
-                updated_record = result.data[0]
+            if result:
+                updated_record = dict(result)
                 logger.info(f"Successfully updated IRR record: {updated_record}")
                 return {
                     "action": "updated",
@@ -1737,10 +1817,14 @@ async def create_irr_value(
             # Create new record
             logger.info(f"Creating new IRR record: {irr_value_data}")
             
-            result = db.table("portfolio_fund_irr_values").insert(irr_value_data).execute()
+            result = await db.fetchrow("""
+                INSERT INTO portfolio_fund_irr_values (fund_id, irr_result, date, fund_valuation_id) 
+                VALUES ($1, $2, $3, $4) 
+                RETURNING *
+            """, fund_id, float(round(irr_result, 2)), date, fund_valuation_id)
             
-            if result.data and len(result.data) > 0:
-                created_record = result.data[0]
+            if result:
+                created_record = dict(result)
                 logger.info(f"Successfully created IRR record: {created_record}")
                 return {
                     "action": "created",
@@ -1797,55 +1881,67 @@ async def calculate_portfolio_fund_irr(
         
         # If we need to get a valuation for this date
         if valuation is None:
-            valuation_result = db.table("portfolio_fund_valuations") \
-                .select("*") \
-                .eq("portfolio_fund_id", portfolio_fund_id) \
-                .gte("valuation_date", calculation_date.isoformat()) \
-                .lt("valuation_date", (calculation_date.replace(month=month+1) if month < 12 else calculation_date.replace(year=year+1, month=1)).isoformat()) \
-                .execute()
+            next_month = calculation_date.replace(month=month+1) if month < 12 else calculation_date.replace(year=year+1, month=1)
+            valuation_result = await db.fetchrow("""
+                SELECT * FROM portfolio_fund_valuations 
+                WHERE portfolio_fund_id = $1 
+                  AND valuation_date >= $2 
+                  AND valuation_date < $3
+                ORDER BY valuation_date LIMIT 1
+            """, portfolio_fund_id, calculation_date, next_month)
                 
-            if not valuation_result.data:
+            if not valuation_result:
                 logger.warning(f"No valuation found for portfolio_fund_id {portfolio_fund_id} in {year}-{month:02d}")
                 return None
                 
             # Get valuation
-            valuation = float(valuation_result.data[0]["valuation"])
-            fund_valuation_id = valuation_result.data[0]["id"]
+            valuation_dict = dict(valuation_result)
+            valuation = float(valuation_dict["valuation"])
+            fund_valuation_id = valuation_dict["id"]
         else:
             # Try to find existing valuation record for this month
-            valuation_result = db.table("portfolio_fund_valuations") \
-                .select("id") \
-                .eq("portfolio_fund_id", portfolio_fund_id) \
-                .gte("valuation_date", calculation_date.isoformat()) \
-                .lt("valuation_date", (calculation_date.replace(month=month+1) if month < 12 else calculation_date.replace(year=year+1, month=1)).isoformat()) \
-                .execute()
+            next_month = calculation_date.replace(month=month+1) if month < 12 else calculation_date.replace(year=year+1, month=1)
+            valuation_result = await db.fetchrow("""
+                SELECT id FROM portfolio_fund_valuations 
+                WHERE portfolio_fund_id = $1 
+                  AND valuation_date >= $2 
+                  AND valuation_date < $3
+                ORDER BY valuation_date LIMIT 1
+            """, portfolio_fund_id, calculation_date, next_month)
                 
-            if valuation_result.data:
-                fund_valuation_id = valuation_result.data[0]["id"]
+            if valuation_result:
+                fund_valuation_id = dict(valuation_result)["id"]
             else:
                 fund_valuation_id = None
                 
         # Get all activity logs for this portfolio fund up to the calculation date
-        activity_logs = db.table("holding_activity_log")\
-            .select("*")\
-            .eq("portfolio_fund_id", portfolio_fund_id)\
-            .lte("activity_timestamp", calculation_date.isoformat())\
-            .order("activity_timestamp")\
-            .execute()
+        activity_logs = await db.fetch("""
+            SELECT * FROM holding_activity_log 
+            WHERE portfolio_fund_id = $1 
+              AND activity_timestamp <= $2 
+            ORDER BY activity_timestamp
+        """, portfolio_fund_id, calculation_date)
             
-        if not activity_logs.data or len(activity_logs.data) == 0:
+        if not activity_logs:
             logger.warning(f"No activity logs found for portfolio_fund_id {portfolio_fund_id}")
             return None
             
-        logger.info(f"Found {len(activity_logs.data)} activity logs")
+        logger.info(f"Found {len(activity_logs)} activity logs")
         
         # Prepare cash flows for IRR calculation
         dates = []
         amounts = []
         
         # Process activity logs
-        for log in activity_logs.data:
-            activity_date = datetime.fromisoformat(log["activity_timestamp"]).date()
+        for log_record in activity_logs:
+            log = dict(log_record)
+            # Handle both string and datetime object types for activity_timestamp
+            activity_timestamp = log["activity_timestamp"]
+            if isinstance(activity_timestamp, str):
+                activity_date = datetime.fromisoformat(activity_timestamp).date()
+            else:
+                # activity_timestamp is already a datetime object
+                activity_date = activity_timestamp.date() if hasattr(activity_timestamp, 'date') else activity_timestamp
             activity_type = log["activity_type"]
             amount = float(log["amount"])
             
@@ -1949,13 +2045,12 @@ async def calculate_portfolio_fund_irr(
             
             # If update_only is True, check if an IRR record exists for this fund/date
             if update_only:
-                existing_irr = db.table("portfolio_fund_irr_values")\
-                    .select("id")\
-                    .eq("fund_id", portfolio_fund_id)\
-                    .eq("date", calculation_date.isoformat())\
-                    .execute()
+                existing_irr = await db.fetchrow("""
+                    SELECT id FROM portfolio_fund_irr_values 
+                    WHERE fund_id = $1 AND date = $2
+                """, portfolio_fund_id, calculation_date)
                     
-                if not existing_irr.data or len(existing_irr.data) == 0:
+                if not existing_irr:
                     # Skip creating a new record in update_only mode
                     logger.info(f"No existing IRR record for {calculation_date.isoformat()}, skipping in update_only mode")
                     return {
@@ -1968,31 +2063,35 @@ async def calculate_portfolio_fund_irr(
                     }
                 else:
                     # Update existing record
-                    irr_id = existing_irr.data[0]["id"]
-                    db.table("portfolio_fund_irr_values")\
-                        .update({"irr_result": float(round(annual_irr_percent, 2))})\
-                        .eq("id", irr_id)\
-                        .execute()
+                    irr_id = dict(existing_irr)["id"]
+                    await db.execute("""
+                        UPDATE portfolio_fund_irr_values 
+                        SET irr_result = $1 
+                        WHERE id = $2
+                    """, float(round(annual_irr_percent, 2)), irr_id)
                     logger.info(f"Updated existing IRR record {irr_id} with value {annual_irr_percent:.4f}%")
             else:
                 # Check if IRR already exists for this date
-                existing_irr = db.table("portfolio_fund_irr_values")\
-                    .select("id")\
-                    .eq("fund_id", portfolio_fund_id)\
-                    .eq("date", calculation_date.isoformat())\
-                    .execute()
+                existing_irr = await db.fetchrow("""
+                    SELECT id FROM portfolio_fund_irr_values 
+                    WHERE fund_id = $1 AND date = $2
+                """, portfolio_fund_id, calculation_date)
                 
-                if existing_irr.data and len(existing_irr.data) > 0:
+                if existing_irr:
                     # Update existing
-                    irr_id = existing_irr.data[0]["id"]
-                    db.table("portfolio_fund_irr_values")\
-                        .update({"irr_result": float(round(annual_irr_percent, 2))})\
-                        .eq("id", irr_id)\
-                        .execute()
+                    irr_id = dict(existing_irr)["id"]
+                    await db.execute("""
+                        UPDATE portfolio_fund_irr_values 
+                        SET irr_result = $1 
+                        WHERE id = $2
+                    """, float(round(annual_irr_percent, 2)), irr_id)
                     logger.info(f"Updated existing IRR record {irr_id} with value {annual_irr_percent:.4f}%")
                 else:
                     # Insert new
-                    db.table("portfolio_fund_irr_values").insert(irr_value_data).execute()
+                    await db.execute("""
+                        INSERT INTO portfolio_fund_irr_values (fund_id, irr_result, date, fund_valuation_id) 
+                        VALUES ($1, $2, $3, $4)
+                    """, irr_value_data["fund_id"], irr_value_data["irr_result"], irr_value_data["date"], irr_value_data["fund_valuation_id"])
                     logger.info(f"Created new IRR record with value {annual_irr_percent:.4f}%")
             
             # Convert IRR to float for JSON serialization
@@ -2068,10 +2167,16 @@ async def calculate_multiple_portfolio_funds_irr(
         # If no IRR date provided, find the latest valuation date across all funds
         if irr_date_obj is None:
             logger.info("No IRR date provided, finding latest valuation date")
-            latest_valuations_response = db.table("portfolio_fund_valuations").select("valuation_date").in_("portfolio_fund_id", portfolio_fund_ids).order("valuation_date", desc=True).limit(1).execute()
+            latest_valuations_response = await db.fetchrow("""
+                SELECT valuation_date 
+                FROM portfolio_fund_valuations 
+                WHERE portfolio_fund_id = ANY($1::int[]) 
+                ORDER BY valuation_date DESC 
+                LIMIT 1
+            """, portfolio_fund_ids)
             
-            if latest_valuations_response.data:
-                valuation_date_str = latest_valuations_response.data[0]["valuation_date"]
+            if latest_valuations_response:
+                valuation_date_str = latest_valuations_response["valuation_date"]
                 # Handle both date-only and datetime formats from the database
                 if 'T' in valuation_date_str:
                     # Full datetime string - parse and extract date
@@ -2091,17 +2196,19 @@ async def calculate_multiple_portfolio_funds_irr(
         logger.info(f"🚀 Batch fetching valuations for {len(portfolio_fund_ids)} funds (eliminates {len(portfolio_fund_ids)} individual requests)")
         
         # Single batch query instead of individual requests per fund
-        batch_valuation_response = db.table("portfolio_fund_valuations") \
-                                     .select("portfolio_fund_id, valuation, valuation_date") \
-                                     .in_("portfolio_fund_id", portfolio_fund_ids) \
-                                     .lte("valuation_date", irr_date_obj.isoformat()) \
-                                     .order("portfolio_fund_id, valuation_date", desc=True) \
-                                     .execute()
+        batch_valuation_response = await db.fetch("""
+            SELECT portfolio_fund_id, valuation, valuation_date 
+            FROM portfolio_fund_valuations 
+            WHERE portfolio_fund_id = ANY($1::int[]) 
+              AND valuation_date <= $2 
+            ORDER BY portfolio_fund_id, valuation_date DESC
+        """, portfolio_fund_ids, irr_date_obj)
         
         # Process batch results to get latest valuation per fund
         seen_funds = set()
-        if batch_valuation_response.data:
-            for valuation_record in batch_valuation_response.data:
+        if batch_valuation_response:
+            for valuation_record_row in batch_valuation_response:
+                valuation_record = dict(valuation_record_row)
                 fund_id = valuation_record["portfolio_fund_id"]
                 
                 # Since we ordered by fund_id, valuation_date DESC, first occurrence is latest
@@ -2118,17 +2225,22 @@ async def calculate_multiple_portfolio_funds_irr(
         logger.info(f"✅ Batch valuation optimization complete - Fund valuations: {fund_valuations}")
         
         # Verify all portfolio funds exist
-        funds_response = db.table("portfolio_funds").select("id").in_("id", portfolio_fund_ids).execute()
-        found_fund_ids = [fund["id"] for fund in funds_response.data]
+        funds_response = await db.fetch("SELECT id FROM portfolio_funds WHERE id = ANY($1::int[])", portfolio_fund_ids)
+        found_fund_ids = [fund["id"] for fund in funds_response]
         
         if len(found_fund_ids) != len(portfolio_fund_ids):
             missing_ids = set(portfolio_fund_ids) - set(found_fund_ids)
             raise HTTPException(status_code=404, detail=f"Portfolio funds not found: {missing_ids}")
         
         # Fetch all activity logs for these funds up to the IRR date
-        activities_response = db.table("holding_activity_log").select("*").in_("portfolio_fund_id", portfolio_fund_ids).lte("activity_timestamp", irr_date_obj.isoformat()).order("activity_timestamp").execute()
+        activities_response = await db.fetch("""
+            SELECT * FROM holding_activity_log 
+            WHERE portfolio_fund_id = ANY($1::int[]) 
+            AND activity_timestamp <= $2 
+            ORDER BY activity_timestamp
+        """, portfolio_fund_ids, irr_date_obj)
         
-        activities = activities_response.data
+        activities = [dict(record) for record in activities_response]
         
         # 📊 PERFORMANCE: Reduced logging - detailed debugging disabled for production speed
         logger.info(f"📊 Processing {len(activities)} activities across {len(portfolio_fund_ids)} funds")
@@ -2158,7 +2270,13 @@ async def calculate_multiple_portfolio_funds_irr(
         
         # Process activities - these happen at the START of the month (day 1)
         for activity in activities:
-            activity_date = datetime.fromisoformat(activity["activity_timestamp"].replace('Z', '+00:00')).date()
+            # Handle both string and datetime object types for activity_timestamp
+            activity_timestamp = activity["activity_timestamp"]
+            if isinstance(activity_timestamp, str):
+                activity_date = datetime.fromisoformat(activity_timestamp.replace('Z', '+00:00')).date()
+            else:
+                # activity_timestamp is already a datetime object
+                activity_date = activity_timestamp.date() if hasattr(activity_timestamp, 'date') else activity_timestamp
             # Activities happen at START of month
             activity_start_key = activity_date.replace(day=1)
             
@@ -2355,27 +2473,26 @@ async def calculate_single_portfolio_fund_irr(
         # Calculate IRR for portfolio fund
         
         # DEBUG: Get fund details to identify which fund this is
-        fund_details = db.table("portfolio_funds")\
-            .select("portfolio_id, available_funds_id")\
-            .eq("id", portfolio_fund_id)\
-            .execute()
+        fund_details = await db.fetchrow("""
+            SELECT portfolio_id, available_funds_id FROM portfolio_funds WHERE id = $1
+        """, portfolio_fund_id)
         
-        if fund_details.data:
-            available_funds_id = fund_details.data[0]["available_funds_id"]
-            fund_name_result = db.table("available_funds")\
-                .select("fund_name, isin_number")\
-                .eq("id", available_funds_id)\
-                .execute()
+        if fund_details:
+            available_funds_id = dict(fund_details)["available_funds_id"]
+            fund_name_result = await db.fetchrow("""
+                SELECT fund_name, isin_number FROM available_funds WHERE id = $1
+            """, available_funds_id)
             
-            if fund_name_result.data:
-                fund_name = fund_name_result.data[0]["fund_name"]
-                isin = fund_name_result.data[0]["isin_number"]
+            if fund_name_result:
+                fund_name_dict = dict(fund_name_result)
+                fund_name = fund_name_dict["fund_name"]
+                isin = fund_name_dict["isin_number"]
             else:
                 pass  # Fund name not found
         
         # Verify portfolio fund exists
-        fund_response = db.table("portfolio_funds").select("id").eq("id", portfolio_fund_id).execute()
-        if not fund_response.data:
+        fund_response = await db.fetchrow("SELECT id FROM portfolio_funds WHERE id = $1", portfolio_fund_id)
+        if not fund_response:
             logger.error(f"💰 DEBUG: ❌ Portfolio fund {portfolio_fund_id} not found")
             raise HTTPException(status_code=404, detail=f"Portfolio fund {portfolio_fund_id} not found")
         
@@ -2391,10 +2508,16 @@ async def calculate_single_portfolio_fund_irr(
         
         # If no IRR date provided, find the latest valuation date for this fund
         if irr_date_obj is None:
-            latest_valuation_response = db.table("portfolio_fund_valuations").select("valuation_date").eq("portfolio_fund_id", portfolio_fund_id).order("valuation_date", desc=True).limit(1).execute()
+            latest_valuation_response = await db.fetchrow("""
+                SELECT valuation_date 
+                FROM portfolio_fund_valuations 
+                WHERE portfolio_fund_id = $1 
+                ORDER BY valuation_date DESC 
+                LIMIT 1
+            """, portfolio_fund_id)
             
-            if latest_valuation_response.data:
-                valuation_date_str = latest_valuation_response.data[0]["valuation_date"]
+            if latest_valuation_response:
+                valuation_date_str = latest_valuation_response["valuation_date"]
                 # Handle both date-only and datetime formats from the database
                 if 'T' in valuation_date_str:
                     # Full datetime string - parse and extract date
@@ -2410,29 +2533,47 @@ async def calculate_single_portfolio_fund_irr(
         logger.info(f"💰 DEBUG: IRR calculation date: {irr_date_obj}")
         
         # Fetch valuation for the fund as of the IRR date
-        valuation_response = db.table("portfolio_fund_valuations").select("valuation").eq("portfolio_fund_id", portfolio_fund_id).lte("valuation_date", irr_date_obj.isoformat()).order("valuation_date", desc=True).limit(1).execute()
+        valuation_response = await db.fetchrow("""
+            SELECT valuation 
+            FROM portfolio_fund_valuations 
+            WHERE portfolio_fund_id = $1 
+            AND valuation_date <= $2 
+            ORDER BY valuation_date DESC 
+            LIMIT 1
+        """, portfolio_fund_id, irr_date_obj)
         
-        if not valuation_response.data:
+        if not valuation_response:
             logger.error(f"💰 DEBUG: ❌ No valuation found for portfolio fund {portfolio_fund_id} as of {irr_date_obj}")
             raise HTTPException(status_code=404, detail=f"No valuation found for portfolio fund {portfolio_fund_id} as of {irr_date_obj}")
         
-        valuation_amount = float(valuation_response.data[0]["valuation"])
+        valuation_amount = float(valuation_response["valuation"])
         logger.info(f"💰 DEBUG: Fund valuation: £{valuation_amount}")
         
         if valuation_amount == 0:
             logger.warning(f"💰 DEBUG: ⚠️  ZERO VALUATION DETECTED! Fund {portfolio_fund_id} has £0 valuation")
         
         # Fetch all activity logs for this fund up to the IRR date
-        activities_response = db.table("holding_activity_log").select("*").eq("portfolio_fund_id", portfolio_fund_id).lte("activity_timestamp", irr_date_obj.isoformat()).order("activity_timestamp").execute()
+        activities_response = await db.fetch("""
+            SELECT * FROM holding_activity_log 
+            WHERE portfolio_fund_id = $1 
+            AND activity_timestamp <= $2 
+            ORDER BY activity_timestamp
+        """, portfolio_fund_id, irr_date_obj)
         
-        activities = activities_response.data
+        activities = [dict(record) for record in activities_response]
         logger.info(f"💰 DEBUG: Found {len(activities)} activities for fund {portfolio_fund_id} up to {irr_date_obj}")
         
         # Aggregate cash flows by month
         cash_flows = {}
         
         for activity in activities:
-            activity_date = datetime.fromisoformat(activity["activity_timestamp"].replace('Z', '+00:00')).date()
+            # Handle both string and datetime object types for activity_timestamp
+            activity_timestamp = activity["activity_timestamp"]
+            if isinstance(activity_timestamp, str):
+                activity_date = datetime.fromisoformat(activity_timestamp.replace('Z', '+00:00')).date()
+            else:
+                # activity_timestamp is already a datetime object
+                activity_date = activity_timestamp.date() if hasattr(activity_timestamp, 'date') else activity_timestamp
             month_key = activity_date.replace(day=1)
             
             if month_key not in cash_flows:
@@ -2525,17 +2666,16 @@ async def calculate_single_portfolio_fund_irr(
             irr_date_iso = irr_date_obj.isoformat()
             
             # Check if IRR already exists for this fund and date
-            existing_irr_response = db.table("portfolio_fund_irr_values")\
-                .select("id")\
-                .eq("fund_id", portfolio_fund_id)\
-                .eq("date", irr_date_iso)\
-                .execute()
+            existing_irr_response = await db.fetch("""
+                SELECT id FROM portfolio_fund_irr_values 
+                WHERE fund_id = $1 AND date = $2
+            """, portfolio_fund_id, irr_date_iso)
             
             # Delete existing IRR values if any (to replace them)
-            if existing_irr_response.data:
-                for irr_record in existing_irr_response.data:
-                    db.table("portfolio_fund_irr_values").delete().eq("id", irr_record["id"]).execute()
-                logger.info(f"💰 DEBUG: Deleted {len(existing_irr_response.data)} existing IRR value(s) for zero valuation fund {portfolio_fund_id} on {irr_date_iso}")
+            if existing_irr_response:
+                for irr_record in existing_irr_response:
+                    await db.execute("DELETE FROM portfolio_fund_irr_values WHERE id = $1", irr_record["id"])
+                logger.info(f"💰 DEBUG: Deleted {len(existing_irr_response)} existing IRR value(s) for zero valuation fund {portfolio_fund_id} on {irr_date_iso}")
             
             # Insert the new 0% IRR value for zero valuation fund
             # REMOVED: Database insertion - this function should only calculate, not store
@@ -2758,19 +2898,23 @@ async def get_batch_fund_valuations(
         logger.info(f"Batch fetching valuations for {len(fund_ids)} funds up to date: {valuation_date}")
         
         # Build the query for batch valuation fetching
-        query = db.table("portfolio_fund_valuations") \
-                  .select("portfolio_fund_id, valuation, valuation_date") \
-                  .in_("portfolio_fund_id", fund_ids) \
-                  .order("portfolio_fund_id, valuation_date", desc=True)
-        
-        # Apply date filter if provided
         if valuation_date:
-            query = query.lte("valuation_date", valuation_date)
+            result = await db.fetch("""
+                SELECT portfolio_fund_id, valuation, valuation_date 
+                FROM portfolio_fund_valuations 
+                WHERE portfolio_fund_id = ANY($1::int[]) 
+                  AND valuation_date <= $2 
+                ORDER BY portfolio_fund_id, valuation_date DESC
+            """, fund_ids, valuation_date)
+        else:
+            result = await db.fetch("""
+                SELECT portfolio_fund_id, valuation, valuation_date 
+                FROM portfolio_fund_valuations 
+                WHERE portfolio_fund_id = ANY($1::int[]) 
+                ORDER BY portfolio_fund_id, valuation_date DESC
+            """, fund_ids)
         
-        # Execute the batch query
-        result = query.execute()
-        
-        if not result.data:
+        if not result:
             return {"fund_valuations": {}, "count": 0}
         
         # Process results to get latest valuation per fund
@@ -2779,7 +2923,8 @@ async def get_batch_fund_valuations(
         
         # Since we ordered by portfolio_fund_id, valuation_date DESC, 
         # the first occurrence of each fund is its latest valuation
-        for valuation_record in result.data:
+        for valuation_record_row in result:
+            valuation_record = dict(valuation_record_row)
             fund_id = valuation_record["portfolio_fund_id"]
             
             if fund_id not in seen_funds:
@@ -2830,22 +2975,22 @@ async def get_batch_historical_fund_valuations(
         logger.info(f"🚀 Batch fetching ALL historical valuations for {len(fund_ids)} funds")
         
         # Single batch query to get ALL historical valuations for all funds
-        query = db.table("portfolio_fund_valuations") \
-                  .select("portfolio_fund_id, valuation, valuation_date") \
-                  .in_("portfolio_fund_id", fund_ids) \
-                  .order("portfolio_fund_id, valuation_date", desc=True)
+        result = await db.fetch("""
+            SELECT portfolio_fund_id, valuation, valuation_date 
+            FROM portfolio_fund_valuations 
+            WHERE portfolio_fund_id = ANY($1::int[]) 
+            ORDER BY portfolio_fund_id, valuation_date DESC
+        """, fund_ids)
         
-        # Execute the batch query
-        result = query.execute()
-        
-        if not result.data:
+        if not result:
             return {"fund_historical_valuations": {}, "count": 0}
         
         # Organize results by fund ID
         fund_historical_valuations = {}
         total_valuations = 0
         
-        for valuation_record in result.data:
+        for valuation_record_row in result:
+            valuation_record = dict(valuation_record_row)
             fund_id = valuation_record["portfolio_fund_id"]
             
             if fund_id not in fund_historical_valuations:

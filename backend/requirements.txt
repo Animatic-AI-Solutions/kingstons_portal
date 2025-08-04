@@ -10,7 +10,8 @@ websockets==11.0.3
 python-dotenv==1.0.0
 
 # Database and authentication
-supabase==2.8.1
+asyncpg==0.30.0
+psycopg2-binary==2.9.10
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 

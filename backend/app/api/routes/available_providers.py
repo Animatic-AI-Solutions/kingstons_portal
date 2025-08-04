@@ -46,34 +46,42 @@ async def get_available_providers(
     What it does: Retrieves a paginated list of available providers from the database.
     Why it's needed: Provides a way to view all available providers in the system with optional filtering.
     How it works:
-        1. Connects to the Supabase database
+        1. Connects to the PostgreSQL database
         2. Queries the 'available_providers' table with pagination and optional filters
         3. Returns the data as a list of AvailableProvider objects
     Expected output: A JSON array of provider objects with all their details
     """
     try:
         logger.info(f"Fetching available providers with skip={skip}, limit={limit}")
-        query = db.table("available_providers").select("*")
         
-        # Apply filters if provided
+        # Build SQL query with optional status filter
+        base_query = "SELECT * FROM available_providers"
+        conditions = []
+        params = []
+        
+        # Apply status filter if provided
         if status is not None:
-            query = query.eq("status", status)
-            
-        # Extract actual values from Query objects
-        skip_val = skip
-        limit_val = limit
-        if hasattr(skip, 'default'):
-            skip_val = skip.default
-        if hasattr(limit, 'default'):
-            limit_val = limit.default
-            
-        # Apply pagination
-        result = query.range(skip_val, skip_val + limit_val - 1).execute()
-        logger.info(f"Query result: {result}")
+            conditions.append("status = $" + str(len(params) + 1))
+            params.append(status)
         
-        if not result.data:
+        # Construct query with WHERE clause if needed
+        if conditions:
+            query = base_query + " WHERE " + " AND ".join(conditions)
+        else:
+            query = base_query
+            
+        # Add pagination with LIMIT and OFFSET
+        query += f" ORDER BY id LIMIT ${len(params) + 1} OFFSET ${len(params) + 2}"
+        params.extend([limit, skip])
+        
+        # Execute the query
+        result = await db.fetch(query, *params)
+        logger.info(f"Query returned {len(result)} providers")
+        
+        if not result:
             logger.warning("No available providers found in the database")
-        return result.data
+        
+        return [dict(row) for row in result]
     except Exception as e:
         logger.error(f"Error fetching available providers: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch available providers: {str(e)}")
@@ -93,13 +101,28 @@ async def create_available_provider(provider: AvailableProviderCreate, db = Depe
     try:
         # Check if the color is already used by another provider
         if provider.theme_color:
-            color_check = db.table("available_providers").select("id").eq("theme_color", provider.theme_color).execute()
-            if color_check.data and len(color_check.data) > 0:
+            color_check = await db.fetchrow(
+                "SELECT id FROM available_providers WHERE theme_color = $1", 
+                provider.theme_color
+            )
+            if color_check:
                 raise HTTPException(status_code=400, detail=f"The selected color is already in use by another provider")
         
-        result = db.table("available_providers").insert(provider.model_dump()).execute()
-        if result.data and len(result.data) > 0:
-            return result.data[0]
+        # Create the provider
+        provider_data = provider.model_dump()
+        columns = list(provider_data.keys())
+        placeholders = [f"${i+1}" for i in range(len(columns))]
+        values = list(provider_data.values())
+        
+        query = f"""
+            INSERT INTO available_providers ({', '.join(columns)}) 
+            VALUES ({', '.join(placeholders)}) 
+            RETURNING *
+        """
+        
+        result = await db.fetchrow(query, *values)
+        if result:
+            return dict(result)
         raise HTTPException(status_code=400, detail="Failed to create available provider")
     except HTTPException:
         raise
@@ -110,25 +133,20 @@ async def create_available_provider(provider: AvailableProviderCreate, db = Depe
 @router.get("/available_providers/theme-colors", response_model=List[ProviderThemeColor])
 async def get_provider_theme_colors(db = Depends(get_db)):
     """
-    What it does: Retrieves a simplified list of providers with their ID, name, and theme color.
-    Why it's needed: Provides a lightweight endpoint to fetch just the provider colors for UI styling.
+    What it does: Retrieves a list of provider theme colors for UI components.
+    Why it's needed: Frontend components need provider theme colors for styling and UI consistency.
     How it works:
         1. Queries the 'available_providers' table for ID, name, and theme_color
-        2. Returns a simplified list for frontend use
-    Expected output: A JSON array of objects with id, name, and theme_color fields
+        2. Returns a list of objects containing these fields for each provider
+    Expected output: A JSON array of provider objects with ID, name, and theme_color
     """
     try:
-        logger.info("Fetching provider theme colors")
-        query = db.table("available_providers").select("id,name,theme_color").execute()
+        result = await db.fetch("SELECT id, name, theme_color FROM available_providers")
         
-        # Check if any providers have null theme colors and log a warning
-        providers_without_colors = [p for p in query.data if p.get("theme_color") is None]
-        if providers_without_colors:
-            provider_names = [p.get("name", f"ID: {p.get('id')}") for p in providers_without_colors]
-            logger.warning(f"Found {len(providers_without_colors)} providers without theme colors: {', '.join(provider_names)}")
+        if not result:
             logger.info("Consider calling /available_providers/update-theme-colors to initialize missing colors")
         
-        return query.data
+        return [dict(row) for row in result]
     except Exception as e:
         logger.error(f"Error fetching provider theme colors: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch provider theme colors: {str(e)}")
@@ -136,30 +154,30 @@ async def get_provider_theme_colors(db = Depends(get_db)):
 @router.get("/available_providers/available-colors", response_model=List[ColorOption])
 async def get_available_colors(db = Depends(get_db)):
     """
-    What it does: Retrieves a list of colors that are not currently used by any provider.
-    Why it's needed: Allows frontend to show only available colors when creating/editing providers.
+    What it does: Returns a list of colors that are available for assignment to providers.
+    Why it's needed: To prevent color conflicts and provide users with available color options.
     How it works:
-        1. Fetches all provider theme_colors currently in use
-        2. Returns a list of available colors (those not currently in use)
+        1. Gets all colors currently used by providers
+        2. Filters the default color palette to show only unused colors
+        3. Returns the available colors for assignment
     Expected output: A JSON array of color objects with name and value properties
     """
     try:
-        # Get all providers that have a theme_color set
-        result = db.table("available_providers").select("theme_color").not_.is_("theme_color", "null").execute()
+        # Get currently used colors
+        result = await db.fetch(
+            "SELECT theme_color FROM available_providers WHERE theme_color IS NOT NULL"
+        )
         
-        # Extract used colors
-        used_colors = [provider.get("theme_color") for provider in result.data if provider.get("theme_color")]
-        logger.info(f"Found {len(used_colors)} colors already in use: {used_colors}")
+        used_colors = set()
+        if result:
+            used_colors = {row['theme_color'] for row in result}
         
-        # Filter out colors that are already in use
-        available_colors = [color for color in DEFAULT_COLORS if color["value"] not in used_colors]
+        # Filter out used colors from default palette
+        available_colors = [
+            color for color in DEFAULT_COLORS 
+            if color['value'] not in used_colors
+        ]
         
-        # If all colors are used, return a "No colors available" message
-        if not available_colors:
-            logger.warning("All default colors are in use")
-            # Return at least one color as fallback if all are used
-            return [{'name': 'Default (All colors in use)', 'value': '#CCCCCC'}]
-            
         return available_colors
     except Exception as e:
         logger.error(f"Error fetching available colors: {str(e)}")
@@ -177,9 +195,12 @@ async def get_available_provider(provider_id: int, db = Depends(get_db)):
     Expected output: A JSON object containing the requested provider's details
     """
     try:
-        result = db.table("available_providers").select("*").eq("id", provider_id).execute()
-        if result.data and len(result.data) > 0:
-            return result.data[0]
+        result = await db.fetchrow(
+            "SELECT * FROM available_providers WHERE id = $1", 
+            provider_id
+        )
+        if result:
+            return dict(result)
         raise HTTPException(status_code=404, detail=f"Available provider with ID {provider_id} not found")
     except HTTPException:
         raise
@@ -191,42 +212,59 @@ async def get_available_provider(provider_id: int, db = Depends(get_db)):
 async def update_available_provider(provider_id: int, provider_update: AvailableProviderUpdate, db = Depends(get_db)):
     """
     What it does: Updates an existing available provider's information.
-    Why it's needed: Allows modifying available provider details when they change.
+    Why it's needed: Allows modifying provider details when they change.
     How it works:
-        1. Validates the update data using the AvailableProviderUpdate model
-        2. Removes any None values from the input (fields that aren't being updated)
-        3. Verifies the provider exists
-        4. If updating theme_color, checks that it's not already in use by another provider
-        5. Updates only the provided fields in the database
-        6. Returns the updated provider information
+        1. Takes the provider_id from the URL path and update data from request body
+        2. Verifies the provider exists
+        3. Checks if the new theme color conflicts with existing providers
+        4. Updates the provider record with the new data
+        5. Returns the updated provider information
     Expected output: A JSON object containing the updated provider's details
     """
-    # Remove None values from the update data
-    update_data = {k: v for k, v in provider_update.model_dump().items() if v is not None}
-    
-    if not update_data:
-        raise HTTPException(status_code=400, detail="No valid update data provided")
-    
     try:
         # Check if provider exists
-        check_result = db.table("available_providers").select("id").eq("id", provider_id).execute()
-        if not check_result.data or len(check_result.data) == 0:
+        check_result = await db.fetchrow(
+            "SELECT id FROM available_providers WHERE id = $1", 
+            provider_id
+        )
+        if not check_result:
             raise HTTPException(status_code=404, detail=f"Available provider with ID {provider_id} not found")
         
-        # If updating theme_color, check if it's already in use by another provider
-        if "theme_color" in update_data:
-            color_check = db.table("available_providers").select("id").eq("theme_color", update_data["theme_color"]).execute()
-            if color_check.data and len(color_check.data) > 0:
-                # Check if it's the same provider (allow updating other fields without changing color)
-                is_same_provider = any(p.get("id") == provider_id for p in color_check.data)
-                if not is_same_provider:
-                    raise HTTPException(status_code=400, detail=f"The selected color is already in use by another provider")
+        # Get update data, excluding unset fields
+        update_data = provider_update.model_dump(exclude_unset=True)
         
-        # Update the provider
-        result = db.table("available_providers").update(update_data).eq("id", provider_id).execute()
+        if not update_data:
+            # No fields to update, return current provider
+            return await get_available_provider(provider_id, db)
         
-        if result.data and len(result.data) > 0:
-            return result.data[0]
+        # Check if the new color conflicts with existing providers
+        if "theme_color" in update_data and update_data["theme_color"]:
+            color_check = await db.fetchrow(
+                "SELECT id FROM available_providers WHERE theme_color = $1 AND id != $2",
+                update_data["theme_color"], provider_id
+            )
+            if color_check:
+                raise HTTPException(status_code=400, detail=f"The selected color is already in use by another provider")
+        
+        # Build dynamic UPDATE query
+        set_clauses = []
+        params = []
+        for i, (column, value) in enumerate(update_data.items(), 1):
+            set_clauses.append(f"{column} = ${i}")
+            params.append(value)
+        
+        query = f"""
+            UPDATE available_providers 
+            SET {', '.join(set_clauses)} 
+            WHERE id = ${len(params) + 1} 
+            RETURNING *
+        """
+        params.append(provider_id)
+        
+        result = await db.fetchrow(query, *params)
+        
+        if result:
+            return dict(result)
         
         raise HTTPException(status_code=400, detail="Failed to update available provider")
     except HTTPException:
@@ -239,7 +277,7 @@ async def update_available_provider(provider_id: int, provider_update: Available
 async def delete_available_provider(provider_id: int, db = Depends(get_db)):
     """
     What it does: Deletes an available provider from the database.
-    Why it's needed: Allows removing available providers who are no longer relevant to the business.
+    Why it's needed: Allows removing providers who are no longer relevant to the business.
     How it works:
         1. Verifies the provider exists
         2. Deletes the provider record from the 'available_providers' table
@@ -248,12 +286,18 @@ async def delete_available_provider(provider_id: int, db = Depends(get_db)):
     """
     try:
         # Check if provider exists
-        check_result = db.table("available_providers").select("id").eq("id", provider_id).execute()
-        if not check_result.data or len(check_result.data) == 0:
+        check_result = await db.fetchrow(
+            "SELECT id FROM available_providers WHERE id = $1", 
+            provider_id
+        )
+        if not check_result:
             raise HTTPException(status_code=404, detail=f"Available provider with ID {provider_id} not found")
         
         # Delete the provider
-        result = db.table("available_providers").delete().eq("id", provider_id).execute()
+        await db.execute(
+            "DELETE FROM available_providers WHERE id = $1", 
+            provider_id
+        )
         
         return {"message": f"Available provider with ID {provider_id} deleted successfully"}
     except HTTPException:
@@ -265,78 +309,81 @@ async def delete_available_provider(provider_id: int, db = Depends(get_db)):
 @router.post("/available_providers/update-theme-colors", response_model=dict)
 async def update_provider_theme_colors(db = Depends(get_db)):
     """
-    What it does: Updates theme colors for all providers that have null theme colors.
-    Why it's needed: Utility endpoint to initialize theme colors for providers.
+    What it does: Assigns theme colors to providers that don't have one.
+    Why it's needed: Ensures all providers have theme colors for consistent UI styling.
     How it works:
-        1. Fetches all providers
-        2. Assigns theme colors to those that have null theme colors
-        3. Updates the database
-    Expected output: A JSON object with a success message and the number of providers updated
+        1. Gets all providers from the database
+        2. Identifies providers without theme colors
+        3. Assigns available colors from the default palette
+        4. Updates each provider with their new theme color
+        5. Returns statistics about the update operation
+    Expected output: A JSON object with update statistics and color assignments
     """
     try:
-        # Predefined colors for common providers
-        provider_colors = {
-            "Gov": "#EA580C",      # Orange
-            "AJBell": "#0369A1",   # Blue
-            "HL": "#16A34A",       # Green
-            "Fidelity": "#7C3AED", # Purple
-            "Standard Life": "#DC2626", # Red
-            "Quilter": "#B45309",  # Amber
-            "Aviva": "#D97706",    # Yellow
-            "Embark": "#BE185D",   # Pink
-            # Add more providers and their colors as needed
-        }
+        # Get all providers
+        result = await db.fetch("SELECT * FROM available_providers")
         
-        # Default colors for providers not in the predefined list
-        default_colors = [
-            "#4F46E5", # Indigo
-            "#16A34A", # Green
-            "#EA580C", # Orange
-            "#DC2626", # Red
-            "#7C3AED", # Purple
-            "#0369A1", # Blue
-            "#B45309", # Amber
-            "#0D9488", # Teal
-            "#BE185D", # Pink
-            "#475569"  # Slate
+        if not result:
+            return {"message": "No providers found to update"}
+        
+        all_providers = [dict(row) for row in result]
+        
+        # Find providers without theme colors
+        providers_without_colors = [
+            provider for provider in all_providers
+            if not provider.get('theme_color')
         ]
         
-        # Fetch all providers
-        result = db.table("available_providers").select("*").execute()
-        providers = result.data
+        if not providers_without_colors:
+            return {
+                "message": "All providers already have theme colors assigned",
+                "total_providers": len(all_providers),
+                "providers_updated": 0
+            }
         
-        if not providers:
-            return {"message": "No providers found in the database", "updated": 0}
+        # Get used colors
+        used_colors = set()
+        for provider in all_providers:
+            if provider.get('theme_color'):
+                used_colors.add(provider['theme_color'])
         
-        # Track the number of updates
+        # Get available colors
+        available_colors = [
+            color['value'] for color in DEFAULT_COLORS
+            if color['value'] not in used_colors
+        ]
+        
+        if len(providers_without_colors) > len(available_colors):
+            # If we need more colors than available, we'll have to reuse some
+            available_colors.extend([color['value'] for color in DEFAULT_COLORS])
+        
+        # Assign colors to providers
         updates_made = 0
-        color_index = 0
+        color_assignments = []
         
-        for provider in providers:
-            # Skip providers that already have a theme color
-            if provider.get("theme_color"):
-                continue
+        for i, provider in enumerate(providers_without_colors):
+            if i < len(available_colors):
+                provider_id = provider['id']
+                theme_color = available_colors[i]
                 
-            provider_id = provider["id"]
-            provider_name = provider["name"]
-            
-            # Use predefined color if available, otherwise use one from default list
-            if provider_name in provider_colors:
-                theme_color = provider_colors[provider_name]
-            else:
-                theme_color = default_colors[color_index % len(default_colors)]
-                color_index += 1
-            
-            # Update the provider's theme color
-            update_result = db.table("available_providers").update({"theme_color": theme_color}).eq("id", provider_id).execute()
-            
-            if update_result.data and len(update_result.data) > 0:
+                # Update provider with new theme color
+                update_result = await db.execute(
+                    "UPDATE available_providers SET theme_color = $1 WHERE id = $2",
+                    theme_color, provider_id
+                )
+                
                 updates_made += 1
-                logger.info(f"Updated theme color for provider {provider_name} (ID: {provider_id}) to {theme_color}")
+                color_assignments.append({
+                    "provider_id": provider_id,
+                    "provider_name": provider.get('name', 'Unknown'),
+                    "assigned_color": theme_color
+                })
         
         return {
-            "message": f"Successfully updated theme colors for {updates_made} providers",
-            "updated": updates_made
+            "message": f"Successfully updated {updates_made} providers with theme colors",
+            "total_providers": len(all_providers),
+            "providers_updated": updates_made,
+            "color_assignments": color_assignments
         }
     except Exception as e:
         logger.error(f"Error updating provider theme colors: {str(e)}")
@@ -350,65 +397,78 @@ async def get_available_providers_with_product_count(
     db = Depends(get_db)
 ):
     """
-    What it does: Retrieves a paginated list of available providers with a count of associated products.
-    Why it's needed: Provides information about how many products are linked to each provider.
+    What it does: Retrieves a paginated list of available providers with their associated product counts.
+    Why it's needed: Provides a comprehensive view of providers and their usage in the system.
     How it works:
-        1. Connects to the Supabase database
+        1. Connects to the PostgreSQL database
         2. Queries the 'available_providers' table
-        3. For each provider, counts the number of products in 'client_products' that reference it
-        4. Returns the data as a list with provider details and product counts
-    Expected output: A JSON array of provider objects with all their details plus product_count
+        3. Joins with product counts or calculates them
+        4. Returns providers with their product count information
+    Expected output: A JSON array of provider objects with product count data
     """
     try:
-        logger.info(f"Fetching available providers with product counts")
-        query = db.table("available_providers").select("*")
+        # Build SQL query with optional status filter and LEFT JOIN for product counts
+        base_query = """
+            SELECT 
+                ap.*,
+                COALESCE(product_counts.product_count, 0) as product_count
+            FROM available_providers ap
+            LEFT JOIN (
+                SELECT 
+                    provider_id, 
+                    COUNT(*) as product_count 
+                FROM client_products 
+                WHERE status = 'active'
+                GROUP BY provider_id
+            ) product_counts ON ap.id = product_counts.provider_id
+        """
         
-        # Apply filters if provided
+        conditions = []
+        params = []
+        
+        # Apply status filter if provided
         if status is not None:
-            query = query.eq("status", status)
-            
-        # Apply pagination
-        providers_result = query.execute()
+            conditions.append("ap.status = $" + str(len(params) + 1))
+            params.append(status)
         
-        if not providers_result.data:
-            logger.warning("No available providers found in the database")
-            return []
+        # Construct query with WHERE clause if needed
+        if conditions:
+            query = base_query + " WHERE " + " AND ".join(conditions)
+        else:
+            query = base_query
             
-        # Get all provider IDs
-        provider_ids = [provider["id"] for provider in providers_result.data]
+        # Add pagination with LIMIT and OFFSET
+        query += f" ORDER BY ap.id LIMIT ${len(params) + 1} OFFSET ${len(params) + 2}"
+        params.extend([limit, skip])
         
-        # Get count of products for each provider
-        product_counts = {}
-        for provider_id in provider_ids:
-            try:
-                count_result = db.table("client_products").select("id").eq("provider_id", provider_id).execute()
-                product_counts[provider_id] = len(count_result.data)
-            except Exception as count_err:
-                logger.error(f"Error counting products for provider {provider_id}: {str(count_err)}")
-                product_counts[provider_id] = 0
-            
-        # Add product count to each provider
-        providers_with_count = []
-        for provider in providers_result.data:
-            try:
-                provider_with_count = dict(provider)
-                provider_with_count["product_count"] = product_counts.get(provider["id"], 0)
-                providers_with_count.append(provider_with_count)
-            except Exception as format_err:
-                logger.error(f"Error formatting provider {provider.get('id')}: {str(format_err)}")
-                # Skip this provider if there's an error
-            
-        # Apply skip and limit after adding product counts
-        start_idx = min(skip, len(providers_with_count))
-        end_idx = min(start_idx + limit, len(providers_with_count))
-        paginated_providers = providers_with_count[start_idx:end_idx]
+        # Execute the query
+        result = await db.fetch(query, *params)
         
-        return paginated_providers
-        
-    except ValueError as ve:
-        logger.error(f"Validation error: {str(ve)}")
-        raise HTTPException(status_code=422, detail=f"Validation error: {str(ve)}")
+        return [dict(row) for row in result]
     except Exception as e:
-        logger.error(f"Error fetching available providers with product counts: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to fetch available providers with product counts: {str(e)}")
+        logger.error(f"Error fetching available providers with count: {str(e)}")
+        # If client_products table doesn't exist, fall back to simple query
+        try:
+            # Fallback to basic provider list without counts
+            base_query = "SELECT *, 0 as product_count FROM available_providers"
+            conditions = []
+            params = []
+            
+            if status is not None:
+                conditions.append("status = $" + str(len(params) + 1))
+                params.append(status)
+            
+            if conditions:
+                query = base_query + " WHERE " + " AND ".join(conditions)
+            else:
+                query = base_query
+                
+            query += f" ORDER BY id LIMIT ${len(params) + 1} OFFSET ${len(params) + 2}"
+            params.extend([limit, skip])
+            
+            result = await db.fetch(query, *params)
+            return [dict(row) for row in result]
+        except Exception as fallback_error:
+            logger.error(f"Fallback query also failed: {str(fallback_error)}")
+            raise HTTPException(status_code=500, detail=f"Failed to fetch available providers: {str(e)}")
 

@@ -48,31 +48,68 @@ async def get_fund_distribution(
     """
     try:
         # Get all available funds
-        funds_result = db.table("available_funds").select("id,fund_name").execute()
+        funds_result = await db.fetch("SELECT id, fund_name FROM available_funds")
         
-        if not funds_result.data:
+        if not funds_result:
             logger.warning("No funds found in the database")
             return {"funds": []}
+        
+        # Extract fund IDs for bulk queries
+        fund_ids = [dict(fund)["id"] for fund in funds_result]
+        
+        # Bulk fetch all portfolio_funds for all funds
+        portfolio_funds_result = await db.fetch("""
+            SELECT id, amount_invested, available_funds_id 
+            FROM portfolio_funds 
+            WHERE available_funds_id = ANY($1::int[])
+        """, fund_ids)
+        
+        # Extract portfolio fund IDs for bulk valuation query
+        pf_ids = [dict(pf)["id"] for pf in portfolio_funds_result]
+        
+        # Bulk fetch all valuations for all portfolio funds
+        valuations_result = await db.fetch("""
+            SELECT portfolio_fund_id, valuation 
+            FROM latest_portfolio_fund_valuations 
+            WHERE portfolio_fund_id = ANY($1::int[])
+        """, pf_ids) if pf_ids else []
+        
+        # Create lookup maps for efficient processing
+        pf_by_fund_id = {}
+        for pf_record in portfolio_funds_result:
+            pf = dict(pf_record)
+            fund_id = pf["available_funds_id"]
+            if fund_id not in pf_by_fund_id:
+                pf_by_fund_id[fund_id] = []
+            pf_by_fund_id[fund_id].append(pf)
+        
+        valuations_by_pf_id = {}
+        for val_record in valuations_result:
+            val = dict(val_record)
+            valuations_by_pf_id[val["portfolio_fund_id"]] = val["valuation"]
         
         fund_data = []
         valuations_used = 0
         amount_invested_fallbacks = 0
         
-        # For each fund, calculate total current market value from latest valuations
-        for fund in funds_result.data:
-            # Get all portfolio_funds entries for this fund
-            pf_result = db.table("portfolio_funds").select("id,amount_invested").eq("available_funds_id", fund["id"]).execute()
+        # Process each fund with bulk data
+        for fund_record in funds_result:
+            fund = dict(fund_record)
+            fund_id = fund["id"]
             
             total_value = 0
             fund_has_valuations = False
             
-            for pf in pf_result.data:
-                # Prioritize latest valuation for current market value
-                valuation_result = db.table("latest_portfolio_fund_valuations").select("valuation").eq("portfolio_fund_id", pf["id"]).execute()
+            # Get portfolio funds for this fund
+            portfolio_funds = pf_by_fund_id.get(fund_id, [])
+            
+            for pf in portfolio_funds:
+                pf_id = pf["id"]
                 
-                if valuation_result.data and len(valuation_result.data) > 0 and valuation_result.data[0]["valuation"] is not None:
+                # Check if valuation exists
+                if pf_id in valuations_by_pf_id and valuations_by_pf_id[pf_id] is not None:
                     # Use latest market valuation (preferred method)
-                    total_value += valuation_result.data[0]["valuation"]
+                    total_value += valuations_by_pf_id[pf_id]
                     fund_has_valuations = True
                     valuations_used += 1
                 else:
@@ -118,36 +155,93 @@ async def get_provider_distribution(
     """
     try:
         # Get all providers
-        providers_result = db.table("available_providers").select("id,name").execute()
+        providers_result = await db.fetch("SELECT id, name FROM available_providers")
         
-        if not providers_result.data:
+        if not providers_result:
             logger.warning("No providers found in the database")
             return {"providers": []}
+        
+        # Extract provider IDs for bulk queries
+        provider_ids = [dict(provider)["id"] for provider in providers_result]
+        
+        # Bulk fetch all client_products for all providers
+        products_result = await db.fetch("""
+            SELECT id, portfolio_id, provider_id 
+            FROM client_products 
+            WHERE provider_id = ANY($1::int[]) AND portfolio_id IS NOT NULL
+        """, provider_ids)
+        
+        # Extract portfolio IDs for bulk queries
+        portfolio_ids = [dict(product)["portfolio_id"] for product in products_result]
+        portfolio_ids = list(set(portfolio_ids))  # Remove duplicates
+        
+        # Bulk fetch all portfolio_funds for all portfolios
+        portfolio_funds_result = await db.fetch("""
+            SELECT id, amount_invested, portfolio_id 
+            FROM portfolio_funds 
+            WHERE portfolio_id = ANY($1::int[])
+        """, portfolio_ids) if portfolio_ids else []
+        
+        # Extract portfolio fund IDs for bulk valuation query
+        pf_ids = [dict(pf)["id"] for pf in portfolio_funds_result]
+        
+        # Bulk fetch all valuations for all portfolio funds
+        valuations_result = await db.fetch("""
+            SELECT portfolio_fund_id, valuation 
+            FROM latest_portfolio_fund_valuations 
+            WHERE portfolio_fund_id = ANY($1::int[])
+        """, pf_ids) if pf_ids else []
+        
+        # Create lookup maps for efficient processing
+        products_by_provider_id = {}
+        for product_record in products_result:
+            product = dict(product_record)
+            provider_id = product["provider_id"]
+            if provider_id not in products_by_provider_id:
+                products_by_provider_id[provider_id] = []
+            products_by_provider_id[provider_id].append(product)
+        
+        pf_by_portfolio_id = {}
+        for pf_record in portfolio_funds_result:
+            pf = dict(pf_record)
+            portfolio_id = pf["portfolio_id"]
+            if portfolio_id not in pf_by_portfolio_id:
+                pf_by_portfolio_id[portfolio_id] = []
+            pf_by_portfolio_id[portfolio_id].append(pf)
+        
+        valuations_by_pf_id = {}
+        for val_record in valuations_result:
+            val = dict(val_record)
+            valuations_by_pf_id[val["portfolio_fund_id"]] = val["valuation"]
         
         provider_data = []
         valuations_used = 0
         amount_invested_fallbacks = 0
         
-        # For each provider, calculate total current market value (FUM)
-        for provider in providers_result.data:
-            # Get all products for this provider
-            products_result = db.table("client_products").select("id,portfolio_id").eq("provider_id", provider["id"]).execute()
+        # Process each provider with bulk data
+        for provider_record in providers_result:
+            provider = dict(provider_record)
+            provider_id = provider["id"]
             
             total_value = 0
             provider_has_valuations = False
             
-            for product in products_result.data:
-                if product["portfolio_id"]:
-                    # Get all portfolio_funds for this product's portfolio
-                    pf_result = db.table("portfolio_funds").select("id,amount_invested").eq("portfolio_id", product["portfolio_id"]).execute()
+            # Get products for this provider
+            products = products_by_provider_id.get(provider_id, [])
+            
+            for product in products:
+                portfolio_id = product["portfolio_id"]
+                if portfolio_id:
+                    # Get portfolio funds for this product's portfolio
+                    portfolio_funds = pf_by_portfolio_id.get(portfolio_id, [])
                     
-                    for pf in pf_result.data:
-                        # Prioritize latest valuation for current market value
-                        valuation_result = db.table("latest_portfolio_fund_valuations").select("valuation").eq("portfolio_fund_id", pf["id"]).execute()
+                    for pf in portfolio_funds:
+                        pf_id = pf["id"]
                         
-                        if valuation_result.data and len(valuation_result.data) > 0 and valuation_result.data[0]["valuation"] is not None:
+                        # Check if valuation exists
+                        if pf_id in valuations_by_pf_id and valuations_by_pf_id[pf_id] is not None:
                             # Use latest market valuation (preferred method)
-                            total_value += valuation_result.data[0]["valuation"]
+                            total_value += valuations_by_pf_id[pf_id]
                             provider_has_valuations = True
                             valuations_used += 1
                         else:
@@ -191,34 +285,51 @@ async def get_dashboard_stats(db = Depends(get_db)):
             "totalActiveHoldings": 0
         }
         
-        # Get company-wide IRR using our new calculation method
-        company_irr_result = await calculate_company_irr(db)
-        stats["companyIRR"] = company_irr_result["company_irr"]
-        stats["totalClients"] = company_irr_result["client_count"]
-        stats["totalAccounts"] = company_irr_result["total_products"]
+        # Get company-wide IRR using our new calculation method  
+        try:
+            company_irr_result = await calculate_company_irr(db)
+            stats["companyIRR"] = float(company_irr_result) if company_irr_result is not None else 0.0
+        except Exception as e:
+            logger.warning(f"Error calculating company IRR: {e}")
+            stats["companyIRR"] = 0.0
+        
+        # Get client and product counts separately
+        try:
+            clients_count_result = await db.fetchval("SELECT COUNT(*) FROM client_groups WHERE status = 'active'")
+            stats["totalClients"] = int(clients_count_result) if clients_count_result is not None else 0
+        except Exception as e:
+            logger.warning(f"Error counting clients: {e}")
+            stats["totalClients"] = 0
+        
+        try:
+            products_count_result = await db.fetchval("SELECT COUNT(*) FROM client_products WHERE status = 'active'")
+            stats["totalAccounts"] = int(products_count_result) if products_count_result is not None else 0
+        except Exception as e:
+            logger.warning(f"Error counting products: {e}")
+            stats["totalAccounts"] = 0
         
         # Calculate total FUM from latest fund valuations (preferred) with fallback to amount_invested
         # This gives current market value rather than historical invested amount
-        latest_valuations_result = db.table("latest_portfolio_fund_valuations").select("valuation").execute()
+        latest_valuations_result = await db.fetch("SELECT valuation FROM latest_portfolio_fund_valuations")
         total_from_valuations = 0
         total_from_investments = 0
         
-        if latest_valuations_result.data:
-            total_from_valuations = sum(val["valuation"] or 0 for val in latest_valuations_result.data)
+        if latest_valuations_result:
+            total_from_valuations = sum(dict(val)["valuation"] or 0 for val in latest_valuations_result)
             stats["totalFUM"] = total_from_valuations
         
         # If no valuations exist, fallback to amount_invested
         if total_from_valuations == 0:
-            portfolio_funds_result = db.table("portfolio_funds").select("amount_invested").execute()
-            if portfolio_funds_result.data:
-                total_from_investments = sum(pf["amount_invested"] or 0 for pf in portfolio_funds_result.data)
+            portfolio_funds_result = await db.fetch("SELECT amount_invested FROM portfolio_funds")
+            if portfolio_funds_result:
+                total_from_investments = sum(dict(pf)["amount_invested"] or 0 for pf in portfolio_funds_result)
                 stats["totalFUM"] = total_from_investments
                 logger.warning(f"Dashboard stats: No valuations found, using amount_invested fallback: {total_from_investments}")
         
         # Get total active holdings (portfolio funds that are active)
-        active_holdings_result = db.table("portfolio_funds").select("id").eq("status", "active").execute()
-        if active_holdings_result.data:
-            stats["totalActiveHoldings"] = len(active_holdings_result.data)
+        active_holdings_result = await db.fetch("SELECT id FROM portfolio_funds WHERE status = 'active'")
+        if active_holdings_result:
+            stats["totalActiveHoldings"] = len(active_holdings_result)
         
         return stats
     except Exception as e:
@@ -245,38 +356,80 @@ async def get_performance_data(
         response["companyIRR"] = company_irr
         
         # Calculate total FUM using latest valuations (consistent with dashboard_stats)
-        latest_valuations_result = db.table("latest_portfolio_fund_valuations").select("valuation").execute()
-        if latest_valuations_result.data:
-            response["companyFUM"] = sum(val["valuation"] or 0 for val in latest_valuations_result.data)
+        latest_valuations_result = await db.fetch("SELECT valuation FROM latest_portfolio_fund_valuations")
+        if latest_valuations_result:
+            response["companyFUM"] = sum(dict(val)["valuation"] or 0 for val in latest_valuations_result)
         else:
             # Fallback to amount_invested if no valuations exist
-            fum_result = db.table("portfolio_funds").select("amount_invested").execute()
-            if fum_result.data:
-                response["companyFUM"] = sum(pf["amount_invested"] or 0 for pf in fum_result.data)
+            fum_result = await db.fetch("SELECT amount_invested FROM portfolio_funds")
+            if fum_result:
+                response["companyFUM"] = sum(dict(pf)["amount_invested"] or 0 for pf in fum_result)
                 logger.warning(f"Performance data: No valuations found, using amount_invested fallback: {response['companyFUM']}")
             else:
                 response["companyFUM"] = 0
 
         if entity_type == "funds":
-            # Get funds with their latest IRR values and total FUM
-            funds_result = db.table("available_funds").select("*").execute()
+            # Get funds with their latest IRR values and total FUM - OPTIMIZED BULK QUERIES
+            funds_result = await db.fetch("SELECT * FROM available_funds")
             
-            for fund in funds_result.data:
-                # Get portfolio funds and their latest IRR values
-                pf_result = db.table("portfolio_funds").select("id,amount_invested").eq("available_funds_id", fund["id"]).execute()
+            if funds_result:
+                # Extract fund IDs for bulk queries
+                fund_ids = [dict(fund)["id"] for fund in funds_result]
+                
+                # Bulk fetch all portfolio_funds for all funds
+                portfolio_funds_result = await db.fetch("""
+                    SELECT id, amount_invested, available_funds_id 
+                    FROM portfolio_funds 
+                    WHERE available_funds_id = ANY($1::int[])
+                """, fund_ids)
+                
+                # Extract portfolio fund IDs for bulk IRR query
+                pf_ids = [dict(pf)["id"] for pf in portfolio_funds_result]
+                
+                # Bulk fetch latest IRR values for all portfolio funds
+                irr_values_result = await db.fetch("""
+                    SELECT DISTINCT ON (fund_id) fund_id, irr_result
+                    FROM portfolio_fund_irr_values 
+                    WHERE fund_id = ANY($1::int[])
+                    ORDER BY fund_id, date DESC
+                """, pf_ids) if pf_ids else []
+                
+                # Create lookup maps for efficient processing
+                pf_by_fund_id = {}
+                for pf_record in portfolio_funds_result:
+                    pf = dict(pf_record)
+                    fund_id = pf["available_funds_id"]
+                    if fund_id not in pf_by_fund_id:
+                        pf_by_fund_id[fund_id] = []
+                    pf_by_fund_id[fund_id].append(pf)
+                
+                irr_by_pf_id = {}
+                for irr_record in irr_values_result:
+                    irr = dict(irr_record)
+                    irr_by_pf_id[irr["fund_id"]] = irr["irr_result"]
+                
+                # Process each fund with bulk data
+                for fund_record in funds_result:
+                    fund = dict(fund_record)
+                    fund_id = fund["id"]
                 
                 total_fum = 0
                 weighted_irr = 0
                 total_weight = 0
                 
-                for pf in pf_result.data:
-                    # Get latest IRR value for this portfolio fund
-                    irr_result = db.table("portfolio_fund_irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                    # Get portfolio funds for this fund
+                portfolio_funds = pf_by_fund_id.get(fund_id, [])
                     
-                    if irr_result.data and pf["amount_invested"]:
-                        total_fum += pf["amount_invested"]
-                        weighted_irr += (irr_result.data[0]["irr_result"] * pf["amount_invested"])
-                        total_weight += pf["amount_invested"]
+                for pf in portfolio_funds:
+                    pf_id = pf["id"]
+                    amount_invested = pf["amount_invested"]
+                        
+                    # Get latest IRR value for this portfolio fund
+                    if pf_id in irr_by_pf_id and amount_invested:
+                        irr_value = irr_by_pf_id[pf_id]
+                        total_fum += amount_invested
+                        weighted_irr += (irr_value * amount_invested)
+                        total_weight += amount_invested
                 
                 if total_weight > 0:
                     response["performanceData"].append({
@@ -296,24 +449,67 @@ async def get_performance_data(
             response["performanceData"] = response["performanceData"][:limit]
         
         elif entity_type == "portfolios":
-            # Get portfolios with their latest IRR values and total FUM
-            portfolios_result = db.table("portfolios").select("*").execute()
+            # Get portfolios with their latest IRR values and total FUM - OPTIMIZED BULK QUERIES
+            portfolios_result = await db.fetch("SELECT * FROM portfolios")
             
-            for portfolio in portfolios_result.data:
-                # Get portfolio funds and their latest IRR values
-                pf_result = db.table("portfolio_funds").select("id,amount_invested").eq("portfolio_id", portfolio["id"]).execute()
+            if portfolios_result:
+                # Extract portfolio IDs for bulk queries
+                portfolio_ids = [dict(portfolio)["id"] for portfolio in portfolios_result]
+                
+                # Bulk fetch all portfolio_funds for all portfolios
+                portfolio_funds_result = await db.fetch("""
+                    SELECT id, amount_invested, portfolio_id 
+                    FROM portfolio_funds 
+                    WHERE portfolio_id = ANY($1::int[])
+                """, portfolio_ids)
+                
+                # Extract portfolio fund IDs for bulk IRR query
+                pf_ids = [dict(pf)["id"] for pf in portfolio_funds_result]
+                
+                # Bulk fetch latest IRR values for all portfolio funds
+                irr_values_result = await db.fetch("""
+                    SELECT DISTINCT ON (fund_id) fund_id, irr_result
+                    FROM portfolio_fund_irr_values 
+                    WHERE fund_id = ANY($1::int[])
+                    ORDER BY fund_id, date DESC
+                """, pf_ids) if pf_ids else []
+                
+                # Create lookup maps for efficient processing
+                pf_by_portfolio_id = {}
+                for pf_record in portfolio_funds_result:
+                    pf = dict(pf_record)
+                    portfolio_id = pf["portfolio_id"]
+                    if portfolio_id not in pf_by_portfolio_id:
+                        pf_by_portfolio_id[portfolio_id] = []
+                    pf_by_portfolio_id[portfolio_id].append(pf)
+                
+                irr_by_pf_id = {}
+                for irr_record in irr_values_result:
+                    irr = dict(irr_record)
+                    irr_by_pf_id[irr["fund_id"]] = irr["irr_result"]
+                
+                # Process each portfolio with bulk data
+                for portfolio_record in portfolios_result:
+                    portfolio = dict(portfolio_record)
+                    portfolio_id = portfolio["id"]
                 
                 total_fum = 0
                 weighted_irr = 0
                 total_weight = 0
                 
-                for pf in pf_result.data:
-                    irr_result = db.table("portfolio_fund_irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                # Get portfolio funds for this portfolio
+                portfolio_funds = pf_by_portfolio_id.get(portfolio_id, [])
                     
-                    if irr_result.data and pf["amount_invested"]:
-                        total_fum += pf["amount_invested"]
-                        weighted_irr += (irr_result.data[0]["irr_result"] * pf["amount_invested"])
-                        total_weight += pf["amount_invested"]
+                for pf in portfolio_funds:
+                    pf_id = pf["id"]
+                    amount_invested = pf["amount_invested"]
+                        
+                    # Get latest IRR value for this portfolio fund
+                    if pf_id in irr_by_pf_id and amount_invested:
+                        irr_value = irr_by_pf_id[pf_id]
+                        total_fum += amount_invested
+                        weighted_irr += (irr_value * amount_invested)
+                        total_weight += amount_invested
                 
                 if total_weight > 0:
                     response["performanceData"].append({
@@ -333,31 +529,84 @@ async def get_performance_data(
             response["performanceData"] = response["performanceData"][:limit]
 
         elif entity_type == "products":
-            # Get products with their latest IRR values and total FUM
-            products_result = db.table("client_products").select("*").execute()
+            # Get products with their latest IRR values and total FUM - OPTIMIZED BULK QUERIES
+            products_result = await db.fetch("SELECT * FROM client_products")
             
-            for product in products_result.data:
-                # Get product's portfolio directly from client_products
-                if product["portfolio_id"]:
-                    total_fum = 0
-                    weighted_irr = 0
-                    total_weight = 0
+            if products_result:
+                # Extract portfolio IDs and client IDs for bulk queries
+                portfolio_ids = [dict(product)["portfolio_id"] for product in products_result if dict(product)["portfolio_id"]]
+                client_ids = [dict(product)["client_id"] for product in products_result if dict(product)["client_id"]]
+                portfolio_ids = list(set(portfolio_ids))  # Remove duplicates
+                client_ids = list(set(client_ids))  # Remove duplicates
+                
+                # Bulk fetch all portfolio_funds for all portfolios
+                portfolio_funds_result = await db.fetch("""
+                    SELECT id, amount_invested, portfolio_id 
+                    FROM portfolio_funds 
+                    WHERE portfolio_id = ANY($1::int[])
+                """, portfolio_ids) if portfolio_ids else []
+                
+                # Extract portfolio fund IDs for bulk IRR query
+                pf_ids = [dict(pf)["id"] for pf in portfolio_funds_result]
+                
+                # Bulk fetch latest IRR values and client names
+                irr_values_result = await db.fetch("""
+                    SELECT DISTINCT ON (fund_id) fund_id, irr_result
+                    FROM portfolio_fund_irr_values 
+                    WHERE fund_id = ANY($1::int[])
+                    ORDER BY fund_id, date DESC
+                """, pf_ids) if pf_ids else []
+                
+                client_names_result = await db.fetch("""
+                    SELECT id, name FROM client_groups WHERE id = ANY($1::int[])
+                """, client_ids) if client_ids else []
+                
+                # Create lookup maps for efficient processing
+                pf_by_portfolio_id = {}
+                for pf_record in portfolio_funds_result:
+                    pf = dict(pf_record)
+                    portfolio_id = pf["portfolio_id"]
+                    if portfolio_id not in pf_by_portfolio_id:
+                        pf_by_portfolio_id[portfolio_id] = []
+                    pf_by_portfolio_id[portfolio_id].append(pf)
+                
+                irr_by_pf_id = {}
+                for irr_record in irr_values_result:
+                    irr = dict(irr_record)
+                    irr_by_pf_id[irr["fund_id"]] = irr["irr_result"]
+                
+                client_names_by_id = {}
+                for client_record in client_names_result:
+                    client = dict(client_record)
+                    client_names_by_id[client["id"]] = client["name"]
+                
+                # Process each product with bulk data
+                for product_record in products_result:
+                    product = dict(product_record)
+                    portfolio_id = product["portfolio_id"]
                     
-                    # Get all portfolio funds for this portfolio
-                    pf_result = db.table("portfolio_funds").select("id,amount_invested").eq("portfolio_id", product["portfolio_id"]).execute()
+                    if portfolio_id:
+                        total_fum = 0
+                        weighted_irr = 0
+                        total_weight = 0
                     
-                    for pf in pf_result.data:
-                        irr_result = db.table("portfolio_fund_irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                        # Get portfolio funds for this portfolio
+                        portfolio_funds = pf_by_portfolio_id.get(portfolio_id, [])
                         
-                        if irr_result.data and pf["amount_invested"]:
-                            total_fum += pf["amount_invested"]
-                            weighted_irr += (irr_result.data[0]["irr_result"] * pf["amount_invested"])
-                            total_weight += pf["amount_invested"]
+                        for pf in portfolio_funds:
+                            pf_id = pf["id"]
+                            amount_invested = pf["amount_invested"]
+                            
+                            # Get latest IRR value for this portfolio fund
+                            if pf_id in irr_by_pf_id and amount_invested:
+                                irr_value = irr_by_pf_id[pf_id]
+                                total_fum += amount_invested
+                                weighted_irr += (irr_value * amount_invested)
+                                total_weight += amount_invested
                 
                     if total_weight > 0:
                         # Get client name for product
-                        client_result = db.table("client_groups").select("name").eq("id", product["client_id"]).execute()
-                        client_name = client_result.data[0]["name"] if client_result.data else "Unknown Client"
+                        client_name = client_names_by_id.get(product["client_id"], "Unknown Client")
                         
                         response["performanceData"].append({
                             "id": product["id"],
@@ -376,31 +625,94 @@ async def get_performance_data(
             response["performanceData"] = response["performanceData"][:limit]
 
         elif entity_type == "clients":
-            # Get clients with their latest IRR values and total FUM
-            clients_result = db.table("client_groups").select("*").execute()
+            # Get clients with their latest IRR values and total FUM - OPTIMIZED BULK QUERIES
+            clients_result = await db.fetch("SELECT * FROM client_groups")
             
-            for client in clients_result.data:
-                # Get client products
-                products_result = db.table("client_products").select("*").eq("client_id", client["id"]).execute()
+            if clients_result:
+                # Extract client IDs for bulk queries
+                client_ids = [dict(client)["id"] for client in clients_result]
                 
-                total_fum = 0
-                weighted_irr = 0
-                total_weight = 0
-                earliest_start_date = None
+                # Bulk fetch all products for all clients
+                products_result = await db.fetch("""
+                    SELECT * FROM client_products 
+                    WHERE client_id = ANY($1::int[]) AND portfolio_id IS NOT NULL
+                """, client_ids)
                 
-                for product in products_result.data:
-                    # Get portfolio directly from client_products
-                    if product["portfolio_id"]:
-                        # Get all portfolio funds for this portfolio
-                        pf_result = db.table("portfolio_funds").select("id,amount_invested").eq("portfolio_id", product["portfolio_id"]).execute()
+                # Extract portfolio IDs for bulk queries
+                portfolio_ids = [dict(product)["portfolio_id"] for product in products_result]
+                portfolio_ids = list(set(portfolio_ids))  # Remove duplicates
+                
+                # Bulk fetch all portfolio_funds for all portfolios
+                portfolio_funds_result = await db.fetch("""
+                    SELECT id, amount_invested, portfolio_id 
+                    FROM portfolio_funds 
+                    WHERE portfolio_id = ANY($1::int[])
+                """, portfolio_ids) if portfolio_ids else []
+                
+                # Extract portfolio fund IDs for bulk IRR query
+                pf_ids = [dict(pf)["id"] for pf in portfolio_funds_result]
+                
+                # Bulk fetch latest IRR values for all portfolio funds
+                irr_values_result = await db.fetch("""
+                    SELECT DISTINCT ON (fund_id) fund_id, irr_result
+                    FROM portfolio_fund_irr_values 
+                    WHERE fund_id = ANY($1::int[])
+                    ORDER BY fund_id, date DESC
+                """, pf_ids) if pf_ids else []
+                
+                # Create lookup maps for efficient processing
+                products_by_client_id = {}
+                for product_record in products_result:
+                    product = dict(product_record)
+                    client_id = product["client_id"]
+                    if client_id not in products_by_client_id:
+                        products_by_client_id[client_id] = []
+                    products_by_client_id[client_id].append(product)
+                
+                pf_by_portfolio_id = {}
+                for pf_record in portfolio_funds_result:
+                    pf = dict(pf_record)
+                    portfolio_id = pf["portfolio_id"]
+                    if portfolio_id not in pf_by_portfolio_id:
+                        pf_by_portfolio_id[portfolio_id] = []
+                    pf_by_portfolio_id[portfolio_id].append(pf)
+                
+                irr_by_pf_id = {}
+                for irr_record in irr_values_result:
+                    irr = dict(irr_record)
+                    irr_by_pf_id[irr["fund_id"]] = irr["irr_result"]
+                
+                # Process each client with bulk data
+                for client_record in clients_result:
+                    client = dict(client_record)
+                    client_id = client["id"]
+                
+                    total_fum = 0
+                    weighted_irr = 0
+                    total_weight = 0
+                    earliest_start_date = None
+                
+                    # Get products for this client from the bulk data
+                    client_products = [p for p in products_result if dict(p)["client_id"] == client_id]
+                    
+                    for product_record in client_products:
+                        product = dict(product_record)
+                        portfolio_id = product["portfolio_id"]
                         
-                        for pf in pf_result.data:
-                            irr_result = db.table("portfolio_fund_irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                        if portfolio_id:
+                            # Get portfolio funds for this portfolio
+                            portfolio_funds = pf_by_portfolio_id.get(portfolio_id, [])
                             
-                            if irr_result.data and pf["amount_invested"]:
-                                total_fum += pf["amount_invested"]
-                                weighted_irr += (irr_result.data[0]["irr_result"] * pf["amount_invested"])
-                                total_weight += pf["amount_invested"]
+                            for pf in portfolio_funds:
+                                pf_id = pf["id"]
+                                amount_invested = pf["amount_invested"]
+                                
+                                # Get latest IRR value for this portfolio fund
+                                if pf_id in irr_by_pf_id and amount_invested:
+                                    irr_value = irr_by_pf_id[pf_id]
+                                    total_fum += amount_invested
+                                    weighted_irr += (irr_value * amount_invested)
+                                    total_weight += amount_invested
                                 
                                 if not earliest_start_date or (product["start_date"] and product["start_date"] < earliest_start_date):
                                     earliest_start_date = product["start_date"]
@@ -425,25 +737,102 @@ async def get_performance_data(
             response["performanceData"] = response["performanceData"][:limit]
 
         elif entity_type == "overview":
-            # Get top performers across all entity types
+            # 🚀 MASSIVELY OPTIMIZED: Get top performers across all entity types
+            # Converts N*M*P*Q queries (potentially thousands) to 5 bulk queries
             all_performers = []
             
-            # Get top funds
-            funds_result = db.table("available_funds").select("*").execute()
-            for fund in funds_result.data:
-                pf_result = db.table("portfolio_funds").select("id,amount_invested").eq("available_funds_id", fund["id"]).execute()
+            # Step 1: Bulk fetch all entities (4 queries instead of individual loops)
+            funds_result = await db.fetch("SELECT * FROM available_funds")
+            portfolios_result = await db.fetch("SELECT * FROM portfolios")  
+            products_result = await db.fetch("""
+                SELECT cp.*, cg.name as client_name 
+                FROM client_products cp 
+                JOIN client_groups cg ON cp.client_id = cg.id
+                WHERE cp.portfolio_id IS NOT NULL
+            """)
+            clients_result = await db.fetch("SELECT * FROM client_groups")
+            
+            # Step 2: Get all unique portfolio IDs from all entities
+            all_portfolio_ids = set()
+            
+            # Collect portfolio IDs from portfolios directly
+            for portfolio_record in portfolios_result:
+                all_portfolio_ids.add(portfolio_record["id"])
+            
+            # Collect portfolio IDs from products
+            for product_record in products_result:
+                if product_record["portfolio_id"]:
+                    all_portfolio_ids.add(product_record["portfolio_id"])
+            
+            all_portfolio_ids = list(all_portfolio_ids)
+            
+            if not all_portfolio_ids:
+                response["performanceData"] = []
+                return response
+            
+            # Step 3: Bulk fetch all portfolio funds for all portfolios (1 query instead of N)
+            portfolio_funds_result = await db.fetch("""
+                SELECT id, portfolio_id, available_funds_id, amount_invested 
+                FROM portfolio_funds 
+                WHERE portfolio_id = ANY($1::int[]) OR available_funds_id = ANY($2::int[])
+            """, all_portfolio_ids, [fund["id"] for fund in funds_result])
+            
+            # Step 4: Bulk fetch all IRR values for all portfolio funds (1 query instead of N*M)
+            all_pf_ids = [pf["id"] for pf in portfolio_funds_result]
+            if all_pf_ids:
+                # Get latest IRR for each portfolio fund
+                latest_irr_result = await db.fetch("""
+                    SELECT DISTINCT ON (fund_id) fund_id, irr_result
+                    FROM portfolio_fund_irr_values 
+                    WHERE fund_id = ANY($1::int[])
+                    ORDER BY fund_id, date DESC
+                """, all_pf_ids)
+            else:
+                latest_irr_result = []
+            
+            # Step 5: Create efficient lookup maps
+            pf_by_portfolio_id = {}
+            pf_by_fund_id = {}
+            for pf_record in portfolio_funds_result:
+                pf = dict(pf_record)
+                # Map by portfolio_id
+                if pf["portfolio_id"]:
+                    if pf["portfolio_id"] not in pf_by_portfolio_id:
+                        pf_by_portfolio_id[pf["portfolio_id"]] = []
+                    pf_by_portfolio_id[pf["portfolio_id"]].append(pf)
+                # Map by available_funds_id
+                if pf["available_funds_id"]:
+                    if pf["available_funds_id"] not in pf_by_fund_id:
+                        pf_by_fund_id[pf["available_funds_id"]] = []
+                    pf_by_fund_id[pf["available_funds_id"]].append(pf)
+            
+            irr_by_pf_id = {}
+            for irr_record in latest_irr_result:
+                irr = dict(irr_record)
+                irr_by_pf_id[irr["fund_id"]] = irr["irr_result"]
+            
+            # Step 6: Process funds with bulk data
+            for fund_record in funds_result:
+                fund = dict(fund_record)
+                fund_id = fund["id"]
                 
                 total_fum = 0
                 weighted_irr = 0
                 total_weight = 0
                 
-                for pf in pf_result.data:
-                    irr_result = db.table("portfolio_fund_irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                # Get portfolio funds for this fund
+                portfolio_funds = pf_by_fund_id.get(fund_id, [])
+                
+                for pf in portfolio_funds:
+                    pf_id = pf["id"]
+                    amount_invested = pf["amount_invested"]
                     
-                    if irr_result.data and pf["amount_invested"]:
-                        total_fum += pf["amount_invested"]
-                        weighted_irr += (irr_result.data[0]["irr_result"] * pf["amount_invested"])
-                        total_weight += pf["amount_invested"]
+                    # Get latest IRR value for this portfolio fund
+                    if pf_id in irr_by_pf_id and amount_invested:
+                        irr_value = irr_by_pf_id[pf_id]
+                        total_fum += amount_invested
+                        weighted_irr += (irr_value * amount_invested)
+                        total_weight += amount_invested
                 
                 if total_weight > 0:
                     all_performers.append({
@@ -455,22 +844,28 @@ async def get_performance_data(
                         "startDate": None
                     })
             
-            # Get top portfolios
-            portfolios_result = db.table("portfolios").select("*").execute()
-            for portfolio in portfolios_result.data:
-                pf_result = db.table("portfolio_funds").select("id,amount_invested").eq("portfolio_id", portfolio["id"]).execute()
+            # Step 7: Process portfolios with bulk data
+            for portfolio_record in portfolios_result:
+                portfolio = dict(portfolio_record)
+                portfolio_id = portfolio["id"]
                 
                 total_fum = 0
                 weighted_irr = 0
                 total_weight = 0
                 
-                for pf in pf_result.data:
-                    irr_result = db.table("portfolio_fund_irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                # Get portfolio funds for this portfolio
+                portfolio_funds = pf_by_portfolio_id.get(portfolio_id, [])
+                
+                for pf in portfolio_funds:
+                    pf_id = pf["id"]
+                    amount_invested = pf["amount_invested"]
                     
-                    if irr_result.data and pf["amount_invested"]:
-                        total_fum += pf["amount_invested"]
-                        weighted_irr += (irr_result.data[0]["irr_result"] * pf["amount_invested"])
-                        total_weight += pf["amount_invested"]
+                    # Get latest IRR value for this portfolio fund
+                    if pf_id in irr_by_pf_id and amount_invested:
+                        irr_value = irr_by_pf_id[pf_id]
+                        total_fum += amount_invested
+                        weighted_irr += (irr_value * amount_invested)
+                        total_weight += amount_invested
                 
                 if total_weight > 0:
                     all_performers.append({
@@ -482,28 +877,32 @@ async def get_performance_data(
                         "startDate": portfolio["start_date"]
                     })
             
-            # Get top products
-            products_result = db.table("client_products").select("*").execute()
-            for product in products_result.data:
-                if product["portfolio_id"]:
+            # Step 8: Process products with bulk data (includes client names from JOIN)
+            for product_record in products_result:
+                product = dict(product_record)
+                portfolio_id = product["portfolio_id"]
+                
+                if portfolio_id:
                     total_fum = 0
                     weighted_irr = 0
                     total_weight = 0
                     
-                    # Get all portfolio funds for this portfolio
-                    pf_result = db.table("portfolio_funds").select("id,amount_invested").eq("portfolio_id", product["portfolio_id"]).execute()
+                    # Get portfolio funds for this portfolio
+                    portfolio_funds = pf_by_portfolio_id.get(portfolio_id, [])
                     
-                    for pf in pf_result.data:
-                        irr_result = db.table("portfolio_fund_irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                    for pf in portfolio_funds:
+                        pf_id = pf["id"]
+                        amount_invested = pf["amount_invested"]
                         
-                        if irr_result.data and pf["amount_invested"]:
-                            total_fum += pf["amount_invested"]
-                            weighted_irr += (irr_result.data[0]["irr_result"] * pf["amount_invested"])
-                            total_weight += pf["amount_invested"]
+                        # Get latest IRR value for this portfolio fund
+                        if pf_id in irr_by_pf_id and amount_invested:
+                            irr_value = irr_by_pf_id[pf_id]
+                            total_fum += amount_invested
+                            weighted_irr += (irr_value * amount_invested)
+                            total_weight += amount_invested
                 
                     if total_weight > 0:
-                        client_result = db.table("client_groups").select("name").eq("id", product["client_id"]).execute()
-                        client_name = client_result.data[0]["name"] if client_result.data else "Unknown Client"
+                        client_name = product.get("client_name", "Unknown Client")
                         
                         all_performers.append({
                             "id": product["id"],
@@ -514,37 +913,45 @@ async def get_performance_data(
                             "startDate": product["start_date"]
                         })
             
-            # Get top clients
-            clients_result = db.table("client_groups").select("*").execute()
-            for client in clients_result.data:
-                products_result = db.table("client_products").select("*").eq("client_id", client["id"]).execute()
+            # Step 9: Process clients with bulk data
+            for client_record in clients_result:
+                client = dict(client_record)
+                client_id = client["id"]
                 
                 total_fum = 0
                 weighted_irr = 0
                 total_weight = 0
                 earliest_start_date = None
                 
-                for product in products_result.data:
-                    if product["portfolio_id"]:
-                        # Get all portfolio funds for this portfolio
-                        pf_result = db.table("portfolio_funds").select("id,amount_invested").eq("portfolio_id", product["portfolio_id"]).execute()
+                # Get products for this client from the bulk data
+                client_products = [p for p in products_result if dict(p)["client_id"] == client_id]
+                
+                for product_record in client_products:
+                    product = dict(product_record)
+                    portfolio_id = product["portfolio_id"]
+                    
+                    if portfolio_id:
+                        # Get portfolio funds for this portfolio
+                        portfolio_funds = pf_by_portfolio_id.get(portfolio_id, [])
                         
-                        for pf in pf_result.data:
-                            irr_result = db.table("portfolio_fund_irr_values").select("irr_result").eq("fund_id", pf["id"]).order("date", desc=True).limit(1).execute()
+                        for pf in portfolio_funds:
+                            pf_id = pf["id"]
+                            amount_invested = pf["amount_invested"]
                             
-                            if irr_result.data and pf["amount_invested"]:
-                                total_fum += pf["amount_invested"]
-                                weighted_irr += (irr_result.data[0]["irr_result"] * pf["amount_invested"])
-                                total_weight += pf["amount_invested"]
+                            # Get latest IRR value for this portfolio fund
+                            if pf_id in irr_by_pf_id and amount_invested:
+                                irr_value = irr_by_pf_id[pf_id]
+                                total_fum += amount_invested
+                                weighted_irr += (irr_value * amount_invested)
+                                total_weight += amount_invested
                                 
                                 if not earliest_start_date or (product["start_date"] and product["start_date"] < earliest_start_date):
                                     earliest_start_date = product["start_date"]
                 
                 if total_weight > 0:
-                    client_name = client["name"]
                     all_performers.append({
                         "id": client["id"],
-                        "name": client_name,
+                        "name": client["name"],
                         "type": "client",
                         "irr": weighted_irr / total_weight,
                         "fum": total_fum,
@@ -583,9 +990,9 @@ async def get_product_client_counts(db = Depends(get_db)):
     """
     try:
         # Get all product types from client_products
-        products_result = await db.table("client_products").select("product_type").execute()
+        products_result = await db.fetch("SELECT DISTINCT product_type FROM client_products WHERE product_type IS NOT NULL")
         
-        if not products_result.data:
+        if not products_result:
             return {
                 "relationships": [],
                 "products": [],
@@ -593,12 +1000,12 @@ async def get_product_client_counts(db = Depends(get_db)):
             }
         
         # Extract unique product types
-        product_types = list(set(product["product_type"] for product in products_result.data if product["product_type"]))
+        product_types = [dict(product)["product_type"] for product in products_result]
         
         # Get all clients and their relationship types
-        clients_result = await db.table("client_groups").select("id", "relationship").execute()
+        clients_result = await db.fetch("SELECT id, relationship FROM client_groups WHERE relationship IS NOT NULL")
         
-        if not clients_result.data:
+        if not clients_result:
             return {
                 "relationships": [],
                 "products": [],
@@ -606,17 +1013,19 @@ async def get_product_client_counts(db = Depends(get_db)):
             }
         
         # Get all client-product associations
-        client_products_result = await db.table("client_products").select("client_id", "product_type").execute()
+        client_products_result = await db.fetch("SELECT client_id, product_type FROM client_products WHERE product_type IS NOT NULL")
         
         # Build the response
-        relationships = list(set(client["relationship"] for client in clients_result.data if client["relationship"]))
+        relationships = list(set(dict(client)["relationship"] for client in clients_result))
         
         data = []
         for relationship in relationships:
             counts = {product_type: 0 for product_type in product_types}
-            for client in clients_result.data:
+            for client_record in clients_result:
+                client = dict(client_record)
                 if client["relationship"] == relationship:
-                    for cp in client_products_result.data:
+                    for cp_record in client_products_result:
+                        cp = dict(cp_record)
                         if cp["client_id"] == client["id"] and cp["product_type"] in product_types:
                             counts[cp["product_type"]] += 1
             data.append({
@@ -639,10 +1048,10 @@ async def get_portfolio_performance(portfolio_id: int, db = Depends(get_db)):
     Get performance metrics for a portfolio including IRR and other key metrics.
     """
     try:
-        # Get all funds in the portfolio
-        funds_result = await db.table("portfolio_funds").select("*").eq("portfolio_id", portfolio_id).execute()
+        # Get all funds in the portfolio - OPTIMIZED BULK QUERIES
+        funds_result = await db.fetch("SELECT * FROM portfolio_funds WHERE portfolio_id = $1", portfolio_id)
         
-        if not funds_result.data:
+        if not funds_result:
             return {
                 "irr": 0.0,
                 "total_investment": 0.0,
@@ -650,25 +1059,36 @@ async def get_portfolio_performance(portfolio_id: int, db = Depends(get_db)):
                 "fund_performance": []
             }
             
+        # Extract fund IDs for bulk queries
+        fund_ids = [dict(fund)["id"] for fund in funds_result]
+        
+        # Bulk fetch investment amounts for all funds
+        investment_result = await db.fetch("""
+            SELECT portfolio_fund_id, SUM(amount) as total_investment
+            FROM holding_activity_log 
+            WHERE portfolio_fund_id = ANY($1::int[]) AND activity_type = 'Investment'
+            GROUP BY portfolio_fund_id
+        """, fund_ids)
+        
+        # Create lookup map for investments
+        investment_by_fund_id = {}
+        for inv_record in investment_result:
+            inv = dict(inv_record)
+            investment_by_fund_id[inv["portfolio_fund_id"]] = float(inv["total_investment"] or 0)
+            
         total_investment = 0.0
         current_value = 0.0
         fund_performance = []
         
-        for fund in funds_result.data:
-            # Get investment amount
-            investment_result = await db.table("holding_activity_log")\
-                .select("amount")\
-                .eq("portfolio_fund_id", fund["id"])\
-                .eq("activity_type", "Investment")\
-                .execute()
-            investment = sum(log["amount"] for log in investment_result.data) if investment_result.data else 0.0
+        for fund_record in funds_result:
+            fund = dict(fund_record)
+            fund_id = fund["id"]
             
-            # Get current value
-            current_value_result = await db.table("portfolio_funds")\
-                .select("market_value")\
-                .eq("id", fund["id"])\
-                .execute()
-            fund_current_value = current_value_result.data[0]["market_value"] if current_value_result.data else 0.0
+            # Get investment amount from lookup
+            investment = investment_by_fund_id.get(fund_id, 0.0)
+            
+            # Get current value from the fund record
+            fund_current_value = float(fund.get("market_value") or 0.0)
             
             total_investment += investment
             current_value += fund_current_value
@@ -709,7 +1129,7 @@ async def get_portfolio_performance(portfolio_id: int, db = Depends(get_db)):
         logger.error(f"Error calculating portfolio performance: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}") 
 
-async def calculate_company_irr(client):
+async def calculate_company_irr(db):
     """
     Calculate company-wide IRR using the standardized multiple IRR endpoint.
     This ensures consistency with individual fund IRR calculations and properly handles
@@ -733,12 +1153,9 @@ async def calculate_company_irr(client):
     
     try:
         # Step 1: Get all portfolio fund IDs in a single query
-        portfolio_funds_response = client.table('portfolio_funds') \
-            .select('id') \
-            .eq('status', 'active') \
-            .execute()
+        portfolio_funds_response = await db.fetch("SELECT id FROM portfolio_funds WHERE status = 'active'")
         
-        all_portfolio_fund_ids = [fund['id'] for fund in portfolio_funds_response.data]
+        all_portfolio_fund_ids = [dict(fund)['id'] for fund in portfolio_funds_response]
         
         if not all_portfolio_fund_ids:
             logger.warning("No active portfolio funds found")
@@ -758,7 +1175,7 @@ async def calculate_company_irr(client):
         irr_result = await calculate_multiple_portfolio_funds_irr(
             portfolio_fund_ids=all_portfolio_fund_ids,
             irr_date=None,  # Use latest valuation date
-            db=client
+            db=db
         )
         
         if irr_result and irr_result.get('success'):
@@ -780,19 +1197,14 @@ async def calculate_company_irr(client):
         try:
             
             # Get total current valuations
-            latest_valuations_response = client.table('latest_portfolio_fund_valuations') \
-                .select('valuation') \
-                .execute()
+            latest_valuations_response = await db.fetch("SELECT valuation FROM latest_portfolio_fund_valuations")
             
-            total_current_value = sum(float(v['valuation'] or 0) for v in latest_valuations_response.data)
+            total_current_value = sum(float(dict(v)['valuation'] or 0) for v in latest_valuations_response)
             
             # Get total amount invested
-            portfolio_funds_response = client.table('portfolio_funds') \
-                .select('amount_invested') \
-                .eq('status', 'active') \
-                .execute()
+            portfolio_funds_response = await db.fetch("SELECT amount_invested FROM portfolio_funds WHERE status = 'active'")
             
-            total_invested = sum(float(pf['amount_invested'] or 0) for pf in portfolio_funds_response.data)
+            total_invested = sum(float(dict(pf)['amount_invested'] or 0) for pf in portfolio_funds_response)
             
             if total_invested > 0:
                 # Simple ROI calculation as fallback
@@ -823,19 +1235,20 @@ async def get_company_irr_endpoint(db = Depends(get_db)):
         company_irr = await calculate_company_irr(db)
         
         # Get additional metrics for compatibility with existing API
-        client_count_result = db.table("client_groups").select("id").eq("status", "active").execute()
-        client_count = len(client_count_result.data) if client_count_result.data else 0
+        client_count = await db.fetchval("SELECT COUNT(*) FROM client_groups WHERE status = 'active'")
+        client_count = int(client_count) if client_count is not None else 0
         
-        product_count_result = db.table("client_products").select("id").eq("status", "active").execute()
-        total_products = len(product_count_result.data) if product_count_result.data else 0
+        total_products = await db.fetchval("SELECT COUNT(*) FROM client_products WHERE status = 'active'")
+        total_products = int(total_products) if total_products is not None else 0
         
-        portfolio_funds_result = db.table("portfolio_funds").select("id").eq("status", "active").execute()
-        total_portfolio_funds = len(portfolio_funds_result.data) if portfolio_funds_result.data else 0
+        portfolio_funds_result = await db.fetch("SELECT id, amount_invested FROM portfolio_funds WHERE status = 'active'")
+        total_portfolio_funds = len(portfolio_funds_result) if portfolio_funds_result else 0
         
         # Calculate total investment for backward compatibility
         total_investment = 0
-        if portfolio_funds_result.data:
-            for pf in portfolio_funds_result.data:
+        if portfolio_funds_result:
+            for pf_record in portfolio_funds_result:
+                pf = dict(pf_record)
                 if pf.get("amount_invested"):
                     total_investment += float(pf["amount_invested"])
         
@@ -861,31 +1274,28 @@ async def calculate_client_irr(client_id: int, db = Depends(get_db)):
     3. Using the standardized multiple funds IRR calculation to get the true aggregated IRR
     """
     try:
-        # Get all products for the client
-        products_result = db.table("client_products").select("*").eq("client_id", client_id).execute()
+        # Get all products for the client - OPTIMIZED BULK QUERIES
+        products_result = await db.fetch("SELECT * FROM client_products WHERE client_id = $1", client_id)
         
-        if not products_result.data:
+        if not products_result:
             logger.info(f"No products found for client {client_id}")
             return {"client_id": client_id, "irr": 0, "product_count": 0}
             
-        # Collect all portfolio fund IDs from all products
-        all_portfolio_fund_ids = []
-        product_count = len(products_result.data)
+        # Extract portfolio IDs and bulk fetch portfolio funds
+        portfolio_ids = [dict(product)["portfolio_id"] for product in products_result if dict(product)["portfolio_id"]]
+        product_count = len(products_result)
         
-        for product in products_result.data:
-            # Get portfolio directly from client_products
-            if not product["portfolio_id"]:
-                continue
-                
-            # Get all portfolio funds for this portfolio
-            portfolio_funds_result = db.table("portfolio_funds")\
-                .select("id")\
-                .eq("portfolio_id", product["portfolio_id"])\
-                .execute()
-                
-            if portfolio_funds_result.data:
-                portfolio_fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
-                all_portfolio_fund_ids.extend(portfolio_fund_ids)
+        if not portfolio_ids:
+            logger.info(f"No portfolios found for client {client_id}")
+            return {"client_id": client_id, "irr": 0, "product_count": product_count, "portfolio_fund_count": 0}
+        
+        # Bulk fetch all portfolio funds for all portfolios at once
+        portfolio_funds_result = await db.fetch("""
+            SELECT id FROM portfolio_funds 
+            WHERE portfolio_id = ANY($1::int[])
+        """, portfolio_ids)
+        
+        all_portfolio_fund_ids = [dict(pf)["id"] for pf in portfolio_funds_result]
         
         if not all_portfolio_fund_ids:
             logger.info(f"No portfolio funds found for client {client_id}")
@@ -936,12 +1346,13 @@ async def calculate_product_irr(product_id: int, db = Depends(get_db)):
     """
     try:
         # Get the product and its associated portfolio
-        product_result = db.table("client_products")\
-            .select("portfolio_id, start_date")\
-            .eq("id", product_id)\
-            .execute()
+        product_result = await db.fetchrow("""
+            SELECT portfolio_id, start_date 
+            FROM client_products 
+            WHERE id = $1
+        """, product_id)
             
-        if not product_result.data or not product_result.data[0]["portfolio_id"]:
+        if not product_result or not dict(product_result)["portfolio_id"]:
             logger.info(f"No portfolio associated with product {product_id}")
             return {
                 "product_id": product_id,
@@ -951,16 +1362,16 @@ async def calculate_product_irr(product_id: int, db = Depends(get_db)):
                 "date": None
             }
             
-        portfolio_id = product_result.data[0]["portfolio_id"]
+        portfolio_id = dict(product_result)["portfolio_id"]
             
         # Get all portfolio funds for this portfolio
-        portfolio_funds_result = db.table("portfolio_funds")\
-            .select("id")\
-            .eq("portfolio_id", portfolio_id)\
-            .execute()
+        portfolio_funds_result = await db.fetch("""
+            SELECT id FROM portfolio_funds 
+            WHERE portfolio_id = $1
+        """, portfolio_id)
             
         # DEBUG: Log fund counts
-        if not portfolio_funds_result.data:
+        if not portfolio_funds_result:
             logger.info(f"No portfolio funds found for portfolio {portfolio_id}")
             return {
                 "product_id": product_id,
@@ -970,7 +1381,7 @@ async def calculate_product_irr(product_id: int, db = Depends(get_db)):
                 "date": None
             }
             
-        portfolio_fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
+        portfolio_fund_ids = [dict(pf)["id"] for pf in portfolio_funds_result]
         
         # Use the standardized multiple funds IRR calculation
         from app.api.routes.portfolio_funds import calculate_multiple_portfolio_funds_irr
@@ -1021,58 +1432,103 @@ async def get_client_risks(db = Depends(get_db)):
     3. Client level: Weighted average of product risks based on total investment
     """
     try:
-        # Get all active clients
-        clients_result = db.table("client_groups").select("*").eq("status", "active").execute()
+        # MASSIVE OPTIMIZATION: Convert N*M*P*Q queries to 4 bulk queries
         
+        # Step 1: Get all active clients
+        clients_result = await db.fetch("SELECT * FROM client_groups WHERE status = 'active'")
+        
+        if not clients_result:
+            return []
+        
+        # Step 2: Bulk fetch all client products for all clients
+        client_ids = [dict(client)["id"] for client in clients_result]
+        products_result = await db.fetch("""
+            SELECT * FROM client_products 
+            WHERE client_id = ANY($1::int[]) AND status = 'active' AND portfolio_id IS NOT NULL
+        """, client_ids)
+        
+        # Step 3: Bulk fetch all portfolio funds for all portfolios
+        portfolio_ids = [dict(product)["portfolio_id"] for product in products_result]
+        portfolio_ids = list(set(portfolio_ids))  # Remove duplicates
+        
+        portfolio_funds_result = await db.fetch("""
+            SELECT available_funds_id, amount_invested, portfolio_id
+            FROM portfolio_funds 
+            WHERE portfolio_id = ANY($1::int[])
+        """, portfolio_ids) if portfolio_ids else []
+        
+        # Step 4: Bulk fetch all fund risk factors
+        fund_ids = [dict(pf)["available_funds_id"] for pf in portfolio_funds_result]
+        fund_ids = list(set(fund_ids))  # Remove duplicates
+        
+        funds_result = await db.fetch("""
+            SELECT id, risk_factor FROM available_funds 
+            WHERE id = ANY($1::int[]) AND risk_factor IS NOT NULL
+        """, fund_ids) if fund_ids else []
+        
+        # Step 5: Create efficient lookup maps
+        products_by_client_id = {}
+        for product_record in products_result:
+            product = dict(product_record)
+            client_id = product["client_id"]
+            if client_id not in products_by_client_id:
+                products_by_client_id[client_id] = []
+            products_by_client_id[client_id].append(product)
+        
+        pf_by_portfolio_id = {}
+        for pf_record in portfolio_funds_result:
+            pf = dict(pf_record)
+            portfolio_id = pf["portfolio_id"]
+            if portfolio_id not in pf_by_portfolio_id:
+                pf_by_portfolio_id[portfolio_id] = []
+            pf_by_portfolio_id[portfolio_id].append(pf)
+        
+        risk_by_fund_id = {}
+        for fund_record in funds_result:
+            fund = dict(fund_record)
+            risk_by_fund_id[fund["id"]] = fund["risk_factor"]
+        
+        # Step 6: Process each client with bulk data
         client_risks = []
         
-        for client in clients_result.data:
+        for client_record in clients_result:
             try:
-                # Get all products for this client
-                products_result = db.table("client_products")\
-                    .select("*")\
-                    .eq("client_id", client["id"])\
-                    .eq("status", "active")\
-                    .execute()
+                client = dict(client_record)
+                client_id = client["id"]
                 
-                if not products_result.data:
+                # Get products for this client
+                products = products_by_client_id.get(client_id, [])
+                
+                if not products:
                     continue
                 
                 total_client_investment = 0
                 weighted_risk_sum = 0
                 
-                for product in products_result.data:
-                    # Get portfolio directly from client_products
-                    if not product["portfolio_id"]:
+                for product in products:
+                    portfolio_id = product["portfolio_id"]
+                    
+                    if not portfolio_id:
                         continue
                     
                     product_investment = 0
                     product_risk_sum = 0
                     
-                    # Get all funds in this portfolio
-                    portfolio_funds_result = db.table("portfolio_funds")\
-                        .select("available_funds_id, amount_invested")\
-                        .eq("portfolio_id", product["portfolio_id"])\
-                        .execute()
-                    
-                    if not portfolio_funds_result.data:
-                        continue
+                    # Get portfolio funds for this portfolio
+                    portfolio_funds = pf_by_portfolio_id.get(portfolio_id, [])
                     
                     portfolio_investment = 0
                     portfolio_risk_sum = 0
                     
-                    for pf in portfolio_funds_result.data:
-                        # Get the fund's risk factor
-                        fund_result = db.table("available_funds")\
-                            .select("risk_factor")\
-                            .eq("id", pf["available_funds_id"])\
-                            .execute()
-                        
-                        if not fund_result.data or fund_result.data[0]["risk_factor"] is None:
-                            continue
-                            
+                    for pf in portfolio_funds:
+                        fund_id = pf["available_funds_id"]
                         amount_invested = pf["amount_invested"] or 0
-                        risk_factor = fund_result.data[0]["risk_factor"]
+                        
+                        # Get risk factor from lookup
+                        risk_factor = risk_by_fund_id.get(fund_id)
+                        
+                        if risk_factor is None:
+                            continue
                         
                         portfolio_investment += amount_invested
                         portfolio_risk_sum += risk_factor * amount_invested
@@ -1119,45 +1575,47 @@ async def get_portfolio_irr(portfolio_id: int, db = Depends(get_db)):
     """
     try:
         # Check if portfolio exists
-        portfolio_check = db.table("portfolios").select("id").eq("id", portfolio_id).execute()
-        if not portfolio_check.data:
+        portfolio_check = await db.fetchrow("SELECT id FROM portfolios WHERE id = $1", portfolio_id)
+        if not portfolio_check:
             raise HTTPException(status_code=404, detail=f"Portfolio with ID {portfolio_id} not found")
         
         # Get the latest portfolio IRR from the portfolio_irr_values table
         logger.info(f"📊 [ANALYTICS DEBUG] Querying portfolio_irr_values for portfolio_id: {portfolio_id}")
         
-        latest_irr_result = db.table("portfolio_irr_values")\
-            .select("irr_result, date")\
-            .eq("portfolio_id", portfolio_id)\
-            .order("date", desc=True)\
-            .limit(1)\
-            .execute()
+        latest_irr_result = await db.fetchrow("""
+            SELECT irr_result, date FROM portfolio_irr_values 
+            WHERE portfolio_id = $1 
+            ORDER BY date DESC 
+            LIMIT 1
+        """, portfolio_id)
         
         logger.info(f"📊 [ANALYTICS DEBUG] Query result: {latest_irr_result}")
-        logger.info(f"📊 [ANALYTICS DEBUG] Query data: {latest_irr_result.data}")
+        logger.info(f"📊 [ANALYTICS DEBUG] Query result: {latest_irr_result}")
         
-        if latest_irr_result.data and latest_irr_result.data[0]["irr_result"] is not None:
-            irr_value = float(latest_irr_result.data[0]["irr_result"])
-            logger.info(f"📊 Retrieved portfolio IRR for portfolio {portfolio_id}: {irr_value}% from date {latest_irr_result.data[0]['date']}")
+        if latest_irr_result and dict(latest_irr_result)["irr_result"] is not None:
+            irr_record = dict(latest_irr_result)
+            irr_value = float(irr_record["irr_result"])
+            logger.info(f"📊 Retrieved portfolio IRR for portfolio {portfolio_id}: {irr_value}% from date {irr_record['date']}")
+            return {"portfolio_id": portfolio_id, "irr": irr_value}
         else:
-            logger.warning(f"📊 [ANALYTICS DEBUG] No portfolio IRR found - data: {latest_irr_result.data}")
-            if latest_irr_result.data:
-                logger.warning(f"📊 [ANALYTICS DEBUG] First record irr_result: {latest_irr_result.data[0].get('irr_result', 'KEY_NOT_FOUND')}")
+            logger.warning(f"📊 [ANALYTICS DEBUG] No portfolio IRR found - result: {latest_irr_result}")
+            if latest_irr_result:
+                logger.warning(f"📊 [ANALYTICS DEBUG] IRR result value: {dict(latest_irr_result).get('irr_result', 'KEY_NOT_FOUND')}")
             
             # Fallback: If no portfolio IRR values exist, try to calculate using the correct method
             logger.warning(f"No portfolio IRR values found for portfolio {portfolio_id}, attempting to calculate using aggregated approach")
             
             # Get all portfolio funds for the portfolio to calculate IRR
-            portfolio_funds_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
+            portfolio_funds_result = await db.fetch("SELECT id FROM portfolio_funds WHERE portfolio_id = $1", portfolio_id)
             
-            if not portfolio_funds_result.data:
+            if not portfolio_funds_result:
                 logger.info(f"No portfolio funds found for portfolio {portfolio_id}")
                 return {"portfolio_id": portfolio_id, "irr": 0}
             
             # Use the fixed calculate_multiple_portfolio_funds_irr function
             from app.api.routes.portfolio_funds import calculate_multiple_portfolio_funds_irr
             
-            fund_ids = [fund["id"] for fund in portfolio_funds_result.data]
+            fund_ids = [dict(fund)["id"] for fund in portfolio_funds_result]
             try:
                 irr_calculation_result = await calculate_multiple_portfolio_funds_irr(
                     portfolio_fund_ids=fund_ids,
@@ -1203,53 +1661,99 @@ async def get_portfolio_template_distribution(
     Expected output: A list of portfolio template generations with their names and total current market value
     """
     try:
-        # Get all template portfolio generations
-        generations_result = db.table("template_portfolio_generations").select("id,generation_name").execute()
+        # OPTIMIZED BULK QUERIES: Convert N*M*P queries to 4 bulk queries
         
-        if not generations_result.data:
+        # Step 1: Get all template portfolio generations
+        generations_result = await db.fetch("SELECT id, generation_name FROM template_portfolio_generations")
+        
+        if not generations_result:
             logger.warning("No template portfolio generations found in the database")
             return {"templates": []}
         
-        # Add a category for portfolios without a template (bespoke)
-        template_data = [
-            {
-                "id": "bespoke",
-                "name": "Bespoke Portfolios",
-                "amount": 0,
-                "valuation_source": "mixed"
-            }
-        ]
+        # Step 2: Bulk fetch all portfolios (both templated and bespoke)
+        portfolios_result = await db.fetch("SELECT id, template_generation_id FROM portfolios")
         
+        # Step 3: Bulk fetch all portfolio funds for all portfolios
+        portfolio_ids = [dict(portfolio)["id"] for portfolio in portfolios_result]
+        portfolio_funds_result = await db.fetch("""
+            SELECT id, amount_invested, portfolio_id 
+            FROM portfolio_funds 
+            WHERE portfolio_id = ANY($1::int[])
+        """, portfolio_ids) if portfolio_ids else []
+        
+        # Step 4: Bulk fetch all valuations for all portfolio funds
+        pf_ids = [dict(pf)["id"] for pf in portfolio_funds_result]
+        valuations_result = await db.fetch("""
+            SELECT portfolio_fund_id, valuation 
+            FROM latest_portfolio_fund_valuations 
+            WHERE portfolio_fund_id = ANY($1::int[]) AND valuation IS NOT NULL
+        """, pf_ids) if pf_ids else []
+        
+        # Step 5: Create efficient lookup maps
+        portfolios_by_template_id = {}
+        bespoke_portfolios = []
+        
+        for portfolio_record in portfolios_result:
+            portfolio = dict(portfolio_record)
+            template_id = portfolio["template_generation_id"]
+            
+            if template_id is None:
+                bespoke_portfolios.append(portfolio)
+            else:
+                if template_id not in portfolios_by_template_id:
+                    portfolios_by_template_id[template_id] = []
+                portfolios_by_template_id[template_id].append(portfolio)
+        
+        pf_by_portfolio_id = {}
+        for pf_record in portfolio_funds_result:
+            pf = dict(pf_record)
+            portfolio_id = pf["portfolio_id"]
+            if portfolio_id not in pf_by_portfolio_id:
+                pf_by_portfolio_id[portfolio_id] = []
+            pf_by_portfolio_id[portfolio_id].append(pf)
+        
+        valuations_by_pf_id = {}
+        for val_record in valuations_result:
+            val = dict(val_record)
+            valuations_by_pf_id[val["portfolio_fund_id"]] = val["valuation"]
+        
+        # Step 6: Process templates with bulk data
+        template_data = []
         valuations_used = 0
         amount_invested_fallbacks = 0
         
-        # For each template generation, calculate total current market value (FUM)
-        for generation in generations_result.data:
-            # Find all portfolios that use this template generation
-            portfolios_result = db.table("portfolios").select("id").eq("template_generation_id", generation["id"]).execute()
+        # Process each template generation
+        for generation_record in generations_result:
+            generation = dict(generation_record)
+            template_id = generation["id"]
+            
+            # Get portfolios for this template
+            portfolios = portfolios_by_template_id.get(template_id, [])
             
             total_value = 0
             template_has_valuations = False
             
-            for portfolio in portfolios_result.data:
-                # Get all portfolio_funds for this portfolio
-                pf_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio["id"]).execute()
+            for portfolio in portfolios:
+                portfolio_id = portfolio["id"]
                 
-                for pf in pf_result.data:
-                    # Prioritize latest valuation for current market value
-                    valuation_result = db.table("latest_portfolio_fund_valuations").select("valuation").eq("portfolio_fund_id", pf["id"]).execute()
+                # Get portfolio funds for this portfolio
+                portfolio_funds = pf_by_portfolio_id.get(portfolio_id, [])
+                
+                for pf in portfolio_funds:
+                    pf_id = pf["id"]
                     
-                    if valuation_result.data and len(valuation_result.data) > 0 and valuation_result.data[0]["valuation"] is not None:
-                        # Use latest market valuation (preferred method)
-                        total_value += valuation_result.data[0]["valuation"]
+                    # Check for valuation first (preferred)
+                    if pf_id in valuations_by_pf_id:
+                        total_value += valuations_by_pf_id[pf_id]
                         template_has_valuations = True
                         valuations_used += 1
                     else:
-                        # Fallback to amount_invested only if no valuation exists
-                        if pf["amount_invested"] is not None:
-                            total_value += pf["amount_invested"]
+                        # Fallback to amount_invested
+                        amount_invested = pf["amount_invested"]
+                        if amount_invested is not None:
+                            total_value += amount_invested
                             amount_invested_fallbacks += 1
-                            logger.debug(f"No valuation found for portfolio_fund {pf['id']}, using amount_invested: {pf['amount_invested']}")
+                            logger.debug(f"No valuation found for portfolio_fund {pf_id}, using amount_invested: {amount_invested}")
             
             # Only include template generations with values > 0
             if total_value > 0:
@@ -1260,40 +1764,40 @@ async def get_portfolio_template_distribution(
                     "valuation_source": "latest_valuation" if template_has_valuations else "amount_invested"
                 })
         
-        # Now handle portfolios without a template (bespoke)
-        # Find all portfolios with null template_generation_id
-        bespoke_portfolios_result = db.table("portfolios").select("id").is_("template_generation_id", "null").execute()
-        
+        # Step 7: Process bespoke portfolios
         bespoke_total = 0
         bespoke_has_valuations = False
         
-        for portfolio in bespoke_portfolios_result.data:
-            # Get all portfolio_funds for this bespoke portfolio
-            pf_result = db.table("portfolio_funds").select("id,amount_invested").eq("portfolio_id", portfolio["id"]).execute()
+        for portfolio in bespoke_portfolios:
+            portfolio_id = portfolio["id"]
             
-            for pf in pf_result.data:
-                # Prioritize latest valuation for current market value
-                valuation_result = db.table("latest_portfolio_fund_valuations").select("valuation").eq("portfolio_fund_id", pf["id"]).execute()
+            # Get portfolio funds for this bespoke portfolio
+            portfolio_funds = pf_by_portfolio_id.get(portfolio_id, [])
+            
+            for pf in portfolio_funds:
+                pf_id = pf["id"]
                 
-                if valuation_result.data and len(valuation_result.data) > 0 and valuation_result.data[0]["valuation"] is not None:
-                    # Use latest market valuation (preferred method)
-                    bespoke_total += valuation_result.data[0]["valuation"]
+                # Check for valuation first (preferred)
+                if pf_id in valuations_by_pf_id:
+                    bespoke_total += valuations_by_pf_id[pf_id]
                     bespoke_has_valuations = True
                     valuations_used += 1
                 else:
-                    # Fallback to amount_invested only if no valuation exists
-                    if pf["amount_invested"] is not None:
-                        bespoke_total += pf["amount_invested"]
+                    # Fallback to amount_invested
+                    amount_invested = pf["amount_invested"]
+                    if amount_invested is not None:
+                        bespoke_total += amount_invested
                         amount_invested_fallbacks += 1
-                        logger.debug(f"No valuation found for portfolio_fund {pf['id']}, using amount_invested: {pf['amount_invested']}")
+                        logger.debug(f"No valuation found for portfolio_fund {pf_id}, using amount_invested: {amount_invested}")
         
-        # Update the bespoke category amount and valuation source
-        template_data[0]["amount"] = bespoke_total
-        template_data[0]["valuation_source"] = "latest_valuation" if bespoke_has_valuations else "amount_invested"
-        
-        # Remove bespoke category if it's 0
-        if bespoke_total == 0:
-            template_data = template_data[1:]
+        # Add bespoke category if it has value
+        if bespoke_total > 0:
+            template_data.insert(0, {
+                "id": "bespoke",
+                "name": "Bespoke Portfolios",
+                "amount": bespoke_total,
+                "valuation_source": "latest_valuation" if bespoke_has_valuations else "amount_invested"
+            })
         
         # Sort by amount (descending) and limit results
         template_data.sort(key=lambda x: x["amount"], reverse=True)
@@ -1318,40 +1822,29 @@ async def get_dashboard_all_data(
     """
     try:
         # 1. Get ALL latest valuations in one query (instead of N individual queries)
-        all_valuations_result = db.table("latest_portfolio_fund_valuations")\
-            .select("portfolio_fund_id, valuation, valuation_date")\
-            .execute()
+        all_valuations_result = await db.fetch("SELECT portfolio_fund_id, valuation, valuation_date FROM latest_portfolio_fund_valuations")
         
         # Create lookup dictionary for O(1) access
         valuations_lookup = {}
         total_fum_from_valuations = 0
         
-        if all_valuations_result.data:
-            for v in all_valuations_result.data:
+        if all_valuations_result:
+            for v_record in all_valuations_result:
+                v = dict(v_record)
                 if v["valuation"] is not None:
                     valuations_lookup[v["portfolio_fund_id"]] = v["valuation"]
                     total_fum_from_valuations += v["valuation"]
         
         # 2. Get ALL portfolio funds with related data in one query
-        portfolio_funds_result = db.table("portfolio_funds")\
-            .select("id, portfolio_id, available_funds_id, amount_invested, status")\
-            .eq("status", "active")\
-            .execute()
+        portfolio_funds_result = await db.fetch("SELECT id, portfolio_id, available_funds_id, amount_invested, status FROM portfolio_funds WHERE status = 'active'")
         
         # 3. Get ALL reference data in parallel batch queries
         # FIXED: Include ALL funds regardless of status to prevent exclusions
-        funds_task = db.table("available_funds").select("id, fund_name, status").execute()
-        providers_task = db.table("available_providers").select("id, name, status").execute()
-        portfolios_task = db.table("portfolios").select("id, template_generation_id, status").execute()
-        templates_task = db.table("template_portfolio_generations").select("id, generation_name, status").execute()
-        client_products_task = db.table("client_products").select("id, portfolio_id, provider_id, status").eq("status", "active").execute()
-        
-        # Execute queries in parallel
-        funds_result = funds_task
-        providers_result = providers_task
-        portfolios_result = portfolios_task
-        templates_result = templates_task
-        client_products_result = client_products_task
+        funds_result = await db.fetch("SELECT id, fund_name, status FROM available_funds")
+        providers_result = await db.fetch("SELECT id, name, status FROM available_providers")
+        portfolios_result = await db.fetch("SELECT id, template_generation_id, status FROM portfolios")
+        templates_result = await db.fetch("SELECT id, generation_name, status FROM template_portfolio_generations")
+        client_products_result = await db.fetch("SELECT id, portfolio_id, provider_id, status FROM client_products WHERE status = 'active'")
         
         # 4. Calculate distributions using in-memory aggregation (MUCH faster)
         fund_totals = {}
@@ -1361,10 +1854,10 @@ async def get_dashboard_all_data(
         total_from_investments = 0
         
         # Create lookup dictionaries for O(1) access (FIXED: Include ALL funds/providers regardless of status)
-        funds_lookup = {f["id"]: f["fund_name"] for f in funds_result.data} if funds_result.data else {}
-        providers_lookup = {p["id"]: p["name"] for p in providers_result.data} if providers_result.data else {}
-        templates_lookup = {t["id"]: t["generation_name"] for t in templates_result.data} if templates_result.data else {}
-        portfolios_lookup = {p["id"]: p["template_generation_id"] for p in portfolios_result.data} if portfolios_result.data else {}
+        funds_lookup = {dict(f)["id"]: dict(f)["fund_name"] for f in funds_result} if funds_result else {}
+        providers_lookup = {dict(p)["id"]: dict(p)["name"] for p in providers_result} if providers_result else {}
+        templates_lookup = {dict(t)["id"]: dict(t)["generation_name"] for t in templates_result} if templates_result else {}
+        portfolios_lookup = {dict(p)["id"]: dict(p)["template_generation_id"] for p in portfolios_result} if portfolios_result else {}
         
         # DEBUGGING: Log lookup sizes to identify the data inconsistency
         logger.info(f"🔍 Lookup Dictionary Sizes:")
@@ -1372,12 +1865,13 @@ async def get_dashboard_all_data(
         logger.info(f"   Providers Lookup: {len(providers_lookup)} providers")
         logger.info(f"   Templates Lookup: {len(templates_lookup)} templates")
         logger.info(f"   Portfolios Lookup: {len(portfolios_lookup)} portfolios")
-        logger.info(f"   Portfolio Funds to Process: {len(portfolio_funds_result.data) if portfolio_funds_result.data else 0}")
+        logger.info(f"   Portfolio Funds to Process: {len(portfolio_funds_result) if portfolio_funds_result else 0}")
         
         # Group client products by portfolio and provider for O(1) lookup
         portfolio_to_provider = {}
-        if client_products_result.data:
-            for cp in client_products_result.data:
+        if client_products_result:
+            for cp_record in client_products_result:
+                cp = dict(cp_record)
                 if cp["portfolio_id"] and cp["provider_id"]:
                     portfolio_to_provider[cp["portfolio_id"]] = cp["provider_id"]
         
@@ -1389,8 +1883,9 @@ async def get_dashboard_all_data(
         portfolio_funds_with_fund_ids = 0
         portfolio_funds_missing_fund_ids = 0
         
-        if portfolio_funds_result.data:
-            for pf in portfolio_funds_result.data:
+        if portfolio_funds_result:
+            for pf_record in portfolio_funds_result:
+                pf = dict(pf_record)
                 # Get current value (valuation preferred, amount_invested as fallback)
                 current_value = valuations_lookup.get(pf["id"]) or pf["amount_invested"] or 0
                 
@@ -1448,11 +1943,9 @@ async def get_dashboard_all_data(
         company_irr = await calculate_company_irr(db)
         
         # Count metrics efficiently from already loaded data
-        client_count_result = db.table("client_groups").select("id").eq("status", "active").execute()
-        client_count = len(client_count_result.data) if client_count_result.data else 0
+        client_count = await db.fetchval("SELECT COUNT(*) FROM client_groups WHERE status = 'active'")
         
-        product_count_result = db.table("client_products").select("id").eq("status", "active").execute()
-        total_products = len(product_count_result.data) if product_count_result.data else 0
+        total_products = await db.fetchval("SELECT COUNT(*) FROM client_products WHERE status = 'active'")
         
         # 7. Format response data efficiently (FIXED: Handle unknown/unassigned categories)
         funds_list = []
@@ -1525,7 +2018,7 @@ async def get_dashboard_all_data(
                 "companyIRR": company_irr,
                 "totalClients": client_count,
                 "totalAccounts": total_products,
-                "totalActiveHoldings": len(portfolio_funds_result.data) if portfolio_funds_result.data else 0
+                "totalActiveHoldings": len(portfolio_funds_result) if portfolio_funds_result else 0
             },
             "funds": funds_list,
             "providers": providers_list,
@@ -1533,8 +2026,8 @@ async def get_dashboard_all_data(
             "performance": {
                 "optimization_stats": {
                     "total_db_queries": 6,  # vs 50+ individual queries before
-                    "total_portfolio_funds": len(portfolio_funds_result.data) if portfolio_funds_result.data else 0,
-                    "total_valuations": len(all_valuations_result.data) if all_valuations_result.data else 0,
+                                "total_portfolio_funds": len(portfolio_funds_result) if portfolio_funds_result else 0,
+            "total_valuations": len(all_valuations_result) if all_valuations_result else 0,
                     "valuations_used": len(valuations_lookup),
                     "fum_source": "valuations" if total_fum > 0 else "investments"
                 }
@@ -1559,60 +2052,97 @@ async def get_products_risk_differences(
     Actual risk: weighted average risk of portfolio_funds against their latest valuations
     """
     try:
-        # Get all active client products with their portfolios
-        products_result = db.table("client_products")\
-            .select("id, product_name, client_id, portfolio_id")\
-            .eq("status", "active")\
-            .not_.is_("portfolio_id", "null")\
-            .execute()
+        # MASSIVE OPTIMIZATION: Convert N*M*P*Q queries to 5 bulk queries
         
-        if not products_result.data:
+        # Step 1: Get all active client products with portfolios and client names
+        products_with_clients_result = await db.fetch("""
+            SELECT cp.id, cp.product_name, cp.client_id, cp.portfolio_id, cg.name as client_name
+            FROM client_products cp
+            JOIN client_groups cg ON cp.client_id = cg.id
+            WHERE cp.status = 'active' AND cp.portfolio_id IS NOT NULL
+        """)
+        
+        if not products_with_clients_result:
             return []
         
+        # Step 2: Bulk fetch all portfolio funds for all products
+        portfolio_ids = [dict(product)["portfolio_id"] for product in products_with_clients_result]
+        portfolio_funds_result = await db.fetch("""
+            SELECT id, available_funds_id, target_weighting, amount_invested, portfolio_id
+            FROM portfolio_funds 
+            WHERE portfolio_id = ANY($1::int[]) AND status = 'active'
+        """, portfolio_ids)
+        
+        # Step 3: Bulk fetch all fund risk factors and names
+        fund_ids = [dict(pf)["available_funds_id"] for pf in portfolio_funds_result]
+        fund_ids = list(set(fund_ids))  # Remove duplicates
+        
+        funds_result = await db.fetch("""
+            SELECT id, risk_factor, fund_name 
+            FROM available_funds 
+            WHERE id = ANY($1::int[]) AND risk_factor IS NOT NULL
+        """, fund_ids) if fund_ids else []
+        
+        # Step 4: Bulk fetch latest valuations for all portfolio funds
+        pf_ids = [dict(pf)["id"] for pf in portfolio_funds_result]
+        valuations_result = await db.fetch("""
+            SELECT DISTINCT ON (portfolio_fund_id) portfolio_fund_id, valuation
+            FROM portfolio_fund_valuations 
+            WHERE portfolio_fund_id = ANY($1::int[])
+            ORDER BY portfolio_fund_id, valuation_date DESC
+        """, pf_ids) if pf_ids else []
+        
+        # Step 5: Create efficient lookup maps
+        pf_by_portfolio_id = {}
+        for pf_record in portfolio_funds_result:
+            pf = dict(pf_record)
+            portfolio_id = pf["portfolio_id"]
+            if portfolio_id not in pf_by_portfolio_id:
+                pf_by_portfolio_id[portfolio_id] = []
+            pf_by_portfolio_id[portfolio_id].append(pf)
+        
+        funds_by_id = {}
+        for fund_record in funds_result:
+            fund = dict(fund_record)
+            funds_by_id[fund["id"]] = fund
+        
+        valuations_by_pf_id = {}
+        for val_record in valuations_result:
+            val = dict(val_record)
+            valuations_by_pf_id[val["portfolio_fund_id"]] = val["valuation"]
+        
+        # Step 6: Process each product with bulk data
         risk_differences = []
         
-        for product in products_result.data:
+        for product_record in products_with_clients_result:
+            product = dict(product_record)
             product_id = product["id"]
             portfolio_id = product["portfolio_id"]
             
-            # Get all portfolio funds for this product
-            portfolio_funds_result = db.table("portfolio_funds")\
-                .select("id, available_funds_id, target_weighting, amount_invested")\
-                .eq("portfolio_id", portfolio_id)\
-                .eq("status", "active")\
-                .execute()
+            # Get portfolio funds for this product
+            portfolio_funds = pf_by_portfolio_id.get(portfolio_id, [])
             
-            if not portfolio_funds_result.data:
+            if not portfolio_funds:
                 continue
             
-            # Get fund risk factors and latest valuations
+            # Build fund data with bulk lookup
             fund_data = {}
-            for pf in portfolio_funds_result.data:
+            for pf in portfolio_funds:
                 fund_id = pf["available_funds_id"]
+                pf_id = pf["id"]
                 
-                # Get fund risk factor
-                fund_result = db.table("available_funds")\
-                    .select("risk_factor, fund_name")\
-                    .eq("id", fund_id)\
-                    .execute()
-                
-                if not fund_result.data or fund_result.data[0]["risk_factor"] is None:
+                # Get fund info from lookup
+                if fund_id not in funds_by_id:
                     continue
                 
-                # Get latest valuation for this portfolio fund
-                valuation_result = db.table("portfolio_fund_valuations")\
-                    .select("valuation")\
-                    .eq("portfolio_fund_id", pf["id"])\
-                    .order("valuation_date", desc=True)\
-                    .limit(1)\
-                    .execute()
+                fund_info = funds_by_id[fund_id]
                 
-                fund_data[pf["id"]] = {
-                    "risk_factor": fund_result.data[0]["risk_factor"],
-                    "fund_name": fund_result.data[0]["fund_name"],
+                fund_data[pf_id] = {
+                    "risk_factor": fund_info["risk_factor"],
+                    "fund_name": fund_info["fund_name"],
                     "target_weighting": float(pf["target_weighting"] or 0),
                     "amount_invested": float(pf["amount_invested"] or 0),
-                    "latest_valuation": float(valuation_result.data[0]["valuation"]) if valuation_result.data else None
+                    "latest_valuation": float(valuations_by_pf_id.get(pf_id, 0)) if pf_id in valuations_by_pf_id else None
                 }
             
             if not fund_data:
@@ -1645,13 +2175,8 @@ async def get_products_risk_differences(
             if target_risk is not None and actual_risk is not None:
                 risk_difference = abs(actual_risk - target_risk)
                 
-                # Get client name
-                client_result = db.table("client_groups")\
-                    .select("name")\
-                    .eq("id", product["client_id"])\
-                    .execute()
-                
-                client_name = client_result.data[0]["name"] if client_result.data else "Unknown"
+                # Get client name from bulk query
+                client_name = product.get("client_name", "Unknown")
                 
                 risk_differences.append({
                     "product_id": product_id,
@@ -1723,9 +2248,9 @@ async def get_ultra_fast_dashboard(
         
         # 1. Get pre-computed metrics (sub-second response)
         try:
-            metrics_response = db.table("analytics_dashboard_summary").select("*").execute()
+            metrics_result = await db.fetch("SELECT * FROM analytics_dashboard_summary")
             
-            if not metrics_response.data:
+            if not metrics_result:
                 raise Exception("Analytics dashboard summary view returned no data")
                 
         except Exception as view_error:
@@ -1736,33 +2261,37 @@ async def get_ultra_fast_dashboard(
                 detail="Analytics views not deployed. Please run deploy_analytics_views.ps1 script to enable ultra-fast analytics."
             )
         
-        summary = metrics_response.data[0]
+        summary = dict(metrics_result[0])
         
         # 2. Get fast fund distribution (no IRR calculations)
-        funds_response = db.table("fund_distribution_fast") \
-            .select("id, name, amount") \
-            .limit(fund_limit) \
-            .execute()
+        funds_result = await db.fetch("""
+            SELECT id, name, amount 
+            FROM fund_distribution_fast 
+            LIMIT $1
+        """, fund_limit)
         
         # 3. Get fast provider distribution
-        providers_response = db.table("provider_distribution_fast") \
-            .select("id, name, amount") \
-            .limit(provider_limit) \
-            .execute()
+        providers_result = await db.fetch("""
+            SELECT id, name, amount 
+            FROM provider_distribution_fast 
+            LIMIT $1
+        """, provider_limit)
         
         # 4. Get template distribution (simplified, no IRR)
-        templates_response = db.table("template_portfolio_generations") \
-            .select("id, generation_name, status") \
-            .eq("status", "active") \
-            .limit(template_limit) \
-            .execute()
+        templates_result = await db.fetch("""
+            SELECT id, generation_name, status 
+            FROM template_portfolio_generations 
+            WHERE status = 'active' 
+            LIMIT $1
+        """, template_limit)
         
         # Calculate percentages for distributions
         total_fum = float(summary.get("total_fum", 0))
         
         funds = []
-        if funds_response.data and total_fum > 0:
-            for fund in funds_response.data:
+        if funds_result and total_fum > 0:
+            for fund_record in funds_result:
+                fund = dict(fund_record)
                 amount = float(fund["amount"] or 0)
                 funds.append({
                     "id": fund["id"],
@@ -1772,8 +2301,9 @@ async def get_ultra_fast_dashboard(
                 })
         
         providers = []
-        if providers_response.data and total_fum > 0:
-            for provider in providers_response.data:
+        if providers_result and total_fum > 0:
+            for provider_record in providers_result:
+                provider = dict(provider_record)
                 amount = float(provider["amount"] or 0)
                 providers.append({
                     "id": provider["id"],
@@ -1783,8 +2313,9 @@ async def get_ultra_fast_dashboard(
                 })
         
         templates = []
-        if templates_response.data:
-            for template in templates_response.data:
+        if templates_result:
+            for template_record in templates_result:
+                template = dict(template_record)
                 templates.append({
                     "id": template["id"],
                     "name": template["generation_name"],
@@ -1794,9 +2325,9 @@ async def get_ultra_fast_dashboard(
         
         # 5. Get revenue data (using existing company_revenue_analytics view)
         try:
-            revenue_response = db.table("company_revenue_analytics").select("*").execute()
-            if revenue_response.data:
-                revenue_data = revenue_response.data[0]
+            revenue_result = await db.fetch("SELECT * FROM company_revenue_analytics")
+            if revenue_result:
+                revenue_data = dict(revenue_result[0])
                 logger.info(f"✅ Revenue data loaded: £{revenue_data.get('total_annual_revenue', 0):,.2f}")
             else:
                 logger.warning("⚠️ No revenue data found in company_revenue_analytics view")

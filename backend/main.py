@@ -28,12 +28,7 @@ logger.info(f"Current working directory: {os.getcwd()}")
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 logger.info(f"Added to Python path: {os.path.dirname(os.path.abspath(__file__))}")
 
-try:
-    from app.api.routes import product_portfolio_assignments
-    logger.info("Successfully imported product_portfolio_assignments")
-except Exception as e:
-    logger.error(f"Error importing product_portfolio_assignments: {str(e)}")
-    raise
+
 
 import uvicorn
 from fastapi import FastAPI
@@ -52,16 +47,19 @@ logger.info("All modules imported successfully")
 
 # Import all route modules for API endpoints
 from app.api.routes import (
-    client_groups, products, funds, portfolios, providers, 
-    auth, product_funds,
+    client_groups, products, funds, portfolios,
+    auth,
     portfolio_funds, analytics, revenue,
     available_providers,
     available_portfolios, fund_valuations,
-    client_products, holding_activity_logs, product_holdings,
+    client_products, holding_activity_logs,
     product_owners, client_group_product_owners,
     provider_switch_log, search, portfolio_valuations,
     historical_irr, presence
 )
+
+# Import database functions for connection management
+from app.db.database import create_db_pool, close_db_pool, check_database_health
 
 # Load environment variables from .env file
 load_dotenv()
@@ -216,16 +214,14 @@ app.include_router(products.router, prefix="/api", tags=["Products"])
 app.include_router(funds.router, prefix="/api", tags=["Funds"])
 app.include_router(portfolios.router, prefix="/api", tags=["Portfolios"])
 app.include_router(available_providers.router, prefix="/api", tags=["Providers"])
-app.include_router(providers.router, prefix="/api", tags=["Providers"])
 app.include_router(available_portfolios.router, prefix="/api", tags=["Portfolios"])
-app.include_router(product_funds.router, prefix="/api", tags=["Products"])
 app.include_router(portfolio_funds.router, prefix="/api", tags=["Portfolios"])
 app.include_router(client_products.router, prefix="/api", tags=["Products"])
-app.include_router(product_holdings.router, prefix="/api", tags=["Holdings"])
+
 app.include_router(holding_activity_logs.router, prefix="/api", tags=["Holdings"])
 app.include_router(analytics.router, prefix="/api", tags=["Analytics"])
 app.include_router(revenue.router, prefix="/api", tags=["Revenue"])
-app.include_router(product_portfolio_assignments.router, prefix="/api", tags=["Portfolios"])
+
 app.include_router(fund_valuations.router, prefix="/api", tags=["Holdings"])
 app.include_router(product_owners.router, prefix="/api", tags=["Client Groups"])
 app.include_router(client_group_product_owners.router, prefix="/api", tags=["Client Groups"])
@@ -245,12 +241,38 @@ async def periodic_cleanup():
         except Exception as e:
             logger.error(f"Error in periodic cleanup: {str(e)}")
 
-# Start the periodic cleanup task
+# Application lifecycle events
 @app.on_event("startup")
 async def startup_event():
-    """Start background tasks when the application starts"""
-    asyncio.create_task(periodic_cleanup())
-    logger.info("Started periodic presence cleanup task")
+    """Initialize application resources when the server starts"""
+    try:
+        # Initialize database connection pool
+        logger.info("Initializing database connection pool...")
+        await create_db_pool()
+        logger.info("Database connection pool initialized successfully")
+        
+        # Start background tasks
+        asyncio.create_task(periodic_cleanup())
+        logger.info("Started periodic presence cleanup task")
+        
+        logger.info("Application startup completed successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize application: {str(e)}")
+        raise
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Clean up application resources when the server shuts down"""
+    try:
+        logger.info("Shutting down application...")
+        
+        # Close database connection pool
+        await close_db_pool()
+        logger.info("Database connection pool closed successfully")
+        
+        logger.info("Application shutdown completed successfully")
+    except Exception as e:
+        logger.error(f"Error during application shutdown: {str(e)}")
 
 @app.get("/api")
 async def api_root():
@@ -323,11 +345,15 @@ async def health_check():
     from datetime import datetime
     
     try:
+        # Check database health
+        db_health = await check_database_health()
+        
         # Basic system information
         health_data = {
-            "status": "healthy",
+            "status": "healthy" if db_health["status"] == "healthy" else "degraded",
             "timestamp": datetime.utcnow().isoformat(),
             "version": app.version,
+            "database": db_health,
             "system": {
                 "platform": platform.system(),
                 "python_version": platform.python_version(),

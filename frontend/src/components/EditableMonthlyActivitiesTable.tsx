@@ -222,11 +222,32 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   const activitiesIndex = useMemo(() => {
     const index = new Map<string, Activity>();
     activitiesState.forEach(activity => {
-      const date = new Date(activity.activity_timestamp);
-      const activityMonthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const key = `${activity.portfolio_fund_id}-${activityMonthYear}-${activity.activity_type}`;
-      index.set(key, activity);
+      try {
+        // Handle different timestamp formats safely
+        let date: Date;
+        if (activity.activity_timestamp.includes('T')) {
+          // Already has time component
+          date = new Date(activity.activity_timestamp);
+        } else {
+          // Date-only string, force UTC to avoid timezone shifts
+          date = new Date(activity.activity_timestamp + 'T00:00:00.000Z');
+        }
+        
+        // Validate the date
+        if (isNaN(date.getTime())) {
+          console.warn(`🚨 Invalid activity timestamp: ${activity.activity_timestamp}`);
+          return; // Skip this activity
+        }
+        
+        const activityMonthYear = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+        const key = `${activity.portfolio_fund_id}-${activityMonthYear}-${activity.activity_type}`;
+        // console.log(`🔍 ACTIVITY INDEX DEBUG: activity_timestamp=${activity.activity_timestamp}, parsed_date=${date.toISOString()}, activityMonthYear=${activityMonthYear}, key=${key}`);
+        index.set(key, activity);
+      } catch (error) {
+        console.error(`🚨 Error parsing activity timestamp: ${activity.activity_timestamp}`, error);
+      }
     });
+    // console.log(`🔍 ACTIVITY INDEX TOTAL: ${index.size} activities indexed`);
     return index;
   }, [activitiesState]);
 
@@ -371,6 +392,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           // Handle other activity types
           const backendType = convertActivityTypeForBackend(activityType);
           const activityKey = `${fund.id}-${month}-${backendType}`;
+          // console.log(`🔍 LOOKUP DEBUG: Looking for key=${activityKey}, found=${!!activitiesIndex.get(activityKey)}`);
           const activity = activitiesIndex.get(activityKey);
           if (activity) {
             const amount = parseFloat(activity.amount);
@@ -1017,11 +1039,30 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           let latestActivityDate = new Date(0); // Start with epoch
           
           activities.forEach(activity => {
-            const activityDate = new Date(activity.activity_timestamp);
-            if (activityDate > latestActivityDate) {
-              latestActivityDate = activityDate;
-              // Convert to YYYY-MM format to match our months array
-              latestActivityMonth = `${activityDate.getFullYear()}-${String(activityDate.getMonth() + 1).padStart(2, '0')}`;
+            try {
+              // Handle different timestamp formats safely
+              let activityDate: Date;
+              if (activity.activity_timestamp.includes('T')) {
+                // Already has time component
+                activityDate = new Date(activity.activity_timestamp);
+              } else {
+                // Date-only string, force UTC to avoid timezone shifts
+                activityDate = new Date(activity.activity_timestamp + 'T00:00:00.000Z');
+              }
+              
+              // Validate the date
+              if (isNaN(activityDate.getTime())) {
+                console.warn(`🚨 Invalid activity timestamp in scroll logic: ${activity.activity_timestamp}`);
+                return; // Skip this activity
+              }
+              
+              if (activityDate > latestActivityDate) {
+                latestActivityDate = activityDate;
+                // Convert to YYYY-MM format to match our months array (using UTC to avoid timezone shifts)
+                latestActivityMonth = `${activityDate.getUTCFullYear()}-${String(activityDate.getUTCMonth() + 1).padStart(2, '0')}`;
+              }
+            } catch (error) {
+              console.error(`🚨 Error parsing activity timestamp in scroll logic: ${activity.activity_timestamp}`, error);
             }
           });
           

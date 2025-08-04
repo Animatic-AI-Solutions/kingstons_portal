@@ -5,7 +5,7 @@ from app.db.database import get_db
 from pydantic import BaseModel
 import logging
 import sys
-from supabase import create_client, Client as SupabaseClient
+
 
 # Set up logging with more detailed configuration
 logging.basicConfig(
@@ -102,37 +102,27 @@ async def get_available_portfolios(db = Depends(get_db)):
     try:
         logger.info("=== Starting get_available_portfolios ===")
         
-        # Debug the query and response
+        # Execute PostgreSQL query
         try:
-            response = db.table('available_portfolios').select('*').execute()
+            response = await db.fetch("SELECT * FROM available_portfolios")
         except Exception as e:
-            logger.error(f"Failed to execute Supabase query: {str(e)}")
+            logger.error(f"Failed to execute PostgreSQL query: {str(e)}")
             raise HTTPException(status_code=500, detail="Database query failed")
 
         # Log the raw response
-        logger.info("=== Supabase Response ===")
+        logger.info("=== PostgreSQL Response ===")
         logger.info(f"Response type: {type(response)}")
-        logger.info(f"Has data attribute: {hasattr(response, 'data')}")
-        
-        if not hasattr(response, 'data'):
-            logger.error("Response missing data attribute")
-            raise HTTPException(status_code=500, detail="Invalid response format from database")
-            
-        logger.info(f"Response data: {response.data}")
-        logger.info(f"Response data type: {type(response.data)}")
+        logger.info(f"Response length: {len(response) if response else 0}")
 
-        if not response.data:
+        if not response:
             logger.info("No portfolios found")
             return []
 
-        if not isinstance(response.data, list):
-            logger.error(f"Expected list but got {type(response.data)}")
-            raise HTTPException(status_code=500, detail="Unexpected response format from database")
-
         # Process each portfolio with detailed error handling
         portfolios = []
-        for idx, portfolio in enumerate(response.data):
+        for idx, portfolio_record in enumerate(response):
             try:
+                portfolio = dict(portfolio_record)
                 logger.info(f"Processing portfolio {idx}: {portfolio}")
                 
                 # Validate required fields
@@ -153,29 +143,26 @@ async def get_available_portfolios(db = Depends(get_db)):
                 
                 try:
                     logger.info(f"Fetching latest generation for portfolio {portfolio_id}")
-                    generations_response = db.table("template_portfolio_generations") \
-                        .select("id, generation_name, status") \
-                        .eq("available_portfolio_id", portfolio_id) \
-                        .eq("status", "active") \
-                        .order("created_at", desc=True) \
-                        .limit(1) \
-                        .execute()
+                    generations_response = await db.fetchrow(
+                        "SELECT id, generation_name, status FROM template_portfolio_generations WHERE available_portfolio_id = $1 AND status = 'active' ORDER BY created_at DESC LIMIT 1",
+                        portfolio_id
+                    )
                     
-                    if generations_response.data:
-                        latest_generation = generations_response.data[0]
+                    if generations_response:
+                        latest_generation = dict(generations_response)
                         generation_id = latest_generation["id"]
                         generation_name = latest_generation["generation_name"]
                         
                         logger.info(f"Found latest generation {generation_id} for portfolio {portfolio_id}")
                         
                         # Get weighted risk from the view
-                        weighted_risk_response = db.table("template_generation_weighted_risk") \
-                            .select("weighted_risk") \
-                            .eq("generation_id", generation_id) \
-                            .execute()
+                        weighted_risk_response = await db.fetchrow(
+                            "SELECT weighted_risk FROM template_generation_weighted_risk WHERE generation_id = $1",
+                            generation_id
+                        )
                         
-                        if weighted_risk_response.data and weighted_risk_response.data[0].get("weighted_risk"):
-                            weighted_risk = float(weighted_risk_response.data[0]["weighted_risk"])
+                        if weighted_risk_response and weighted_risk_response.get("weighted_risk"):
+                            weighted_risk = float(weighted_risk_response["weighted_risk"])
                             logger.info(f"Found weighted risk {weighted_risk} for generation {generation_id}")
                         else:
                             logger.info(f"No weighted risk found for generation {generation_id}")
@@ -220,44 +207,43 @@ async def get_portfolio_templates_with_counts(db = Depends(get_db)):
         logger.info("=== Starting bulk portfolio templates with counts ===")
         
         # Get all portfolio templates
-        templates_response = db.table('available_portfolios').select('*').execute()
+        templates_response = await db.fetch("SELECT * FROM available_portfolios")
         
-        if not templates_response.data:
+        if not templates_response:
             return []
         
         # Get all generations in one query
-        generations_response = db.table("template_portfolio_generations") \
-            .select("id, available_portfolio_id, generation_name, status, created_at") \
-            .eq("status", "active") \
-            .execute()
+        generations_response = await db.fetch(
+            "SELECT id, available_portfolio_id, generation_name, status, created_at FROM template_portfolio_generations WHERE status = 'active'"
+        )
         
         # Get all weighted risks in one query
-        if generations_response.data:
-            generation_ids = [g["id"] for g in generations_response.data]
-            weighted_risks_response = db.table("template_generation_weighted_risk") \
-                .select("generation_id, weighted_risk") \
-                .in_("generation_id", generation_ids) \
-                .execute()
+        if generations_response:
+            generation_ids = [g["id"] for g in generations_response]
+            weighted_risks_response = await db.fetch(
+                "SELECT generation_id, weighted_risk FROM template_generation_weighted_risk WHERE generation_id = ANY($1::int[])",
+                generation_ids
+            )
             
             # Create lookup map for weighted risks
             weighted_risks_map = {
                 wr["generation_id"]: float(wr["weighted_risk"]) 
-                for wr in weighted_risks_response.data or []
+                for wr in weighted_risks_response or []
                 if wr.get("weighted_risk")
             }
         else:
             weighted_risks_map = {}
         
         # Get portfolio counts for all generations in one query
-        if generations_response.data:
-            portfolio_counts_response = db.table("portfolios") \
-                .select("template_generation_id") \
-                .in_("template_generation_id", generation_ids) \
-                .execute()
+        if generations_response:
+            portfolio_counts_response = await db.fetch(
+                "SELECT template_generation_id FROM portfolios WHERE template_generation_id = ANY($1::int[])",
+                generation_ids
+            )
             
             # Count portfolios per generation
             portfolio_counts_map = {}
-            for portfolio in portfolio_counts_response.data or []:
+            for portfolio in portfolio_counts_response or []:
                 gen_id = portfolio["template_generation_id"]
                 portfolio_counts_map[gen_id] = portfolio_counts_map.get(gen_id, 0) + 1
         else:
@@ -265,7 +251,7 @@ async def get_portfolio_templates_with_counts(db = Depends(get_db)):
         
         # Create lookup map for generations by template
         generations_map = {}
-        for gen in generations_response.data or []:
+        for gen in generations_response or []:
             template_id = gen["available_portfolio_id"]
             if template_id not in generations_map:
                 generations_map[template_id] = []
@@ -277,7 +263,8 @@ async def get_portfolio_templates_with_counts(db = Depends(get_db)):
         
         # Build result
         result = []
-        for template in templates_response.data:
+        for template in templates_response:
+            template = dict(template)
             template_id = template["id"]
             template_generations = generations_map.get(template_id, [])
             
@@ -311,7 +298,7 @@ async def get_portfolio_templates_with_counts(db = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/{portfolio_id}", response_model=PortfolioTemplateDetail)
-async def get_available_portfolio_details(request: Request, portfolio_id: int, generation_id: Optional[int] = None, db: SupabaseClient = Depends(get_db)):
+async def get_available_portfolio_details(request: Request, portfolio_id: int, generation_id: Optional[int] = None, db = Depends(get_db)):
     """Get detailed information about a specific portfolio template including its funds"""
     try:
         # Log request details
@@ -326,8 +313,8 @@ async def get_available_portfolio_details(request: Request, portfolio_id: int, g
         # Get portfolio details
         try:
             logger.info(f"Fetching portfolio with ID: {portfolio_id}")
-            portfolio_response = db.table("available_portfolios").select("*").eq("id", portfolio_id).execute()
-            logger.info(f"Portfolio response data: {portfolio_response.data}")
+            portfolio_response = await db.fetchrow("SELECT * FROM available_portfolios WHERE id = $1", portfolio_id)
+            logger.info(f"Portfolio response data: {portfolio_response}")
             logger.info(f"Portfolio response type: {type(portfolio_response)}")
         except Exception as e:
             logger.error("=== Portfolio Query Error ===")
@@ -336,11 +323,11 @@ async def get_available_portfolio_details(request: Request, portfolio_id: int, g
             logger.error(f"Error args: {e.args}")
             raise HTTPException(status_code=500, detail=f"Failed to fetch portfolio: {str(e)}")
 
-        if not portfolio_response.data:
+        if not portfolio_response:
             logger.warning(f"No portfolio found with ID: {portfolio_id}")
             raise HTTPException(status_code=404, detail="Portfolio template not found")
         
-        portfolio = portfolio_response.data[0]
+        portfolio = dict(portfolio_response)
         logger.info(f"Found portfolio: {portfolio}")
         
         # Use specific generation if provided, otherwise get the latest active one
@@ -348,16 +335,16 @@ async def get_available_portfolio_details(request: Request, portfolio_id: int, g
         if generation_id:
             try:
                 logger.info(f"Fetching specific generation with ID: {generation_id}")
-                generation_response = db.table("template_portfolio_generations") \
-                    .select("*") \
-                    .eq("id", generation_id) \
-                    .execute()
+                generation_response = await db.fetchrow(
+                    "SELECT * FROM template_portfolio_generations WHERE id = $1", 
+                    generation_id
+                )
                 
-                if not generation_response.data or len(generation_response.data) == 0:
+                if not generation_response:
                     logger.warning(f"Generation with ID {generation_id} not found")
                     raise HTTPException(status_code=404, detail=f"Generation with ID {generation_id} not found")
                 
-                generation = generation_response.data[0]
+                generation = dict(generation_response)
                 logger.info(f"Found specific generation: {generation}")
                 
             except Exception as e:
@@ -367,22 +354,19 @@ async def get_available_portfolio_details(request: Request, portfolio_id: int, g
             # Get the latest active generation for this portfolio template
             try:
                 logger.info(f"Fetching latest generation for portfolio ID: {portfolio_id}")
-                generation_response = db.table("template_portfolio_generations") \
-                    .select("*") \
-                    .eq("available_portfolio_id", portfolio_id) \
-                    .eq("status", "active") \
-                    .order("created_at", desc=True) \
-                    .limit(1) \
-                    .execute()
+                generation_response = await db.fetchrow(
+                    "SELECT * FROM template_portfolio_generations WHERE available_portfolio_id = $1 AND status = 'active' ORDER BY created_at DESC LIMIT 1",
+                    portfolio_id
+                )
                 
-                logger.info(f"Generation response data: {generation_response.data}")
+                logger.info(f"Generation response data: {generation_response}")
                 
-                if not generation_response.data or len(generation_response.data) == 0:
+                if not generation_response:
                     logger.warning(f"No active generations found for portfolio ID: {portfolio_id}")
                     # We'll still continue, but with no generation information
                     generation = None
                 else:
-                    generation = generation_response.data[0]
+                    generation = dict(generation_response)
                     logger.info(f"Using generation: {generation}")
             except Exception as e:
                 logger.error("=== Generation Query Error ===")
@@ -394,17 +378,17 @@ async def get_available_portfolio_details(request: Request, portfolio_id: int, g
         try:
             if generation:
                 logger.info(f"Fetching funds for generation ID: {generation['id']}")
-                portfolio_funds_response = db.table("available_portfolio_funds") \
-                    .select("*") \
-                    .eq("template_portfolio_generation_id", generation['id']) \
-                    .execute()
+                portfolio_funds_response = await db.fetch(
+                    "SELECT * FROM available_portfolio_funds WHERE template_portfolio_generation_id = $1",
+                    generation['id']
+                )
             else:
                 logger.warning("No generation found, skipping fund retrieval")
                 portfolio_funds_response = None
                 
             if portfolio_funds_response:
-                logger.info(f"Portfolio funds response data: {portfolio_funds_response.data}")
-                logger.info(f"Number of funds found: {len(portfolio_funds_response.data) if portfolio_funds_response.data else 0}")
+                logger.info(f"Portfolio funds response data: {portfolio_funds_response}")
+                logger.info(f"Number of funds found: {len(portfolio_funds_response) if portfolio_funds_response else 0}")
             else:
                 logger.info("No portfolio funds response available")
         except Exception as e:
@@ -415,18 +399,19 @@ async def get_available_portfolio_details(request: Request, portfolio_id: int, g
             raise HTTPException(status_code=500, detail=f"Failed to fetch portfolio funds: {str(e)}")
         
         funds = []
-        if portfolio_funds_response and portfolio_funds_response.data:
-            for idx, portfolio_fund in enumerate(portfolio_funds_response.data):
+        if portfolio_funds_response:
+            for idx, portfolio_fund in enumerate(portfolio_funds_response):
+                portfolio_fund = dict(portfolio_fund)
                 try:
-                    logger.info(f"Processing fund {idx + 1} of {len(portfolio_funds_response.data)}")
+                    logger.info(f"Processing fund {idx + 1} of {len(portfolio_funds_response)}")
                     logger.info(f"Portfolio fund data: {portfolio_fund}")
                     
                     # Get fund details
-                    fund_response = db.table("available_funds") \
-                        .select("*") \
-                        .eq("id", portfolio_fund["fund_id"]) \
-                        .execute()
-                    logger.info(f"Fund details response: {fund_response.data}")
+                    fund_response = await db.fetchrow(
+                        "SELECT * FROM available_funds WHERE id = $1",
+                        portfolio_fund["fund_id"]
+                    )
+                    logger.info(f"Fund details response: {fund_response}")
                     
                     fund_detail = {
                         "id": portfolio_fund["id"],
@@ -434,7 +419,7 @@ async def get_available_portfolio_details(request: Request, portfolio_id: int, g
                         "portfolio_id": portfolio_id,  # We're still using the original portfolio ID for consistency
                         "target_weighting": float(portfolio_fund["target_weighting"]) if portfolio_fund["target_weighting"] else 0.0,
                         "fund_id": portfolio_fund["fund_id"],
-                        "available_funds": fund_response.data[0] if fund_response.data else {}
+                        "available_funds": dict(fund_response) if fund_response else {}
                     }
                     funds.append(fund_detail)
                     logger.info(f"Successfully processed fund {idx + 1}: {fund_detail}")
@@ -449,13 +434,13 @@ async def get_available_portfolio_details(request: Request, portfolio_id: int, g
         if generation:
             try:
                 logger.info(f"Fetching weighted risk for generation ID: {generation['id']}")
-                weighted_risk_response = db.table("template_generation_weighted_risk") \
-                    .select("weighted_risk") \
-                    .eq("generation_id", generation['id']) \
-                    .execute()
+                weighted_risk_response = await db.fetchrow(
+                    "SELECT weighted_risk FROM template_generation_weighted_risk WHERE generation_id = $1",
+                    generation['id']
+                )
                 
-                if weighted_risk_response.data and len(weighted_risk_response.data) > 0:
-                    weighted_risk = weighted_risk_response.data[0].get("weighted_risk")
+                if weighted_risk_response:
+                    weighted_risk = weighted_risk_response.get("weighted_risk")
                     logger.info(f"Found weighted risk: {weighted_risk}")
                 else:
                     logger.info("No weighted risk found for this generation")
@@ -499,14 +484,15 @@ async def create_available_portfolio(portfolio_data: PortfolioCreate, db = Depen
         }
         
         # Insert the template
-        portfolio_response = db.table("available_portfolios")\
-            .insert(new_portfolio)\
-            .execute()
+        portfolio_response = await db.fetchrow(
+            "INSERT INTO available_portfolios (name) VALUES ($1) RETURNING *",
+            new_portfolio["name"]
+        )
         
-        if not portfolio_response.data:
+        if not portfolio_response:
             raise HTTPException(status_code=500, detail="Failed to create portfolio template")
         
-        new_portfolio_id = portfolio_response.data[0]["id"]
+        new_portfolio_id = portfolio_response["id"]
         logger.info(f"Created portfolio template with ID: {new_portfolio_id}")
         
         # Create the initial generation
@@ -517,47 +503,50 @@ async def create_available_portfolio(portfolio_data: PortfolioCreate, db = Depen
             "status": "active"
         }
         
-        generation_response = db.table("template_portfolio_generations")\
-            .insert(generation_data)\
-            .execute()
+        generation_response = await db.fetchrow(
+            "INSERT INTO template_portfolio_generations (available_portfolio_id, generation_name, description, status) VALUES ($1, $2, $3, $4) RETURNING *",
+            generation_data["available_portfolio_id"],
+            generation_data["generation_name"], 
+            generation_data["description"],
+            generation_data["status"]
+        )
             
-        if not generation_response.data:
+        if not generation_response:
             # If generation creation fails, we should clean up the portfolio template
-            db.table("available_portfolios").delete().eq("id", new_portfolio_id).execute()
+            await db.execute("DELETE FROM available_portfolios WHERE id = $1", new_portfolio_id)
             raise HTTPException(status_code=500, detail="Failed to create initial generation for portfolio template")
         
-        new_generation_id = generation_response.data[0]["id"]
+        new_generation_id = generation_response["id"]
         logger.info(f"Created initial generation with ID: {new_generation_id}")
         
         # Add funds if provided
         if portfolio_data.funds:
             for fund in portfolio_data.funds:
                 # Verify the fund exists
-                fund_exists = db.table("available_funds")\
-                    .select("id")\
-                    .eq("id", fund.fund_id)\
-                    .execute()
+                fund_exists = await db.fetchrow(
+                    "SELECT id FROM available_funds WHERE id = $1",
+                    fund.fund_id
+                )
                 
-                if not fund_exists.data:
+                if not fund_exists:
                     logger.warning(f"Fund {fund.fund_id} does not exist, skipping")
                     continue
                 
                 # Add the fund to the portfolio generation
-                fund_response = db.table("available_portfolio_funds")\
-                    .insert({
-                        "template_portfolio_generation_id": new_generation_id,
-                        "fund_id": fund.fund_id,
-                        "target_weighting": fund.target_weighting
-                    })\
-                    .execute()
+                fund_response = await db.fetchrow(
+                    "INSERT INTO available_portfolio_funds (template_portfolio_generation_id, fund_id, target_weighting) VALUES ($1, $2, $3) RETURNING *",
+                    new_generation_id,
+                    fund.fund_id,
+                    fund.target_weighting
+                )
                 
-                if not fund_response.data:
+                if not fund_response:
                     logger.warning(f"Failed to add fund {fund.fund_id} to portfolio generation {new_generation_id}")
         
         # Return the new portfolio with ID
         return {
             "id": new_portfolio_id,
-            "created_at": portfolio_response.data[0]["created_at"],
+            "created_at": portfolio_response["created_at"],
             "name": portfolio_data.name
         }
         
@@ -569,66 +558,61 @@ async def create_available_portfolio(portfolio_data: PortfolioCreate, db = Depen
 async def create_portfolio_from_template(data: PortfolioFromTemplate, db = Depends(get_db)):
     """Create a new portfolio from a template"""
     # Verify template exists
-    template_response = db.table('available_portfolios')\
-        .select('*')\
-        .eq('id', data.template_id)\
-        .single()\
-        .execute()
+    template_response = await db.fetchrow(
+        "SELECT * FROM available_portfolios WHERE id = $1",
+        data.template_id
+    )
     
-    if not template_response.data:
+    if not template_response:
         raise HTTPException(status_code=404, detail="Portfolio template not found")
     
     # Get the latest generation of the template
-    latest_generation_response = db.table('template_portfolio_generations')\
-        .select('*')\
-        .eq('available_portfolio_id', data.template_id)\
-        .eq('status', 'active')\
-        .order('created_at', desc=True)\
-        .limit(1)\
-        .execute()
+    latest_generation_response = await db.fetchrow(
+        "SELECT * FROM template_portfolio_generations WHERE available_portfolio_id = $1 AND status = 'active' ORDER BY created_at DESC LIMIT 1",
+        data.template_id
+    )
     
-    if not latest_generation_response.data:
+    if not latest_generation_response:
         raise HTTPException(status_code=404, detail="No active generations found for this template")
     
-    latest_generation = latest_generation_response.data[0]
+    latest_generation = dict(latest_generation_response)
     logger.info(f"Using template generation: {latest_generation['id']}")
     
     # Create portfolio from template
-    portfolio_response = db.table('portfolios')\
-        .insert({
-            "portfolio_name": data.portfolio_name,
-            "status": "active",
-            "start_date": str(date.today()),
-            "template_generation_id": data.template_id
-        })\
-        .execute()
+    portfolio_response = await db.fetchrow(
+        "INSERT INTO portfolios (portfolio_name, status, start_date, template_generation_id) VALUES ($1, $2, $3, $4) RETURNING *",
+        data.portfolio_name,
+        "active",
+        str(date.today()),
+        data.template_id
+    )
     
-    if not portfolio_response.data:
+    if not portfolio_response:
         raise HTTPException(status_code=500, detail="Failed to create portfolio")
     
-    new_portfolio = portfolio_response.data[0]
+    new_portfolio = dict(portfolio_response)
     
     # Get template funds from the latest generation
-    template_funds_response = db.table('available_portfolio_funds')\
-        .select('*')\
-        .eq('template_portfolio_generation_id', latest_generation['id'])\
-        .execute()
+    template_funds_response = await db.fetch(
+        "SELECT * FROM available_portfolio_funds WHERE template_portfolio_generation_id = $1",
+        latest_generation['id']
+    )
     
-    if not template_funds_response.data:
+    if not template_funds_response:
         return new_portfolio  # Return early if no funds to copy
     
     # Copy funds to new portfolio
-    for template_fund in template_funds_response.data:
-        portfolio_fund_response = db.table('portfolio_funds')\
-            .insert({
-                "portfolio_id": new_portfolio["id"],
-                "available_funds_id": template_fund["fund_id"],
-                "target_weighting": template_fund["target_weighting"],
-                "start_date": str(date.today())
-            })\
-            .execute()
+    for template_fund in template_funds_response:
+        template_fund = dict(template_fund)
+        portfolio_fund_response = await db.fetchrow(
+            "INSERT INTO portfolio_funds (portfolio_id, available_funds_id, target_weighting, start_date) VALUES ($1, $2, $3, $4) RETURNING *",
+            new_portfolio["id"],
+            template_fund["fund_id"],
+            template_fund["target_weighting"],
+            str(date.today())
+        )
         
-        if not portfolio_fund_response.data:
+        if not portfolio_fund_response:
             logger.error(f"Failed to add fund {template_fund['fund_id']} to portfolio {new_portfolio['id']}")
     
     return new_portfolio
@@ -648,35 +632,35 @@ async def delete_available_portfolio(portfolio_id: int, db = Depends(get_db)):
         logger.info(f"Deleting portfolio template with ID: {portfolio_id}")
         
         # First check if portfolio exists
-        check_result = db.table("available_portfolios").select("id").eq("id", portfolio_id).execute()
-        if not check_result.data or len(check_result.data) == 0:
+        check_result = await db.fetchrow("SELECT id FROM available_portfolios WHERE id = $1", portfolio_id)
+        if not check_result:
             raise HTTPException(status_code=404, detail=f"Portfolio template with ID {portfolio_id} not found")
         
         # Get all generations for this portfolio
-        generations_result = db.table("template_portfolio_generations").select("id").eq("available_portfolio_id", portfolio_id).execute()
+        generations_result = await db.fetch("SELECT id FROM template_portfolio_generations WHERE available_portfolio_id = $1", portfolio_id)
         
         # Calculate total number of generations
-        generations_count = len(generations_result.data) if generations_result.data else 0
+        generations_count = len(generations_result) if generations_result else 0
         logger.info(f"Found {generations_count} generations for portfolio template {portfolio_id}")
         
         # Get total count of funds across all generations
         funds_count = 0
         if generations_count > 0:
             # For each generation, count its funds
-            for generation in generations_result.data:
+            for generation in generations_result:
                 generation_id = generation['id']
-                funds_result = db.table("available_portfolio_funds").select("id").eq("template_portfolio_generation_id", generation_id).execute()
-                funds_count += len(funds_result.data) if funds_result.data else 0
+                funds_result = await db.fetch("SELECT id FROM available_portfolio_funds WHERE template_portfolio_generation_id = $1", generation_id)
+                funds_count += len(funds_result) if funds_result else 0
         
         # Delete the template generations (this will cascade delete funds due to ON DELETE CASCADE)
         if generations_count > 0:
-            db.table("template_portfolio_generations").delete().eq("available_portfolio_id", portfolio_id).execute()
+            await db.execute("DELETE FROM template_portfolio_generations WHERE available_portfolio_id = $1", portfolio_id)
             logger.info(f"Deleted {generations_count} generations from portfolio template {portfolio_id}")
         
         # Now delete the portfolio template
-        result = db.table("available_portfolios").delete().eq("id", portfolio_id).execute()
+        result = await db.fetchrow("DELETE FROM available_portfolios WHERE id = $1 RETURNING *", portfolio_id)
         
-        if not result.data or len(result.data) == 0:
+        if not result:
             raise HTTPException(status_code=500, detail="Failed to delete portfolio template")
         
         return {
@@ -715,15 +699,27 @@ async def update_portfolio_template(portfolio_id: int, template_update: Portfoli
             raise HTTPException(status_code=400, detail="No valid update data provided")
         
         # Check if portfolio exists
-        check_result = db.table("available_portfolios").select("id").eq("id", portfolio_id).execute()
-        if not check_result.data or len(check_result.data) == 0:
+        check_result = await db.fetchrow("SELECT id FROM available_portfolios WHERE id = $1", portfolio_id)
+        if not check_result:
             raise HTTPException(status_code=404, detail=f"Portfolio template with ID {portfolio_id} not found")
         
-        # Update the portfolio template
-        result = db.table("available_portfolios").update(update_data).eq("id", portfolio_id).execute()
+        # Update the portfolio template - Build dynamic query
+        set_clauses = []
+        params = []
+        param_count = 1
         
-        if result.data and len(result.data) > 0:
-            return result.data[0]
+        for key, value in update_data.items():
+            set_clauses.append(f"{key} = ${param_count}")
+            params.append(value)
+            param_count += 1
+        
+        params.append(portfolio_id)  # For WHERE clause
+        
+        query = f"UPDATE available_portfolios SET {', '.join(set_clauses)} WHERE id = ${param_count} RETURNING *"
+        result = await db.fetchrow(query, *params)
+        
+        if result:
+            return dict(result)
         
         raise HTTPException(status_code=400, detail="Failed to update portfolio template")
     except HTTPException:
@@ -753,22 +749,36 @@ async def get_available_portfolio_funds(
         logger.info(f"template_portfolio_generation_id: {template_portfolio_generation_id}")
         logger.info(f"fund_id: {fund_id}")
         
-        query = db.table("available_portfolio_funds").select("*")
+        # Build dynamic query with optional filters
+        where_clauses = []
+        params = []
+        param_count = 1
         
         if template_portfolio_generation_id is not None:
-            query = query.eq("template_portfolio_generation_id", template_portfolio_generation_id)
+            where_clauses.append(f"template_portfolio_generation_id = ${param_count}")
+            params.append(template_portfolio_generation_id)
+            param_count += 1
             
         if fund_id is not None:
-            query = query.eq("fund_id", fund_id)
+            where_clauses.append(f"fund_id = ${param_count}")
+            params.append(fund_id)
+            param_count += 1
+        
+        # Build the complete query
+        base_query = "SELECT * FROM available_portfolio_funds"
+        if where_clauses:
+            query = f"{base_query} WHERE {' AND '.join(where_clauses)}"
+        else:
+            query = base_query
         
         logger.info(f"Executing query with template_portfolio_generation_id={template_portfolio_generation_id}, fund_id={fund_id}")
-        result = query.execute()
-        logger.info(f"Query result: {result.data}")
+        result = await db.fetch(query, *params)
+        logger.info(f"Query result: {result}")
         
-        if not result.data:
+        if not result:
              return []
 
-        return result.data
+        return [dict(fund) for fund in result]
     except HTTPException:
         raise
     except Exception as e:
@@ -795,13 +805,15 @@ async def get_portfolio_funds_by_fund_id(
         logger.info(f"=== get_portfolio_funds_by_fund_id called with fund_id: {fund_id} ===")
         
         # Build query with the fund_id in the path parameter
-        query = db.table("available_portfolio_funds").select("*").eq("fund_id", fund_id)
         logger.info(f"Executing query for fund_id={fund_id}")
         
-        result = query.execute()
-        logger.info(f"Query result: {result.data}")
+        result = await db.fetch(
+            "SELECT * FROM available_portfolio_funds WHERE fund_id = $1",
+            fund_id
+        )
+        logger.info(f"Query result: {result}")
         
-        return result.data
+        return [dict(fund) for fund in result] if result else []
     except Exception as e:
         logger.error(f"Error fetching portfolio funds for fund ID {fund_id}: {str(e)}")
         logger.error(f"Error type: {type(e)}")
@@ -813,23 +825,21 @@ async def get_portfolio_generations(portfolio_id: int, db = Depends(get_db)):
     """Get all generations for a portfolio template"""
     try:
         # Verify template exists
-        template_response = db.table('available_portfolios')\
-            .select('*')\
-            .eq('id', portfolio_id)\
-            .single()\
-            .execute()
+        template_response = await db.fetchrow(
+            "SELECT * FROM available_portfolios WHERE id = $1",
+            portfolio_id
+        )
         
-        if not template_response.data:
+        if not template_response:
             raise HTTPException(status_code=404, detail="Portfolio template not found")
         
         # Get all generations for this template, ordered by creation date (newest first)
-        generations_response = db.table('template_portfolio_generations')\
-            .select('*')\
-            .eq('available_portfolio_id', portfolio_id)\
-            .order('created_at', desc=True)\
-            .execute()
+        generations_response = await db.fetch(
+            "SELECT * FROM template_portfolio_generations WHERE available_portfolio_id = $1 ORDER BY created_at DESC",
+            portfolio_id
+        )
         
-        return generations_response.data or []
+        return [dict(gen) for gen in generations_response] if generations_response else []
     except Exception as e:
         logger.error(f"Error fetching generations for portfolio {portfolio_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -839,13 +849,12 @@ async def create_portfolio_generation(portfolio_id: int, generation_data: Genera
     """Create a new generation for a portfolio template"""
     try:
         # Check if portfolio exists
-        portfolio_response = db.table('available_portfolios')\
-            .select('*')\
-            .eq('id', portfolio_id)\
-            .single()\
-            .execute()
+        portfolio_response = await db.fetchrow(
+            "SELECT * FROM available_portfolios WHERE id = $1",
+            portfolio_id
+        )
         
-        if not portfolio_response.data:
+        if not portfolio_response:
             raise HTTPException(status_code=404, detail=f"Portfolio template with ID {portfolio_id} not found")
         
         # Create new generation
@@ -860,76 +869,83 @@ async def create_portfolio_generation(portfolio_id: int, generation_data: Genera
         if generation_data.created_at:
             new_generation['created_at'] = generation_data.created_at.isoformat()
         
-        generation_response = db.table('template_portfolio_generations')\
-            .insert(new_generation)\
-            .execute()
+        generation_response = await db.fetchrow(
+            "INSERT INTO template_portfolio_generations (available_portfolio_id, generation_name, description, status, created_at) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+            new_generation["available_portfolio_id"],
+            new_generation["generation_name"],
+            new_generation["description"],
+            new_generation["status"],
+            new_generation.get("created_at")
+        )
         
-        if not generation_response.data:
+        if not generation_response:
             raise HTTPException(status_code=500, detail="Failed to create new generation")
         
-        new_generation_id = generation_response.data[0]['id']
+        new_generation_id = generation_response['id']
         logger.info(f"Created new generation with ID: {new_generation_id}")
         
         # Handle funds - either copy from existing generation or add new funds
         if generation_data.copy_from_generation_id:
-            source_generation_response = db.table('template_portfolio_generations')\
-                .select('*')\
-                .eq('id', generation_data.copy_from_generation_id)\
-                .single()\
-                .execute()
+            source_generation_response = await db.fetchrow(
+                "SELECT * FROM template_portfolio_generations WHERE id = $1",
+                generation_data.copy_from_generation_id
+            )
             
-            if not source_generation_response.data:
+            if not source_generation_response:
                 logger.warning(f"Source generation ID {generation_data.copy_from_generation_id} not found for copying funds")
             else:
                 # Get funds from source generation
-                source_funds_response = db.table('available_portfolio_funds')\
-                    .select('*')\
-                    .eq('template_portfolio_generation_id', generation_data.copy_from_generation_id)\
-                    .execute()
+                source_funds_response = await db.fetch(
+                    "SELECT * FROM available_portfolio_funds WHERE template_portfolio_generation_id = $1",
+                    generation_data.copy_from_generation_id
+                )
                 
-                if source_funds_response.data and len(source_funds_response.data) > 0:
+                if source_funds_response and len(source_funds_response) > 0:
                     # Copy each fund to the new generation
-                    for source_fund in source_funds_response.data:
+                    for source_fund in source_funds_response:
+                        source_fund = dict(source_fund)
                         new_fund = {
                             "template_portfolio_generation_id": new_generation_id,
                             "fund_id": source_fund['fund_id'],
                             "target_weighting": source_fund['target_weighting']
                         }
                         
-                        db.table('available_portfolio_funds')\
-                            .insert(new_fund)\
-                            .execute()
+                        await db.execute(
+                            "INSERT INTO available_portfolio_funds (template_portfolio_generation_id, fund_id, target_weighting) VALUES ($1, $2, $3)",
+                            new_fund["template_portfolio_generation_id"],
+                            new_fund["fund_id"],
+                            new_fund["target_weighting"]
+                        )
                     
-                    logger.info(f"Copied {len(source_funds_response.data)} funds from generation {generation_data.copy_from_generation_id} to {new_generation_id}")
+                    logger.info(f"Copied {len(source_funds_response)} funds from generation {generation_data.copy_from_generation_id} to {new_generation_id}")
         elif generation_data.funds:
             # Add new funds directly from the request
             for fund in generation_data.funds:
                 # Verify the fund exists
-                fund_exists = db.table("available_funds")\
-                    .select("id")\
-                    .eq("id", fund.fund_id)\
-                    .execute()
+                fund_exists = await db.fetchrow(
+                    "SELECT id FROM available_funds WHERE id = $1",
+                    fund.fund_id
+                )
                 
-                if not fund_exists.data:
+                if not fund_exists:
                     logger.warning(f"Fund {fund.fund_id} does not exist, skipping")
                     continue
                 
                 # Add the fund to the portfolio generation
-                fund_response = db.table("available_portfolio_funds")\
-                    .insert({
-                        "template_portfolio_generation_id": new_generation_id,
-                        "fund_id": fund.fund_id,
-                        "target_weighting": fund.target_weighting
-                    })\
-                    .execute()
+                fund_response = await db.fetchrow(
+                    "INSERT INTO available_portfolio_funds (template_portfolio_generation_id, fund_id, target_weighting) VALUES ($1, $2, $3) RETURNING *",
+                    new_generation_id,
+                    fund.fund_id,
+                    fund.target_weighting
+                )
                 
-                if not fund_response.data:
+                if not fund_response:
                     logger.warning(f"Failed to add fund {fund.fund_id} to generation {new_generation_id}")
                     
             logger.info(f"Added {len(generation_data.funds)} funds to generation {new_generation_id}")
         
         # Return the newly created generation
-        return generation_response.data[0]
+        return dict(generation_response)
     
     except HTTPException:
         raise
@@ -947,14 +963,13 @@ async def update_generation(
     """Update a generation's details, including status and/or funds"""
     try:
         # Check if generation exists and belongs to the specified portfolio
-        generation_response = db.table('template_portfolio_generations')\
-            .select('*')\
-            .eq('id', generation_id)\
-            .eq('available_portfolio_id', portfolio_id)\
-            .single()\
-            .execute()
+        generation_response = await db.fetchrow(
+            "SELECT * FROM template_portfolio_generations WHERE id = $1 AND available_portfolio_id = $2",
+            generation_id,
+            portfolio_id
+        )
         
-        if not generation_response.data:
+        if not generation_response:
             raise HTTPException(
                 status_code=404, 
                 detail=f"Generation with ID {generation_id} not found for portfolio {portfolio_id}"
@@ -973,22 +988,21 @@ async def update_generation(
             # If setting to 'active', deactivate all other generations for this portfolio
             if update_data.status == 'active':
                 # Find all other active generations for this portfolio
-                other_active_response = db.table('template_portfolio_generations')\
-                    .select('id')\
-                    .eq('available_portfolio_id', portfolio_id)\
-                    .eq('status', 'active')\
-                    .neq('id', generation_id)\
-                    .execute()
+                other_active_response = await db.fetch(
+                    "SELECT id FROM template_portfolio_generations WHERE available_portfolio_id = $1 AND status = 'active' AND id != $2",
+                    portfolio_id,
+                    generation_id
+                )
                 
-                if other_active_response.data:
-                    for other_generation in other_active_response.data:
+                if other_active_response:
+                    for other_generation in other_active_response:
                         # Set other generations to 'archived'
-                        db.table('template_portfolio_generations')\
-                            .update({'status': 'archived'})\
-                            .eq('id', other_generation['id'])\
-                            .execute()
+                        await db.execute(
+                            "UPDATE template_portfolio_generations SET status = 'archived' WHERE id = $1",
+                            other_generation['id']
+                        )
                     
-                    logger.info(f"Archived {len(other_active_response.data)} previously active generations for portfolio {portfolio_id}")
+                    logger.info(f"Archived {len(other_active_response)} previously active generations for portfolio {portfolio_id}")
         
         # Prepare update data
         generation_updates = {}
@@ -1006,12 +1020,25 @@ async def update_generation(
             
         # Update the generation details
         if generation_updates:
-            update_response = db.table('template_portfolio_generations')\
-                .update(generation_updates)\
-                .eq('id', generation_id)\
-                .execute()
+            # Build dynamic update query
+            set_clauses = []
+            params = []
+            param_count = 1
             
-            if not update_response.data:
+            for key, value in generation_updates.items():
+                if key == 'updated_at' and value == 'now()':
+                    set_clauses.append(f"{key} = NOW()")
+                else:
+                    set_clauses.append(f"{key} = ${param_count}")
+                    params.append(value)
+                    param_count += 1
+            
+            params.append(generation_id)  # For WHERE clause
+            
+            query = f"UPDATE template_portfolio_generations SET {', '.join(set_clauses)} WHERE id = ${param_count} RETURNING *"
+            update_response = await db.fetchrow(query, *params)
+            
+            if not update_response:
                 raise HTTPException(status_code=500, detail="Failed to update generation details")
             
             logger.info(f"Updated details for generation {generation_id}")
@@ -1019,47 +1046,45 @@ async def update_generation(
         # Handle fund updates if provided
         if hasattr(update_data, 'funds') and update_data.funds is not None:
             # First, delete existing funds for this generation
-            db.table('available_portfolio_funds')\
-                .delete()\
-                .eq('template_portfolio_generation_id', generation_id)\
-                .execute()
+            await db.execute(
+                "DELETE FROM available_portfolio_funds WHERE template_portfolio_generation_id = $1",
+                generation_id
+            )
             
             logger.info(f"Removed existing funds from generation {generation_id}")
             
             # Add the new funds
             for fund in update_data.funds:
                 # Verify the fund exists
-                fund_exists = db.table("available_funds")\
-                    .select("id")\
-                    .eq("id", fund.fund_id)\
-                    .execute()
+                fund_exists = await db.fetchrow(
+                    "SELECT id FROM available_funds WHERE id = $1",
+                    fund.fund_id
+                )
                 
-                if not fund_exists.data:
+                if not fund_exists:
                     logger.warning(f"Fund {fund.fund_id} does not exist, skipping")
                     continue
                 
                 # Add the fund to the portfolio generation
-                fund_response = db.table("available_portfolio_funds")\
-                    .insert({
-                        "template_portfolio_generation_id": generation_id,
-                        "fund_id": fund.fund_id,
-                        "target_weighting": fund.target_weighting
-                    })\
-                    .execute()
+                fund_response = await db.fetchrow(
+                    "INSERT INTO available_portfolio_funds (template_portfolio_generation_id, fund_id, target_weighting) VALUES ($1, $2, $3) RETURNING *",
+                    generation_id,
+                    fund.fund_id,
+                    fund.target_weighting
+                )
                 
-                if not fund_response.data:
+                if not fund_response:
                     logger.warning(f"Failed to add fund {fund.fund_id} to generation {generation_id}")
             
             logger.info(f"Added {len(update_data.funds)} funds to generation {generation_id}")
         
         # Get the updated generation to return
-        updated_generation = db.table('template_portfolio_generations')\
-            .select('*')\
-            .eq('id', generation_id)\
-            .single()\
-            .execute()
+        updated_generation = await db.fetchrow(
+            "SELECT * FROM template_portfolio_generations WHERE id = $1",
+            generation_id
+        )
         
-        return updated_generation.data
+        return dict(updated_generation) if updated_generation else None
     
     except HTTPException:
         raise
@@ -1083,49 +1108,48 @@ async def delete_generation(portfolio_id: int, generation_id: int, db = Depends(
         logger.info(f"Deleting generation {generation_id} from portfolio template {portfolio_id}")
         
         # Check if generation exists and belongs to the specified portfolio
-        generation_response = db.table('template_portfolio_generations')\
-            .select('*')\
-            .eq('id', generation_id)\
-            .eq('available_portfolio_id', portfolio_id)\
-            .single()\
-            .execute()
+        generation_response = await db.fetchrow(
+            "SELECT * FROM template_portfolio_generations WHERE id = $1 AND available_portfolio_id = $2",
+            generation_id,
+            portfolio_id
+        )
         
-        if not generation_response.data:
+        if not generation_response:
             raise HTTPException(
                 status_code=404, 
                 detail=f"Generation with ID {generation_id} not found for portfolio {portfolio_id}"
             )
         
-        generation = generation_response.data
+        generation = dict(generation_response)
         
         # Check if any portfolios are using this generation
-        portfolios_using_generation = db.table("portfolios")\
-            .select("id")\
-            .eq("template_generation_id", generation_id)\
-            .execute()
+        portfolios_using_generation = await db.fetch(
+            "SELECT id FROM portfolios WHERE template_generation_id = $1",
+            generation_id
+        )
         
-        if portfolios_using_generation.data and len(portfolios_using_generation.data) > 0:
-            portfolio_count = len(portfolios_using_generation.data)
+        if portfolios_using_generation and len(portfolios_using_generation) > 0:
+            portfolio_count = len(portfolios_using_generation)
             raise HTTPException(
                 status_code=400,
                 detail=f"Cannot delete generation '{generation['generation_name']}' - {portfolio_count} portfolio(s) are using this generation"
             )
         
         # Get count of funds that will be deleted
-        funds_response = db.table("available_portfolio_funds")\
-            .select("id")\
-            .eq("template_portfolio_generation_id", generation_id)\
-            .execute()
+        funds_response = await db.fetch(
+            "SELECT id FROM available_portfolio_funds WHERE template_portfolio_generation_id = $1",
+            generation_id
+        )
         
-        funds_count = len(funds_response.data) if funds_response.data else 0
+        funds_count = len(funds_response) if funds_response else 0
         
         # Delete the generation (this will cascade delete funds due to ON DELETE CASCADE)
-        delete_result = db.table("template_portfolio_generations")\
-            .delete()\
-            .eq("id", generation_id)\
-            .execute()
+        delete_result = await db.fetchrow(
+            "DELETE FROM template_portfolio_generations WHERE id = $1 RETURNING *",
+            generation_id
+        )
         
-        if not delete_result.data or len(delete_result.data) == 0:
+        if not delete_result:
             raise HTTPException(status_code=500, detail="Failed to delete generation")
         
         logger.info(f"Successfully deleted generation {generation_id} and {funds_count} associated funds")
@@ -1150,16 +1174,15 @@ async def get_generation_by_id(generation_id: int, db = Depends(get_db)):
     """Get a specific generation by ID"""
     try:
         # Get the generation details
-        generation_response = db.table('template_portfolio_generations')\
-            .select('*')\
-            .eq('id', generation_id)\
-            .single()\
-            .execute()
+        generation_response = await db.fetchrow(
+            "SELECT * FROM template_portfolio_generations WHERE id = $1",
+            generation_id
+        )
         
-        if not generation_response.data:
+        if not generation_response:
             raise HTTPException(status_code=404, detail=f"Generation with ID {generation_id} not found")
         
-        return generation_response.data
+        return dict(generation_response)
     except Exception as e:
         logger.error(f"Error fetching generation {generation_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1182,13 +1205,15 @@ async def get_available_portfolio_funds_by_generation(
         logger.info(f"=== get_available_portfolio_funds_by_generation called with generation_id: {generation_id} ===")
         
         # Build query with the generation_id in the path parameter
-        query = db.table("available_portfolio_funds").select("*").eq("template_portfolio_generation_id", generation_id)
         logger.info(f"Executing query for generation_id={generation_id}")
         
-        result = query.execute()
-        logger.info(f"Query result: {result.data}")
+        result = await db.fetch(
+            "SELECT * FROM available_portfolio_funds WHERE template_portfolio_generation_id = $1",
+            generation_id
+        )
+        logger.info(f"Query result: {result}")
         
-        return result.data or []
+        return [dict(fund) for fund in result] if result else []
     except Exception as e:
         logger.error(f"Error fetching portfolio funds for generation ID {generation_id}: {str(e)}")
         logger.error(f"Error type: {type(e)}")
@@ -1202,29 +1227,28 @@ async def get_active_template_portfolio_generations(db = Depends(get_db)):
         logger.info("Fetching active template portfolio generations with product counts")
         
         # Get all template portfolio generations that are not inactive
-        response = db.table('template_portfolio_generations')\
-            .select('id, generation_name, available_portfolio_id, status, created_at, description')\
-            .neq('status', 'inactive')\
-            .order('generation_name')\
-            .execute()
+        response = await db.fetch(
+            "SELECT id, generation_name, available_portfolio_id, status, created_at, description FROM template_portfolio_generations WHERE status != 'inactive' ORDER BY generation_name"
+        )
         
-        if not response.data:
+        if not response:
             logger.info("No active template portfolio generations found")
             return []
         
-        logger.info(f"Found {len(response.data)} active template portfolio generations")
+        logger.info(f"Found {len(response)} active template portfolio generations")
         
         # Get product counts for each generation
         product_counts = {}
-        for generation in response.data:
+        for generation in response:
+            generation = dict(generation)
             generation_id = generation["id"]
             try:
-                # Count products using the products_list_view where effective_template_generation_id matches
-                count_result = db.table("products_list_view")\
-                    .select("product_id")\
-                    .eq("effective_template_generation_id", generation_id)\
-                    .execute()
-                product_counts[generation_id] = len(count_result.data) if count_result.data else 0
+                # Count products using the products_list_view where template_generation_id matches
+                count_result = await db.fetchval(
+                    "SELECT COUNT(*) FROM products_list_view WHERE portfolio_id IN (SELECT id FROM portfolios WHERE template_generation_id = $1)",
+                    generation_id
+                )
+                product_counts[generation_id] = count_result or 0
                 logger.debug(f"Generation {generation_id} ({generation.get('generation_name', 'Unknown')}): {product_counts[generation_id]} products")
             except Exception as count_err:
                 logger.error(f"Error counting products for generation {generation_id}: {str(count_err)}")
@@ -1232,7 +1256,8 @@ async def get_active_template_portfolio_generations(db = Depends(get_db)):
         
         # Add product counts to each generation
         enhanced_generations = []
-        for generation in response.data:
+        for generation in response:
+            generation = dict(generation)
             generation_with_count = generation.copy()
             generation_with_count["product_count"] = product_counts.get(generation["id"], 0)
             enhanced_generations.append(generation_with_count)
@@ -1256,15 +1281,21 @@ async def get_generation_with_funds_batch(generation_id: int, db = Depends(get_d
         logger.info(f"🚀 Batch fetching generation and funds for generation_id: {generation_id}")
         
         # Fetch both generation details and portfolio funds in parallel
-        generation_response = db.table('template_portfolio_generations').select('*').eq('id', generation_id).execute()
-        funds_response = db.table('available_portfolio_funds').select('*').eq('template_portfolio_generation_id', generation_id).execute()
+        generation_response = await db.fetchrow(
+            "SELECT * FROM template_portfolio_generations WHERE id = $1",
+            generation_id
+        )
+        funds_response = await db.fetch(
+            "SELECT * FROM available_portfolio_funds WHERE template_portfolio_generation_id = $1",
+            generation_id
+        )
         
-        if not generation_response.data:
+        if not generation_response:
             logger.warning(f"No generation found with ID: {generation_id}")
             raise HTTPException(status_code=404, detail="Template generation not found")
         
-        generation_data = generation_response.data[0]
-        funds_data = funds_response.data if funds_response.data else []
+        generation_data = dict(generation_response)
+        funds_data = [dict(fund) for fund in funds_response] if funds_response else []
         
         # Create template weightings map for easier frontend consumption
         template_weightings = {}
@@ -1277,7 +1308,7 @@ async def get_generation_with_funds_batch(generation_id: int, db = Depends(get_d
             "funds": funds_data,
             "template_weightings": template_weightings,
             "count": {
-                "generation": len(generation_response.data),
+                "generation": 1,  # Single generation record
                 "funds": len(funds_data)
             }
         }
@@ -1311,55 +1342,54 @@ async def get_products_linked_to_template(portfolio_id: int, db = Depends(get_db
         logger.info(f"Fetching products linked to portfolio template {portfolio_id}")
         
         # First, get all generations for this portfolio template
-        generations_response = db.table('template_portfolio_generations')\
-            .select('id')\
-            .eq('available_portfolio_id', portfolio_id)\
-            .execute()
+        generations_response = await db.fetch(
+            "SELECT id FROM template_portfolio_generations WHERE available_portfolio_id = $1",
+            portfolio_id
+        )
         
-        if not generations_response.data:
+        if not generations_response:
             logger.info(f"No generations found for portfolio template {portfolio_id}")
             return []
         
-        generation_ids = [gen['id'] for gen in generations_response.data]
+        generation_ids = [gen['id'] for gen in generations_response]
         logger.info(f"Found {len(generation_ids)} generations for template {portfolio_id}")
         
         # Query products linked through portfolios (where portfolio.template_generation_id matches)
-        products_via_portfolio = db.table('client_products')\
-            .select('*')\
-            .not_.is_('portfolio_id', 'null')\
-            .execute()
+        products_via_portfolio = await db.fetch(
+            "SELECT * FROM client_products WHERE portfolio_id IS NOT NULL"
+        )
         
         # Query products directly linked to template generations
-        products_direct = db.table('client_products')\
-            .select('*')\
-            .in_('template_generation_id', generation_ids)\
-            .execute()
+        products_direct = await db.fetch(
+            "SELECT * FROM client_products WHERE template_generation_id = ANY($1::int[])",
+            generation_ids
+        )
         
         # Helper function to enrich product with related data
         async def enrich_product(product):
             # Fetch client group
             if product.get('client_id'):
-                client_response = db.table('client_groups')\
-                    .select('id, name, advisor')\
-                    .eq('id', product['client_id'])\
-                    .execute()
-                product['client_groups'] = client_response.data[0] if client_response.data else None
+                client_response = await db.fetchrow(
+                    "SELECT id, name, advisor FROM client_groups WHERE id = $1",
+                    product['client_id']
+                )
+                product['client_groups'] = dict(client_response) if client_response else None
             
             # Fetch provider
             if product.get('provider_id'):
-                provider_response = db.table('available_providers')\
-                    .select('id, name, theme_color')\
-                    .eq('id', product['provider_id'])\
-                    .execute()
-                product['available_providers'] = provider_response.data[0] if provider_response.data else None
+                provider_response = await db.fetchrow(
+                    "SELECT id, name, theme_color FROM available_providers WHERE id = $1",
+                    product['provider_id']
+                )
+                product['available_providers'] = dict(provider_response) if provider_response else None
             
             # Fetch portfolio
             if product.get('portfolio_id'):
-                portfolio_response = db.table('portfolios')\
-                    .select('id, portfolio_name, template_generation_id')\
-                    .eq('id', product['portfolio_id'])\
-                    .execute()
-                product['portfolios'] = portfolio_response.data[0] if portfolio_response.data else None
+                portfolio_response = await db.fetchrow(
+                    "SELECT id, portfolio_name, template_generation_id FROM portfolios WHERE id = $1",
+                    product['portfolio_id']
+                )
+                product['portfolios'] = dict(portfolio_response) if portfolio_response else None
             
             return product
         
@@ -1368,8 +1398,9 @@ async def get_products_linked_to_template(portfolio_id: int, db = Depends(get_db
         seen_product_ids = set()
         
         # Add products from portfolio links (filter by portfolio's template_generation_id)
-        if products_via_portfolio.data:
-            for product in products_via_portfolio.data:
+        if products_via_portfolio:
+            for product in products_via_portfolio:
+                product = dict(product)
                 if product['id'] not in seen_product_ids:
                     # Enrich product with related data
                     enriched_product = await enrich_product(product.copy())
@@ -1382,8 +1413,9 @@ async def get_products_linked_to_template(portfolio_id: int, db = Depends(get_db
                         seen_product_ids.add(product['id'])
         
         # Add products from direct links
-        if products_direct.data:
-            for product in products_direct.data:
+        if products_direct:
+            for product in products_direct:
+                product = dict(product)
                 if product['id'] not in seen_product_ids:
                     # Enrich product with related data
                     enriched_product = await enrich_product(product.copy())

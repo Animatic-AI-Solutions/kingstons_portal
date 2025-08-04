@@ -104,8 +104,10 @@ async def get_product_value_irr_summary(db = Depends(get_db)):
     Returns the product value and IRR summary for all client products from the product_value_irr_summary view.
     """
     try:
-        result = db.table("product_value_irr_summary").select("*").execute()
-        return result.data
+        # AsyncPG query to select all from view
+        result = await db.fetch("SELECT * FROM product_value_irr_summary")
+        # Convert AsyncPG Records to dictionaries
+        return [dict(row) for row in result]
     except Exception as e:
         logger.error(f"Error fetching product value IRR summary: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

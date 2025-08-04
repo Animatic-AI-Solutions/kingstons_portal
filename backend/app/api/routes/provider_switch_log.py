@@ -26,54 +26,69 @@ async def create_provider_switch_log(provider_switch: ProviderSwitchLogCreate, d
     """
     try:
         # Verify the client product exists
-        client_product_check = db.table("client_products").select("id").eq("id", provider_switch.client_product_id).execute()
-        if not client_product_check.data:
+        client_product = await db.fetchrow("SELECT id FROM client_products WHERE id = $1", provider_switch.client_product_id)
+        if not client_product:
             raise HTTPException(status_code=404, detail=f"Client product with ID {provider_switch.client_product_id} not found")
         
         # Verify the new provider exists
-        new_provider_check = db.table("available_providers").select("id").eq("id", provider_switch.new_provider_id).execute()
-        if not new_provider_check.data:
+        new_provider = await db.fetchrow("SELECT id FROM available_providers WHERE id = $1", provider_switch.new_provider_id)
+        if not new_provider:
             raise HTTPException(status_code=404, detail=f"Provider with ID {provider_switch.new_provider_id} not found")
         
         # Verify previous provider if provided
         if provider_switch.previous_provider_id:
-            prev_provider_check = db.table("available_providers").select("id").eq("id", provider_switch.previous_provider_id).execute()
-            if not prev_provider_check.data:
+            prev_provider = await db.fetchrow("SELECT id FROM available_providers WHERE id = $1", provider_switch.previous_provider_id)
+            if not prev_provider:
                 raise HTTPException(status_code=404, detail=f"Previous provider with ID {provider_switch.previous_provider_id} not found")
         
-        # Create the provider switch log
-        insert_data = {
-            "client_product_id": provider_switch.client_product_id,
-            "switch_date": provider_switch.switch_date.isoformat(),
-            "new_provider_id": provider_switch.new_provider_id,
-            "description": provider_switch.description
-        }
-        
-        # Add previous_provider_id only if it's provided
+        # Create the provider switch log with dynamic INSERT
         if provider_switch.previous_provider_id:
-            insert_data["previous_provider_id"] = provider_switch.previous_provider_id
+            # Include previous_provider_id
+            result = await db.fetchrow(
+                """
+                INSERT INTO provider_switch_log (client_product_id, switch_date, new_provider_id, previous_provider_id, description)
+                VALUES ($1, $2, $3, $4, $5)
+                RETURNING *
+                """,
+                provider_switch.client_product_id,
+                provider_switch.switch_date,
+                provider_switch.new_provider_id,
+                provider_switch.previous_provider_id,
+                provider_switch.description
+            )
+        else:
+            # Exclude previous_provider_id
+            result = await db.fetchrow(
+                """
+                INSERT INTO provider_switch_log (client_product_id, switch_date, new_provider_id, description)
+                VALUES ($1, $2, $3, $4)
+                RETURNING *
+                """,
+                provider_switch.client_product_id,
+                provider_switch.switch_date,
+                provider_switch.new_provider_id,
+                provider_switch.description
+            )
         
-        result = db.table("provider_switch_log").insert(insert_data).execute()
-        
-        if not result.data:
+        if not result:
             raise HTTPException(status_code=500, detail="Failed to create provider switch log")
         
-        created_log = result.data[0]
+        created_log = dict(result)
         
         # Fetch provider names for the response
         new_provider_name = None
         previous_provider_name = None
         
         # Get new provider name
-        new_provider_result = db.table("available_providers").select("name").eq("id", provider_switch.new_provider_id).execute()
-        if new_provider_result.data:
-            new_provider_name = new_provider_result.data[0].get("name")
+        new_provider_data = await db.fetchrow("SELECT name FROM available_providers WHERE id = $1", provider_switch.new_provider_id)
+        if new_provider_data:
+            new_provider_name = new_provider_data["name"]
         
         # Get previous provider name if provided
         if provider_switch.previous_provider_id:
-            prev_provider_result = db.table("available_providers").select("name").eq("id", provider_switch.previous_provider_id).execute()
-            if prev_provider_result.data:
-                previous_provider_name = prev_provider_result.data[0].get("name")
+            prev_provider_data = await db.fetchrow("SELECT name FROM available_providers WHERE id = $1", provider_switch.previous_provider_id)
+            if prev_provider_data:
+                previous_provider_name = prev_provider_data["name"]
         
         # Add provider names to the response
         response_data = {
@@ -108,16 +123,33 @@ async def get_provider_switch_logs(
     Expected output: A JSON array of provider switch log objects
     """
     try:
-        # Build the base query
-        query = db.table("provider_switch_log").select("*")
+        # Build dynamic query with optional filtering
+        where_clause = ""
+        params = []
+        param_count = 0
         
-        # Apply filters if provided
         if client_product_id is not None:
-            query = query.eq("client_product_id", client_product_id)
+            param_count += 1
+            where_clause = f"WHERE client_product_id = ${param_count}"
+            params.append(client_product_id)
         
-        # Execute the query with pagination
-        result = query.order("switch_date", desc=True).range(skip, skip + limit - 1).execute()
-        switch_logs = result.data
+        # Add pagination parameters
+        param_count += 1
+        limit_clause = f"LIMIT ${param_count}"
+        params.append(limit)
+        
+        param_count += 1
+        offset_clause = f"OFFSET ${param_count}"
+        params.append(skip)
+        
+        query = f"""
+            SELECT * FROM provider_switch_log 
+            {where_clause}
+            ORDER BY switch_date DESC
+            {limit_clause} {offset_clause}
+        """
+        
+        switch_logs = await db.fetch(query, *params)
         
         # If no logs found, return empty list
         if not switch_logs:
@@ -126,24 +158,24 @@ async def get_provider_switch_logs(
         # Gather all provider IDs for bulk fetching
         provider_ids = set()
         for log in switch_logs:
-            if log.get("previous_provider_id"):
-                provider_ids.add(log.get("previous_provider_id"))
-            if log.get("new_provider_id"):
-                provider_ids.add(log.get("new_provider_id"))
+            if log["previous_provider_id"]:
+                provider_ids.add(log["previous_provider_id"])
+            if log["new_provider_id"]:
+                provider_ids.add(log["new_provider_id"])
         
-        # Fetch all providers at once
+        # Fetch all providers at once using ANY()
         providers_map = {}
         if provider_ids:
-            providers_result = db.table("available_providers").select("id, name").in_("id", list(provider_ids)).execute()
-            if providers_result.data:
-                providers_map = {p.get("id"): p.get("name") for p in providers_result.data}
+            providers = await db.fetch("SELECT id, name FROM available_providers WHERE id = ANY($1::int[])", list(provider_ids))
+            providers_map = {p["id"]: p["name"] for p in providers}
         
         # Add provider names to each log
         enhanced_logs = []
         for log in switch_logs:
-            log["previous_provider_name"] = providers_map.get(log.get("previous_provider_id"))
-            log["new_provider_name"] = providers_map.get(log.get("new_provider_id"))
-            enhanced_logs.append(log)
+            log_dict = dict(log)
+            log_dict["previous_provider_name"] = providers_map.get(log["previous_provider_id"])
+            log_dict["new_provider_name"] = providers_map.get(log["new_provider_id"])
+            enhanced_logs.append(log_dict)
         
         return enhanced_logs
     
@@ -167,13 +199,15 @@ async def get_provider_switches_for_product(
     """
     try:
         # Verify the client product exists
-        client_product_check = db.table("client_products").select("id").eq("id", client_product_id).execute()
-        if not client_product_check.data:
+        client_product = await db.fetchrow("SELECT id FROM client_products WHERE id = $1", client_product_id)
+        if not client_product:
             raise HTTPException(status_code=404, detail=f"Client product with ID {client_product_id} not found")
         
         # Fetch all provider switch logs for this product
-        result = db.table("provider_switch_log").select("*").eq("client_product_id", client_product_id).order("switch_date", desc=True).execute()
-        switch_logs = result.data
+        switch_logs = await db.fetch(
+            "SELECT * FROM provider_switch_log WHERE client_product_id = $1 ORDER BY switch_date DESC",
+            client_product_id
+        )
         
         # If no logs found, return empty list
         if not switch_logs:
@@ -182,24 +216,24 @@ async def get_provider_switches_for_product(
         # Gather all provider IDs for bulk fetching
         provider_ids = set()
         for log in switch_logs:
-            if log.get("previous_provider_id"):
-                provider_ids.add(log.get("previous_provider_id"))
-            if log.get("new_provider_id"):
-                provider_ids.add(log.get("new_provider_id"))
+            if log["previous_provider_id"]:
+                provider_ids.add(log["previous_provider_id"])
+            if log["new_provider_id"]:
+                provider_ids.add(log["new_provider_id"])
         
-        # Fetch all providers at once
+        # Fetch all providers at once using ANY()
         providers_map = {}
         if provider_ids:
-            providers_result = db.table("available_providers").select("id, name").in_("id", list(provider_ids)).execute()
-            if providers_result.data:
-                providers_map = {p.get("id"): p.get("name") for p in providers_result.data}
+            providers = await db.fetch("SELECT id, name FROM available_providers WHERE id = ANY($1::int[])", list(provider_ids))
+            providers_map = {p["id"]: p["name"] for p in providers}
         
         # Add provider names to each log
         enhanced_logs = []
         for log in switch_logs:
-            log["previous_provider_name"] = providers_map.get(log.get("previous_provider_id"))
-            log["new_provider_name"] = providers_map.get(log.get("new_provider_id"))
-            enhanced_logs.append(log)
+            log_dict = dict(log)
+            log_dict["previous_provider_name"] = providers_map.get(log["previous_provider_id"])
+            log_dict["new_provider_name"] = providers_map.get(log["new_provider_id"])
+            enhanced_logs.append(log_dict)
         
         return enhanced_logs
     
@@ -220,12 +254,12 @@ async def get_provider_switch_log(log_id: int, db = Depends(get_db)):
     Expected output: The provider switch log with provider names
     """
     try:
-        result = db.table("provider_switch_log").select("*").eq("id", log_id).execute()
+        result = await db.fetchrow("SELECT * FROM provider_switch_log WHERE id = $1", log_id)
         
-        if not result.data:
+        if not result:
             raise HTTPException(status_code=404, detail=f"Provider switch log with ID {log_id} not found")
         
-        log = result.data[0]
+        log = dict(result)
         
         # Fetch provider names
         new_provider_name = None
@@ -233,15 +267,15 @@ async def get_provider_switch_log(log_id: int, db = Depends(get_db)):
         
         # Get new provider name
         if log.get("new_provider_id"):
-            new_provider_result = db.table("available_providers").select("name").eq("id", log.get("new_provider_id")).execute()
-            if new_provider_result.data:
-                new_provider_name = new_provider_result.data[0].get("name")
+            new_provider_data = await db.fetchrow("SELECT name FROM available_providers WHERE id = $1", log["new_provider_id"])
+            if new_provider_data:
+                new_provider_name = new_provider_data["name"]
         
         # Get previous provider name if provided
         if log.get("previous_provider_id"):
-            prev_provider_result = db.table("available_providers").select("name").eq("id", log.get("previous_provider_id")).execute()
-            if prev_provider_result.data:
-                previous_provider_name = prev_provider_result.data[0].get("name")
+            prev_provider_data = await db.fetchrow("SELECT name FROM available_providers WHERE id = $1", log["previous_provider_id"])
+            if prev_provider_data:
+                previous_provider_name = prev_provider_data["name"]
         
         # Add provider names to the response
         log["previous_provider_name"] = previous_provider_name

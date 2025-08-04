@@ -71,13 +71,13 @@ class TransactionCoordinator:
                 logger.info("🧮 Phase 3: Triggering fund-level IRR recalculations...")
                 for fund_id, dates in affected_funds.items():
                     # Get portfolio_id for this fund to track portfolio-level recalculation
-                    fund_info = self.db.table("portfolio_funds")\
-                        .select("portfolio_id")\
-                        .eq("id", fund_id)\
-                        .execute()
+                    fund_info = await self.db.fetchrow(
+                        "SELECT portfolio_id FROM portfolio_funds WHERE id = $1", 
+                        fund_id
+                    )
                     
-                    if fund_info.data:
-                        portfolio_id = fund_info.data[0]["portfolio_id"]
+                    if fund_info:
+                        portfolio_id = fund_info["portfolio_id"]
                         affected_portfolios.add(portfolio_id)
                     
                     for date in dates:
@@ -90,7 +90,7 @@ class TransactionCoordinator:
                     logger.info("🏢 Phase 4: Triggering portfolio-level IRR recalculations...")
                     for portfolio_id in affected_portfolios:
                         # Find the earliest date affected for this portfolio
-                        earliest_date = self._get_earliest_date_for_portfolio(portfolio_id, affected_funds)
+                        earliest_date = await self._get_earliest_date_for_portfolio(portfolio_id, affected_funds)
                         if earliest_date:
                             portfolio_irr_count = await self._recalculate_portfolio_irr(portfolio_id, earliest_date)
                             result["portfolio_irr_recalculations"] += portfolio_irr_count
@@ -110,18 +110,31 @@ class TransactionCoordinator:
         try:
             # Insert or update activity
             if activity_data.get('id'):
-                # Update existing activity
-                result = self.db.table("holding_activity_log")\
-                    .update(activity_data)\
-                    .eq("id", activity_data['id'])\
-                    .execute()
+                # Update existing activity - Build dynamic update query
+                set_clauses = []
+                params = []
+                param_count = 1
+                
+                for key, value in activity_data.items():
+                    if key != 'id':  # Skip the id field for SET clause
+                        set_clauses.append(f"{key} = ${param_count}")
+                        params.append(value)
+                        param_count += 1
+                
+                params.append(activity_data['id'])  # Add id for WHERE clause
+                
+                query = f"UPDATE holding_activity_log SET {', '.join(set_clauses)} WHERE id = ${param_count} RETURNING *"
+                result = await self.db.fetchrow(query, *params)
             else:
-                # Insert new activity
-                result = self.db.table("holding_activity_log")\
-                    .insert(activity_data)\
-                    .execute()
+                # Insert new activity - Build dynamic insert query
+                columns = list(activity_data.keys())
+                values = list(activity_data.values())
+                placeholders = [f"${i+1}" for i in range(len(values))]
+                
+                query = f"INSERT INTO holding_activity_log ({', '.join(columns)}) VALUES ({', '.join(placeholders)}) RETURNING *"
+                result = await self.db.fetchrow(query, *values)
             
-            if not result.data:
+            if not result:
                 raise Exception(f"Failed to save activity: {activity_data}")
                 
             logger.info(f"📥 Activity saved: {activity_data['activity_type']} for fund {activity_data['portfolio_fund_id']}")
@@ -134,25 +147,37 @@ class TransactionCoordinator:
         """Save a single valuation to the database"""
         try:
             # Check for existing valuation
-            existing_valuation = self.db.table("portfolio_fund_valuations")\
-                .select("*")\
-                .eq("portfolio_fund_id", valuation_data['portfolio_fund_id'])\
-                .eq("valuation_date", valuation_data['valuation_date'])\
-                .execute()
+            existing_valuation = await self.db.fetchrow(
+                "SELECT * FROM portfolio_fund_valuations WHERE portfolio_fund_id = $1 AND valuation_date = $2",
+                valuation_data['portfolio_fund_id'],
+                valuation_data['valuation_date']
+            )
             
-            if existing_valuation.data:
-                # Update existing valuation
-                result = self.db.table("portfolio_fund_valuations")\
-                    .update(valuation_data)\
-                    .eq("id", existing_valuation.data[0]['id'])\
-                    .execute()
+            if existing_valuation:
+                # Update existing valuation - Build dynamic update query
+                set_clauses = []
+                params = []
+                param_count = 1
+                
+                for key, value in valuation_data.items():
+                    set_clauses.append(f"{key} = ${param_count}")
+                    params.append(value)
+                    param_count += 1
+                
+                params.append(existing_valuation['id'])  # Add id for WHERE clause
+                
+                query = f"UPDATE portfolio_fund_valuations SET {', '.join(set_clauses)} WHERE id = ${param_count} RETURNING *"
+                result = await self.db.fetchrow(query, *params)
             else:
-                # Insert new valuation
-                result = self.db.table("portfolio_fund_valuations")\
-                    .insert(valuation_data)\
-                    .execute()
+                # Insert new valuation - Build dynamic insert query
+                columns = list(valuation_data.keys())
+                values = list(valuation_data.values())
+                placeholders = [f"${i+1}" for i in range(len(values))]
+                
+                query = f"INSERT INTO portfolio_fund_valuations ({', '.join(columns)}) VALUES ({', '.join(placeholders)}) RETURNING *"
+                result = await self.db.fetchrow(query, *values)
             
-            if not result.data:
+            if not result:
                 raise Exception(f"Failed to save valuation: {valuation_data}")
                 
             logger.info(f"💰 Valuation saved: £{valuation_data['valuation']} for fund {valuation_data['portfolio_fund_id']} on {valuation_data['valuation_date']}")
@@ -213,7 +238,7 @@ class TransactionCoordinator:
             # Don't raise - IRR calculation failure shouldn't fail the entire transaction
             return 0
 
-    def _get_earliest_date_for_portfolio(self, portfolio_id: int, affected_funds: Dict[int, List[str]]) -> Optional[str]:
+    async def _get_earliest_date_for_portfolio(self, portfolio_id: int, affected_funds: Dict[int, List[str]]) -> Optional[str]:
         """
         Find the earliest date that affects a specific portfolio.
         
@@ -227,15 +252,15 @@ class TransactionCoordinator:
         earliest_date = None
         
         # Get all funds for this portfolio
-        portfolio_funds = self.db.table("portfolio_funds")\
-            .select("id")\
-            .eq("portfolio_id", portfolio_id)\
-            .execute()
+        portfolio_funds = await self.db.fetch(
+            "SELECT id FROM portfolio_funds WHERE portfolio_id = $1",
+            portfolio_id
+        )
         
-        if not portfolio_funds.data:
+        if not portfolio_funds:
             return None
         
-        portfolio_fund_ids = [pf["id"] for pf in portfolio_funds.data]
+        portfolio_fund_ids = [pf["id"] for pf in portfolio_funds]
         
         # Find the earliest date from affected funds that belong to this portfolio
         for fund_id, dates in affected_funds.items():

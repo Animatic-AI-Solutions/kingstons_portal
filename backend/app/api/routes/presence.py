@@ -102,19 +102,31 @@ async def handle_presence_enter(message: dict, page_identifier: str):
         user_id = message.get("user_id")
         user_info = message.get("user_info", {})
         
-        db = get_db()
-        
-        # Insert or update presence record
-        presence_data = {
-            "user_id": user_id,
-            "page_identifier": page_identifier,
-            "entered_at": datetime.utcnow().isoformat(),
-            "last_seen": datetime.utcnow().isoformat(),
-            "user_info": user_info
-        }
-        
-        # Upsert presence record
-        result = db.table("user_page_presence").upsert(presence_data, on_conflict="user_id,page_identifier").execute()
+        # Get database connection properly for WebSocket
+        from app.db.database import get_db_sync
+        pool = get_db_sync()
+        async with pool.acquire() as db:
+            # Insert or update presence record
+            current_time = datetime.utcnow()
+            presence_data = {
+                "user_id": user_id,
+                "page_identifier": page_identifier,
+                "entered_at": current_time,
+                "last_seen": current_time,
+                "user_info": user_info
+            }
+            
+            # Upsert presence record
+            result = await db.execute("""
+            INSERT INTO user_page_presence (user_id, page_identifier, entered_at, last_seen, user_info)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (user_id, page_identifier) 
+            DO UPDATE SET 
+                last_seen = EXCLUDED.last_seen,
+                user_info = EXCLUDED.user_info
+        """, presence_data["user_id"], presence_data["page_identifier"], 
+             presence_data["entered_at"], presence_data["last_seen"], 
+             json.dumps(presence_data["user_info"]))
         
         # Get all current users on this page
         current_users = await get_page_users(page_identifier)
@@ -143,12 +155,16 @@ async def handle_heartbeat(message: dict, page_identifier: str):
     try:
         user_id = message.get("user_id")
         if user_id:
-            db = get_db()
-            
-            # Update last_seen timestamp
-            db.table("user_page_presence").update({
-                "last_seen": datetime.utcnow().isoformat()
-            }).eq("user_id", user_id).eq("page_identifier", page_identifier).execute()
+            # Get database connection properly for WebSocket
+            from app.db.database import get_db_sync
+            pool = get_db_sync()
+            async with pool.acquire() as db:
+                # Update last_seen timestamp
+                await db.execute("""
+                    UPDATE user_page_presence 
+                    SET last_seen = $1 
+                    WHERE user_id = $2 AND page_identifier = $3
+                """, datetime.utcnow(), user_id, page_identifier)
             
     except Exception as e:
         logger.error(f"Error handling heartbeat: {str(e)}")
@@ -156,10 +172,15 @@ async def handle_heartbeat(message: dict, page_identifier: str):
 async def cleanup_user_presence(page_identifier: str, user_id: int):
     """Clean up user presence when they leave"""
     try:
-        db = get_db()
-        
-        # Remove presence record
-        db.table("user_page_presence").delete().eq("user_id", user_id).eq("page_identifier", page_identifier).execute()
+        # Get database connection properly for WebSocket
+        from app.db.database import get_db_sync
+        pool = get_db_sync()
+        async with pool.acquire() as db:
+            # Remove presence record
+            await db.execute("""
+                DELETE FROM user_page_presence 
+                WHERE user_id = $1 AND page_identifier = $2
+            """, user_id, page_identifier)
         
         # Get updated user list
         current_users = await get_page_users(page_identifier)
@@ -176,17 +197,22 @@ async def cleanup_user_presence(page_identifier: str, user_id: int):
 async def get_page_users(page_identifier: str) -> List[dict]:
     """Get all users currently on a page"""
     try:
-        db = get_db()
-        
-        result = db.table("user_page_presence").select("*").eq("page_identifier", page_identifier).execute()
+        # Get database connection properly for WebSocket
+        from app.db.database import get_db_sync
+        pool = get_db_sync()
+        async with pool.acquire() as db:
+            result = await db.fetch("""
+                SELECT * FROM user_page_presence WHERE page_identifier = $1
+            """, page_identifier)
         
         users = []
-        for record in result.data:
+        for record_row in result:
+            record = dict(record_row)
             user_data = {
                 "user_id": record["user_id"],
                 "user_info": record["user_info"],
-                "entered_at": record["entered_at"],
-                "last_seen": record["last_seen"]
+                "entered_at": record["entered_at"].isoformat() if record["entered_at"] else None,
+                "last_seen": record["last_seen"].isoformat() if record["last_seen"] else None
             }
             users.append(user_data)
         
@@ -225,15 +251,25 @@ async def enter_page(
             "avatar": current_user.get('profile_picture_url', '/images/Companylogo2.png')
         }
         
+        current_time = datetime.utcnow()
         presence_data = {
             "user_id": current_user["id"],
             "page_identifier": page_identifier,
-            "entered_at": datetime.utcnow().isoformat(),
-            "last_seen": datetime.utcnow().isoformat(),
+            "entered_at": current_time,
+            "last_seen": current_time,
             "user_info": user_info
         }
         
-        result = db.table("user_page_presence").upsert(presence_data, on_conflict="user_id,page_identifier").execute()
+        result = await db.execute("""
+            INSERT INTO user_page_presence (user_id, page_identifier, entered_at, last_seen, user_info)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (user_id, page_identifier) 
+            DO UPDATE SET 
+                last_seen = EXCLUDED.last_seen,
+                user_info = EXCLUDED.user_info
+        """, presence_data["user_id"], presence_data["page_identifier"], 
+             presence_data["entered_at"], presence_data["last_seen"], 
+             json.dumps(presence_data["user_info"]))
         
         return {"message": "Presence recorded", "user_id": current_user["id"]}
         
@@ -249,7 +285,10 @@ async def exit_page(
 ):
     """Mark user as leaving a page (REST fallback)"""
     try:
-        db.table("user_page_presence").delete().eq("user_id", current_user["id"]).eq("page_identifier", page_identifier).execute()
+        await db.execute("""
+            DELETE FROM user_page_presence 
+            WHERE user_id = $1 AND page_identifier = $2
+        """, current_user["id"], page_identifier)
         
         return {"message": "Presence removed"}
         
@@ -261,10 +300,28 @@ async def exit_page(
 async def cleanup_stale_presence():
     """Remove stale presence records (older than 2 minutes)"""
     try:
-        db = get_db()
+        # Import here to avoid circular imports
+        from app.db.database import get_db_sync
+        
+        # Get database connection pool synchronously for background task
+        db_pool = get_db_sync()
+        if not db_pool:
+            logger.warning("Database pool not available for presence cleanup")
+            return
+            
         cutoff_time = datetime.utcnow() - timedelta(minutes=2)
         
-        result = db.table("user_page_presence").delete().lt("last_seen", cutoff_time.isoformat()).execute()
+        # Use AsyncPG syntax instead of Supabase
+        async with db_pool.acquire() as db:
+            result = await db.execute(
+                "DELETE FROM user_page_presence WHERE last_seen < $1",
+                cutoff_time
+            )
+            
+            # Log the cleanup result
+            if result.startswith("DELETE"):
+                deleted_count = result.split()[1]
+                logger.debug(f"Cleaned up {deleted_count} stale presence records")
         
     except Exception as e:
         logger.error(f"Error cleaning up presence: {str(e)}") 

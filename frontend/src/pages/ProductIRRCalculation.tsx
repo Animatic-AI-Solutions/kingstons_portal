@@ -147,7 +147,18 @@ const calculateValueMinusWithdrawals = (marketValue: number, activities: Activit
 
 // Helper functions to calculate totals for the Period Overview table
 const calculateTotalAmountInvested = (holdings: Holding[]): number => {
-  return holdings.reduce((total, holding) => total + (holding.amount_invested || 0), 0);
+  return holdings.reduce((total, holding) => {
+    // Convert amount_invested to number (it might come as string from database)
+    const amountInvested = holding.amount_invested || 0;
+    const numericAmountInvested = typeof amountInvested === 'string' ? parseFloat(amountInvested) : amountInvested;
+    
+    // Skip if conversion failed
+    if (isNaN(numericAmountInvested)) {
+      return total;
+    }
+    
+    return total + numericAmountInvested;
+  }, 0);
 };
 
 // Helper to filter active/inactive holdings
@@ -352,8 +363,17 @@ const createPreviousFundsEntry = (inactiveHoldings: Holding[], activityLogs: Act
   }
   
   // Sum up all the values from inactive holdings
-  const totalAmountInvested = inactiveHoldings.reduce((sum, holding) => sum + (holding.amount_invested || 0), 0);
-  const totalMarketValue = inactiveHoldings.reduce((sum, holding) => sum + (holding.market_value || 0), 0);
+  const totalAmountInvested = inactiveHoldings.reduce((sum, holding) => {
+    const amountInvested = holding.amount_invested || 0;
+    const numericAmount = typeof amountInvested === 'string' ? parseFloat(amountInvested) : amountInvested;
+    return sum + (isNaN(numericAmount) ? 0 : numericAmount);
+  }, 0);
+  
+  const totalMarketValue = inactiveHoldings.reduce((sum, holding) => {
+    const marketValue = holding.market_value || 0;
+    const numericValue = typeof marketValue === 'string' ? parseFloat(marketValue) : marketValue;
+    return sum + (isNaN(numericValue) ? 0 : numericValue);
+  }, 0);
   
   console.log("Previous Funds totals:", { totalAmountInvested, totalMarketValue });
   
@@ -536,7 +556,17 @@ const calculateTotalValue = (holdings: Holding[]): number => {
     if (holding.isVirtual || holding.status === 'inactive') {
       return total;
     }
-    return total + (holding.market_value || 0);
+    
+    // Convert market_value to number (it might come as string from database)
+    const marketValue = holding.market_value || 0;
+    const numericMarketValue = typeof marketValue === 'string' ? parseFloat(marketValue) : marketValue;
+    
+    // Skip if conversion failed
+    if (isNaN(numericMarketValue)) {
+      return total;
+    }
+    
+    return total + numericMarketValue;
   }, 0);
 };
 
@@ -545,8 +575,18 @@ const calculateTotalValue = (holdings: Holding[]): number => {
 const calculateTotalValueMinusWithdrawals = (holdings: Holding[], activities: ActivityLog[]): number => {
   // Include ALL real holdings (active and inactive) but exclude virtual entries
   const allRealHoldings = holdings.filter(h => !h.isVirtual);
-  return allRealHoldings.reduce((total, holding) => 
-    total + calculateValueMinusWithdrawals(holding.market_value || 0, activities, holding.id), 0);
+  return allRealHoldings.reduce((total, holding) => {
+    // Convert market_value to number (it might come as string from database)
+    const marketValue = holding.market_value || 0;
+    const numericMarketValue = typeof marketValue === 'string' ? parseFloat(marketValue) : marketValue;
+    
+    // Skip if conversion failed
+    if (isNaN(numericMarketValue)) {
+      return total;
+    }
+    
+    return total + calculateValueMinusWithdrawals(numericMarketValue, activities, holding.id);
+  }, 0);
 };
 
 const calculateTotalInvestmentsPlusSwitchIns = (activities: ActivityLog[], holdings: Holding[]): number => {
@@ -943,8 +983,11 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       if (holding.isVirtual) return; // Skip virtual entries
       
       if (holding.irr !== undefined && holding.irr !== null && holding.irr_calculation_date) {
+        // Convert IRR to number (it comes from database as string)
+        const numericIRR = typeof holding.irr === 'string' ? parseFloat(holding.irr) : holding.irr;
+        
         mappedIRRs[holding.id] = {
-          irr: holding.irr,
+          irr: numericIRR,
           date: holding.irr_calculation_date
         };
         console.log(`Mapped IRR for fund ${holding.id} (${holding.fund_name}):`, mappedIRRs[holding.id]);
@@ -1252,11 +1295,20 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
   };
 
   // Format percentage with 1 decimal place
-  const formatPercentage = (value: number): string => {
+  const formatPercentage = (value: number | null | undefined): string => {
     if (value === null || value === undefined) {
       return 'N/A';
     }
-    return `${value.toFixed(1)}%`;
+    
+    // Convert to number if it's a string (defensive programming)
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    
+    // Check if the conversion resulted in a valid number
+    if (isNaN(numValue)) {
+      return 'N/A';
+    }
+    
+    return `${numValue.toFixed(1)}%`;
   };
 
   // Format date only
@@ -1569,16 +1621,24 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
 
     // Fallback to database IRR if no view value (for backward compatibility)
     if (fund.irr !== undefined && fund.irr !== null) {
+      // Convert to number if it's a string (defensive programming)
+      const numericIRR = typeof fund.irr === 'string' ? parseFloat(fund.irr) : fund.irr;
+      
+      // Skip if conversion failed
+      if (isNaN(numericIRR)) {
+        return <span className="text-xs text-gray-500">N/A</span>;
+      }
+      
       return (
         <>
           <div className={`text-right ${
-            fund.irr >= 0 ? 'text-green-700' : 'text-red-700'
+            numericIRR >= 0 ? 'text-green-700' : 'text-red-700'
           }`}>
-            {Math.abs(fund.irr) > 1 
-              ? `${fund.irr.toFixed(1)}%` 
-              : formatPercentage(fund.irr)}
+            {Math.abs(numericIRR) > 1 
+              ? `${numericIRR.toFixed(1)}%` 
+              : formatPercentage(numericIRR)}
             <span className="ml-1">
-              {fund.irr >= 0 ? '▲' : '▼'}
+              {numericIRR >= 0 ? '▲' : '▼'}
             </span>
           </div>
           {fund.irr_calculation_date && (

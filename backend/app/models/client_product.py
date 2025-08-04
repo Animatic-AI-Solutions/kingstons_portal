@@ -20,6 +20,12 @@ class ClientproductBase(BaseModel):
     notes: Optional[str] = None
     fixed_cost: Optional[float] = None  # Fixed annual cost
     percentage_fee: Optional[float] = None  # Percentage fee (e.g., 1.5 for 1.5%)
+    
+    # Portfolio performance fields
+    irr: Optional[float] = None  # Portfolio IRR value
+    irr_date: Optional[date] = None  # IRR calculation date
+    total_value: Optional[float] = None  # Portfolio total value
+    template_info_name: Optional[str] = None  # Template generation name
 
     model_config = ConfigDict(
         from_attributes=True

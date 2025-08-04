@@ -33,50 +33,74 @@ async def get_client_groups(
     """
     try:
         logger.info(f"Fetching client groups with skip={skip}, limit={limit}, status={status}, search={search}")
-        query = db.table("client_groups").select("*").neq("status", "inactive")
         
-        # Apply filters if provided
+        # Build base query with filters
+        where_conditions = ["status != 'inactive'"]
+        params = []
+        param_count = 0
+        
         if status:
-            query = query.eq("status", status)
-            
+            param_count += 1
+            where_conditions.append(f"status = ${param_count}")
+            params.append(status)
+        
+        # Handle search functionality
         if search:
             search = search.lower()
-            # Complex searches would need a more sophisticated approach
-            # This is just a simple implementation
-            search_results = []
-            raw_results = query.execute()
+            # Get all matching records first for client-side filtering
+            where_clause = " WHERE " + " AND ".join(where_conditions)
+            search_query = f"SELECT * FROM client_groups{where_clause}"
             
-            if raw_results.data:
-                for client_group in raw_results.data:
-                    name = client_group.get("name", "").lower()
-                    relationship = client_group.get("relationship", "").lower()
-                    advisor = client_group.get("advisor", "").lower()
+            raw_results = await db.fetch(search_query, *params)
+            
+            if raw_results:
+                search_results = []
+                for client_group in raw_results:
+                    name = (client_group.get("name", "") or "").lower()
+                    relationship = (client_group.get("relationship", "") or "").lower()
+                    advisor = (client_group.get("advisor", "") or "").lower()
                     
                     if (search in name or 
                         search in relationship or 
                         search in advisor):
-                        search_results.append(client_group)
+                        search_results.append(dict(client_group))
                 
                 # Apply pagination to filtered results
                 start = skip
                 end = skip + limit
                 paginated_results = search_results[start:end] if start < len(search_results) else []
                 return paginated_results
+            else:
+                return []
                 
-        # Apply sorting if provided
+        # Build query with sorting and pagination
+        where_clause = " WHERE " + " AND ".join(where_conditions)
+        
+        # Add sorting if specified
+        order_clause = ""
         if sort_by:
-            # Determine sort order
-            ascending = sort_order.lower() != "desc"
-            query = query.order(sort_by, ascending=ascending)
+            sort_direction = "DESC" if sort_order.lower() == "desc" else "ASC"
+            # Validate sort_by to prevent SQL injection (basic validation)
+            allowed_sort_fields = ["name", "status", "advisor", "relationship", "type", "created_at", "id"]
+            if sort_by in allowed_sort_fields:
+                order_clause = f" ORDER BY {sort_by} {sort_direction}"
         
-        # Apply pagination
-        result = query.range(skip, skip + limit - 1).execute()
+        # Add pagination parameters
+        param_count += 1
+        offset_param = param_count
+        param_count += 1
+        limit_param = param_count
+        params.extend([skip, limit])
         
-        logger.info(f"Query result: {result}")
-        if not result.data:
+        query = f"SELECT * FROM client_groups{where_clause}{order_clause} OFFSET ${offset_param} LIMIT ${limit_param}"
+        
+        result = await db.fetch(query, *params)
+        
+        logger.info(f"Query executed successfully, found {len(result)} client groups")
+        if not result:
             logger.warning("No client groups found in the database")
             
-        return result.data
+        return [dict(row) for row in result]
         
     except Exception as e:
         logger.error(f"Error fetching client groups: {str(e)}")
@@ -98,8 +122,11 @@ async def get_dormant_client_groups(
     Expected output: A JSON array of dormant client group objects
     """
     try:
-        result = db.table("client_groups").select("*").eq("status", "dormant").range(skip, skip + limit - 1).execute()
-        return result.data
+        result = await db.fetch(
+            "SELECT * FROM client_groups WHERE status = 'dormant' OFFSET $1 LIMIT $2",
+            skip, limit
+        )
+        return [dict(row) for row in result]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
@@ -115,9 +142,20 @@ async def create_client_group(client_group: ClientGroupCreate, db = Depends(get_
     Expected output: A JSON object containing the created client group's details
     """
     try:
-        result = db.table("client_groups").insert(client_group.model_dump()).execute()
-        if result.data and len(result.data) > 0:
-            return result.data[0]
+        # Get the data from the Pydantic model
+        client_data = client_group.model_dump()
+        
+        # Build dynamic INSERT query
+        columns = list(client_data.keys())
+        values = list(client_data.values())
+        placeholders = ", ".join([f"${i+1}" for i in range(len(values))])
+        columns_str = ", ".join(columns)
+        
+        query = f"INSERT INTO client_groups ({columns_str}) VALUES ({placeholders}) RETURNING *"
+        result = await db.fetchrow(query, *values)
+        
+        if result:
+            return dict(result)
         raise HTTPException(status_code=500, detail="Failed to create client group")
     except Exception as e:
         logger.error(f"Error creating client group: {str(e)}")
@@ -135,9 +173,9 @@ async def get_client_group(client_group_id: int, db = Depends(get_db)):
     Expected output: A JSON object containing the requested client group's details
     """
     try:
-        result = db.table("client_groups").select("*").eq("id", client_group_id).execute()
-        if result.data and len(result.data) > 0:
-            return result.data[0]
+        result = await db.fetchrow("SELECT * FROM client_groups WHERE id = $1", client_group_id)
+        if result:
+            return dict(result)
         raise HTTPException(status_code=404, detail=f"Client group with ID {client_group_id} not found")
     except HTTPException:
         raise
@@ -159,15 +197,36 @@ async def update_client_group(client_group_id: int, client_group_update: ClientG
     """
     try:
         # Check if client group exists
-        check_result = db.table("client_groups").select("id").eq("id", client_group_id).execute()
-        if not check_result.data or len(check_result.data) == 0:
+        check_result = await db.fetchrow("SELECT id FROM client_groups WHERE id = $1", client_group_id)
+        if not check_result:
             raise HTTPException(status_code=404, detail=f"Client group with ID {client_group_id} not found")
         
-        # Update client group
-        result = db.table("client_groups").update(client_group_update.model_dump(exclude_unset=True)).eq("id", client_group_id).execute()
+        # Get update data (excluding unset fields)
+        update_data = client_group_update.model_dump(exclude_unset=True)
+        
+        if not update_data:
+            # No updates provided, return existing record
+            existing = await db.fetchrow("SELECT * FROM client_groups WHERE id = $1", client_group_id)
+            return dict(existing)
+        
+        # Build dynamic UPDATE query
+        set_clauses = []
+        params = []
+        param_count = 0
+        
+        for key, value in update_data.items():
+            param_count += 1
+            set_clauses.append(f"{key} = ${param_count}")
+            params.append(value)
+        
+        param_count += 1
+        params.append(client_group_id)
+        
+        query = f"UPDATE client_groups SET {', '.join(set_clauses)} WHERE id = ${param_count} RETURNING *"
+        result = await db.fetchrow(query, *params)
 
-        if result.data and len(result.data) > 0:
-            return result.data[0]
+        if result:
+            return dict(result)
         raise HTTPException(status_code=500, detail="Failed to update client group")
     except HTTPException:
         raise
@@ -194,8 +253,8 @@ async def delete_client_group(
     """
     try:
         # Check if client group exists
-        check_result = db.table("client_groups").select("id").eq("id", client_group_id).execute()
-        if not check_result.data or len(check_result.data) == 0:
+        check_result = await db.fetchrow("SELECT id FROM client_groups WHERE id = $1", client_group_id)
+        if not check_result:
             raise HTTPException(status_code=404, detail=f"Client group with ID {client_group_id} not found")
 
         # First, delete all client group products and associated data
@@ -209,8 +268,8 @@ async def delete_client_group(
             raise HTTPException(status_code=500, detail=f"Failed to delete client group products: {str(e)}")
 
         # Delete client group
-        result = db.table("client_groups").delete().eq("id", client_group_id).execute()
-        if not result.data or len(result.data) == 0:
+        result = await db.fetchrow("DELETE FROM client_groups WHERE id = $1 RETURNING id", client_group_id)
+        if not result:
             raise HTTPException(status_code=400, detail="Failed to delete client group")
 
         return {
@@ -252,15 +311,18 @@ async def update_client_group_status(
             raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {valid_statuses}")
             
         # Check if client group exists
-        check_result = db.table("client_groups").select("id").eq("id", client_group_id).execute()
-        if not check_result.data or len(check_result.data) == 0:
+        check_result = await db.fetchrow("SELECT id FROM client_groups WHERE id = $1", client_group_id)
+        if not check_result:
             raise HTTPException(status_code=404, detail=f"Client group with ID {client_group_id} not found")
         
         # Update only the status field
-        result = db.table("client_groups").update({"status": status_update["status"]}).eq("id", client_group_id).execute()
+        result = await db.fetchrow(
+            "UPDATE client_groups SET status = $1 WHERE id = $2 RETURNING *",
+            status_update["status"], client_group_id
+        )
         
-        if result.data and len(result.data) > 0:
-            return result.data[0]
+        if result:
+            return dict(result)
         raise HTTPException(status_code=500, detail="Failed to update client group status")
     except HTTPException:
         raise
@@ -285,12 +347,12 @@ async def create_client_group_version(
     """
     try:
         # Get current client group data
-        client_group_result = db.table("client_groups").select("*").eq("id", client_group_id).execute()
+        client_group_result = await db.fetchrow("SELECT * FROM client_groups WHERE id = $1", client_group_id)
         
-        if not client_group_result.data or len(client_group_result.data) == 0:
+        if not client_group_result:
             raise HTTPException(status_code=404, detail=f"Client group with ID {client_group_id} not found")
         
-        client_group_data = client_group_result.data[0]
+        client_group_data = dict(client_group_result)
         
         # Include who made the version and when
         version_data = {
@@ -303,9 +365,13 @@ async def create_client_group_version(
         }
         
         # Insert into versions table
-        version_result = db.table("client_group_versions").insert(version_data).execute()
+        version_result = await db.fetchrow(
+            "INSERT INTO client_group_versions (client_group_id, created_by, name, status, advisor, type) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+            version_data["client_group_id"], version_data["created_by"], version_data["name"], 
+            version_data["status"], version_data["advisor"], version_data["type"]
+        )
         
-        if not version_result.data or len(version_result.data) == 0:
+        if not version_result:
             raise HTTPException(status_code=500, detail="Failed to create client group version")
         
         # Return the client group data (not the version record)
@@ -335,9 +401,12 @@ async def delete_client_group_products(
     """
     try:
         # Get all products for this client group
-        products_result = db.table("client_products").select("id,portfolio_id").eq("client_id", client_group_id).execute()
+        products_result = await db.fetch(
+            "SELECT id, portfolio_id FROM client_products WHERE client_id = $1",
+            client_group_id
+        )
         
-        if not products_result.data:
+        if not products_result:
             logger.info(f"No products found for client group {client_group_id}")
             return {
                 "message": "No products found for client group",
@@ -346,58 +415,72 @@ async def delete_client_group_products(
                 "deleted_portfolio_funds": 0
             }
             
-        products = products_result.data
+        products = [dict(row) for row in products_result]
         product_ids = [p["id"] for p in products]
         portfolio_ids = [p["portfolio_id"] for p in products if p["portfolio_id"] is not None]
         
         # Get all portfolio funds for these portfolios
         portfolio_fund_ids = []
         if portfolio_ids:
-            for portfolio_id in portfolio_ids:
-                pf_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
-                if pf_result.data:
-                    portfolio_fund_ids.extend([pf["id"] for pf in pf_result.data])
+            portfolio_funds_result = await db.fetch(
+                "SELECT id FROM portfolio_funds WHERE portfolio_id = ANY($1::int[])",
+                portfolio_ids
+            )
+            portfolio_fund_ids = [pf["id"] for pf in portfolio_funds_result]
             
         # Delete activity logs associated with portfolio funds
         activity_logs_deleted = 0
         if portfolio_fund_ids:
-            for pf_id in portfolio_fund_ids:
-                activity_logs = db.table("holding_activity_log").delete().eq("portfolio_fund_id", pf_id).execute()
-                activity_logs_deleted += len(activity_logs.data) if activity_logs.data else 0
+            activity_logs_result = await db.execute(
+                "DELETE FROM holding_activity_log WHERE portfolio_fund_id = ANY($1::int[])",
+                portfolio_fund_ids
+            )
+            activity_logs_deleted = int(activity_logs_result.split()[-1]) if activity_logs_result.startswith("DELETE") else 0
                 
         # Delete valuations and IRR values for portfolio funds
         valuations_deleted = 0
         irr_values_deleted = 0
         if portfolio_fund_ids:
-            for pf_id in portfolio_fund_ids:
-                        # Delete fund valuations
-                valuations = db.table("portfolio_fund_valuations").delete().eq("portfolio_fund_id", pf_id).execute()
-                valuations_deleted += len(valuations.data) if valuations.data else 0
-                        
-                        # Delete IRR values
-                irr_values = db.table("portfolio_fund_irr_values").delete().eq("fund_id", pf_id).execute()
-                irr_values_deleted += len(irr_values.data) if irr_values.data else 0
+            # Delete fund valuations
+            valuations_result = await db.execute(
+                "DELETE FROM portfolio_fund_valuations WHERE portfolio_fund_id = ANY($1::int[])",
+                portfolio_fund_ids
+            )
+            valuations_deleted = int(valuations_result.split()[-1]) if valuations_result.startswith("DELETE") else 0
+            
+            # Delete IRR values
+            irr_values_result = await db.execute(
+                "DELETE FROM portfolio_fund_irr_values WHERE fund_id = ANY($1::int[])",
+                portfolio_fund_ids
+            )
+            irr_values_deleted = int(irr_values_result.split()[-1]) if irr_values_result.startswith("DELETE") else 0
         
         # Delete portfolio funds
         funds_deleted = 0
         if portfolio_ids:
-            for portfolio_id in portfolio_ids:
-                funds = db.table("portfolio_funds").delete().eq("portfolio_id", portfolio_id).execute()
-                funds_deleted += len(funds.data) if funds.data else 0
+            funds_result = await db.execute(
+                "DELETE FROM portfolio_funds WHERE portfolio_id = ANY($1::int[])",
+                portfolio_ids
+            )
+            funds_deleted = int(funds_result.split()[-1]) if funds_result.startswith("DELETE") else 0
         
         # Delete portfolios
         portfolios_deleted = 0
         if portfolio_ids:
-            for portfolio_id in portfolio_ids:
-                portfolio = db.table("portfolios").delete().eq("id", portfolio_id).execute()
-                portfolios_deleted += len(portfolio.data) if portfolio.data else 0
+            portfolios_result = await db.execute(
+                "DELETE FROM portfolios WHERE id = ANY($1::int[])",
+                portfolio_ids
+            )
+            portfolios_deleted = int(portfolios_result.split()[-1]) if portfolios_result.startswith("DELETE") else 0
         
         # Delete products
         products_deleted = 0
         if product_ids:
-            for product_id in product_ids:
-                product = db.table("client_products").delete().eq("id", product_id).execute()
-                products_deleted += len(product.data) if product.data else 0
+            products_result = await db.execute(
+                "DELETE FROM client_products WHERE id = ANY($1::int[])",
+                product_ids
+            )
+            products_deleted = int(products_result.split()[-1]) if products_result.startswith("DELETE") else 0
 
         return {
             "message": f"Successfully deleted data for client group {client_group_id}",
@@ -425,58 +508,57 @@ async def get_client_group_fum_summary(db = Depends(get_db)):
     """
     try:
         # Fetch active client groups
-        client_groups_result = db.table("client_groups").select("*").eq("status", "active").execute()
+        client_groups_result = await db.fetch("SELECT * FROM client_groups WHERE status = 'active'")
         
-        if not client_groups_result.data:
+        if not client_groups_result:
             return []
         
         combined_data = []
         
-        for client_group in client_groups_result.data:
-            client_group_id = client_group["id"]
+        for client_group in client_groups_result:
+            client_group_dict = dict(client_group)
+            client_group_id = client_group_dict["id"]
             
             # Calculate FUM for this client group
             # Get all active products for this client group
-            products_result = db.table("client_products")\
-                .select("id, portfolio_id")\
-                .eq("client_id", client_group_id)\
-                .eq("status", "active")\
-                .execute()
+            products_result = await db.fetch(
+                "SELECT id, portfolio_id FROM client_products WHERE client_id = $1 AND status = 'active'",
+                client_group_id
+            )
             
             total_fum = 0.0
             
-            if products_result.data:
+            if products_result:
                 # Get portfolio IDs
-                portfolio_ids = [p["portfolio_id"] for p in products_result.data if p["portfolio_id"]]
+                portfolio_ids = [p["portfolio_id"] for p in products_result if p["portfolio_id"]]
                 
                 if portfolio_ids:
                     # Calculate FUM by summing fund valuations directly
-                    for portfolio_id in portfolio_ids:
-                        # Get all active funds for this portfolio
-                        funds_result = db.table("portfolio_funds")\
-                            .select("id")\
-                            .eq("portfolio_id", portfolio_id)\
-                            .eq("status", "active")\
-                            .execute()
+                    # Get all active funds for these portfolios
+                    funds_result = await db.fetch(
+                        "SELECT id FROM portfolio_funds WHERE portfolio_id = ANY($1::int[]) AND status = 'active'",
+                        portfolio_ids
+                    )
+                    
+                    if funds_result:
+                        fund_ids = [fund["id"] for fund in funds_result]
                         
-                        if funds_result.data:
-                            for fund in funds_result.data:
-                                # Get the latest valuation for this fund
-                                fund_val_result = db.table("portfolio_fund_valuations")\
-                                    .select("valuation")\
-                                    .eq("portfolio_fund_id", fund["id"])\
-                                    .order("valuation_date", desc=True)\
-                                    .limit(1)\
-                                    .execute()
-                                
-                                if fund_val_result.data:
-                                    total_fum += float(fund_val_result.data[0]["valuation"] or 0)
+                        # Get the latest valuation for each fund (using window function for efficiency)
+                        fund_valuations = await db.fetch("""
+                            SELECT DISTINCT ON (portfolio_fund_id) portfolio_fund_id, valuation
+                            FROM portfolio_fund_valuations 
+                            WHERE portfolio_fund_id = ANY($1::int[])
+                            ORDER BY portfolio_fund_id, valuation_date DESC
+                        """, fund_ids)
+                        
+                        for fund_val in fund_valuations:
+                            total_fum += float(fund_val["valuation"] or 0)
             
             # Combine the data  
             combined_record = {
                 "client_group_id": client_group_id,
                 "fum": total_fum,
-                **client_group  # Add all client group fields
+                **client_group_dict  # Add all client group fields
             }
             combined_data.append(combined_record)
         

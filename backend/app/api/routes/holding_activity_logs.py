@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from typing import List, Optional
 import logging
 from datetime import datetime, date
@@ -36,28 +36,26 @@ async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, acti
         logger.info(f"⚡ [OPTIMIZED] Targeted IRR recalculation for portfolio_fund {portfolio_fund_id} on date {activity_date or 'latest'}")
         
         # Get portfolio_id from portfolio_fund_id
-        portfolio_fund_result = db.table("portfolio_funds")\
-            .select("portfolio_id")\
-            .eq("id", portfolio_fund_id)\
-            .execute()
+        portfolio_fund_result = await db.fetchrow(
+            "SELECT portfolio_id FROM portfolio_funds WHERE id = $1",
+            portfolio_fund_id
+        )
         
-        if not portfolio_fund_result.data:
+        if not portfolio_fund_result:
             logger.error(f"Portfolio fund {portfolio_fund_id} not found")
             return {"success": False, "error": "Portfolio fund not found"}
         
-        portfolio_id = portfolio_fund_result.data[0]["portfolio_id"]
+        portfolio_id = portfolio_fund_result["portfolio_id"]
         
         # Get the latest activity date if not provided
         if not activity_date:
-            latest_activity = db.table("holding_activity_log")\
-                .select("activity_timestamp")\
-                .eq("portfolio_fund_id", portfolio_fund_id)\
-                .order("activity_timestamp", desc=True)\
-                .limit(1)\
-                .execute()
+            latest_activity = await db.fetchrow(
+                "SELECT activity_timestamp FROM holding_activity_log WHERE portfolio_fund_id = $1 ORDER BY activity_timestamp DESC LIMIT 1",
+                portfolio_fund_id
+            )
             
-            if latest_activity.data:
-                activity_date = latest_activity.data[0]["activity_timestamp"].split('T')[0]
+            if latest_activity:
+                activity_date = str(latest_activity["activity_timestamp"]).split('T')[0]
             else:
                 logger.warning(f"No activities found for portfolio fund {portfolio_fund_id}")
                 return {"success": False, "error": "No activities found"}
@@ -115,28 +113,26 @@ async def recalculate_irr_after_historical_change(portfolio_fund_id: int, db, ac
         logger.warning("⚠️  This will recalculate ALL IRRs from the specified date onwards - use sparingly!")
         
         # Get portfolio_id from portfolio_fund_id
-        portfolio_fund_result = db.table("portfolio_funds")\
-            .select("portfolio_id")\
-            .eq("id", portfolio_fund_id)\
-            .execute()
+        portfolio_fund_result = await db.fetchrow(
+            "SELECT portfolio_id FROM portfolio_funds WHERE id = $1",
+            portfolio_fund_id
+        )
         
-        if not portfolio_fund_result.data:
+        if not portfolio_fund_result:
             logger.error(f"Portfolio fund {portfolio_fund_id} not found")
             return {"success": False, "error": "Portfolio fund not found"}
         
-        portfolio_id = portfolio_fund_result.data[0]["portfolio_id"]
+        portfolio_id = portfolio_fund_result["portfolio_id"]
         
         # Get the latest activity date if not provided
         if not activity_date:
-            latest_activity = db.table("holding_activity_log")\
-                .select("activity_timestamp")\
-                .eq("portfolio_fund_id", portfolio_fund_id)\
-                .order("activity_timestamp", desc=True)\
-                .limit(1)\
-                .execute()
+            latest_activity = await db.fetchrow(
+                "SELECT activity_timestamp FROM holding_activity_log WHERE portfolio_fund_id = $1 ORDER BY activity_timestamp DESC LIMIT 1",
+                portfolio_fund_id
+            )
             
-            if latest_activity.data:
-                activity_date = latest_activity.data[0]["activity_timestamp"].split('T')[0]
+            if latest_activity:
+                activity_date = str(latest_activity["activity_timestamp"]).split('T')[0]
             else:
                 logger.warning(f"No activities found for portfolio fund {portfolio_fund_id}")
                 return {"success": False, "error": "No activities found"}
@@ -197,29 +193,28 @@ async def find_common_valuation_dates_from_date(fund_ids: List[int], start_date:
         logger.info(f"Finding common valuation dates for {len(fund_ids)} funds from {start_date} onwards")
         
         # Get fund statuses to separate active and inactive funds
-        fund_statuses = db.table("portfolio_funds")\
-            .select("id, status")\
-            .in_("id", fund_ids)\
-            .execute()
+        fund_statuses = await db.fetch(
+            "SELECT id, status FROM portfolio_funds WHERE id = ANY($1::int[])",
+            fund_ids
+        )
         
-        if not fund_statuses.data:
+        if not fund_statuses:
             logger.info("No fund information found")
             return []
         
         # Separate active and inactive funds
-        active_funds = [f["id"] for f in fund_statuses.data if f.get("status", "active") == "active"]
-        inactive_funds = [f["id"] for f in fund_statuses.data if f.get("status", "active") != "active"]
+        active_funds = [f["id"] for f in fund_statuses if f.get("status", "active") == "active"]
+        inactive_funds = [f["id"] for f in fund_statuses if f.get("status", "active") != "active"]
         
         logger.info(f"Found {len(active_funds)} active funds and {len(inactive_funds)} inactive funds")
         
         # Get all valuation dates for all funds from start date onwards
-        all_valuations = db.table("portfolio_fund_valuations")\
-            .select("portfolio_fund_id, valuation_date")\
-            .in_("portfolio_fund_id", fund_ids)\
-            .gte("valuation_date", start_date)\
-            .execute()
+        all_valuations = await db.fetch(
+            "SELECT portfolio_fund_id, valuation_date FROM portfolio_fund_valuations WHERE portfolio_fund_id = ANY($1::int[]) AND valuation_date >= $2",
+            fund_ids, start_date
+        )
         
-        if not all_valuations.data:
+        if not all_valuations:
             logger.info("No valuations found for any funds from start date onwards")
             return []
         
@@ -227,24 +222,22 @@ async def find_common_valuation_dates_from_date(fund_ids: List[int], start_date:
         inactive_fund_latest_dates = {}
         if inactive_funds:
             for fund_id in inactive_funds:
-                latest_valuation = db.table("portfolio_fund_valuations")\
-                    .select("valuation_date")\
-                    .eq("portfolio_fund_id", fund_id)\
-                    .order("valuation_date", desc=True)\
-                    .limit(1)\
-                    .execute()
+                latest_valuation = await db.fetchrow(
+                    "SELECT valuation_date FROM portfolio_fund_valuations WHERE portfolio_fund_id = $1 ORDER BY valuation_date DESC LIMIT 1",
+                    fund_id
+                )
                 
-                if latest_valuation.data:
-                    latest_date = latest_valuation.data[0]["valuation_date"].split('T')[0]
+                if latest_valuation:
+                    latest_date = str(latest_valuation["valuation_date"]).split('T')[0]
                     inactive_fund_latest_dates[fund_id] = latest_date
                     logger.info(f"Inactive fund {fund_id} latest valuation date: {latest_date}")
         
         # Group active fund valuations by date
         active_fund_dates = {}
-        for valuation in all_valuations.data:
+        for valuation in all_valuations:
             fund_id = valuation["portfolio_fund_id"]
             if fund_id in active_funds:
-                date = valuation["valuation_date"].split('T')[0]  # Ensure YYYY-MM-DD
+                date = str(valuation["valuation_date"]).split('T')[0]  # Ensure YYYY-MM-DD
                 if date not in active_fund_dates:
                     active_fund_dates[date] = set()
                 active_fund_dates[date].add(fund_id)
@@ -264,8 +257,8 @@ async def find_common_valuation_dates_from_date(fund_ids: List[int], start_date:
                     # Check if this inactive fund has a valuation on this date
                     has_valuation_on_date = any(
                         v["portfolio_fund_id"] == inactive_fund_id and 
-                        v["valuation_date"].split('T')[0] == date
-                        for v in all_valuations.data
+                        str(v["valuation_date"]).split('T')[0] == date
+                        for v in all_valuations
                     )
                     
                     # If no valuation on this date, check if date is after latest valuation date
@@ -307,29 +300,28 @@ async def calculate_portfolio_valuation_for_date(portfolio_id: int, date: str, d
     """
     try:
         # Get all portfolio funds for this portfolio
-        portfolio_funds = db.table("portfolio_funds")\
-            .select("id")\
-            .eq("portfolio_id", portfolio_id)\
-            .execute()
+        portfolio_funds = await db.fetch(
+            "SELECT id FROM portfolio_funds WHERE portfolio_id = $1",
+            portfolio_id
+        )
         
-        if not portfolio_funds.data:
+        if not portfolio_funds:
             logger.warning(f"No portfolio funds found for portfolio {portfolio_id}")
             return 0.0
         
-        fund_ids = [pf["id"] for pf in portfolio_funds.data]
+        fund_ids = [pf["id"] for pf in portfolio_funds]
         
         # Get fund valuations for this date
-        fund_valuations = db.table("portfolio_fund_valuations")\
-            .select("valuation")\
-            .in_("portfolio_fund_id", fund_ids)\
-            .eq("valuation_date", date)\
-            .execute()
+        fund_valuations = await db.fetch(
+            "SELECT valuation FROM portfolio_fund_valuations WHERE portfolio_fund_id = ANY($1::int[]) AND valuation_date = $2",
+            fund_ids, date
+        )
         
-        if not fund_valuations.data:
+        if not fund_valuations:
             logger.warning(f"No fund valuations found for portfolio {portfolio_id} on {date}")
             return 0.0
         
-        total_valuation = sum(float(fv["valuation"]) for fv in fund_valuations.data)
+        total_valuation = sum(float(fv["valuation"]) for fv in fund_valuations)
         logger.info(f"Calculated portfolio valuation for portfolio {portfolio_id} on {date}: {total_valuation}")
         return total_valuation
         
@@ -399,47 +391,77 @@ async def get_holding_activity_logs(
     Retrieves a paginated list of holding activity logs with optional filtering.
     """
     try:
-        query = db.table("holding_activity_log").select("*")
+        # Build base query with filters
+        where_conditions = []
+        params = []
+        param_count = 0
         
         if product_id is not None:
-            query = query.eq("product_id", product_id)
+            param_count += 1
+            where_conditions.append(f"product_id = ${param_count}")
+            params.append(product_id)
         
         if portfolio_fund_id is not None:
-            query = query.eq("portfolio_fund_id", portfolio_fund_id)
+            param_count += 1
+            where_conditions.append(f"portfolio_fund_id = ${param_count}")
+            params.append(portfolio_fund_id)
             
         if portfolio_id is not None:
             # Get all portfolio_fund_ids associated with this portfolio
-            portfolio_funds = db.table("portfolio_funds") \
-                .select("id") \
-                .eq("portfolio_id", portfolio_id) \
-                .execute()
+            portfolio_funds = await db.fetch(
+                "SELECT id FROM portfolio_funds WHERE portfolio_id = $1",
+                portfolio_id
+            )
                 
-            if portfolio_funds.data and len(portfolio_funds.data) > 0:
-                portfolio_fund_ids = [fund["id"] for fund in portfolio_funds.data]
-                query = query.in_("portfolio_fund_id", portfolio_fund_ids)
+            if portfolio_funds:
+                portfolio_fund_ids = [fund["id"] for fund in portfolio_funds]
+                param_count += 1
+                where_conditions.append(f"portfolio_fund_id = ANY(${param_count}::int[])")
+                params.append(portfolio_fund_ids)
             else:
                 return []
             
         if activity_type is not None:
-            query = query.eq("activity_type", activity_type)
+            param_count += 1
+            where_conditions.append(f"activity_type = ${param_count}")
+            params.append(activity_type)
             
         if from_date is not None:
-            query = query.gte("activity_timestamp", from_date)
+            param_count += 1
+            where_conditions.append(f"activity_timestamp >= ${param_count}")
+            params.append(from_date)
             
         if to_date is not None:
-            query = query.lte("activity_timestamp", to_date)
-            
-        # Order by activity_timestamp descending (newest first)
-        query = query.order("activity_timestamp", desc=True)
-            
-        result = query.range(skip, skip + limit - 1).execute()
-        return result.data
+            param_count += 1
+            where_conditions.append(f"activity_timestamp <= ${param_count}")
+            params.append(to_date)
+        
+        # Build the complete query
+        where_clause = " WHERE " + " AND ".join(where_conditions) if where_conditions else ""
+        
+        # Add pagination parameters
+        param_count += 1
+        offset_param = param_count
+        param_count += 1
+        limit_param = param_count
+        params.extend([skip, limit])
+        
+        query = f"""
+            SELECT * FROM holding_activity_log
+            {where_clause}
+            ORDER BY activity_timestamp DESC
+            OFFSET ${offset_param} LIMIT ${limit_param}
+        """
+        
+        result = await db.fetch(query, *params)
+        return [dict(row) for row in result]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.post("/holding_activity_logs", response_model=HoldingActivityLog)
 async def create_holding_activity_log(
     log: HoldingActivityLogCreate,
+    request: Request,
     db = Depends(get_db),
     skip_irr_calculation: bool = False  # New parameter to skip IRR when part of transaction
 ):
@@ -452,27 +474,33 @@ async def create_holding_activity_log(
         skip_irr_calculation: If True, skips IRR calculation (used in transactions)
     """
     try:
-        # Convert log data to dict and prepare for insertion
-        log_data = {
-            "portfolio_fund_id": log.portfolio_fund_id,
-            "product_id": log.product_id,
-            "activity_type": log.activity_type,
-            "activity_timestamp": log.activity_timestamp.isoformat(),
-            "amount": float(log.amount) if log.amount is not None else None,
-        }
         
-        logger.info(f"🔍 ACTIVITY CREATE: Prepared log_data: {log_data}")
+        # Prepare data for insertion
+        logger.info(f"🔍 ACTIVITY CREATE: Preparing log data for portfolio_fund_id={log.portfolio_fund_id}, product_id={log.product_id}, activity_type={log.activity_type}, activity_timestamp={log.activity_timestamp}, amount={log.amount}")
+        logger.info(f"🔍 ACTIVITY CREATE: Timestamp details - Type={type(log.activity_timestamp)}, Value={log.activity_timestamp}, Repr={repr(log.activity_timestamp)}")
         
-        # Insert the new activity log
-        result = db.table("holding_activity_log").insert(log_data).execute()
+        # Convert date to timezone-aware datetime at midnight UTC to avoid timezone conversion issues
+        if isinstance(log.activity_timestamp, date) and not isinstance(log.activity_timestamp, datetime):
+            # Convert date to datetime at midnight UTC
+            from datetime import timezone
+            activity_datetime = datetime.combine(log.activity_timestamp, datetime.min.time()).replace(tzinfo=timezone.utc)
+            logger.info(f"🔧 TIMEZONE FIX: Converted {log.activity_timestamp} to {activity_datetime}")
+        else:
+            activity_datetime = log.activity_timestamp
+            
+        # Insert the new activity log - pass timezone-aware datetime to avoid conversion issues
+        created_activity = await db.fetchrow(
+            "INSERT INTO holding_activity_log (portfolio_fund_id, product_id, activity_type, activity_timestamp, amount) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+            log.portfolio_fund_id, log.product_id, log.activity_type, activity_datetime, float(log.amount) if log.amount is not None else None
+        )
         
-        if not result.data:
+        if not created_activity:
             raise HTTPException(status_code=500, detail="Failed to create holding activity log")
         
-        created_activity = result.data[0]
         portfolio_fund_id = created_activity['portfolio_fund_id']
         
         logger.info(f"Created new holding activity log for portfolio fund {portfolio_fund_id}")
+        logger.info(f"🔍 ACTIVITY CREATED: Database returned - ID={created_activity['id']}, Timestamp={created_activity['activity_timestamp']}, Type={type(created_activity['activity_timestamp'])}")
         
         # ========================================================================
         # NEW: Conditional IRR recalculation for transaction coordination
@@ -483,7 +511,13 @@ async def create_holding_activity_log(
             logger.info(f"🔄 STANDALONE: Calculating IRR for activity on fund {portfolio_fund_id} (not part of transaction)")
             try:
                 # Extract the activity date for sophisticated recalculation
-                activity_date = log_data.get("activity_timestamp", "").split('T')[0]
+                # log.activity_timestamp is already a date object after Pydantic validation
+                if hasattr(log.activity_timestamp, 'isoformat'):
+                    activity_date = log.activity_timestamp.isoformat()  # date.isoformat() gives YYYY-MM-DD
+                else:
+                    activity_date = str(log.activity_timestamp)
+                
+                logger.info(f"🔍 ACTIVITY DATE EXTRACTION: Original={log.activity_timestamp}, Type={type(log.activity_timestamp)}, Extracted={activity_date}")
                 
                 irr_recalc_result = await recalculate_irr_after_activity_change(portfolio_fund_id, db, activity_date)
             except Exception as e:
@@ -493,7 +527,7 @@ async def create_holding_activity_log(
                 logger.error(f"Traceback: {traceback.format_exc()}")
         # ========================================================================
         
-        return created_activity
+        return dict(created_activity)
         
     except Exception as e:
         logger.error(f"Error creating holding activity log: {str(e)}")
@@ -503,18 +537,59 @@ async def create_holding_activity_log(
         logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
+@router.get("/holding_activity_logs/earliest_date")
+async def get_earliest_activity_date(
+    product_id: Optional[int] = None,
+    portfolio_fund_id: Optional[int] = None,
+    db = Depends(get_db)
+):
+    """
+    Retrieves the earliest activity date for a given product or portfolio fund.
+    """
+    try:
+        if product_id is None and portfolio_fund_id is None:
+            raise HTTPException(status_code=400, detail="Either product_id or portfolio_fund_id is required")
+
+        where_conditions = []
+        params = []
+        param_count = 0
+        
+        if product_id is not None:
+            param_count += 1
+            where_conditions.append(f"product_id = ${param_count}")
+            params.append(product_id)
+        
+        if portfolio_fund_id is not None:
+            param_count += 1
+            where_conditions.append(f"portfolio_fund_id = ${param_count}")
+            params.append(portfolio_fund_id)
+        
+        where_clause = " WHERE " + " AND ".join(where_conditions)
+        query = f"SELECT activity_timestamp FROM holding_activity_log{where_clause} ORDER BY activity_timestamp ASC LIMIT 1"
+            
+        result = await db.fetchrow(query, *params)
+        
+        if not result:
+            return {"earliest_date": None}
+            
+        earliest_date = result["activity_timestamp"]
+        return {"earliest_date": earliest_date}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
 @router.get("/holding_activity_logs/{holding_activity_log_id}", response_model=HoldingActivityLog)
 async def get_holding_activity_log(holding_activity_log_id: int, db = Depends(get_db)):
     """
     Retrieves a specific holding activity log by its ID.
     """
     try:
-        result = db.table("holding_activity_log").select("*").eq("id", holding_activity_log_id).execute()
+        result = await db.fetchrow("SELECT * FROM holding_activity_log WHERE id = $1", holding_activity_log_id)
         
-        if not result.data or len(result.data) == 0:
+        if not result:
             raise HTTPException(status_code=404, detail=f"Holding activity log with ID {holding_activity_log_id} not found")
             
-        return result.data[0]
+        return dict(result)
     except HTTPException:
         raise
     except Exception as e:
@@ -533,9 +608,9 @@ async def update_holding_activity_log(
     """
     try:
         # Check if activity exists
-        existing_result = db.table("holding_activity_log").select("*").eq("id", activity_id).execute()
+        existing_result = await db.fetchrow("SELECT * FROM holding_activity_log WHERE id = $1", activity_id)
         
-        if not existing_result.data:
+        if not existing_result:
             raise HTTPException(status_code=404, detail="Holding activity log not found")
             
         # Get update data
@@ -544,38 +619,75 @@ async def update_holding_activity_log(
         # Remove None values
         update_data = {k: v for k, v in update_data.items() if v is not None}
         
-        # Handle date serialization
-        if 'activity_timestamp' in update_data and isinstance(update_data['activity_timestamp'], date):
-            update_data['activity_timestamp'] = update_data['activity_timestamp'].isoformat()
+        # PostgreSQL with asyncpg handles datetime objects directly, no conversion needed
 
         # Handle amount conversion
         if 'amount' in update_data and isinstance(update_data['amount'], Decimal):
                     update_data['amount'] = float(update_data['amount'])
 
+        # Handle timezone conversion for activity_timestamp
+        if 'activity_timestamp' in update_data:
+            timestamp_value = update_data['activity_timestamp']
+            if isinstance(timestamp_value, date) and not isinstance(timestamp_value, datetime):
+                # Convert date to datetime at midnight UTC
+                from datetime import timezone
+                activity_datetime = datetime.combine(timestamp_value, datetime.min.time()).replace(tzinfo=timezone.utc)
+                update_data['activity_timestamp'] = activity_datetime
+                logger.info(f"🔧 TIMEZONE FIX UPDATE: Converted {timestamp_value} to {activity_datetime}")
+
         logger.info(f"Updating activity {activity_id} with data: {update_data}")
 
-        # Update the activity log
-        result = db.table("holding_activity_log").update(update_data).eq("id", activity_id).execute()
+        # Build dynamic UPDATE query
+        if update_data:
+            set_clauses = []
+            params = []
+            param_count = 0
+            
+            for key, value in update_data.items():
+                param_count += 1
+                set_clauses.append(f"{key} = ${param_count}")
+                params.append(value)
+            
+            param_count += 1
+            params.append(activity_id)
+            
+            query = f"UPDATE holding_activity_log SET {', '.join(set_clauses)} WHERE id = ${param_count} RETURNING *"
+            updated_activity = await db.fetchrow(query, *params)
+        else:
+            updated_activity = existing_result
         
-        if not result.data:
+        if not updated_activity:
             raise HTTPException(status_code=400, detail="Failed to update holding activity log")
-        
-        updated_activity = result.data[0]
         
         # ========================================================================
         # NEW: Automatically recalculate IRR after updating activity
         # ========================================================================
         try:
             # Get the portfolio_fund_id from the existing record
-            existing_activity = existing_result.data[0]
-            portfolio_fund_id = existing_activity.get("portfolio_fund_id")
+            portfolio_fund_id = existing_result["portfolio_fund_id"]
             
             # Use the updated activity date if provided, otherwise use the existing one
             activity_date = None
             if 'activity_timestamp' in update_data:
-                activity_date = update_data['activity_timestamp'].split('T')[0]
+                # update_data['activity_timestamp'] is already a date object after Pydantic validation
+                if hasattr(update_data['activity_timestamp'], 'isoformat'):
+                    activity_date = update_data['activity_timestamp'].isoformat()
+                else:
+                    activity_date = str(update_data['activity_timestamp'])
             else:
-                activity_date = existing_activity.get("activity_timestamp", "").split('T')[0]
+                # existing_result["activity_timestamp"] could be a date or datetime from database
+                existing_timestamp = existing_result["activity_timestamp"]
+                if hasattr(existing_timestamp, 'date'):
+                    # It's a datetime, get the date part
+                    activity_date = existing_timestamp.date().isoformat()
+                elif hasattr(existing_timestamp, 'isoformat'):
+                    # It's already a date
+                    activity_date = existing_timestamp.isoformat()
+                else:
+                    # Fallback to string conversion
+                    activity_date = str(existing_timestamp).split('T')[0]
+                    
+            logger.info(f"🔍 ACTIVITY DATE EXTRACTION (UPDATE): Extracted={activity_date}, UpdateData={update_data.get('activity_timestamp')}, ExistingType={type(existing_result['activity_timestamp'])}")
             
             if portfolio_fund_id:
                 logger.info(f"Triggering sophisticated IRR recalculation after updating activity for portfolio fund {portfolio_fund_id} on date {activity_date}")
@@ -588,7 +700,7 @@ async def update_holding_activity_log(
             logger.error(f"IRR recalculation failed after activity update: {str(e)}")
         # ========================================================================
         
-        return updated_activity
+        return dict(updated_activity)
         
     except HTTPException:
         raise
@@ -604,17 +716,30 @@ async def delete_holding_activity_log(holding_activity_log_id: int, db = Depends
     """
     try:
         # Check if exists
-        existing = db.table("holding_activity_log").select("*").eq("id", holding_activity_log_id).execute()
+        existing = await db.fetchrow("SELECT * FROM holding_activity_log WHERE id = $1", holding_activity_log_id)
         
-        if not existing.data:
+        if not existing:
             raise HTTPException(status_code=404, detail=f"Activity log with ID {holding_activity_log_id} not found")
         
         # Get portfolio_fund_id and activity date before deletion for IRR recalculation
-        portfolio_fund_id = existing.data[0].get("portfolio_fund_id")
-        activity_date = existing.data[0].get("activity_timestamp", "").split('T')[0]
+        portfolio_fund_id = existing["portfolio_fund_id"]
+        
+        # Handle activity date extraction properly
+        existing_timestamp = existing["activity_timestamp"]
+        if hasattr(existing_timestamp, 'date'):
+            # It's a datetime, get the date part
+            activity_date = existing_timestamp.date().isoformat()
+        elif hasattr(existing_timestamp, 'isoformat'):
+            # It's already a date
+            activity_date = existing_timestamp.isoformat()
+        else:
+            # Fallback to string conversion
+            activity_date = str(existing_timestamp).split('T')[0]
+            
+        logger.info(f"🔍 ACTIVITY DATE EXTRACTION (DELETE): Extracted={activity_date}, ExistingType={type(existing_timestamp)}")
         
         # Delete the activity log
-        db.table("holding_activity_log").delete().eq("id", holding_activity_log_id).execute()
+        await db.execute("DELETE FROM holding_activity_log WHERE id = $1", holding_activity_log_id)
         
         logger.info(f"Successfully deleted activity log with ID: {holding_activity_log_id}")
         
@@ -639,40 +764,6 @@ async def delete_holding_activity_log(holding_activity_log_id: int, db = Depends
         raise
     except Exception as e:
         logger.error(f"Error deleting activity log: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-
-@router.get("/holding_activity_logs/earliest_date")
-async def get_earliest_activity_date(
-    product_id: Optional[int] = None,
-    portfolio_fund_id: Optional[int] = None,
-    db = Depends(get_db)
-):
-    """
-    Retrieves the earliest activity date for a given product or portfolio fund.
-    """
-    try:
-        if product_id is None and portfolio_fund_id is None:
-            raise HTTPException(status_code=400, detail="Either product_id or portfolio_fund_id is required")
-
-        query = db.table("holding_activity_log").select("activity_timestamp")
-        
-        if product_id is not None:
-            query = query.eq("product_id", product_id)
-        
-        if portfolio_fund_id is not None:
-            query = query.eq("portfolio_fund_id", portfolio_fund_id)
-            
-        query = query.order("activity_timestamp", desc=False).limit(1)
-            
-        result = query.execute()
-        
-        if not result.data or len(result.data) == 0:
-            return {"earliest_date": None}
-            
-        earliest_date = result.data[0]["activity_timestamp"]
-        return {"earliest_date": earliest_date}
-        
-    except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.post("/holding_activity_logs/test_sophisticated_irr_recalculation")
@@ -701,58 +792,52 @@ async def test_sophisticated_irr_recalculation(
         logger.info(f"Testing sophisticated IRR recalculation for portfolio fund {portfolio_fund_id}")
         
         # Verify portfolio fund exists
-        portfolio_fund_check = db.table("portfolio_funds")\
-            .select("id, portfolio_id")\
-            .eq("id", portfolio_fund_id)\
-            .execute()
+        portfolio_fund_check = await db.fetchrow(
+            "SELECT id, portfolio_id FROM portfolio_funds WHERE id = $1",
+            portfolio_fund_id
+        )
         
-        if not portfolio_fund_check.data:
+        if not portfolio_fund_check:
             raise HTTPException(status_code=404, detail=f"Portfolio fund {portfolio_fund_id} not found")
         
-        portfolio_id = portfolio_fund_check.data[0]["portfolio_id"]
+        portfolio_id = portfolio_fund_check["portfolio_id"]
         
         # If no activity date provided, get the latest activity date
         if not activity_date:
-            latest_activity = db.table("holding_activity_log")\
-                .select("activity_timestamp")\
-                .eq("portfolio_fund_id", portfolio_fund_id)\
-                .order("activity_timestamp", desc=True)\
-                .limit(1)\
-                .execute()
+            latest_activity = await db.fetchrow(
+                "SELECT activity_timestamp FROM holding_activity_log WHERE portfolio_fund_id = $1 ORDER BY activity_timestamp DESC LIMIT 1",
+                portfolio_fund_id
+            )
             
-            if latest_activity.data:
-                activity_date = latest_activity.data[0]["activity_timestamp"].split('T')[0]
+            if latest_activity:
+                activity_date = str(latest_activity["activity_timestamp"]).split('T')[0]
             else:
                 raise HTTPException(status_code=400, detail=f"No activities found for portfolio fund {portfolio_fund_id} and no activity_date provided")
         
         # Get current state before recalculation
-        existing_irr_before = db.table("portfolio_fund_irr_values")\
-            .select("*")\
-            .eq("fund_id", portfolio_fund_id)\
-            .gte("date", activity_date)\
-            .execute()
+        existing_irr_before = await db.fetch(
+            "SELECT * FROM portfolio_fund_irr_values WHERE fund_id = $1 AND date >= $2",
+            portfolio_fund_id, activity_date
+        )
         
-        existing_portfolio_irr_before = db.table("portfolio_irr_values")\
-            .select("*")\
-            .eq("portfolio_id", portfolio_id)\
-            .gte("date", activity_date)\
-            .execute()
+        existing_portfolio_irr_before = await db.fetch(
+            "SELECT * FROM portfolio_irr_values WHERE portfolio_id = $1 AND date >= $2",
+            portfolio_id, activity_date
+        )
         
         # Trigger the sophisticated IRR recalculation
         recalc_result = await recalculate_irr_after_activity_change(portfolio_fund_id, db, activity_date)
         
         # Get state after recalculation
-        existing_irr_after = db.table("portfolio_fund_irr_values")\
-            .select("*")\
-            .eq("fund_id", portfolio_fund_id)\
-            .gte("date", activity_date)\
-            .execute()
+        existing_irr_after = await db.fetch(
+            "SELECT * FROM portfolio_fund_irr_values WHERE fund_id = $1 AND date >= $2",
+            portfolio_fund_id, activity_date
+        )
         
-        existing_portfolio_irr_after = db.table("portfolio_irr_values")\
-            .select("*")\
-            .eq("portfolio_id", portfolio_id)\
-            .gte("date", activity_date)\
-            .execute()
+        existing_portfolio_irr_after = await db.fetch(
+            "SELECT * FROM portfolio_irr_values WHERE portfolio_id = $1 AND date >= $2",
+            portfolio_id, activity_date
+        )
         
         return {
             "test_status": "completed",
@@ -761,16 +846,16 @@ async def test_sophisticated_irr_recalculation(
             "activity_date_used": activity_date,
             "recalculation_result": recalc_result,
             "before_state": {
-                "fund_irr_count": len(existing_irr_before.data) if existing_irr_before.data else 0,
-                "portfolio_irr_count": len(existing_portfolio_irr_before.data) if existing_portfolio_irr_before.data else 0,
-                "fund_irr_values": existing_irr_before.data if existing_irr_before.data else [],
-                "portfolio_irr_values": existing_portfolio_irr_before.data if existing_portfolio_irr_before.data else []
+                "fund_irr_count": len(existing_irr_before) if existing_irr_before else 0,
+                "portfolio_irr_count": len(existing_portfolio_irr_before) if existing_portfolio_irr_before else 0,
+                "fund_irr_values": [dict(row) for row in existing_irr_before] if existing_irr_before else [],
+                "portfolio_irr_values": [dict(row) for row in existing_portfolio_irr_before] if existing_portfolio_irr_before else []
             },
             "after_state": {
-                "fund_irr_count": len(existing_irr_after.data) if existing_irr_after.data else 0,
-                "portfolio_irr_count": len(existing_portfolio_irr_after.data) if existing_portfolio_irr_after.data else 0,
-                "fund_irr_values": existing_irr_after.data if existing_irr_after.data else [],
-                "portfolio_irr_values": existing_portfolio_irr_after.data if existing_portfolio_irr_after.data else []
+                "fund_irr_count": len(existing_irr_after) if existing_irr_after else 0,
+                "portfolio_irr_count": len(existing_portfolio_irr_after) if existing_portfolio_irr_after else 0,
+                "fund_irr_values": [dict(row) for row in existing_irr_after] if existing_irr_after else [],
+                "portfolio_irr_values": [dict(row) for row in existing_portfolio_irr_after] if existing_portfolio_irr_after else []
             }
         }
         
@@ -801,27 +886,25 @@ async def compare_irr_performance(
         logger.info(f"🔬 [PERFORMANCE TEST] Starting IRR performance comparison for portfolio fund {portfolio_fund_id}")
         
         # Verify portfolio fund exists
-        portfolio_fund_check = db.table("portfolio_funds")\
-            .select("id, portfolio_id")\
-            .eq("id", portfolio_fund_id)\
-            .execute()
+        portfolio_fund_check = await db.fetchrow(
+            "SELECT id, portfolio_id FROM portfolio_funds WHERE id = $1",
+            portfolio_fund_id
+        )
         
-        if not portfolio_fund_check.data:
+        if not portfolio_fund_check:
             raise HTTPException(status_code=404, detail=f"Portfolio fund {portfolio_fund_id} not found")
         
-        portfolio_id = portfolio_fund_check.data[0]["portfolio_id"]
+        portfolio_id = portfolio_fund_check["portfolio_id"]
         
         # If no activity date provided, get the latest activity date
         if not activity_date:
-            latest_activity = db.table("holding_activity_log")\
-                .select("activity_timestamp")\
-                .eq("portfolio_fund_id", portfolio_fund_id)\
-                .order("activity_timestamp", desc=True)\
-                .limit(1)\
-                .execute()
+            latest_activity = await db.fetchrow(
+                "SELECT activity_timestamp FROM holding_activity_log WHERE portfolio_fund_id = $1 ORDER BY activity_timestamp DESC LIMIT 1",
+                portfolio_fund_id
+            )
             
-            if latest_activity.data:
-                activity_date = latest_activity.data[0]["activity_timestamp"].split('T')[0]
+            if latest_activity:
+                activity_date = str(latest_activity["activity_timestamp"]).split('T')[0]
             else:
                 raise HTTPException(status_code=400, detail=f"No activities found for portfolio fund {portfolio_fund_id} and no activity_date provided")
         
@@ -896,29 +979,29 @@ async def recalculate_all_portfolio_irr(
     """
     try:
         # Get all portfolio funds
-        portfolio_funds = db.table("portfolio_funds")\
-            .select("id, available_funds_id")\
-            .eq("portfolio_id", portfolio_id)\
-            .execute()
+        portfolio_funds = await db.fetch(
+            "SELECT id, available_funds_id FROM portfolio_funds WHERE portfolio_id = $1",
+            portfolio_id
+        )
         
-        if not portfolio_funds.data:
+        if not portfolio_funds:
             return {"success": False, "error": f"No portfolio funds found for portfolio {portfolio_id}"}
         
         results = []
         
-        for pf in portfolio_funds.data:
+        for pf in portfolio_funds:
             portfolio_fund_id = pf["id"]
             available_funds_id = pf["available_funds_id"]
             
             # Get fund name for logging
-            fund_details = db.table("available_funds")\
-                .select("fund_name, isin_number")\
-                .eq("id", available_funds_id)\
-                .execute()
+            fund_details = await db.fetchrow(
+                "SELECT fund_name, isin_number FROM available_funds WHERE id = $1",
+                available_funds_id
+            )
             
             fund_name = "Unknown"
-            if fund_details.data:
-                fund_name = fund_details.data[0]["fund_name"]
+            if fund_details:
+                fund_name = fund_details["fund_name"]
             
             try:
                 # Trigger IRR recalculation for this fund

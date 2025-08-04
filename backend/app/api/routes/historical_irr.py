@@ -38,26 +38,34 @@ async def get_portfolio_historical_irr(
     try:
         logger.info(f"Fetching portfolio historical IRR for product {product_id} (limit: {limit})")
         
-        # Query the portfolio_historical_irr view
-        response = db.table("portfolio_historical_irr") \
-            .select("*") \
-            .eq("product_id", product_id) \
-            .order("irr_date", desc=True) \
-            .limit(limit) \
-            .execute()
+        # Query the portfolio_historical_irr view - note: view uses portfolio_id, not product_id
+        # We need to join through client_products to filter by product_id
+        result = await db.fetch(
+            """
+            SELECT phi.portfolio_id, phi.portfolio_name, phi.date as irr_date, 
+                   phi.irr_result, phi.product_name, phi.provider_name,
+                   phi.created_at, cp.id as product_id
+            FROM portfolio_historical_irr phi
+            JOIN client_products cp ON phi.portfolio_id = cp.portfolio_id
+            WHERE cp.id = $1 
+            ORDER BY phi.date DESC 
+            LIMIT $2
+            """,
+            product_id, limit
+        )
         
-        if response.data:
-            logger.info(f"Found {len(response.data)} portfolio IRR records for product {product_id}")
+        if result:
+            logger.info(f"Found {len(result)} portfolio IRR records for product {product_id}")
             
             # Format the response
             historical_irrs = []
-            for record in response.data:
+            for record in result:
                 historical_irrs.append({
-                    "irr_id": record["irr_id"],
+                    "irr_id": None,  # Not available in view
                     "portfolio_id": record["portfolio_id"],
                     "irr_result": float(record["irr_result"]) if record["irr_result"] is not None else None,
                     "irr_date": record["irr_date"],
-                    "portfolio_valuation_id": record["portfolio_valuation_id"],
+                    "portfolio_valuation_id": None,  # Not available in view
                     "portfolio_name": record["portfolio_name"],
                     "product_name": record["product_name"],
                     "provider_name": record["provider_name"]
@@ -93,21 +101,28 @@ async def get_funds_historical_irr(
     try:
         logger.info(f"Fetching funds historical IRR for product {product_id} (limit: {limit})")
         
-        # Query the fund_historical_irr view
-        response = db.table("fund_historical_irr") \
-            .select("*") \
-            .eq("product_id", product_id) \
-            .order("portfolio_fund_id") \
-            .order("irr_date", desc=True) \
-            .execute()
+        # Query the fund_historical_irr view - need to join through client_products
+        result = await db.fetch(
+            """
+            SELECT fhi.fund_id, fhi.portfolio_id, fhi.fund_name, fhi.isin_number, 
+                   fhi.risk_factor, fhi.date as irr_date, fhi.irr_result,
+                   fhi.portfolio_name, fhi.product_name, fhi.provider_name,
+                   cp.id as product_id
+            FROM fund_historical_irr fhi
+            JOIN client_products cp ON fhi.portfolio_id = cp.portfolio_id
+            WHERE cp.id = $1 
+            ORDER BY fhi.fund_id, fhi.date DESC
+            """,
+            product_id
+        )
         
-        if response.data:
-            logger.info(f"Found {len(response.data)} fund IRR records for product {product_id}")
+        if result:
+            logger.info(f"Found {len(result)} fund IRR records for product {product_id}")
             
             # Group by fund and limit each fund's records
             funds_irr = {}
-            for record in response.data:
-                fund_id = record["portfolio_fund_id"]
+            for record in result:
+                fund_id = record["fund_id"]
                 
                 if fund_id not in funds_irr:
                     funds_irr[fund_id] = {
@@ -115,18 +130,18 @@ async def get_funds_historical_irr(
                         "fund_name": record["fund_name"],
                         "isin_number": record["isin_number"],
                         "risk_factor": record["risk_factor"],
-                        "fund_status": record["fund_status"],
-                        "target_weighting": float(record["target_weighting"]) if record["target_weighting"] is not None else None,
+                        "fund_status": None,  # Not available in view
+                        "target_weighting": None,  # Not available in view
                         "historical_irr": []
                     }
                 
                 # Only add if we haven't reached the limit for this fund
                 if len(funds_irr[fund_id]["historical_irr"]) < limit:
                     funds_irr[fund_id]["historical_irr"].append({
-                        "irr_id": record["irr_id"],
+                        "irr_id": None,  # Not available in view
                         "irr_result": float(record["irr_result"]) if record["irr_result"] is not None else None,
                         "irr_date": record["irr_date"],
-                        "fund_valuation_id": record["fund_valuation_id"]
+                        "fund_valuation_id": None  # Not available in view
                     })
             
             # Convert to list and sort by fund name
@@ -137,7 +152,7 @@ async def get_funds_historical_irr(
                 "product_id": product_id,
                 "funds_historical_irr": funds_list,
                 "total_funds": len(funds_list),
-                "total_records": len(response.data)
+                "total_records": len(result)
             }
         else:
             logger.info(f"No funds historical IRR data found for product {product_id}")
@@ -195,20 +210,31 @@ async def get_irr_history_summary(
             product_irr_history = []
             portfolio_irr_history = []
             
-            # Get product details with provider information using Supabase client
+            # Get product details with provider information using AsyncPG
             logger.info(f"Querying products for IDs: {request.product_ids}")
-            product_response = db.table("client_products") \
-                .select("id, product_name, provider_id, status, available_providers(name, theme_color)") \
-                .in_("id", request.product_ids) \
-                .execute()
             
-            logger.info(f"Product response: {product_response}")
-            logger.info(f"Found {len(product_response.data)} products")
+            # Since available_providers join doesn't exist, we'll do separate queries
+            products = await db.fetch(
+                "SELECT id, product_name, provider_id, status FROM client_products WHERE id = ANY($1::int[])",
+                request.product_ids
+            )
+            
+            logger.info(f"Found {len(products)} products")
+            
+            # Get provider information separately
+            provider_ids = [p["provider_id"] for p in products if p["provider_id"]]
+            providers = {}
+            if provider_ids:
+                provider_results = await db.fetch(
+                    "SELECT id, name, theme_color FROM available_providers WHERE id = ANY($1::int[])",
+                    provider_ids
+                )
+                providers = {p["id"]: p for p in provider_results}
             
             # Create a map of product info for easy lookup
             product_info_map = {}
-            for product in product_response.data:
-                provider_info = product.get("available_providers", {}) or {}
+            for product in products:
+                provider_info = providers.get(product["provider_id"], {})
                 product_info_map[product["id"]] = {
                     "product_name": product["product_name"],
                     "provider_name": provider_info.get("name", "Unknown Provider"),
@@ -247,74 +273,22 @@ async def get_irr_history_summary(
                 return result
 
             # Only continue if we have valid products
-            if not product_response.data:
+            if not products:
                 result = {
                     "success": True,
                     "portfolio_history": portfolio_irr_history,
                     "products": product_info_map,
                     "product_ids": request.product_ids,
                     "selected_dates": request.selected_dates,
-                    "message": "No products found for specified IDs"
-                }
-                future.set_result(result)
-                return result
-                
-            # Filter out products that don't exist or have issues
-            valid_product_ids = []
-            for product in product_response.data:
-                if product and product.get("id"):
-                    valid_product_ids.append(product["id"])
-            
-            if not valid_product_ids:
-                result = {
-                    "success": True,
-                    "portfolio_history": portfolio_irr_history,
-                    "products": product_info_map,
-                    "product_ids": request.product_ids,
-                    "selected_dates": request.selected_dates,
-                    "message": "No valid product IDs found"
-                }
-                future.set_result(result)
-                return result
-                
-            # Only process valid products from here on
-            request.product_ids = valid_product_ids
-            
-            # Skip if no actual processing needed
-            if len(valid_product_ids) == 0:
-                result = {
-                    "success": True,
-                    "portfolio_history": portfolio_irr_history,
-                    "products": product_info_map,
-                    "product_ids": request.product_ids,
-                    "selected_dates": request.selected_dates,
-                    "message": "No products to process after validation"
-                }
-                future.set_result(result)
-                return result
-                
-            # Only process if we have both valid products and valid dates
-            if len(valid_dates) == 0 or len(valid_product_ids) == 0:
-                result = {
-                    "success": True,
-                    "portfolio_history": portfolio_irr_history,
-                    "products": product_info_map,
-                    "product_ids": request.product_ids,
-                    "selected_dates": request.selected_dates,
-                    "message": "Insufficient data for IRR calculation"
+                    "message": "No valid products found"
                 }
                 future.set_result(result)
                 return result
             
-            # Skip any invalid combinations
+            # For each product, get IRR values for each selected date
             for product_id in request.product_ids:
                 if product_id not in product_info_map:
-                    logger.warning(f"Product {product_id} not found in product info map, skipping")
-                    continue
-            
-                            # Create flat rows for each product-date combination (for table display)
-            for product_id in request.product_ids:
-                if product_id not in product_info_map:
+                    logger.warning(f"Product {product_id} not found in product info map")
                     continue
                     
                 product_info = product_info_map[product_id]
@@ -324,19 +298,23 @@ async def get_irr_history_summary(
                         # Normalize date format to YYYY-MM-DD
                         normalized_date = date_str.split('T')[0] if 'T' in date_str else date_str
                         
-                        # Get IRR value for this product and date from portfolio_historical_irr table
-                        product_irr_response = db.table("portfolio_historical_irr") \
-                            .select("irr_result") \
-                            .eq("product_id", product_id) \
-                            .gte("irr_date", normalized_date) \
-                            .lt("irr_date", f"{normalized_date}T23:59:59") \
-                            .order("irr_date", desc=True) \
-                            .limit(1) \
-                            .execute()
+                        # Get IRR value for this product and date from portfolio_historical_irr view
+                        irr_result = await db.fetchrow(
+                            """
+                            SELECT phi.irr_result FROM portfolio_historical_irr phi
+                            JOIN client_products cp ON phi.portfolio_id = cp.portfolio_id
+                            WHERE cp.id = $1 
+                              AND phi.date >= $2 
+                              AND phi.date < $3 
+                            ORDER BY phi.date DESC 
+                            LIMIT 1
+                            """,
+                            product_id, normalized_date, f"{normalized_date}T23:59:59"
+                        )
                         
                         irr_value = None
-                        if product_irr_response.data and len(product_irr_response.data) > 0:
-                            irr_value = float(product_irr_response.data[0]["irr_result"])
+                        if irr_result:
+                            irr_value = float(irr_result["irr_result"])
                             logger.info(f"📊 Product {product_id} IRR for {date_str}: {irr_value}%")
                         else:
                             logger.warning(f"⚠️ No IRR data found for product {product_id} on date {date_str}")
@@ -374,15 +352,17 @@ async def get_irr_history_summary(
                     
                     # Get all portfolio fund IDs for the selected products
                     # First get all portfolio IDs for the selected products
-                    portfolio_ids_response = db.table("client_products") \
-                        .select("portfolio_id") \
-                        .in_("id", request.product_ids) \
-                        .not_.is_("portfolio_id", "null") \
-                        .execute()
+                    portfolio_ids = await db.fetch(
+                        """
+                        SELECT portfolio_id FROM client_products 
+                        WHERE id = ANY($1::int[]) AND portfolio_id IS NOT NULL
+                        """,
+                        request.product_ids
+                    )
                     
-                    portfolio_ids = [row["portfolio_id"] for row in portfolio_ids_response.data if row["portfolio_id"]]
+                    portfolio_id_list = [row["portfolio_id"] for row in portfolio_ids if row["portfolio_id"]]
                     
-                    if not portfolio_ids:
+                    if not portfolio_id_list:
                         logger.warning(f"No portfolio IDs found for products {request.product_ids}")
                         portfolio_irr_history.append({
                             "date": date_str,
@@ -391,15 +371,15 @@ async def get_irr_history_summary(
                         continue
                     
                     # Get all portfolio fund IDs from these portfolios
-                    portfolio_funds_response = db.table("portfolio_funds") \
-                        .select("id") \
-                        .in_("portfolio_id", portfolio_ids) \
-                        .execute()
+                    portfolio_funds = await db.fetch(
+                        "SELECT id FROM portfolio_funds WHERE portfolio_id = ANY($1::int[])",
+                        portfolio_id_list
+                    )
                     
-                    portfolio_fund_ids = [row["id"] for row in portfolio_funds_response.data]
+                    portfolio_fund_ids = [row["id"] for row in portfolio_funds]
                     
                     if not portfolio_fund_ids:
-                        logger.warning(f"No portfolio fund IDs found for portfolios {portfolio_ids} on date {date_str}")
+                        logger.warning(f"No portfolio fund IDs found for portfolios {portfolio_id_list} on date {date_str}")
                         portfolio_irr_history.append({
                             "date": date_str,
                             "portfolio_irr": None
@@ -412,16 +392,21 @@ async def get_irr_history_summary(
                     # This prevents IRR calculation failures due to incomplete data
                     logger.debug(f"🔍 Checking valuation availability for {len(portfolio_fund_ids)} funds on {normalized_date}")
                     
-                    valuation_check_response = db.table("portfolio_fund_valuations") \
-                        .select("portfolio_fund_id, valuation") \
-                        .in_("portfolio_fund_id", portfolio_fund_ids) \
-                        .lte("valuation_date", normalized_date) \
-                        .order("valuation_date", desc=True) \
-                        .execute()
+                    valuation_check = await db.fetch(
+                        """
+                        SELECT DISTINCT ON (portfolio_fund_id) 
+                            portfolio_fund_id, valuation 
+                        FROM portfolio_fund_valuations 
+                        WHERE portfolio_fund_id = ANY($1::int[]) 
+                          AND valuation_date <= $2
+                        ORDER BY portfolio_fund_id, valuation_date DESC
+                        """,
+                        portfolio_fund_ids, normalized_date
+                    )
                     
                     # Group by portfolio_fund_id to get the latest valuation for each fund
                     fund_valuations = {}
-                    for row in valuation_check_response.data:
+                    for row in valuation_check:
                         fund_id = row["portfolio_fund_id"]
                         if fund_id not in fund_valuations:
                             fund_valuations[fund_id] = row["valuation"]

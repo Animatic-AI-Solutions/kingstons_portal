@@ -27,16 +27,27 @@ async def get_portfolio_valuations(
     Why it's needed: Provides access to historical portfolio valuation data.
     """
     try:
-        query = db.table("portfolio_valuations").select("*")
+        # Build dynamic SQL query
+        base_query = "SELECT * FROM portfolio_valuations"
+        conditions = []
+        params = []
         
         if portfolio_id is not None:
-            query = query.eq("portfolio_id", portfolio_id)
+            conditions.append("portfolio_id = $" + str(len(params) + 1))
+            params.append(portfolio_id)
         
-        # Order by portfolio_id and valuation_date descending
-        query = query.order("portfolio_id").order("valuation_date", ascending=False)
+        # Construct query with WHERE clause if needed
+        if conditions:
+            query = base_query + " WHERE " + " AND ".join(conditions)
+        else:
+            query = base_query
+            
+        # Add ordering and pagination
+        query += f" ORDER BY portfolio_id, valuation_date DESC LIMIT ${len(params) + 1} OFFSET ${len(params) + 2}"
+        params.extend([limit, skip])
         
-        result = query.range(skip, skip + limit - 1).execute()
-        return result.data
+        result = await db.fetch(query, *params)
+        return [dict(row) for row in result]
         
     except Exception as e:
         logger.error(f"Error fetching portfolio valuations: {str(e)}")
@@ -52,13 +63,33 @@ async def get_latest_portfolio_valuations(
     Why it's needed: Provides fast access to current portfolio values without expensive calculations.
     """
     try:
-        query = db.table("latest_portfolio_valuations").select("*")
-        
+        # Since latest_portfolio_valuations view is missing, query the table with proper column aliases
         if portfolio_id is not None:
-            query = query.eq("portfolio_id", portfolio_id)
+            query = """
+                SELECT 
+                    portfolio_id,
+                    valuation as current_value,
+                    valuation_date,
+                    id as portfolio_valuation_id
+                FROM portfolio_valuations 
+                WHERE portfolio_id = $1
+                ORDER BY valuation_date DESC 
+                LIMIT 1
+            """
+            result = await db.fetch(query, portfolio_id)
+        else:
+            query = """
+                SELECT DISTINCT ON (portfolio_id)
+                    portfolio_id,
+                    valuation as current_value,
+                    valuation_date,
+                    id as portfolio_valuation_id
+                FROM portfolio_valuations 
+                ORDER BY portfolio_id, valuation_date DESC
+            """
+            result = await db.fetch(query)
         
-        result = query.execute()
-        return result.data
+        return [dict(row) for row in result]
         
     except Exception as e:
         logger.error(f"Error fetching latest portfolio valuations: {str(e)}")
@@ -72,8 +103,11 @@ async def create_portfolio_valuation(valuation: PortfolioValuationCreate, db = D
     """
     try:
         # Verify portfolio exists
-        portfolio_check = db.table("portfolios").select("id").eq("id", valuation.portfolio_id).execute()
-        if not portfolio_check.data:
+        portfolio_check = await db.fetchrow(
+            "SELECT id FROM portfolios WHERE id = $1", 
+            valuation.portfolio_id
+        )
+        if not portfolio_check:
             raise HTTPException(status_code=404, detail=f"Portfolio with ID {valuation.portfolio_id} not found")
         
         # Prepare data for insertion
@@ -83,10 +117,20 @@ async def create_portfolio_valuation(valuation: PortfolioValuationCreate, db = D
         if isinstance(data_dict['valuation_date'], datetime):
             data_dict['valuation_date'] = data_dict['valuation_date'].isoformat()
         
-        result = db.table("portfolio_valuations").insert(data_dict).execute()
+        # Create dynamic INSERT query
+        columns = list(data_dict.keys())
+        placeholders = [f"${i+1}" for i in range(len(columns))]
+        values = list(data_dict.values())
         
-        if result.data and len(result.data) > 0:
-            return result.data[0]
+        query = f"""
+            INSERT INTO portfolio_valuations ({', '.join(columns)}) 
+            VALUES ({', '.join(placeholders)}) 
+            RETURNING *
+        """
+        
+        result = await db.fetchrow(query, *values)
+        if result:
+            return dict(result)
         
         raise HTTPException(status_code=500, detail="Failed to create portfolio valuation")
         
@@ -102,12 +146,15 @@ async def get_portfolio_valuation(valuation_id: int, db = Depends(get_db)):
     What it does: Retrieves a specific portfolio valuation by ID.
     """
     try:
-        result = db.table("portfolio_valuations").select("*").eq("id", valuation_id).execute()
+        result = await db.fetchrow(
+            "SELECT * FROM portfolio_valuations WHERE id = $1", 
+            valuation_id
+        )
         
-        if not result.data:
+        if not result:
             raise HTTPException(status_code=404, detail=f"Portfolio valuation with ID {valuation_id} not found")
         
-        return result.data[0]
+        return dict(result)
         
     except HTTPException:
         raise
@@ -126,12 +173,15 @@ async def update_portfolio_valuation(
     """
     try:
         # Check if valuation exists
-        check_result = db.table("portfolio_valuations").select("id").eq("id", valuation_id).execute()
-        if not check_result.data:
+        check_result = await db.fetchrow(
+            "SELECT id FROM portfolio_valuations WHERE id = $1", 
+            valuation_id
+        )
+        if not check_result:
             raise HTTPException(status_code=404, detail=f"Portfolio valuation with ID {valuation_id} not found")
         
         # Prepare update data
-        update_data = {k: v for k, v in valuation_update.model_dump().items() if v is not None}
+        update_data = valuation_update.model_dump(exclude_unset=True)
         
         if not update_data:
             raise HTTPException(status_code=400, detail="No valid update data provided")
@@ -140,10 +190,24 @@ async def update_portfolio_valuation(
         if 'valuation_date' in update_data and isinstance(update_data['valuation_date'], datetime):
             update_data['valuation_date'] = update_data['valuation_date'].isoformat()
         
-        result = db.table("portfolio_valuations").update(update_data).eq("id", valuation_id).execute()
+        # Build dynamic UPDATE query
+        set_clauses = []
+        params = []
+        for i, (column, value) in enumerate(update_data.items(), 1):
+            set_clauses.append(f"{column} = ${i}")
+            params.append(value)
         
-        if result.data and len(result.data) > 0:
-            return result.data[0]
+        query = f"""
+            UPDATE portfolio_valuations 
+            SET {', '.join(set_clauses)} 
+            WHERE id = ${len(params) + 1} 
+            RETURNING *
+        """
+        params.append(valuation_id)
+        
+        result = await db.fetchrow(query, *params)
+        if result:
+            return dict(result)
         
         raise HTTPException(status_code=500, detail="Failed to update portfolio valuation")
         
@@ -164,12 +228,15 @@ async def delete_portfolio_valuation(valuation_id: int, db = Depends(get_db)):
     """
     try:
         # Check if valuation exists and get its details
-        check_result = db.table("portfolio_valuations").select("*").eq("id", valuation_id).execute()
-        if not check_result.data:
+        check_result = await db.fetchrow(
+            "SELECT * FROM portfolio_valuations WHERE id = $1", 
+            valuation_id
+        )
+        if not check_result:
             raise HTTPException(status_code=404, detail=f"Portfolio valuation with ID {valuation_id} not found")
         
         # Get details of the valuation being deleted
-        valuation_to_delete = check_result.data[0]
+        valuation_to_delete = dict(check_result)
         portfolio_id = valuation_to_delete["portfolio_id"]
         valuation_date = valuation_to_delete["valuation_date"]
         
@@ -188,31 +255,35 @@ async def delete_portfolio_valuation(valuation_id: int, db = Depends(get_db)):
         
         try:
             # Delete any IRR records that reference this valuation
-            irr_cleanup_result = db.table("portfolio_irr_values")\
-                .delete()\
-                .eq("portfolio_valuation_id", valuation_id)\
-                .execute()
+            irr_cleanup_result = await db.execute(
+                "DELETE FROM portfolio_irr_values WHERE portfolio_valuation_id = $1",
+                valuation_id
+            )
             
-            if irr_cleanup_result.data:
-                logger.info(f"Cleaned up {len(irr_cleanup_result.data)} portfolio IRR records that referenced valuation {valuation_id}")
-                cascade_deletions.append(f"Deleted {len(irr_cleanup_result.data)} IRR records by valuation reference")
-                
+            # Parse deletion count from result
+            if irr_cleanup_result.startswith("DELETE"):
+                deleted_count = irr_cleanup_result.split()[1]
+                if int(deleted_count) > 0:
+                    logger.info(f"Cleaned up {deleted_count} portfolio IRR records that referenced valuation {valuation_id}")
+                    cascade_deletions.append(f"Deleted {deleted_count} IRR records by valuation reference")
+            
             # Delete related portfolio IRR values for this date
             try:
-                # Use date range instead of LIKE for timestamp comparison
+                # Use date range for timestamp comparison
                 date_start = f"{valuation_date_only}T00:00:00"
                 date_end = f"{valuation_date_only}T23:59:59"
                 
-                portfolio_irr_delete_result = db.table("portfolio_irr_values")\
-                    .delete()\
-                    .eq("portfolio_id", portfolio_id)\
-                    .gte("date", date_start)\
-                    .lte("date", date_end)\
-                    .execute()
+                portfolio_irr_delete_result = await db.execute(
+                    "DELETE FROM portfolio_irr_values WHERE portfolio_id = $1 AND date >= $2 AND date <= $3",
+                    portfolio_id, date_start, date_end
+                )
                 
-                if portfolio_irr_delete_result.data:
-                    logger.info(f"Deleted {len(portfolio_irr_delete_result.data)} related portfolio IRR records for date {valuation_date_only}")
-                    cascade_deletions.append(f"Deleted {len(portfolio_irr_delete_result.data)} portfolio IRR records")
+                # Parse deletion count from result
+                if portfolio_irr_delete_result.startswith("DELETE"):
+                    deleted_count = portfolio_irr_delete_result.split()[1]
+                    if int(deleted_count) > 0:
+                        logger.info(f"Deleted {deleted_count} related portfolio IRR records for date {valuation_date_only}")
+                        cascade_deletions.append(f"Deleted {deleted_count} portfolio IRR records")
                 
             except Exception as e:
                 logger.warning(f"Failed to delete related portfolio IRR records for date {valuation_date_only}: {str(e)}")
@@ -223,9 +294,12 @@ async def delete_portfolio_valuation(valuation_id: int, db = Depends(get_db)):
         # ========================================================================
         # Step 2: Delete the portfolio valuation
         # ========================================================================
-        result = db.table("portfolio_valuations").delete().eq("id", valuation_id).execute()
+        result = await db.execute(
+            "DELETE FROM portfolio_valuations WHERE id = $1",
+            valuation_id
+        )
         
-        if not result or not hasattr(result, 'data') or not result.data:
+        if not result or not result.startswith("DELETE"):
             logger.error(f"Failed to delete portfolio valuation with ID {valuation_id}")
             raise HTTPException(status_code=500, detail="Failed to delete portfolio valuation")
         
@@ -263,18 +337,24 @@ async def get_portfolio_valuations_by_portfolio(
     """
     try:
         # Verify portfolio exists
-        portfolio_check = db.table("portfolios").select("id").eq("id", portfolio_id).execute()
-        if not portfolio_check.data:
+        portfolio_check = await db.fetchrow(
+            "SELECT id FROM portfolios WHERE id = $1", 
+            portfolio_id
+        )
+        if not portfolio_check:
             raise HTTPException(status_code=404, detail=f"Portfolio with ID {portfolio_id} not found")
         
-        result = db.table("portfolio_valuations")\
-            .select("*")\
-            .eq("portfolio_id", portfolio_id)\
-            .order("valuation_date", ascending=False)\
-            .range(skip, skip + limit - 1)\
-            .execute()
+        result = await db.fetch(
+            """
+            SELECT * FROM portfolio_valuations 
+            WHERE portfolio_id = $1 
+            ORDER BY valuation_date DESC 
+            LIMIT $2 OFFSET $3
+            """,
+            portfolio_id, limit, skip
+        )
         
-        return result.data
+        return [dict(row) for row in result]
         
     except HTTPException:
         raise
@@ -288,15 +368,25 @@ async def get_latest_portfolio_valuation(portfolio_id: int, db = Depends(get_db)
     What it does: Retrieves the latest valuation for a specific portfolio.
     """
     try:
-        result = db.table("latest_portfolio_valuations")\
-            .select("*")\
-            .eq("portfolio_id", portfolio_id)\
-            .execute()
+        result = await db.fetchrow(
+            """
+            SELECT 
+                portfolio_id,
+                valuation as current_value,
+                valuation_date,
+                id as portfolio_valuation_id
+            FROM portfolio_valuations 
+            WHERE portfolio_id = $1
+            ORDER BY valuation_date DESC 
+            LIMIT 1
+            """,
+            portfolio_id
+        )
         
-        if not result.data:
+        if not result:
             raise HTTPException(status_code=404, detail=f"No valuations found for portfolio {portfolio_id}")
         
-        return result.data[0]
+        return dict(result)
         
     except HTTPException:
         raise
@@ -321,8 +411,11 @@ async def calculate_and_store_portfolio_valuation(
     """
     try:
         # Verify portfolio exists
-        portfolio_check = db.table("portfolios").select("id").eq("id", portfolio_id).execute()
-        if not portfolio_check.data:
+        portfolio_check = await db.fetchrow(
+            "SELECT id FROM portfolios WHERE id = $1", 
+            portfolio_id
+        )
+        if not portfolio_check:
             raise HTTPException(status_code=404, detail=f"Portfolio with ID {portfolio_id} not found")
         
         # Set valuation date to today if not provided
@@ -336,13 +429,16 @@ async def calculate_and_store_portfolio_valuation(
             raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
         
         # Get all active portfolio funds
-        portfolio_funds_result = db.table("portfolio_funds")\
-            .select("id, available_funds_id")\
-            .eq("portfolio_id", portfolio_id)\
-            .eq("status", "active")\
-            .execute()
+        portfolio_funds_result = await db.fetch(
+            """
+            SELECT id, available_funds_id 
+            FROM portfolio_funds 
+            WHERE portfolio_id = $1 AND status = 'active'
+            """,
+            portfolio_id
+        )
         
-        if not portfolio_funds_result.data:
+        if not portfolio_funds_result:
             logger.warning(f"No active funds found for portfolio {portfolio_id}")
             # Create a zero valuation if no funds
             portfolio_valuation = PortfolioValuationCreate(
@@ -351,7 +447,7 @@ async def calculate_and_store_portfolio_valuation(
                 value=0.0
             )
         else:
-            portfolio_fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
+            portfolio_fund_ids = [row["id"] for row in portfolio_funds_result]
             
             # Get fund valuations for the target date (or closest date before)
             total_value = 0.0
@@ -359,16 +455,19 @@ async def calculate_and_store_portfolio_valuation(
             
             for pf_id in portfolio_fund_ids:
                 # Get the closest valuation on or before the target date
-                valuation_result = db.table("portfolio_fund_valuations")\
-                    .select("valuation")\
-                    .eq("portfolio_fund_id", pf_id)\
-                    .lte("valuation_date", target_date.isoformat())\
-                    .order("valuation_date", ascending=False)\
-                    .limit(1)\
-                    .execute()
+                valuation_result = await db.fetchrow(
+                    """
+                    SELECT valuation 
+                    FROM portfolio_fund_valuations 
+                    WHERE portfolio_fund_id = $1 AND valuation_date <= $2
+                    ORDER BY valuation_date DESC 
+                    LIMIT 1
+                    """,
+                    pf_id, target_date.isoformat()
+                )
                 
-                if valuation_result.data:
-                    total_value += float(valuation_result.data[0]["valuation"])
+                if valuation_result:
+                    total_value += float(valuation_result["valuation"])
                     fund_values_found += 1
                 else:
                     logger.warning(f"No valuation found for portfolio fund {pf_id} on or before {target_date}")
@@ -387,29 +486,46 @@ async def calculate_and_store_portfolio_valuation(
         data_dict['valuation_date'] = data_dict['valuation_date'].isoformat()
         
         # Check if a valuation already exists for this date
-        existing_result = db.table("portfolio_valuations")\
-            .select("id")\
-            .eq("portfolio_id", portfolio_id)\
-            .eq("valuation_date", data_dict['valuation_date'])\
-            .execute()
+        existing_result = await db.fetchrow(
+            """
+            SELECT id 
+            FROM portfolio_valuations 
+            WHERE portfolio_id = $1 AND valuation_date = $2
+            """,
+            portfolio_id, data_dict['valuation_date']
+        )
         
-        if existing_result.data:
+        if existing_result:
             # Update existing valuation
-            update_result = db.table("portfolio_valuations")\
-                .update({"value": data_dict['value']})\
-                .eq("id", existing_result.data[0]["id"])\
-                .execute()
+            update_result = await db.fetchrow(
+                """
+                UPDATE portfolio_valuations 
+                SET value = $1 
+                WHERE id = $2 
+                RETURNING *
+                """,
+                data_dict['value'], existing_result["id"]
+            )
             
-            if update_result.data and len(update_result.data) > 0:
+            if update_result:
                 logger.info(f"Updated existing portfolio valuation for {portfolio_id} on {valuation_date}")
-                return update_result.data[0]
+                return dict(update_result)
         else:
             # Create new valuation
-            result = db.table("portfolio_valuations").insert(data_dict).execute()
+            columns = list(data_dict.keys())
+            placeholders = [f"${i+1}" for i in range(len(columns))]
+            values = list(data_dict.values())
             
-            if result.data and len(result.data) > 0:
+            query = f"""
+                INSERT INTO portfolio_valuations ({', '.join(columns)}) 
+                VALUES ({', '.join(placeholders)}) 
+                RETURNING *
+            """
+            
+            result = await db.fetchrow(query, *values)
+            if result:
                 logger.info(f"Created new portfolio valuation for {portfolio_id} on {valuation_date}")
-                return result.data[0]
+                return dict(result)
         
         raise HTTPException(status_code=500, detail="Failed to create or update portfolio valuation")
         
@@ -427,18 +543,24 @@ async def get_current_portfolio_value(portfolio_id: int, db = Depends(get_db)):
     """
     try:
         # Verify portfolio exists
-        portfolio_check = db.table("portfolios").select("id").eq("id", portfolio_id).execute()
-        if not portfolio_check.data:
+        portfolio_check = await db.fetchrow(
+            "SELECT id FROM portfolios WHERE id = $1", 
+            portfolio_id
+        )
+        if not portfolio_check:
             raise HTTPException(status_code=404, detail=f"Portfolio with ID {portfolio_id} not found")
         
         # Get all active portfolio funds
-        portfolio_funds_result = db.table("portfolio_funds")\
-            .select("id")\
-            .eq("portfolio_id", portfolio_id)\
-            .eq("status", "active")\
-            .execute()
+        portfolio_funds_result = await db.fetch(
+            """
+            SELECT id 
+            FROM portfolio_funds 
+            WHERE portfolio_id = $1 AND status = 'active'
+            """,
+            portfolio_id
+        )
         
-        if not portfolio_funds_result.data:
+        if not portfolio_funds_result:
             return {
                 "portfolio_id": portfolio_id,
                 "current_value": 0.0,
@@ -446,20 +568,27 @@ async def get_current_portfolio_value(portfolio_id: int, db = Depends(get_db)):
                 "calculation_date": datetime.now().isoformat()
             }
         
-        portfolio_fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
+        portfolio_fund_ids = [row["id"] for row in portfolio_funds_result]
         
-        # Get latest valuations using the optimized view
-        latest_valuations_result = db.table("latest_portfolio_fund_valuations")\
-            .select("portfolio_fund_id, valuation")\
-            .in_("portfolio_fund_id", portfolio_fund_ids)\
-            .execute()
+        # Get latest valuations (since latest_portfolio_fund_valuations view is missing)
+        latest_valuations_result = await db.fetch(
+            """
+            SELECT DISTINCT ON (portfolio_fund_id)
+                portfolio_fund_id, 
+                valuation 
+            FROM portfolio_fund_valuations 
+            WHERE portfolio_fund_id = ANY($1::int[])
+            ORDER BY portfolio_fund_id, valuation_date DESC
+            """,
+            portfolio_fund_ids
+        )
         
-        total_value = sum(float(fv["valuation"]) for fv in latest_valuations_result.data)
+        total_value = sum(float(row["valuation"]) for row in latest_valuations_result)
         
         return {
             "portfolio_id": portfolio_id,
             "current_value": total_value,
-            "fund_count": len(latest_valuations_result.data),
+            "fund_count": len(latest_valuations_result),
             "calculation_date": datetime.now().isoformat()
         }
         

@@ -14,13 +14,41 @@ class HoldingActivityLogBase(BaseModel):
     @field_validator('activity_timestamp', mode='before')
     @classmethod
     def parse_date(cls, value):
+        # Add comprehensive debugging for date parsing
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"🔍 DATE VALIDATOR (BASE): Input value={value}, Type={type(value)}, Repr={repr(value)}")
+        
         if isinstance(value, str):
             try:
-                return datetime.strptime(value, "%Y-%m-%d").date()
-            except ValueError:
-                raise ValueError("Invalid date format. Expected YYYY-MM-DD")
+                # First try simple date format (this is what frontend should send)
+                parsed_date = datetime.strptime(value, "%Y-%m-%d").date()
+                logger.info(f"🔍 DATE VALIDATOR (BASE): Parsed string '{value}' to date {parsed_date}")
+                return parsed_date
+            except ValueError as e:
+                logger.error(f"🔍 DATE VALIDATOR (BASE): Failed to parse string '{value}': {e}")
+                # Try alternative formats but extract only date part to avoid timezone issues
+                try:
+                    # If it has time component, extract just the date part to avoid timezone conversion
+                    if 'T' in value:
+                        date_part = value.split('T')[0]
+                        parsed_date = datetime.strptime(date_part, "%Y-%m-%d").date()
+                        logger.info(f"🔍 DATE VALIDATOR (BASE): Extracted date part '{date_part}' from '{value}' → date {parsed_date}")
+                        return parsed_date
+                    else:
+                        # Try other date formats
+                        parsed_date = datetime.strptime(value, "%Y-%m-%d").date()
+                        logger.info(f"🔍 DATE VALIDATOR (BASE): Parsed alternative format '{value}' to date {parsed_date}")
+                        return parsed_date
+                except ValueError:
+                    logger.error(f"🔍 DATE VALIDATOR (BASE): All parsing attempts failed for '{value}'")
+                    raise ValueError(f"Invalid date format. Expected YYYY-MM-DD, got: {value}")
         if isinstance(value, datetime):
-            return value.date()
+            result = value.date()
+            logger.info(f"🔍 DATE VALIDATOR (BASE): Converted datetime {value} to date {result}")
+            return result
+        
+        logger.info(f"🔍 DATE VALIDATOR (BASE): Returning value as-is: {value}")
         return value
     
     model_config = ConfigDict(
@@ -45,13 +73,40 @@ class HoldingActivityLogUpdate(BaseModel):
     @field_validator('activity_timestamp', mode='before')
     @classmethod
     def parse_date(cls, value):
+        # Add comprehensive debugging for date parsing
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"🔍 DATE VALIDATOR (UPDATE): Input value={value}, Type={type(value)}, Repr={repr(value)}")
+        
         if isinstance(value, str):
             try:
-                return datetime.strptime(value, "%Y-%m-%d").date()
-            except ValueError:
-                raise ValueError("Invalid date format. Expected YYYY-MM-DD")
+                parsed_date = datetime.strptime(value, "%Y-%m-%d").date()
+                logger.info(f"🔍 DATE VALIDATOR (UPDATE): Parsed string '{value}' to date {parsed_date}")
+                return parsed_date
+            except ValueError as e:
+                logger.error(f"🔍 DATE VALIDATOR (UPDATE): Failed to parse string '{value}': {e}")
+                # Try alternative formats but extract only date part to avoid timezone issues
+                try:
+                    # If it has time component, extract just the date part to avoid timezone conversion
+                    if 'T' in value:
+                        date_part = value.split('T')[0]
+                        parsed_date = datetime.strptime(date_part, "%Y-%m-%d").date()
+                        logger.info(f"🔍 DATE VALIDATOR (UPDATE): Extracted date part '{date_part}' from '{value}' → date {parsed_date}")
+                        return parsed_date
+                    else:
+                        # Try other date formats
+                        parsed_date = datetime.strptime(value, "%Y-%m-%d").date()
+                        logger.info(f"🔍 DATE VALIDATOR (UPDATE): Parsed alternative format '{value}' to date {parsed_date}")
+                        return parsed_date
+                except ValueError:
+                    logger.error(f"🔍 DATE VALIDATOR (UPDATE): All parsing attempts failed for '{value}'")
+                    raise ValueError(f"Invalid date format. Expected YYYY-MM-DD, got: {value}")
         if isinstance(value, datetime):
-            return value.date()
+            result = value.date()
+            logger.info(f"🔍 DATE VALIDATOR (UPDATE): Converted datetime {value} to date {result}")
+            return result
+        
+        logger.info(f"🔍 DATE VALIDATOR (UPDATE): Returning value as-is: {value}")
         return value
     
     model_config = ConfigDict(

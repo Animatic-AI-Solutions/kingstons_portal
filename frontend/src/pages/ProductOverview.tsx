@@ -393,7 +393,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             amount_invested: pf.amount_invested || 0,
             market_value: pf.market_value !== undefined ? pf.market_value : pf.amount_invested || 0,
             valuation_date: pf.valuation_date,
-            irr: pf.irr_result,
+            irr: pf.irr_result !== null && pf.irr_result !== undefined ? parseFloat(pf.irr_result) : null,
             irr_date: pf.irr_calculation_date || pf.irr_date,
             status: pf.status || 'active',
             end_date: pf.end_date,
@@ -598,7 +598,16 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     if (value === null || value === undefined) {
       return 'N/A';
     }
-    return `${value.toFixed(1)}%`;
+    
+    // Convert to number if it's a string (defensive programming)
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    
+    // Check if the conversion resulted in a valid number
+    if (isNaN(numValue)) {
+      return 'N/A';
+    }
+    
+    return `${numValue.toFixed(1)}%`;
   };
 
   // Format activity type for display - convert camelCase or snake_case to spaces

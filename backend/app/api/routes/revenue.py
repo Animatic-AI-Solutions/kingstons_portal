@@ -24,9 +24,9 @@ async def get_company_revenue_analytics(db = Depends(get_db)):
     """
     try:
         # Query the company_revenue_analytics view
-        result = db.table("company_revenue_analytics").select("*").execute()
+        result = await db.fetch("SELECT * FROM company_revenue_analytics")
         
-        if not result.data:
+        if not result:
             logger.warning("No data returned from company_revenue_analytics view")
             return [{
                 "total_annual_revenue": 0,
@@ -39,7 +39,7 @@ async def get_company_revenue_analytics(db = Depends(get_db)):
             }]
         
         # The view returns a single row with aggregated data
-        revenue_data = result.data[0]
+        revenue_data = dict(result[0])
         
         # Ensure all values are properly formatted
         formatted_data = {
@@ -68,30 +68,29 @@ async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
     """
     try:
         # First get the total company revenue for percentage calculations
-        company_revenue_result = db.table("company_revenue_analytics").select("total_annual_revenue").execute()
-        total_company_revenue = float(company_revenue_result.data[0]["total_annual_revenue"]) if company_revenue_result.data else 0
+        company_revenue_result = await db.fetchrow("SELECT total_annual_revenue FROM company_revenue_analytics")
+        total_company_revenue = float(company_revenue_result["total_annual_revenue"]) if company_revenue_result else 0
         
         # Get all active client groups
-        client_groups_result = db.table("client_groups").select("id, name, status").eq("status", "active").execute()
+        client_groups = await db.fetch("SELECT id, name, status FROM client_groups WHERE status = 'active'")
         
-        if not client_groups_result.data:
+        if not client_groups:
             logger.warning("No active client groups found")
             return []
         
         revenue_breakdown = []
         
-        for client_group in client_groups_result.data:
+        for client_group in client_groups:
             client_id = client_group["id"]
             client_name = client_group["name"]
             
             # Get all active products for this client group
-            products_result = db.table("client_products")\
-                .select("id, fixed_cost, percentage_fee, portfolio_id")\
-                .eq("client_id", client_id)\
-                .eq("status", "active")\
-                .execute()
+            products = await db.fetch(
+                "SELECT id, fixed_cost, percentage_fee, portfolio_id FROM client_products WHERE client_id = $1 AND status = 'active'",
+                client_id
+            )
             
-            if not products_result.data:
+            if not products:
                 # Client has no products, add with zero revenue and complete status
                 revenue_breakdown.append({
                     "id": client_id,
@@ -113,32 +112,31 @@ async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
             # Track revenue status for this client - SIMPLIFIED LOGIC
             has_missing_valuations = False  # Any product missing valuations = amber
 
-            for product in products_result.data:
+            for product in products:
                 product_id = product["id"]
-                portfolio_id = product.get("portfolio_id")
-                fixed_cost = float(product.get("fixed_cost", 0) or 0)
-                percentage_fee = float(product.get("percentage_fee", 0) or 0)
+                portfolio_id = product["portfolio_id"]
+                fixed_cost = float(product["fixed_cost"] or 0)
+                percentage_fee = float(product["percentage_fee"] or 0)
                 
                 if portfolio_id:
                     # Get portfolio funds for this product
-                    portfolio_funds_result = db.table("portfolio_funds")\
-                        .select("id, available_funds_id")\
-                        .eq("portfolio_id", portfolio_id)\
-                        .eq("status", "active")\
-                        .execute()
+                    portfolio_funds = await db.fetch(
+                        "SELECT id, available_funds_id FROM portfolio_funds WHERE portfolio_id = $1 AND status = 'active'",
+                        portfolio_id
+                    )
                     
-                    if portfolio_funds_result.data:
-                        fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
+                    if portfolio_funds:
+                        fund_ids = [pf["id"] for pf in portfolio_funds]
                         
                         # Get latest valuations for these funds
-                        valuations_result = db.table("latest_portfolio_fund_valuations")\
-                            .select("portfolio_fund_id, valuation")\
-                            .in_("portfolio_fund_id", fund_ids)\
-                            .execute()
+                        valuations = await db.fetch(
+                            "SELECT portfolio_fund_id, valuation FROM latest_portfolio_fund_valuations WHERE portfolio_fund_id = ANY($1::int[])",
+                            fund_ids
+                        )
                         
                         # Check if all funds have valuations
-                        funds_with_valuations = len(valuations_result.data) if valuations_result.data else 0
-                        total_valuations = sum(float(v["valuation"]) for v in valuations_result.data) if valuations_result.data else 0
+                        funds_with_valuations = len(valuations) if valuations else 0
+                        total_valuations = sum(float(v["valuation"]) for v in valuations) if valuations else 0
                         
                         if funds_with_valuations == len(fund_ids):
                             product_has_valuations = True
@@ -183,7 +181,7 @@ async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
                 "id": client_id,
                 "name": client_name,
                 "status": client_group["status"],
-                "product_count": len(products_result.data),
+                "product_count": len(products),
                 "total_revenue": total_client_revenue,
                 "revenue_percentage_of_total": revenue_percentage,
                 "total_fum": total_client_fum,
@@ -221,20 +219,19 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
 
         # Get a hash of all revenue-relevant data to check if recalculation is needed
         # Get all active client products with revenue configuration
-        products_for_hash = db.table("client_products")\
-            .select("id, client_id, fixed_cost, percentage_fee, portfolio_id, status")\
-            .eq("status", "active")\
-            .execute()
+        products_for_hash = await db.fetch(
+            "SELECT id, client_id, fixed_cost, percentage_fee, portfolio_id, status FROM client_products WHERE status = 'active'"
+        )
         
         # Get all latest valuations
-        valuations_for_hash = db.table("latest_portfolio_fund_valuations")\
-            .select("portfolio_fund_id, valuation, valuation_date")\
-            .execute()
+        valuations_for_hash = await db.fetch(
+            "SELECT portfolio_fund_id, valuation, valuation_date FROM latest_portfolio_fund_valuations"
+        )
         
         # Create hash of the revenue-relevant data
         hash_data = {
-            "products": products_for_hash.data,
-            "valuations": valuations_for_hash.data
+            "products": [dict(p) for p in products_for_hash],
+            "valuations": [dict(v) for v in valuations_for_hash]
         }
         revenue_data_str = json.dumps(hash_data, sort_keys=True, default=str)
         current_hash = hashlib.md5(revenue_data_str.encode()).hexdigest()
@@ -245,9 +242,9 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
             return _revenue_cache["data"]
         
         # Get all active client groups
-        client_groups_result = db.table("client_groups").select("id, name, status").eq("status", "active").execute()
+        client_groups = await db.fetch("SELECT id, name, status FROM client_groups WHERE status = 'active'")
         
-        if not client_groups_result.data:
+        if not client_groups:
             logger.warning("No active client groups found")
             return {
                 "total_revenue": 0,
@@ -257,32 +254,31 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
                 "total_client_groups": 0
             }
         
-        total_client_groups = len(client_groups_result.data)
+        total_client_groups = len(client_groups)
         complete_client_groups = []
         total_revenue = 0
         total_fum = 0
         
-        for client_group in client_groups_result.data:
+        for client_group in client_groups:
             client_id = client_group["id"]
             client_name = client_group["name"]
             
             # Get all active products for this client group
-            products_result = db.table("client_products")\
-                .select("id, fixed_cost, percentage_fee, portfolio_id")\
-                .eq("client_id", client_id)\
-                .eq("status", "active")\
-                .execute()
+            products = await db.fetch(
+                "SELECT id, fixed_cost, percentage_fee, portfolio_id FROM client_products WHERE client_id = $1 AND status = 'active'",
+                client_id
+            )
             
-            if not products_result.data:
+            if not products:
                 continue  # Skip client groups with no products
             
             # Find products with fee setup (including zero fees)
             products_with_fee_setup = []
             products_with_positive_fees = []
             
-            for product in products_result.data:
-                fixed_cost = product.get("fixed_cost")
-                percentage_fee = product.get("percentage_fee")
+            for product in products:
+                fixed_cost = product["fixed_cost"]
+                percentage_fee = product["percentage_fee"]
                 
                 # Check if product has any fee setup (including zero fees)
                 if fixed_cost is not None or percentage_fee is not None:
@@ -305,30 +301,29 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
             client_revenue = 0
             
             for product in products_with_fee_setup:
-                portfolio_id = product.get("portfolio_id")
-                fixed_cost_val = float(product.get("fixed_cost", 0) or 0)
-                percentage_fee_val = float(product.get("percentage_fee", 0) or 0)
+                portfolio_id = product["portfolio_id"]
+                fixed_cost_val = float(product["fixed_cost"] or 0)
+                percentage_fee_val = float(product["percentage_fee"] or 0)
                 
                 if portfolio_id:
                     # Get portfolio funds for this product
-                    portfolio_funds_result = db.table("portfolio_funds")\
-                        .select("id")\
-                        .eq("portfolio_id", portfolio_id)\
-                        .eq("status", "active")\
-                        .execute()
+                    portfolio_funds = await db.fetch(
+                        "SELECT id FROM portfolio_funds WHERE portfolio_id = $1 AND status = 'active'",
+                        portfolio_id
+                    )
                     
-                    if portfolio_funds_result.data:
-                        fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
+                    if portfolio_funds:
+                        fund_ids = [pf["id"] for pf in portfolio_funds]
                         
                         # Get latest valuations for these funds
-                        valuations_result = db.table("latest_portfolio_fund_valuations")\
-                            .select("portfolio_fund_id, valuation")\
-                            .in_("portfolio_fund_id", fund_ids)\
-                            .execute()
+                        valuations = await db.fetch(
+                            "SELECT portfolio_fund_id, valuation FROM latest_portfolio_fund_valuations WHERE portfolio_fund_id = ANY($1::int[])",
+                            fund_ids
+                        )
                         
                         # Check if all funds have valuations
-                        funds_with_valuations = len(valuations_result.data) if valuations_result.data else 0
-                        total_valuations = sum(float(v["valuation"]) for v in valuations_result.data) if valuations_result.data else 0
+                        funds_with_valuations = len(valuations) if valuations else 0
+                        total_valuations = sum(float(v["valuation"]) for v in valuations) if valuations else 0
                         
                         # If this product has positive fees, it must have complete valuations to be "complete"
                         if fixed_cost_val > 0 or percentage_fee_val > 0:
@@ -413,15 +408,15 @@ async def get_revenue_breakdown_optimized(db = Depends(get_db)):
         logger.info("Fetching optimized revenue breakdown")
         
         # Single query to get all revenue data using optimized view
-        result = db.table("revenue_analytics_optimized").select("*").execute()
+        result = await db.fetch("SELECT * FROM revenue_analytics_optimized")
         
-        if not result.data:
+        if not result:
             return []
         
         # Group data by client for aggregation
         client_data = {}
         
-        for row in result.data:
+        for row in result:
             client_id = row["client_id"]
             
             if client_id not in client_data:

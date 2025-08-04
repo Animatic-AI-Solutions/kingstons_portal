@@ -34,25 +34,48 @@ async def get_client_products_with_owners(
     Expected output: A JSON array of client product objects with portfolio type and all related data
     """
     try:
-        # Build the base query using the new optimized view
-        query = db.table("products_list_view").select("*")
+        # Get the client products with pagination
+        # Build dynamic SQL query for products_list_view
+        base_query = "SELECT * FROM products_list_view"
+        conditions = []
+        params = []
+        param_count = 0
         
-        # Apply filters if provided
         if client_id is not None:
-            query = query.eq("client_id", client_id)
+            param_count += 1
+            conditions.append(f"client_id = ${param_count}")
+            params.append(client_id)
             
         if provider_id is not None:
-            query = query.eq("provider_id", provider_id)
+            param_count += 1
+            conditions.append(f"provider_id = ${param_count}")
+            params.append(provider_id)
             
         if status is not None:
-            query = query.eq("status", status)
+            param_count += 1
+            conditions.append(f"status = ${param_count}")
+            params.append(status)
             
         if portfolio_type is not None:
-            query = query.eq("portfolio_type_display", portfolio_type)
+            param_count += 1
+            conditions.append(f"portfolio_type_display = ${param_count}")
+            params.append(portfolio_type)
         
-        # Get the client products with pagination
-        result = query.range(skip, skip + limit - 1).execute()
-        products = result.data
+        # Add WHERE clause if conditions exist
+        if conditions:
+            base_query += " WHERE " + " AND ".join(conditions)
+        
+        # Add pagination
+        param_count += 1
+        base_query += f" OFFSET ${param_count}"
+        params.append(skip)
+        
+        param_count += 1
+        base_query += f" LIMIT ${param_count}"
+        params.append(limit)
+        
+        result = await db.fetch(base_query, *params)
+        products = [dict(record) for record in result]
         
         if not products:
             return []
@@ -67,16 +90,17 @@ async def get_client_products_with_owners(
         if portfolio_ids:
             try:
                 # Get latest portfolio IRR for all portfolios
-                portfolio_irr_result = db.table("latest_portfolio_irr_values").select("portfolio_id,irr_result").in_("portfolio_id", portfolio_ids).execute()
-                portfolio_irr_map = {item.get("portfolio_id"): item.get("irr_result") for item in portfolio_irr_result.data}
+                portfolio_irr_result = await db.fetch("SELECT portfolio_id, irr_result FROM latest_portfolio_irr_values WHERE portfolio_id = ANY($1::int[])", portfolio_ids)
+                portfolio_irr_map = {item.get("portfolio_id"): item.get("irr_result") for item in [dict(record) for record in portfolio_irr_result] if portfolio_irr_result}
                 
                 # Get IRR dates efficiently
-                all_portfolio_funds_result = db.table("portfolio_funds").select("id,portfolio_id").in_("portfolio_id", portfolio_ids).execute()
+                all_portfolio_funds_result = await db.fetch("SELECT id, portfolio_id FROM portfolio_funds WHERE portfolio_id = ANY($1::int[])", portfolio_ids)
                 
-                if all_portfolio_funds_result.data:
+                if all_portfolio_funds_result:
                     portfolio_to_funds = {}
                     all_fund_ids = []
-                    for pf in all_portfolio_funds_result.data:
+                    for pf_record in all_portfolio_funds_result:
+                        pf = dict(pf_record)
                         portfolio_id = pf.get("portfolio_id")
                         fund_id = pf.get("id")
                         if portfolio_id not in portfolio_to_funds:
@@ -85,10 +109,10 @@ async def get_client_products_with_owners(
                         all_fund_ids.append(fund_id)
                     
                     if all_fund_ids:
-                        irr_dates_result = db.table("latest_portfolio_fund_irr_values").select("fund_id,irr_date").in_("fund_id", all_fund_ids).execute()
-                        if irr_dates_result.data:
-                            fund_to_irr_date = {item.get("fund_id"): item.get("irr_date") for item in irr_dates_result.data if item.get("irr_date")}
-                            
+                        irr_dates_result = await db.fetch("SELECT fund_id, date FROM latest_portfolio_fund_irr_values WHERE fund_id = ANY($1::int[])", all_fund_ids)
+                        if irr_dates_result:
+                            fund_to_irr_date = {dict(item).get("fund_id"): dict(item).get("date") for item in irr_dates_result if dict(item).get("date")}
+                                        
                             for portfolio_id, fund_ids in portfolio_to_funds.items():
                                 portfolio_irr_dates = [fund_to_irr_date.get(fund_id) for fund_id in fund_ids if fund_to_irr_date.get(fund_id)]
                                 if portfolio_irr_dates:
@@ -104,9 +128,10 @@ async def get_client_products_with_owners(
         
         try:
             # Get all product_owner_products associations
-            pop_result = db.table("product_owner_products").select("*").in_("product_id", product_ids).execute()
-            if pop_result.data:
-                for assoc in pop_result.data:
+            pop_result = await db.fetch("SELECT * FROM product_owner_products WHERE product_id = ANY($1::int[])", product_ids)
+            if pop_result:
+                for assoc_record in pop_result:
+                    assoc = dict(assoc_record)
                     product_id = assoc.get("product_id")
                     if product_id not in product_owner_associations:
                         product_owner_associations[product_id] = []
@@ -118,9 +143,9 @@ async def get_client_products_with_owners(
                 product_owner_ids.extend(owners)
             
             if product_owner_ids:
-                owners_result = db.table("product_owners").select("id, firstname, surname, known_as, status, created_at").in_("id", list(set(product_owner_ids))).execute()
-                if owners_result.data:
-                    product_owners_map = {owner.get("id"): owner for owner in owners_result.data}
+                owners_result = await db.fetch("SELECT id, firstname, surname, known_as, status, created_at FROM product_owners WHERE id = ANY($1::int[])", list(set(product_owner_ids)))
+                if owners_result:
+                    product_owners_map = {dict(owner).get("id"): dict(owner) for owner in owners_result}
                     
         except Exception as e:
             logger.error(f"Error fetching product owners: {str(e)}")
@@ -238,28 +263,109 @@ async def get_products_display(
     Expected output: A JSON array of product objects with only essential display data
     """
     try:
-        # Build the base query using the new optimized view
-        query = db.table("products_display_view").select("*")
+        # TEMP DEBUG: Test basic client_products table first
+        basic_result = await db.fetchrow("SELECT id, product_name, status, client_id FROM client_products LIMIT 1")
+        if basic_result:
+            logger.info(f"DEBUG - Basic client_products result: {dict(basic_result)}")
+        else:
+            logger.warning("DEBUG - No results from client_products table!")
+        
+        # Use direct query with proper value and IRR calculations (bypassing problematic view)
+        base_query = """
+        SELECT 
+            cp.id as product_id,
+            cp.product_name,
+            cp.status,
+            cp.client_id,
+            cg.name as client_name,
+            cp.provider_id,
+            ap.name as provider_name,
+            ap.theme_color as provider_theme_color,
+            cp.portfolio_id,
+            
+            -- Portfolio value calculation (same logic as view but more explicit)
+            COALESCE(pv_agg.total_portfolio_value, 0) as total_value,
+            
+            -- IRR information from latest portfolio IRR values
+            lpiv.irr_result as irr,
+            lpiv.date as irr_date,
+            
+            -- Portfolio type display
+            CASE 
+                WHEN cp.portfolio_id IS NOT NULL THEN 'Portfolio'
+                ELSE 'No Portfolio'
+            END as portfolio_type_display
+            
+        FROM client_products cp
+        LEFT JOIN client_groups cg ON cg.id = cp.client_id
+        LEFT JOIN available_providers ap ON ap.id = cp.provider_id
+        
+        -- Portfolio value aggregation (same as in the view)
+        LEFT JOIN (
+            SELECT 
+                pf.portfolio_id,
+                SUM(COALESCE(lfv.valuation, 0)) as total_portfolio_value
+            FROM portfolio_funds pf
+            LEFT JOIN latest_portfolio_fund_valuations lfv ON lfv.portfolio_fund_id = pf.id
+            WHERE pf.status = 'active'
+            GROUP BY pf.portfolio_id
+        ) pv_agg ON pv_agg.portfolio_id = cp.portfolio_id
+        
+        -- IRR data from latest portfolio IRR values
+        LEFT JOIN latest_portfolio_irr_values lpiv ON lpiv.portfolio_id = cp.portfolio_id
+        """
+        conditions = []
+        params = []
+        param_count = 0
         
         # Apply filters if provided
         if client_id is not None:
-            query = query.eq("client_id", client_id)
+            param_count += 1
+            conditions.append(f"client_id = ${param_count}")
+            params.append(client_id)
             
         if provider_id is not None:
-            query = query.eq("provider_id", provider_id)
+            param_count += 1
+            conditions.append(f"provider_id = ${param_count}")
+            params.append(provider_id)
             
         if status is not None:
-            query = query.eq("status", status)
+            param_count += 1
+            conditions.append(f"status = ${param_count}")
+            params.append(status)
             
         if portfolio_type is not None:
-            query = query.eq("portfolio_type_display", portfolio_type)
+            param_count += 1
+            conditions.append(f"portfolio_type_display = ${param_count}")
+            params.append(portfolio_type)
+        
+        # Add WHERE clause if conditions exist
+        if conditions:
+            base_query += " WHERE " + " AND ".join(conditions)
+        
+        # Add pagination
+        param_count += 1
+        base_query += f" OFFSET ${param_count}"
+        params.append(skip)
+        
+        param_count += 1
+        base_query += f" LIMIT ${param_count}"
+        params.append(limit)
         
         # Get the products with pagination
-        result = query.range(skip, skip + limit - 1).execute()
-        products = result.data
+        result = await db.fetch(base_query, *params)
+        products = [dict(record) for record in result]
         
         if not products:
             return []
+        
+        # DEBUG: Log first product to see what data we're getting from the view
+        if products:
+            first_product = dict(products[0])
+            logger.info(f"DEBUG - Raw product keys: {list(first_product.keys())}")
+            logger.info(f"DEBUG - Product ID value: {first_product.get('product_id')}")
+            logger.info(f"DEBUG - Total value: {first_product.get('total_value')}")
+            logger.info(f"DEBUG - IRR value: {first_product.get('irr')}")
         
         # Extract product IDs for product owners
         product_ids = [p.get("product_id") for p in products]
@@ -270,9 +376,10 @@ async def get_products_display(
         
         try:
             # Get all product_owner_products associations
-            pop_result = db.table("product_owner_products").select("*").in_("product_id", product_ids).execute()
-            if pop_result.data:
-                for assoc in pop_result.data:
+            pop_result = await db.fetch("SELECT * FROM product_owner_products WHERE product_id = ANY($1::int[])", product_ids)
+            if pop_result:
+                for assoc_record in pop_result:
+                    assoc = dict(assoc_record)
                     product_id = assoc.get("product_id")
                     if product_id not in product_owner_associations:
                         product_owner_associations[product_id] = []
@@ -284,9 +391,9 @@ async def get_products_display(
                 product_owner_ids.extend(owners)
             
             if product_owner_ids:
-                owners_result = db.table("product_owners").select("id, firstname, surname, known_as, status").in_("id", list(set(product_owner_ids))).execute()
-                if owners_result.data:
-                    product_owners_map = {owner.get("id"): owner for owner in owners_result.data}
+                owners_result = await db.fetch("SELECT id, firstname, surname, known_as, status FROM product_owners WHERE id = ANY($1::int[])", list(set(product_owner_ids)))
+                if owners_result:
+                    product_owners_map = {owner.get("id"): dict(owner) for owner in owners_result}
                     
         except Exception as e:
             logger.error(f"Error fetching product owners: {str(e)}")
@@ -297,7 +404,26 @@ async def get_products_display(
         for product in products:
             product_id = product.get("product_id")
             
-            # Create minimal response structure for Products page
+            # Create minimal response structure for Products page with proper type conversion
+            raw_irr = product.get("irr")
+            raw_total_value = product.get("total_value")
+            
+            # Convert IRR to number (frontend expects number type)
+            irr_value = None
+            if raw_irr is not None:
+                try:
+                    irr_value = float(raw_irr)
+                except (ValueError, TypeError):
+                    irr_value = None
+            
+            # Convert total_value to number
+            total_value = 0.0
+            if raw_total_value is not None:
+                try:
+                    total_value = float(raw_total_value)
+                except (ValueError, TypeError):
+                    total_value = 0.0
+            
             enhanced_product = {
                 "id": product_id,
                 "product_name": product.get("product_name"),
@@ -309,8 +435,8 @@ async def get_products_display(
                 "provider_theme_color": product.get("provider_theme_color"),
                 "theme_color": product.get("provider_theme_color"),  # Add for StandardTable compatibility
                 "portfolio_id": product.get("portfolio_id"),
-                "total_value": product.get("total_value", 0),
-                "irr": product.get("irr", "-"),
+                "total_value": total_value,
+                "irr": irr_value,
                 "irr_date": product.get("irr_date"),
                 "portfolio_type_display": product.get("portfolio_type_display")
             }
@@ -362,17 +488,34 @@ async def get_portfolio_types(db = Depends(get_db)):
     Expected output: A JSON array of distinct portfolio type strings
     """
     try:
-        result = db.table("products_list_view").select("portfolio_type_display").execute()
-        
-        if not result.data:
-            return []
-        
-        # Get distinct portfolio types and filter out nulls
-        portfolio_types = list(set(
-            item.get("portfolio_type_display") 
-            for item in result.data 
-            if item.get("portfolio_type_display")
-        ))
+        # Try to get portfolio types from the view first
+        try:
+            result = await db.fetch("SELECT DISTINCT portfolio_type_display FROM products_list_view WHERE portfolio_type_display IS NOT NULL")
+            if result:
+                portfolio_types = list(set(
+                    record.get("portfolio_type_display") 
+                    for record in result 
+                    if record.get("portfolio_type_display")
+                ))
+            else:
+                portfolio_types = []
+        except Exception as e:
+            logger.warning(f"Could not query products_list_view for portfolio types: {e}")
+            # Fallback: compute portfolio types from portfolios table
+            result = await db.fetch("""
+                SELECT DISTINCT 
+                    CASE 
+                        WHEN template_generation_id IS NOT NULL THEN 'Template'
+                        ELSE 'Bespoke'
+                    END as portfolio_type
+                FROM portfolios 
+                WHERE id IN (SELECT DISTINCT portfolio_id FROM client_products WHERE portfolio_id IS NOT NULL)
+            """)
+            portfolio_types = list(set(
+                record.get("portfolio_type") 
+                for record in result 
+                if record.get("portfolio_type")
+            ))
         
         # Sort alphabetically with "Bespoke" first
         portfolio_types.sort()
@@ -408,80 +551,133 @@ async def get_client_products(
     Expected output: A JSON array of client product objects with all their details including provider theme colors and template info
     """
     try:
-        # Build the base query for client_products
-        query = db.table("client_products").select("*")
+        # Build comprehensive query with JOINs to get all data in one query
+        base_query = """
+        SELECT 
+            -- Client product fields
+            cp.id, cp.client_id, cp.provider_id, cp.portfolio_id, cp.product_name, 
+            cp.status, cp.start_date, cp.end_date, cp.plan_number, cp.product_type,
+            cp.notes, cp.fixed_cost, cp.percentage_fee, cp.created_at,
+            
+            -- Joined data
+            cg.name as client_name,
+            ap.name as provider_name,
+            ap.theme_color as provider_theme_color,
+            
+            -- Portfolio IRR data
+            lpiv.irr_result as irr,
+            lpiv.date as irr_date,
+            
+            -- Portfolio valuation data  
+            COALESCE(lpv.valuation, 0) as total_value,
+            
+            -- Template info
+            tpg.generation_name as template_info_name
+            
+        FROM client_products cp
+        LEFT JOIN client_groups cg ON cg.id = cp.client_id
+        LEFT JOIN available_providers ap ON ap.id = cp.provider_id
+        LEFT JOIN portfolios p ON p.id = cp.portfolio_id
+        LEFT JOIN latest_portfolio_irr_values lpiv ON lpiv.portfolio_id = cp.portfolio_id
+        LEFT JOIN latest_portfolio_valuations lpv ON lpv.portfolio_id = cp.portfolio_id
+        LEFT JOIN template_portfolio_generations tpg ON tpg.id = p.template_generation_id
+        """
         
-        # Apply filters if provided
+        params = []
+        where_conditions = []
+        param_count = 1
+        
         if client_id is not None:
-            query = query.eq("client_id", client_id)
+            where_conditions.append(f"cp.client_id = ${param_count}")
+            params.append(client_id)
+            param_count += 1
             
         if provider_id is not None:
-            query = query.eq("provider_id", provider_id)
+            where_conditions.append(f"cp.provider_id = ${param_count}")
+            params.append(provider_id)
+            param_count += 1
             
         if status is not None:
-            query = query.eq("status", status)
+            where_conditions.append(f"cp.status = ${param_count}")
+            params.append(status)
+            param_count += 1
             
-        # Extract values from Query objects
-        skip_val = skip
-        limit_val = limit
-        if hasattr(skip, 'default'):
-            skip_val = skip.default
-        if hasattr(limit, 'default'):
-            limit_val = limit.default
-            
-        # Get the client products with pagination
-        result = query.range(skip_val, skip_val + limit_val - 1).execute()
-        client_products = result.data
+        # Add WHERE clause if needed
+        if where_conditions:
+            base_query += " WHERE " + " AND ".join(where_conditions)
         
-        # Fetch all needed providers and clients in bulk
-        provider_ids = [p.get("provider_id") for p in client_products if p.get("provider_id") is not None]
-        client_ids = [p.get("client_id") for p in client_products if p.get("client_id") is not None]
-        portfolio_ids = [p.get("portfolio_id") for p in client_products if p.get("portfolio_id") is not None]
-        product_ids = [p.get("id") for p in client_products]
+        # Add ORDER BY, OFFSET, and LIMIT
+        base_query += f" ORDER BY cp.created_at DESC OFFSET ${param_count} LIMIT ${param_count + 1}"
+        params.extend([skip, limit])
+        
+        # Execute the query - all data comes from JOINs now
+        result = await db.fetch(base_query, *params)
+        client_products = [dict(record) for record in result]
+        
+        logger.info(f"Retrieved {len(client_products)} client products with IRR data via direct JOIN query")
+        
+        # Convert IRR result to proper format and handle NULLs
+        for product in client_products:
+            # Convert IRR to float if present
+            if product.get("irr") is not None:
+                try:
+                    product["irr"] = float(product["irr"])
+                except (ValueError, TypeError):
+                    product["irr"] = None
+            
+            # Convert total_value to float
+            if product.get("total_value") is not None:
+                try:
+                    product["total_value"] = float(product["total_value"])
+                except (ValueError, TypeError):
+                    product["total_value"] = 0.0
+        
+        return client_products
         
         # Only fetch providers if we have provider IDs
         providers_map = {}
         if provider_ids:
-            providers_result = db.table("available_providers").select("*").in_("id", provider_ids).execute()
+            providers_result = await db.fetch("SELECT * FROM available_providers WHERE id = ANY($1::int[])", provider_ids)
             # Create a lookup map of provider data by ID
-            providers_map = {p.get("id"): p for p in providers_result.data}
+            providers_map = {p.get("id"): dict(p) for p in providers_result}
             
         # Only fetch clients if we have client IDs
         clients_map = {}
         if client_ids:
-            clients_result = db.table("client_groups").select("*").in_("id", client_ids).execute()
+            clients_result = await db.fetch("SELECT * FROM client_groups WHERE id = ANY($1::int[])", client_ids)
             # Create a lookup map of client data by ID
-            clients_map = {c.get("id"): c for c in clients_result.data}
+            clients_map = {c.get("id"): dict(c) for c in clients_result}
         
-        # Fetch portfolio information to get template info
+                # Fetch portfolio information to get template info
         portfolios_map = {}
         template_generation_ids = set()
         if portfolio_ids:
-            portfolios_result = db.table("portfolios").select("*").in_("id", portfolio_ids).execute()
-            if portfolios_result.data:
-                portfolios_map = {p.get("id"): p for p in portfolios_result.data}
+            portfolios_result = await db.fetch("SELECT * FROM portfolios WHERE id = ANY($1::int[])", portfolio_ids)
+            if portfolios_result:
+                portfolios_map = {p.get("id"): dict(p) for p in portfolios_result}
                 # Collect all template generation IDs to fetch in bulk
-                template_generation_ids = {p.get("template_generation_id") for p in portfolios_result.data 
-                              if p.get("template_generation_id") is not None}
+                template_generation_ids = {p.get("template_generation_id") for p in portfolios_result 
+                          if p.get("template_generation_id") is not None}
         
         # Fetch all needed template generations in bulk
         template_generations_map = {}
         if template_generation_ids:
-            template_generations_result = db.table("template_portfolio_generations").select("*").in_("id", list(template_generation_ids)).execute()
-            if template_generations_result.data:
-                template_generations_map = {t.get("id"): t for t in template_generations_result.data}
+            template_generations_result = await db.fetch("SELECT * FROM template_portfolio_generations WHERE id = ANY($1::int[])", list(template_generation_ids))
+            if template_generations_result:
+                template_generations_map = {t.get("id"): dict(t) for t in template_generations_result}
         
         # Get IRR dates for all products in bulk
         irr_dates_map = {}
         try:
             if portfolio_ids:
                 # Get all portfolio funds for all portfolios
-                all_portfolio_funds_result = db.table("portfolio_funds").select("id,portfolio_id").in_("portfolio_id", portfolio_ids).execute()
+                all_portfolio_funds_result = await db.fetch("SELECT id, portfolio_id FROM portfolio_funds WHERE portfolio_id = ANY($1::int[])", portfolio_ids)
                 
-                if all_portfolio_funds_result.data:
+                if all_portfolio_funds_result:
                     portfolio_to_funds = {}
                     all_fund_ids = []
-                    for pf in all_portfolio_funds_result.data:
+                    for pf_record in all_portfolio_funds_result:
+                        pf = dict(pf_record)
                         portfolio_id = pf.get("portfolio_id")
                         fund_id = pf.get("id")
                         if portfolio_id not in portfolio_to_funds:
@@ -490,11 +686,11 @@ async def get_client_products(
                         all_fund_ids.append(fund_id)
                     
                     # Get latest IRR dates for funds that have them for efficient date filtering
-                    irr_dates_result = db.table("latest_portfolio_fund_irr_values").select("fund_id,irr_date").in_("fund_id", all_fund_ids).execute()
-                    if irr_dates_result.data:
-                        # Create a map of fund_id to irr_date
-                        fund_to_irr_date = {item.get("fund_id"): item.get("irr_date") for item in irr_dates_result.data if item.get("irr_date")}
-                            
+                        irr_dates_result = await db.fetch("SELECT fund_id, date FROM latest_portfolio_fund_irr_values WHERE fund_id = ANY($1::int[])", all_fund_ids)
+                        if irr_dates_result:
+                            # Create a map of fund_id to irr_date  
+                            fund_to_irr_date = {dict(item).get("fund_id"): dict(item).get("date") for item in irr_dates_result if dict(item).get("date")}
+                                        
                         # For each portfolio, find the most recent IRR date
                         for portfolio_id, fund_ids in portfolio_to_funds.items():
                             portfolio_irr_dates = [fund_to_irr_date.get(fund_id) for fund_id in fund_ids if fund_to_irr_date.get(fund_id)]
@@ -508,20 +704,34 @@ async def get_client_products(
         # Calculate FUM for each portfolio using latest_portfolio_fund_valuations view
         portfolio_fum_map = {}
         portfolio_irr_map = {}  # Add this to track portfolio IRRs
+        
+        # Process IRR data first (separate try-catch for debugging)
         try:
             if portfolio_ids:
+                logger.info(f"🔍 Processing IRR data for portfolio IDs: {portfolio_ids}")
                 # Get latest portfolio IRR for all portfolios
-                portfolio_irr_result = db.table("latest_portfolio_irr_values").select("portfolio_id,irr_result").in_("portfolio_id", portfolio_ids).execute()
+                portfolio_irr_result = await db.fetch("SELECT portfolio_id, irr_result FROM latest_portfolio_irr_values WHERE portfolio_id = ANY($1::int[])", portfolio_ids)
                 
-                portfolio_irr_map = {item.get("portfolio_id"): item.get("irr_result") for item in portfolio_irr_result.data}
+                portfolio_irr_map = {dict(item).get("portfolio_id"): dict(item).get("irr_result") for item in portfolio_irr_result}
+                logger.info(f"✅ IRR SUCCESS: Retrieved IRR data for {len(portfolio_irr_map)} portfolios: {portfolio_irr_map}")
+            else:
+                logger.warning("❌ No portfolio_ids found - skipping IRR data fetch")
+        except Exception as irr_error:
+            logger.error(f"❌ IRR ERROR: Failed to fetch IRR data: {str(irr_error)}")
+            portfolio_irr_map = {}
+        
+        # Process FUM data (separate try-catch)
+        try:
                 
-                # Get all portfolio funds for all portfolios (active + inactive for historical accuracy)
-                all_portfolio_funds_result = db.table("portfolio_funds").select("id,portfolio_id").in_("portfolio_id", portfolio_ids).execute()
+            # Get all portfolio funds for all portfolios (active + inactive for historical accuracy)
+            if portfolio_ids:
+                all_portfolio_funds_result = await db.fetch("SELECT id, portfolio_id FROM portfolio_funds WHERE portfolio_id = ANY($1::int[])", portfolio_ids)
                 
-                if all_portfolio_funds_result.data:
+                if all_portfolio_funds_result:
                     portfolio_to_funds = {}
                     all_fund_ids = []
-                    for pf in all_portfolio_funds_result.data:
+                    for pf_record in all_portfolio_funds_result:
+                        pf = dict(pf_record)
                         portfolio_id = pf.get("portfolio_id")
                         fund_id = pf.get("id")
                         if portfolio_id not in portfolio_to_funds:
@@ -531,10 +741,10 @@ async def get_client_products(
                     
                     # Get latest valuations for all funds
                     if all_fund_ids:
-                        valuations_result = db.table("latest_portfolio_fund_valuations").select("portfolio_fund_id,valuation").in_("portfolio_fund_id", all_fund_ids).execute()
-                        if valuations_result.data:
+                        valuations_result = await db.fetch("SELECT portfolio_fund_id, valuation FROM latest_portfolio_fund_valuations WHERE portfolio_fund_id = ANY($1::int[])", all_fund_ids)
+                        if valuations_result:
                             # Create fund_id to value map
-                            fund_to_value = {item.get("portfolio_fund_id"): float(item.get("valuation", 0)) for item in valuations_result.data}
+                            fund_to_value = {dict(item).get("portfolio_fund_id"): float(dict(item).get("valuation", 0)) for item in valuations_result}
                             
                             # Calculate FUM for each portfolio
                             for portfolio_id, fund_ids in portfolio_to_funds.items():
@@ -547,10 +757,11 @@ async def get_client_products(
         # 1. Get all product_owner_products associations in one query
         product_owner_associations = {}
         try:
-            pop_result = db.table("product_owner_products").select("*").in_("product_id", product_ids).execute()
-            if pop_result.data:
+            pop_result = await db.fetch("SELECT * FROM product_owner_products WHERE product_id = ANY($1::int[])", product_ids)
+            if pop_result:
                 # Group by product_id for efficient lookup
-                for assoc in pop_result.data:
+                for assoc_record in pop_result:
+                    assoc = dict(assoc_record)
                     product_id = assoc.get("product_id")
                     if product_id not in product_owner_associations:
                         product_owner_associations[product_id] = []
@@ -566,9 +777,9 @@ async def get_client_products(
         product_owners_map = {}
         if product_owner_ids:
             try:
-                owners_result = db.table("product_owners").select("id, firstname, surname, known_as, status, created_at").in_("id", list(set(product_owner_ids))).execute()
-                if owners_result.data:
-                    product_owners_map = {owner.get("id"): owner for owner in owners_result.data}
+                owners_result = await db.fetch("SELECT id, firstname, surname, known_as, status, created_at FROM product_owners WHERE id = ANY($1::int[])", list(set(product_owner_ids)))
+                if owners_result:
+                    product_owners_map = {dict(owner).get("id"): dict(owner) for owner in owners_result}
             except Exception as e:
                 logger.error(f"Error fetching product owners: {str(e)}")
         
@@ -614,22 +825,33 @@ async def get_client_products(
                     product["template_info"] = template
             
             # Add total_value and irr from calculated FUM and latest portfolio IRR
-            if portfolio_id and portfolio_id in portfolio_fum_map:
-                product["total_value"] = portfolio_fum_map[portfolio_id]
-            else:
-                product["total_value"] = 0
+            try:
+                if portfolio_id and portfolio_id in portfolio_fum_map:
+                    product["total_value"] = portfolio_fum_map[portfolio_id]
+                else:
+                    product["total_value"] = 0
+                
+                # TEMP TEST: Add hardcoded IRR to verify enhancement section runs
+                product["irr"] = 999.99  # This should appear if enhancement runs
+                product["test_portfolio_id"] = portfolio_id
+                product["test_portfolio_irr_map_keys"] = str(list(portfolio_irr_map.keys()))
+                
+            except Exception as test_error:
+                logger.error(f"❌ EXCEPTION in IRR test section: {str(test_error)}")
+                product["irr"] = "ERROR"
             
             # Use latest portfolio IRR if available
             if portfolio_id and portfolio_id in portfolio_irr_map:
-                product["irr"] = portfolio_irr_map[portfolio_id]
+                irr_value = portfolio_irr_map[portfolio_id]
+                product["irr"] = float(irr_value) if irr_value is not None else None
             else:
-                product["irr"] = "-"  # Display as dash if no portfolio IRR available
+                product["irr"] = None
                 
-                # Add IRR date from the bulk-fetched data
-                if portfolio_id and portfolio_id in irr_dates_map:
-                    product["irr_date"] = irr_dates_map[portfolio_id]
-                else:
-                    product["irr_date"] = None
+            # Add IRR date from the bulk-fetched data (regardless of whether IRR was found)
+            if portfolio_id and portfolio_id in irr_dates_map:
+                product["irr_date"] = irr_dates_map[portfolio_id]
+            else:
+                product["irr_date"] = None
             
             # Add product owners - this is the key improvement
             product_owners = []
@@ -689,7 +911,7 @@ async def create_client_product(client_product: ClientproductCreate, db = Depend
     try:
         # Ensure start_date is today's date if not provided
         today = date.today()
-        start_date_iso = client_product.start_date.isoformat() if client_product.start_date else today.isoformat()
+        start_date = client_product.start_date if client_product.start_date else today
 
         # Log all request data for debugging
         logger.info(f"Creating client product with client_id={client_product.client_id}")
@@ -702,20 +924,20 @@ async def create_client_product(client_product: ClientproductCreate, db = Depend
             "client_id": client_product.client_id,
             "product_name": client_product.product_name,
             "status": client_product.status,
-            "start_date": start_date_iso,
+            "start_date": start_date,
             "plan_number": client_product.plan_number,
             "provider_id": client_product.provider_id,
             "product_type": client_product.product_type,
             "template_generation_id": client_product.template_generation_id,
-            "fixed_cost": client_product.fixed_cost,
-            "percentage_fee": client_product.percentage_fee
+            "fixed_cost": str(client_product.fixed_cost) if client_product.fixed_cost is not None else None,
+            "percentage_fee": str(client_product.percentage_fee) if client_product.percentage_fee is not None else None
         }
         
         # Add portfolio_id if it exists
         if client_product.portfolio_id:
             # Verify the portfolio exists
-            portfolio_check = db.table("portfolios").select("id").eq("id", client_product.portfolio_id).execute()
-            if not portfolio_check.data or len(portfolio_check.data) == 0:
+            portfolio_check = await db.fetchrow("SELECT id FROM portfolios WHERE id = $1", client_product.portfolio_id)
+            if not portfolio_check:
                 raise HTTPException(status_code=404, detail=f"Portfolio with ID {client_product.portfolio_id} not found")
                 
             # Add portfolio_id to the product data
@@ -723,12 +945,22 @@ async def create_client_product(client_product: ClientproductCreate, db = Depend
             logger.info(f"Using provided portfolio_id {client_product.portfolio_id}")
         
         # Create the client product
-        created_product = db.table("client_products").insert(product_data).execute()
+        columns = list(product_data.keys())
+        values = list(product_data.values())
+        placeholders = [f"${i+1}" for i in range(len(values))]
         
-        if not created_product.data or len(created_product.data) == 0:
+        insert_query = f"""
+            INSERT INTO client_products ({', '.join(columns)}) 
+            VALUES ({', '.join(placeholders)}) 
+            RETURNING *
+        """
+        
+        created_product = await db.fetchrow(insert_query, *values)
+        
+        if not created_product:
             raise HTTPException(status_code=500, detail="Failed to create client product")
             
-        created_product = created_product.data[0]
+        created_product = dict(created_product)
         logger.info(f"Successfully created client product with ID {created_product['id']}")
         
         # Check if we should skip portfolio creation (when frontend is handling it)
@@ -745,30 +977,33 @@ async def create_client_product(client_product: ClientproductCreate, db = Depend
         # Determine a default portfolio name
         portfolio_name = f"Portfolio for {created_product['product_name'] if created_product['product_name'] else 'product ' + str(created_product['id'])}"
         
-        portfolio = db.table("portfolios").insert({
-            "portfolio_name": portfolio_name,
-            "status": "active",
-            "start_date": start_date_iso,
-        }).execute()
+        portfolio = await db.fetchrow("""
+            INSERT INTO portfolios (portfolio_name, status, start_date) 
+            VALUES ($1, $2, $3) 
+            RETURNING *
+        """, portfolio_name, "active", start_date_iso)
         
-        if not portfolio.data or len(portfolio.data) == 0:
+        if not portfolio:
             raise HTTPException(status_code=500, detail="Failed to create portfolio for client product")
             
-        portfolio = portfolio.data[0]
+        portfolio = dict(portfolio)
         logger.info(f"Successfully created portfolio with ID {portfolio['id']} for product {created_product['id']}")
         
         # Update the client_product with the new portfolio_id
-        updated_product = db.table("client_products").update({
-            "portfolio_id": portfolio["id"]
-        }).eq("id", created_product["id"]).execute()
+        updated_product = await db.fetchrow("""
+            UPDATE client_products 
+            SET portfolio_id = $1 
+            WHERE id = $2 
+            RETURNING *
+        """, portfolio["id"], created_product["id"])
         
-        if not updated_product.data or len(updated_product.data) == 0:
+        if not updated_product:
             raise HTTPException(status_code=500, detail="Failed to update client product with portfolio ID")
             
         logger.info(f"Successfully updated product {created_product['id']} with portfolio_id {portfolio['id']}")
         
         # Return the updated product
-        return updated_product.data[0]
+        return dict(updated_product)
     except HTTPException:
         raise
     except Exception as e:
@@ -792,19 +1027,19 @@ async def get_client_product(client_product_id: int, db = Depends(get_db)):
     """
     try:
         # Query the client_product by ID
-        result = db.table("client_products").select("*").eq("id", client_product_id).execute()
+        result = await db.fetchrow("SELECT * FROM client_products WHERE id = $1", client_product_id)
             
-        if not result.data or len(result.data) == 0:
+        if not result:
             raise HTTPException(status_code=404, detail=f"Client product with ID {client_product_id} not found")
 
-        client_product = result.data[0]
+        client_product = dict(result)
         
         # Fetch provider data if available
         provider_id = client_product.get("provider_id")
         if provider_id:
-            provider_result = db.table("available_providers").select("*").eq("id", provider_id).execute()
-            if provider_result.data and len(provider_result.data) > 0:
-                provider = provider_result.data[0]
+            provider_result = await db.fetchrow("SELECT * FROM available_providers WHERE id = $1", provider_id)
+            if provider_result:
+                provider = dict(provider_result)
                 client_product["provider_name"] = provider.get("name")
                 client_product["provider_theme_color"] = provider.get("theme_color")
                 logger.info(f"Added provider data: {provider.get('name')} with theme color: {provider.get('theme_color')}")
@@ -812,9 +1047,9 @@ async def get_client_product(client_product_id: int, db = Depends(get_db)):
         # Fetch client data if available
         client_id = client_product.get("client_id")
         if client_id:
-            client_result = db.table("client_groups").select("*").eq("id", client_id).execute()
-            if client_result.data and len(client_result.data) > 0:
-                client = client_result.data[0]
+            client_result = await db.fetchrow("SELECT * FROM client_groups WHERE id = $1", client_id)
+            if client_result:
+                client = dict(client_result)
                 client_name = client.get("name")
                 # Handle NULL/empty names by providing a meaningful fallback
                 if not client_name or client_name.strip() == "":
@@ -826,15 +1061,15 @@ async def get_client_product(client_product_id: int, db = Depends(get_db)):
         # Fetch portfolio information if available
         portfolio_id = client_product.get("portfolio_id")
         if portfolio_id:
-            portfolio_result = db.table("portfolios").select("*").eq("id", portfolio_id).execute()
-            if portfolio_result.data and len(portfolio_result.data) > 0:
-                portfolio = portfolio_result.data[0]
+            portfolio_result = await db.fetchrow("SELECT * FROM portfolios WHERE id = $1", portfolio_id)
+            if portfolio_result:
+                portfolio = dict(portfolio_result)
                 
                 # Add template info if this portfolio is based on a template
                 if portfolio.get("template_generation_id"):
-                    template_result = db.table("template_portfolio_generations").select("*").eq("id", portfolio.get("template_generation_id")).execute()
-                    if template_result.data and len(template_result.data) > 0:
-                        template = template_result.data[0]
+                    template_result = await db.fetchrow("SELECT * FROM template_portfolio_generations WHERE id = $1", portfolio.get("template_generation_id"))
+                    if template_result:
+                        template = dict(template_result)
                         client_product["template_generation_id"] = portfolio.get("template_generation_id")
                         client_product["template_info"] = template
             
@@ -846,21 +1081,22 @@ async def get_client_product(client_product_id: int, db = Depends(get_db)):
         if portfolio_id:
             try:
                 # Get latest portfolio IRR
-                portfolio_irr_result = db.table("latest_portfolio_irr_values").select("irr_result").eq("portfolio_id", portfolio_id).execute()
-                if portfolio_irr_result.data:
-                    portfolio_irr = portfolio_irr_result.data[0].get("irr_result")
+                portfolio_irr_result = await db.fetchrow("SELECT irr_result FROM latest_portfolio_irr_values WHERE portfolio_id = $1", portfolio_id)
+                if portfolio_irr_result:
+                    portfolio_irr = dict(portfolio_irr_result).get("irr_result")
                 
                 # Get all portfolio funds for this portfolio (active + inactive for historical accuracy)
-                funds_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
+                funds_result = await db.fetch("SELECT id FROM portfolio_funds WHERE portfolio_id = $1", portfolio_id)
                 
-                if funds_result.data:
-                    portfolio_fund_ids = [fund.get("id") for fund in funds_result.data]
+                if funds_result:
+                    portfolio_fund_ids = [dict(fund).get("id") for fund in funds_result]
                     
                     # Use the latest_portfolio_fund_valuations view to get current values
-                    valuations_result = db.table("latest_portfolio_fund_valuations").select("valuation").in_("portfolio_fund_id", portfolio_fund_ids).execute()
+                    valuations_result = await db.fetch("SELECT valuation FROM latest_portfolio_fund_valuations WHERE portfolio_fund_id = ANY($1::int[])", portfolio_fund_ids)
                     
-                    if valuations_result.data:
-                        for valuation in valuations_result.data:
+                    if valuations_result:
+                        for valuation_record in valuations_result:
+                            valuation = dict(valuation_record)
                             value = valuation.get("valuation", 0)
                             if value:
                                 total_value += float(value)
@@ -913,28 +1149,42 @@ async def update_client_product(client_product_id: int, client_product_update: C
     
     try:
         # Check if client product exists
-        check_result = db.table("client_products").select("id").eq("id", client_product_id).execute()
-        if not check_result.data or len(check_result.data) == 0:
+        check_result = await db.fetchrow("SELECT id FROM client_products WHERE id = $1", client_product_id)
+        if not check_result:
             raise HTTPException(status_code=404, detail=f"Client product with ID {client_product_id} not found")
         
         # Validate client_id if provided
         if "client_id" in update_data and update_data["client_id"] is not None:
-            client_check = db.table("client_groups").select("id").eq("id", update_data["client_id"]).execute()
-            if not client_check.data or len(client_check.data) == 0:
+            client_check = await db.fetchrow("SELECT id FROM client_groups WHERE id = $1", update_data["client_id"])
+            if not client_check:
                 raise HTTPException(status_code=404, detail=f"Client with ID {update_data['client_id']} not found")
         
-        # Convert date objects to ISO format strings
-        if 'start_date' in update_data and update_data['start_date'] is not None:
-            update_data['start_date'] = update_data['start_date'].isoformat()
-        
-        if 'end_date' in update_data and update_data['end_date'] is not None:
-            update_data['end_date'] = update_data['end_date'].isoformat()
-        
+       
         # Update the client product
-        result = db.table("client_products").update(update_data).eq("id", client_product_id).execute()
+        # Build dynamic UPDATE query
+        set_clauses = []
+        values = []
+        param_counter = 1
         
-        if result.data and len(result.data) > 0:
-            return result.data[0]
+        for key, value in update_data.items():
+            set_clauses.append(f"{key} = ${param_counter}")
+            values.append(value)
+            param_counter += 1
+        
+        # Add client_product_id as the last parameter
+        values.append(client_product_id)
+        
+        update_query = f"""
+            UPDATE client_products 
+            SET {', '.join(set_clauses)} 
+            WHERE id = ${param_counter}
+            RETURNING *
+        """
+        
+        result = await db.fetchrow(update_query, *values)
+        
+        if result:
+            return dict(result)
         
         raise HTTPException(status_code=400, detail="Failed to update client product")
     except HTTPException:
@@ -965,11 +1215,11 @@ async def delete_client_product(client_product_id: int, db = Depends(get_db)):
     """
     try:
         # Check if client product exists
-        check_result = db.table("client_products").select("*").eq("id", client_product_id).execute()
-        if not check_result.data or len(check_result.data) == 0:
+        check_result = await db.fetchrow("SELECT * FROM client_products WHERE id = $1", client_product_id)
+        if not check_result:
             raise HTTPException(status_code=404, detail=f"Client product with ID {client_product_id} not found")
         
-        client_product = check_result.data[0]
+        client_product = dict(check_result)
         portfolio_id = client_product.get("portfolio_id")
         
         logger.info(f"Deleting client product with ID {client_product_id} and all associated records")
@@ -987,68 +1237,69 @@ async def delete_client_product(client_product_id: int, db = Depends(get_db)):
             logger.info(f"Processing portfolio with ID {portfolio_id}")
             
             # Get all portfolio funds for this portfolio
-            portfolio_funds = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
+            portfolio_funds_result = await db.fetch("SELECT id FROM portfolio_funds WHERE portfolio_id = $1", portfolio_id)
             
-            if portfolio_funds.data and len(portfolio_funds.data) > 0:
-                portfolio_funds_count = len(portfolio_funds.data)
+            if portfolio_funds_result:
+                portfolio_funds_data = [dict(fund) for fund in portfolio_funds_result]
+                portfolio_funds_count = len(portfolio_funds_data)
                 portfolio_funds_deleted = portfolio_funds_count
                 
                 # Process each portfolio fund
-                for fund in portfolio_funds.data:
+                for fund in portfolio_funds_data:
                     fund_id = fund["id"]
                     
                     # First, delete IRR values for this fund (IMPORTANT: do this BEFORE deleting fund_valuations)
-                    irr_result = db.table("portfolio_fund_irr_values").delete().eq("fund_id", fund_id).execute()
-                    deleted_count = len(irr_result.data) if irr_result.data else 0
+                    irr_result = await db.execute("DELETE FROM portfolio_fund_irr_values WHERE fund_id = $1", fund_id)
+                    deleted_count = int(irr_result.split()[-1]) if isinstance(irr_result, str) and 'DELETE' in irr_result else 0
                     irr_values_deleted += deleted_count
                     logger.info(f"Deleted {deleted_count} IRR values for portfolio fund {fund_id}")
                     
                     # Also delete IRR values for any fund valuations related to this fund
                     # Get all fund valuation IDs for this fund
-                    fund_valuation_ids_result = db.table("portfolio_fund_valuations").select("id").eq("portfolio_fund_id", fund_id).execute()
-                    if fund_valuation_ids_result.data and len(fund_valuation_ids_result.data) > 0:
-                        valuation_ids = [v["id"] for v in fund_valuation_ids_result.data]
+                    fund_valuation_ids_result = await db.fetch("SELECT id FROM portfolio_fund_valuations WHERE portfolio_fund_id = $1", fund_id)
+                    if fund_valuation_ids_result:
+                        valuation_ids = [dict(v)["id"] for v in fund_valuation_ids_result]
                         # Delete IRR values referencing these fund valuation IDs
                         for val_id in valuation_ids:
-                            val_irr_result = db.table("portfolio_fund_irr_values").delete().eq("fund_valuation_id", val_id).execute()
-                            deleted_count = len(val_irr_result.data) if val_irr_result.data else 0
+                            val_irr_result = await db.execute("DELETE FROM portfolio_fund_irr_values WHERE fund_valuation_id = $1", val_id)
+                            deleted_count = int(val_irr_result.split()[-1]) if isinstance(val_irr_result, str) and 'DELETE' in val_irr_result else 0
                             irr_values_deleted += deleted_count
                             logger.info(f"Deleted {deleted_count} IRR values for fund valuation {val_id}")
                     
                     # Now it's safe to delete fund valuations for this fund
-                    fund_val_result = db.table("portfolio_fund_valuations").delete().eq("portfolio_fund_id", fund_id).execute()
-                    deleted_count = len(fund_val_result.data) if fund_val_result.data else 0
+                    fund_val_result = await db.execute("DELETE FROM portfolio_fund_valuations WHERE portfolio_fund_id = $1", fund_id)
+                    deleted_count = int(fund_val_result.split()[-1]) if isinstance(fund_val_result, str) and 'DELETE' in fund_val_result else 0
                     fund_valuations_deleted += deleted_count
                     logger.info(f"Deleted {deleted_count} fund valuations for portfolio fund {fund_id}")
                     
                     # Delete activity logs for this fund
-                    activity_result = db.table("holding_activity_log").delete().eq("portfolio_fund_id", fund_id).execute()
-                    deleted_count = len(activity_result.data) if activity_result.data else 0
+                    activity_result = await db.execute("DELETE FROM holding_activity_log WHERE portfolio_fund_id = $1", fund_id)
+                    deleted_count = int(activity_result.split()[-1]) if isinstance(activity_result, str) and 'DELETE' in activity_result else 0
                     activity_logs_deleted += deleted_count
                     logger.info(f"Deleted {deleted_count} activity logs for portfolio fund {fund_id}")
                 
                 # Delete all portfolio funds for this portfolio
-                db.table("portfolio_funds").delete().eq("portfolio_id", portfolio_id).execute()
+                await db.execute("DELETE FROM portfolio_funds WHERE portfolio_id = $1", portfolio_id)
                 logger.info(f"Deleted {portfolio_funds_count} portfolio funds for portfolio {portfolio_id}")
         
         # Delete the client product
-        result = db.table("client_products").delete().eq("id", client_product_id).execute()
+        await db.execute("DELETE FROM client_products WHERE id = $1", client_product_id)
         logger.info(f"Deleted client product {client_product_id}")
         
         # Now clean up portfolio-level records before deleting the portfolio
         if portfolio_id:
             # Delete portfolio IRR values
-            portfolio_irr_result = db.table("portfolio_irr_values").delete().eq("portfolio_id", portfolio_id).execute()
-            portfolio_irr_deleted = len(portfolio_irr_result.data) if portfolio_irr_result.data else 0
+            portfolio_irr_result = await db.execute("DELETE FROM portfolio_irr_values WHERE portfolio_id = $1", portfolio_id)
+            portfolio_irr_deleted = int(portfolio_irr_result.split()[-1]) if isinstance(portfolio_irr_result, str) and 'DELETE' in portfolio_irr_result else 0
             logger.info(f"Deleted {portfolio_irr_deleted} portfolio IRR values for portfolio {portfolio_id}")
             
             # Delete portfolio valuations (this was the missing step causing the foreign key error)
-            portfolio_val_result = db.table("portfolio_valuations").delete().eq("portfolio_id", portfolio_id).execute()
-            portfolio_val_deleted = len(portfolio_val_result.data) if portfolio_val_result.data else 0
+            portfolio_val_result = await db.execute("DELETE FROM portfolio_valuations WHERE portfolio_id = $1", portfolio_id)
+            portfolio_val_deleted = int(portfolio_val_result.split()[-1]) if isinstance(portfolio_val_result, str) and 'DELETE' in portfolio_val_result else 0
             logger.info(f"Deleted {portfolio_val_deleted} portfolio valuations for portfolio {portfolio_id}")
             
             # Now it's safe to delete the portfolio
-            db.table("portfolios").delete().eq("id", portfolio_id).execute()
+            await db.execute("DELETE FROM portfolios WHERE id = $1", portfolio_id)
             logger.info(f"Deleted portfolio {portfolio_id}")
         
         return {
@@ -1083,35 +1334,36 @@ async def get_product_fum(product_id: int, db = Depends(get_db)):
     """
     try:
         # Get the product to find its portfolio ID
-        product_result = db.table("client_products").select("portfolio_id").eq("id", product_id).execute()
+        product_result = await db.fetchrow("SELECT portfolio_id FROM client_products WHERE id = $1", product_id)
         
-        if not product_result.data or len(product_result.data) == 0:
+        if not product_result:
             raise HTTPException(status_code=404, detail=f"Product with ID {product_id} not found")
             
-        portfolio_id = product_result.data[0].get("portfolio_id")
+        portfolio_id = product_result.get("portfolio_id")
         if not portfolio_id:
             logger.info(f"Product {product_id} has no associated portfolio")
             return {"product_id": product_id, "fum": 0}
             
         # Get all portfolio funds for this portfolio (active + inactive for historical accuracy)
-        funds_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
+        funds_result = await db.fetch("SELECT id FROM portfolio_funds WHERE portfolio_id = $1", portfolio_id)
         
-        if not funds_result.data or len(funds_result.data) == 0:
+        if not funds_result:
             logger.info(f"No funds found for portfolio {portfolio_id}")
             return {"product_id": product_id, "fum": 0}
             
-        portfolio_fund_ids = [fund.get("id") for fund in funds_result.data]
+        portfolio_fund_ids = [fund.get("id") for fund in funds_result]
         
         # Use the latest_portfolio_fund_valuations view to get current values
-        valuations_result = db.table("latest_portfolio_fund_valuations").select("valuation").in_("portfolio_fund_id", portfolio_fund_ids).execute()
+        valuations_result = await db.fetch("SELECT valuation FROM latest_portfolio_fund_valuations WHERE portfolio_fund_id = ANY($1::int[])", portfolio_fund_ids)
             
         total_fum = 0
-        if valuations_result.data:
-            for valuation in valuations_result.data:
+        if valuations_result:
+            for valuation_record in valuations_result:
+                valuation = dict(valuation_record)
                 value = valuation.get("valuation", 0)
                 if value:
                     total_fum += float(value)
-            logger.info(f"Total FUM calculated from {len(valuations_result.data)} fund valuations")
+            logger.info(f"Total FUM calculated from {len(valuations_result)} fund valuations")
         else:
             logger.info(f"No valuations found for portfolio funds: {portfolio_fund_ids}")
                 
@@ -1141,26 +1393,26 @@ async def get_product_irr(product_id: int, db = Depends(get_db)):
         logger.info(f"Calculating portfolio IRR from cash flows for product {product_id}")
         
         # Get the product to find its portfolio ID
-        product_result = db.table("client_products").select("portfolio_id,product_name").eq("id", product_id).execute()
+        product_result = await db.fetchrow("SELECT portfolio_id, product_name FROM client_products WHERE id = $1", product_id)
         
-        if not product_result.data or len(product_result.data) == 0:
+        if not product_result:
             raise HTTPException(status_code=404, detail=f"Product with ID {product_id} not found")
             
-        portfolio_id = product_result.data[0].get("portfolio_id")
-        product_name = product_result.data[0].get("product_name", "Unknown Product")
+        portfolio_id = product_result.get("portfolio_id")
+        product_name = product_result.get("product_name", "Unknown Product")
         
         if not portfolio_id:
             logger.info(f"Product {product_id} ({product_name}) has no associated portfolio")
             return {"product_id": product_id, "product_name": product_name, "irr": 0, "irr_decimal": 0}
             
         # Get all portfolio funds for this portfolio (active and inactive to capture full history)
-        funds_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
+        funds_result = await db.fetch("SELECT id FROM portfolio_funds WHERE portfolio_id = $1", portfolio_id)
         
-        if not funds_result.data or len(funds_result.data) == 0:
+        if not funds_result:
             logger.info(f"No funds found for portfolio {portfolio_id} (product {product_id})")
             return {"product_id": product_id, "product_name": product_name, "irr": 0, "irr_decimal": 0}
-            
-        portfolio_fund_ids = [fund.get("id") for fund in funds_result.data]
+        
+        portfolio_fund_ids = [fund.get("id") for fund in funds_result]
         logger.info(f"Found {len(portfolio_fund_ids)} portfolio funds for IRR calculation")
         
         # Aggregate all cash flows from all portfolio funds
@@ -1168,12 +1420,13 @@ async def get_product_irr(product_id: int, db = Depends(get_db)):
         
         # Get all activities for all portfolio funds
         if portfolio_fund_ids:
-            activities_result = db.table("holding_activity_log").select("*").in_("portfolio_fund_id", portfolio_fund_ids).order("activity_timestamp").execute()
+            activities_result = await db.fetch("SELECT * FROM holding_activity_log WHERE portfolio_fund_id = ANY($1::int[]) ORDER BY activity_timestamp", portfolio_fund_ids)
             
-            if activities_result.data:
-                logger.info(f"Found {len(activities_result.data)} activities across all funds")
+            if activities_result:
+                logger.info(f"Found {len(activities_result)} activities across all funds")
                 
-                for activity in activities_result.data:
+                for activity_record in activities_result:
+                    activity = dict(activity_record)
                     activity_date = activity.get("activity_timestamp")
                     activity_type = activity.get("activity_type", "").lower()
                     amount = float(activity.get("amount", 0))
@@ -1212,26 +1465,29 @@ async def get_product_irr(product_id: int, db = Depends(get_db)):
             
             if portfolio_fund_ids:
                 # Get all latest valuations in one bulk query using the view
-                valuations_result = db.table("latest_portfolio_fund_valuations")\
-                    .select("valuation, valuation_date")\
-                    .in_("portfolio_fund_id", portfolio_fund_ids)\
-                    .execute()
+                valuations_result = await db.fetch("SELECT valuation, valuation_date FROM latest_portfolio_fund_valuations WHERE portfolio_fund_id = ANY($1::int[])", portfolio_fund_ids)
                 
-                if valuations_result.data:
-                    for valuation in valuations_result.data:
+                if valuations_result:
+                    for valuation_record in valuations_result:
+                        valuation = dict(valuation_record)
                         current_value = float(valuation.get("valuation", 0))
                         total_current_value += current_value
                         
                         # Track the latest valuation date across all funds
                         val_date = valuation.get("valuation_date")
                         if val_date:
-                            from datetime import datetime
-                            if isinstance(val_date, str):
-                                # Handle full datetime format from database (e.g., "2025-03-01T00:00:00")
+                            from datetime import datetime, date
+                            if isinstance(val_date, date):
+                                # PostgreSQL returns date objects directly
+                                val_date_obj = val_date
+                            elif isinstance(val_date, str):
+                                # Handle string datetime format from database (e.g., "2025-03-01T00:00:00")
                                 if 'T' in val_date:
                                     val_date_obj = datetime.strptime(val_date, '%Y-%m-%dT%H:%M:%S').date()
+                                else:
+                                    val_date_obj = datetime.strptime(val_date, '%Y-%m-%d').date()
                             else:
-                                val_date_obj = datetime.strptime(val_date, '%Y-%m-%d').date()
+                                val_date_obj = None
                         else:
                             val_date_obj = None
                             
@@ -1344,12 +1600,12 @@ async def get_complete_product_details(client_product_id: int, db = Depends(get_
         logger.info(f"Fetching complete product details for product ID: {client_product_id}")
         
         # Check if the product exists
-        product_result = db.table("client_products").select("*").eq("id", client_product_id).execute()
+        product_result = await db.fetchrow("SELECT * FROM client_products WHERE id = $1", client_product_id)
         
-        if not product_result.data or len(product_result.data) == 0:
+        if not product_result:
             raise HTTPException(status_code=404, detail=f"Product with ID {client_product_id} not found")
         
-        product = product_result.data[0]
+        product = dict(product_result)
         logger.info(f"Found product: {product['product_name']} (ID: {product['id']})")
         
         # Extract IDs needed for related data
@@ -1375,17 +1631,18 @@ async def get_complete_product_details(client_product_id: int, db = Depends(get_
         
         # Fetch provider details if available
         if provider_id:
-            provider_result = db.table("available_providers").select("*").eq("id", provider_id).execute()
-            if provider_result.data and len(provider_result.data) > 0:
-                response["provider_details"] = provider_result.data[0]
-                response["provider_name"] = provider_result.data[0].get("name")
-                response["provider_theme_color"] = provider_result.data[0].get("theme_color")
+            provider_result = await db.fetchrow("SELECT * FROM available_providers WHERE id = $1", provider_id)
+            if provider_result:
+                provider_dict = dict(provider_result)
+                response["provider_details"] = provider_dict
+                response["provider_name"] = provider_dict.get("name")
+                response["provider_theme_color"] = provider_dict.get("theme_color")
         
         # Fetch client details if available
         if client_id:
-            client_result = db.table("client_groups").select("*").eq("id", client_id).execute()
-            if client_result.data and len(client_result.data) > 0:
-                client = client_result.data[0]
+            client_result = await db.fetchrow("SELECT * FROM client_groups WHERE id = $1", client_id)
+            if client_result:
+                client = dict(client_result)
                 response["client_details"] = client
                 client_name = client.get("name")
                 # Handle NULL/empty names by providing a meaningful fallback
@@ -1397,18 +1654,19 @@ async def get_complete_product_details(client_product_id: int, db = Depends(get_
         # Fetch product owners in a single query
         try:
             # First get all associations
-            pop_result = db.table("product_owner_products").select("*").eq("product_id", client_product_id).execute()
+            pop_result = await db.fetch("SELECT * FROM product_owner_products WHERE product_id = $1", client_product_id)
             
-            if pop_result.data and len(pop_result.data) > 0:
+            if pop_result:
                 # Extract product owner IDs
-                owner_ids = [pop.get("product_owner_id") for pop in pop_result.data]
+                owner_ids = [dict(pop).get("product_owner_id") for pop in pop_result]
                 
                 # Fetch all product owners in one query
-                owners_result = db.table("product_owners").select("id, firstname, surname, known_as, status, created_at").in_("id", owner_ids).execute()
-                if owners_result.data:
+                owners_result = await db.fetch("SELECT id, firstname, surname, known_as, status, created_at FROM product_owners WHERE id = ANY($1::int[])", owner_ids)
+                if owners_result:
                     # Create display names for frontend compatibility
                     enhanced_owners = []
-                    for owner in owners_result.data:
+                    for owner_record in owners_result:
+                        owner = dict(owner_record)
                         # Create display name from firstname and surname, falling back to known_as
                         display_name = f"{owner.get('firstname', '')} {owner.get('surname', '')}".strip()
                         if not display_name and owner.get('known_as'):
@@ -1427,23 +1685,19 @@ async def get_complete_product_details(client_product_id: int, db = Depends(get_
         # Fetch portfolio details and funds if available
         if portfolio_id:
             # Get portfolio details
-            portfolio_result = db.table("portfolios").select("*").eq("id", portfolio_id).execute()
-            if portfolio_result.data and len(portfolio_result.data) > 0:
-                portfolio = portfolio_result.data[0]
+            portfolio_result = await db.fetchrow("SELECT * FROM portfolios WHERE id = $1", portfolio_id)
+            if portfolio_result:
+                portfolio = dict(portfolio_result)
                 response["portfolio_details"] = portfolio
                 
                 # Get original template generation if available
                 original_template_generation_id = portfolio.get("template_generation_id")
                 if original_template_generation_id:
                     # Fetch from template_portfolio_generations table
-                    generation_result = db.table("template_portfolio_generations") \
-                        .select("*") \
-                        .eq("id", original_template_generation_id) \
-                        .maybe_single() \
-                        .execute()
+                    generation_result = await db.fetchrow("SELECT * FROM template_portfolio_generations WHERE id = $1", original_template_generation_id)
                     
-                    if generation_result.data:
-                        generation_info = generation_result.data
+                    if generation_result:
+                        generation_info = dict(generation_result)
                         response["template_info"] = generation_info # Contains generation name, version, etc.
                         response["template_generation_id"] = original_template_generation_id
                         # If the parent template name is needed and fetched via a join (e.g., template_portfolio_generations(name)):
@@ -1453,9 +1707,9 @@ async def get_complete_product_details(client_product_id: int, db = Depends(get_
                             response["parent_template_name"] = None # Or fetch separately if needed
 
                 # Get portfolio funds in a single query
-                funds_result = db.table("portfolio_funds").select("*").eq("portfolio_id", portfolio_id).execute()
-                if funds_result.data:
-                    portfolio_funds = funds_result.data
+                funds_result = await db.fetch("SELECT * FROM portfolio_funds WHERE portfolio_id = $1", portfolio_id)
+                if funds_result:
+                    portfolio_funds = [dict(fund) for fund in funds_result]
                     
                     # Get all fund IDs to fetch fund details
                     fund_ids = [pf.get("available_funds_id") for pf in portfolio_funds if pf.get("available_funds_id")]
@@ -1466,26 +1720,26 @@ async def get_complete_product_details(client_product_id: int, db = Depends(get_
                     # Fetch fund details in one query
                     funds_map = {}
                     if fund_ids:
-                        funds_details_result = db.table("available_funds").select("*").in_("id", fund_ids).execute()
-                        if funds_details_result.data:
-                            funds_map = {f.get("id"): f for f in funds_details_result.data}
+                        funds_details_result = await db.fetch("SELECT * FROM available_funds WHERE id = ANY($1::int[])", fund_ids)
+                        if funds_details_result:
+                            funds_map = {dict(f).get("id"): dict(f) for f in funds_details_result}
                     
                     # Fetch all fund valuations in one query
                     valuations_map = {}
                     if portfolio_fund_ids:
                         # We want the latest valuation for each fund, so we need to use a SQL query
                         # A typical approach in Supabase might be:
-                        latest_valuations_result = db.table("latest_portfolio_fund_valuations").select("*").in_("portfolio_fund_id", portfolio_fund_ids).execute()
-                        if latest_valuations_result.data:
-                            valuations_map = {v.get("portfolio_fund_id"): v for v in latest_valuations_result.data}
+                        latest_valuations_result = await db.fetch("SELECT * FROM latest_portfolio_fund_valuations WHERE portfolio_fund_id = ANY($1::int[])", portfolio_fund_ids)
+                        if latest_valuations_result:
+                            valuations_map = {dict(v).get("portfolio_fund_id"): dict(v) for v in latest_valuations_result}
                     
                     # Fetch all IRR values in one query
                     irr_map = {}
                     if portfolio_fund_ids:
                         # Similar to valuations, we want the latest IRR for each fund
-                        latest_irr_result = db.table("latest_portfolio_fund_irr_values").select("*").in_("fund_id", portfolio_fund_ids).execute()
-                        if latest_irr_result.data:
-                            irr_map = {irr.get("fund_id"): irr for irr in latest_irr_result.data}
+                        latest_irr_result = await db.fetch("SELECT * FROM latest_portfolio_fund_irr_values WHERE fund_id = ANY($1::int[])", portfolio_fund_ids)
+                        if latest_irr_result:
+                            irr_map = {dict(irr).get("fund_id"): dict(irr) for irr in latest_irr_result}
                     
                     # Combine all the data
                     enhanced_funds = []
@@ -1513,7 +1767,7 @@ async def get_complete_product_details(client_product_id: int, db = Depends(get_
                             irr = irr_map[portfolio_fund_id]
                             pf["latest_irr"] = irr
                             pf["irr_result"] = irr.get("irr_result")
-                            pf["irr_date"] = irr.get("irr_date")
+                            pf["irr_date"] = irr.get("date")
                         else:
                             # Fund has no IRR data, set default values
                             pf["latest_irr"] = None
@@ -1534,21 +1788,22 @@ async def get_complete_product_details(client_product_id: int, db = Depends(get_
         if portfolio_id:
             try:
                 # Get latest portfolio IRR
-                portfolio_irr_result = db.table("latest_portfolio_irr_values").select("irr_result").eq("portfolio_id", portfolio_id).execute()
-                if portfolio_irr_result.data:
-                    portfolio_irr = portfolio_irr_result.data[0].get("irr_result")
+                portfolio_irr_result = await db.fetchrow("SELECT irr_result FROM latest_portfolio_irr_values WHERE portfolio_id = $1", portfolio_id)
+                if portfolio_irr_result:
+                    portfolio_irr = dict(portfolio_irr_result).get("irr_result")
                 
                 # Get all portfolio funds for this portfolio (active + inactive for historical accuracy)
-                funds_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).execute()
+                funds_result = await db.fetch("SELECT id FROM portfolio_funds WHERE portfolio_id = $1", portfolio_id)
                 
-                if funds_result.data:
-                    portfolio_fund_ids = [fund.get("id") for fund in funds_result.data]
+                if funds_result:
+                    portfolio_fund_ids = [dict(fund).get("id") for fund in funds_result]
                     
                     # Use the latest_portfolio_fund_valuations view to get current values
-                    valuations_result = db.table("latest_portfolio_fund_valuations").select("valuation").in_("portfolio_fund_id", portfolio_fund_ids).execute()
+                    valuations_result = await db.fetch("SELECT valuation FROM latest_portfolio_fund_valuations WHERE portfolio_fund_id = ANY($1::int[])", portfolio_fund_ids)
                     
-                    if valuations_result.data:
-                        for valuation in valuations_result.data:
+                    if valuations_result:
+                        for valuation_record in valuations_result:
+                            valuation = dict(valuation_record)
                             value = valuation.get("valuation", 0)
                             if value:
                                 summary_total_value += float(value)
@@ -1585,11 +1840,14 @@ async def update_product_notes(client_product_id: int, request: Request, db = De
         notes = body.get('notes', '')
         
         # Update the notes in the database
-        result = db.table("client_products").update({
-            "notes": notes
-        }).eq("id", client_product_id).execute()
+        result = await db.fetchrow("""
+            UPDATE client_products 
+            SET notes = $1 
+            WHERE id = $2 
+            RETURNING *
+        """, notes, client_product_id)
         
-        if not result.data:
+        if not result:
             raise HTTPException(status_code=404, detail="Product not found")
         
         logger.info(f"Updated notes for product {client_product_id}")
@@ -1614,11 +1872,11 @@ async def lapse_product(product_id: int, db = Depends(get_db)):
     """
     try:
         # Get the product and verify it exists and is active
-        product_result = db.table("client_products").select("*").eq("id", product_id).execute()
-        if not product_result.data:
+        product_result = await db.fetchrow("SELECT * FROM client_products WHERE id = $1", product_id)
+        if not product_result:
             raise HTTPException(status_code=404, detail="Product not found")
         
-        product = product_result.data[0]
+        product = dict(product_result)
         
         if product.get("status") != "active":
             raise HTTPException(status_code=400, detail="Product is not active and cannot be lapsed")
@@ -1629,26 +1887,27 @@ async def lapse_product(product_id: int, db = Depends(get_db)):
             raise HTTPException(status_code=400, detail="Product has no associated portfolio")
         
         # Get all portfolio funds for this product
-        portfolio_funds_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).eq("status", "active").execute()
+        portfolio_funds_result = await db.fetch("SELECT id FROM portfolio_funds WHERE portfolio_id = $1 AND status = $2", portfolio_id, "active")
         
-        logger.info(f"Lapse check for product {product_id}: Found {len(portfolio_funds_result.data) if portfolio_funds_result.data else 0} active portfolio funds")
+        logger.info(f"Lapse check for product {product_id}: Found {len(portfolio_funds_result) if portfolio_funds_result else 0} active portfolio funds")
         
-        if not portfolio_funds_result.data:
+        if not portfolio_funds_result:
             # No active funds means zero value, allow lapse
             total_value = 0
             logger.info(f"Lapse check for product {product_id}: No active funds, total value = 0")
         else:
-            fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
+            fund_ids = [pf["id"] for pf in portfolio_funds_result]
             
             # Get latest valuations for all funds
-            valuations_result = db.table("latest_portfolio_fund_valuations").select("valuation").in_("portfolio_fund_id", fund_ids).execute()
+            valuations_result = await db.fetch("SELECT valuation FROM latest_portfolio_fund_valuations WHERE portfolio_fund_id = ANY($1::int[])", fund_ids)
             
-            logger.info(f"Lapse check for product {product_id}: Found {len(valuations_result.data) if valuations_result.data else 0} valuations for fund IDs: {fund_ids}")
+            logger.info(f"Lapse check for product {product_id}: Found {len(valuations_result) if valuations_result else 0} valuations for fund IDs: {fund_ids}")
             
             # Sum up all valuations, handling None values and type conversion safely
             total_value = 0
-            if valuations_result.data:
-                for v in valuations_result.data:
+            if valuations_result:
+                for v_record in valuations_result:
+                    v = dict(v_record)
                     valuation = v.get("valuation")
                     if valuation is not None:
                         try:
@@ -1671,15 +1930,17 @@ async def lapse_product(product_id: int, db = Depends(get_db)):
             )
         
         # Update product status to inactive
-        update_result = db.table("client_products").update({
-            "status": "inactive",
-            "end_date": datetime.now().date().isoformat()  # Set end date to today
-        }).eq("id", product_id).execute()
+        update_result = await db.fetchrow("""
+            UPDATE client_products 
+            SET status = $1, end_date = $2 
+            WHERE id = $3 
+            RETURNING *
+        """, "inactive", datetime.now().date().isoformat(), product_id)
         
-        if not update_result.data:
+        if not update_result:
             raise HTTPException(status_code=500, detail="Failed to update product status")
         
-        updated_product = update_result.data[0]
+        updated_product = dict(update_result)
         logger.info(f"Successfully lapsed product {product_id}")
         
         return {
@@ -1706,25 +1967,27 @@ async def reactivate_product(product_id: int, db = Depends(get_db)):
     """
     try:
         # Get the product and verify it exists and is inactive
-        product_result = db.table("client_products").select("*").eq("id", product_id).execute()
-        if not product_result.data:
+        product_result = await db.fetchrow("SELECT * FROM client_products WHERE id = $1", product_id)
+        if not product_result:
             raise HTTPException(status_code=404, detail="Product not found")
         
-        product = product_result.data[0]
+        product = dict(product_result)
         
         if product.get("status") != "inactive":
             raise HTTPException(status_code=400, detail="Product is not inactive and cannot be reactivated")
         
         # Update product status to active and clear end_date
-        update_result = db.table("client_products").update({
-            "status": "active",
-            "end_date": None  # Clear the end date
-        }).eq("id", product_id).execute()
+        update_result = await db.fetchrow("""
+            UPDATE client_products 
+            SET status = $1, end_date = $2 
+            WHERE id = $3 
+            RETURNING *
+        """, "active", None, product_id)
         
-        if not update_result.data:
+        if not update_result:
             raise HTTPException(status_code=500, detail="Failed to update product status")
         
-        updated_product = update_result.data[0]
+        updated_product = dict(update_result)
         logger.info(f"Successfully reactivated product {product_id}")
         
         return {
@@ -1752,11 +2015,11 @@ async def calculate_product_revenue(product_id: int, db = Depends(get_db)):
     """
     try:
         # Get the product details including revenue fields
-        product_result = db.table("client_products").select("*").eq("id", product_id).execute()
-        if not product_result.data:
+        product_result = await db.fetchrow("SELECT * FROM client_products WHERE id = $1", product_id)
+        if not product_result:
             raise HTTPException(status_code=404, detail="Product not found")
         
-        product = product_result.data[0]
+        product = dict(product_result)
         logger.info(f"Calculating revenue for product {product_id}: {product.get('product_name')}")
         
         # Initialize response data
@@ -1790,20 +2053,21 @@ async def calculate_product_revenue(product_id: int, db = Depends(get_db)):
         if has_percentage_fee and portfolio_id:
             try:
                 # Get all active portfolio funds for this portfolio
-                portfolio_funds_result = db.table("portfolio_funds").select("id").eq("portfolio_id", portfolio_id).eq("status", "active").execute()
+                portfolio_funds_result = await db.fetch("SELECT id FROM portfolio_funds WHERE portfolio_id = $1 AND status = $2", portfolio_id, "active")
                 
-                if portfolio_funds_result.data:
-                    fund_ids = [pf["id"] for pf in portfolio_funds_result.data]
+                if portfolio_funds_result:
+                    fund_ids = [pf["id"] for pf in portfolio_funds_result]
                     
                     # Get latest valuations for all active funds
-                    valuations_result = db.table("latest_portfolio_fund_valuations").select("valuation, valuation_date").in_("portfolio_fund_id", fund_ids).execute()
+                    valuations_result = await db.fetch("SELECT valuation, valuation_date FROM latest_portfolio_fund_valuations WHERE portfolio_fund_id = ANY($1::int[])", fund_ids)
                     
-                    if valuations_result.data:
+                    if valuations_result:
                         # Sum all fund valuations to get total portfolio value
                         total_value = 0
                         latest_date = None
                         
-                        for valuation in valuations_result.data:
+                        for valuation_record in valuations_result:
+                            valuation = dict(valuation_record)
                             value = valuation.get("valuation", 0)
                             date_str = valuation.get("valuation_date")
                             

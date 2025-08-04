@@ -63,7 +63,7 @@ def decode_token_from_cookie(access_token: Optional[str] = Cookie(None)) -> dict
         logger.error(f"Cookie token validation error: {str(e)}")
         return None
 
-def get_user_from_token_cookie(
+async def get_user_from_token_cookie(
     access_token: Optional[str] = Cookie(None),
     db = Depends(get_db)
 ):
@@ -93,12 +93,12 @@ def get_user_from_token_cookie(
         raise HTTPException(status_code=401, detail="Invalid token payload")
     
     # Get user profile
-    user_result = db.table("profiles").select("*").eq("id", int(user_id)).execute()
+    user_result = await db.fetchrow("SELECT * FROM profiles WHERE id = $1", int(user_id))
     
-    if not user_result.data or len(user_result.data) == 0:
+    if not user_result:
         raise HTTPException(status_code=401, detail="User not found")
     
-    return user_result.data[0]
+    return dict(user_result)
 
 async def get_user_from_session(
     session_id: Optional[str] = Cookie(None),
@@ -121,30 +121,32 @@ async def get_user_from_session(
         raise HTTPException(status_code=401, detail="Not authenticated - no session cookie")
         
     # Validate session from database
-    session_result = db.table("session").select("*").eq("session_id", session_id).execute()
+    session_result = await db.fetchrow("SELECT * FROM session WHERE session_id = $1", session_id)
     
-    if not session_result.data or len(session_result.data) == 0:
+    if not session_result:
         raise HTTPException(status_code=401, detail="Invalid session")
     
-    session = session_result.data[0]
+    session = dict(session_result)
     
     # Check if session is expired
     if "expires_at" in session and session["expires_at"]:
         expires_at = datetime.fromisoformat(session["expires_at"].replace("Z", "+00:00"))
         if datetime.utcnow() > expires_at:
             # Clean up expired session
-            db.table("session").delete().eq("session_id", session_id).execute()
+            await db.execute("DELETE FROM session WHERE session_id = $1", session_id)
             raise HTTPException(status_code=401, detail="Session expired")
     
     # Get user profile
-    user_result = db.table("profiles").select("*").eq("id", session["profiles_id"]).execute()
+    user_result = await db.fetchrow("SELECT * FROM profiles WHERE id = $1", session["profiles_id"])
     
-    if not user_result.data or len(user_result.data) == 0:
+    if not user_result:
         raise HTTPException(status_code=401, detail="User not found")
         
     # Update last activity timestamp
-    db.table("session").update({
-        "last_activity": datetime.utcnow().isoformat()
-    }).eq("session_id", session_id).execute()
+    await db.execute(
+        "UPDATE session SET last_activity = $1 WHERE session_id = $2",
+        datetime.utcnow().isoformat(),
+        session_id
+    )
     
-    return user_result.data[0] 
+    return dict(user_result) 

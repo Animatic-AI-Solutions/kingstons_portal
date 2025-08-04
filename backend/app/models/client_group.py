@@ -11,7 +11,7 @@ class ClientGroupBase(BaseModel):
     name: Optional[str] = Field(default="")
     status: Optional[str] = Field(default="active")
     type: Optional[str] = Field(default="Family")
-    created_at: Optional[str] = Field(default=None)  # Allow setting start date when creating/updating
+    created_at: Optional[datetime] = Field(default=None)  # Allow setting start date when creating/updating
     
     # New advisor relationship field
     advisor_id: Optional[int] = Field(default=None, description="Foreign key to profiles table")
@@ -37,7 +37,7 @@ class ClientGroupUpdate(BaseModel):
     name: Optional[str] = None
     status: Optional[str] = None
     type: Optional[str] = None
-    created_at: Optional[str] = None  # Allow updating client start date
+    created_at: Optional[datetime] = None  # Allow updating client start date
     advisor_id: Optional[int] = None  # Can update advisor assignment
     advisor: Optional[str] = None  # Legacy field
 
@@ -48,7 +48,7 @@ class ClientGroupUpdate(BaseModel):
 class ClientGroupInDB(ClientGroupBase):
     """Model for client group as stored in database"""
     id: int
-    created_at: str
+    created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -68,11 +68,11 @@ class ClientGroup(ClientGroupInDB):
 
 class AdvisorInfo(BaseModel):
     """Model for advisor information from profiles"""
-    advisor_id: int = Field(description="Profile ID")
+    advisor_id: int = Field(description="Generated numeric ID for the advisor")
     first_name: str
-    last_name: str
+    last_name: Optional[str] = Field(default=None, description="Last name if available")
     full_name: str
-    email: str
+    email: Optional[str] = Field(default=None, description="Email if available")
     client_groups_count: int = Field(description="Number of assigned client groups")
     total_products_count: int = Field(description="Total products across all assigned clients")
     

@@ -5,7 +5,6 @@ from datetime import date
 
 from app.models.fund import FundBase, FundCreate, FundUpdate, FundInDB, FundWithProvider
 from app.db.database import get_db
-from supabase import Client as SupabaseClient
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -15,43 +14,46 @@ router = APIRouter()
 
 @router.get("/funds", response_model=List[FundInDB])
 async def get_funds(
-    db: SupabaseClient = Depends(get_db),
+    db = Depends(get_db),
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
     limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
     search: Optional[str] = None
 ):
     """Get all funds with optional search"""
     try:
-        query = db.table("available_funds").select("*")
+        # Build SQL query with optional search
+        base_query = "SELECT * FROM available_funds"
+        conditions = []
+        params = []
         
+        # Apply search filter if provided
         if search:
-            query = query.or_(
-                f"fund_name.ilike.%{search}%",
-                f"isin_number.ilike.%{search}%"
-            )
+            conditions.append("(fund_name ILIKE $1 OR isin_number ILIKE $1)")
+            params.append(f"%{search}%")
         
-        # Execute the query and get the response
-        try:
-            response = query.range(skip, skip + limit - 1).execute()
-        except Exception as e:
-            logger.error(f"Failed to execute Supabase query: {str(e)}")
-            raise HTTPException(status_code=500, detail="Database query failed")
+        # Construct query with WHERE clause if needed
+        if conditions:
+            query = base_query + " WHERE " + " AND ".join(conditions)
+        else:
+            query = base_query
+            
+        # Add pagination with LIMIT and OFFSET
+        query += f" ORDER BY id LIMIT ${len(params) + 1} OFFSET ${len(params) + 2}"
+        params.extend([limit, skip])
         
-        if not hasattr(response, 'data'):
-            logger.error("Response missing data attribute")
-            raise HTTPException(status_code=500, detail="Invalid response format from database")
-
-        if not response.data:
+        # Execute the query
+        result = await db.fetch(query, *params)
+        
+        if not result:
             return []
-
-        if not isinstance(response.data, list):
-            logger.error(f"Expected list but got {type(response.data)}")
-            raise HTTPException(status_code=500, detail="Unexpected response format from database")
-
-        # Process each fund
+        
+        # Process each fund and validate
         funds = []
-        for idx, fund in enumerate(response.data):
+        for idx, fund_row in enumerate(result):
             try:
+                # Convert AsyncPG Record to dictionary
+                fund = dict(fund_row)
+                
                 # Validate required fields
                 if 'id' not in fund or 'created_at' not in fund:
                     logger.error(f"Fund {idx} missing required fields")
@@ -83,17 +85,20 @@ async def get_funds(
 async def get_fund(
     fund_id: int,
     portfolio_id: Optional[int] = None,
-    db: SupabaseClient = Depends(get_db)
+    db = Depends(get_db)
 ):
     """Get a specific fund"""
     try:
         # Get base fund data
-        fund_result = db.table("available_funds").select("*").eq("id", fund_id).execute()
+        fund_result = await db.fetchrow(
+            "SELECT * FROM available_funds WHERE id = $1", 
+            fund_id
+        )
         
-        if not fund_result.data:
+        if not fund_result:
             raise HTTPException(status_code=404, detail=f"Fund with ID {fund_id} not found")
         
-        fund_data = fund_result.data[0]
+        fund_data = dict(fund_result)
         
         # Available funds in this context are never assigned providers
         # Only return the portfolio_id parameter which may be used for context
@@ -108,11 +113,27 @@ async def get_fund(
         raise HTTPException(status_code=500, detail="Failed to fetch fund")
 
 @router.post("/funds", response_model=FundInDB)
-async def create_fund(fund: FundCreate, db: SupabaseClient = Depends(get_db)):
+async def create_fund(fund: FundCreate, db = Depends(get_db)):
     """Create a new fund"""
     try:
-        result = db.table("available_funds").insert(fund.model_dump()).execute()
-        return result.data[0]
+        # Get fund data as dictionary
+        fund_data = fund.model_dump()
+        
+        # Build INSERT query dynamically
+        columns = list(fund_data.keys())
+        placeholders = [f"${i+1}" for i in range(len(columns))]
+        values = list(fund_data.values())
+        
+        query = f"""
+            INSERT INTO available_funds ({', '.join(columns)}) 
+            VALUES ({', '.join(placeholders)}) 
+            RETURNING *
+        """
+        
+        result = await db.fetchrow(query, *values)
+        if result:
+            return dict(result)
+        raise HTTPException(status_code=400, detail="Failed to create fund")
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -129,47 +150,84 @@ async def update_fund(fund_id: int, fund_update: FundUpdate, db = Depends(get_db
     Expected output: A JSON object containing the updated fund's details
     """
     try:
-        result = db.table("available_funds")\
-            .update(fund_update.model_dump(exclude_unset=True))\
-            .eq("id", fund_id)\
-            .execute()
+        # Get update data, excluding unset fields
+        update_data = fund_update.model_dump(exclude_unset=True)
         
-        if not result.data:
-            raise HTTPException(status_code=404, detail=f"Fund with ID {fund_id} not found")
-        
-        return result.data[0]
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@router.delete("/funds/{fund_id}")
-async def delete_fund(fund_id: int, db: SupabaseClient = Depends(get_db)):
-    """Delete a fund"""
-    try:
-        # Check if fund is used in any portfolios
-        portfolio_funds = db.table("portfolio_funds")\
-            .select("id")\
-            .eq("available_funds_id", fund_id)\
-            .execute()
-        
-        if portfolio_funds.data:
-            raise HTTPException(
-                status_code=400,
-                detail="Cannot delete fund as it is used in portfolios"
+        if not update_data:
+            # No fields to update, get current fund
+            result = await db.fetchrow(
+                "SELECT * FROM available_funds WHERE id = $1", 
+                fund_id
             )
+            if not result:
+                raise HTTPException(status_code=404, detail=f"Fund with ID {fund_id} not found")
+            return dict(result)
         
-        result = db.table("available_funds")\
-            .delete()\
-            .eq("id", fund_id)\
-            .execute()
+        # Build dynamic UPDATE query
+        set_clauses = []
+        params = []
+        for i, (column, value) in enumerate(update_data.items(), 1):
+            set_clauses.append(f"{column} = ${i}")
+            params.append(value)
         
-        if not result.data:
+        query = f"""
+            UPDATE available_funds 
+            SET {', '.join(set_clauses)} 
+            WHERE id = ${len(params) + 1} 
+            RETURNING *
+        """
+        params.append(fund_id)
+        
+        result = await db.fetchrow(query, *params)
+        
+        if not result:
             raise HTTPException(status_code=404, detail=f"Fund with ID {fund_id} not found")
         
-        return {"message": "Fund deleted successfully"}
+        return dict(result)
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.delete("/funds/{fund_id}")
+async def delete_fund(fund_id: int, db = Depends(get_db)):
+    """Delete a fund"""
+    try:
+        # Check if fund exists
+        fund_check = await db.fetchrow(
+            "SELECT id FROM available_funds WHERE id = $1", 
+            fund_id
+        )
+        if not fund_check:
+            raise HTTPException(status_code=404, detail=f"Fund with ID {fund_id} not found")
+        
+        # Check if fund is used in any portfolios (if portfolio_funds table exists)
+        try:
+            portfolio_funds = await db.fetch(
+                "SELECT id FROM portfolio_funds WHERE available_funds_id = $1 LIMIT 1",
+                fund_id
+            )
+            if portfolio_funds:
+                raise HTTPException(
+                    status_code=400, 
+                    detail="Cannot delete fund: it is currently used in one or more portfolios"
+                )
+        except Exception as e:
+            # If portfolio_funds table doesn't exist, log warning but continue with deletion
+            logger.warning(f"Could not check portfolio_funds table: {str(e)}")
+        
+        # Delete the fund
+        await db.execute(
+            "DELETE FROM available_funds WHERE id = $1", 
+            fund_id
+        )
+        
+        return {"message": f"Fund with ID {fund_id} deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting fund {fund_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to delete fund")
 
 @router.get("/funds/{fund_id}/products-with-owners", response_model=List[dict])
 async def get_fund_products_with_owners(
@@ -189,35 +247,47 @@ async def get_fund_products_with_owners(
     """
     try:
         # First check if the fund exists
-        fund_result = db.table("available_funds").select("*").eq("id", fund_id).execute()
-        if not fund_result.data:
+        fund_result = await db.fetchrow(
+            "SELECT * FROM available_funds WHERE id = $1", 
+            fund_id
+        )
+        if not fund_result:
             raise HTTPException(status_code=404, detail=f"Fund with ID {fund_id} not found")
 
         # Get all portfolio_funds that use this fund
-        portfolio_funds = db.table("portfolio_funds").select("*").eq("available_funds_id", fund_id).eq("status", "active").execute()
+        portfolio_funds = await db.fetch(
+            "SELECT portfolio_id FROM portfolio_funds WHERE available_funds_id = $1 AND status = 'active'",
+            fund_id
+        )
         
-        if not portfolio_funds.data:
+        if not portfolio_funds:
             return []
             
         # Get all portfolio IDs
-        portfolio_ids = [pf["portfolio_id"] for pf in portfolio_funds.data]
+        portfolio_ids = [pf["portfolio_id"] for pf in portfolio_funds]
         
         # Get all products that use these portfolios
-        products_result = db.table("client_products").select("*").in_("portfolio_id", portfolio_ids).execute()
+        products_result = await db.fetch(
+            "SELECT * FROM client_products WHERE portfolio_id IN ($1:list)",
+            portfolio_ids
+        )
         
-        if not products_result.data:
+        if not products_result:
             return []
             
         # Get all product IDs
-        product_ids = [p["id"] for p in products_result.data]
+        product_ids = [p["id"] for p in products_result]
         
         # Get all product owner associations
-        owner_assocs = db.table("product_owner_products").select("*").in_("product_id", product_ids).execute()
+        owner_assocs = await db.fetch(
+            "SELECT * FROM product_owner_products WHERE product_id IN ($1:list)",
+            product_ids
+        )
         
         # Create a map of product ID to owner IDs
         product_owner_map = {}
-        if owner_assocs.data:
-            for assoc in owner_assocs.data:
+        if owner_assocs:
+            for assoc in owner_assocs:
                 product_id = assoc["product_id"]
                 if product_id not in product_owner_map:
                     product_owner_map[product_id] = []
@@ -230,16 +300,22 @@ async def get_fund_products_with_owners(
         owner_ids = list(set(owner_ids))
         
         # Get all owner details
-        owners_result = db.table("product_owners").select("id, firstname, surname, known_as, status, created_at").in_("id", owner_ids).execute()
-        owner_map = {owner["id"]: owner for owner in owners_result.data} if owners_result.data else {}
+        owners_result = await db.fetch(
+            "SELECT id, firstname, surname, known_as, status, created_at FROM product_owners WHERE id IN ($1:list)",
+            owner_ids
+        )
+        owner_map = {owner["id"]: owner for owner in owners_result} if owners_result else {}
         
         # Create portfolio map for quick lookup
-        portfolios_result = db.table("portfolios").select("*").in_("id", portfolio_ids).execute()
-        portfolio_map = {p["id"]: p for p in portfolios_result.data} if portfolios_result.data else {}
+        portfolios_result = await db.fetch(
+            "SELECT * FROM portfolios WHERE id IN ($1:list)",
+            portfolio_ids
+        )
+        portfolio_map = {p["id"]: p for p in portfolios_result} if portfolios_result else {}
         
         # Build the final response
         products_with_owners = []
-        for product in products_result.data:
+        for product in products_result:
             product_id = product["id"]
             portfolio_id = product["portfolio_id"]
             
@@ -248,7 +324,7 @@ async def get_fund_products_with_owners(
             
             # Get portfolio fund info
             portfolio_fund = next(
-                (pf for pf in portfolio_funds.data if pf["portfolio_id"] == portfolio_id),
+                (pf for pf in portfolio_funds if pf["portfolio_id"] == portfolio_id),
                 {}
             )
             
@@ -298,7 +374,7 @@ async def get_fund_products_with_owners(
 async def check_isin_duplicate(
     isin_number: str = Path(..., description="ISIN number to check for duplicates"),
     exclude_fund_id: Optional[int] = Query(None, description="Fund ID to exclude from duplicate check (for updates)"),
-    db: SupabaseClient = Depends(get_db)
+    db = Depends(get_db)
 ):
     """
     Check if an ISIN number already exists in the database
@@ -316,15 +392,17 @@ async def check_isin_duplicate(
         isin_upper = isin_number.upper().strip()
         
         # Build query to find funds with matching ISIN
-        query = db.table("available_funds").select("id, fund_name, isin_number, status").eq("isin_number", isin_upper)
+        query = "SELECT id, fund_name, isin_number, status FROM available_funds WHERE isin_number = $1"
+        params = [isin_upper]
         
         # Exclude specific fund ID if provided (useful for updates)
         if exclude_fund_id:
-            query = query.neq("id", exclude_fund_id)
+            query += " AND id != $2"
+            params.append(exclude_fund_id)
         
-        response = query.execute()
+        response = await db.fetch(query, *params)
         
-        if not response.data:
+        if not response:
             return {
                 "is_duplicate": False,
                 "isin_number": isin_upper,
@@ -332,7 +410,7 @@ async def check_isin_duplicate(
             }
         
         # Found duplicate(s)
-        duplicate_fund = response.data[0]  # Get first match
+        duplicate_fund = response[0]  # Get first match
         return {
             "is_duplicate": True,
             "isin_number": isin_upper,
