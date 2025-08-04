@@ -2177,9 +2177,29 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                         <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Estimated Annual Revenue</div>
                         <div className="text-sm font-semibold">
                           {(() => {
-                            const fixedCost = account.fixed_cost || 0;
-                            const percentageFee = account.percentage_fee || 0;
-                            const portfolioValue = portfolioTotalValue || 0;
+                            // Safe number conversion with NaN protection
+                            const fixedCost = (() => {
+                              const value = account.fixed_cost;
+                              if (value === null || value === undefined || value === '') return 0;
+                              const num = parseFloat(value);
+                              return isNaN(num) ? 0 : num;
+                            })();
+                            
+                            const percentageFee = (() => {
+                              const value = account.percentage_fee;
+                              if (value === null || value === undefined || value === '') return 0;
+                              const num = parseFloat(value);
+                              return isNaN(num) ? 0 : num;
+                            })();
+                            
+                            const portfolioValue = (() => {
+                              const value = portfolioTotalValue;
+                              if (value === null || value === undefined || value === '') return 0;
+                              const num = parseFloat(value);
+                              return isNaN(num) ? 0 : num;
+                            })();
+                            
+
                             
                             // If neither cost type is set
                             if (!fixedCost && !percentageFee) {
@@ -2197,8 +2217,17 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                               if (!portfolioValue || portfolioValue <= 0) {
                                 return <span className="text-orange-600">Latest valuation needed</span>;
                               }
-                              // If valuation exists, calculate properly
-                              const totalRevenue = fixedCost + ((portfolioValue * percentageFee) / 100);
+                              // If valuation exists, calculate properly with NaN protection
+                              const calculatedFee = (portfolioValue * percentageFee) / 100;
+                              const totalRevenue = fixedCost + calculatedFee;
+                              
+
+                              
+                              // Final NaN check
+                              if (isNaN(totalRevenue) || !isFinite(totalRevenue)) {
+                                return <span className="text-red-600">Calculation Error</span>;
+                              }
+                              
                               return <span className="text-green-600">{formatCurrency(totalRevenue)}</span>;
                             }
                             

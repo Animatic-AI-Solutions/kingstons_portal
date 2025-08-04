@@ -343,10 +343,10 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
         monthly_amounts = [0] * total_months
         
         # Map all cash flows to their corresponding months, totaling flows within same month
-        for date, amount in zip(dates, amounts):
-            month_index = ((date.year - start_date.year) * 12) + (date.month - start_date.month)
+        for cash_flow_date, amount in zip(dates, amounts):
+            month_index = ((cash_flow_date.year - start_date.year) * 12) + (cash_flow_date.month - start_date.month)
             if month_index < 0 or month_index >= len(monthly_amounts):
-                error_msg = f"Invalid month index: {month_index} for date {date.isoformat()}"
+                error_msg = f"Invalid month index: {month_index} for date {cash_flow_date.isoformat()}"
                 logger.error(error_msg)
                 raise ValueError(error_msg)
                 
@@ -2146,7 +2146,7 @@ async def calculate_multiple_portfolio_funds_irr(
         if not bypass_cache:
             cached_result = await _irr_cache.get(
                 portfolio_fund_ids=portfolio_fund_ids,
-                calculation_date=irr_date
+                calculation_date=irr_date.isoformat() if isinstance(irr_date, date) else irr_date
             )
             
             if cached_result is not None:
@@ -2155,12 +2155,18 @@ async def calculate_multiple_portfolio_funds_irr(
         else:
             logger.info(f"🔄 Bypassing cache for fresh calculation as requested")
 
-        # Parse the date string if provided
+        # Parse the date string if provided, or use date object directly
         if irr_date is not None:
             try:
-                irr_date_obj = datetime.strptime(irr_date, "%Y-%m-%d").date()
-            except ValueError:
-                raise HTTPException(status_code=422, detail=f"Invalid date format. Expected YYYY-MM-DD, got: {irr_date}")
+                # Handle both string and date object inputs
+                if isinstance(irr_date, date):
+                    irr_date_obj = irr_date
+                elif isinstance(irr_date, str):
+                    irr_date_obj = datetime.strptime(irr_date, "%Y-%m-%d").date()
+                else:
+                    raise ValueError(f"irr_date must be string or date object, got {type(irr_date)}")
+            except ValueError as e:
+                raise HTTPException(status_code=422, detail=f"Invalid date format. Expected YYYY-MM-DD string or date object, got: {irr_date} ({str(e)})")
         else:
             irr_date_obj = None
         
@@ -2176,14 +2182,23 @@ async def calculate_multiple_portfolio_funds_irr(
             """, portfolio_fund_ids)
             
             if latest_valuations_response:
-                valuation_date_str = latest_valuations_response["valuation_date"]
-                # Handle both date-only and datetime formats from the database
-                if 'T' in valuation_date_str:
-                    # Full datetime string - parse and extract date
-                    irr_date_obj = datetime.fromisoformat(valuation_date_str.replace('Z', '+00:00')).date()
+                valuation_date_value = latest_valuations_response["valuation_date"]
+                # Handle both date objects and string formats from the database
+                if isinstance(valuation_date_value, date):
+                    # Database returned a date object directly
+                    irr_date_obj = valuation_date_value
+                elif isinstance(valuation_date_value, str):
+                    # Database returned a string - parse it
+                    if 'T' in valuation_date_value:
+                        # Full datetime string - parse and extract date
+                        irr_date_obj = datetime.fromisoformat(valuation_date_value.replace('Z', '+00:00')).date()
+                    else:
+                        # Date-only string
+                        irr_date_obj = datetime.strptime(valuation_date_value, "%Y-%m-%d").date()
                 else:
-                    # Date-only string
-                    irr_date_obj = datetime.strptime(valuation_date_str, "%Y-%m-%d").date()
+                    logger.error(f"🚨 VALUATION DATE ERROR: Unexpected type {type(valuation_date_value)}: {valuation_date_value}")
+                    raise HTTPException(status_code=500, detail=f"Unexpected valuation_date type: {type(valuation_date_value)}")
+                    
                 logger.info(f"Using latest valuation date: {irr_date_obj}")
             else:
                 raise HTTPException(status_code=404, detail="No valuations found for the provided portfolio funds")
@@ -2287,26 +2302,38 @@ async def calculate_multiple_portfolio_funds_irr(
             amount = float(activity["amount"])
             activity_type = activity["activity_type"]
             
-            if any(keyword in activity_type.lower() for keyword in ["investment"]):
-                cash_flows_by_date[activity_start_key] -= amount  # Negative for investments
-            elif activity_type.lower() in ["taxuplift"]:
-                cash_flows_by_date[activity_start_key] -= amount  # Tax uplift = negative (inflow)
-            elif activity_type.lower() in ["productswitchin"]:
-                cash_flows_by_date[activity_start_key] -= amount  # Product switch in = negative (money out)
-            elif activity_type.lower() in ["fundswitchin"]:
-                cash_flows_by_date[activity_start_key] -= amount  # Fund switch in = negative (money coming into fund)
-            elif any(keyword in activity_type.lower() for keyword in ["withdrawal"]):
-                cash_flows_by_date[activity_start_key] += amount  # Positive for withdrawals
-            elif activity_type.lower() in ["productswitchout"]:
-                cash_flows_by_date[activity_start_key] += amount  # Product switch out = positive (money in)
-            elif activity_type.lower() in ["fundswitchout"]:
-                cash_flows_by_date[activity_start_key] += amount  # Fund switch out = positive (money leaving fund)
-            elif any(keyword in activity_type.lower() for keyword in ["fee", "charge", "expense"]):
-                cash_flows_by_date[activity_start_key] += amount  # Positive for fees (money out)
-            elif any(keyword in activity_type.lower() for keyword in ["dividend", "interest", "capital gain"]):
-                cash_flows_by_date[activity_start_key] -= amount  # Negative for reinvested gains
-            else:
-                logger.warning(f"Unknown activity type: {activity['activity_type']}, treating as neutral (amount={amount})")
+            # Safety check for activity_type
+            if not isinstance(activity_type, str):
+                logger.error(f"🚨 CRITICAL: activity_type is not a string! Type: {type(activity_type)}, Value: {activity_type}")
+                # Skip this activity to prevent crash
+                continue
+            
+            # Wrap all activity type checks in try-catch to identify exact failure point
+            try:
+                if any(keyword in activity_type.lower() for keyword in ["investment"]):
+                    cash_flows_by_date[activity_start_key] -= amount  # Negative for investments
+                elif activity_type.lower() in ["taxuplift"]:
+                    cash_flows_by_date[activity_start_key] -= amount  # Tax uplift = negative (inflow)
+                elif activity_type.lower() in ["productswitchin"]:
+                    cash_flows_by_date[activity_start_key] -= amount  # Product switch in = negative (money out)
+                elif activity_type.lower() in ["fundswitchin"]:
+                    cash_flows_by_date[activity_start_key] -= amount  # Fund switch in = negative (money coming into fund)
+                elif any(keyword in activity_type.lower() for keyword in ["withdrawal"]):
+                    cash_flows_by_date[activity_start_key] += amount  # Positive for withdrawals
+                elif activity_type.lower() in ["productswitchout"]:
+                    cash_flows_by_date[activity_start_key] += amount  # Product switch out = positive (money in)
+                elif activity_type.lower() in ["fundswitchout"]:
+                    cash_flows_by_date[activity_start_key] += amount  # Fund switch out = positive (money leaving fund)
+                elif any(keyword in activity_type.lower() for keyword in ["fee", "charge", "expense"]):
+                    cash_flows_by_date[activity_start_key] += amount  # Positive for fees (money out)
+                elif any(keyword in activity_type.lower() for keyword in ["dividend", "interest", "capital gain"]):
+                    cash_flows_by_date[activity_start_key] -= amount  # Negative for reinvested gains
+                else:
+                    logger.warning(f"Unknown activity type: {activity['activity_type']}, treating as neutral (amount={amount})")
+            except Exception as activity_error:
+                logger.error(f"🚨 ACTIVITY TYPE ERROR: {str(activity_error)} for activity_type: {activity_type}")
+                # Skip this activity and continue
+                continue
         
         # Process valuations - these happen at the END of the month (last day)
         # Calculate total valuation, treating None values as 0 for calculation purposes
@@ -2415,7 +2442,7 @@ async def calculate_multiple_portfolio_funds_irr(
 
         await _irr_cache.set(
             portfolio_fund_ids=portfolio_fund_ids,
-            calculation_date=irr_date,
+            calculation_date=irr_date_obj.isoformat() if irr_date_obj else None,
             result=result
         )
         
@@ -2461,7 +2488,7 @@ async def calculate_single_portfolio_fund_irr(
         if not bypass_cache:
             cached_result = await _irr_cache.get(
                 portfolio_fund_ids=[portfolio_fund_id],
-                calculation_date=irr_date
+                calculation_date=irr_date.isoformat() if isinstance(irr_date, date) else irr_date
             )
             
             if cached_result is not None:
@@ -2493,16 +2520,22 @@ async def calculate_single_portfolio_fund_irr(
         # Verify portfolio fund exists
         fund_response = await db.fetchrow("SELECT id FROM portfolio_funds WHERE id = $1", portfolio_fund_id)
         if not fund_response:
-            logger.error(f"💰 DEBUG: ❌ Portfolio fund {portfolio_fund_id} not found")
+            logger.error(f"Portfolio fund {portfolio_fund_id} not found")
             raise HTTPException(status_code=404, detail=f"Portfolio fund {portfolio_fund_id} not found")
         
-        # Parse the date string if provided
+        # Parse the date string if provided, or use date object directly
         if irr_date is not None:
             try:
-                irr_date_obj = datetime.strptime(irr_date, "%Y-%m-%d").date()
-            except ValueError:
-                logger.error(f"💰 DEBUG: ❌ Invalid date format. Expected YYYY-MM-DD, got: {irr_date}")
-                raise HTTPException(status_code=422, detail=f"Invalid date format. Expected YYYY-MM-DD, got: {irr_date}")
+                # Handle both string and date object inputs
+                if isinstance(irr_date, date):
+                    irr_date_obj = irr_date
+                elif isinstance(irr_date, str):
+                    irr_date_obj = datetime.strptime(irr_date, "%Y-%m-%d").date()
+                else:
+                    raise ValueError(f"irr_date must be string or date object, got {type(irr_date)}")
+            except ValueError as e:
+                logger.error(f"Invalid date format. Expected YYYY-MM-DD string or date object, got: {irr_date} ({str(e)})")
+                raise HTTPException(status_code=422, detail=f"Invalid date format. Expected YYYY-MM-DD string or date object, got: {irr_date} ({str(e)})")
         else:
             irr_date_obj = None
         
@@ -2517,20 +2550,27 @@ async def calculate_single_portfolio_fund_irr(
             """, portfolio_fund_id)
             
             if latest_valuation_response:
-                valuation_date_str = latest_valuation_response["valuation_date"]
-                # Handle both date-only and datetime formats from the database
-                if 'T' in valuation_date_str:
-                    # Full datetime string - parse and extract date
-                    irr_date_obj = datetime.fromisoformat(valuation_date_str.replace('Z', '+00:00')).date()
+                valuation_date_value = latest_valuation_response["valuation_date"]
+                # Handle both date objects and string formats from the database
+                if isinstance(valuation_date_value, date):
+                    # Database returned a date object directly
+                    irr_date_obj = valuation_date_value
+                elif isinstance(valuation_date_value, str):
+                    # Database returned a string - parse it
+                    if 'T' in valuation_date_value:
+                        # Full datetime string - parse and extract date
+                        irr_date_obj = datetime.fromisoformat(valuation_date_value.replace('Z', '+00:00')).date()
+                    else:
+                        # Date-only string
+                        irr_date_obj = datetime.strptime(valuation_date_value, "%Y-%m-%d").date()
                 else:
-                    # Date-only string
-                    irr_date_obj = datetime.strptime(valuation_date_str, "%Y-%m-%d").date()
-                logger.info(f"💰 DEBUG: Using latest valuation date: {irr_date_obj}")
+                    raise HTTPException(status_code=500, detail=f"Unexpected valuation_date type: {type(valuation_date_value)}")
+                logger.info(f"Using latest valuation date: {irr_date_obj}")
             else:
-                logger.error(f"💰 DEBUG: ❌ No valuations found for portfolio fund {portfolio_fund_id}")
+                logger.error(f"No valuations found for portfolio fund {portfolio_fund_id}")
                 raise HTTPException(status_code=404, detail=f"No valuations found for portfolio fund {portfolio_fund_id}")
         
-        logger.info(f"💰 DEBUG: IRR calculation date: {irr_date_obj}")
+        logger.info(f"IRR calculation date: {irr_date_obj}")
         
         # Fetch valuation for the fund as of the IRR date
         valuation_response = await db.fetchrow("""
@@ -2581,7 +2621,16 @@ async def calculate_single_portfolio_fund_irr(
             
             # Apply sign conventions based on activity type
             amount = float(activity["amount"])
-            activity_type = activity["activity_type"].lower()  # Convert to lowercase for comparison
+            
+            # Safety check for activity_type to prevent type errors
+            raw_activity_type = activity["activity_type"]
+            if not isinstance(raw_activity_type, str):
+                logger.error(f"🚨 SINGLE FUND IRR: activity_type is not a string! Type: {type(raw_activity_type)}, Value: {raw_activity_type}")
+                logger.error(f"🚨 SINGLE FUND IRR: Full activity record: {activity}")
+                # Skip this activity to prevent crash
+                continue
+                
+            activity_type = raw_activity_type.lower()  # Convert to lowercase for comparison
             
             logger.info(f"💰 DEBUG: Processing activity - Date: {activity_date}, Type: {activity['activity_type']}, Amount: £{amount}")
             
@@ -2733,7 +2782,16 @@ async def calculate_single_portfolio_fund_irr(
                 
                 if activity_month_date == single_month_date:
                     amount = float(activity['amount'])
-                    activity_type = activity['activity_type'].lower()
+                    
+                    # Safety check for activity_type to prevent type errors
+                    raw_activity_type = activity['activity_type']
+                    if not isinstance(raw_activity_type, str):
+                        logger.error(f"🚨 SINGLE MONTH IRR: activity_type is not a string! Type: {type(raw_activity_type)}, Value: {raw_activity_type}")
+                        logger.error(f"🚨 SINGLE MONTH IRR: Full activity record: {activity}")
+                        # Skip this activity to prevent crash
+                        continue
+                        
+                    activity_type = raw_activity_type.lower()
                     logger.info(f"💰 DEBUG: Activity matches month - Amount: £{amount}, Type: {activity_type}")
                     
                     # Apply the same logic as in the main loop to determine cash flow direction
@@ -2796,8 +2854,8 @@ async def calculate_single_portfolio_fund_irr(
             logger.info(f"💰 DEBUG: Using separated cash flows for IRR calculation: {len(cash_flows)} flows")
             
             # Debug: Print the separated cash flows
-            for date, amount in sorted(cash_flows.items()):
-                logger.info(f"💰 DEBUG: Final separated cash flow - {date}: £{amount}")
+            for cash_flow_date, amount in sorted(cash_flows.items()):
+                logger.info(f"💰 DEBUG: Final separated cash flow - {cash_flow_date}: £{amount}")
         
         # Convert to sorted lists for IRR calculation
         sorted_months = sorted(cash_flows.keys())
@@ -2847,7 +2905,7 @@ async def calculate_single_portfolio_fund_irr(
         await _irr_cache.set(
             portfolio_fund_ids=[portfolio_fund_id],
             result=final_result,
-            calculation_date=irr_date,
+            calculation_date=irr_date_obj.isoformat() if irr_date_obj else None,
             cash_flows=cash_flow_values,
             fund_valuations={portfolio_fund_id: valuation_amount},
             ttl_minutes=30
@@ -2860,7 +2918,7 @@ async def calculate_single_portfolio_fund_irr(
         await _irr_cache.set(
             portfolio_fund_ids=[portfolio_fund_id],
             result=final_result,
-            calculation_date=irr_date,
+            calculation_date=irr_date_obj.isoformat() if irr_date_obj else None,
             cash_flows=cash_flow_values,
             fund_valuations={portfolio_fund_id: valuation_amount},
             ttl_minutes=30

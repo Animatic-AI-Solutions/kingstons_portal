@@ -81,7 +81,7 @@ async def get_client_products_with_owners(
             return []
         
         # Extract product IDs and portfolio IDs for additional data
-        product_ids = [p.get("product_id") for p in products]
+        product_ids = [p.get("id") for p in products]  # Fix: Database view returns 'id', not 'product_id'
         portfolio_ids = [p.get("portfolio_id") for p in products if p.get("portfolio_id") is not None]
         
         # Get IRR data for portfolios
@@ -154,7 +154,8 @@ async def get_client_products_with_owners(
         enhanced_products = []
         
         for product in products:
-            product_id = product.get("product_id")
+            # Fix: The database view returns 'id', not 'product_id'
+            product_id = product.get("id")  # Changed from "product_id" to "id"
             portfolio_id = product.get("portfolio_id")
             
             # Map the view fields to the expected frontend format
@@ -359,16 +360,8 @@ async def get_products_display(
         if not products:
             return []
         
-        # DEBUG: Log first product to see what data we're getting from the view
-        if products:
-            first_product = dict(products[0])
-            logger.info(f"DEBUG - Raw product keys: {list(first_product.keys())}")
-            logger.info(f"DEBUG - Product ID value: {first_product.get('product_id')}")
-            logger.info(f"DEBUG - Total value: {first_product.get('total_value')}")
-            logger.info(f"DEBUG - IRR value: {first_product.get('irr')}")
-        
         # Extract product IDs for product owners
-        product_ids = [p.get("product_id") for p in products]
+        product_ids = [p.get("id") for p in products]  # Fix: Database view returns 'id', not 'product_id'
         
         # Get product owners efficiently (same pattern as existing endpoint)
         product_owner_associations = {}
@@ -402,7 +395,7 @@ async def get_products_display(
         enhanced_products = []
         
         for product in products:
-            product_id = product.get("product_id")
+            product_id = product.get("id")  # Fix: Database view returns 'id', not 'product_id'
             
             # Create minimal response structure for Products page with proper type conversion
             raw_irr = product.get("irr")
@@ -2095,17 +2088,40 @@ async def calculate_product_revenue(product_id: int, db = Depends(get_db)):
             except Exception as e:
                 logger.error(f"Error getting portfolio valuation: {str(e)}")
         
-        # Calculate revenue components
-        fixed_cost_amount = float(product.get("fixed_cost", 0))
-        percentage_fee_rate = float(product.get("percentage_fee", 0))
+        # Calculate revenue components with proper null handling
+        raw_fixed_cost = product.get("fixed_cost")
+        raw_percentage_fee = product.get("percentage_fee")
         
-        # Calculate percentage-based fee
-        calculated_percentage_fee = 0
-        if has_percentage_fee and latest_valuation > 0:
-            calculated_percentage_fee = latest_valuation * (percentage_fee_rate / 100.0)
+        # Safe conversion to float with explicit null checks
+        try:
+            fixed_cost_amount = float(raw_fixed_cost) if raw_fixed_cost is not None else 0.0
+        except (ValueError, TypeError):
+            fixed_cost_amount = 0.0
+            
+        try:
+            percentage_fee_rate = float(raw_percentage_fee) if raw_percentage_fee is not None else 0.0
+        except (ValueError, TypeError):
+            percentage_fee_rate = 0.0
         
-        # Calculate total estimated annual revenue
-        total_revenue = fixed_cost_amount + calculated_percentage_fee
+        # Calculate percentage-based fee with safety checks
+        calculated_percentage_fee = 0.0
+        if has_percentage_fee and latest_valuation > 0 and percentage_fee_rate > 0:
+            try:
+                calculated_percentage_fee = latest_valuation * (percentage_fee_rate / 100.0)
+            except Exception:
+                calculated_percentage_fee = 0.0
+        
+        # Calculate total estimated annual revenue with safety checks
+        try:
+            total_revenue = fixed_cost_amount + calculated_percentage_fee
+            
+            # Additional NaN/Infinity checks
+            import math
+            if math.isnan(total_revenue) or math.isinf(total_revenue):
+                total_revenue = 0.0
+                
+        except Exception:
+            total_revenue = 0.0
         
         # Update response with calculated values
         response.latest_portfolio_valuation = latest_valuation if latest_valuation > 0 else None

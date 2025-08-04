@@ -157,12 +157,12 @@ async def get_available_portfolios(db = Depends(get_db)):
                         
                         # Get weighted risk from the view
                         weighted_risk_response = await db.fetchrow(
-                            "SELECT weighted_risk FROM template_generation_weighted_risk WHERE generation_id = $1",
+                            "SELECT weighted_risk_factor FROM template_generation_weighted_risk WHERE id = $1",
                             generation_id
                         )
                         
-                        if weighted_risk_response and weighted_risk_response.get("weighted_risk"):
-                            weighted_risk = float(weighted_risk_response["weighted_risk"])
+                        if weighted_risk_response and weighted_risk_response.get("weighted_risk_factor"):
+                            weighted_risk = float(weighted_risk_response["weighted_risk_factor"])
                             logger.info(f"Found weighted risk {weighted_risk} for generation {generation_id}")
                         else:
                             logger.info(f"No weighted risk found for generation {generation_id}")
@@ -221,15 +221,15 @@ async def get_portfolio_templates_with_counts(db = Depends(get_db)):
         if generations_response:
             generation_ids = [g["id"] for g in generations_response]
             weighted_risks_response = await db.fetch(
-                "SELECT generation_id, weighted_risk FROM template_generation_weighted_risk WHERE generation_id = ANY($1::int[])",
+                "SELECT id, weighted_risk_factor FROM template_generation_weighted_risk WHERE id = ANY($1::int[])",
                 generation_ids
             )
             
             # Create lookup map for weighted risks
             weighted_risks_map = {
-                wr["generation_id"]: float(wr["weighted_risk"]) 
+                wr["id"]: float(wr["weighted_risk_factor"]) 
                 for wr in weighted_risks_response or []
-                if wr.get("weighted_risk")
+                if wr.get("weighted_risk_factor")
             }
         else:
             weighted_risks_map = {}
@@ -435,12 +435,12 @@ async def get_available_portfolio_details(request: Request, portfolio_id: int, g
             try:
                 logger.info(f"Fetching weighted risk for generation ID: {generation['id']}")
                 weighted_risk_response = await db.fetchrow(
-                    "SELECT weighted_risk FROM template_generation_weighted_risk WHERE generation_id = $1",
+                    "SELECT weighted_risk_factor FROM template_generation_weighted_risk WHERE id = $1",
                     generation['id']
                 )
                 
                 if weighted_risk_response:
-                    weighted_risk = weighted_risk_response.get("weighted_risk")
+                    weighted_risk = weighted_risk_response.get("weighted_risk_factor")
                     logger.info(f"Found weighted risk: {weighted_risk}")
                 else:
                     logger.info("No weighted risk found for this generation")

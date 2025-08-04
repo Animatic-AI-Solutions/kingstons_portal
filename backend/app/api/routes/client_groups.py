@@ -966,7 +966,7 @@ async def get_client_group_products(
         products = []
         for product in result:
             products.append({
-                "id": product.get("product_id"),
+                "id": product.get("id"),  # Fix: Database view returns 'id', not 'product_id'
                 "product_name": product.get("product_name"),
                 "product_type": product.get("product_type"),
                 "client_id": product.get("client_id"),

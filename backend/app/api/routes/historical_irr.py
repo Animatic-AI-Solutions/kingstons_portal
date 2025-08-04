@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 import logging
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from app.db.database import get_db
 from app.api.routes.portfolio_funds import calculate_multiple_portfolio_funds_irr
 
@@ -296,9 +296,19 @@ async def get_irr_history_summary(
                 for date_str in request.selected_dates:
                     try:
                         # Normalize date format to YYYY-MM-DD
-                        normalized_date = date_str.split('T')[0] if 'T' in date_str else date_str
+                        normalized_date_str = date_str.split('T')[0] if 'T' in date_str else date_str
                         
-                        # Get IRR value for this product and date from portfolio_historical_irr view
+                        # Convert string to date object for database query
+                        normalized_date = datetime.strptime(normalized_date_str, "%Y-%m-%d").date()
+                        # For month/year matching, get the first day of the month and first day of next month
+                        first_day_of_month = normalized_date.replace(day=1)
+                        # Calculate first day of next month
+                        if normalized_date.month == 12:
+                            first_day_of_next_month = normalized_date.replace(year=normalized_date.year + 1, month=1, day=1)
+                        else:
+                            first_day_of_next_month = normalized_date.replace(month=normalized_date.month + 1, day=1)
+                        
+                        # Get IRR value for this product and month/year from portfolio_historical_irr view
                         irr_result = await db.fetchrow(
                             """
                             SELECT phi.irr_result FROM portfolio_historical_irr phi
@@ -309,7 +319,7 @@ async def get_irr_history_summary(
                             ORDER BY phi.date DESC 
                             LIMIT 1
                             """,
-                            product_id, normalized_date, f"{normalized_date}T23:59:59"
+                            product_id, first_day_of_month, first_day_of_next_month
                         )
                         
                         irr_value = None
@@ -347,8 +357,11 @@ async def get_irr_history_summary(
             for date_str in request.selected_dates:
                 try:
                     # Normalize date format to YYYY-MM-DD (remove time component if present)
-                    normalized_date = date_str.split('T')[0] if 'T' in date_str else date_str
-                    logger.debug(f"📅 Processing date: {date_str} -> normalized: {normalized_date}")
+                    normalized_date_str = date_str.split('T')[0] if 'T' in date_str else date_str
+                    logger.debug(f"📅 Processing date: {date_str} -> normalized: {normalized_date_str}")
+                    
+                    # Convert string to date object for database queries
+                    normalized_date = datetime.strptime(normalized_date_str, "%Y-%m-%d").date()
                     
                     # Get all portfolio fund IDs for the selected products
                     # First get all portfolio IDs for the selected products
@@ -428,7 +441,7 @@ async def get_irr_history_summary(
                     try:
                         portfolio_irr_result = await calculate_multiple_portfolio_funds_irr(
                             portfolio_fund_ids=portfolio_fund_ids,
-                            irr_date=normalized_date,
+                            irr_date=normalized_date,  # Now passing date object instead of string
                             db=db
                         )
                         

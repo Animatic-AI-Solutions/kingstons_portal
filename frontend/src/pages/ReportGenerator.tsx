@@ -1038,10 +1038,18 @@ const ReportGenerator: React.FC = () => {
     const allDatesMap = new Map<string, Set<number>>(); // date -> set of product IDs
     
     try {
-      console.log(`📊 Fetching available IRR dates for ${productIds.length} products`);
+      // Filter out any invalid product IDs as a safety measure
+      const validProductIds = productIds.filter(id => id !== null && id !== undefined && typeof id === 'number' && !isNaN(id));
+      
+      if (validProductIds.length !== productIds.length) {
+        console.warn(`🚨 Filtered out ${productIds.length - validProductIds.length} invalid product IDs:`, 
+          productIds.filter(id => id === null || id === undefined || typeof id !== 'number' || isNaN(id)));
+      }
+      
+      console.log(`📊 Fetching available IRR dates for ${validProductIds.length} valid products (originally ${productIds.length})`);
       
       // Fetch historical IRR data for each product (no limit to get all dates)
-      for (const productId of productIds) {
+      for (const productId of validProductIds) {
         try {
           // Check cache first, fallback to API call if not cached
           let response = historicalIRRCache.get(productId);
@@ -1818,9 +1826,17 @@ const ReportGenerator: React.FC = () => {
               console.log(`✅ [FUND IRR DEBUG] Latest IRR values fetched:`, latestIRRResponse.data.fund_irrs);
               
               latestIRRResponse.data.fund_irrs.forEach((irrRecord: any) => {
-                if (typeof irrRecord.irr_result === 'number') {
-                  fundIRRMap.set(irrRecord.fund_id, irrRecord.irr_result);
-                  console.log(`✅ [FUND IRR DEBUG] Set latest IRR for fund ${irrRecord.fund_id}: ${irrRecord.irr_result}%`);
+                // Handle both string and number IRR results from the API
+                const irrValue = irrRecord.irr_result;
+                if (irrValue !== null && irrValue !== undefined && irrValue !== '') {
+                  const numericIRR = typeof irrValue === 'number' ? irrValue : parseFloat(irrValue);
+                  if (!isNaN(numericIRR)) {
+                    fundIRRMap.set(irrRecord.fund_id, numericIRR);
+                    console.log(`✅ [FUND IRR DEBUG] Set latest IRR for fund ${irrRecord.fund_id}: ${numericIRR}%`);
+                  } else {
+                    fundIRRMap.set(irrRecord.fund_id, null);
+                    console.log(`⚠️ [FUND IRR DEBUG] Invalid IRR value for fund ${irrRecord.fund_id}: ${irrValue}`);
+                  }
                 } else {
                   fundIRRMap.set(irrRecord.fund_id, null);
                   console.log(`⚠️ [FUND IRR DEBUG] No latest IRR for fund ${irrRecord.fund_id}`);
@@ -2031,9 +2047,16 @@ const ReportGenerator: React.FC = () => {
                 console.log(`🎯 [PRODUCT IRR DEBUG] Fetching portfolio IRR for INACTIVE product: ${productDetails.product_name} (ID: ${productId})`);
                 try {
                   const portfolioIRRResponse = await api.get(`/api/portfolios/${productDetails.portfolio_id}/latest_irr`);
-                  if (portfolioIRRResponse.data && typeof portfolioIRRResponse.data.irr_result === 'number') {
-                    productIRR = portfolioIRRResponse.data.irr_result;
-                    console.log(`Latest portfolio IRR for inactive product ${productId}: ${productIRR}% (date: ${portfolioIRRResponse.data.irr_date})`);
+                  if (portfolioIRRResponse.data && portfolioIRRResponse.data.irr_result !== null && portfolioIRRResponse.data.irr_result !== undefined) {
+                    // Handle both string and number IRR results from the API
+                    const irrValue = portfolioIRRResponse.data.irr_result;
+                    const numericIRR = typeof irrValue === 'number' ? irrValue : parseFloat(irrValue);
+                    if (!isNaN(numericIRR)) {
+                      productIRR = numericIRR;
+                      console.log(`Latest portfolio IRR for inactive product ${productId}: ${productIRR}% (date: ${portfolioIRRResponse.data.irr_date})`);
+                    } else {
+                      console.warn(`Invalid portfolio IRR value for inactive product ${productId}: ${irrValue}`);
+                    }
                   } else {
                     console.warn(`No portfolio IRR found for inactive product ${productId}`);
                   }
@@ -2160,9 +2183,17 @@ const ReportGenerator: React.FC = () => {
                 // Map the IRR results back to the inactive funds
                 for (const fund of inactiveFunds) {
                   const irrRecord = latestIRRsResponse.data.fund_irrs.find((irr: any) => irr.fund_id === fund.id);
-                  if (irrRecord && typeof irrRecord.irr_result === 'number') {
-                    fund.irr = irrRecord.irr_result;
-                    console.log(`✅ Set IRR for ${fund.fund_name} (ID: ${fund.id}): ${fund.irr}%`);
+                  if (irrRecord && irrRecord.irr_result !== null && irrRecord.irr_result !== undefined) {
+                    // Handle both string and number IRR results from the API
+                    const irrValue = irrRecord.irr_result;
+                    const numericIRR = typeof irrValue === 'number' ? irrValue : parseFloat(irrValue);
+                    if (!isNaN(numericIRR)) {
+                      fund.irr = numericIRR;
+                      console.log(`✅ Set IRR for ${fund.fund_name} (ID: ${fund.id}): ${fund.irr}%`);
+                    } else {
+                      fund.irr = null;
+                      console.log(`⚠️ Invalid IRR value for ${fund.fund_name} (ID: ${fund.id}): ${irrValue}`);
+                    }
                   } else {
                     fund.irr = null;
                     console.log(`⚠️ No IRR found for ${fund.fund_name} (ID: ${fund.id})`);
@@ -2586,28 +2617,15 @@ Please select a different valuation date or ensure all active funds have valuati
         selectedValuationDate: selectedValuationDate,
         productOwnerOrder: productOwnerOrder, // Use custom order instead of alphabetical
         productOwnerNames: (() => {
-          console.log('🔍 [FINAL PRODUCT OWNER DEBUG] Raw product owner names:', productSummaryResults.map(p => ({ 
-            id: p.id, 
-            name: p.product_name, 
-            owner: p.product_owner_name,
-            ownerType: typeof p.product_owner_name 
-          })));
-          
           const allNames = productSummaryResults
             .map(product => product.product_owner_name)
             .filter(name => name && name.trim() !== '');
-          
-          console.log('🔍 [FINAL PRODUCT OWNER DEBUG] Filtered names:', allNames);
           
           const splitNames = allNames
             .flatMap(name => name ? name.split(/[,&]/).map(n => n.trim()) : [])
             .filter(name => name !== '');
           
-          console.log('🔍 [FINAL PRODUCT OWNER DEBUG] After splitting:', splitNames);
-          
           const uniqueNames = Array.from(new Set(splitNames)).sort();
-          
-          console.log('🔍 [FINAL PRODUCT OWNER DEBUG] Final unique names:', uniqueNames);
           
           return uniqueNames;
         })(),
@@ -2756,28 +2774,15 @@ Please select a different valuation date or ensure all active funds have valuati
 
     // Get unique product owner names from the generated report
     const productOwnerNames = (() => {
-      console.log('🔍 [TITLE INFO PRODUCT OWNER DEBUG] Raw product owner names:', productSummaries.map(p => ({ 
-        id: p.id, 
-        name: p.product_name, 
-        owner: p.product_owner_name,
-        ownerType: typeof p.product_owner_name 
-      })));
-      
       const allNames = productSummaries
         .map(product => product.product_owner_name)
         .filter(name => name && name.trim() !== '');
-      
-      console.log('🔍 [TITLE INFO PRODUCT OWNER DEBUG] Filtered names:', allNames);
       
       const splitNames = allNames
         .flatMap(name => name ? name.split(/[,&]/).map(n => n.trim()) : [])
         .filter(name => name !== '');
       
-      console.log('🔍 [TITLE INFO PRODUCT OWNER DEBUG] After splitting:', splitNames);
-      
       const uniqueNames = Array.from(new Set(splitNames)).sort();
-      
-      console.log('🔍 [TITLE INFO PRODUCT OWNER DEBUG] Final unique names:', uniqueNames);
       
       return uniqueNames;
     })();
@@ -3120,7 +3125,18 @@ Please select a different valuation date or ensure all active funds have valuati
       }
       
         console.log('📊 Fetching available IRR dates for', includedProducts.length, 'products');
-        const productIds = includedProducts.map(p => p.id);
+        // Filter out products with null/undefined IDs before mapping
+        const productIds = includedProducts
+          .filter(p => p.id !== null && p.id !== undefined && typeof p.id === 'number')
+          .map(p => p.id);
+        
+        if (productIds.length === 0) {
+          console.log('🚫 No valid product IDs found, skipping IRR dates fetch');
+          setAvailableIRRDates([]);
+          setSelectedIRRDates({});
+          return;
+        }
+        
         const dates = await fetchAvailableIRRDates(productIds);
         setAvailableIRRDates(dates);
         
