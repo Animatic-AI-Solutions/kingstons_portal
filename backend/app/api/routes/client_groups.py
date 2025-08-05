@@ -138,14 +138,14 @@ async def get_bulk_client_data_optimized(db = Depends(get_db)):
     Use case: Clients.tsx page that only needs basic client information
     """
     try:
-        logger.info("Fetching ultra-optimized client data with enhanced advisor relationships")
+        logger.info("Fetching ultra-optimized client data with proper advisor_id foreign key relationships")
         
         # Add timeout protection to prevent blocking by other heavy queries
         import asyncio
         
         try:
             # Execute with asyncio timeout to prevent blocking
-            # Use enhanced query with proper case-insensitive first name matching
+            # Use enhanced query with proper advisor_id foreign key relationship
             summary_result = await asyncio.wait_for(
                 db.fetch("""
                     SELECT DISTINCT
@@ -154,14 +154,14 @@ async def get_bulk_client_data_optimized(db = Depends(get_db)):
                         cg.status as client_group_status,
                         cg.type,
                         cg.advisor as legacy_advisor_text,
-                        -- Get advisor information from profiles using case-insensitive first name match
+                        cg.advisor_id,
+                        -- Get advisor information from profiles using proper foreign key relationship
                         p.first_name as advisor_first_name,
                         p.last_name as advisor_last_name,
                         CONCAT(p.first_name, ' ', p.last_name) as advisor_name,
-                        p.email as advisor_email,
-                        p.id as advisor_id
+                        p.email as advisor_email
                     FROM client_groups cg
-                    LEFT JOIN profiles p ON LOWER(p.first_name) = LOWER(cg.advisor)
+                    LEFT JOIN profiles p ON p.id = cg.advisor_id
                     WHERE cg.status != 'deleted'
                     ORDER BY cg.name ASC NULLS LAST
                 """),
@@ -212,7 +212,7 @@ async def get_bulk_client_data_optimized(db = Depends(get_db)):
                 "created_at": None,  # Not available in minimal view, set to None
                 
                 # Enhanced advisor information with proper relationships
-                "advisor_id": row.get("advisor_id"),
+                "advisor_id": row.get("advisor_id"),  # This comes from cg.advisor_id
                 "advisor_name": row.get("advisor_name"),
                 "advisor_email": row.get("advisor_email"),
                 "advisor_first_name": row.get("advisor_first_name"),
@@ -245,7 +245,7 @@ async def get_bulk_client_data_optimized(db = Depends(get_db)):
                 "query_time": datetime.now().isoformat(),  
                 "cache_eligible": True,
                 "performance_improvement": "95% faster than original - only 5 essential columns",
-                "optimization_notes": "Enhanced with proper advisor relationships: ID, Name, Type, Advisor (with full profile data), Status. FUM and product data removed for speed. Timeout protection added."
+                "optimization_notes": "Enhanced with proper advisor_id foreign key relationships: ID, Name, Type, Advisor (with full profile data via advisor_id FK), Status. FUM and product data removed for speed. Timeout protection added."
             }
         }
         
@@ -398,27 +398,35 @@ async def get_available_advisors(
 ):
     """
     Get list of available advisors for dropdown selection.
-    Uses advisor_client_summary view from Phase 3.
+    Uses real profiles from the profiles table.
     """
     try:
-        # Query the advisor_client_summary view using AsyncPG
-        result = await db.fetch("SELECT * FROM advisor_client_summary ORDER BY advisor")
+        # Query the profiles table directly for real advisor data
+        result = await db.fetch("""
+            SELECT 
+                id as advisor_id,
+                first_name,
+                last_name,
+                CONCAT(first_name, ' ', last_name) as full_name,
+                email
+            FROM profiles 
+            ORDER BY first_name, last_name
+        """)
         
         advisors = []
-        for i, row in enumerate(result):
-            advisor_name = row.get("advisor")
+        for row in result:
             advisor_data = {
-                "advisor_id": hash(advisor_name) % 1000000,  # Generate a consistent numeric ID from advisor name
-                "first_name": advisor_name,  # Use advisor name as first_name
-                "last_name": None,  # Not available in advisor_client_summary
-                "full_name": advisor_name,  # Use advisor name as full_name
-                "email": None,  # Not available in advisor_client_summary
-                "client_groups_count": row.get("active_client_count", 0),
-                "total_products_count": 0  # Not available in advisor_client_summary
+                "advisor_id": row.get("advisor_id"),  # Use real profile ID
+                "first_name": row.get("first_name"),
+                "last_name": row.get("last_name"),
+                "full_name": row.get("full_name"),
+                "email": row.get("email"),
+                "client_groups_count": 0,  # We can calculate this later if needed
+                "total_products_count": 0  # We can calculate this later if needed
             }
             advisors.append(AdvisorInfo(**advisor_data))
         
-        logger.info(f"Retrieved {len(advisors)} available advisors")
+        logger.info(f"Retrieved {len(advisors)} available advisors from profiles table")
         return advisors
         
     except Exception as e:
@@ -503,27 +511,8 @@ async def update_client_group(client_group_id: int, client_group_update: ClientG
         # Get update data (excluding unset fields)
         update_data = client_group_update.model_dump(exclude_unset=True)
         
-        # Handle advisor_id to advisor name conversion (same logic as PATCH endpoint)
-        if "advisor_id" in update_data:
-            advisor_id = int(update_data["advisor_id"])
-            # Get available advisors to find the matching name
-            advisors_result = await db.fetch("SELECT * FROM advisor_client_summary ORDER BY advisor")
-            advisor_name = None
-            
-            for row in advisors_result:
-                advisor_name_candidate = row.get("advisor")
-                if hash(advisor_name_candidate) % 1000000 == advisor_id:
-                    advisor_name = advisor_name_candidate
-                    break
-            
-            if advisor_name:
-                # Update the advisor text field instead of advisor_id
-                update_data["advisor"] = advisor_name
-                del update_data["advisor_id"]  # Remove advisor_id since we're using advisor text field
-                logger.info(f"PUT - Converted advisor_id {advisor_id} to advisor name: {advisor_name}")
-            else:
-                logger.warning(f"PUT - Could not find advisor for advisor_id: {advisor_id}")
-                raise HTTPException(status_code=400, detail=f"Invalid advisor_id: {advisor_id}")
+        # advisor_id is now a direct foreign key to profiles table - no conversion needed
+        # The update_data can contain advisor_id directly as it references profiles.id
         
         if not update_data:
             # No updates provided, return existing record
@@ -578,27 +567,8 @@ async def patch_client_group(client_group_id: int, client_group_update: dict, db
         # Remove any None values from the update data
         update_data = {k: v for k, v in client_group_update.items() if v is not None}
         
-        # Handle advisor_id to advisor name conversion
-        if "advisor_id" in update_data:
-            advisor_id = int(update_data["advisor_id"])
-            # Get available advisors to find the matching name
-            advisors_result = await db.fetch("SELECT * FROM advisor_client_summary ORDER BY advisor")
-            advisor_name = None
-            
-            for row in advisors_result:
-                advisor_name_candidate = row.get("advisor")
-                if hash(advisor_name_candidate) % 1000000 == advisor_id:
-                    advisor_name = advisor_name_candidate
-                    break
-            
-            if advisor_name:
-                # Update the advisor text field instead of advisor_id
-                update_data["advisor"] = advisor_name
-                del update_data["advisor_id"]  # Remove advisor_id since we're using advisor text field
-                logger.info(f"Converted advisor_id {advisor_id} to advisor name: {advisor_name}")
-            else:
-                logger.warning(f"Could not find advisor for advisor_id: {advisor_id}")
-                raise HTTPException(status_code=400, detail=f"Invalid advisor_id: {advisor_id}")
+        # advisor_id is now a direct foreign key to profiles table - no conversion needed
+        # The update_data can contain advisor_id directly as it references profiles.id
         
         if not update_data:
             raise HTTPException(status_code=400, detail="No valid update data provided")
@@ -1240,8 +1210,10 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                     lpfirr.irr_result as irr,
                     COALESCE(fas.total_investments, 0) as total_investments,
                     COALESCE(fas.total_withdrawals, 0) as total_withdrawals,
-                    COALESCE(fas.total_switch_in, 0) as total_switch_in,
-                    COALESCE(fas.total_switch_out, 0) as total_switch_out
+                    COALESCE(fas.total_switch_in, 0) as total_fund_switch_in,
+                    COALESCE(fas.total_switch_out, 0) as total_fund_switch_out,
+                    COALESCE(fas.total_product_switch_in, 0) as total_product_switch_in,
+                    COALESCE(fas.total_product_switch_out, 0) as total_product_switch_out
                 FROM portfolio_funds pf
                 LEFT JOIN available_funds af ON af.id = pf.available_funds_id  
                 LEFT JOIN latest_portfolio_fund_valuations lpfv ON lpfv.portfolio_fund_id = pf.id
@@ -1290,10 +1262,10 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                     "investments": float(fund["total_investments"]) if fund["total_investments"] is not None else 0,
                     "tax_uplift": 0,  # Not available in fund_activity_summary, would need separate query
                     "withdrawals": float(fund["total_withdrawals"]) if fund["total_withdrawals"] is not None else 0,
-                    "fund_switch_in": float(fund["total_switch_in"]) if fund["total_switch_in"] is not None else 0,
-                    "fund_switch_out": float(fund["total_switch_out"]) if fund["total_switch_out"] is not None else 0,
-                    "product_switch_in": 0,  # Not available in fund_activity_summary, would need separate query
-                    "product_switch_out": 0,  # Not available in fund_activity_summary, would need separate query
+                    "fund_switch_in": float(fund["total_fund_switch_in"]) if fund["total_fund_switch_in"] is not None else 0,
+                    "fund_switch_out": float(fund["total_fund_switch_out"]) if fund["total_fund_switch_out"] is not None else 0,
+                    "product_switch_in": float(fund["total_product_switch_in"]) if fund["total_product_switch_in"] is not None else 0,
+                    "product_switch_out": float(fund["total_product_switch_out"]) if fund["total_product_switch_out"] is not None else 0,
                     "irr": float(fund["irr"]) if fund["irr"] is not None else None,
                     "valuation_date": fund["valuation_date"],
                     "status": "active"
@@ -1305,10 +1277,10 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                 total_investments = sum(float(f["total_investments"]) if f["total_investments"] is not None else 0 for f in inactive_funds)
                 total_tax_uplift = 0  # Not available in fund_activity_summary
                 total_withdrawals = sum(float(f["total_withdrawals"]) if f["total_withdrawals"] is not None else 0 for f in inactive_funds)
-                total_fund_switch_in = sum(float(f["total_switch_in"]) if f["total_switch_in"] is not None else 0 for f in inactive_funds)
-                total_fund_switch_out = sum(float(f["total_switch_out"]) if f["total_switch_out"] is not None else 0 for f in inactive_funds)
-                total_product_switch_in = 0  # Not available in fund_activity_summary
-                total_product_switch_out = 0  # Not available in fund_activity_summary
+                total_fund_switch_in = sum(float(f["total_fund_switch_in"]) if f["total_fund_switch_in"] is not None else 0 for f in inactive_funds)
+                total_fund_switch_out = sum(float(f["total_fund_switch_out"]) if f["total_fund_switch_out"] is not None else 0 for f in inactive_funds)
+                total_product_switch_in = sum(float(f["total_product_switch_in"]) if f["total_product_switch_in"] is not None else 0 for f in inactive_funds)
+                total_product_switch_out = sum(float(f["total_product_switch_out"]) if f["total_product_switch_out"] is not None else 0 for f in inactive_funds)
                 total_market_value = sum(f["market_value"] or 0 for f in inactive_funds)
                 
                 previous_funds_entry = {
@@ -1414,16 +1386,38 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
             "product_owners": all_product_owners
         }
         
-        # Add advisor information from the client_groups table
-        advisor_name = client_group_result.get("advisor")
-        client_group_with_owners.update({
-            "advisor_id": None,  # Not available in basic client_groups table
-            "advisor_name": advisor_name,  # Use the advisor field from client_groups table
-            "advisor_email": None,  # Not available in basic client_groups table
-            "advisor_first_name": advisor_name,  # Use advisor name as first name
-            "advisor_last_name": None,  # Not available in basic client_groups table
-            "advisor_assignment_status": "assigned" if advisor_name else "unassigned"
-        })
+        # Add advisor information using proper advisor_id foreign key
+        advisor_id = client_group_result.get("advisor_id")
+        advisor_info = {}
+        
+        if advisor_id:
+            # Get advisor details from profiles table
+            advisor_profile = await db.fetchrow(
+                "SELECT id, first_name, last_name, email FROM profiles WHERE id = $1", 
+                advisor_id
+            )
+            if advisor_profile:
+                advisor_info = {
+                    "advisor_id": advisor_profile.get("id"),
+                    "advisor_name": f"{advisor_profile.get('first_name')} {advisor_profile.get('last_name')}".strip(),
+                    "advisor_email": advisor_profile.get("email"),
+                    "advisor_first_name": advisor_profile.get("first_name"),
+                    "advisor_last_name": advisor_profile.get("last_name"),
+                    "advisor_assignment_status": "assigned"
+                }
+        
+        if not advisor_info:
+            # No advisor assigned or advisor not found in profiles
+            advisor_info = {
+                "advisor_id": advisor_id,  # Keep the ID even if profile not found
+                "advisor_name": None,
+                "advisor_email": None,
+                "advisor_first_name": None,
+                "advisor_last_name": None,
+                "advisor_assignment_status": "unassigned"
+            }
+        
+        client_group_with_owners.update(advisor_info)
         
         # Step 8: Return complete response
         return {

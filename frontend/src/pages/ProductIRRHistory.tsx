@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getFundIRRValues, getBatchFundIRRValues, calculateStandardizedMultipleFundsIRR } from '../services/api';
+import { getFundIRRValues, getBatchFundIRRValues, calculateStandardizedMultipleFundsIRR, getPortfolioHistoricalIRR } from '../services/api';
 
 interface Account {
   id: number;
@@ -298,36 +298,42 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
           }
         }
         
-        console.log('Common valuation dates for portfolio IRR calculation:', commonDates);
+        console.log('Common valuation dates found:', commonDates);
         
-        // Calculate portfolio IRR for each common date
+        // Use all available dates for complete history
+        const recentDates = commonDates;
+        
+        // Fetch stored portfolio IRR data from database instead of calculating in real-time
         const portfolioIRRResults: {[monthYear: string]: number} = {};
-        const portfolioFundIds = portfolioFunds.map((pf: any) => pf.id);
-        console.log('🔍 DEBUG: ProductIRRHistory portfolioFundIds being sent to IRR API:', portfolioFundIds);
         
-        // Limit to last 24 months for performance
-        const recentDates = commonDates.slice(0, 24);
-        
-        for (const date of recentDates) {
-          try {
-            console.log(`Calculating portfolio IRR for date: ${date}`);
+        try {
+          console.log(`🔍 DEBUG: Fetching stored portfolio IRR data for product ${accountId}`);
+          
+          // Fetch all historical portfolio IRR data from the database
+          const portfolioHistoricalResponse = await getPortfolioHistoricalIRR(parseInt(accountId));
+          
+          if (portfolioHistoricalResponse.data && portfolioHistoricalResponse.data.portfolio_historical_irr) {
+            const historicalIRRs = portfolioHistoricalResponse.data.portfolio_historical_irr;
             
-            const irrResponse = await calculateStandardizedMultipleFundsIRR({
-              portfolioFundIds,
-              irrDate: date
-            });
+            console.log(`✅ Found ${historicalIRRs.length} stored portfolio IRR records`);
             
-            const irrPercentage = irrResponse.data.irr_percentage;
-            const monthYear = formatMonthYear(date + 'T00:00:00Z'); // Add time for proper date parsing
-            portfolioIRRResults[monthYear] = irrPercentage;
-            
-            console.log(`Portfolio IRR for ${date}: ${irrPercentage}%`);
-          } catch (err) {
-            console.warn(`Failed to calculate portfolio IRR for date ${date}:`, err);
+            // Convert stored IRR data to the format expected by the table
+            for (const irrRecord of historicalIRRs) {
+              if (irrRecord.irr_result !== null && irrRecord.irr_date) {
+                const monthYear = formatMonthYear(irrRecord.irr_date + 'T00:00:00Z');
+                portfolioIRRResults[monthYear] = irrRecord.irr_result;
+                console.log(`📊 Portfolio IRR ${monthYear}: ${irrRecord.irr_result}%`);
+              }
+            }
+          } else {
+            console.warn('⚠️ No stored portfolio IRR data found');
           }
+        } catch (err) {
+          console.error('❌ Failed to fetch stored portfolio IRR data:', err);
         }
         
         // Set the portfolio IRR data
+        console.log(`🔍 DEBUG: Portfolio IRR fetch complete. Setting ${Object.keys(portfolioIRRResults).length} results:`, portfolioIRRResults);
         setPortfolioIRRData(portfolioIRRResults);
         
         // Calculate Previous Funds IRR for each common date if there are inactive holdings
@@ -399,7 +405,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
         // Set the inactive funds IRR data
         setInactiveFundsIRRData(inactiveFundsData);
         
-        // Create columns from the dates we calculated
+        // Create columns from the recent dates
         const columns = recentDates.map((date: string) => formatMonthYear(date + 'T00:00:00Z'));
         setIrrTableColumns(columns);
         
@@ -736,24 +742,36 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
                   </React.Fragment>
                 ))}
                 
-                {/* Portfolio IRR Total Row */}
-                {Object.keys(portfolioIRRData).length > 0 && (
+                {/* Portfolio IRR Total Row - Always show if we have columns */}
+                {irrTableColumns.length > 0 && (
                   <tr className="bg-gray-50 border-t-2 border-gray-300">
                     <td className="px-3 py-2 whitespace-nowrap text-base font-bold text-red-600 sticky left-0 bg-gray-50 z-10">
                       PORTFOLIO TOTAL
                     </td>
                     {irrTableColumns.map(monthYear => {
                       const portfolioIrrValue = portfolioIRRData[monthYear];
+                      
+                      // Show loading state if we're still loading and have no data
+                      const isLoadingThisMonth = isLoadingHistory && portfolioIrrValue === undefined;
+                      
                       const irrClass = portfolioIrrValue !== undefined
                         ? portfolioIrrValue >= 0 
                           ? 'text-green-700 font-bold'  // 0.0% and positive values get green (bold)
                           : 'text-red-700 font-bold'    // Negative values get red (bold)
-                        : 'text-gray-400';               // Undefined/null gets gray
+                        : isLoadingThisMonth
+                          ? 'text-gray-500'              // Loading state
+                          : 'text-gray-400';             // No data available
                       
                       return (
                         <td key={`portfolio-${monthYear}`} className="px-3 py-2 whitespace-nowrap text-sm text-right">
                           <span className={irrClass}>
-                            {formatPercentage(portfolioIrrValue, 1, true)}
+                            {isLoadingThisMonth ? (
+                              <div className="flex items-center justify-end">
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-400"></div>
+                              </div>
+                            ) : (
+                              formatPercentage(portfolioIrrValue, 1, true)
+                            )}
                           </span>
                         </td>
                       );

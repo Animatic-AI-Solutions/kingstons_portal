@@ -1161,7 +1161,13 @@ async def update_client_product(client_product_id: int, client_product_update: C
         
         for key, value in update_data.items():
             set_clauses.append(f"{key} = ${param_counter}")
-            values.append(value)
+            # Ensure proper type conversion for numeric fields
+            if key in ['fixed_cost', 'percentage_fee'] and value is not None:
+                # Convert to string representation for PostgreSQL numeric type
+                # asyncpg sometimes expects string input for numeric columns
+                values.append(str(float(value)))
+            else:
+                values.append(value)
             param_counter += 1
         
         # Add client_product_id as the last parameter
@@ -1173,6 +1179,11 @@ async def update_client_product(client_product_id: int, client_product_update: C
             WHERE id = ${param_counter}
             RETURNING *
         """
+        
+        # Debug logging
+        logger.info(f"Update query: {update_query}")
+        logger.info(f"Values: {values}")
+        logger.info(f"Value types: {[type(v).__name__ for v in values]}")
         
         result = await db.fetchrow(update_query, *values)
         
@@ -1928,7 +1939,7 @@ async def lapse_product(product_id: int, db = Depends(get_db)):
             SET status = $1, end_date = $2 
             WHERE id = $3 
             RETURNING *
-        """, "inactive", datetime.now().date().isoformat(), product_id)
+        """, "inactive", datetime.now().date(), product_id)
         
         if not update_result:
             raise HTTPException(status_code=500, detail="Failed to update product status")
@@ -2143,3 +2154,65 @@ async def calculate_product_revenue(product_id: int, db = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error calculating revenue for product {product_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to calculate revenue: {str(e)}")
+
+
+@router.patch("/client_products/{product_id}/owners", response_model=dict)
+async def update_product_owners(
+    product_id: int,
+    request_data: dict,
+    db = Depends(get_db)
+):
+    """
+    Update the product owners for a specific client product.
+    This endpoint manages the relationships in the product_owner_products table.
+    """
+    try:
+        # Extract owner_ids from the request data
+        owner_ids = request_data.get("selected_owner_ids", [])
+        logger.info(f"Updating product owners for product {product_id} with owners: {owner_ids}")
+        
+        # First verify the product exists
+        product_check = await db.fetchrow("SELECT id FROM client_products WHERE id = $1", product_id)
+        if not product_check:
+            raise HTTPException(status_code=404, detail=f"Client product {product_id} not found")
+        
+        # Delete existing product owner relationships
+        await db.execute("DELETE FROM product_owner_products WHERE product_id = $1", product_id)
+        logger.info(f"Deleted existing product owner relationships for product {product_id}")
+        
+        # Insert new product owner relationships
+        if owner_ids:
+            for owner_id in owner_ids:
+                # Verify the product owner exists
+                owner_check = await db.fetchrow("SELECT id FROM product_owners WHERE id = $1", owner_id)
+                if not owner_check:
+                    logger.warning(f"Product owner {owner_id} not found, skipping")
+                    continue
+                    
+                await db.execute(
+                    "INSERT INTO product_owner_products (product_id, product_owner_id) VALUES ($1, $2)",
+                    product_id, owner_id
+                )
+            logger.info(f"Added {len(owner_ids)} product owner relationships for product {product_id}")
+        
+        # Return the updated relationships
+        updated_owners = await db.fetch(
+            """SELECT po.id, po.firstname, po.surname, po.known_as 
+               FROM product_owners po 
+               JOIN product_owner_products pop ON po.id = pop.product_owner_id 
+               WHERE pop.product_id = $1""",
+            product_id
+        )
+        
+        return {
+            "success": True,
+            "product_id": product_id,
+            "owner_count": len(updated_owners),
+            "owners": [dict(owner) for owner in updated_owners]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating product owners for product {product_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to update product owners: {str(e)}")

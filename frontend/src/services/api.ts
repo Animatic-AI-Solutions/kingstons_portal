@@ -362,6 +362,16 @@ export const getLatestPortfolioIRR = (portfolioId: number) => {
 };
 
 /**
+ * Get historical stored portfolio IRR values for a product
+ * @param {number} productId - Product ID
+ * @param {number} limit - Maximum number of historical records to return (default: 1000 for all data)
+ * @returns {Promise} - API response with historical portfolio IRR data
+ */
+export const getPortfolioHistoricalIRR = (productId: number, limit: number = 1000) => {
+  return api.get(`historical-irr/portfolio/${productId}?limit=${limit}`);
+};
+
+/**
  * Calculate IRRs for all portfolio funds in a portfolio for a specific date
  * @param {number} portfolioId - Portfolio ID
  * @param {string} date - Date in YYYY-MM-DD format

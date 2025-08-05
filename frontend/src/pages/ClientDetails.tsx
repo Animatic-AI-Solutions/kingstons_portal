@@ -762,9 +762,12 @@ const ProductCard: React.FC<{
 
   // Calculate estimated annual revenue with proper validation logic
   const calculateRevenue = (fixedCost?: number, percentageFee?: number, portfolioValue?: number): string | number => {
-    const fixed = fixedCost || 0;
-    const percentage = percentageFee || 0;
-    const value = portfolioValue || 0;
+    // Ensure all values are properly converted to numbers (not strings)
+    const fixed = Number(fixedCost) || 0;
+    const percentage = Number(percentageFee) || 0;
+    const value = Number(portfolioValue) || 0;
+    
+    // Revenue calculation with proper number conversion
     
     // If neither cost type is set, return 'None'
     if (!fixed && !percentage) {
@@ -782,8 +785,10 @@ const ProductCard: React.FC<{
       if (!value || value <= 0) {
         return 'Latest valuation needed';
       }
-      // If valuation exists, calculate properly
-      return fixed + ((value * percentage) / 100);
+      // If valuation exists, calculate properly with explicit number conversion
+      const percentageFeeAmount = Number((value * percentage) / 100);
+      const totalRevenue = Number(fixed + percentageFeeAmount);
+      return totalRevenue;
     }
     
     return 'None';
@@ -1155,6 +1160,17 @@ const ClientDetails: React.FC = () => {
     isDeleting,
     isChangingStatus
   } = useClientMutations();
+
+  // Handle 404 errors - redirect to client groups if client not found
+  useEffect(() => {
+    if (queryError && (queryError as any).response?.status === 404) {
+      console.warn(`⚠️ Client ${clientId} not found - redirecting to client groups`);
+      navigateWithSuccessMessage(
+        '/client_groups',
+        'Client not found - it may have been deleted'
+      );
+    }
+  }, [queryError, clientId, navigateWithSuccessMessage]);
   
   // Transform data for component compatibility - the API returns { client_group: {...}, products: [...] }
   const apiResponse = clientData as any;
@@ -1186,9 +1202,12 @@ const ClientDetails: React.FC = () => {
 
   // Calculate total revenue across all products
   const totalRevenue = clientAccounts.reduce((sum: number, product: any) => {
-    const fixedCost = product.fixed_cost || 0;
-    const percentageFee = product.percentage_fee || 0;
-    const portfolioValue = product.total_value || 0;
+    // Ensure all values are properly converted to numbers (prevent NaN)
+    const fixedCost = Number(product.fixed_cost) || 0;
+    const percentageFee = Number(product.percentage_fee) || 0;
+    const portfolioValue = Number(product.total_value) || 0;
+    
+    // Calculate revenue for this product
     
     // If neither cost type is set, add 0 to sum
     if (!fixedCost && !percentageFee) {
@@ -1202,7 +1221,8 @@ const ClientDetails: React.FC = () => {
     
     // If percentage fee is involved (with or without fixed cost)
     if (percentageFee > 0 && portfolioValue > 0) {
-      const productRevenue = fixedCost + ((portfolioValue * percentageFee) / 100);
+      const percentageFeeAmount = Number((portfolioValue * percentageFee) / 100);
+      const productRevenue = Number(fixedCost + percentageFeeAmount);
       return sum + productRevenue;
     }
     

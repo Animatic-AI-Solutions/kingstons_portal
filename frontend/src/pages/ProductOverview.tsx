@@ -863,8 +863,10 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       return "N/A";
     }
     
-    // Calculate total value
-    totalValue = holdingsToUse.reduce((sum, h) => sum + h.market_value, 0);
+    // Calculate total value with proper number conversion
+    totalValue = holdingsToUse.reduce((sum, h) => sum + Number(h.market_value || 0), 0);
+    
+    console.log(`🧮 Live risk calc - Total portfolio value: ${totalValue}`);
     
     if (totalValue <= 0) {
       console.log('Total portfolio value is zero or negative');
@@ -874,14 +876,16 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     // Now calculate weighted risk
     for (const holding of holdingsToUse) {
       const fundId = holding.fund_id;
-      const value = holding.market_value;
+      const value = Number(holding.market_value || 0);
       
       if (!fundId) continue;
       
       const fund = Array.from(fundsData.values()).find(f => f.id === fundId);
       
       if (fund && fund.risk_factor !== undefined && fund.risk_factor !== null) {
-        weightedRiskSum += fund.risk_factor * value;
+        const weight = value / totalValue;
+        const contribution = fund.risk_factor * weight;
+        weightedRiskSum += fund.risk_factor * weight;
         fundsWithValidValuations++;
         
         console.log('DEBUG - Risk calculation for fund:', {
@@ -889,8 +893,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           fund_id: fundId,
           risk_factor: fund.risk_factor,
           value: value,
-          weight: value / totalValue,
-          contribution: fund.risk_factor * (value / totalValue)
+          weight: weight,
+          contribution: contribution
         });
       }
     }
@@ -923,12 +927,16 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     );
     
     if (hasAllMarketValues) {
-      // Calculate total portfolio value
-      const totalValue = holdings.reduce((sum, h) => sum + h.market_value, 0);
+      // Calculate total portfolio value with proper number conversion
+      const totalValue = holdings.reduce((sum, h) => sum + Number(h.market_value || 0), 0);
+      
+      console.log(`🧮 Weighting calc - Total portfolio value: ${totalValue}`);
       
       // Calculate each fund's proportion of the total
       holdings.forEach(holding => {
-        const weighting = totalValue > 0 ? (holding.market_value / totalValue) * 100 : 0;
+        const marketValue = Number(holding.market_value || 0);
+        const weighting = totalValue > 0 ? (marketValue / totalValue) * 100 : 0;
+        console.log(`🧮 Fund ${holding.fund_name}: Market Value: ${marketValue}, Weighting: ${weighting.toFixed(1)}%`);
         weightings.set(holding.id, weighting);
       });
       
@@ -1376,11 +1384,15 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       const response = await lapseProduct(parseInt(accountId));
       console.log('Product lapsed successfully');
       
-      // Navigate back using smart breadcrumb-aware navigation
-      navigateBack({
-        type: 'success',
-        message: 'Product successfully lapsed'
-      }, account?.client_id);
+      // Close the modal
+      setIsLapseModalOpen(false);
+      setIsLapsing(false);
+      
+      // Refresh the product data to show updated status and buttons
+      await fetchData(accountId);
+      
+      // Show success message (optional - you could add a toast notification here)
+      console.log('Product data refreshed after lapse');
     } catch (err: any) {
       console.error('Error lapsing product:', err);
       
@@ -1405,11 +1417,15 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       const response = await reactivateProduct(parseInt(accountId));
       console.log('Product reactivated successfully');
       
-      // Navigate back using smart breadcrumb-aware navigation
-      navigateBack({
-        type: 'success',
-        message: 'Product successfully reactivated'
-      }, account?.client_id);
+      // Close the modal
+      setIsReactivateModalOpen(false);
+      setIsReactivating(false);
+      
+      // Refresh the product data to show updated status and buttons
+      await fetchData(accountId);
+      
+      // Show success message (optional - you could add a toast notification here)
+      console.log('Product data refreshed after reactivation');
     } catch (err: any) {
       console.error('Error reactivating product:', err);
       

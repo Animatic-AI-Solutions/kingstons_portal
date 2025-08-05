@@ -84,16 +84,32 @@ export const useClientDetails = (clientId: string | undefined) => {
       if (!clientId) throw new Error('Client ID is required');
       
       console.log(`🚀 Fetching client details for ID: ${clientId}`);
-      const response = await api.get(`/client_groups/${clientId}/complete`);
-      console.log(`✅ Loaded client details for: ${response.data.name || 'Unknown'}`);
-      return response.data as ClientDetailsData;
+      try {
+        const response = await api.get(`/client_groups/${clientId}/complete`);
+        console.log(`✅ Loaded client details for: ${response.data.name || 'Unknown'}`);
+        return response.data as ClientDetailsData;
+      } catch (error: any) {
+        // Handle 404 errors specifically - client was likely deleted
+        if (error.response?.status === 404) {
+          console.warn(`⚠️ Client ${clientId} not found (404) - may have been deleted`);
+          throw new Error(`Client with ID ${clientId} not found`);
+        }
+        throw error;
+      }
     },
     staleTime: 10 * 60 * 1000, // 10 minutes - client details change occasionally
     gcTime: 20 * 60 * 1000, // 20 minutes - keep in cache for fast navigation
     refetchOnWindowFocus: false, // Don't refetch on window focus
     refetchOnReconnect: false, // Don't refetch on network reconnect
     enabled: !!clientId, // Only fetch when clientId is available
-    retry: 3, // Retry failed requests 3 times
+    retry: (failureCount, error: any) => {
+      // Don't retry 404 errors (client deleted/not found)
+      if (error.response?.status === 404) {
+        return false;
+      }
+      // Retry other errors up to 3 times
+      return failureCount < 3;
+    },
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
   });
 
