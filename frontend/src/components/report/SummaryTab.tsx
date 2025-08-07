@@ -219,7 +219,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
           <div className="overflow-x-auto product-table">
             <table className="w-full table-fixed divide-y divide-gray-300 landscape-table portfolio-summary-table">
               <colgroup>
-                <col className="w-[28%]" />
+                <col className="w-[22%]" />
                 <col className="w-[7%]" />
                 <col className="w-[7%]" />
                 <col className="w-[7%]" />
@@ -228,55 +228,55 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                 <col className="w-[7%]" />
                 <col className="w-[8%]" />
                 <col className="w-[8%]" />
-                <col className="w-[8%]" />
-                <col className="w-[6%]" />
+                <col className="w-[9%]" />
+                <col className="w-[5%]" />
               </colgroup>
               <thead className="bg-gray-100">
                 <tr>
-                  <th scope="col" className="px-1 py-2 text-left text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
+                  <th scope="col" className="px-2 py-2 text-left text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                     Product
                   </th>
-                  <th scope="col" className="px-1 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
+                  <th scope="col" className="px-2 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                     Investment
                   </th>
-                  <th scope="col" className="px-1 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
+                  <th scope="col" className="px-2 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                     <div className="leading-tight">
                       Tax<br />Uplift
                     </div>
                   </th>
-                  <th scope="col" className="px-1 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
+                  <th scope="col" className="px-2 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                     <div className="leading-tight">
                       Product<br />Switch In
                     </div>
                   </th>
-                  <th scope="col" className="px-1 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
+                  <th scope="col" className="px-2 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                     <div className="leading-tight">
                       Fund<br />Switches
                     </div>
                   </th>
-                  <th scope="col" className="px-1 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
+                  <th scope="col" className="px-2 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                     <div className="leading-tight">
                       Product<br />Switch Out
                     </div>
                   </th>
-                  <th scope="col" className="px-1 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
+                  <th scope="col" className="px-2 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                     Withdrawal
                   </th>
-                  <th scope="col" className="px-1 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide bg-green-100">
+                  <th scope="col" className="px-2 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide bg-green-100">
                     Valuation
                   </th>
-                  <th scope="col" className="px-1 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide bg-blue-100">
+                  <th scope="col" className="px-2 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide bg-blue-100">
                     <div className="leading-tight">
                       Profit<br />Made
                     </div>
                   </th>
-                  <th scope="col" className="px-1 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide bg-purple-100">
+                  <th scope="col" className="px-2 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide bg-purple-100">
                     <div className="leading-tight">
                       Average<br />Return P.A.
                     </div>
                   </th>
-                  <th scope="col" className="px-1 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
-                    Current Risk
+                  <th scope="col" className="px-2 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
+                    Risk
                   </th>
                 </tr>
               </thead>
@@ -292,7 +292,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                     
                     return (
                       <tr key={product.id} className={`hover:bg-blue-50 ${isInactive ? 'opacity-50 bg-gray-50' : ''}`}>
-                        <td className={`product-name-cell text-left px-1 py-2 ${isInactive ? 'text-gray-500' : 'text-gray-800'}`}>
+                        <td className={`product-name-cell text-left px-2 py-2 ${isInactive ? 'text-gray-500' : 'text-gray-800'}`}>
                           <div className="flex items-start gap-1.5">
                             {product.provider_theme_color && (
                               <div 

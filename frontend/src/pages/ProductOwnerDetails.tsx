@@ -7,7 +7,7 @@ import { getProductOwnerDisplayName, ProductOwner } from '../utils/productOwnerU
 import DynamicPageContainer from '../components/DynamicPageContainer';
 
 interface Product {
-  id: number;
+  product_id: number; // Changed from id to product_id to match backend response
   product_name: string;
   client_name: string;
   provider_name: string;
@@ -552,11 +552,11 @@ const ProductOwnerDetails: React.FC = () => {
               <div className="space-y-3">
                 {associatedProducts.map((product) => (
                   <div
-                    key={product.id}
+                    key={product.product_id}
                     className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                   >
                                          <div className="flex items-center justify-between">
-                       <div className="flex-1 cursor-pointer" onClick={() => navigate(`/products/${product.id}`)}>
+                       <div className="flex-1 cursor-pointer" onClick={() => navigate(`/products/${product.product_id}`)}>
                          <div className="font-medium text-sm text-gray-900 truncate">
                            {product.client_name}
                          </div>

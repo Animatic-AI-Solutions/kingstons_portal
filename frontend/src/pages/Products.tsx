@@ -11,7 +11,7 @@ import StandardTable, { ColumnConfig } from '../components/StandardTable';
 import DynamicPageContainer from '../components/DynamicPageContainer';
 
 interface Product {
-  id: number;
+  product_id: number; // Changed from id to product_id to match backend response
   client_id: number;
   client_name: string;
   product_name: string;
@@ -75,7 +75,7 @@ const Products: React.FC = () => {
       if (productsData.length > 0) {
         const sampleProduct = productsData[0];
         console.log('Sample product:', {
-          id: sampleProduct.id,
+          id: sampleProduct.product_id, // Fixed: use product_id instead of id
           name: sampleProduct.product_name,
           client: sampleProduct.client_name,
           portfolioType: sampleProduct.portfolio_type_display,
@@ -226,7 +226,11 @@ const Products: React.FC = () => {
   const finalFilteredData = filteredData;
 
   const handleProductClick = (product: Product) => {
-    navigate(`/products/${product.id}`, {
+    console.log('🔍 Products: handleProductClick called with product:', product);
+    console.log('🔍 Products: product.product_id:', product.product_id);
+    console.log('🔍 Products: typeof product.product_id:', typeof product.product_id);
+    
+    navigate(`/products/${product.product_id}`, {
       state: {
         from: {
           pathname: '/products',

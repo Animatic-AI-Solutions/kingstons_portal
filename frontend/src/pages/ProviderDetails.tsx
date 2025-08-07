@@ -20,7 +20,7 @@ interface ColorOption {
 }
 
 interface Product {
-  id: number;
+  product_id: number; // Changed from id to product_id to match backend response
   client_id: number;
   client_name?: string; // This is actually the client group name from the API
   product_name: string;
@@ -301,7 +301,7 @@ const ProviderDetails: React.FC = () => {
 
   // Handle product row click
   const handleProductClick = (product: Product) => {
-    navigate(`/products/${product.id}`, {
+            navigate(`/products/${product.product_id}`, {
       state: {
         from: {
           pathname: `/definitions/providers/${providerId}`,

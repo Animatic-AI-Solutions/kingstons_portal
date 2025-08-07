@@ -74,15 +74,18 @@ const GlobalSearch: React.FC = () => {
     };
 
     if (isOpen) {
-      // Use capture phase to ensure this fires before other handlers
-      document.addEventListener('click', handleClickOutside, true);
-      document.addEventListener('mousedown', handleClickOutside, true);
+      // Use setTimeout to delay adding the event listener to avoid immediate closure
+      const timeoutId = setTimeout(() => {
+        document.addEventListener('click', handleClickOutside);
+        document.addEventListener('mousedown', handleClickOutside);
+      }, 0);
+      
+      return () => {
+        clearTimeout(timeoutId);
+        document.removeEventListener('click', handleClickOutside);
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
     }
-
-    return () => {
-      document.removeEventListener('click', handleClickOutside, true);
-      document.removeEventListener('mousedown', handleClickOutside, true);
-    };
   }, [isOpen]);
 
   // Keyboard navigation
@@ -119,7 +122,10 @@ const GlobalSearch: React.FC = () => {
       case 'client_group':
         return <UsersIcon {...iconProps} className="h-4 w-4 text-blue-500 flex-shrink-0" />;
       case 'product':
+      case 'client_product':
         return <CubeIcon {...iconProps} className="h-4 w-4 text-green-500 flex-shrink-0" />;
+      case 'product_owner':
+        return <UsersIcon {...iconProps} className="h-4 w-4 text-teal-500 flex-shrink-0" />;
       case 'fund':
         return <ArrowTrendingUpIcon {...iconProps} className="h-4 w-4 text-purple-500 flex-shrink-0" />;
       case 'provider':
@@ -135,6 +141,8 @@ const GlobalSearch: React.FC = () => {
     const labels = {
       client_group: 'Client',
       product: 'Product',
+      client_product: 'Product',
+      product_owner: 'Owner',
       fund: 'Fund',
       provider: 'Provider',
       portfolio: 'Portfolio'
@@ -146,6 +154,8 @@ const GlobalSearch: React.FC = () => {
     const colors = {
       client_group: 'bg-blue-50 text-blue-600',
       product: 'bg-green-50 text-green-600',
+      client_product: 'bg-green-50 text-green-600',
+      product_owner: 'bg-teal-50 text-teal-600',
       fund: 'bg-purple-50 text-purple-600',
       provider: 'bg-orange-50 text-orange-600',
       portfolio: 'bg-indigo-50 text-indigo-600'
@@ -159,7 +169,10 @@ const GlobalSearch: React.FC = () => {
       case 'client_group':
         return result.additional_info || 'Active client';
       case 'product':
+      case 'client_product':
         return result.additional_info || 'Active product';
+      case 'product_owner':
+        return result.additional_info || 'Product owner';
       case 'fund':
         // Extract ISIN if available, otherwise show additional info
         const isinMatch = result.additional_info?.match(/ISIN:\s*([A-Z0-9]+)/i);
@@ -178,9 +191,11 @@ const GlobalSearch: React.FC = () => {
     const priorityOrder = {
       'client_group': 1,
       'product': 2,
-      'fund': 3,
-      'portfolio': 4,
-      'provider': 5
+      'client_product': 2, // Same priority as product
+      'product_owner': 3,
+      'fund': 4,
+      'portfolio': 5,
+      'provider': 6
     };
 
     return [...results].sort((a, b) => {
@@ -198,18 +213,24 @@ const GlobalSearch: React.FC = () => {
   };
 
   const handleResultClick = (result: SearchResult) => {
+    console.log('🔍 GlobalSearch: Result clicked:', result);
+    
     const routes = {
       client_group: `/client_groups/${result.entity_id}`,
       product: `/products/${result.entity_id}`,
+      client_product: `/products/${result.entity_id}`, // Handle client_product as product
+      product_owner: `/product_owners/${result.entity_id}`,
       fund: `/definitions/funds/${result.entity_id}`,
       provider: `/definitions/providers/${result.entity_id}`,
       portfolio: `/definitions/portfolio-templates/${result.entity_id}`
     };
 
     const route = routes[result.entity_type as keyof typeof routes];
+    console.log('🔍 GlobalSearch: Navigating to route:', route);
+    
     if (route) {
-      // For products, pass state information about coming from global search
-      if (result.entity_type === 'product') {
+      // For products (including client_product), pass state information about coming from global search
+      if (result.entity_type === 'product' || result.entity_type === 'client_product') {
         navigate(route, {
           state: {
             from: {
@@ -224,6 +245,8 @@ const GlobalSearch: React.FC = () => {
       setIsOpen(false);
       setQuery('');
       inputRef.current?.blur();
+    } else {
+      console.error('🔍 GlobalSearch: No route found for entity type:', result.entity_type);
     }
   };
 
@@ -299,7 +322,15 @@ const GlobalSearch: React.FC = () => {
                 <li key={`${result.entity_type}-${result.entity_id}`} role="option" aria-selected={selectedIndex === index}>
                   <button
                     type="button"
-                    onClick={() => handleResultClick(result)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResultClick(result);
+                    }}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
                     className={`w-full text-left px-3 py-1.5 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none transition-colors duration-150 ${
                       selectedIndex === index ? 'bg-gray-50' : ''
                     }`}

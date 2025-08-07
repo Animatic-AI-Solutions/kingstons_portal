@@ -282,6 +282,7 @@ async def get_products_display(
             cp.provider_id,
             ap.name as provider_name,
             ap.theme_color as provider_theme_color,
+            ap.theme_color as theme_color,
             cp.portfolio_id,
             
             -- Portfolio value calculation (same logic as view but more explicit)
@@ -357,11 +358,13 @@ async def get_products_display(
         result = await db.fetch(base_query, *params)
         products = [dict(record) for record in result]
         
+        # DEBUG: Removed debug logging
+        
         if not products:
             return []
         
         # Extract product IDs for product owners
-        product_ids = [p.get("id") for p in products]  # Fix: Database view returns 'id', not 'product_id'
+        product_ids = [p.get("product_id") for p in products if p.get("product_id") is not None]  # Use product_id alias and filter out nulls
         
         # Get product owners efficiently (same pattern as existing endpoint)
         product_owner_associations = {}
@@ -395,7 +398,7 @@ async def get_products_display(
         enhanced_products = []
         
         for product in products:
-            product_id = product.get("id")  # Fix: Database view returns 'id', not 'product_id'
+            product_id = product.get("product_id")  # Use product_id alias from query
             
             # Create minimal response structure for Products page with proper type conversion
             raw_irr = product.get("irr")
@@ -418,7 +421,7 @@ async def get_products_display(
                     total_value = 0.0
             
             enhanced_product = {
-                "id": product_id,
+                "product_id": product_id,
                 "product_name": product.get("product_name"),
                 "status": product.get("status"),
                 "client_id": product.get("client_id"),

@@ -309,7 +309,9 @@ async def get_product_owner_products(
         # Get products with provider and client group information via JOINs
         products = await db.fetch(
             """
-            SELECT cp.*, ap.name as provider_name, ap.theme_color as provider_theme_color, 
+            SELECT cp.id as product_id, cp.product_name, cp.status, cp.client_id, cp.provider_id, 
+                   cp.portfolio_id, cp.start_date, cp.end_date, cp.created_at,
+                   ap.name as provider_name, ap.theme_color as provider_theme_color, 
                    cg.name as client_name
             FROM client_products cp
             JOIN product_owner_products pop ON cp.id = pop.product_id
@@ -334,7 +336,7 @@ async def get_product_owner_products(
                 JOIN product_owner_products pop ON po.id = pop.product_owner_id
                 WHERE pop.product_id = $1
                 """,
-                product["id"]
+                product["product_id"]
             )
             
             # Extract product owner information

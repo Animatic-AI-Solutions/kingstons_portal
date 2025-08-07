@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Routes, Route, NavLink, Link, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, Routes, Route, NavLink, Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import DynamicPageContainer from '../components/DynamicPageContainer';
 import AccountOverview from './ProductOverview';
@@ -20,6 +20,10 @@ const ProductDetails: React.FC = () => {
   const [account, setAccount] = useState<Account | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [breadcrumbTrail, setBreadcrumbTrail] = useState<Array<{path: string; label: string}>>([]);
+  
+  // Debug logging
+  console.log('🔍 ProductDetails: productId from useParams:', productId);
+  console.log('🔍 ProductDetails: location.pathname:', location.pathname);
   
   // Build the complete breadcrumb trail
   const buildBreadcrumbTrail = () => {
@@ -264,6 +268,11 @@ const ProductDetails: React.FC = () => {
         <Route
           path="irr-history"
           element={<AccountIRRHistory accountId={productId} />}
+        />
+        {/* Default route - redirect to overview */}
+        <Route
+          path=""
+          element={<Navigate to="overview" replace />}
         />
       </Routes>
     </DynamicPageContainer>
