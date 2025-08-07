@@ -201,7 +201,7 @@ async def get_client_products_with_owners(
             
             # Add product owners
             product_owners = []
-            product_owner_name = None  # Add this field for report compatibility
+            product_owner_names = []  # Collect all owner names for report compatibility
             if product_id in product_owner_associations:
                 owner_ids = product_owner_associations[product_id]
                 for owner_id in owner_ids:
@@ -219,17 +219,26 @@ async def get_client_products_with_owners(
                         product_owners.append(enhanced_owner)
                         
                         # For reports, use known_as (nickname) + surname combination
-                        if product_owner_name is None:
-                            nickname = owner.get('known_as') or owner.get('firstname') or ""
-                            surname = owner.get('surname') or ""
-                            if nickname and surname:
-                                product_owner_name = f"{nickname} {surname}"
-                            elif nickname:
-                                product_owner_name = nickname
-                            elif surname:
-                                product_owner_name = surname
-                            else:
-                                product_owner_name = "No Owner"
+                        nickname = owner.get('known_as') or owner.get('firstname') or ""
+                        surname = owner.get('surname') or ""
+                        if nickname and surname:
+                            owner_name = f"{nickname} {surname}"
+                        elif nickname:
+                            owner_name = nickname
+                        elif surname:
+                            owner_name = surname
+                        else:
+                            owner_name = "No Owner"
+                        
+                        product_owner_names.append(owner_name)
+            
+            # Set product_owner_name based on number of owners
+            if len(product_owner_names) > 1:
+                product_owner_name = ", ".join(product_owner_names)  # Multiple owners comma-separated
+            elif len(product_owner_names) == 1:
+                product_owner_name = product_owner_names[0]  # Single owner
+            else:
+                product_owner_name = "No Owner"  # No owners
             
             enhanced_product["product_owners"] = product_owners
             enhanced_product["product_owner_name"] = product_owner_name or "No Owner"  # Add this for report compatibility

@@ -100,10 +100,32 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
         });
         
         // Apply custom owner order after ISA/JISA sorting
+        console.log(`🔍 [SUMMARY TAB DEBUG] Sorting ${type} (ISA/JISA) products by owner order:`, {
+          productsCount: groupedProducts[type].length,
+          productOwnerOrder: reportData.productOwnerOrder,
+          productOwnerOrderLength: reportData.productOwnerOrder?.length || 0,
+          productNames: groupedProducts[type].map(p => p.product_name),
+          productOwnerNames: groupedProducts[type].map(p => p.product_owner_name)
+        });
         groupedProducts[type] = sortProductsByOwnerOrder(groupedProducts[type], reportData.productOwnerOrder || []);
+        console.log(`🔍 [SUMMARY TAB DEBUG] After sorting ${type} (ISA/JISA) products:`, {
+          sortedProductNames: groupedProducts[type].map(p => p.product_name),
+          sortedProductOwnerNames: groupedProducts[type].map(p => p.product_owner_name)
+        });
       } else {
         // Standard sorting by custom product owner order for other product types
+        console.log(`🔍 [SUMMARY TAB DEBUG] Sorting ${type} products by owner order:`, {
+          productsCount: groupedProducts[type].length,
+          productOwnerOrder: reportData.productOwnerOrder,
+          productOwnerOrderLength: reportData.productOwnerOrder?.length || 0,
+          productNames: groupedProducts[type].map(p => p.product_name),
+          productOwnerNames: groupedProducts[type].map(p => p.product_owner_name)
+        });
         groupedProducts[type] = sortProductsByOwnerOrder(groupedProducts[type], reportData.productOwnerOrder || []);
+        console.log(`🔍 [SUMMARY TAB DEBUG] After sorting ${type} products:`, {
+          sortedProductNames: groupedProducts[type].map(p => p.product_name),
+          sortedProductOwnerNames: groupedProducts[type].map(p => p.product_owner_name)
+        });
       }
     });
 

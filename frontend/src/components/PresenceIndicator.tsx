@@ -12,6 +12,19 @@ const PresenceIndicator: React.FC<PresenceIndicatorProps> = ({
 }) => {
   const { users, isConnected, error } = usePresence({ pageIdentifier });
   
+  // Helper function to safely parse user_info JSON string
+  const parseUserInfo = (user: any) => {
+    try {
+      if (typeof user.user_info === 'string') {
+        return JSON.parse(user.user_info);
+      }
+      return user.user_info || { name: 'Unknown User', avatar: '/images/Companylogo2.png' };
+    } catch (err) {
+      console.error('Failed to parse user_info:', user.user_info, err);
+      return { name: 'Unknown User', avatar: '/images/Companylogo2.png' };
+    }
+  };
+  
   // Debug logging
   console.log('🎭 PresenceIndicator: Render with props:', { pageIdentifier, className });
   console.log('🎭 PresenceIndicator: Hook state:', { users, isConnected, error, userCount: users?.length });
@@ -64,25 +77,28 @@ const PresenceIndicator: React.FC<PresenceIndicatorProps> = ({
     <div className={`flex items-center space-x-3 ${className}`}>
       {/* User avatars */}
       <div className="flex -space-x-2">
-        {users.slice(0, 3).map((user) => (
-          <div
-            key={user.user_id}
-            className="relative"
-            title={`${user.user_info.name} is also here`}
-          >
-            <img
-              src={user.user_info.avatar}
-              alt={user.user_info.name}
-              className="w-6 h-6 rounded-full border-2 border-white shadow-sm bg-gray-100"
-              onError={(e) => {
-                // Fallback to default avatar if image fails to load
-                const target = e.target as HTMLImageElement;
-                target.src = '/images/Companylogo2.png';
-              }}
-            />
+        {users.slice(0, 3).map((user) => {
+          const userInfo = parseUserInfo(user);
+          return (
+            <div
+              key={user.user_id}
+              className="relative"
+              title={`${userInfo.name} is also here`}
+            >
+              <img
+                src={userInfo.avatar}
+                alt={userInfo.name}
+                className="w-6 h-6 rounded-full border-2 border-white shadow-sm bg-gray-100"
+                onError={(e) => {
+                  // Fallback to default avatar if image fails to load
+                  const target = e.target as HTMLImageElement;
+                  target.src = '/images/Companylogo2.png';
+                }}
+              />
             <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
           </div>
-        ))}
+          );
+        })}
         {users.length > 3 && (
           <div className="w-6 h-6 rounded-full border-2 border-white shadow-sm bg-gray-200 flex items-center justify-center text-xs text-gray-600">
             +{users.length - 3}
@@ -93,17 +109,17 @@ const PresenceIndicator: React.FC<PresenceIndicatorProps> = ({
       {/* User names and status */}
       <div className="flex items-center space-x-2">
         <div className="text-sm text-gray-600">
-          {users.length === 1 ? (
-            <span><strong>{users[0].user_info.name}</strong> is also here</span>
-          ) : users.length === 2 ? (
-            <span>
-              <strong>{users[0].user_info.name}</strong> and <strong>{users[1].user_info.name}</strong> are also here
-            </span>
-          ) : (
-            <span>
-              <strong>{users[0].user_info.name}</strong> and <strong>{users.length - 1} others</strong> are also here
-            </span>
-          )}
+                  {users.length === 1 ? (
+          <span><strong>{parseUserInfo(users[0]).name}</strong> is also here</span>
+        ) : users.length === 2 ? (
+          <span>
+            <strong>{parseUserInfo(users[0]).name}</strong> and <strong>{parseUserInfo(users[1]).name}</strong> are also here
+          </span>
+        ) : (
+          <span>
+            <strong>{parseUserInfo(users[0]).name}</strong> and <strong>{users.length - 1} others</strong> are also here
+          </span>
+        )}
         </div>
         
         {/* Live indicator */}

@@ -185,6 +185,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     product_name: '',
     provider_id: '',
     product_type: '',
+    plan_number: '',
     target_risk: '',
     start_date: null as Dayjs | null,
     fixed_cost: '' as string,
@@ -1611,6 +1612,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         product_name: account.product_name || '',
         provider_id: account.provider_id?.toString() || '',
         product_type: account.product_type || '',
+        plan_number: account.plan_number || '',
         target_risk: account.target_risk?.toString() || '',
         start_date: account.start_date ? dayjs(account.start_date) : null,
         fixed_cost: account.fixed_cost?.toString() ?? '',
@@ -1728,7 +1730,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
 
       const updateData: any = {
         product_name: editFormData.product_name,
-        product_type: editFormData.product_type || null
+        product_type: editFormData.product_type || null,
+        plan_number: editFormData.plan_number || null
       };
 
       // Only include provider_id if a value is selected
@@ -2022,6 +2025,25 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                       <>
                         <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Product Type</div>
                         <div className="text-sm font-medium text-gray-900">{account.product_type || 'N/A'}</div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Plan Number - Inline Editable */}
+                  <div>
+                    {isEditMode ? (
+                      <BaseInput
+                        label="Plan Number"
+                        name="plan_number"
+                        value={editFormData.plan_number}
+                        onChange={handleBaseInputChange('plan_number')}
+                        placeholder="Enter plan number"
+                        size="sm"
+                      />
+                    ) : (
+                      <>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Plan Number</div>
+                        <div className="text-sm font-medium text-gray-900">{account.plan_number || 'N/A'}</div>
                       </>
                     )}
                   </div>

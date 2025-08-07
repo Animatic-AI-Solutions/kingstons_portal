@@ -89,7 +89,7 @@ export const sortProductsByOwnerOrder = (products: ProductPeriodSummary[], produ
 /**
  * Generate default product title (auto-generated without custom title)
  */
-export const generateDefaultProductTitle = (product: ProductPeriodSummary): string => {
+export const generateDefaultProductTitle = (product: ProductPeriodSummary, options?: { omitOwner?: boolean }): string => {
   let title = `${product.provider_name || 'Unknown Provider'}`;
   
   if (product.product_type) {
@@ -98,9 +98,12 @@ export const generateDefaultProductTitle = (product: ProductPeriodSummary): stri
     title += ` - ${simplifiedType}`;
   }
   
-  const ownerNickname = extractProductOwnerNickname(product);
-  if (ownerNickname) {
-    title += ` - ${ownerNickname}`;
+  // Only include owner nickname if not omitted
+  if (!options?.omitOwner) {
+    const ownerNickname = extractProductOwnerNickname(product);
+    if (ownerNickname) {
+      title += ` - ${ownerNickname}`;
+    }
   }
   
   // Add plan number if available
@@ -117,7 +120,8 @@ export const generateDefaultProductTitle = (product: ProductPeriodSummary): stri
  */
 export const generateEffectiveProductTitle = (
   product: ProductPeriodSummary, 
-  customTitles: Map<number, string>
+  customTitles: Map<number, string>,
+  options?: { omitOwner?: boolean }
 ): string => {
   // If there's a custom title, use it
   const customTitle = customTitles.get(product.id);
@@ -126,5 +130,5 @@ export const generateEffectiveProductTitle = (
   }
 
   // Otherwise, generate the default title
-  return generateDefaultProductTitle(product);
+  return generateDefaultProductTitle(product, options);
 }; 

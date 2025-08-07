@@ -429,21 +429,34 @@ const ReportGenerator: React.FC = () => {
   const extractProductOwners = (products: Product[]): string[] => {
     const ownerSet = new Set<string>();
     
-    products.forEach(product => {
+    console.log('🔍 [EXTRACT OWNERS DEBUG] Processing', products.length, 'products for owner extraction');
+    
+    products.forEach((product, index) => {
+      console.log(`🔍 [EXTRACT OWNERS DEBUG] Product ${index + 1}:`, {
+        id: product.id,
+        name: product.product_name,
+        product_owner_name: product.product_owner_name,
+        product_owners: product.product_owners,
+        product_owners_count: product.product_owners?.length || 0
+      });
+      
       // Method 1: Extract from product_owner_name string (existing logic)
       if (product.product_owner_name) {
         const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
+        console.log(`🔍 [EXTRACT OWNERS DEBUG] Product ${product.id} owner names from string:`, ownerNames);
         ownerNames.forEach(ownerName => {
           const nameParts = ownerName.trim().split(' ');
           const nickname = nameParts[0]; // Take first part (nickname)
           if (nickname) {
             ownerSet.add(nickname);
+            console.log(`🔍 [EXTRACT OWNERS DEBUG] Added nickname: "${nickname}"`);
           }
         });
       }
       
       // Method 2: Extract from product_owners array (for joint products)
       if (product.product_owners && Array.isArray(product.product_owners)) {
+        console.log(`🔍 [EXTRACT OWNERS DEBUG] Product ${product.id} owners array:`, product.product_owners);
         product.product_owners.forEach(owner => {
           // Priority: known_as > firstname > id
           let ownerName = '';
@@ -457,12 +470,15 @@ const ReportGenerator: React.FC = () => {
           
           if (ownerName) {
             ownerSet.add(ownerName);
+            console.log(`🔍 [EXTRACT OWNERS DEBUG] Added from array: "${ownerName}"`);
           }
         });
       }
     });
     
-    return Array.from(ownerSet).sort();
+    const result = Array.from(ownerSet).sort();
+    console.log('🔍 [EXTRACT OWNERS DEBUG] Final extracted owners:', result);
+    return result;
   };
 
   // Update product owner order when related products change
@@ -2615,17 +2631,42 @@ Please select a different valuation date or ensure all active funds have valuati
         totalValuation: overallValuation,
         earliestTransactionDate: earliestDate,
         selectedValuationDate: selectedValuationDate,
-        productOwnerOrder: productOwnerOrder, // Use custom order instead of alphabetical
+        productOwnerOrder: (() => {
+          console.log('🔍 [PRODUCT OWNER ORDER DEBUG] Current productOwnerOrder state:', productOwnerOrder);
+          console.log('🔍 [PRODUCT OWNER ORDER DEBUG] productOwnerOrder length:', productOwnerOrder.length);
+          return productOwnerOrder;
+        })(), // Use custom order instead of alphabetical
         productOwnerNames: (() => {
+          console.log('🔍 [PRODUCT OWNER DEBUG - FINAL] Raw product owner names:', productSummaryResults.map(p => ({ 
+            id: p.id, 
+            name: p.product_name, 
+            owner: p.product_owner_name,
+            ownerType: typeof p.product_owner_name 
+          })));
+          
           const allNames = productSummaryResults
             .map(product => product.product_owner_name)
             .filter(name => name && name.trim() !== '');
+          
+          console.log('🔍 [PRODUCT OWNER DEBUG - FINAL] Filtered names:', allNames);
           
           const splitNames = allNames
             .flatMap(name => name ? name.split(/[,&]/).map(n => n.trim()) : [])
             .filter(name => name !== '');
           
-          const uniqueNames = Array.from(new Set(splitNames)).sort();
+          console.log('🔍 [PRODUCT OWNER DEBUG - FINAL] After splitting:', splitNames);
+          
+          // Extract nicknames only (first word) to match productOwnerOrder format
+          const nicknames = splitNames
+            .map(fullName => {
+              const nameParts = fullName.trim().split(' ');
+              return nameParts[0]; // Take first part (nickname)
+            })
+            .filter(nickname => nickname !== '');
+          
+          const uniqueNames = Array.from(new Set(nicknames)).sort();
+          
+          console.log('🔍 [PRODUCT OWNER DEBUG - FINAL] Final unique nicknames (matching productOwnerOrder):', uniqueNames);
           
           return uniqueNames;
         })(),
