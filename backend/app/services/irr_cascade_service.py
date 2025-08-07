@@ -337,11 +337,13 @@ class IRRCascadeService:
                 date_obj = date
                 
             # Delete fund IRR records
-            deleted_count = await self.db.execute(
+            deleted_count_str = await self.db.execute(
                 "DELETE FROM portfolio_fund_irr_values WHERE fund_id = $1 AND date = $2",
-                fund_id, date_obj
+                int(fund_id), date_obj
             )
             
+            # Parse the delete count from the returned string (e.g., "DELETE 1" -> 1)
+            deleted_count = int(deleted_count_str.split()[-1]) if deleted_count_str and isinstance(deleted_count_str, str) else 0
             logger.info(f"🗑️ Deleted {deleted_count} fund IRR records for fund {fund_id} on {date}")
             return deleted_count > 0
             
@@ -356,23 +358,33 @@ class IRRCascadeService:
             # We need to check if ALL active funds will have valuations AFTER the deletion
             all_active_funds = await self.db.fetch(
                 "SELECT id FROM portfolio_funds WHERE portfolio_id = $1 AND status = $2",
-                portfolio_id, "active"
+                int(portfolio_id), "active"
             )
             
             if not all_active_funds:
                 logger.info(f"🔍 No active funds found in portfolio {portfolio_id}")
                 return False
             
-            all_fund_ids = [f["id"] for f in all_active_funds]
+            # Ensure all fund IDs are integers
+            all_fund_ids = [int(f["id"]) for f in all_active_funds]
+            excluding_fund_id = int(excluding_fund_id)  # Ensure excluding_fund_id is also an integer
             logger.info(f"🔍 Portfolio {portfolio_id} has {len(all_fund_ids)} active funds: {all_fund_ids}")
+            
+            # Convert string date to date object for PostgreSQL comparison
+            from datetime import datetime
+            if isinstance(date, str):
+                date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+            else:
+                date_obj = date
             
             # Get current valuations for this date (BEFORE deletion)
             current_valuations = await self.db.fetch(
                 "SELECT portfolio_fund_id FROM portfolio_fund_valuations WHERE portfolio_fund_id = ANY($1::int[]) AND valuation_date = $2",
-                all_fund_ids, date
+                all_fund_ids, date_obj
             )
             
-            current_funds_with_valuations = set([v["portfolio_fund_id"] for v in current_valuations]) if current_valuations else set()
+            # Ensure all portfolio_fund_ids from database are integers
+            current_funds_with_valuations = set([int(v["portfolio_fund_id"]) for v in current_valuations]) if current_valuations else set()
             
             # Simulate what will happen AFTER deleting the specified fund's valuation
             funds_with_valuations_after_deletion = current_funds_with_valuations.copy()
@@ -411,38 +423,45 @@ class IRRCascadeService:
             # ENHANCED DEBUG: Check ALL portfolio IRR records to see what exists
             all_records = await self.db.fetch(
                 "SELECT id, irr_result, date, created_at FROM portfolio_irr_values WHERE portfolio_id = $1",
-                portfolio_id
+                int(portfolio_id)
             )
             
             logger.info(f"🔍 [PORTFOLIO IRR DELETE] Portfolio {portfolio_id} has {len(all_records)} total IRR records")
             
             if all_records:
                 for record in all_records:
-                    logger.info(f"🔍 [PORTFOLIO IRR DELETE] All records - ID {record['id']}: IRR={record.get('irr_result', 'N/A')}%, Date='{record['date']}'")
+                    # Ensure record ID is treated as integer for consistent logging
+                    record_id = int(record['id']) if record['id'] is not None else 'N/A'
+                    logger.info(f"🔍 [PORTFOLIO IRR DELETE] All records - ID {record_id}: IRR={record.get('irr_result', 'N/A')}%, Date='{record['date']}'")
             
             # Check what records exist for the specific date
             check_result = await self.db.fetch(
                 "SELECT id, irr_result, date, created_at FROM portfolio_irr_values WHERE portfolio_id = $1 AND date = $2",
-                portfolio_id, date_obj
+                int(portfolio_id), date_obj
             )
             
             logger.info(f"🔍 [PORTFOLIO IRR DELETE] Targeting date '{date}': found {len(check_result)} exact matches")
             
             if check_result:
                 for record in check_result:
-                    logger.info(f"🔍 [PORTFOLIO IRR DELETE] Target match - ID {record['id']}: IRR={record.get('irr_result', 'N/A')}%, Date='{record['date']}'")
+                    # Ensure record ID is treated as integer for consistent logging
+                    record_id = int(record['id']) if record['id'] is not None else 'N/A'
+                    logger.info(f"🔍 [PORTFOLIO IRR DELETE] Target match - ID {record_id}: IRR={record.get('irr_result', 'N/A')}%, Date='{record['date']}'")
             
             # Delete the portfolio IRRs using the date object
-            deleted_count = await self.db.execute(
+            deleted_count_str = await self.db.execute(
                 "DELETE FROM portfolio_irr_values WHERE portfolio_id = $1 AND date = $2",
-                portfolio_id, date_obj
+                int(portfolio_id), date_obj
             )
+            
+            # Parse the delete count from the returned string (e.g., "DELETE 1" -> 1)
+            deleted_count = int(deleted_count_str.split()[-1]) if deleted_count_str and isinstance(deleted_count_str, str) else 0
             logger.info(f"🗑️ Deleted {deleted_count} portfolio IRR records for portfolio {portfolio_id} on '{date}'")
             
             # ENHANCED DEBUG: Double-check that records are actually gone
             verify_result = await self.db.fetch(
                 "SELECT id, irr_result, date FROM portfolio_irr_values WHERE portfolio_id = $1",
-                portfolio_id
+                int(portfolio_id)
             )
             
             remaining_total = len(verify_result)
@@ -450,7 +469,9 @@ class IRRCascadeService:
             
             if verify_result:
                 for record in verify_result:
-                    logger.info(f"🔍 [PORTFOLIO IRR DELETE] Remaining record ID {record['id']}: IRR={record.get('irr_result', 'N/A')}%, Date='{record['date']}'")
+                    # Ensure record ID is treated as integer for consistent logging
+                    record_id = int(record['id']) if record['id'] is not None else 'N/A'
+                    logger.info(f"🔍 [PORTFOLIO IRR DELETE] Remaining record ID {record_id}: IRR={record.get('irr_result', 'N/A')}%, Date='{record['date']}'")
             
             return deleted_count > 0
             
@@ -461,24 +482,35 @@ class IRRCascadeService:
     async def _delete_portfolio_valuation_by_date(self, portfolio_id: int, date: str) -> bool:
         """Delete portfolio valuation for specific date"""
         try:
+            # Convert string date to date object for PostgreSQL comparison
+            from datetime import datetime
+            if isinstance(date, str):
+                date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+            else:
+                date_obj = date
+                
             # First, check if any portfolio valuations exist for this date
             check_result = await self.db.fetch(
                 "SELECT id, valuation_date FROM portfolio_valuations WHERE portfolio_id = $1 AND valuation_date = $2",
-                portfolio_id, date
+                int(portfolio_id), date_obj
             )
             
             logger.info(f"🔍 [PORTFOLIO VALUATION] Checking portfolio {portfolio_id} on {date}: found {len(check_result)} records")
             
             if check_result:
                 for record in check_result:
-                    logger.info(f"🔍 [PORTFOLIO VALUATION] Found record ID {record['id']} with date {record['valuation_date']}")
+                    # Ensure record ID is treated as integer for consistent logging
+                    record_id = int(record['id']) if record['id'] is not None else 'N/A'
+                    logger.info(f"🔍 [PORTFOLIO VALUATION] Found record ID {record_id} with date {record['valuation_date']}")
             
             # Delete the portfolio valuations
-            deleted_count = await self.db.execute(
+            deleted_count_str = await self.db.execute(
                 "DELETE FROM portfolio_valuations WHERE portfolio_id = $1 AND valuation_date = $2",
-                portfolio_id, date
+                int(portfolio_id), date_obj
             )
             
+            # Parse the delete count from the returned string (e.g., "DELETE 0" -> 0)
+            deleted_count = int(deleted_count_str.split()[-1]) if deleted_count_str and isinstance(deleted_count_str, str) else 0
             logger.info(f"🗑️ Deleted {deleted_count} portfolio valuation records for portfolio {portfolio_id} on {date}")
             
             if deleted_count == 0 and check_result:
@@ -493,11 +525,13 @@ class IRRCascadeService:
     async def _delete_fund_valuation(self, valuation_id: int) -> bool:
         """Delete the original fund valuation"""
         try:
-            deleted_count = await self.db.execute(
+            deleted_count_str = await self.db.execute(
                 "DELETE FROM portfolio_fund_valuations WHERE id = $1",
-                valuation_id
+                int(valuation_id)
             )
             
+            # Parse the delete count from the returned string (e.g., "DELETE 1" -> 1)
+            deleted_count = int(deleted_count_str.split()[-1]) if deleted_count_str and isinstance(deleted_count_str, str) else 0
             logger.info(f"🗑️ Deleted fund valuation {valuation_id}")
             return deleted_count > 0
             
@@ -531,12 +565,13 @@ class IRRCascadeService:
                 portfolio_id
             )
             
-            portfolio_fund_ids = [pf["id"] for pf in portfolio_funds] if portfolio_funds else []
+            # Ensure all IDs are integers for consistent type comparison
+            portfolio_fund_ids = [int(pf["id"]) for pf in portfolio_funds] if portfolio_funds else []
             
             # Filter to only funds that belong to this portfolio and have valuations
             relevant_fund_ids = [
-                v["portfolio_fund_id"] for v in funds_with_valuations 
-                if v["portfolio_fund_id"] in portfolio_fund_ids
+                int(v["portfolio_fund_id"]) for v in funds_with_valuations 
+                if int(v["portfolio_fund_id"]) in portfolio_fund_ids
             ]
             
             recalculated_count = 0
@@ -686,14 +721,15 @@ class IRRCascadeService:
             # FIXED: Use consistent "active" status filtering instead of end_date check
             active_funds = await self.db.fetch(
                 "SELECT id FROM portfolio_funds WHERE portfolio_id = $1 AND status = $2",
-                portfolio_id, "active"
+                int(portfolio_id), "active"
             )
             
             if not active_funds:
                 logger.info(f"🔍 No active funds found in portfolio {portfolio_id}")
                 return False
             
-            fund_ids = [f["id"] for f in active_funds]
+            # Ensure fund IDs are integers for consistent type comparison
+            fund_ids = [int(f["id"]) for f in active_funds]
             
             # Check valuations for this date
             # Convert string date to date object for PostgreSQL comparison
@@ -708,7 +744,8 @@ class IRRCascadeService:
                 fund_ids, date_obj
             )
             
-            funds_with_valuations = len(set([v["portfolio_fund_id"] for v in valuations])) if valuations else 0
+            # Ensure portfolio_fund_ids are integers for consistent type comparison
+            funds_with_valuations = len(set([int(v["portfolio_fund_id"]) for v in valuations])) if valuations else 0
             
             is_complete = funds_with_valuations == len(fund_ids)
             logger.info(f"📊 Portfolio {portfolio_id} completeness for {date}: {funds_with_valuations}/{len(fund_ids)} = {is_complete}")
@@ -740,7 +777,7 @@ class IRRCascadeService:
             if not portfolio_funds:
                 return False
             
-            fund_ids = [pf["id"] for pf in portfolio_funds]
+            fund_ids = [int(pf["id"]) for pf in portfolio_funds]
             
             # FIXED: Clear ALL cache BEFORE calculation to ensure fresh data is used
             try:
@@ -835,7 +872,7 @@ class IRRCascadeService:
                 logger.info(f"🔍 No portfolio funds found for portfolio {portfolio_id}")
                 return []
             
-            fund_ids = [pf["id"] for pf in portfolio_funds]
+            fund_ids = [int(pf["id"]) for pf in portfolio_funds]
             
             # Get all valuation dates for these funds from start_date onwards
             # Convert string date to date object for PostgreSQL comparison

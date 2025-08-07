@@ -2228,7 +2228,12 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">
                           <div className="text-sm text-right font-bold text-red-700">
-                            {formatCurrency(calculateTotalValue(holdings))}
+                            <div>{formatCurrency(calculateTotalValue(holdings))}</div>
+                            {latestValuationDate && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                {formatDateMonthYear(latestValuationDate)}
+                              </div>
+                            )}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">

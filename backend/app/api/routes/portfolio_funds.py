@@ -1915,12 +1915,16 @@ async def calculate_portfolio_fund_irr(
                 fund_valuation_id = None
                 
         # Get all activity logs for this portfolio fund up to the calculation date
+        # Convert calculation date to end of day to include activities saved on the same day
+        from datetime import time
+        calculation_datetime_end = datetime.combine(calculation_date.date(), time.max)
+        
         activity_logs = await db.fetch("""
             SELECT * FROM holding_activity_log 
             WHERE portfolio_fund_id = $1 
               AND activity_timestamp <= $2 
             ORDER BY activity_timestamp
-        """, portfolio_fund_id, calculation_date)
+        """, portfolio_fund_id, calculation_datetime_end)
             
         if not activity_logs:
             logger.warning(f"No activity logs found for portfolio_fund_id {portfolio_fund_id}")
@@ -2248,12 +2252,16 @@ async def calculate_multiple_portfolio_funds_irr(
             raise HTTPException(status_code=404, detail=f"Portfolio funds not found: {missing_ids}")
         
         # Fetch all activity logs for these funds up to the IRR date
+        # Convert date to end of day to include activities saved on the same day
+        from datetime import time
+        irr_datetime_end = datetime.combine(irr_date_obj, time.max)
+        
         activities_response = await db.fetch("""
             SELECT * FROM holding_activity_log 
             WHERE portfolio_fund_id = ANY($1::int[]) 
             AND activity_timestamp <= $2 
             ORDER BY activity_timestamp
-        """, portfolio_fund_ids, irr_date_obj)
+        """, portfolio_fund_ids, irr_datetime_end)
         
         activities = [dict(record) for record in activities_response]
         
@@ -2593,15 +2601,19 @@ async def calculate_single_portfolio_fund_irr(
             logger.warning(f"💰 DEBUG: ⚠️  ZERO VALUATION DETECTED! Fund {portfolio_fund_id} has £0 valuation")
         
         # Fetch all activity logs for this fund up to the IRR date
+        # Convert date to end of day to include activities saved on the same day
+        from datetime import time
+        irr_datetime_end = datetime.combine(irr_date_obj, time.max)
+        
         activities_response = await db.fetch("""
             SELECT * FROM holding_activity_log 
             WHERE portfolio_fund_id = $1 
             AND activity_timestamp <= $2 
             ORDER BY activity_timestamp
-        """, portfolio_fund_id, irr_date_obj)
+        """, portfolio_fund_id, irr_datetime_end)
         
         activities = [dict(record) for record in activities_response]
-        logger.info(f"💰 DEBUG: Found {len(activities)} activities for fund {portfolio_fund_id} up to {irr_date_obj}")
+        logger.info(f"💰 DEBUG: Found {len(activities)} activities for fund {portfolio_fund_id} up to {irr_date_obj} (using end-of-day filter: {irr_datetime_end})")
         
         # Aggregate cash flows by month
         cash_flows = {}
