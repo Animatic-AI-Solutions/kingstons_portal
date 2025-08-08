@@ -349,12 +349,17 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
               console.log('🔧 DEBUG: Using hardcoded portfolio ID 193 for Product 14');
             }
             
-            if (portfolioIdForIRR) {
+            if (portfolioIdForIRR && typeof portfolioIdForIRR === 'number' && portfolioIdForIRR > 0) {
               console.log(`🔍 Looking for stored portfolio IRR values for portfolio ${portfolioIdForIRR}`);
               
               // Get actual stored portfolio IRR values from portfolio_irr_values table
               try {
-                const portfolioIRRResponse = await fetch(`/api/historical-irr/portfolio-irr-values/${portfolioIdForIRR}`);
+                const url = `/api/historical-irr/portfolio-irr-values/${portfolioIdForIRR}`;
+                console.log(`📡 Fetching from URL: ${url}`);
+                
+                const portfolioIRRResponse = await fetch(url);
+                console.log(`📡 Response status: ${portfolioIRRResponse.status}, Content-Type: ${portfolioIRRResponse.headers.get('content-type')}`);
+                
                 if (portfolioIRRResponse.ok) {
                   const portfolioIRRData = await portfolioIRRResponse.json();
                   
@@ -370,14 +375,23 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
                     console.log('📊 No stored portfolio IRR values found - portfolio totals will be empty');
                   }
                 } else {
-                  console.warn('Failed to fetch stored portfolio IRR values - endpoint may not exist');
+                  console.warn(`Failed to fetch stored portfolio IRR values - HTTP ${portfolioIRRResponse.status}`);
+                  const errorText = await portfolioIRRResponse.text();
+                  console.warn('Error response body:', errorText.substring(0, 200) + '...');
                 }
               } catch (err) {
-                console.warn('Failed to fetch stored portfolio IRR values:', err);
+                console.error('Failed to fetch stored portfolio IRR values:', err);
                 console.log('📊 Portfolio totals will be empty since no stored values are available');
+                
+                // Log more details about the error
+                if (err instanceof Error) {
+                  console.error('Error name:', err.name);
+                  console.error('Error message:', err.message);
+                }
               }
             } else {
-              console.warn('No portfolio ID found - cannot fetch stored portfolio IRR values');
+              console.warn('No valid portfolio ID found - cannot fetch stored portfolio IRR values');
+              console.warn('portfolioIdForIRR value:', portfolioIdForIRR, 'type:', typeof portfolioIdForIRR);
             }
             
           } else {
