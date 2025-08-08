@@ -233,7 +233,7 @@ const detectNonCommonValuationDates = (holdings: Holding[]): {
 } => {
   // Filter to only active holdings (ignore inactive ones)
   const activeHoldings = filterActiveHoldings(holdings);
-
+  
   console.log('🔍 Valuation Date Detection Debug:', {
     totalHoldings: holdings.length,
     activeHoldings: activeHoldings.length,
@@ -245,12 +245,12 @@ const detectNonCommonValuationDates = (holdings: Holding[]): {
       status: h.status
     }))
   });
-
+  
   if (activeHoldings.length === 0) {
     console.log('🔍 No active holdings found');
     return { hasNonCommonDates: false, nonCommonFunds: [], commonDates: [] };
   }
-
+  
   // NEW: Get ALL unique valuation dates across all funds (including those with multiple valuations)
   // This is the key change - we need to check completeness for each date
   const allValuationDatesSet = new Set<string>();
@@ -269,7 +269,7 @@ const detectNonCommonValuationDates = (holdings: Holding[]): {
     console.log('🔍 No funds have valuations');
     return { hasNonCommonDates: false, nonCommonFunds: [], commonDates: [] };
   }
-
+  
   // NEW: Check each date for completeness - do ALL active funds have a valuation for this date?
   const incompleteDates: string[] = [];
   const completeDates: string[] = [];
@@ -372,7 +372,7 @@ const detectNonCommonValuationDates = (holdings: Holding[]): {
 
   // All dates are complete - no warnings needed
   console.log('🔍 All valuation dates are complete across all funds');
-  return { 
+  return {
     hasNonCommonDates: false, 
     nonCommonFunds: [], 
     commonDates: completeDates 

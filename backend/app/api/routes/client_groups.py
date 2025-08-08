@@ -94,7 +94,7 @@ async def get_bulk_client_data(
                     "portfolio_name": row["portfolio_name"],
                     "active_fund_count": row.get("active_fund_count", 0),
                     "inactive_fund_count": row.get("inactive_fund_count", 0),
-                    "product_total_value": float(row.get("product_total_value", 0))
+                    "product_total_value": float(row.get("product_total_value") or 0) if row.get("product_total_value") is not None and str(row.get("product_total_value")).strip() != '' else 0
                 }
                 
                 client_group["products"].append(product_data)
@@ -1280,7 +1280,7 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                     "isin_number": fund["isin_number"] or "N/A", 
                     "risk_factor": fund["risk_factor"],
                     "amount_invested": fund["amount_invested"] or 0,
-                    "market_value": fund["market_value"] or 0,
+                    "market_value": float(fund["market_value"]) if fund["market_value"] is not None and str(fund["market_value"]).strip() != '' else 0,
                     "investments": float(fund["total_investments"]) if fund["total_investments"] is not None else 0,
                     "tax_uplift": 0,  # Not available in fund_activity_summary, would need separate query
                     "withdrawals": float(fund["total_withdrawals"]) if fund["total_withdrawals"] is not None else 0,
@@ -1303,7 +1303,11 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                 total_fund_switch_out = sum(float(f["total_fund_switch_out"]) if f["total_fund_switch_out"] is not None else 0 for f in inactive_funds)
                 total_product_switch_in = sum(float(f["total_product_switch_in"]) if f["total_product_switch_in"] is not None else 0 for f in inactive_funds)
                 total_product_switch_out = sum(float(f["total_product_switch_out"]) if f["total_product_switch_out"] is not None else 0 for f in inactive_funds)
-                total_market_value = sum(f["market_value"] or 0 for f in inactive_funds)
+                total_market_value = sum(
+                    float(f["market_value"]) if f["market_value"] is not None and str(f["market_value"]).strip() != '' 
+                    else 0 
+                    for f in inactive_funds
+                )
                 
                 previous_funds_entry = {
                     "id": -1,  # Virtual ID
@@ -1343,7 +1347,11 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                 "provider_id": product["provider_id"],
                 "provider_name": product["provider_name"],
                 "provider_theme_color": product.get("provider_theme_color"),
-                "total_value": sum(float(fund.get("market_value", 0) or 0) for fund in portfolio_funds),
+                "total_value": sum(
+                    float(fund.get("market_value") or 0) if fund.get("market_value") is not None and str(fund.get("market_value")).strip() != '' 
+                    else 0 
+                    for fund in portfolio_funds
+                ),
                 "irr": None,  # Will be calculated using standardized method below
                 "active_fund_count": product.get("active_fund_count", 0),
                 "inactive_fund_count": product.get("inactive_fund_count", 0),

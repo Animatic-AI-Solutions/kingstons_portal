@@ -577,10 +577,12 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
 
   // Create client options for AutocompleteSearch
   const clientOptions: AutocompleteOption[] = React.useMemo(() => {
-    return clients.map(client => ({
+    return clients
+      .map(client => ({
       value: client.id.toString(),
       label: client.name || 'Unnamed Client'
-    }));
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
   }, [clients]);
 
   // Handle client selection from AutocompleteSearch
@@ -2431,7 +2433,10 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                     <div>
                             <BaseDropdown
                               label="Provider"
-                              options={providers.map(p => ({ value: p.id.toString(), label: p.name }))}
+                              options={providers
+                                .map(p => ({ value: p.id.toString(), label: p.name }))
+                                .sort((a, b) => a.label.localeCompare(b.label))
+                              }
                               value={product.provider_id ? product.provider_id.toString() : ''}
                               onChange={(value) => handleProductChange(product.id, 'provider_id', Number(value))}
                               placeholder="Select provider"
@@ -2581,10 +2586,13 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                       <div className="flex-grow">
                                         <MultiSelectDropdown
                                           label="Product Owners"
-                                                                    options={productOwners.map(owner => ({ 
+                                                                                                                                                        options={productOwners
+                                            .map(owner => ({
                             value: owner.id.toString(), 
                             label: getProductOwnerDisplayName(owner)
-                          }))}
+                                            }))
+                                            .sort((a, b) => a.label.localeCompare(b.label))
+                                          }
                                           values={product.product_owner_ids.map(id => id.toString())}
                                           onChange={(values) => {
                                             const numericValues = values.map(v => parseInt(String(v)));

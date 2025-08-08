@@ -100,8 +100,8 @@ const AddClient: React.FC = () => {
   // Prepare options for dropdowns
 
   const typeOptions = [
-    { value: 'Family', label: 'Family' },
     { value: 'Business', label: 'Business' },
+    { value: 'Family', label: 'Family' },
     { value: 'Trust', label: 'Trust' }
   ];
 

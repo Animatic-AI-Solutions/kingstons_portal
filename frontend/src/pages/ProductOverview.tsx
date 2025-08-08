@@ -12,11 +12,13 @@ import {
   BaseInput,
   BaseDropdown,
   DateInput,
-  ActionButton
+  ActionButton,
+  AddButton
 } from '../components/ui';
 import { isCashFund } from '../utils/fundUtils';
 import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
 import { useSmartNavigation } from '../hooks/useSmartNavigation';
+import CreateProductOwnerModal from '../components/CreateProductOwnerModal';
 
 
 
@@ -181,6 +183,9 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   const [providers, setProviders] = useState<Provider[]>([]);
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [allProductOwners, setAllProductOwners] = useState<ProductOwner[]>([]);
+  
+  // Create product owner modal state
+  const [showCreateProductOwnerModal, setShowCreateProductOwnerModal] = useState(false);
   const [editFormData, setEditFormData] = useState({
     product_name: '',
     provider_id: '',
@@ -1697,6 +1702,26 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     }));
   };
 
+  // Handle creating a new product owner
+  const handleCreateProductOwner = async (newProductOwner: ProductOwner) => {
+    // Add to the list of all product owners
+    setAllProductOwners(prevOwners => [...prevOwners, newProductOwner]);
+    
+    // Add this product owner to the current product's selected owners
+    setEditOwnersFormData(prev => ({
+      ...prev,
+      selected_owner_ids: [...prev.selected_owner_ids, newProductOwner.id]
+    }));
+    
+    // Close the modal
+    setShowCreateProductOwnerModal(false);
+  };
+
+  // Open the create product owner modal
+  const openCreateProductOwnerModal = () => {
+    setShowCreateProductOwnerModal(true);
+  };
+
   // Handle product details form submission
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -1991,12 +2016,15 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                   {/* Provider - Inline Editable */}
                   <div>
                     {isEditMode ? (
-                      <BaseDropdown
+                                            <BaseDropdown
                         label="Provider"
-                        options={providers.map(provider => ({ 
-                          value: provider.id.toString(), 
-                          label: provider.name 
-                        }))}
+                        options={providers
+                          .map(provider => ({
+                            value: provider.id.toString(),
+                            label: provider.name
+                          }))
+                          .sort((a, b) => a.label.localeCompare(b.label))
+                        }
                         value={editFormData.provider_id}
                         onChange={handleDropdownChange('provider_id')}
                         placeholder="Select Provider"
@@ -2063,21 +2091,37 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                         <label htmlFor="product-owners-select" className="block text-xs font-medium text-gray-700 mb-1">
                           Product Owners
                         </label>
-                        <MultiSelectDropdown
-                          label=""
-                          options={allProductOwners.map(owner => ({
-                            value: owner.id,
-                            label: getProductOwnerDisplayName(owner)
-                          }))}
-                          values={editOwnersFormData.selected_owner_ids}
-                          onChange={(values) => setEditOwnersFormData(prev => ({
-                            ...prev,
-                            selected_owner_ids: values as number[]
-                          }))}
-                          placeholder="Search and select product owners"
-                          size="sm"
-                          searchable={true}
-                        />
+                        <div className="flex items-end gap-2">
+                          <div className="flex-1">
+                            <MultiSelectDropdown
+                              label=""
+                              options={allProductOwners
+                                .map(owner => ({
+                                  value: owner.id,
+                                  label: getProductOwnerDisplayName(owner)
+                                }))
+                                .sort((a, b) => a.label.localeCompare(b.label))
+                              }
+                              values={editOwnersFormData.selected_owner_ids}
+                              onChange={(values) => setEditOwnersFormData(prev => ({
+                                ...prev,
+                                selected_owner_ids: values as number[]
+                              }))}
+                              placeholder="Search and select product owners"
+                              size="sm"
+                              searchable={true}
+                            />
+                          </div>
+                          <div className="flex-shrink-0">
+                            <AddButton
+                              context="Product Owner"
+                              size="sm"
+                              iconOnly
+                              onClick={openCreateProductOwnerModal}
+                              title="Create new product owner"
+                            />
+                          </div>
+                        </div>
                       </div>
                     ) : (
                       <>
@@ -2914,6 +2958,17 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
 
         </div>
       </div>
+      
+      {/* Create Product Owner Modal */}
+      {showCreateProductOwnerModal && (
+        <CreateProductOwnerModal
+          isOpen={showCreateProductOwnerModal}
+          onClose={() => setShowCreateProductOwnerModal(false)}
+          onSuccess={handleCreateProductOwner}
+          includeProductSelection={false}
+          title="Create New Product Owner"
+        />
+      )}
     </>
   );
 };

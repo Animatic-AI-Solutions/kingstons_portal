@@ -2352,28 +2352,26 @@ async def calculate_multiple_portfolio_funds_irr(
                 # Skip this activity and continue
                 continue
         
-        # Process valuations - these happen at the END of the month (last day)
+        # Process valuations - these happen at the BEGINNING of the NEXT month for IRR calculation
+        # This ensures proper separation from activities in the same calendar month
         # Calculate total valuation, treating None values as 0 for calculation purposes
         total_valuation = sum(v for v in fund_valuations.values() if v is not None)
         
         # EDGE CASE HANDLING: For zero total valuation, omit final valuations completely
         # This allows IRR calculation to proceed using only activities for fully exited funds
         if total_valuation > 0:
-            # Valuations happen at END of month - use last day of the month for separation
+            # FIXED: For IRR calculation, treat final valuations as happening at the beginning of the next month
+            # This allows activities in the same month to have their own cash flows separate from the valuation
             valuation_month = irr_date_obj.replace(day=1)
-            # Find last day of the month
+            # Move to next month
             if valuation_month.month == 12:
-                next_month = valuation_month.replace(year=valuation_month.year + 1, month=1)
+                next_month_key = valuation_month.replace(year=valuation_month.year + 1, month=1)
             else:
-                next_month = valuation_month.replace(month=valuation_month.month + 1)
-            last_day_of_month = (next_month - timedelta(days=1))
+                next_month_key = valuation_month.replace(month=valuation_month.month + 1)
             
-            # Use the last day as the key to ensure it's separate from start-of-month activities
-            valuation_end_key = last_day_of_month
-            
-            if valuation_end_key not in cash_flows_by_date:
-                cash_flows_by_date[valuation_end_key] = 0.0
-            cash_flows_by_date[valuation_end_key] += total_valuation  # Include final value at end of month
+            if next_month_key not in cash_flows_by_date:
+                cash_flows_by_date[next_month_key] = 0.0
+            cash_flows_by_date[next_month_key] += total_valuation  # Add valuation to next month
         
         logger.info(f"💰 DEBUG: Separated cash flows by date:")
         for date_key, amount in sorted(cash_flows_by_date.items()):
@@ -2701,8 +2699,15 @@ async def calculate_single_portfolio_fund_irr(
             
             if valuation_month_key not in cash_flows:
                 cash_flows[valuation_month_key] = 0.0
-            cash_flows[valuation_month_key] += valuation_amount  # Include final value in the same month
-            logger.info(f"💰 DEBUG: Added final valuation of £{valuation_amount} to same month as activities: {valuation_month_key}")
+            # FIXED: For IRR calculation, treat final valuations as happening at the beginning of the next month
+            # This allows activities in the same month to have their own cash flows separate from the valuation
+            next_month = valuation_month_key.replace(day=28) + timedelta(days=4)  # Move to next month
+            next_month_key = next_month.replace(day=1)  # First day of next month
+            
+            if next_month_key not in cash_flows:
+                cash_flows[next_month_key] = 0.0
+            cash_flows[next_month_key] += valuation_amount  # Add valuation to next month
+            logger.info(f"💰 DEBUG: Added final valuation of £{valuation_amount} to next month ({next_month_key}) to separate from activities in {valuation_month_key}")
         
         logger.info(f"💰 DEBUG: Aggregated cash flows: {len(cash_flows)} flows from {min(cash_flows.keys()) if cash_flows else 'N/A'} to {max(cash_flows.keys()) if cash_flows else 'N/A'}")
         logger.info(f"💰 DEBUG: Total valuation: £{valuation_amount}")
