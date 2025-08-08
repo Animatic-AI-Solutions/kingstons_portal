@@ -354,39 +354,38 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
               
               // Get actual stored portfolio IRR values from portfolio_irr_values table
               try {
-                const url = `/api/historical-irr/portfolio-irr-values/${portfolioIdForIRR}`;
-                console.log(`📡 Fetching from URL: ${url}`);
+                // Import api service to get correct base URL for production
+                const { default: api } = await import('../services/api');
                 
-                const portfolioIRRResponse = await fetch(url);
-                console.log(`📡 Response status: ${portfolioIRRResponse.status}, Content-Type: ${portfolioIRRResponse.headers.get('content-type')}`);
+                const response = await api.get(`/api/historical-irr/portfolio-irr-values/${portfolioIdForIRR}`);
+                console.log(`📡 Successfully fetched portfolio IRR data for portfolio ${portfolioIdForIRR}`);
                 
-                if (portfolioIRRResponse.ok) {
-                  const portfolioIRRData = await portfolioIRRResponse.json();
-                  
-                  if (portfolioIRRData && portfolioIRRData.length > 0) {
-                    for (const irrRecord of portfolioIRRData) {
-                      if (irrRecord.irr_result !== null && irrRecord.date) {
-                        const monthYear = formatMonthYear(irrRecord.date + 'T00:00:00Z');
-                        portfolioIRRResults[monthYear] = irrRecord.irr_result;
-                        console.log(`📊 Stored Portfolio IRR ${monthYear}: ${irrRecord.irr_result}%`);
-                      }
+                const portfolioIRRData = response.data;
+                console.log(`📡 Response status: ${response.status}, received ${portfolioIRRData?.length || 0} portfolio IRR records`);
+                
+                if (portfolioIRRData && portfolioIRRData.length > 0) {
+                  for (const irrRecord of portfolioIRRData) {
+                    if (irrRecord.irr_result !== null && irrRecord.date) {
+                      const monthYear = formatMonthYear(irrRecord.date + 'T00:00:00Z');
+                      portfolioIRRResults[monthYear] = irrRecord.irr_result;
+                      console.log(`📊 Stored Portfolio IRR ${monthYear}: ${irrRecord.irr_result}%`);
                     }
-                  } else {
-                    console.log('📊 No stored portfolio IRR values found - portfolio totals will be empty');
                   }
                 } else {
-                  console.warn(`Failed to fetch stored portfolio IRR values - HTTP ${portfolioIRRResponse.status}`);
-                  const errorText = await portfolioIRRResponse.text();
-                  console.warn('Error response body:', errorText.substring(0, 200) + '...');
+                  console.log('📊 No stored portfolio IRR values found - portfolio totals will be empty');
                 }
-              } catch (err) {
+              } catch (err: any) {
                 console.error('Failed to fetch stored portfolio IRR values:', err);
                 console.log('📊 Portfolio totals will be empty since no stored values are available');
                 
-                // Log more details about the error
-                if (err instanceof Error) {
-                  console.error('Error name:', err.name);
-                  console.error('Error message:', err.message);
+                // Log more details about the error (axios error format)
+                if (err.response) {
+                  console.error('HTTP Error:', err.response.status, err.response.statusText);
+                  console.error('Error data:', err.response.data);
+                } else if (err.request) {
+                  console.error('Network Error:', err.message);
+                } else {
+                  console.error('Error:', err.message);
                 }
               }
             } else {
