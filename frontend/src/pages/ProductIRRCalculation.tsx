@@ -233,7 +233,7 @@ const detectNonCommonValuationDates = (holdings: Holding[]): {
 } => {
   // Filter to only active holdings (ignore inactive ones)
   const activeHoldings = filterActiveHoldings(holdings);
-  
+
   console.log('🔍 Valuation Date Detection Debug:', {
     totalHoldings: holdings.length,
     activeHoldings: activeHoldings.length,
@@ -245,70 +245,115 @@ const detectNonCommonValuationDates = (holdings: Holding[]): {
       status: h.status
     }))
   });
-  
+
   if (activeHoldings.length === 0) {
     console.log('🔍 No active holdings found');
     return { hasNonCommonDates: false, nonCommonFunds: [], commonDates: [] };
   }
-  
-  // Separate funds with and without valid valuations
-  // A valid valuation requires both a valuation_date AND a market_value (including zero)
-  const fundsWithValuations = activeHoldings.filter(holding => 
-    holding.valuation_date && holding.market_value !== null && holding.market_value !== undefined
-  );
-  const fundsWithoutValuations = activeHoldings.filter(holding => 
-    !holding.valuation_date || holding.market_value === null || holding.market_value === undefined
-  );
-  
-  console.log('🔍 Valuation separation:', {
-    fundsWithValuations: fundsWithValuations.length,
-    fundsWithoutValuations: fundsWithoutValuations.length,
-    withValuations: fundsWithValuations.map(h => ({ fund_name: h.fund_name, valuation_date: h.valuation_date, market_value: h.market_value })),
-    withoutValuations: fundsWithoutValuations.map(h => ({ fund_name: h.fund_name, valuation_date: h.valuation_date, market_value: h.market_value }))
+
+  // NEW: Get ALL unique valuation dates across all funds (including those with multiple valuations)
+  // This is the key change - we need to check completeness for each date
+  const allValuationDatesSet = new Set<string>();
+  activeHoldings.forEach(holding => {
+    if (holding.valuation_date && holding.market_value !== null && holding.market_value !== undefined) {
+      allValuationDatesSet.add(holding.valuation_date);
+    }
   });
   
-  // If no funds have valuations, no issue
-  if (fundsWithValuations.length === 0) {
+  const allValuationDates = Array.from(allValuationDatesSet).sort((a, b) => b.localeCompare(a));
+  
+  console.log('🔍 All unique valuation dates found:', allValuationDates);
+
+  // If no dates found, no issue
+  if (allValuationDates.length === 0) {
     console.log('🔍 No funds have valuations');
     return { hasNonCommonDates: false, nonCommonFunds: [], commonDates: [] };
   }
+
+  // NEW: Check each date for completeness - do ALL active funds have a valuation for this date?
+  const incompleteDates: string[] = [];
+  const completeDates: string[] = [];
+  const incompleteDetails: Array<{ date: string; missingFunds: string[] }> = [];
   
-  // Calculate common dates among funds that DO have valuations
-  const valuationDates = fundsWithValuations.map(holding => holding.valuation_date as string);
-  
-  // Count frequency of each date
-  const dateFrequency: Record<string, number> = {};
-  valuationDates.forEach(date => {
-    dateFrequency[date] = (dateFrequency[date] || 0) + 1;
+  allValuationDates.forEach(date => {
+    const fundsWithThisDate = activeHoldings.filter(holding => 
+      holding.valuation_date === date && 
+      holding.market_value !== null && 
+      holding.market_value !== undefined
+    );
+    
+    const fundsWithoutThisDate = activeHoldings.filter(holding => 
+      holding.valuation_date !== date || 
+      holding.market_value === null || 
+      holding.market_value === undefined
+    );
+    
+    console.log(`🔍 Date ${date} completeness:`, {
+      totalActiveFunds: activeHoldings.length,
+      fundsWithThisDate: fundsWithThisDate.length,
+      fundsWithoutThisDate: fundsWithoutThisDate.length,
+      missingFunds: fundsWithoutThisDate.map(f => f.fund_name)
+    });
+    
+    if (fundsWithThisDate.length > 0 && fundsWithoutThisDate.length > 0) {
+      // INCOMPLETE DATE: Some funds have this date, others don't
+      incompleteDates.push(date);
+      incompleteDetails.push({
+        date,
+        missingFunds: fundsWithoutThisDate.map(f => f.fund_name || 'Unknown Fund')
+      });
+    } else if (fundsWithThisDate.length === activeHoldings.length) {
+      // COMPLETE DATE: All funds have this date
+      completeDates.push(date);
+    }
+    // If fundsWithThisDate.length === 0, no funds have this date (shouldn't happen due to our filter)
   });
-  
-  console.log('🔍 Date frequency analysis:', dateFrequency);
-  
-  // Find dates that ALL funds with valuations have (intersection)
-  // These are dates where count equals the number of funds with valuations
-  const totalFundsWithValuations = fundsWithValuations.length;
-  const commonDates = Object.entries(dateFrequency)
-    .filter(([, count]) => count === totalFundsWithValuations)
-    .map(([date]) => date)
-    .sort((a, b) => b.localeCompare(a)); // Sort descending (most recent first)
-  
-  console.log('🔍 Common valuation dates analysis:', {
-    totalFundsWithValuations,
-    allDates: Object.keys(dateFrequency),
-    commonDates: commonDates,
-    commonDatesCount: commonDates.length
+
+  console.log('🔍 Date completeness analysis:', {
+    completeDates: completeDates.length,
+    incompleteDates: incompleteDates.length,
+    incompleteDetails
   });
-  
-  // If some funds have valuations and others don't, that's non-common
-  if (fundsWithoutValuations.length > 0) {
-    const nonCommonFunds = fundsWithoutValuations.map(holding => {
-      // Determine the appropriate display text based on the issue type
+
+  // If we found incomplete dates, show warning
+  if (incompleteDates.length > 0) {
+    // Create the list of funds that are missing valuations for incomplete dates
+    const nonCommonFunds: Array<{ fund_name: string; valuation_date: string }> = [];
+    
+    incompleteDetails.forEach(({ date, missingFunds }) => {
+      missingFunds.forEach(fundName => {
+        nonCommonFunds.push({
+          fund_name: fundName,
+          valuation_date: `Missing for ${new Date(date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`
+        });
+      });
+    });
+    
+    console.log('🔍 INCOMPLETE VALUATION DATES DETECTED:', {
+      incompleteDates,
+      affectedFunds: nonCommonFunds.length,
+      details: incompleteDetails
+    });
+    
+    return {
+      hasNonCommonDates: true,
+      nonCommonFunds,
+      commonDates: completeDates
+    };
+  }
+
+  // Legacy logic: Check for funds with no valuations at all
+  const fundsWithoutAnyValuations = activeHoldings.filter(holding =>
+    !holding.valuation_date || holding.market_value === null || holding.market_value === undefined
+  );
+
+  if (fundsWithoutAnyValuations.length > 0) {
+    const nonCommonFunds = fundsWithoutAnyValuations.map(holding => {
       let displayText = 'No valuation date';
       if (holding.valuation_date) {
         if (holding.market_value === null || holding.market_value === undefined) {
           displayText = 'No valuation amount';
         }
-        // Note: Zero valuations are valid and should not appear in this list
       }
       
       return {
@@ -317,39 +362,20 @@ const detectNonCommonValuationDates = (holdings: Holding[]): {
       };
     });
     
-    console.log('🔍 Mixed valuation scenario detected - some funds have valid valuations, others don\'t');
+    console.log('🔍 Some funds have no valuations at all');
     return {
       hasNonCommonDates: true,
       nonCommonFunds,
-      commonDates // Include the common dates among funds that do have valuations
+      commonDates: completeDates
     };
   }
-  
-  // All funds have valuations - check if they're all the same date
-  if (Object.keys(dateFrequency).length === 1) {
-    console.log('🔍 All funds have same valuation date:', commonDates[0]);
-    return { hasNonCommonDates: false, nonCommonFunds: [], commonDates };
-  }
-  
-  // Multiple different valuation dates exist among all funds
-  // Find funds with non-common dates (dates that aren't the most frequent)
-  const nonCommonFunds = fundsWithValuations
-    .filter(holding => holding.valuation_date && !commonDates.includes(holding.valuation_date))
-    .map(holding => ({
-      fund_name: holding.fund_name || 'Unknown Fund',
-      valuation_date: holding.valuation_date as string
-    }));
-  
-  console.log('🔍 Multiple valuation dates detected:', {
-    commonDates,
-    nonCommonFunds: nonCommonFunds.length,
-    hasNonCommonDates: nonCommonFunds.length > 0
-  });
-  
-  return {
-    hasNonCommonDates: nonCommonFunds.length > 0,
-    nonCommonFunds,
-    commonDates
+
+  // All dates are complete - no warnings needed
+  console.log('🔍 All valuation dates are complete across all funds');
+  return { 
+    hasNonCommonDates: false, 
+    nonCommonFunds: [], 
+    commonDates: completeDates 
   };
 };
 

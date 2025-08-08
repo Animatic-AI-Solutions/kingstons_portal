@@ -53,7 +53,12 @@ export interface ClientDetailsData {
   id: string;
   name: string | null;
   status: string;
-  advisor: string | null;
+  advisor: string | null; // Legacy field
+  advisor_id?: number | null; // New advisor relationship field
+  advisor_name?: string | null;
+  advisor_email?: string | null;
+  advisor_first_name?: string | null;
+  advisor_last_name?: string | null;
   type: string | null;
   created_at: string;
   updated_at: string;

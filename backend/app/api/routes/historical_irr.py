@@ -88,6 +88,52 @@ async def get_portfolio_historical_irr(
         logger.error(f"Error fetching portfolio historical IRR for product {product_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch portfolio historical IRR: {str(e)}")
 
+@router.get("/portfolio-irr-values/{portfolio_id}")
+async def get_portfolio_irr_values(
+    portfolio_id: int,
+    db = Depends(get_db)
+):
+    """
+    Get stored portfolio IRR values directly from portfolio_irr_values table.
+    This returns the actual stored portfolio-level IRR calculations, not fund averages.
+    """
+    try:
+        logger.info(f"Fetching stored portfolio IRR values for portfolio {portfolio_id}")
+        
+        # Query the portfolio_irr_values table directly
+        result = await db.fetch(
+            """
+            SELECT id, portfolio_id, date, irr_result, created_at
+            FROM portfolio_irr_values
+            WHERE portfolio_id = $1
+            ORDER BY date DESC
+            """,
+            portfolio_id
+        )
+        
+        if result:
+            logger.info(f"Found {len(result)} stored portfolio IRR values for portfolio {portfolio_id}")
+            
+            # Format the response
+            irr_values = []
+            for record in result:
+                irr_values.append({
+                    "id": record["id"],
+                    "portfolio_id": record["portfolio_id"],
+                    "date": record["date"],
+                    "irr_result": float(record["irr_result"]) if record["irr_result"] is not None else None,
+                    "created_at": record["created_at"]
+                })
+            
+            return irr_values
+        else:
+            logger.info(f"No stored portfolio IRR values found for portfolio {portfolio_id}")
+            return []
+            
+    except Exception as e:
+        logger.error(f"Error fetching stored portfolio IRR values for portfolio {portfolio_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch stored portfolio IRR values: {str(e)}")
+
 @router.get("/funds/{product_id}")
 async def get_funds_historical_irr(
     product_id: int,

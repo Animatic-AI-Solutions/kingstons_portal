@@ -368,7 +368,9 @@ export const getLatestPortfolioIRR = (portfolioId: number) => {
  * @returns {Promise} - API response with historical portfolio IRR data
  */
 export const getPortfolioHistoricalIRR = (productId: number, limit: number = 1000) => {
-  return api.get(`historical-irr/portfolio/${productId}?limit=${limit}`);
+  // Fixed: Use funds endpoint instead of portfolio endpoint to get fund-level IRR history
+  // The portfolio endpoint was returning empty data, while funds endpoint has the actual IRR data
+  return api.get(`historical-irr/funds/${productId}?limit=${limit}`);
 };
 
 /**

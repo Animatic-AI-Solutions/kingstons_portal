@@ -1121,16 +1121,38 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
     try:
         logger.info(f"Fetching complete client group details for ID: {client_group_id}")
         
-        # Step 1: Verify client group exists
-        client_group_result = await db.fetchrow("SELECT * FROM client_groups WHERE id = $1", client_group_id)
+        # Step 1: Verify client group exists and get advisor information
+        client_group_result = await db.fetchrow("""
+            SELECT 
+                cg.*,
+                p.first_name as advisor_first_name,
+                p.last_name as advisor_last_name,
+                p.email as advisor_email,
+                COALESCE(p.first_name || ' ' || p.last_name, p.email, cg.advisor) as advisor_name
+            FROM client_groups cg
+            LEFT JOIN profiles p ON cg.advisor_id = p.id
+            WHERE cg.id = $1
+        """, client_group_id)
         if not client_group_result:
             raise HTTPException(status_code=404, detail=f"Client group with ID {client_group_id} not found")
         
         client_group = dict(client_group_result)
         logger.info(f"Found client group: {client_group['name']}")
         
-        # Step 2: Get all products for this client group using the working products_list_view
-        products_result = await db.fetch("SELECT * FROM products_list_view WHERE client_id = $1", client_group_id)
+        # Step 2: Get all products for this client group with template generation information
+        products_result = await db.fetch("""
+            SELECT 
+                plv.*,
+                tpg.id as template_generation_id,
+                tpg.generation_name as template_generation_name,
+                tpg.description as template_description,
+                ap.name as template_name
+            FROM products_list_view plv
+            LEFT JOIN client_products cp ON plv.id = cp.id
+            LEFT JOIN template_portfolio_generations tpg ON cp.template_generation_id = tpg.id
+            LEFT JOIN available_portfolios ap ON tpg.available_portfolio_id = ap.id
+            WHERE plv.client_id = $1
+        """, client_group_id)
         
         if not products_result:
             logger.info(f"No products found for client group {client_group_id}")

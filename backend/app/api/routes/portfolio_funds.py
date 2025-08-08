@@ -361,7 +361,7 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
         # UPDATED: More flexible validation for final cash flow
         # The final cash flow should generally be positive (representing current valuation)
         # but we'll allow some flexibility for edge cases
-        if final_value <= 0:
+        if final_value < 0:
             # Check if this might be a valid scenario (e.g., all money withdrawn)
             total_outflows = sum(amount for amount in monthly_amounts if amount > 0)
             total_inflows = abs(sum(amount for amount in monthly_amounts if amount < 0))
@@ -373,6 +373,15 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
                 error_msg = f"Final cash flow (valuation) must be positive, but got {final_value}. This typically indicates the valuation is being combined with activities in the same month."
                 logger.error(error_msg)
                 raise ValueError(error_msg)
+        elif final_value == 0:
+            # Special case: final value is exactly 0, meaning no net change
+            # This should result in an IRR of 0% (no growth or loss)
+            logger.info(f"Final cash flow is exactly 0.0 - this indicates no net change over the period. Returning IRR of 0%.")
+            days_in_period = (end_date - start_date).days
+            return {
+                'period_irr': 0.0,  # 0% IRR for no net change
+                'days_in_period': days_in_period
+            }
         
         # Check if we have a valid investment pattern (negative initial flow, positive final flow)
         if monthly_amounts[0] >= 0:
@@ -3208,3 +3217,119 @@ async def recalculate_irr_after_activity(
     except Exception as e:
         logger.error(f"Error recalculating IRR after activity change for fund {portfolio_fund_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to recalculate IRR: {str(e)}")
+
+
+@router.get("/portfolio_funds/enhanced/{product_id}", response_model=List[dict])
+async def get_enhanced_portfolio_funds(
+    product_id: int,
+    db = Depends(get_db)
+):
+    """
+    Enhanced Portfolio Funds Endpoint - Fixes IRR Bug
+    
+    What it does: Combines fund summary data with latest IRR values for period overview display.
+    Why it's needed: The period overview was using complete_fund_data (aggregated) while IRR history 
+                     uses fund_historical_irr (time-series). This caused November IRR data to appear 
+                     in IRR history but not in period overview.
+    How it works: 
+        1. Joins complete_fund_data with latest fund_historical_irr data
+        2. Filters for the specific product
+        3. Returns combined data with both summary info AND latest IRR dates
+    Expected output: List of fund records with enhanced IRR data including dates
+    
+    Fixes: Product 14 BNY Melon fund November IRR data visibility issue
+    """
+    logger.info(f"Fetching enhanced portfolio funds data for product {product_id}")
+    
+    try:
+        # Enhanced query that combines both views to show latest IRR data with dates
+        query = """
+        SELECT 
+            pf.id as portfolio_fund_id,
+            af.id as fund_id,
+            af.fund_name,
+            af.isin_number,
+            af.risk_factor,
+            af.fund_cost,
+            pf.amount_invested,
+            pf.target_weighting,
+            pf.status as fund_status,
+            pf.start_date as fund_start_date,
+            pf.end_date as fund_end_date,
+            -- Latest valuation data
+            lpfv.valuation as current_valuation,
+            lpfv.valuation_date as latest_valuation_date,
+            -- Latest IRR data with date
+            lpfir.irr_result as latest_irr,
+            lpfir.date as latest_irr_date,
+            -- Product and client info
+            cp.id as product_id,
+            cp.product_name,
+            cg.name as client_name,
+            ap.name as provider_name,
+            ap.theme_color as provider_color
+        FROM client_products cp
+        JOIN portfolios p ON cp.portfolio_id = p.id
+        JOIN portfolio_funds pf ON p.id = pf.portfolio_id
+        JOIN available_funds af ON pf.available_funds_id = af.id
+        JOIN client_groups cg ON cp.client_id = cg.id
+        JOIN available_providers ap ON cp.provider_id = ap.id
+        -- Get latest valuation
+        LEFT JOIN latest_portfolio_fund_valuations lpfv ON pf.id = lpfv.portfolio_fund_id
+        -- Get latest IRR with date
+        LEFT JOIN latest_portfolio_fund_irr_values lpfir ON pf.id = lpfir.fund_id
+        WHERE cp.id = $1
+        AND cp.status = 'active'
+        AND p.status = 'active'
+        AND pf.status = 'active'
+        AND af.status = 'active'
+        ORDER BY af.fund_name
+        """
+        
+        rows = await db.fetch(query, product_id)
+        
+        if not rows:
+            logger.warning(f"No enhanced portfolio funds found for product {product_id}")
+            return []
+        
+        # Convert to list of dictionaries with proper formatting
+        result = []
+        for row in rows:
+            fund_data = {
+                "portfolio_fund_id": row["portfolio_fund_id"],
+                "fund_id": row["fund_id"],
+                "fund_name": row["fund_name"],
+                "isin_number": row["isin_number"],
+                "risk_factor": row["risk_factor"],
+                "fund_cost": float(row["fund_cost"]) if row["fund_cost"] else None,
+                "amount_invested": float(row["amount_invested"]) if row["amount_invested"] else 0.0,
+                "target_weighting": float(row["target_weighting"]) if row["target_weighting"] else None,
+                "fund_status": row["fund_status"],
+                "fund_start_date": row["fund_start_date"].isoformat() if row["fund_start_date"] else None,
+                "fund_end_date": row["fund_end_date"].isoformat() if row["fund_end_date"] else None,
+                # Enhanced IRR data with dates
+                "current_valuation": float(row["current_valuation"]) if row["current_valuation"] else None,
+                "latest_valuation_date": row["latest_valuation_date"].isoformat() if row["latest_valuation_date"] else None,
+                "latest_irr": float(row["latest_irr"]) if row["latest_irr"] else None,
+                "latest_irr_date": row["latest_irr_date"].isoformat() if row["latest_irr_date"] else None,
+                # Product context
+                "product_id": row["product_id"],
+                "product_name": row["product_name"],
+                "client_name": row["client_name"],
+                "provider_name": row["provider_name"],
+                "provider_color": row["provider_color"]
+            }
+            result.append(fund_data)
+        
+        logger.info(f"Successfully retrieved {len(result)} enhanced portfolio funds for product {product_id}")
+        
+        # Log if we found November IRR data (for debugging the fix)
+        november_funds = [f for f in result if f["latest_irr_date"] and "2024-11" in f["latest_irr_date"]]
+        if november_funds:
+            logger.info(f"Found {len(november_funds)} funds with November 2024 IRR data for product {product_id}")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error fetching enhanced portfolio funds for product {product_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch enhanced portfolio funds: {str(e)}")
