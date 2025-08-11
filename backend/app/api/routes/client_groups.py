@@ -1166,46 +1166,34 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                 }
             }
         
-        # Step 3: Get all product owners for all products in one query
+        # Step 3: Get all product owners for all products in one query using proper ID-based matching
         product_ids = [p["id"] for p in products_result if p["id"]]
         product_owners_data = {}
         
         if product_ids:
             try:
-                # Get product names for the product IDs
-                product_names = [p["product_name"] for p in products_result if p["id"]]
+                # Use proper ID-based matching with the junction table
+                owners_result = await db.fetch("""
+                    SELECT 
+                        po.id,
+                        po.firstname,
+                        po.surname, 
+                        po.known_as,
+                        COALESCE(po.known_as, po.firstname || ' ' || po.surname) as display_name,
+                        pop.product_id
+                    FROM product_owners po
+                    JOIN product_owner_products pop ON po.id = pop.product_owner_id
+                    WHERE pop.product_id = ANY($1) AND po.status = 'active'
+                """, product_ids)
                 
-                if product_names:
-                    # Query product owners using the products column (comma-separated product names)
-                    # Use LIKE instead of regex for simpler matching
-                    owners_set = set()
-                    owners_result = []
-                    for name in product_names:
-                        result = await db.fetch("""
-                            SELECT id, firstname, surname, known_as, display_name, products
-                            FROM product_owner_details 
-                            WHERE products LIKE $1
-                        """, f'%{name}%')
-                        # Deduplicate owners by ID
-                        for owner in result:
-                            if owner["id"] not in owners_set:
-                                owners_set.add(owner["id"])
-                                owners_result.append(owner)
-                    
-                    # Group owners by product_id
-                    for owner in owners_result:
-                        # Parse comma-separated product names from the products column
-                        owner_product_names = [name.strip() for name in owner["products"].split(",")]
-                        
-                        # Match product names to product IDs
-                        for product in products_result:
-                            if product["product_name"] in owner_product_names:
-                                product_id = product["id"]
-                                if product_id not in product_owners_data:
-                                    product_owners_data[product_id] = []
-                                product_owners_data[product_id].append(dict(owner))
+                # Group owners by product_id
+                for owner in owners_result:
+                    product_id = owner["product_id"]
+                    if product_id not in product_owners_data:
+                        product_owners_data[product_id] = []
+                    product_owners_data[product_id].append(dict(owner))
                 
-                logger.info(f"Retrieved product owners for {len(product_owners_data)} products")
+                logger.info(f"Retrieved product owners for {len(product_owners_data)} products using ID-based matching")
             except Exception as e:
                 logger.error(f"Error retrieving product owners: {str(e)}")
                 product_owners_data = {}
