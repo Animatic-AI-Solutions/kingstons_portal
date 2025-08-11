@@ -1047,3 +1047,208 @@ async def recalculate_all_portfolio_irr(
         import traceback
         logger.error(f"Traceback: {traceback.format_exc()}")
         return {"success": False, "error": str(e)}
+
+
+# ==================== BULK OPERATIONS WITH SEQUENCE RESERVATION ====================
+
+from app.utils.sequence_manager import SequenceManager
+
+@router.post("/holding_activity_logs/bulk", response_model=List[dict])
+async def create_bulk_holding_activity_logs(
+    activities: List[HoldingActivityLogCreate],
+    skip_irr_calculation: bool = Query(False, description="Skip IRR recalculation for transaction coordination"),
+    db = Depends(get_db)
+):
+    """
+    Bulk create holding activity logs with sequence reservation
+    
+    This endpoint uses sequence reservation to prevent ID conflicts during bulk operations.
+    Designed for high-volume activity imports and bulk monthly saves.
+    
+    Key Features:
+    - Atomic sequence reservation prevents race conditions
+    - Batch processing with individual error handling
+    - Optional IRR recalculation coordination
+    - Comprehensive logging and error reporting
+    
+    Args:
+        activities: List of activity log data to create
+        skip_irr_calculation: Skip IRR calc for transaction coordination (default: False)
+        db: Database dependency
+        
+    Returns:
+        List of created activity log records with assigned IDs
+        
+    Raises:
+        HTTPException: On validation errors or database failures
+    """
+    try:
+        if not activities:
+            logger.info("🚀 BULK: No activities provided, returning empty list")
+            return []
+        
+        logger.info(f"🚀 BULK: Creating {len(activities)} activity logs with sequence reservation")
+        
+        # Convert Pydantic models to dict format for bulk insertion
+        activity_data = []
+        for log in activities:
+            # Handle timezone conversion - improved datetime parsing
+            if isinstance(log.activity_timestamp, date) and not isinstance(log.activity_timestamp, datetime):
+                from datetime import timezone
+                activity_datetime = datetime.combine(log.activity_timestamp, datetime.min.time()).replace(tzinfo=timezone.utc)
+                logger.debug(f"🔧 BULK: Converted date {log.activity_timestamp} to datetime {activity_datetime}")
+            elif isinstance(log.activity_timestamp, str):
+                # Handle ISO datetime strings (e.g., "2025-08-01T00:00:00Z")
+                try:
+                    from dateutil import parser
+                    activity_datetime = parser.parse(log.activity_timestamp)
+                    logger.debug(f"🔧 BULK: Parsed ISO string '{log.activity_timestamp}' to datetime {activity_datetime}")
+                except ImportError:
+                    # Fallback if dateutil is not available
+                    import re
+                    # Extract just the date part if it's an ISO string
+                    date_match = re.match(r'(\d{4}-\d{2}-\d{2})', log.activity_timestamp)
+                    if date_match:
+                        date_str = date_match.group(1)
+                        activity_datetime = datetime.strptime(date_str, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+                        logger.debug(f"🔧 BULK: Extracted date '{date_str}' from '{log.activity_timestamp}' → {activity_datetime}")
+                    else:
+                        activity_datetime = log.activity_timestamp
+                except Exception as parse_error:
+                    logger.warning(f"⚠️ BULK: Failed to parse datetime string '{log.activity_timestamp}': {parse_error}, using as-is")
+                    activity_datetime = log.activity_timestamp
+            else:
+                activity_datetime = log.activity_timestamp
+            
+            # Prepare data dict (matching the structure from lines 492-495)
+            activity_record = {
+                'portfolio_fund_id': log.portfolio_fund_id,
+                'product_id': log.product_id,
+                'activity_type': log.activity_type,
+                'activity_timestamp': activity_datetime,
+                'amount': float(log.amount) if log.amount is not None else None,
+                'created_at': datetime.utcnow()
+            }
+            
+            activity_data.append(activity_record)
+            logger.debug(f"🔍 BULK: Prepared activity - Fund: {log.portfolio_fund_id}, Type: {log.activity_type}, Amount: {log.amount}")
+        
+        # Use sequence manager for bulk insert with reserved IDs
+        logger.info("🔒 BULK: Using SequenceManager for bulk insert with sequence reservation")
+        created_activities = await SequenceManager.bulk_insert_with_reserved_ids(
+            db=db,
+            table_name='holding_activity_log',
+            data=activity_data,
+            sequence_name='holding_activity_log_id_seq'
+        )
+        
+        success_count = len(created_activities)
+        logger.info(f"✅ BULK: Successfully created {success_count}/{len(activities)} activities")
+        
+        # Handle IRR recalculation if not skipped
+        if not skip_irr_calculation and created_activities:
+            logger.info("🔄 BULK: Triggering IRR recalculation for affected funds...")
+            
+            # Group by portfolio fund for efficient recalculation
+            portfolio_funds = set(activity['portfolio_fund_id'] for activity in created_activities)
+            recalc_results = []
+            
+            for portfolio_fund_id in portfolio_funds:
+                try:
+                    logger.info(f"🔄 BULK: Recalculating IRR for portfolio fund {portfolio_fund_id}")
+                    
+                    # Use the existing IRR recalculation logic (from lines 20-85)
+                    irr_result = await recalculate_irr_after_activity_change(
+                        portfolio_fund_id, 
+                        db, 
+                        activity_date=None  # Will use latest activity date
+                    )
+                    
+                    recalc_results.append({
+                        'portfolio_fund_id': portfolio_fund_id,
+                        'success': irr_result.get('success', False),
+                        'irr_values_updated': irr_result.get('irr_values_updated', 0)
+                    })
+                    
+                    logger.info(f"✅ BULK: IRR recalculation completed for fund {portfolio_fund_id}")
+                    
+                except Exception as irr_error:
+                    logger.error(f"⚠️ BULK: IRR recalculation failed for fund {portfolio_fund_id}: {irr_error}")
+                    recalc_results.append({
+                        'portfolio_fund_id': portfolio_fund_id,
+                        'success': False,
+                        'error': str(irr_error)
+                    })
+                    # Don't fail the entire bulk operation for IRR issues
+            
+            logger.info(f"🔄 BULK: IRR recalculation completed for {len(portfolio_funds)} funds")
+            
+            # Add recalculation summary to response
+            for activity in created_activities:
+                fund_id = activity['portfolio_fund_id']
+                fund_recalc = next((r for r in recalc_results if r['portfolio_fund_id'] == fund_id), None)
+                if fund_recalc:
+                    activity['irr_recalculation'] = fund_recalc
+        else:
+            logger.info("⏭️ BULK: Skipping IRR recalculation (skip_irr_calculation=True)")
+        
+        # Return created activities with metadata
+        response_data = {
+            'activities': created_activities,
+            'summary': {
+                'total_requested': len(activities),
+                'total_created': success_count,
+                'success_rate': (success_count / len(activities)) * 100 if activities else 0,
+                'irr_recalculation_skipped': skip_irr_calculation,
+                'sequence_reservation_used': True
+            }
+        }
+        
+        logger.info(f"🎉 BULK: Bulk activity creation completed - {success_count} activities created")
+        return created_activities  # Return just the activities for compatibility
+        
+    except Exception as e:
+        logger.error(f"❌ BULK: Error creating bulk activity logs: {e}")
+        import traceback
+        logger.error(f"❌ BULK: Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Bulk activity creation failed: {str(e)}")
+
+
+# ==================== BULK VALIDATION UTILITIES ====================
+
+def validate_bulk_activities(activities: List[HoldingActivityLogCreate]) -> List[str]:
+    """
+    Validate bulk activities before processing to prevent sequence waste
+    
+    Args:
+        activities: List of activities to validate
+        
+    Returns:
+        List of validation error messages (empty if valid)
+    """
+    errors = []
+    
+    for i, activity in enumerate(activities):
+        activity_num = i + 1
+        
+        if not activity.portfolio_fund_id:
+            errors.append(f"Activity {activity_num}: Missing portfolio_fund_id")
+        
+        if not activity.product_id:
+            errors.append(f"Activity {activity_num}: Missing product_id")
+        
+        if not activity.activity_type:
+            errors.append(f"Activity {activity_num}: Missing activity_type")
+        
+        if not activity.activity_timestamp:
+            errors.append(f"Activity {activity_num}: Missing activity_timestamp")
+        
+        if activity.amount is None:
+            errors.append(f"Activity {activity_num}: Missing amount")
+        elif not isinstance(activity.amount, (int, float)) and activity.amount != 0:
+            try:
+                float(activity.amount)
+            except (ValueError, TypeError):
+                errors.append(f"Activity {activity_num}: Invalid amount value: {activity.amount}")
+    
+    return errors

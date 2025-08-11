@@ -231,6 +231,10 @@ app.include_router(portfolio_valuations.router, prefix="/api", tags=["Holdings"]
 app.include_router(historical_irr.router, prefix="/api/historical-irr", tags=["Analytics"])
 app.include_router(presence.router, prefix="/api", tags=["Presence"])
 
+# Add system monitoring routes
+from app.api.routes import system
+app.include_router(system.router, prefix="/api", tags=["System"])
+
 # Background task for cleaning up stale presence records
 async def periodic_cleanup():
     """Run cleanup every 60 seconds to remove stale presence records"""

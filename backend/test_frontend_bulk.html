@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Bulk Operations Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        .test-section { 
+            border: 1px solid #ddd; 
+            padding: 20px; 
+            margin: 20px 0; 
+            border-radius: 8px; 
+        }
+        .success { color: green; }
+        .error { color: red; }
+        button { 
+            padding: 10px 20px; 
+            margin: 10px; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            background: #007bff; 
+            color: white; 
+        }
+        button:hover { background: #0056b3; }
+        #results { 
+            background: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 4px; 
+            white-space: pre-wrap; 
+            font-family: monospace; 
+            max-height: 400px; 
+            overflow-y: auto; 
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 Frontend Bulk Operations Test</h1>
+    <p>Testing Phase 2: Frontend TransactionCoordinator Bulk Operations</p>
+
+    <div class="test-section">
+        <h3>📊 Test Configuration</h3>
+        <p><strong>Product ID:</strong> 26 (Test Product)</p>
+        <p><strong>Portfolio Fund IDs:</strong> 2, 3 (Valid Test Funds)</p>
+        <p><strong>Test Type:</strong> Bulk Activity Creation with Validation</p>
+    </div>
+
+    <div class="test-section">
+        <h3>🧪 Test Controls</h3>
+        <button onclick="testBulkValidation()">Test Bulk Validation</button>
+        <button onclick="testBulkActivities()">Test Bulk Activities</button>
+        <button onclick="testMixedOperations()">Test Mixed Operations</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div class="test-section">
+        <h3>📋 Test Results</h3>
+        <div id="results">Ready to run tests...</div>
+    </div>
+
+    <script>
+        // Mock TransactionCoordinator for testing
+        class MockTransactionCoordinator {
+            static validateBulkActivities(activities) {
+                const errors = [];
+                
+                activities.forEach((activity, index) => {
+                    const activityNum = index + 1;
+                    
+                    if (!activity.fundId) {
+                        errors.push(`Activity ${activityNum}: Missing fund ID`);
+                    }
+                    
+                    if (!activity.activityType) {
+                        errors.push(`Activity ${activityNum}: Missing activity type`);
+                    }
+                    
+                    if (!activity.value || isNaN(parseFloat(activity.value))) {
+                        errors.push(`Activity ${activityNum}: Invalid amount value: ${activity.value}`);
+                    }
+                    
+                    if (!activity.month || !/^\d{4}-\d{2}$/.test(activity.month)) {
+                        errors.push(`Activity ${activityNum}: Invalid month format (expected YYYY-MM): ${activity.month}`);
+                    }
+                });
+                
+                return errors;
+            }
+
+            static async mockBulkAPI(activities) {
+                // Simulate API call delay
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Mock successful response
+                return {
+                    data: activities.map((activity, index) => ({
+                        id: 3000 + index,
+                        portfolio_fund_id: activity.fundId,
+                        product_id: 26,
+                        activity_type: activity.activityType,
+                        amount: parseFloat(activity.value),
+                        activity_timestamp: `${activity.month}-01T00:00:00Z`
+                    }))
+                };
+            }
+
+            static async saveBulkActivities(activities, accountHoldingId) {
+                if (activities.length === 0) return;
+                
+                log(`🚀 BULK: Saving ${activities.length} activities with sequence reservation`);
+                
+                // Separate activities by operation type
+                const newActivities = activities.filter(activity => activity.isNew && !activity.toDelete);
+                const updateActivities = activities.filter(activity => !activity.isNew && !activity.toDelete && activity.originalActivityId);
+                const deleteActivities = activities.filter(activity => activity.toDelete && activity.originalActivityId);
+                
+                // Handle bulk creation for new activities
+                if (newActivities.length > 0) {
+                    log(`📥 BULK: Creating ${newActivities.length} new activities...`);
+                    
+                    // Convert to backend format
+                    const activityData = newActivities.map(activity => ({
+                        portfolio_fund_id: activity.fundId,
+                        product_id: accountHoldingId,
+                        activity_type: activity.activityType,
+                        activity_timestamp: `${activity.month}-01`,
+                        amount: parseFloat(activity.value)
+                    }));
+
+                    // Mock bulk endpoint call
+                    const response = await this.mockBulkAPI(activityData);
+                    
+                    log(`✅ BULK: Successfully created ${response.data.length} activities`);
+                    response.data.forEach(activity => {
+                        log(`   - ID: ${activity.id}, Fund: ${activity.portfolio_fund_id}, Amount: £${activity.amount}`);
+                    });
+                }
+                
+                // Handle individual updates
+                if (updateActivities.length > 0) {
+                    log(`🔄 BULK: Would update ${updateActivities.length} existing activities individually...`);
+                }
+                
+                // Handle individual deletions
+                if (deleteActivities.length > 0) {
+                    log(`🗑️ BULK: Would delete ${deleteActivities.length} activities individually...`);
+                }
+            }
+        }
+
+        function log(message) {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            results.textContent += `[${timestamp}] ${message}\n`;
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function clearResults() {
+            document.getElementById('results').textContent = 'Results cleared...\n';
+        }
+
+        async function testBulkValidation() {
+            log('🧪 Testing Bulk Validation...');
+            
+            // Test with invalid data
+            const invalidActivities = [
+                { fundId: null, activityType: 'investment', value: '100', month: '2025-08' },
+                { fundId: 2, activityType: '', value: 'invalid', month: '2025-08' },
+                { fundId: 3, activityType: 'withdrawal', value: '50', month: 'invalid-date' }
+            ];
+            
+            const errors = MockTransactionCoordinator.validateBulkActivities(invalidActivities);
+            
+            if (errors.length > 0) {
+                log('❌ Validation failed as expected:');
+                errors.forEach(error => log(`   - ${error}`));
+            } else {
+                log('✅ Validation passed (unexpected)');
+            }
+            
+            // Test with valid data
+            const validActivities = [
+                { fundId: 2, activityType: 'investment', value: '100', month: '2025-08', isNew: true },
+                { fundId: 3, activityType: 'withdrawal', value: '50', month: '2025-08', isNew: true }
+            ];
+            
+            const validErrors = MockTransactionCoordinator.validateBulkActivities(validActivities);
+            
+            if (validErrors.length === 0) {
+                log('✅ Valid data passed validation');
+            } else {
+                log('❌ Valid data failed validation:');
+                validErrors.forEach(error => log(`   - ${error}`));
+            }
+        }
+
+        async function testBulkActivities() {
+            log('🚀 Testing Bulk Activities...');
+            
+            const testActivities = [
+                { fundId: 2, activityType: 'investment', value: '150', month: '2025-08', isNew: true },
+                { fundId: 3, activityType: 'withdrawal', value: '75', month: '2025-08', isNew: true },
+                { fundId: 2, activityType: 'fee', value: '25', month: '2025-08', isNew: true }
+            ];
+            
+            try {
+                // Validate first
+                const errors = MockTransactionCoordinator.validateBulkActivities(testActivities);
+                if (errors.length > 0) {
+                    throw new Error(`Validation failed: ${errors.join(', ')}`);
+                }
+                log('✅ Validation passed');
+                
+                // Execute bulk save
+                await MockTransactionCoordinator.saveBulkActivities(testActivities, 26);
+                log('🎉 Bulk activities test completed successfully');
+                
+            } catch (error) {
+                log(`❌ Bulk activities test failed: ${error.message}`);
+            }
+        }
+
+        async function testMixedOperations() {
+            log('🔄 Testing Mixed Operations...');
+            
+            const mixedActivities = [
+                { fundId: 2, activityType: 'investment', value: '200', month: '2025-08', isNew: true },
+                { fundId: 3, activityType: 'withdrawal', value: '100', month: '2025-08', isNew: false, originalActivityId: 1234 },
+                { fundId: 2, activityType: 'fee', value: '50', month: '2025-07', toDelete: true, originalActivityId: 5678 }
+            ];
+            
+            try {
+                await MockTransactionCoordinator.saveBulkActivities(mixedActivities, 26);
+                log('🎉 Mixed operations test completed successfully');
+                
+            } catch (error) {
+                log(`❌ Mixed operations test failed: ${error.message}`);
+            }
+        }
+
+        // Initialize
+        log('🚀 Frontend Bulk Operations Test Ready');
+        log('Phase 2: TransactionCoordinator Bulk Implementation');
+        log('Click buttons above to run tests...\n');
+    </script>
+</body>
+</html>

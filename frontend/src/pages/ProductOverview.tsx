@@ -911,7 +911,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     }
     
     // Calculate weighted average and round to 1 decimal place
-    const weightedAverage = weightedRiskSum / totalValue;
+    const weightedAverage = weightedRiskSum; // weightedRiskSum is already the weighted average
     console.log('DEBUG - Final risk calculation:', {
       totalValue,
       weightedRiskSum,
@@ -2262,22 +2262,22 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             // Safe number conversion with NaN protection
                             const fixedCost = (() => {
                               const value = account.fixed_cost;
-                              if (value === null || value === undefined || value === '') return 0;
-                              const num = parseFloat(value);
+                              if (value === null || value === undefined) return 0;
+                              const num = parseFloat(String(value));
                               return isNaN(num) ? 0 : num;
                             })();
                             
                             const percentageFee = (() => {
                               const value = account.percentage_fee;
-                              if (value === null || value === undefined || value === '') return 0;
-                              const num = parseFloat(value);
+                              if (value === null || value === undefined) return 0;
+                              const num = parseFloat(String(value));
                               return isNaN(num) ? 0 : num;
                             })();
                             
                             const portfolioValue = (() => {
                               const value = portfolioTotalValue;
-                              if (value === null || value === undefined || value === '') return 0;
-                              const num = parseFloat(value);
+                              if (value === null || value === undefined) return 0;
+                              const num = parseFloat(String(value));
                               return isNaN(num) ? 0 : num;
                             })();
                             

@@ -515,7 +515,7 @@ CREATE OR REPLACE VIEW fund_activity_summary AS
      LEFT JOIN holding_activity_log hal ON ((pf.id = hal.portfolio_fund_id)))
      LEFT JOIN latest_portfolio_fund_valuations lpfv ON ((pf.id = lpfv.portfolio_fund_id)))
      LEFT JOIN latest_portfolio_fund_irr_values lpfir ON ((pf.id = lpfir.fund_id)))
-  WHERE ((pf.status = 'active'::text) AND (af.status = 'active'::text))
+  WHERE (af.status = 'active'::text)
   GROUP BY pf.id, pf.portfolio_id, pf.available_funds_id, af.fund_name, af.isin_number, af.risk_factor, af.fund_cost, pf.target_weighting, pf.amount_invested, pf.start_date, pf.status, lpfv.valuation, lpfv.valuation_date, lpfir.irr_result, lpfir.date;;
 
 -- View: fund_distribution_fast
@@ -876,71 +876,136 @@ CREATE OR REPLACE VIEW template_generation_weighted_risk AS
 CREATE OR REPLACE FUNCTION public.calculate_adhoc_portfolio_valuation(portfolio_id_param bigint)
  RETURNS TABLE(portfolio_id bigint, portfolio_name text, total_valuation numeric, valuation_date date, fund_count integer, fund_details json)
  LANGUAGE plpgsql
-AS $function$
-DECLARE
-    portfolio_record RECORD;
-    fund_record RECORD;
-    fund_details_array json[] := '{}';
-    total_val numeric := 0;
-    latest_date date;
-BEGIN
-    -- Get portfolio information
-    SELECT p.id, p.portfolio_name INTO portfolio_record
-    FROM portfolios p 
-    WHERE p.id = portfolio_id_param AND p.status = 'active';
-    
-    IF NOT FOUND THEN
-        RETURN;
-    END IF;
-    
-    -- Calculate total valuation and collect fund details
-    FOR fund_record IN
-        SELECT 
-            pf.id as portfolio_fund_id,
-            af.fund_name,
-            af.isin_number,
-            pf.target_weighting,
-            pf.amount_invested,
-            COALESCE(lpfv.valuation, pf.amount_invested) as current_valuation,
-            COALESCE(lpfv.valuation_date, CURRENT_DATE) as valuation_date,
-            lpfir.irr_result
-        FROM portfolio_funds pf
-        JOIN available_funds af ON pf.available_funds_id = af.id
-        LEFT JOIN latest_portfolio_fund_valuations lpfv ON pf.id = lpfv.portfolio_fund_id
-        LEFT JOIN latest_portfolio_fund_irr_values lpfir ON pf.id = lpfir.fund_id
-        WHERE pf.portfolio_id = portfolio_id_param 
-            AND pf.status = 'active' 
-            AND af.status = 'active'
-    LOOP
-        -- Add to total valuation
-        total_val := total_val + COALESCE(fund_record.current_valuation, 0);
-        
-        -- Track latest valuation date
-        IF latest_date IS NULL OR fund_record.valuation_date > latest_date THEN
-            latest_date := fund_record.valuation_date;
-        END IF;
-        
-        -- Collect fund details
-        fund_details_array := fund_details_array || json_build_object(
-            'fund_name', fund_record.fund_name,
-            'isin_number', fund_record.isin_number,
-            'target_weighting', fund_record.target_weighting,
-            'amount_invested', fund_record.amount_invested,
-            'current_valuation', fund_record.current_valuation,
-            'valuation_date', fund_record.valuation_date,
-            'irr_result', fund_record.irr_result
-        );
-    END LOOP;
-    
-    -- Return the calculated result
-    RETURN QUERY SELECT 
-        portfolio_record.id,
-        portfolio_record.portfolio_name,
-        total_val,
-        COALESCE(latest_date, CURRENT_DATE),
-        array_length(fund_details_array, 1),
-        array_to_json(fund_details_array);
-END;
+AS $function$
+
+DECLARE
+
+    portfolio_record RECORD;
+
+    fund_record RECORD;
+
+    fund_details_array json[] := '{}';
+
+    total_val numeric := 0;
+
+    latest_date date;
+
+BEGIN
+
+    -- Get portfolio information
+
+    SELECT p.id, p.portfolio_name INTO portfolio_record
+
+    FROM portfolios p 
+
+    WHERE p.id = portfolio_id_param AND p.status = 'active';
+
+    
+
+    IF NOT FOUND THEN
+
+        RETURN;
+
+    END IF;
+
+    
+
+    -- Calculate total valuation and collect fund details
+
+    FOR fund_record IN
+
+        SELECT 
+
+            pf.id as portfolio_fund_id,
+
+            af.fund_name,
+
+            af.isin_number,
+
+            pf.target_weighting,
+
+            pf.amount_invested,
+
+            COALESCE(lpfv.valuation, pf.amount_invested) as current_valuation,
+
+            COALESCE(lpfv.valuation_date, CURRENT_DATE) as valuation_date,
+
+            lpfir.irr_result
+
+        FROM portfolio_funds pf
+
+        JOIN available_funds af ON pf.available_funds_id = af.id
+
+        LEFT JOIN latest_portfolio_fund_valuations lpfv ON pf.id = lpfv.portfolio_fund_id
+
+        LEFT JOIN latest_portfolio_fund_irr_values lpfir ON pf.id = lpfir.fund_id
+
+        WHERE pf.portfolio_id = portfolio_id_param 
+
+            AND pf.status = 'active' 
+
+            AND af.status = 'active'
+
+    LOOP
+
+        -- Add to total valuation
+
+        total_val := total_val + COALESCE(fund_record.current_valuation, 0);
+
+        
+
+        -- Track latest valuation date
+
+        IF latest_date IS NULL OR fund_record.valuation_date > latest_date THEN
+
+            latest_date := fund_record.valuation_date;
+
+        END IF;
+
+        
+
+        -- Collect fund details
+
+        fund_details_array := fund_details_array || json_build_object(
+
+            'fund_name', fund_record.fund_name,
+
+            'isin_number', fund_record.isin_number,
+
+            'target_weighting', fund_record.target_weighting,
+
+            'amount_invested', fund_record.amount_invested,
+
+            'current_valuation', fund_record.current_valuation,
+
+            'valuation_date', fund_record.valuation_date,
+
+            'irr_result', fund_record.irr_result
+
+        );
+
+    END LOOP;
+
+    
+
+    -- Return the calculated result
+
+    RETURN QUERY SELECT 
+
+        portfolio_record.id,
+
+        portfolio_record.portfolio_name,
+
+        total_val,
+
+        COALESCE(latest_date, CURRENT_DATE),
+
+        array_length(fund_details_array, 1),
+
+        array_to_json(fund_details_array);
+
+END;
+
 $function$
 ;
 
@@ -950,143 +1015,280 @@ $function$
 CREATE OR REPLACE FUNCTION public.global_search_entities(search_term text)
  RETURNS TABLE(entity_type text, entity_id bigint, entity_name text, entity_description text, relevance_score integer)
  LANGUAGE plpgsql
-AS $function$
-BEGIN
-    RETURN QUERY
-    -- Search in client groups
-    SELECT 
-        'client_group'::text as entity_type,
-        cg.id as entity_id,
-        cg.name as entity_name,
-        CONCAT('Client: ', cg.name, ' (', cg.type, ') - Advisor: ', COALESCE(cg.advisor, 'None')) as entity_description,
-        CASE 
-            WHEN LOWER(cg.name) = LOWER(search_term) THEN 100
-            WHEN LOWER(cg.name) LIKE LOWER(search_term || '%') THEN 90
-            WHEN LOWER(cg.name) LIKE LOWER('%' || search_term || '%') THEN 80
-            WHEN LOWER(cg.advisor) LIKE LOWER('%' || search_term || '%') THEN 70
-            ELSE 60
-        END as relevance_score
-    FROM client_groups cg
-    WHERE cg.status = 'active'
-        AND (
-            LOWER(cg.name) LIKE LOWER('%' || search_term || '%') OR
-            LOWER(cg.advisor) LIKE LOWER('%' || search_term || '%') OR
-            LOWER(cg.type) LIKE LOWER('%' || search_term || '%')
-        )
-
-    UNION ALL
-
-    -- Search in product owners
-    SELECT 
-        'product_owner'::text as entity_type,
-        po.id as entity_id,
-        COALESCE(po.known_as, CONCAT(po.firstname, ' ', po.surname)) as entity_name,
-        CONCAT('Product Owner: ', COALESCE(po.known_as, CONCAT(po.firstname, ' ', po.surname))) as entity_description,
-        CASE 
-            WHEN LOWER(COALESCE(po.known_as, CONCAT(po.firstname, ' ', po.surname))) = LOWER(search_term) THEN 100
-            WHEN LOWER(COALESCE(po.known_as, CONCAT(po.firstname, ' ', po.surname))) LIKE LOWER(search_term || '%') THEN 90
-            WHEN LOWER(po.firstname) LIKE LOWER('%' || search_term || '%') THEN 80
-            WHEN LOWER(po.surname) LIKE LOWER('%' || search_term || '%') THEN 80
-            WHEN LOWER(po.known_as) LIKE LOWER('%' || search_term || '%') THEN 85
-            ELSE 60
-        END as relevance_score
-    FROM product_owners po
-    WHERE po.status = 'active'
-        AND (
-            LOWER(po.firstname) LIKE LOWER('%' || search_term || '%') OR
-            LOWER(po.surname) LIKE LOWER('%' || search_term || '%') OR
-            LOWER(po.known_as) LIKE LOWER('%' || search_term || '%')
-        )
-
-    UNION ALL
-
-    -- Search in client products
-    SELECT 
-        'client_product'::text as entity_type,
-        cp.id as entity_id,
-        cp.product_name as entity_name,
-        CONCAT('Product: ', cp.product_name, ' - Client: ', cg.name, ' - Provider: ', ap.name) as entity_description,
-        CASE 
-            WHEN LOWER(cp.product_name) = LOWER(search_term) THEN 100
-            WHEN LOWER(cp.product_name) LIKE LOWER(search_term || '%') THEN 90
-            WHEN LOWER(cp.product_name) LIKE LOWER('%' || search_term || '%') THEN 80
-            WHEN LOWER(cp.plan_number) LIKE LOWER('%' || search_term || '%') THEN 85
-            WHEN LOWER(cp.product_type) LIKE LOWER('%' || search_term || '%') THEN 75
-            ELSE 60
-        END as relevance_score
-    FROM client_products cp
-    JOIN client_groups cg ON cp.client_id = cg.id
-    JOIN available_providers ap ON cp.provider_id = ap.id
-    WHERE cp.status = 'active' AND cg.status = 'active'
-        AND (
-            LOWER(cp.product_name) LIKE LOWER('%' || search_term || '%') OR
-            LOWER(cp.product_type) LIKE LOWER('%' || search_term || '%') OR
-            LOWER(cp.plan_number) LIKE LOWER('%' || search_term || '%')
-        )
-
-    UNION ALL
-
-    -- Search in available funds
-    SELECT 
-        'fund'::text as entity_type,
-        af.id as entity_id,
-        af.fund_name as entity_name,
-        CONCAT('Fund: ', af.fund_name, ' (', af.isin_number, ') - Risk: ', af.risk_factor) as entity_description,
-        CASE 
-            WHEN LOWER(af.fund_name) = LOWER(search_term) THEN 100
-            WHEN LOWER(af.fund_name) LIKE LOWER(search_term || '%') THEN 90
-            WHEN LOWER(af.fund_name) LIKE LOWER('%' || search_term || '%') THEN 80
-            WHEN LOWER(af.isin_number) LIKE LOWER('%' || search_term || '%') THEN 95
-            ELSE 60
-        END as relevance_score
-    FROM available_funds af
-    WHERE af.status = 'active'
-        AND (
-            LOWER(af.fund_name) LIKE LOWER('%' || search_term || '%') OR
-            LOWER(af.isin_number) LIKE LOWER('%' || search_term || '%')
-        )
-
-    UNION ALL
-
-    -- Search in providers
-    SELECT 
-        'provider'::text as entity_type,
-        ap.id as entity_id,
-        ap.name as entity_name,
-        CONCAT('Provider: ', ap.name) as entity_description,
-        CASE 
-            WHEN LOWER(ap.name) = LOWER(search_term) THEN 100
-            WHEN LOWER(ap.name) LIKE LOWER(search_term || '%') THEN 90
-            WHEN LOWER(ap.name) LIKE LOWER('%' || search_term || '%') THEN 80
-            ELSE 60
-        END as relevance_score
-    FROM available_providers ap
-    WHERE ap.status = 'active'
-        AND LOWER(ap.name) LIKE LOWER('%' || search_term || '%')
-
-    UNION ALL
-
-    -- Search in portfolios
-    SELECT 
-        'portfolio'::text as entity_type,
-        p.id as entity_id,
-        p.portfolio_name as entity_name,
-        CONCAT('Portfolio: ', p.portfolio_name, ' - Client: ', cg.name) as entity_description,
-        CASE 
-            WHEN LOWER(p.portfolio_name) = LOWER(search_term) THEN 100
-            WHEN LOWER(p.portfolio_name) LIKE LOWER(search_term || '%') THEN 90
-            WHEN LOWER(p.portfolio_name) LIKE LOWER('%' || search_term || '%') THEN 80
-            ELSE 60
-        END as relevance_score
-    FROM portfolios p
-    JOIN client_products cp ON p.id = cp.portfolio_id
-    JOIN client_groups cg ON cp.client_id = cg.id
-    WHERE p.status = 'active' AND cp.status = 'active' AND cg.status = 'active'
-        AND LOWER(p.portfolio_name) LIKE LOWER('%' || search_term || '%')
-
-    ORDER BY relevance_score DESC, entity_name
-    LIMIT 50;
-END;
+AS $function$
+
+BEGIN
+
+    RETURN QUERY
+
+    -- Search in client groups
+
+    SELECT 
+
+        'client_group'::text as entity_type,
+
+        cg.id as entity_id,
+
+        cg.name as entity_name,
+
+        CONCAT('Client: ', cg.name, ' (', cg.type, ') - Advisor: ', COALESCE(cg.advisor, 'None')) as entity_description,
+
+        CASE 
+
+            WHEN LOWER(cg.name) = LOWER(search_term) THEN 100
+
+            WHEN LOWER(cg.name) LIKE LOWER(search_term || '%') THEN 90
+
+            WHEN LOWER(cg.name) LIKE LOWER('%' || search_term || '%') THEN 80
+
+            WHEN LOWER(cg.advisor) LIKE LOWER('%' || search_term || '%') THEN 70
+
+            ELSE 60
+
+        END as relevance_score
+
+    FROM client_groups cg
+
+    WHERE cg.status = 'active'
+
+        AND (
+
+            LOWER(cg.name) LIKE LOWER('%' || search_term || '%') OR
+
+            LOWER(cg.advisor) LIKE LOWER('%' || search_term || '%') OR
+
+            LOWER(cg.type) LIKE LOWER('%' || search_term || '%')
+
+        )
+
+
+
+    UNION ALL
+
+
+
+    -- Search in product owners
+
+    SELECT 
+
+        'product_owner'::text as entity_type,
+
+        po.id as entity_id,
+
+        COALESCE(po.known_as, CONCAT(po.firstname, ' ', po.surname)) as entity_name,
+
+        CONCAT('Product Owner: ', COALESCE(po.known_as, CONCAT(po.firstname, ' ', po.surname))) as entity_description,
+
+        CASE 
+
+            WHEN LOWER(COALESCE(po.known_as, CONCAT(po.firstname, ' ', po.surname))) = LOWER(search_term) THEN 100
+
+            WHEN LOWER(COALESCE(po.known_as, CONCAT(po.firstname, ' ', po.surname))) LIKE LOWER(search_term || '%') THEN 90
+
+            WHEN LOWER(po.firstname) LIKE LOWER('%' || search_term || '%') THEN 80
+
+            WHEN LOWER(po.surname) LIKE LOWER('%' || search_term || '%') THEN 80
+
+            WHEN LOWER(po.known_as) LIKE LOWER('%' || search_term || '%') THEN 85
+
+            ELSE 60
+
+        END as relevance_score
+
+    FROM product_owners po
+
+    WHERE po.status = 'active'
+
+        AND (
+
+            LOWER(po.firstname) LIKE LOWER('%' || search_term || '%') OR
+
+            LOWER(po.surname) LIKE LOWER('%' || search_term || '%') OR
+
+            LOWER(po.known_as) LIKE LOWER('%' || search_term || '%')
+
+        )
+
+
+
+    UNION ALL
+
+
+
+    -- Search in client products
+
+    SELECT 
+
+        'client_product'::text as entity_type,
+
+        cp.id as entity_id,
+
+        cp.product_name as entity_name,
+
+        CONCAT('Product: ', cp.product_name, ' - Client: ', cg.name, ' - Provider: ', ap.name) as entity_description,
+
+        CASE 
+
+            WHEN LOWER(cp.product_name) = LOWER(search_term) THEN 100
+
+            WHEN LOWER(cp.product_name) LIKE LOWER(search_term || '%') THEN 90
+
+            WHEN LOWER(cp.product_name) LIKE LOWER('%' || search_term || '%') THEN 80
+
+            WHEN LOWER(cp.plan_number) LIKE LOWER('%' || search_term || '%') THEN 85
+
+            WHEN LOWER(cp.product_type) LIKE LOWER('%' || search_term || '%') THEN 75
+
+            ELSE 60
+
+        END as relevance_score
+
+    FROM client_products cp
+
+    JOIN client_groups cg ON cp.client_id = cg.id
+
+    JOIN available_providers ap ON cp.provider_id = ap.id
+
+    WHERE cp.status = 'active' AND cg.status = 'active'
+
+        AND (
+
+            LOWER(cp.product_name) LIKE LOWER('%' || search_term || '%') OR
+
+            LOWER(cp.product_type) LIKE LOWER('%' || search_term || '%') OR
+
+            LOWER(cp.plan_number) LIKE LOWER('%' || search_term || '%')
+
+        )
+
+
+
+    UNION ALL
+
+
+
+    -- Search in available funds
+
+    SELECT 
+
+        'fund'::text as entity_type,
+
+        af.id as entity_id,
+
+        af.fund_name as entity_name,
+
+        CONCAT('Fund: ', af.fund_name, ' (', af.isin_number, ') - Risk: ', af.risk_factor) as entity_description,
+
+        CASE 
+
+            WHEN LOWER(af.fund_name) = LOWER(search_term) THEN 100
+
+            WHEN LOWER(af.fund_name) LIKE LOWER(search_term || '%') THEN 90
+
+            WHEN LOWER(af.fund_name) LIKE LOWER('%' || search_term || '%') THEN 80
+
+            WHEN LOWER(af.isin_number) LIKE LOWER('%' || search_term || '%') THEN 95
+
+            ELSE 60
+
+        END as relevance_score
+
+    FROM available_funds af
+
+    WHERE af.status = 'active'
+
+        AND (
+
+            LOWER(af.fund_name) LIKE LOWER('%' || search_term || '%') OR
+
+            LOWER(af.isin_number) LIKE LOWER('%' || search_term || '%')
+
+        )
+
+
+
+    UNION ALL
+
+
+
+    -- Search in providers
+
+    SELECT 
+
+        'provider'::text as entity_type,
+
+        ap.id as entity_id,
+
+        ap.name as entity_name,
+
+        CONCAT('Provider: ', ap.name) as entity_description,
+
+        CASE 
+
+            WHEN LOWER(ap.name) = LOWER(search_term) THEN 100
+
+            WHEN LOWER(ap.name) LIKE LOWER(search_term || '%') THEN 90
+
+            WHEN LOWER(ap.name) LIKE LOWER('%' || search_term || '%') THEN 80
+
+            ELSE 60
+
+        END as relevance_score
+
+    FROM available_providers ap
+
+    WHERE ap.status = 'active'
+
+        AND LOWER(ap.name) LIKE LOWER('%' || search_term || '%')
+
+
+
+    UNION ALL
+
+
+
+    -- Search in portfolios
+
+    SELECT 
+
+        'portfolio'::text as entity_type,
+
+        p.id as entity_id,
+
+        p.portfolio_name as entity_name,
+
+        CONCAT('Portfolio: ', p.portfolio_name, ' - Client: ', cg.name) as entity_description,
+
+        CASE 
+
+            WHEN LOWER(p.portfolio_name) = LOWER(search_term) THEN 100
+
+            WHEN LOWER(p.portfolio_name) LIKE LOWER(search_term || '%') THEN 90
+
+            WHEN LOWER(p.portfolio_name) LIKE LOWER('%' || search_term || '%') THEN 80
+
+            ELSE 60
+
+        END as relevance_score
+
+    FROM portfolios p
+
+    JOIN client_products cp ON p.id = cp.portfolio_id
+
+    JOIN client_groups cg ON cp.client_id = cg.id
+
+    WHERE p.status = 'active' AND cp.status = 'active' AND cg.status = 'active'
+
+        AND LOWER(p.portfolio_name) LIKE LOWER('%' || search_term || '%')
+
+
+
+    ORDER BY relevance_score DESC, entity_name
+
+    LIMIT 50;
+
+END;
+
 $function$
 ;
 

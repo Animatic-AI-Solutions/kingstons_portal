@@ -60,16 +60,23 @@ export class TransactionCoordinator {
 
       console.log(`🔄 Transaction Coordinator: Processing ${activities.length} activities and ${valuations.length} valuations`);
 
-      // PHASE 1: Save all activities first
+      // VALIDATION: Check activities before processing to prevent sequence waste
       if (activities.length > 0) {
-        console.log('📥 Phase 1: Saving activities...');
-        
-        for (const activity of activities) {
-          await this.saveActivity(activity, accountHoldingId);
-          result.processedActivities++;
+        const validationErrors = this.validateBulkActivities(activities);
+        if (validationErrors.length > 0) {
+          throw new Error(`Validation failed: ${validationErrors.join(', ')}`);
         }
+        console.log(`✅ Validation passed for ${activities.length} activities`);
+      }
+
+      // PHASE 1: Save all activities first (using bulk operations where possible)
+      if (activities.length > 0) {
+        console.log('📥 Phase 1: Saving activities in bulk...');
         
-        console.log(`✅ Phase 1 Complete: ${result.processedActivities} activities saved`);
+        await this.saveBulkActivities(activities, accountHoldingId);
+        result.processedActivities = activities.length;
+        
+        console.log(`✅ Phase 1 Complete: ${result.processedActivities} activities saved in bulk`);
       }
 
       // PHASE 2: Save valuations after all activities are saved
@@ -195,6 +202,91 @@ export class TransactionCoordinator {
     } else if (activity.originalActivityId) {
       await api.patch(`holding_activity_logs/${activity.originalActivityId}`, activityData);
     }
+  }
+
+  /**
+   * Save activities in bulk using sequence reservation
+   * This replaces individual API calls with a single bulk operation for new activities
+   */
+  private static async saveBulkActivities(
+    activities: ActivityEdit[], 
+    accountHoldingId: number
+  ): Promise<void> {
+    
+    if (activities.length === 0) return;
+    
+    console.log(`🚀 BULK: Saving ${activities.length} activities with sequence reservation`);
+    
+    // Separate activities by operation type
+    const newActivities = activities.filter(activity => activity.isNew && !activity.toDelete);
+    const updateActivities = activities.filter(activity => !activity.isNew && !activity.toDelete && activity.originalActivityId);
+    const deleteActivities = activities.filter(activity => activity.toDelete && activity.originalActivityId);
+    
+    // Handle bulk creation for new activities
+    if (newActivities.length > 0) {
+      console.log(`📥 BULK: Creating ${newActivities.length} new activities...`);
+      
+      // Convert to backend format
+      const activityData = newActivities.map(activity => ({
+        portfolio_fund_id: activity.fundId,
+        product_id: accountHoldingId,
+        activity_type: this.convertActivityTypeForBackend(activity.activityType),
+        activity_timestamp: `${activity.month}-01`,
+        amount: parseFloat(activity.value)
+      }));
+
+      // Use bulk endpoint with sequence reservation
+      const response = await api.post('holding_activity_logs/bulk', activityData, {
+        params: { skip_irr_calculation: true }
+      });
+      
+      console.log(`✅ BULK: Successfully created ${response.data.length} activities`);
+    }
+    
+    // Handle individual updates (can't be bulked due to different IDs)
+    if (updateActivities.length > 0) {
+      console.log(`🔄 BULK: Updating ${updateActivities.length} existing activities individually...`);
+      for (const activity of updateActivities) {
+        await this.saveActivity(activity, accountHoldingId);
+      }
+    }
+    
+    // Handle individual deletions (can't be bulked due to different IDs)
+    if (deleteActivities.length > 0) {
+      console.log(`🗑️ BULK: Deleting ${deleteActivities.length} activities individually...`);
+      for (const activity of deleteActivities) {
+        await this.saveActivity(activity, accountHoldingId);
+      }
+    }
+  }
+
+  /**
+   * Validate activities before bulk save to prevent sequence reservation waste
+   */
+  private static validateBulkActivities(activities: ActivityEdit[]): string[] {
+    const errors: string[] = [];
+    
+    activities.forEach((activity, index) => {
+      const activityNum = index + 1;
+      
+      if (!activity.fundId) {
+        errors.push(`Activity ${activityNum}: Missing fund ID`);
+      }
+      
+      if (!activity.activityType) {
+        errors.push(`Activity ${activityNum}: Missing activity type`);
+      }
+      
+      if (!activity.value || isNaN(parseFloat(activity.value))) {
+        errors.push(`Activity ${activityNum}: Invalid amount value: ${activity.value}`);
+      }
+      
+      if (!activity.month || !/^\d{4}-\d{2}$/.test(activity.month)) {
+        errors.push(`Activity ${activityNum}: Invalid month format (expected YYYY-MM): ${activity.month}`);
+      }
+    });
+    
+    return errors;
   }
 
   /**
