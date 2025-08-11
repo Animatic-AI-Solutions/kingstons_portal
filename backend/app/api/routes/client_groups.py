@@ -36,9 +36,50 @@ async def get_bulk_client_data(
     try:
         logger.info("Fetching bulk client data with FUM calculations")
         
-        # Use the existing client_group_complete_data view for efficient data retrieval
-        # Fetch all client groups regardless of status (active, inactive, dormant)
-        bulk_data_result = await db.fetch("SELECT * FROM client_group_complete_data")
+        # Use a custom query that includes provider theme color information
+        # Based on client_group_complete_data but with additional provider details
+        bulk_data_result = await db.fetch("""
+            SELECT 
+                cg.id as client_group_id,
+                cg.name as client_group_name,
+                cg.advisor as legacy_advisor_text,
+                cg.type,
+                cg.status as client_group_status,
+                cg.created_at,
+                cp.id as product_id,
+                cp.product_name,
+                cp.product_type,
+                cp.start_date as product_start_date,
+                cp.end_date as product_end_date,
+                cp.status as product_status,
+                cp.portfolio_id,
+                cp.provider_id,
+                ap.name as provider_name,
+                ap.theme_color as provider_theme_color,
+                p.portfolio_name,
+                lpv.valuation as product_total_value,
+                count(DISTINCT pf.id) FILTER (WHERE pf.status = 'active') as active_fund_count,
+                count(DISTINCT pf.id) FILTER (WHERE pf.status != 'active') as inactive_fund_count,
+                -- Advisor relationship fields (if they exist in your schema)
+                null as advisor_id,
+                null as advisor_name,
+                null as advisor_email,
+                null as advisor_first_name,
+                null as advisor_last_name,
+                null as advisor_assignment_status
+            FROM client_groups cg
+            LEFT JOIN client_products cp ON cg.id = cp.client_id
+            LEFT JOIN available_providers ap ON cp.provider_id = ap.id
+            LEFT JOIN portfolios p ON cp.portfolio_id = p.id
+            LEFT JOIN latest_portfolio_valuations lpv ON p.id = lpv.portfolio_id
+            LEFT JOIN portfolio_funds pf ON p.id = pf.portfolio_id
+            WHERE cg.status = 'active'
+            GROUP BY cg.id, cg.name, cg.advisor, cg.type, cg.status, cg.created_at,
+                     cp.id, cp.product_name, cp.product_type, cp.start_date, cp.end_date, 
+                     cp.status, cp.portfolio_id, cp.provider_id, ap.name, ap.theme_color,
+                     p.portfolio_name, lpv.valuation
+            ORDER BY cg.name, cp.product_name
+        """)
         
         if not bulk_data_result:
             logger.info("No client groups found")

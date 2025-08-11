@@ -26,7 +26,7 @@ export class PrintService implements IPrintService {
     this.options = {
       orientation: 'landscape',
       margins: {
-        top: '0.2in',
+        top: '1.2in',
         right: '0.05in',
         bottom: '0.2in',
         left: '0.05in'

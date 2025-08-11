@@ -169,8 +169,8 @@ async def get_client_products_with_owners(
                 "end_date": product.get("end_date"),
                 "provider_id": product.get("provider_id"),
                 "provider_name": product.get("provider_name"),
-                "provider_theme_color": product.get("provider_theme_color"),
-                "theme_color": product.get("provider_theme_color"),  # Add for StandardTable compatibility
+                "provider_theme_color": product.get("provider_color"),  # Fixed: database view uses 'provider_color'
+                "theme_color": product.get("provider_color"),  # Add for StandardTable compatibility
                 "product_type": product.get("product_type"),
                 "plan_number": product.get("plan_number"),
                 "portfolio_id": portfolio_id,
