@@ -2397,6 +2397,26 @@ async def calculate_multiple_portfolio_funds_irr(
                 "note": "No activities found - IRR set to 0%"
             }
         
+        # NEW: Check if all cash flows are effectively zero (including zero valuation)
+        total_cash_flow = sum(abs(amount) for amount in cash_flows.values())
+        if total_cash_flow < 0.01:  # Less than 1 penny total
+            logger.info(f"💰 DEBUG: ⚠️  All cash flows are effectively zero (total: £{total_cash_flow:.6f}) for multiple funds {portfolio_fund_ids}, returning 0% IRR")
+            
+            return {
+                "success": True,
+                "irr_percentage": 0.0,
+                "irr_decimal": 0.0,
+                "calculation_date": irr_date_obj.isoformat(),
+                "portfolio_fund_ids": portfolio_fund_ids,
+                "total_valuation": total_valuation,
+                "fund_valuations": fund_valuations,
+                "cash_flows_count": len(cash_flows),
+                "period_start": irr_date_obj.isoformat(),
+                "period_end": irr_date_obj.isoformat(),
+                "days_in_period": 0,
+                "note": "All cash flows are effectively zero - IRR set to 0%"
+            }
+        
         # Convert to sorted lists for IRR calculation
         sorted_months = sorted(cash_flows.keys())
         amounts = [cash_flows[month] for month in sorted_months]
@@ -2635,6 +2655,9 @@ async def calculate_single_portfolio_fund_irr(
                 activity_date = activity_timestamp.date() if hasattr(activity_timestamp, 'date') else activity_timestamp
             month_key = activity_date.replace(day=1)
             
+            # DEBUG: Log each activity processing
+            logger.info(f"💰 DEBUG: Processing activity ID {activity.get('id')} - Type: {activity['activity_type']}, Amount: £{activity['amount']}, Timestamp: {activity_timestamp}, Parsed Date: {activity_date}, Month Key: {month_key}")
+            
             if month_key not in cash_flows:
                 cash_flows[month_key] = 0.0
             
@@ -2768,6 +2791,27 @@ async def calculate_single_portfolio_fund_irr(
                 "period_end": irr_date_iso,
                 "days_in_period": 0,
                 "note": "No cash flows after processing (zero valuation) - IRR set to 0%"
+            }
+        
+        # NEW: Check if all cash flows are effectively zero (including zero valuation)
+        total_cash_flow = sum(abs(amount) for amount in cash_flows.values())
+        if total_cash_flow < 0.01:  # Less than 1 penny total
+            logger.info(f"💰 DEBUG: ⚠️  All cash flows are effectively zero (total: £{total_cash_flow:.6f}) for fund {portfolio_fund_id}, returning 0% IRR")
+            
+            irr_date_iso = irr_date_obj.isoformat()
+            
+            return {
+                "success": True,
+                "irr_percentage": 0.0,
+                "irr_decimal": 0.0,
+                "calculation_date": irr_date_iso,
+                "portfolio_fund_id": portfolio_fund_id,
+                "valuation_amount": valuation_amount,
+                "cash_flows_count": len(cash_flows),
+                "period_start": irr_date_iso,
+                "period_end": irr_date_iso,
+                "days_in_period": 0,
+                "note": "All cash flows are effectively zero - IRR set to 0%"
             }
         
         # SPECIAL CASE: Handle single-month scenario with both activities and valuations

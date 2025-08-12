@@ -651,8 +651,8 @@ const calculateTotalInvestments = (activities: ActivityLog[], holdings: Holding[
   // Include ALL real holdings (active and inactive) but exclude virtual entries
   const allRealHoldings = holdings.filter(h => !h.isVirtual);
   const total = allRealHoldings.reduce((total, holding) => {
-    const amount = calculateInvestments(activities, holding.id);
-    console.log(`Investments for holding ${holding.id} (${holding.fund_name}): ${amount}`);
+    const amount = calculateInvestmentsPlusSwitchIns(activities, holding.id);
+    console.log(`Total investments (including regular) for holding ${holding.id} (${holding.fund_name}): ${amount}`);
     return total + amount;
   }, 0);
   
