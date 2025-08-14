@@ -662,9 +662,9 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
             })) || []
           });
           
-          // Check specifically for Historical Funds
-          const historicalFundsCheck = currentProduct.funds?.filter((f: any) => 
-            f.fund_name === 'Historical Funds' || f.fund_name === 'Previous Funds'
+          // Check specifically for Previous Funds (NOT Historical Funds - treat as regular fund)
+          const historicalFundsCheck = currentProduct.funds?.filter((f: any) =>
+            f.fund_name === 'Previous Funds'
           ) || [];
           console.log(`🔍 [Previous Funds] Product ${productHistory.product_id} - Historical/Previous Funds check:`, {
             foundHistoricalFunds: historicalFundsCheck.length,
@@ -703,11 +703,12 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
             count: inactiveFunds.length,
             funds: inactiveFunds.map((f: any) => ({ name: f.fund_name, status: f.status, isVirtual: f.isVirtual }))
           });
-                    // Also look for funds named "Historical Funds" or "Previous Funds" that should be calculated dynamically
-          // Note: We include these regardless of isVirtual status because they represent real aggregated inactive funds
-          const historicalFunds = currentProduct.funds?.filter((fund: any) => 
-            fund.fund_name === 'Historical Funds' || fund.fund_name === 'Previous Funds'
-          ) || [];
+                    // Also look for funds named "Previous Funds" that should be calculated dynamically
+                    // Note: We include these regardless of isVirtual status because they represent real aggregated inactive funds
+                    // Historical Funds should be treated as regular individual funds, not aggregated
+                    const historicalFunds = currentProduct.funds?.filter((fund: any) =>
+                      fund.fund_name === 'Previous Funds'
+                    ) || [];
           dynamicFunds.push(...historicalFunds);
           
           console.log(`🔍 [Previous Funds] Product ${productHistory.product_id} historical funds:`, {
@@ -1527,10 +1528,10 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                             // For Previous Funds, use previousFundsIRRData state; for regular funds, use fundIrrMaps
                             let fundIrrMap: Map<string, number | null>; // Changed type to allow null
                             // Determine if this fund should use the dynamically calculated previousFundsIRRData
-                            // Note: Historical/Previous Funds are included regardless of isVirtual status
-                            const shouldUseDynamicIRR = 
+                            // Note: Only Previous Funds should use dynamic calculation, Historical Funds are treated as regular individual funds
+                            const shouldUseDynamicIRR =
                                 (fund.status === 'inactive' && !fund.isVirtual) ||
-                                (fund.fund_name === 'Historical Funds' || fund.fund_name === 'Previous Funds');
+                                (fund.fund_name === 'Previous Funds');
                             if (shouldUseDynamicIRR) {
                               const productKey = `product_${productHistory.product_id}`;
                               fundIrrMap = previousFundsIRRData.get(productKey) || new Map();
