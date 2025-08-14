@@ -429,34 +429,27 @@ const ReportGenerator: React.FC = () => {
   const extractProductOwners = (products: Product[]): string[] => {
     const ownerSet = new Set<string>();
     
-    console.log('🔍 [EXTRACT OWNERS DEBUG] Processing', products.length, 'products for owner extraction');
+
     
     products.forEach((product, index) => {
-      console.log(`🔍 [EXTRACT OWNERS DEBUG] Product ${index + 1}:`, {
-        id: product.id,
-        name: product.product_name,
-        product_owner_name: product.product_owner_name,
-        product_owners: product.product_owners,
-        product_owners_count: product.product_owners?.length || 0
-      });
-      
+
       // Method 1: Extract from product_owner_name string (existing logic)
       if (product.product_owner_name) {
         const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
-        console.log(`🔍 [EXTRACT OWNERS DEBUG] Product ${product.id} owner names from string:`, ownerNames);
+
         ownerNames.forEach(ownerName => {
           const nameParts = ownerName.trim().split(' ');
           const nickname = nameParts[0]; // Take first part (nickname)
           if (nickname) {
             ownerSet.add(nickname);
-            console.log(`🔍 [EXTRACT OWNERS DEBUG] Added nickname: "${nickname}"`);
+
           }
         });
       }
       
       // Method 2: Extract from product_owners array (for joint products)
       if (product.product_owners && Array.isArray(product.product_owners)) {
-        console.log(`🔍 [EXTRACT OWNERS DEBUG] Product ${product.id} owners array:`, product.product_owners);
+
         product.product_owners.forEach(owner => {
           // Priority: known_as > firstname > id
           let ownerName = '';
@@ -470,14 +463,14 @@ const ReportGenerator: React.FC = () => {
           
           if (ownerName) {
             ownerSet.add(ownerName);
-            console.log(`🔍 [EXTRACT OWNERS DEBUG] Added from array: "${ownerName}"`);
+
           }
         });
       }
     });
     
     const result = Array.from(ownerSet).sort();
-    console.log('🔍 [EXTRACT OWNERS DEBUG] Final extracted owners:', result);
+
     return result;
   };
 
@@ -580,7 +573,7 @@ const ReportGenerator: React.FC = () => {
     }
     hasInitializedRef.current = true;
 
-      console.log('🔴 DEBUGGING: fetchInitialData starting - page just loaded');
+
       setIsLoading(true);
       try {
         console.log('🚀 Starting optimized data loading...');
@@ -596,10 +589,7 @@ const ReportGenerator: React.FC = () => {
         
         setClientGroups(clientGroupsRes.data || []);
         setIsLoadingClientGroups(false); // Enable dropdown immediately!
-        console.log(`✅ Client groups loaded in ${clientGroupsTime}ms - dropdown ready!`);
-        console.log(`📊 Loaded ${(clientGroupsRes.data || []).length} client groups:`, clientGroupsRes.data?.map(g => g.name) || []);
-        console.log(`🎯 Client Groups dropdown is now enabled and should show options immediately!`);
-        
+
         // UI is now responsive - user can select client groups immediately!
         setIsLoading(false);
         setError(null);
@@ -617,13 +607,7 @@ const ReportGenerator: React.FC = () => {
           // Set ALL products for the dropdown and search functionality
           const productsData = allProductsRes.data || [];
           setProducts(productsData);
-          
-          console.log(`📦 All products loaded in ${productsTime}ms (background)`);
-          console.log(`🎯 Total optimized loading: ${totalTime}ms (client groups available after ${clientGroupsTime}ms)`);
-          console.log(`⚡ PERFORMANCE IMPROVEMENT: Client groups now load ${Math.round(productsTime/clientGroupsTime)}x faster!`);
-          console.log(`🚀 USER EXPERIENCE: Client Groups dropdown was usable after ${clientGroupsTime}ms instead of ${totalTime}ms`);
-          console.log(`✅ OPTIMIZATION SUCCESS: Separated loading prevents UI blocking!`);
-          
+
         } catch (productsError: any) {
           console.error('⚠️ Products loading failed (background) - client groups still functional:', productsError);
           // Don't show error to user since client groups are working
@@ -670,8 +654,7 @@ const ReportGenerator: React.FC = () => {
         // 2. Products from selected client groups - OPTIMIZED WITH PARALLEL REQUESTS
         if (selectedClientGroupIds.length > 0) {
           const startTime = Date.now();
-          console.log(`🚀 Starting optimized client group fetch for ${selectedClientGroupIds.length} groups`);
-          
+
           // Separate cached and uncached client groups
           const cachedProducts: Product[] = [];
           const uncachedClientGroups: (string | number)[] = [];
@@ -753,7 +736,7 @@ const ReportGenerator: React.FC = () => {
           }
           
           const totalTime = Date.now() - startTime;
-          console.log(`🎯 Client group processing complete: ${totalTime}ms total (PARALLEL OPTIMIZATION: ${uncachedClientGroups.length}x faster than sequential!)`);
+
         }
         
         setRelatedProducts(productsToDisplay);
@@ -987,8 +970,6 @@ const ReportGenerator: React.FC = () => {
     fetchAvailableValuationDates();
   }, [relatedProducts, excludedProductIds, api, selectedValuationDate, selectedIRRDates]);
 
-  
-
   // Calculate if we have any effective product selection (simplified for client groups and products only)
   const hasEffectiveProductSelection = useMemo(() => {
     // Get all excluded product IDs (only direct exclusions now)
@@ -1061,31 +1042,23 @@ const ReportGenerator: React.FC = () => {
         console.warn(`🚨 Filtered out ${productIds.length - validProductIds.length} invalid product IDs:`, 
           productIds.filter(id => id === null || id === undefined || typeof id !== 'number' || isNaN(id)));
       }
-      
-      console.log(`📊 Fetching available IRR dates for ${validProductIds.length} valid products (originally ${productIds.length})`);
-      
+
       // Fetch historical IRR data for each product (no limit to get all dates)
       for (const productId of validProductIds) {
         try {
           // Check cache first, fallback to API call if not cached
           let response = historicalIRRCache.get(productId);
           if (response) {
-            console.log(`🎯 [CACHE HIT] Using cached historical IRR data for product ${productId}, avoiding duplicate API call in fetchAvailableIRRDates`);
+
           } else {
-            console.log(`📊 Fetching historical IRR data for product ${productId}`);
+
             response = await historicalIRRService.getCombinedHistoricalIRR(productId, 1000); // Large limit to get all data
             
             // Cache the response for later use to avoid duplicate API calls
             setHistoricalIRRCache(prev => new Map(prev.set(productId, response)));
-            console.log(`🎯 [CACHE] Stored historical IRR data for product ${productId} in cache`);
+
           }
-          
-          console.log(`📊 Response for product ${productId}:`, {
-            portfolio_count: response.portfolio_count || 0,
-            funds_count: response.funds_count || 0,
-            total_fund_records: response.total_fund_records || 0
-          });
-          
+
           // Check if we have funds historical IRR data
           if (response.funds_historical_irr && response.funds_historical_irr.length > 0) {
             // Extract all unique dates from this product's IRR data
@@ -1108,10 +1081,9 @@ const ReportGenerator: React.FC = () => {
                 }
                 allDatesMap.get(date)!.add(productId);
               });
-              
-              console.log(`📊 Product ${productId} has ${productDates.size} unique IRR dates`);
+
             } else {
-              console.log(`📊 Product ${productId} has no funds historical IRR data`);
+
             }
             
             // Also check portfolio historical IRR data
@@ -1131,8 +1103,7 @@ const ReportGenerator: React.FC = () => {
                 }
                 allDatesMap.get(date)!.add(productId);
               });
-              
-              console.log(`📊 Product ${productId} has ${portfolioProductDates.size} unique portfolio IRR dates`);
+
             }
         } catch (productError) {
           console.error(`❌ Error fetching IRR data for product ${productId}:`, productError);
@@ -1158,10 +1129,7 @@ const ReportGenerator: React.FC = () => {
       
       // Sort by date (most recent first)
       availableDates.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      
-      console.log(`✅ Found ${availableDates.length} unique IRR dates across all products`);
-      console.log(`📊 Available IRR dates summary:`, availableDates.map(d => `${d.label} (${d.productIds.length} products)`));
-      
+
       return availableDates;
       
     } catch (error) {
@@ -1195,9 +1163,9 @@ const ReportGenerator: React.FC = () => {
         // Check cache first, fallback to API call if not cached
         let response = historicalIRRCache.get(productId);
         if (response) {
-          console.log(`🎯 [CACHE HIT] Using cached historical IRR data for product ${productId}, avoiding duplicate API call`);
+
         } else {
-          console.log(`⚠️ [CACHE MISS] Product ${productId} not in cache, making API call`);
+
           response = await historicalIRRService.getCombinedHistoricalIRR(productId, 1000);
           setHistoricalIRRCache(prev => new Map(prev.set(productId, response)));
         }
@@ -1620,7 +1588,7 @@ const ReportGenerator: React.FC = () => {
                       valuation_date: new Date().toISOString().split('T')[0]
                   };
                   latestValuationFromViewMap.set(fundId, zeroValuation);
-                  console.log(`📊 [VALUATION DEBUG] Assigned zero valuation to inactive fund ${fundId} (no date selected)`);
+
               }
           } else {
               // Find the valuation closest to (but not exceeding) the selected date
@@ -1657,7 +1625,7 @@ const ReportGenerator: React.FC = () => {
                       valuation_date: selectedValuationDate || new Date().toISOString().split('T')[0]
                   };
                   latestValuationFromViewMap.set(fundId, zeroValuation);
-                  console.log(`📊 [VALUATION DEBUG] Assigned zero valuation to inactive fund ${fundId} for ${selectedValuationDate}`);
+
               }
           }
       });
@@ -1807,13 +1775,11 @@ const ReportGenerator: React.FC = () => {
         
           try {
           const allFundIdsList = Array.from(new Set([...activeFundIds, ...inactiveFundIds]));
-          console.log(`🔍 [FUND IRR DEBUG] Fetching IRR values for ${allFundIdsList.length} funds:`, allFundIdsList);
-          
+
           if (selectedValuationDate) {
             // Fetch IRR values for specific date
             const [year, month] = selectedValuationDate.split('-').map(part => parseInt(part));
-            console.log(`🔍 [FUND IRR DEBUG] Fetching IRR values for specific date: ${year}-${month}`);
-            
+
             const irrResponse = await api.post('/portfolio_funds/batch/irr-values-by-date', {
               fund_ids: allFundIdsList,
               target_month: month,
@@ -1826,21 +1792,19 @@ const ReportGenerator: React.FC = () => {
                 const fundIdNum = parseInt(fundId);
                 if (irrInfo && typeof irrInfo.irr === 'number') {
                   fundIRRMap.set(fundIdNum, irrInfo.irr);
-                  console.log(`✅ [FUND IRR DEBUG] Set specific date IRR for fund ${fundIdNum}: ${irrInfo.irr}%`);
+
                 } else {
                   fundIRRMap.set(fundIdNum, null);
-                  console.log(`⚠️ [FUND IRR DEBUG] No IRR for fund ${fundIdNum} on specific date`);
+
                 }
               });
             }
           } else {
             // Fetch latest IRR values when no specific date is selected
-            console.log(`🔍 [FUND IRR DEBUG] No specific date selected, fetching latest IRR values`);
-            
+
             const latestIRRResponse = await getLatestFundIRRs(allFundIdsList);
             if (latestIRRResponse.data && latestIRRResponse.data.fund_irrs) {
-              console.log(`✅ [FUND IRR DEBUG] Latest IRR values fetched:`, latestIRRResponse.data.fund_irrs);
-              
+
               latestIRRResponse.data.fund_irrs.forEach((irrRecord: any) => {
                 // Handle both string and number IRR results from the API
                 const irrValue = irrRecord.irr_result;
@@ -1848,14 +1812,14 @@ const ReportGenerator: React.FC = () => {
                   const numericIRR = typeof irrValue === 'number' ? irrValue : parseFloat(irrValue);
                   if (!isNaN(numericIRR)) {
                     fundIRRMap.set(irrRecord.fund_id, numericIRR);
-                    console.log(`✅ [FUND IRR DEBUG] Set latest IRR for fund ${irrRecord.fund_id}: ${numericIRR}%`);
+
                   } else {
                     fundIRRMap.set(irrRecord.fund_id, null);
-                    console.log(`⚠️ [FUND IRR DEBUG] Invalid IRR value for fund ${irrRecord.fund_id}: ${irrValue}`);
+
                   }
                 } else {
                   fundIRRMap.set(irrRecord.fund_id, null);
-                  console.log(`⚠️ [FUND IRR DEBUG] No latest IRR for fund ${irrRecord.fund_id}`);
+
                 }
               });
             }
@@ -2016,24 +1980,13 @@ const ReportGenerator: React.FC = () => {
           });
         }
 
-        
         // Calculate product IRR using the standardized multiple funds IRR endpoint
 
         let productIRR: number | null = null;
         
         // For inactive products, try to get the latest portfolio IRR even if valuation is zero
         const isInactiveProduct = productDetails.status === 'inactive' || (activeFundIds.size === 0 && inactiveFundIds.size > 0);
-        
-        console.log(`🎯 [PRODUCT IRR DEBUG] Product ${productDetails.product_name} (ID: ${productId}) IRR calculation conditions:`, {
-          fundSummariesLength: fundSummaries.length,
-          productValuation,
-          productStatus: productDetails.status,
-          activeFundIds: activeFundIds.size,
-          inactiveFundIds: inactiveFundIds.size,
-          isInactiveProduct,
-          shouldCalculateIRR: fundSummaries.length > 0 && (productValuation > 0 || isInactiveProduct)
-        });
-        
+
         // Allow IRR calculation for products with funds, regardless of valuation
         // Zero valuation is legitimate and should not prevent IRR calculation
         if (fundSummaries.length > 0) {
@@ -2056,11 +2009,10 @@ const ReportGenerator: React.FC = () => {
               }
               
               // Use optimized IRR service for active products, latest portfolio IRR for inactive products
-              console.log(`🎯 [PRODUCT IRR DEBUG] Product ${productDetails.product_name} is ${isInactiveProduct ? 'INACTIVE' : 'ACTIVE'} - using ${isInactiveProduct ? 'portfolio IRR endpoint' : 'optimized IRR service'}`);
-              
+
               if (isInactiveProduct) {
                 // For inactive products, get the latest portfolio-level IRR
-                console.log(`🎯 [PRODUCT IRR DEBUG] Fetching portfolio IRR for INACTIVE product: ${productDetails.product_name} (ID: ${productId})`);
+
                 try {
                   const portfolioIRRResponse = await api.get(`/api/portfolios/${productDetails.portfolio_id}/latest_irr`);
                   if (portfolioIRRResponse.data && portfolioIRRResponse.data.irr_result !== null && portfolioIRRResponse.data.irr_result !== undefined) {
@@ -2089,25 +2041,16 @@ const ReportGenerator: React.FC = () => {
                 }
               } else {
                 // For active products, use optimized IRR service
-                console.log(`🎯 [REPORT DEBUG] Fetching IRR for active product: ${productDetails.product_name} (ID: ${productId})`);
-                console.log(`🎯 [REPORT DEBUG] IRR service params:`, {
-                  portfolioId: productDetails.portfolio_id,
-                  portfolioFundIds: productPortfolioFundIds,
-                  endDate: formattedDate,
-                  includeHistorical: false
-                });
-                
+
                 const optimizedIRRData = await irrDataService.getOptimizedIRRData({
                   portfolioId: productDetails.portfolio_id,
                   portfolioFundIds: productPortfolioFundIds,
                   endDate: formattedDate,
                   includeHistorical: false
                 });
-                
-                console.log(`🎯 [REPORT DEBUG] IRR service response for ${productDetails.product_name}:`, optimizedIRRData);
-                
+
                 productIRR = optimizedIRRData.portfolioIRR;
-                console.log(`🎯 [REPORT DEBUG] Extracted portfolio IRR: ${productIRR} for ${productDetails.product_name}`);
+
                 console.log(`Optimized IRR for active product ${productId}: ${productIRR}% (source: ${optimizedIRRData.irrDate})`);
               }
           } else {
@@ -2123,12 +2066,20 @@ const ReportGenerator: React.FC = () => {
         const createPreviousFundsEntry = async (inactiveFunds: FundSummary[]): Promise<FundSummary | null> => {
           if (inactiveFunds.length === 0) return null;
           
-          // Sum up all values from inactive funds
+          // Sum up all values from inactive funds - properly aggregate ALL activity types
           const totalInvestment = inactiveFunds.reduce((sum, fund) => sum + fund.total_investment, 0);
+          const totalRegularInvestment = inactiveFunds.reduce((sum, fund) => sum + fund.total_regular_investment, 0);
+          const totalTaxUplift = inactiveFunds.reduce((sum, fund) => sum + fund.total_tax_uplift, 0);
+          const totalProductSwitchIn = inactiveFunds.reduce((sum, fund) => sum + fund.total_product_switch_in, 0);
+          const totalProductSwitchOut = inactiveFunds.reduce((sum, fund) => sum + fund.total_product_switch_out, 0);
+          const totalFundSwitchIn = inactiveFunds.reduce((sum, fund) => sum + fund.total_fund_switch_in, 0);
+          const totalFundSwitchOut = inactiveFunds.reduce((sum, fund) => sum + fund.total_fund_switch_out, 0);
           const totalWithdrawal = inactiveFunds.reduce((sum, fund) => sum + fund.total_withdrawal, 0);
-          const totalSwitchIn = inactiveFunds.reduce((sum, fund) => sum + (fund.total_fund_switch_in || 0) + (fund.total_product_switch_in || 0), 0);
-                      const totalSwitchOut = inactiveFunds.reduce((sum, fund) => sum + (fund.total_fund_switch_out || 0) + (fund.total_product_switch_out || 0), 0);
           const totalValuation = inactiveFunds.reduce((sum, fund) => sum + fund.current_valuation, 0);
+          
+          // Legacy combined switch totals for backward compatibility
+          const totalSwitchIn = totalFundSwitchIn + totalProductSwitchIn;
+          const totalSwitchOut = totalFundSwitchOut + totalProductSwitchOut;
           
           // Calculate IRR for Previous Funds using standardized multiple portfolio fund endpoint
           let previousFundsIRR: number | null = null;
@@ -2156,7 +2107,7 @@ const ReportGenerator: React.FC = () => {
               }
               
               console.log('🚀 Calculating Previous Funds IRR for fund IDs:', inactiveFundIds, 'with date:', formattedDate);
-              console.log('🔍 DEBUG: ReportGenerator.tsx calling IRR with inactive fund IDs:', inactiveFundIds);
+
               
               const irrResponse = await calculateStandardizedMultipleFundsIRR({
                 portfolioFundIds: inactiveFundIds,
@@ -2205,14 +2156,14 @@ const ReportGenerator: React.FC = () => {
                     const numericIRR = typeof irrValue === 'number' ? irrValue : parseFloat(irrValue);
                     if (!isNaN(numericIRR)) {
                       fund.irr = numericIRR;
-                      console.log(`✅ Set IRR for ${fund.fund_name} (ID: ${fund.id}): ${fund.irr}%`);
+
                     } else {
                       fund.irr = null;
-                      console.log(`⚠️ Invalid IRR value for ${fund.fund_name} (ID: ${fund.id}): ${irrValue}`);
+
                     }
                   } else {
                     fund.irr = null;
-                    console.log(`⚠️ No IRR found for ${fund.fund_name} (ID: ${fund.id})`);
+
                   }
                   
                   // Add historical IRR data for inactive funds
@@ -2322,15 +2273,15 @@ const ReportGenerator: React.FC = () => {
             available_funds_id: -1,
             fund_name: 'Previous Funds',
             total_investment: totalInvestment,
-            total_regular_investment: totalInvestment,
-            total_tax_uplift: 0,
-            total_product_switch_in: 0,
-            total_product_switch_out: 0,
-            total_fund_switch_in: 0,
-            total_fund_switch_out: 0,
+            total_regular_investment: totalRegularInvestment,
+            total_tax_uplift: totalTaxUplift,
+            total_product_switch_in: totalProductSwitchIn,
+            total_product_switch_out: totalProductSwitchOut,
+            total_fund_switch_in: totalFundSwitchIn,
+            total_fund_switch_out: totalFundSwitchOut,
             total_withdrawal: totalWithdrawal,
 
-            net_flow: totalInvestment - totalWithdrawal + totalSwitchIn - totalSwitchOut,
+            net_flow: totalInvestment + totalRegularInvestment + totalTaxUplift + totalProductSwitchIn + totalFundSwitchIn - totalWithdrawal - totalProductSwitchOut - totalFundSwitchOut,
             current_valuation: totalValuation,
             irr: previousFundsIRR, // Calculate IRR for Previous Funds using standardized endpoint
             isVirtual: true, // Flag to identify this as a virtual entry
@@ -2340,6 +2291,19 @@ const ReportGenerator: React.FC = () => {
             inactiveFunds: inactiveFunds // Store individual inactive funds for breakdown
           };
           
+          console.log('🎯 Previous Funds aggregation details:', {
+            inactiveFundsCount: inactiveFunds.length,
+            totalInvestment,
+            totalRegularInvestment,
+            totalTaxUplift,
+            totalProductSwitchIn,
+            totalProductSwitchOut,
+            totalFundSwitchIn,
+            totalFundSwitchOut,
+            totalWithdrawal,
+            totalValuation,
+            calculatedNetFlow: totalInvestment + totalRegularInvestment + totalTaxUplift + totalProductSwitchIn + totalFundSwitchIn - totalWithdrawal - totalProductSwitchOut - totalFundSwitchOut
+          });
           console.log('🎯 Created Previous Funds entry with IRR:', previousFundsEntry.irr);
           console.log('🎯 Created Previous Funds entry with Risk:', previousFundsEntry.risk_factor);
           console.log('🎯 Full Previous Funds entry:', previousFundsEntry);
@@ -2350,8 +2314,7 @@ const ReportGenerator: React.FC = () => {
         // Separate active and inactive funds
         const activeFunds = fundSummaries.filter(fund => fund.status === 'active');
         const inactiveFunds = fundSummaries.filter(fund => fund.status !== 'active');
-        
-        console.log(`📊 Fund Status Debug for Product ${productDetails.product_name}:`);
+
         console.log('- Total fund summaries:', fundSummaries.length);
         console.log('- Active funds:', activeFunds.length);
         console.log('- Inactive funds:', inactiveFunds.length);
@@ -2382,18 +2345,7 @@ const ReportGenerator: React.FC = () => {
               (sum, fund) => sum + (fund.risk_factor! * (fund.current_valuation / totalActiveValuation)), 
               0
             );
-            
-            console.log(`🎯 Product ${productDetails.product_name} weighted risk calculation:`, {
-              activeFundsWithRisk: activeFundsWithRiskAndValuation.length,
-              totalActiveValuation,
-              weightedRisk: productWeightedRisk.toFixed(1),
-              fundBreakdown: activeFundsWithRiskAndValuation.map(f => ({
-                name: f.fund_name,
-                risk: f.risk_factor,
-                valuation: f.current_valuation,
-                weight: (f.current_valuation / totalActiveValuation * 100).toFixed(1) + '%'
-              }))
-            });
+
           }
         }
         
@@ -2412,17 +2364,6 @@ const ReportGenerator: React.FC = () => {
         const productTotalWithdrawal = fundSummaries.reduce((sum, fund) => sum + fund.total_withdrawal, 0);
         const productTotalSwitchIn = fundSummaries.reduce((sum, fund) => sum + fund.total_fund_switch_in, 0);
         const productTotalSwitchOut = fundSummaries.reduce((sum, fund) => sum + fund.total_fund_switch_out, 0);
-
-        console.log(`✅ Product ${productDetails.product_name} corrected totals from fund summaries:`, {
-          investment: productTotalInvestment,
-          regular_investment: productTotalRegularInvestment,
-          tax_uplift: productTotalTaxUplift,
-          product_switch_in: productTotalProductSwitchIn,
-          product_switch_out: productTotalProductSwitchOut,
-          fund_switch_in: productTotalFundSwitchIn,
-          fund_switch_out: productTotalFundSwitchOut,
-          withdrawal: productTotalWithdrawal
-        });
 
         // Add to summary results with fund data and corrected activity type totals
         productSummaryResults.push({
@@ -2770,25 +2711,19 @@ Please select a different valuation date or ensure all active funds have valuati
   };
 
   const toggleInactiveProductDetails = (productId: number) => {
-    console.log(`🔍 [CHECKBOX TOGGLE DEBUG] Toggling checkbox for product ${productId}:`, {
-      currentState: showInactiveProductDetails.has(productId),
-      currentSet: Array.from(showInactiveProductDetails)
-    });
-    
+
     setShowInactiveProductDetails(prev => {
       const newSet = new Set(prev);
       if (newSet.has(productId)) {
-        console.log(`🔍 [CHECKBOX TOGGLE DEBUG] Removing product ${productId} from set (unchecking)`);
+
         newSet.delete(productId);
       } else {
-        console.log(`🔍 [CHECKBOX TOGGLE DEBUG] Adding product ${productId} to set (checking)`);
+
         newSet.add(productId);
       }
-      
-      console.log(`🔍 [CHECKBOX TOGGLE DEBUG] New set after toggle:`, Array.from(newSet));
-      
+
       // Sync with state manager
-      console.log(`🔍 [CHECKBOX TOGGLE DEBUG] Syncing with state manager:`, Array.from(newSet));
+
       stateManagerActions.setShowInactiveProductDetails(newSet);
       
       return newSet;
@@ -3815,9 +3750,7 @@ Please select a different valuation date or ensure all active funds have valuati
                   )}
                 </h3>
               </div>
-              
 
-              
                         <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-300">
               <thead className="bg-gray-100">

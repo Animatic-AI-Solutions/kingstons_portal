@@ -8,7 +8,6 @@
  * - Enhanced performance optimizations
  * - Fund comparison tools
  */
-
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import IRRHistorySummaryTable from './IRRHistorySummaryTable';
 import {
@@ -30,7 +29,6 @@ import {
   EyeIcon,
   EyeSlashIcon
 } from '@heroicons/react/24/outline';
-
 import { useReportStateManager } from '../../hooks/report/useReportStateManager';
 import { useReportFormatter } from '../../hooks/report/useReportFormatter';
 import type { ReportData, ProductPeriodSummary } from '../../types/reportTypes';
@@ -44,28 +42,22 @@ import { generateEffectiveProductTitle, extractPlanNumber, sortProductsByOwnerOr
 import { normalizeProductType, PRODUCT_TYPE_ORDER } from '../../utils/reportConstants';
 import { useIRRCalculationService } from '../../hooks/report/useIRRCalculationService';
 import api from '../../services/api';
-
 // Local function to format fund IRRs with consistent 1 decimal place display
 const formatFundIrr = (irr: number | null | undefined): string => {
   if (irr === null || irr === undefined || isNaN(irr)) return '-';
-  
   // Always format to 1 decimal place for consistency
   return `${irr.toFixed(1)}%`;
 };
-
 // Helper function for chart tick formatting (1 decimal place, consistent)
 const formatChartTick = (value: number): string => {
   if (isNaN(value)) return '0.0%';
   return `${value.toFixed(1)}%`;
 };
-
 interface IRRHistoryTabProps {
   reportData: ReportData;
 }
-
 type ViewMode = 'table' | 'chart';
 type ChartType = 'line' | 'area';
-
 export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
   const {
     state: {
@@ -77,11 +69,9 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       portfolioIrrValues
     }
   } = useReportStateManager();
-  
   // Track calculated Previous Funds IRR values for each product and date
   const [previousFundsIRRData, setPreviousFundsIRRData] = useState<Map<string, Map<string, number | null>>>(new Map());
   const [previousFundsCalculationComplete, setPreviousFundsCalculationComplete] = useState<Set<number>>(new Set());
-
   // Debug logging to understand data state (memoized to reduce spam)
   useEffect(() => {
     console.log('🔍 [IRR HISTORY DEBUG] Component loaded with:', {
@@ -94,16 +84,13 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       irrHistoryDataSample: irrHistoryData?.[0]
     });
   }, [!!reportData, reportData?.productSummaries?.length, !!irrHistoryData, irrHistoryData?.length, loading]);
-
   // Local state for Phase 2 enhancements
   const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [chartType, setChartType] = useState<ChartType>('line');
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [showAllFunds, setShowAllFunds] = useState(false);
-
   // Formatting services from Phase 1 (moved up to fix hooks ordering)
   const { formatCurrencyWithZeroToggle, updateOptions } = useReportFormatter();
-
   // MOVED: Memoize expensive prop calculations to prevent infinite re-renders (moved before early returns)
   // Using stable dependencies instead of JSON.stringify to prevent unnecessary re-computations
   const memoizedProductIds = useMemo(
@@ -114,19 +101,16 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       reportData?.productSummaries?.[reportData.productSummaries.length - 1]?.id
     ]
   );
-
   const memoizedSelectedDates = useMemo(
     () => {
       // Extract unique dates that were actually selected by the user
       if (!reportData?.selectedHistoricalIRRDates) {
         return [];
       }
-      
       const allSelectedDates = new Set<string>();
       Object.values(reportData.selectedHistoricalIRRDates).forEach(dates => {
         dates.forEach(date => allSelectedDates.add(date));
       });
-      
       const uniqueSelectedDates = Array.from(allSelectedDates).sort();
       console.log('🎯 [IRR HISTORY] Using actual user-selected dates:', uniqueSelectedDates);
       return uniqueSelectedDates;
@@ -137,7 +121,6 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       JSON.stringify(reportData?.selectedHistoricalIRRDates)
     ]
   );
-
   // Memoize reportData to prevent unnecessary prop changes
   const memoizedReportData = useMemo(
     () => reportData,
@@ -148,22 +131,18 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       reportData?.productOwnerOrder?.length
     ]
   );
-
   // Memoize totalIRR to prevent unnecessary prop changes
   const memoizedTotalIRR = useMemo(
     () => reportData?.totalIRR,
     [reportData?.totalIRR]
   );
-
   // Debug: Track when memoized values change
   useEffect(() => {
     console.log('🔧 [MEMOIZATION DEBUG] ProductIds changed:', memoizedProductIds);
   }, [memoizedProductIds]);
-
   useEffect(() => {
     console.log('🔧 [MEMOIZATION DEBUG] SelectedDates changed:', memoizedSelectedDates);
   }, [memoizedSelectedDates]);
-
   // Add CSS for IRR history table column alignment and widths
   useEffect(() => {
     const style = document.createElement('style');
@@ -173,13 +152,11 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
         table-layout: fixed !important;
         width: 100% !important;
       }
-      
       .irr-history-table th,
       .irr-history-table td {
         word-wrap: break-word !important;
         overflow-wrap: break-word !important;
       }
-      
       /* Fund Name column - 25% width for ~40 characters */
       .irr-history-table th:nth-child(1) {
         width: 25% !important;
@@ -189,7 +166,6 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
         overflow: hidden !important;
         text-overflow: ellipsis !important;
       }
-      
       .irr-history-table td:nth-child(1) {
         width: 25% !important;
         text-align: left !important;
@@ -198,55 +174,46 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
         overflow: hidden !important;
         text-overflow: ellipsis !important;
       }
-      
       /* Risk column - 5% width (thinner) */
       .irr-history-table th:nth-child(2) {
         width: 5% !important;
         text-align: right !important;
       }
-      
       .irr-history-table td:nth-child(2) {
         width: 5% !important;
         text-align: right !important;
       }
-      
       /* Current Average Return column - 8% width */
       .irr-history-table th:nth-child(3) {
         width: 8% !important;
         text-align: right !important;
       }
-      
       .irr-history-table td:nth-child(3) {
         width: 8% !important;
         text-align: right !important;
       }
-      
       /* Historical IRR columns - distribute remaining 62% evenly */
       .irr-history-table th:nth-child(n+4) {
         width: 6.2% !important;
         text-align: right !important;
         padding-right: 8px !important;
       }
-      
       .irr-history-table td:nth-child(n+4) {
         width: 6.2% !important;
         text-align: right !important;
         padding-right: 8px !important;
       }
-      
       /* Print-specific styles */
       @media print {
         .irr-history-table {
           font-size: 9px !important;
         }
-        
         .irr-history-table th,
         .irr-history-table td {
           font-size: 8px !important;
           line-height: 1.0 !important;
           padding: 1px 2px !important;
         }
-        
         /* Ensure Fund Name column wraps properly in print */
         .irr-history-table th:nth-child(1),
         .irr-history-table td:nth-child(1) {
@@ -261,7 +228,6 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       document.head.removeChild(style);
     };
   }, []);
-
   // Update formatter options when hideZeros state changes (same pattern as SummaryTab)
   useEffect(() => {
     updateOptions({
@@ -270,29 +236,23 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       formatWithdrawalsAsNegative: false
     });
   }, [hideZeros, updateOptions]);
-
   const loadingIrrHistory = loading.irrHistory;
-
   // Get custom titles from state manager
   const {
     state: { customTitles }
   } = useReportStateManager();
-
   // Generate product title (simple function to avoid useCallback complexity)
   const getProductTitle = (product: ProductPeriodSummary | undefined): string => {
     if (!product) return 'Unknown Product';
     return generateEffectiveProductTitle(product, customTitles);
   };
-
   // Process chart data for visualization
   const chartData = useMemo(() => {
     if (!irrHistoryData || irrHistoryData.length === 0) return [];
-
     // Organize products first (inline to avoid dependency issues)
     const productTypeOrder = [
       'ISAs', 'GIAs', 'Onshore Bonds', 'Offshore Bonds', 'Pensions', 'Other'
     ];
-
     const groupedProducts: { [key: string]: any[] } = {};
     reportData.productSummaries.forEach(product => {
       const normalizedType = normalizeProductType(product.product_type);
@@ -301,30 +261,24 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       }
       groupedProducts[normalizedType].push(product);
     });
-
     // Sort and flatten
     const organizedProducts = productTypeOrder
       .map(type => groupedProducts[type] || [])
       .flat()
       .filter(Boolean);
-
     // Get all unique dates
     const allDates = new Set<string>();
-    
     organizedProducts.forEach((product, index) => {
       const originalIndex = reportData.productSummaries.findIndex(p => p.id === product.id);
       const productHistory = irrHistoryData[originalIndex];
-      
       if (productHistory?.portfolio_historical_irr) {
         productHistory.portfolio_historical_irr.forEach((record: any) => {
           allDates.add(record.irr_date);
         });
       }
     });
-
     // Sort dates chronologically
     const sortedDates = Array.from(allDates).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
-
     // Create chart data points
     return sortedDates.map(date => {
       const dataPoint: any = {
@@ -334,11 +288,9 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
           month: 'short' 
         })
       };
-
       organizedProducts.forEach((product, index) => {
         const originalIndex = reportData.productSummaries.findIndex(p => p.id === product.id);
         const productHistory = irrHistoryData[originalIndex];
-        
         // Generate title inline using stable custom titles
         const customTitle = stableCustomTitles.get(product.id);
         let productKey;
@@ -347,17 +299,14 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
         } else {
           // Standard format: Provider - Product Type - Product Owner Name (consistent with SummaryTab)
           const parts = [];
-          
           if (product.provider_name) {
             parts.push(product.provider_name);
           }
-          
           if (product.product_type) {
             // Simplify bond types to just "Bond"
             const simplifiedType = product.product_type.toLowerCase().includes('bond') ? 'Bond' : product.product_type;
             parts.push(simplifiedType);
           }
-          
           if (product.product_owner_name) {
             // Check if the product_owner_name contains multiple names (comma-separated or other delimiters)
             const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
@@ -371,16 +320,13 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
               parts.push(nickname);
             }
           }
-          
           productKey = parts.length > 0 ? parts.join(' - ') : 'Unknown Product';
-          
           // Add plan number if available
           const planNumber = extractPlanNumber(product);
           if (planNumber) {
             productKey += ` - ${planNumber}`;
           }
         }
-        
         if (productHistory?.portfolio_historical_irr) {
           const record = productHistory.portfolio_historical_irr.find((r: any) => r.irr_date === date);
           if (record && record.irr_result !== null && record.irr_result !== undefined) {
@@ -391,17 +337,14 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
           }
         }
       });
-
       return dataPoint;
     });
   }, [irrHistoryData, reportData.productSummaries, stableCustomTitles]);
-
   // Get products for chart selection
   const productsForChart = useMemo(() => {
     const productTypeOrder = [
       'ISAs', 'GIAs', 'Onshore Bonds', 'Offshore Bonds', 'Pensions', 'Other'
     ];
-
     const groupedProducts: { [key: string]: any[] } = {};
     reportData.productSummaries.forEach(product => {
       const normalizedType = normalizeProductType(product.product_type);
@@ -410,21 +353,18 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       }
       groupedProducts[normalizedType].push(product);
     });
-
     // Sort and flatten
     return productTypeOrder
       .map(type => groupedProducts[type] || [])
       .flat()
       .filter(Boolean);
   }, [reportData.productSummaries]);
-
   // Debug chart data processing
   console.log('🔍 [IRR HISTORY DEBUG] Chart data processing:', {
     chartDataLength: chartData.length,
     chartDataSample: chartData[0],
     productsForChartLength: productsForChart.length
   });
-
   // Toggle product selection for chart
   const toggleProductSelection = useCallback((productId: string) => {
     setSelectedProducts(prev => {
@@ -437,7 +377,6 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       return newSelection;
     });
   }, []);
-
   // Select all products
   const selectAllProducts = useCallback(() => {
     const allProductTitles = productsForChart.map(product => {
@@ -447,17 +386,14 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       }
       // Standard format: Provider - Product Type - Product Owner Name [Plan Number]
       const parts = [];
-      
       if (product.provider_name) {
         parts.push(product.provider_name);
       }
-      
       if (product.product_type) {
         // Simplify bond types to just "Bond"
         const simplifiedType = product.product_type.toLowerCase().includes('bond') ? 'Bond' : product.product_type;
         parts.push(simplifiedType);
       }
-      
       if (product.product_owner_name) {
         // Check if the product_owner_name contains multiple names (comma-separated or other delimiters)
         const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
@@ -471,36 +407,29 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
           parts.push(nickname);
         }
       }
-      
       let title = parts.length > 0 ? parts.join(' - ') : 'Unknown Product';
-      
       // Add plan number if available
       const planNumber = extractPlanNumber(product);
       if (planNumber) {
         title += ` - ${planNumber}`;
       }
-      
       return title;
     });
     setSelectedProducts(new Set(allProductTitles));
   }, [productsForChart, stableCustomTitles]);
-
   // Deselect all products
   const deselectAllProducts = useCallback(() => {
     setSelectedProducts(new Set());
   }, []);
-
   // Export to CSV functionality
   const exportToCSV = useCallback(() => {
     if (!irrHistoryData || irrHistoryData.length === 0) {
       alert('No IRR history data to export');
       return;
     }
-
     const productTypeOrder = [
       'ISAs', 'GIAs', 'Onshore Bonds', 'Offshore Bonds', 'Pensions', 'Other'
     ];
-
     const groupedProducts: { [key: string]: any[] } = {};
     reportData.productSummaries.forEach(product => {
       const normalizedType = normalizeProductType(product.product_type);
@@ -509,28 +438,23 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       }
       groupedProducts[normalizedType].push(product);
     });
-
     // Sort and flatten
     const organizedProducts = productTypeOrder
       .map(type => groupedProducts[type] || [])
       .flat()
       .filter(Boolean);
-
     // Get all unique dates
     const allDates = new Set<string>();
     organizedProducts.forEach((product, index) => {
       const originalIndex = reportData.productSummaries.findIndex(p => p.id === product.id);
       const productHistory = irrHistoryData[originalIndex];
-      
       if (productHistory?.portfolio_historical_irr) {
         productHistory.portfolio_historical_irr.forEach((record: any) => {
           allDates.add(record.irr_date);
         });
       }
     });
-
     const sortedDates = Array.from(allDates).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-
     // Create CSV headers (inline title generation)
     const headers = ['Date', ...organizedProducts.map(product => {
       const customTitle = stableCustomTitles.get(product.id);
@@ -539,17 +463,14 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       }
       // Standard format: Provider - Product Type - Product Owner Name [Plan Number]
       const parts = [];
-      
       if (product.provider_name) {
         parts.push(product.provider_name);
       }
-      
       if (product.product_type) {
         // Simplify bond types to just "Bond"
         const simplifiedType = product.product_type.toLowerCase().includes('bond') ? 'Bond' : product.product_type;
         parts.push(simplifiedType);
       }
-      
       if (product.product_owner_name) {
         // Check if the product_owner_name contains multiple names (comma-separated or other delimiters)
         const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
@@ -563,26 +484,20 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
           parts.push(nickname);
         }
       }
-      
       let title = parts.length > 0 ? parts.join(' - ') : 'Unknown Product';
-      
       // Add plan number if available
       const planNumber = extractPlanNumber(product);
       if (planNumber) {
         title += ` - ${planNumber}`;
       }
-      
       return title;
     })];
-
     // Create CSV data
     const csvData = sortedDates.map(date => {
       const row = [new Date(date).toLocaleDateString('en-US')];
-      
       organizedProducts.forEach((product, index) => {
         const originalIndex = reportData.productSummaries.findIndex(p => p.id === product.id);
         const productHistory = irrHistoryData[originalIndex];
-        
         if (productHistory?.portfolio_historical_irr) {
           const record = productHistory.portfolio_historical_irr.find((r: any) => r.irr_date === date);
           if (record && record.irr_result !== null && record.irr_result !== undefined) {
@@ -595,15 +510,12 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
           row.push('N/A');
         }
       });
-      
       return row;
     });
-
     // Convert to CSV format
     const csvContent = [headers, ...csvData]
       .map(row => row.map(cell => `"${cell}"`).join(','))
       .join('\n');
-
     // Create download
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -616,7 +528,6 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
     link.click();
     document.body.removeChild(link);
   }, [irrHistoryData, reportData.productSummaries, stableCustomTitles]);
-
   // Generate dynamic colors for chart lines
   const generateColor = useCallback((index: number) => {
     const colors = [
@@ -625,7 +536,6 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
     ];
     return colors[index % colors.length];
   }, []);
-
   // Custom tooltip for charts
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -642,126 +552,328 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
     }
     return null;
   };
-
-  // Calculate Previous Funds IRR using standardized endpoint
-  const calculatePreviousFundsIRR = async (inactiveFundIds: number[], irrDate: string): Promise<number | null> => {
+  // Calculate Previous Funds IRR using specialized historical endpoint
+    const calculatePreviousFundsHistoricalIRR = async (inactiveFundIds: number[], historicalDates: string[]): Promise<Map<string, number | null>> => {
     try {
-      console.log(`🔄 [Previous Funds IRR] Calculating for date ${irrDate} with fund IDs:`, inactiveFundIds);
+      console.log(`🔍 [Previous Funds IRR] Starting calculation for ${inactiveFundIds.length} inactive funds:`, inactiveFundIds);
+      console.log(`🔍 [Previous Funds IRR] Will attempt to calculate IRR for ${historicalDates.length} dates:`, historicalDates);
       
-      // Convert date format to YYYY-MM-DD as expected by API
-      let fullIrrDate = irrDate;
+      // Convert date formats to YYYY-MM-DD as expected by API (same logic as ProductIRRHistory)
+      const fullIrrDates = historicalDates.map(irrDate => {
       if (irrDate && typeof irrDate === 'string') {
         if (irrDate.length === 7) { // Format: YYYY-MM
           const [year, month] = irrDate.split('-');
           const lastDayOfMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
-          fullIrrDate = `${year}-${month}-${lastDayOfMonth.toString().padStart(2, '0')}`;
+            return `${year}-${month}-${lastDayOfMonth.toString().padStart(2, '0')}`;
         } else if (irrDate.includes('T')) {
           // Convert ISO format (YYYY-MM-DDTHH:MM:SS) to YYYY-MM-DD
-          fullIrrDate = irrDate.split('T')[0];
-        }
-      }
-      
-      console.log(`🔄 [Previous Funds IRR] Using full date: ${fullIrrDate}`);
-      
-      // Call the standardized multiple portfolio funds IRR endpoint
-      const response = await api.post('/portfolio_funds/multiple/irr', {
-        portfolio_fund_ids: inactiveFundIds,
-        irr_date: fullIrrDate
-      });
-      
-      console.log(`🔄 [Previous Funds IRR] API Response for ${irrDate}:`, response.data);
-      
-      // Fix: Properly handle zero values - only convert undefined to null
-      const irrResult = response.data?.irr_percentage !== undefined ? response.data.irr_percentage : null;
-      return irrResult;
-    } catch (error) {
-      console.error(`❌ [Previous Funds IRR] Error calculating for ${irrDate}:`, error);
-      return null;
-    }
-  };
-
-  // Effect to calculate Previous Funds IRR when data is available
-  useEffect(() => {
-    const calculateAllPreviousFundsIRR = async () => {
-      if (!irrHistoryData || irrHistoryData.length === 0) return;
-      
-      const newPreviousFundsIRRData = new Map<string, Map<string, number | null>>();
-      const completedProducts = new Set<number>();
-      
-      for (const productHistory of irrHistoryData) {
-        // Skip if already calculated for this product
-        if (previousFundsCalculationComplete.has(productHistory.product_id)) {
-          continue;
-        }
-        
-        const inactiveFunds = productHistory.funds_historical_irr?.filter((fund: any) => 
-          fund.fund_status === 'inactive') || [];
-        
-        if (inactiveFunds.length > 0) {
-          console.log(`🔄 [Previous Funds] Calculating IRR for product ${productHistory.product_id} with ${inactiveFunds.length} inactive funds`);
-          
-          // Extract portfolio fund IDs from inactive funds
-          const inactiveFundIds = inactiveFunds
-            .map((fund: any) => fund.portfolio_fund_id)
-            .filter((id: any) => id !== null && id !== undefined);
-          
-          if (inactiveFundIds.length > 0) {
-            // Get all unique dates from the historical IRR data
-            const allDates = new Set<string>();
-            inactiveFunds.forEach((fund: any) => {
-              if (fund.historical_irr) {
-                fund.historical_irr.forEach((record: any) => {
-                  allDates.add(record.irr_date);
-                });
-              }
-            });
-            
-            const sortedDates = Array.from(allDates).sort();
-            const productIRRMap = new Map<string, number | null>();
-            
-            // Calculate IRR for each date
-            for (const date of sortedDates) {
-              const irrResult = await calculatePreviousFundsIRR(inactiveFundIds, date);
-              productIRRMap.set(date, irrResult);
-            }
-            
-            newPreviousFundsIRRData.set(`product_${productHistory.product_id}`, productIRRMap);
-            completedProducts.add(productHistory.product_id);
+            return irrDate.split('T')[0];
           }
         }
+        return irrDate;
+      });
+      
+      // Use the same approach as ProductIRRHistory - call the existing endpoint for each date
+      // Let the backend determine if it has enough data (activities + valuations) to calculate IRR
+      const irrMap = new Map<string, number | null>();
+      
+      for (let i = 0; i < fullIrrDates.length; i++) {
+        const fullDate = fullIrrDates[i];
+        const originalDate = historicalDates[i];
+        
+        console.log(`🔍 [Previous Funds IRR] Calculating for date ${originalDate} (${fullDate}) with fund IDs:`, inactiveFundIds);
+        
+        try {
+          // Use the same API call as ProductIRRHistory
+      const response = await api.post('/portfolio_funds/multiple/irr', {
+        portfolio_fund_ids: inactiveFundIds,
+            irr_date: fullDate
+          });
+          
+          console.log(`🔍 [Previous Funds IRR] API response for ${originalDate}:`, {
+            success: response.data?.success,
+            irr_percentage: response.data?.irr_percentage,
+            irr_decimal: response.data?.irr_decimal,
+            calculation_date: response.data?.calculation_date,
+            portfolio_fund_ids: response.data?.portfolio_fund_ids
+          });
+          
+          if (response.data?.irr_percentage !== undefined && response.data.irr_percentage !== null) {
+            irrMap.set(originalDate, response.data.irr_percentage);
+            console.log(`✅ [Previous Funds IRR] Successfully calculated IRR for ${originalDate}: ${response.data.irr_percentage}%`);
+          } else {
+            irrMap.set(originalDate, null);
+            console.log(`⚠️ [Previous Funds IRR] No valid IRR returned for ${originalDate} - likely insufficient data (activities/valuations)`);
+          }
+        } catch (dateError) {
+          console.error(`❌ [Previous Funds IRR] Error calculating IRR for date ${fullDate}:`, dateError);
+          irrMap.set(originalDate, null);
+        }
       }
       
-      // Update state if we have new data
-      if (newPreviousFundsIRRData.size > 0) {
-        setPreviousFundsIRRData(prev => {
-          const updated = new Map(prev);
-          newPreviousFundsIRRData.forEach((value, key) => {
-            updated.set(key, value);
+      return irrMap;
+    } catch (error) {
+      console.error(`Error calculating Previous Funds historical IRR:`, error);
+      return new Map();
+    }
+  };
+  // Effect to calculate Previous Funds IRR using our new historical endpoint
+  useEffect(() => {
+    const calculatePreviousFundsIRR = async () => {
+      console.log(`🔄 [Previous Funds] useEffect triggered`, {
+        hasIrrHistoryData: !!irrHistoryData,
+        irrHistoryDataLength: irrHistoryData?.length,
+        hasProductSummaries: !!reportData?.productSummaries,
+        productSummariesLength: reportData?.productSummaries?.length
+      });
+      
+      if (!irrHistoryData || irrHistoryData.length === 0) {
+        console.log(`❌ [Previous Funds] Early return: no irrHistoryData`);
+        return;
+      }
+      if (!reportData?.productSummaries) {
+        console.log(`❌ [Previous Funds] Early return: no productSummaries`);
+        return;
+      }
+      // Extract selected dates from reportData
+      const selectedDates = reportData?.selectedHistoricalIRRDates 
+        ? Array.from(new Set(Object.values(reportData.selectedHistoricalIRRDates).flat()))
+        : [];
+      if (!selectedDates || selectedDates.length === 0) {
+        console.log(`❌ [Previous Funds] Early return: no selectedDates`, selectedDates);
+        return;
+      }
+      
+      console.log(`🔄 [Previous Funds] Starting calculation with ${selectedDates.length} dates:`, selectedDates);
+      // Find products that have funds requiring dynamic IRR calculation
+      const productsWithDynamicFunds = [];
+      for (const productHistory of irrHistoryData) {
+        const currentProduct = reportData.productSummaries.find(p => p.id === productHistory.product_id);
+        if (currentProduct) {
+          console.log(`🔍 [Previous Funds] Analyzing product ${productHistory.product_id}:`, {
+            productName: currentProduct.product_name,
+            totalFunds: currentProduct.funds?.length || 0,
+            fundDetails: currentProduct.funds?.map((f: any) => ({
+              name: f.fund_name,
+              status: f.status,
+              isVirtual: f.isVirtual,
+              id: f.id || f.portfolio_fund_id,
+              portfolio_fund_id: f.portfolio_fund_id
+            })) || []
           });
-          return updated;
+          
+          // Check specifically for Historical Funds
+          const historicalFundsCheck = currentProduct.funds?.filter((f: any) => 
+            f.fund_name === 'Historical Funds' || f.fund_name === 'Previous Funds'
+          ) || [];
+          console.log(`🔍 [Previous Funds] Product ${productHistory.product_id} - Historical/Previous Funds check:`, {
+            foundHistoricalFunds: historicalFundsCheck.length,
+            historicalFundsDetails: historicalFundsCheck.map((f: any) => ({
+              name: f.fund_name,
+              status: f.status,
+              isVirtual: f.isVirtual,
+              id: f.id || f.portfolio_fund_id,
+              portfolio_fund_id: f.portfolio_fund_id,
+              shouldBeIncluded: f.fund_name === 'Historical Funds' || f.fund_name === 'Previous Funds',
+              statusCheck: f.status === 'inactive',
+              virtualCheck: !f.isVirtual,
+              combinedCheck: (f.status === 'inactive' && !f.isVirtual) || ((f.fund_name === 'Historical Funds' || f.fund_name === 'Previous Funds') && !f.isVirtual),
+              allKeys: Object.keys(f),
+              rawFundObject: f
+            }))
+          });
+          
+          // Also check ALL funds to see if there's a "Historical Funds" we're missing
+          console.log(`🔍 [Previous Funds] Product ${productHistory.product_id} - ALL FUNDS CHECK:`, {
+            totalFunds: currentProduct.funds?.length || 0,
+            allFundNames: currentProduct.funds?.map((f: any) => f.fund_name) || [],
+            historicalFundsInAll: currentProduct.funds?.filter((f: any) => f.fund_name === 'Historical Funds') || [],
+            previousFundsInAll: currentProduct.funds?.filter((f: any) => f.fund_name === 'Previous Funds') || []
+          });
+          
+          // Look for funds that need dynamic calculation - either inactive funds or "Historical Funds"/"Previous Funds"
+          const dynamicFunds = [];
+          // First, get actual inactive funds
+          const inactiveFunds = currentProduct.funds?.filter((fund: any) => 
+            fund.status === 'inactive' && !fund.isVirtual
+          ) || [];
+          dynamicFunds.push(...inactiveFunds);
+          
+          console.log(`🔍 [Previous Funds] Product ${productHistory.product_id} inactive funds:`, {
+            count: inactiveFunds.length,
+            funds: inactiveFunds.map((f: any) => ({ name: f.fund_name, status: f.status, isVirtual: f.isVirtual }))
+          });
+                    // Also look for funds named "Historical Funds" or "Previous Funds" that should be calculated dynamically
+          // Note: We include these regardless of isVirtual status because they represent real aggregated inactive funds
+          const historicalFunds = currentProduct.funds?.filter((fund: any) => 
+            fund.fund_name === 'Historical Funds' || fund.fund_name === 'Previous Funds'
+          ) || [];
+          dynamicFunds.push(...historicalFunds);
+          
+          console.log(`🔍 [Previous Funds] Product ${productHistory.product_id} historical funds:`, {
+            count: historicalFunds.length,
+            funds: historicalFunds.map((f: any) => ({ name: f.fund_name, status: f.status, isVirtual: f.isVirtual }))
+          });
+          
+          console.log(`🔍 [Previous Funds] Product ${productHistory.product_id} total dynamic funds:`, {
+            count: dynamicFunds.length,
+            funds: dynamicFunds.map((f: any) => ({ name: f.fund_name, status: f.status, isVirtual: f.isVirtual }))
+          });
+          if (dynamicFunds.length > 0) {
+            // For "Previous Funds" or "Historical Funds", we need to find the actual inactive fund IDs
+            // The virtual fund entry might have ID -1, so we need to look for real inactive funds
+            let actualInactiveFundIds: number[] = [];
+            
+            if (dynamicFunds.some((f: any) => (f.fund_name === 'Previous Funds' || f.fund_name === 'Historical Funds') && (f.id === -1 || f.portfolio_fund_id === -1))) {
+              // This is a virtual "Previous Funds" entry, get the real inactive fund IDs from the virtual fund's inactiveFunds property
+              const virtualFund = dynamicFunds.find((f: any) => f.fund_name === 'Previous Funds' || f.fund_name === 'Historical Funds');
+              
+              if (virtualFund && virtualFund.inactiveFunds && Array.isArray(virtualFund.inactiveFunds)) {
+                // Use the inactive funds stored in the virtual fund entry
+                actualInactiveFundIds = virtualFund.inactiveFunds
+                  .map((fund: any) => fund.portfolio_fund_id || fund.id)
+                  .filter((id: any) => id !== null && id !== undefined && id !== -1);
+                  
+                console.log(`🔍 [Previous Funds] Product ${productHistory.product_id} - Found virtual Previous/Historical Funds with stored inactive funds:`, {
+                  virtualFund: {
+                    name: virtualFund.fund_name,
+                    id: virtualFund.id,
+                    hasInactiveFunds: !!virtualFund.inactiveFunds,
+                    inactiveFundsCount: virtualFund.inactiveFunds?.length || 0
+                  },
+                  inactiveFunds: virtualFund.inactiveFunds.map((f: any) => ({
+                    name: f.fund_name,
+                    id: f.id,
+                    portfolio_fund_id: f.portfolio_fund_id,
+                    status: f.status
+                  })),
+                  actualInactiveFundIds: actualInactiveFundIds
+                });
+              } else {
+                // Fallback: look for actual inactive funds in the product
+                const allInactiveFunds = currentProduct.funds?.filter((fund: any) => 
+                  fund.status === 'inactive' && fund.id !== -1 && fund.portfolio_fund_id !== -1
+                ) || [];
+                
+                actualInactiveFundIds = allInactiveFunds
+                  .map((fund: any) => fund.portfolio_fund_id || fund.id)
+                  .filter((id: any) => id !== null && id !== undefined && id !== -1);
+                  
+                console.log(`🔍 [Previous Funds] Product ${productHistory.product_id} - Virtual fund has no inactiveFunds property, using fallback search:`, {
+                  virtualFund: virtualFund,
+                  allInactiveFunds: allInactiveFunds.length,
+                  actualInactiveFundIds: actualInactiveFundIds,
+                  inactiveFundDetails: allInactiveFunds.map((f: any) => ({
+                    name: f.fund_name,
+                    id: f.id,
+                    portfolio_fund_id: f.portfolio_fund_id,
+                    status: f.status
+                  }))
+                });
+              }
+            } else {
+              // Use the fund IDs from the dynamic funds directly
+              actualInactiveFundIds = dynamicFunds
+                .map((fund: any) => fund.portfolio_fund_id || fund.id || fund.available_funds_id)
+                .filter((id: any) => id !== null && id !== undefined && id !== -1);
+                
+              console.log(`🔍 [Previous Funds] Product ${productHistory.product_id} - Using direct fund IDs:`, {
+                dynamicFunds: dynamicFunds.length,
+                extractedIds: actualInactiveFundIds
+              });
+            }
+            
+            const dynamicFundIds = actualInactiveFundIds;
+            
+            console.log(`🔍 [Previous Funds] Product ${productHistory.product_id} extracted fund IDs:`, {
+              originalCount: dynamicFunds.length,
+              extractedIds: dynamicFundIds,
+              filteredCount: dynamicFundIds.length
+            });
+            if (dynamicFundIds.length > 0) {
+              productsWithDynamicFunds.push({
+                productId: productHistory.product_id,
+                inactiveFundIds: dynamicFundIds // Keep same property name for compatibility
+              });
+            }
+          }
+         }
+       }
+      console.log(`🔍 [Previous Funds] Final analysis:`, {
+        totalProductsAnalyzed: irrHistoryData.length,
+        productsWithDynamicFunds: productsWithDynamicFunds.length,
+        dynamicFundDetails: productsWithDynamicFunds
+      });
+      
+      if (productsWithDynamicFunds.length === 0) {
+        console.log(`❌ [Previous Funds] No products with dynamic funds found - exiting`);
+        return;
+      }
+      console.log(`🔄 [Previous Funds] Starting IRR calculations for ${productsWithDynamicFunds.length} products`);
+      
+      try {
+          const newPreviousFundsIRRData = new Map<string, Map<string, number | null>>();
+          const completedProducts = new Set<number>();
+        // Calculate IRR for each product's dynamic funds
+        for (const { productId, inactiveFundIds } of productsWithDynamicFunds) {
+          console.log(`🔄 [Previous Funds] Calculating IRR for product ${productId} with fund IDs:`, inactiveFundIds);
+          
+          try {
+            // Use our new historical IRR calculation function
+            const dateIrrMap = await calculatePreviousFundsHistoricalIRR(inactiveFundIds, selectedDates);
+            
+            console.log(`🔍 [Previous Funds] Product ${productId} IRR calculation result:`, {
+              mapSize: dateIrrMap.size,
+              dates: Array.from(dateIrrMap.keys()),
+              values: Array.from(dateIrrMap.entries()),
+              detailedValues: Array.from(dateIrrMap.entries()).map(([date, irr]) => `${date}: ${irr}%`)
+            });
+            
+            if (dateIrrMap.size > 0) {
+              newPreviousFundsIRRData.set(`product_${productId}`, dateIrrMap);
+            completedProducts.add(productId);
+              console.log(`✅ [Previous Funds] Successfully stored IRR data for product ${productId}`);
+            } else {
+              console.log(`⚠️ [Previous Funds] No IRR data calculated for product ${productId}`);
+            }
+          } catch (error) {
+            console.error(`❌ [Previous Funds] Error calculating IRR for product ${productId}:`, error);
+          }
+        }
+        // Update state with calculated data
+        console.log(`🔍 [Previous Funds] Final state update:`, {
+          newDataSize: newPreviousFundsIRRData.size,
+          completedProductsCount: completedProducts.size,
+          completedProducts: Array.from(completedProducts),
+          allCalculatedData: Array.from(newPreviousFundsIRRData.entries()).map(([key, map]) => ({
+            key,
+            dates: Array.from(map.keys()),
+            values: Array.from(map.entries()),
+            detailedValues: Array.from(map.entries()).map(([date, irr]) => `${date}: ${irr}%`)
+          }))
         });
         
-        setPreviousFundsCalculationComplete(prev => {
-          const updated = new Set(prev);
-          completedProducts.forEach(id => updated.add(id));
-          return updated;
-        });
+          if (newPreviousFundsIRRData.size > 0) {
+            setPreviousFundsIRRData(newPreviousFundsIRRData);
+            setPreviousFundsCalculationComplete(completedProducts);
+          console.log(`✅ [Previous Funds] State updated successfully with ${newPreviousFundsIRRData.size} products`);
+        } else {
+          console.log(`⚠️ [Previous Funds] No data to update - newPreviousFundsIRRData is empty`);
+        }
+      } catch (error) {
+        console.error('Error in Previous Funds calculation process:', error);
       }
     };
-    
-    calculateAllPreviousFundsIRR();
-  }, [irrHistoryData]); // Only depend on irrHistoryData
-
+    calculatePreviousFundsIRR();
+  }, [irrHistoryData, reportData?.selectedHistoricalIRRDates, reportData?.productSummaries]); // Depend on all relevant data
   // Memoize the expensive table processing to prevent multiple renders
   const memoizedTableData = useMemo(() => {
     if (!reportData?.productSummaries || !irrHistoryData) {
       return [];
     }
-
     // Organize products by type function (moved from IIFE)
     const organizeProductsByType = (products: ProductPeriodSummary[]) => {
       const groupedProducts: { [key: string]: ProductPeriodSummary[] } = {};
-      
       products.forEach(product => {
         const normalizedType = normalizeProductType(product.product_type);
         if (!groupedProducts[normalizedType]) {
@@ -769,61 +881,43 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
         }
         groupedProducts[normalizedType].push(product);
       });
-
       Object.keys(groupedProducts).forEach(type => {
         if (type === 'ISAs') {
           groupedProducts[type].sort((a, b) => {
             const typeA = a.product_type?.toLowerCase().trim() || '';
             const typeB = b.product_type?.toLowerCase().trim() || '';
-            
             const isJISA_A = typeA === 'jisa';
             const isJISA_B = typeB === 'jisa';
-            
             if (isJISA_A && !isJISA_B) return 1;
             if (!isJISA_A && isJISA_B) return -1;
-            
             return 0;
           });
-          
           groupedProducts[type] = sortProductsByOwnerOrder(groupedProducts[type], reportData.productOwnerOrder || []);
         } else {
           groupedProducts[type] = sortProductsByOwnerOrder(groupedProducts[type], reportData.productOwnerOrder || []);
         }
       });
-
       const orderedProducts: ProductPeriodSummary[] = [];
-      
       PRODUCT_TYPE_ORDER.forEach(type => {
         if (groupedProducts[type]) {
           orderedProducts.push(...groupedProducts[type]);
         }
       });
-
       const activeProducts = orderedProducts.filter(product => 
         product.status !== 'inactive' && product.status !== 'lapsed'
       );
       const inactiveProducts = orderedProducts.filter(product => 
         product.status === 'inactive' || product.status === 'lapsed'
       );
-      
       return [...activeProducts, ...inactiveProducts];
     };
-
     const organizedProducts = organizeProductsByType(reportData.productSummaries);
-    
     const filteredProducts = organizedProducts.filter(product => {
       if (product.status === 'inactive') {
         return reportData.showInactiveProducts || showInactiveProductDetails.has(product.id);
       }
       return true;
     });
-
-    console.log(`📊 [IRR HISTORY DEBUG] Memoized processing:`, {
-      totalProducts: organizedProducts.length,
-      filteredProducts: filteredProducts.length,
-      inactiveProducts: organizedProducts.filter(p => p.status === 'inactive').length,
-    });
-
     return filteredProducts;
   }, [
     reportData?.productSummaries, 
@@ -833,7 +927,6 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
     reportData?.productOwnerOrder,
     loading.portfolioIRR
   ]);
-
   // Show loading state if data is being loaded
   if (loadingIrrHistory) {
     return (
@@ -847,7 +940,6 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       </div>
     );
   }
-
   // Show no data message if no IRR history data is available
   if (!irrHistoryData || irrHistoryData.length === 0) {
     return (
@@ -862,13 +954,11 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       </div>
     );
   }
-
   return (
     <div className="irr-history-section print:block print:mt-8 report-section" id="irr-history-tab-panel" role="tabpanel" aria-labelledby="history-tab">
       {/* Header with controls */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
         <h2 className="text-lg font-semibold text-gray-900 mb-2">History</h2>
-        
         <div className="flex items-center gap-4 print-hide">
           {/* View Mode Toggle */}
           <div className="flex bg-gray-100 rounded-lg p-1">
@@ -895,7 +985,6 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
               Chart
             </button>
           </div>
-
           {/* Export Button */}
           <button
             onClick={exportToCSV}
@@ -906,7 +995,6 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
           </button>
         </div>
       </div>
-      
       {/* Chart View */}
       {viewMode === 'chart' && (
         <div className="mb-8 irr-history-chart print-hide">
@@ -939,7 +1027,6 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                   </button>
                 </div>
               </div>
-
               {/* Product Selection Controls */}
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-gray-700">Products:</span>
@@ -962,7 +1049,6 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                 </span>
               </div>
             </div>
-
             {/* Product Selection Grid */}
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 product-selection-grid">
               {productsForChart.map((product, index) => {
@@ -993,7 +1079,6 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
               })}
             </div>
           </div>
-
           {/* Chart Display */}
           {selectedProducts.size > 0 ? (
             <div className="bg-white p-6 rounded-lg border border-gray-200">
@@ -1061,16 +1146,13 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
           )}
         </div>
       )}
-
       {/* Table View */}
       <div className={`mb-8 irr-history-table ${viewMode === 'table' ? '' : 'hidden print:block'}`}>
         {(() => {
           // Use the memoized filtered products to avoid expensive recalculation
           const filteredProducts = memoizedTableData;
-          
           // ✅ GLOBAL DATE CALCULATION - Calculate dates across ALL products first
           const globalAllDates = new Set<string>();
-          
           // Collect ALL dates from ALL products
           irrHistoryData.forEach((productHistory) => {
             // Add portfolio IRR dates
@@ -1079,7 +1161,6 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                 globalAllDates.add(record.irr_date);
               });
             }
-            
             // Add fund IRR dates
             if (productHistory.funds_historical_irr) {
               productHistory.funds_historical_irr.forEach((fund: any) => {
@@ -1091,47 +1172,19 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
               });
             }
           });
-          
           // Sort all global dates (most recent first for display)
           const globalSortedDates = Array.from(globalAllDates).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-          
           // Get the global set of historical dates (excluding current which is first)
           // Take at least 8 columns with most recent dates first
           const globalHistoricalDates = globalSortedDates.slice(1, Math.max(9, globalSortedDates.length)); // Skip first (current) and take next dates
-          
-          console.log(`🌍 [GLOBAL DATES DEBUG] Calculated global historical dates:`, {
-            totalGlobalDates: globalAllDates.size,
-            allGlobalDatesArray: Array.from(globalAllDates),
-            globalHistoricalDates,
-            historicalDateCount: globalHistoricalDates.length
-          });
-          
           return filteredProducts.map((product: ProductPeriodSummary, index: number) => {
             // Find the corresponding IRR history data for this product
             const productHistory = irrHistoryData.find((ph: any) => ph.product_id === product.id);
-            
-            console.log(`🔍 [IRR HISTORY DEBUG] Processing product ${index}:`, {
-              productId: product.id,
-              productName: product.product_name,
-              hasProduct: !!product,
-              hasProductHistory: !!productHistory,
-              productHistoryStructure: productHistory ? Object.keys(productHistory) : 'N/A'
-            });
-            
             if (!productHistory) {
-              console.log(`⚠️ [IRR HISTORY DEBUG] No product history for product ${product.id}`);
               return null;
             }
-
             // ✅ USE GLOBAL DATES for all products (not per-product calculation)
             const sortedDates = globalHistoricalDates;
-            
-            console.log(`🔍 [IRR HISTORY DEBUG] Product ${productHistory.product_id} using GLOBAL dates:`, {
-              productId: productHistory.product_id,
-              globalHistoricalDates: sortedDates,
-              globalDateCount: sortedDates.length
-            });
-            
             // Create lookup maps for quick access
             const portfolioIrrMap = new Map();
             if (productHistory.portfolio_historical_irr) {
@@ -1139,7 +1192,6 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                 portfolioIrrMap.set(record.irr_date, record.irr_result);
               });
             }
-            
             // Build fund-level IRR maps from portfolio_fund_irr_values table data
             const fundIrrMaps = new Map();
             if (productHistory.funds_historical_irr) {
@@ -1150,22 +1202,10 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                   fund.historical_irr.forEach((record: any) => {
                     fundMap.set(record.irr_date, record.irr_result);
                   });
-                  
-                  console.log(`💰 [FUND IRR DEBUG] Fund ${fund.fund_name} (ID: ${fund.portfolio_fund_id}):`, {
-                    totalRecords: fund.historical_irr.length,
-                    selectedDatesCount: sortedDates.length,
-                    recordsForSelectedDates: sortedDates.map(date => ({
-                      date: date,
-                      irr: fundMap.get(date),
-                      hasData: fundMap.has(date)
-                    })),
-                    dataSource: 'portfolio_fund_irr_values table'
-                  });
                 }
                 fundIrrMaps.set(fund.portfolio_fund_id, fundMap);
               });
             }
-
             return (
               <div 
                 key={index} 
@@ -1191,7 +1231,6 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                     )}
                   </h3>
                 </div>
-
                 <div className="overflow-x-auto product-table">
                   <table className="w-full table-fixed divide-y divide-gray-300 landscape-table irr-history-table">
                     <colgroup>
@@ -1231,53 +1270,19 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {/* Fund Rows */}
                       {(() => {
-                        console.log(`🔍 [FUND ROWS DEBUG] Product ${productHistory.product_id} funds_historical_irr:`, {
-                          hasFundsHistoricalIrr: !!productHistory.funds_historical_irr,
-                          fundsHistoricalIrrLength: productHistory.funds_historical_irr?.length || 0,
-                          fundsHistoricalIrrStructure: productHistory.funds_historical_irr ? 
-                            productHistory.funds_historical_irr.map((f: any) => ({
-                              fund_name: f.fund_name,
-                              fund_status: f.fund_status,
-                              portfolio_fund_id: f.portfolio_fund_id,
-                              hasHistoricalIrr: !!f.historical_irr,
-                              historicalIrrLength: f.historical_irr?.length || 0
-                            })) : 'N/A'
-                        });
-                        
                         return productHistory.funds_historical_irr && productHistory.funds_historical_irr.length > 0;
                       })() ? (
                         (() => {
                           // Use the same logic as SummaryTab - get inactive funds from reportData.productSummaries
                           const currentProduct = reportData.productSummaries.find(p => p.id === productHistory.product_id);
-                          
                           // Find inactive funds using SummaryTab logic
                           const inactiveFundsFromSummary = currentProduct?.funds?.filter((fund: any) => 
                             fund.status === 'inactive'
                           ) || [];
-                          
                           // Check if Previous Funds virtual entry already exists in SummaryTab data
                           const existingPreviousFunds = currentProduct?.funds?.find((fund: any) => 
                             fund.isVirtual && fund.fund_name === 'Previous Funds'
                           );
-                          
-                          console.log(`🔍 [FUND STRUCTURE DEBUG] Product ${productHistory.product_id}:`, {
-                            currentProductExists: !!currentProduct,
-                            totalFundsInSummary: currentProduct?.funds?.length || 0,
-                            inactiveFundsCount: inactiveFundsFromSummary.length,
-                            existingPreviousFunds: !!existingPreviousFunds,
-                            inactiveFundNames: inactiveFundsFromSummary.map((f: any) => f.fund_name),
-                            existingPreviousFundsDetails: existingPreviousFunds ? {
-                              name: existingPreviousFunds.fund_name,
-                              isVirtual: existingPreviousFunds.isVirtual,
-                              inactiveFundCount: existingPreviousFunds.inactiveFundCount
-                            } : null,
-                            allFundStatuses: currentProduct?.funds?.map((f: any) => ({
-                              name: f.fund_name,
-                              status: f.status,
-                              isVirtual: f.isVirtual
-                            })) || []
-                          });
-                          
                           // Get active funds from historical IRR data (matching current active funds)
                           const activeFunds = productHistory.funds_historical_irr.filter((histFund: any) => {
                             const correspondingFund = currentProduct?.funds?.find((summaryFund: any) => 
@@ -1285,51 +1290,30 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                             );
                             return !!correspondingFund;
                           });
-                          
                           // Create aggregated Previous Funds entry if there are inactive funds
                           const processedFunds = [...activeFunds];
-                          
                           // Check if Previous Funds entry already exists in the historical data
                           const existingPreviousFundsInHistory = processedFunds.find((fund: any) => 
                             fund.fund_name === 'Previous Funds' || fund.isVirtual
                           );
-                          
                           if (inactiveFundsFromSummary.length > 0 && !existingPreviousFunds && !existingPreviousFundsInHistory) {
-                            console.log(`🔍 [Previous Funds DEBUG] Product ${productHistory.product_id} has ${inactiveFundsFromSummary.length} inactive funds`);
-                            
                             // Get calculated IRR data for this product
                             const productKey = `product_${productHistory.product_id}`;
                             const productPreviousFundsIRR = previousFundsIRRData.get(productKey);
-                            
-                            console.log(`🔍 [Previous Funds DEBUG] Product ${productHistory.product_id} calculated IRR data:`, {
-                              productKey,
-                              hasCalculatedData: !!productPreviousFundsIRR,
-                              calculatedDataSize: productPreviousFundsIRR?.size || 0,
-                              previousFundsIRRDataKeys: Array.from(previousFundsIRRData.keys()),
-                              isCalculationComplete: previousFundsCalculationComplete.has(productHistory.product_id)
-                            });
-                            
                             // Always create Previous Funds entry, even if IRR calculation is still pending
                             // Aggregate historical IRR data manually from inactive funds
                             const aggregatedIrrMap = new Map();
-                            
                             // If we have calculated data, use it; otherwise trigger async calculation
                             if (productPreviousFundsIRR && productPreviousFundsIRR.size > 0) {
-                              console.log(`✅ [Previous Funds DEBUG] Using calculated aggregated IRR data for product ${productHistory.product_id}`);
                               productPreviousFundsIRR.forEach((irr, date) => {
                                 aggregatedIrrMap.set(date, irr);
                               });
                             } else {
                               // Trigger async calculation of aggregated IRR for historical dates
-                              console.log(`🔍 [Previous Funds DEBUG] Triggering async aggregated IRR calculation for inactive funds`);
-                              
                               // Get portfolio fund IDs from inactive funds
                               const inactiveFundIds = inactiveFundsFromSummary
                                 .map((fund: any) => fund.portfolio_fund_id || fund.id)
                                 .filter((id: any) => id !== null && id !== undefined);
-                              
-                              console.log(`🔍 [Previous Funds DEBUG] Inactive fund IDs for aggregation:`, inactiveFundIds);
-                              
                               // Get all historical dates that we need to calculate for
                               const historicalDates = new Set();
                               productHistory.funds_historical_irr.forEach((fund: any) => {
@@ -1339,74 +1323,38 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                   });
                                 }
                               });
-                              
-                              console.log(`🔍 [Previous Funds DEBUG] Historical dates to calculate:`, Array.from(historicalDates));
-                              
-                              // Trigger async calculation for each historical date
+                              // Trigger async calculation using batch historical IRR endpoint
                               const calculateHistoricalAggregatedIRR = async () => {
                                 const productKey = `product_${productHistory.product_id}`;
-                                const dateIrrMap = new Map();
-                                
-                                for (const date of Array.from(historicalDates)) {
-                                  try {
-                                    // Convert date format to YYYY-MM-DD as expected by API
-                                    let fullIrrDate = date;
-                                    if (date && typeof date === 'string') {
-                                      if (date.match(/^\d{4}-\d{2}$/)) {
-                                        // Convert YYYY-MM to YYYY-MM-DD
-                                        fullIrrDate = `${date}-01`;
-                                      } else if (date.includes('T')) {
-                                        // Convert ISO format (YYYY-MM-DDTHH:MM:SS) to YYYY-MM-DD
-                                        fullIrrDate = date.split('T')[0];
-                                      }
-                                    }
-                                    
-                                    console.log(`🔍 [Previous Funds DEBUG] Calculating aggregated IRR for ${date}`);
-                                    
-                                    const response = await api.post('/portfolio_funds/multiple/irr', {
-                                      portfolio_fund_ids: inactiveFundIds,
-                                      irr_date: fullIrrDate
-                                    });
-                                    
-                                    if (response.data.success && response.data.irr_percentage !== null) {
-                                      console.log(`✅ [Previous Funds DEBUG] Calculated aggregated IRR for ${date}: ${response.data.irr_percentage}%`);
-                                      dateIrrMap.set(date, response.data.irr_percentage);
-                                    } else {
-                                      console.log(`❌ [Previous Funds DEBUG] Failed to calculate IRR for ${date}:`, response.data);
-                                    }
-                                  } catch (error) {
-                                    console.log(`❌ [Previous Funds DEBUG] Error calculating IRR for ${date}:`, error);
-                                  }
-                                }
-                                
+                                try {
+                                  // Use the new batch historical IRR calculation function
+                                  const dateIrrMap = await calculatePreviousFundsHistoricalIRR(
+                                    inactiveFundIds, 
+                                    Array.from(historicalDates) as string[]
+                                  );
                                 // Update the previousFundsIRRData state with calculated values
                                 setPreviousFundsIRRData(prev => {
                                   const updated = new Map(prev);
                                   updated.set(productKey, dateIrrMap);
                                   return updated;
                                 });
-                                
                                 // Mark calculation as complete
                                 setPreviousFundsCalculationComplete(prev => {
                                   const updated = new Set(prev);
                                   updated.add(productHistory.product_id);
                                   return updated;
                                 });
-                                
-                                console.log(`✅ [Previous Funds DEBUG] Completed aggregated IRR calculations for product ${productHistory.product_id}`);
+                                } catch (error) {
+                                  console.error(`Error in batch IRR calculation:`, error);
+                                }
                               };
-                              
                               // Start calculation if not already running
                               if (!previousFundsCalculationComplete.has(productHistory.product_id)) {
                                 calculateHistoricalAggregatedIRR();
                               }
-                              
                               // For now, use empty aggregated map (will be populated by async calculation)
                               // This will trigger a re-render when the calculation completes
                             }
-                            
-                            console.log(`🔍 [Previous Funds DEBUG] Product ${productHistory.product_id} aggregated IRR map size:`, aggregatedIrrMap.size);
-                            
                             // Create Previous Funds entry
                             const previousFundsEntry = {
                               portfolio_fund_id: 'previous_funds',
@@ -1421,17 +1369,11 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                               isVirtual: true,
                               inactiveFundCount: inactiveFundsFromSummary.length
                             };
-                            
                             // Note: fundIrrMaps.set removed to prevent infinite re-render loop
                             // Previous Funds IRR data will be accessed directly from previousFundsIRRData state
-                            
                             processedFunds.push(previousFundsEntry);
-                            
-                            console.log(`✅ [Previous Funds DEBUG] Added Previous Funds entry for product ${productHistory.product_id} with ${aggregatedIrrMap.size} historical dates`);
                           } else if (existingPreviousFunds && !existingPreviousFundsInHistory) {
                             // If Previous Funds entry already exists in SummaryTab data, use it
-                            console.log(`✅ [Previous Funds DEBUG] Using existing Previous Funds entry for product ${productHistory.product_id}`);
-                            
                             // Create IRR data from existing aggregated data if available
                             const previousFundsEntry = {
                               portfolio_fund_id: 'previous_funds',
@@ -1443,81 +1385,34 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                               isVirtual: true,
                               inactiveFundCount: existingPreviousFunds.inactiveFundCount || 0
                             };
-                            
                             // Note: fundIrrMaps.set removed to prevent infinite re-render loop
                             // Previous Funds IRR data will be accessed directly from previousFundsIRRData state
                             processedFunds.push(previousFundsEntry);
                           } else if (existingPreviousFundsInHistory) {
-                            console.log(`🔍 [Previous Funds DEBUG] Previous Funds entry already exists in historical data for product ${productHistory.product_id} - calculating IRR values`);
-                            
                             // Even though Previous Funds entry exists, we need to calculate its IRR values for each historical date
                             const inactiveFundsFromSummary: any[] = currentProduct?.funds?.filter((fund: any) => 
                               fund.status === 'inactive'
                             ) || [];
-                            
-                            console.log(`🔍 [Previous Funds DEBUG] Product ${productHistory.product_id} inactive funds detection:`, {
-                              currentProductFunds: currentProduct?.funds?.length || 0,
-                              currentProductFundsDetails: currentProduct?.funds?.map((f: any) => ({
-                                name: f.fund_name,
-                                status: f.status,
-                                isVirtual: f.isVirtual,
-                                portfolioFundId: f.portfolio_fund_id || f.id
-                              })) || [],
-                              inactiveFundsFromSummary: inactiveFundsFromSummary.length,
-                              inactiveFundsDetails: inactiveFundsFromSummary.map((f: any) => ({
-                                name: f.fund_name,
-                                portfolioFundId: f.portfolio_fund_id || f.id
-                              })),
-                              existingPreviousFunds: existingPreviousFunds ? {
-                                name: existingPreviousFunds.fund_name,
-                                isVirtual: existingPreviousFunds.isVirtual,
-                                inactiveFundCount: existingPreviousFunds.inactiveFundCount,
-                                portfolioFundIds: (existingPreviousFunds as any).portfolioFundIds
-                              } : null
-                            });
-                            
                             // Look for Previous Funds entry in historical data itself
                             const historicalPreviousFunds = productHistory.funds_historical_irr?.find((fund: any) => 
                               fund.fund_name === 'Previous Funds' || fund.isVirtual
                             );
-                            
                             // Enhanced debugging with JSON.stringify to see full object content
                             if (historicalPreviousFunds) {
-                              console.log(`🔍 [Previous Funds DEBUG] Historical Previous Funds FULL OBJECT:`, JSON.stringify(historicalPreviousFunds, null, 2));
-                              console.log(`🔍 [Previous Funds DEBUG] Historical Previous Funds properties:`, Object.keys(historicalPreviousFunds));
                             }
-                            
                             if (existingPreviousFunds) {
-                              console.log(`🔍 [Previous Funds DEBUG] Existing Previous Funds FULL OBJECT:`, JSON.stringify(existingPreviousFunds, null, 2));
-                              console.log(`🔍 [Previous Funds DEBUG] Existing Previous Funds properties:`, Object.keys(existingPreviousFunds));
                             }
-                            
                             // Also log all historical funds for comparison
-                            console.log(`🔍 [Previous Funds DEBUG] All Historical Funds:`, 
-                              JSON.stringify(productHistory.funds_historical_irr?.map((f: any) => ({
-                                name: f.fund_name,
-                                portfolio_fund_id: f.portfolio_fund_id,
-                                isVirtual: f.isVirtual,
-                                fund_id: f.fund_id,
-                                allKeys: Object.keys(f)
-                              })) || [], null, 2)
-                            );
-                            
                             // Try to get portfolio fund IDs from multiple sources
                             let portfolioFundIds = [];
-                            
                             // First, try from inactive funds in summary
                             if (inactiveFundsFromSummary.length > 0) {
                               portfolioFundIds = inactiveFundsFromSummary
                                 .map((fund: any) => fund.portfolio_fund_id || fund.id)
                                 .filter((id: any) => id !== null && id !== undefined && id > 0);
-                              console.log(`✅ [Previous Funds DEBUG] Found ${portfolioFundIds.length} portfolio fund IDs from inactive funds in summary`);
                             }
-                            
                             // Check if historical Previous Funds entry already has IRR data we can use
                             if (portfolioFundIds.length === 0 && historicalPreviousFunds && historicalPreviousFunds.historical_irr && historicalPreviousFunds.historical_irr.length > 0) {
-                              console.log(`✅ [Previous Funds DEBUG] Using existing IRR data from historical Previous Funds entry`);
-                              
                               // Use the existing historical IRR data directly
                               const aggregatedIrrMap = new Map();
                               historicalPreviousFunds.historical_irr.forEach((record: any) => {
@@ -1525,20 +1420,11 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                   aggregatedIrrMap.set(record.irr_date, record.irr_result);
                                 }
                               });
-                              
-                              console.log(`✅ [Previous Funds DEBUG] Loaded ${aggregatedIrrMap.size} historical IRR values from existing Previous Funds entry:`, 
-                                Array.from(aggregatedIrrMap.entries()).map(([date, irr]) => ({ date, irr }))
-                              );
-                              
                               // Note: fundIrrMaps.set removed to prevent infinite re-render loop
                               // Previous Funds IRR data will be accessed directly from previousFundsIRRData state
-                              
-                              console.log(`✅ [Previous Funds DEBUG] Using existing historical IRR data for Previous Funds - no API calculation needed`);
-                              
                               // Skip the portfolio fund ID search since we already have the calculated data
                               portfolioFundIds = []; // Set to empty to skip further calculation
                             }
-                            
                             // If no existing IRR data, try to extract from existing Previous Funds entry
                             if (portfolioFundIds.length === 0 && existingPreviousFunds) {
                               // First check for inactiveFunds array which contains the original portfolio fund IDs
@@ -1546,73 +1432,36 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                 portfolioFundIds = (existingPreviousFunds as any).inactiveFunds
                                   .map((fund: any) => fund.id) // Use 'id' which is the portfolio fund ID
                                   .filter((id: any) => id !== null && id !== undefined && id > 0);
-                                
-                                console.log(`✅ [Previous Funds DEBUG] Found ${portfolioFundIds.length} portfolio fund IDs from inactiveFunds array:`, {
-                                  portfolioFundIds,
-                                  inactiveFundsDetails: (existingPreviousFunds as any).inactiveFunds.map((f: any) => ({
-                                    name: f.fund_name,
-                                    portfolioFundId: f.id,
-                                    status: f.status
-                                  }))
-                                });
                               }
                               // Fallback: Check if Previous Funds entry has stored portfolio fund IDs
                               else if ((existingPreviousFunds as any).portfolioFundIds && Array.isArray((existingPreviousFunds as any).portfolioFundIds)) {
                                 portfolioFundIds = (existingPreviousFunds as any).portfolioFundIds;
-                                console.log(`✅ [Previous Funds DEBUG] Found ${portfolioFundIds.length} portfolio fund IDs from portfolioFundIds property`);
                               } 
                               // Last resort: Search historical data for missing funds
                               else if (existingPreviousFunds.inactiveFundCount && existingPreviousFunds.inactiveFundCount > 0) {
-                                console.log(`🔍 [Previous Funds DEBUG] Previous Funds indicates ${existingPreviousFunds.inactiveFundCount} inactive funds, searching historical data...`);
-                                
                                 // Look for funds in historical data that aren't in current active funds
                                 const activeFundNames = currentProduct?.funds?.filter((f: any) => f.status !== 'inactive').map((f: any) => f.fund_name) || [];
                                 const historicalFundNames = productHistory.funds_historical_irr?.map((f: any) => f.fund_name) || [];
                                 const potentialInactiveFunds = productHistory.funds_historical_irr?.filter((f: any) => 
                                   !activeFundNames.includes(f.fund_name) && f.fund_name !== 'Previous Funds'
                                 ) || [];
-                                
                                 portfolioFundIds = potentialInactiveFunds
                                   .map((fund: any) => fund.portfolio_fund_id)
                                   .filter((id: any) => id !== null && id !== undefined);
-                                
-                                console.log(`🔍 [Previous Funds DEBUG] Found potential inactive funds from historical data:`, {
-                                  activeFundNames,
-                                  historicalFundNames,
-                                  potentialInactiveFunds: potentialInactiveFunds.map((f: any) => ({ name: f.fund_name, portfolioFundId: f.portfolio_fund_id })),
-                                  extractedPortfolioFundIds: portfolioFundIds
-                                });
                               }
                             }
-                            
-                            console.log(`🔍 [Previous Funds DEBUG] Final portfolio fund IDs for aggregation:`, portfolioFundIds);
-                            
                             if (portfolioFundIds.length > 0) {
                               // Get calculated IRR data for this product
                               const productKey = `product_${productHistory.product_id}`;
                               const productPreviousFundsIRR = previousFundsIRRData.get(productKey);
-                              
-                              console.log(`🔍 [Previous Funds DEBUG] Product ${productHistory.product_id} existing calculated IRR data:`, {
-                                productKey,
-                                hasCalculatedData: !!productPreviousFundsIRR,
-                                calculatedDataSize: productPreviousFundsIRR?.size || 0,
-                                isCalculationComplete: previousFundsCalculationComplete.has(productHistory.product_id)
-                              });
-                              
                               // Create aggregated IRR map
                               const aggregatedIrrMap = new Map();
-                              
                               if (productPreviousFundsIRR && productPreviousFundsIRR.size > 0) {
-                                console.log(`✅ [Previous Funds DEBUG] Using existing calculated aggregated IRR data for product ${productHistory.product_id}`);
                                 productPreviousFundsIRR.forEach((irr, date) => {
                                   aggregatedIrrMap.set(date, irr);
                                 });
                               } else {
                                 // Trigger async calculation of aggregated IRR for historical dates
-                                console.log(`🔍 [Previous Funds DEBUG] Triggering async aggregated IRR calculation for existing Previous Funds entry`);
-                                
-                                console.log(`🔍 [Previous Funds DEBUG] Portfolio fund IDs for aggregation:`, portfolioFundIds);
-                                
                                 // Get all historical dates that we need to calculate for
                                 const historicalDates = new Set();
                                 productHistory.funds_historical_irr.forEach((fund: any) => {
@@ -1622,84 +1471,51 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                     });
                                   }
                                 });
-                                
-                                console.log(`🔍 [Previous Funds DEBUG] Historical dates to calculate for existing entry:`, Array.from(historicalDates));
-                                
-                                // Trigger async calculation for each historical date
+                                // Trigger async calculation using batch historical IRR endpoint
                                 const calculateHistoricalAggregatedIRR = async () => {
                                   const productKey = `product_${productHistory.product_id}`;
-                                  const dateIrrMap = new Map();
-                                  
-                                  for (const date of Array.from(historicalDates)) {
-                                    try {
-                                      // Convert date format to YYYY-MM-DD as expected by API
-                                      let fullIrrDate = date;
-                                      if (date && typeof date === 'string') {
-                                        if (date.match(/^\d{4}-\d{2}$/)) {
-                                          // Convert YYYY-MM to YYYY-MM-DD
-                                          fullIrrDate = `${date}-01`;
-                                        } else if (date.includes('T')) {
-                                          // Convert ISO format (YYYY-MM-DDTHH:MM:SS) to YYYY-MM-DD
-                                          fullIrrDate = date.split('T')[0];
-                                        }
-                                      }
-                                      
-                                      console.log(`🔍 [Previous Funds DEBUG] Calculating aggregated IRR for existing entry ${date} with fund IDs:`, portfolioFundIds);
-                                      
-                                      const response = await api.post('/portfolio_funds/multiple/irr', {
-                                        portfolio_fund_ids: portfolioFundIds,
-                                        irr_date: fullIrrDate
-                                      });
-                                      
-                                      if (response.data.success && response.data.irr_percentage !== null) {
-                                        console.log(`✅ [Previous Funds DEBUG] Calculated aggregated IRR for existing entry ${date}: ${response.data.irr_percentage}%`);
-                                        dateIrrMap.set(date, response.data.irr_percentage);
-                                      } else {
-                                        console.log(`❌ [Previous Funds DEBUG] Failed to calculate IRR for existing entry ${date}:`, response.data);
-                                      }
-                                    } catch (error) {
-                                      console.log(`❌ [Previous Funds DEBUG] Error calculating IRR for existing entry ${date}:`, error);
-                                    }
-                                  }
-                                  
+                                  try {
+                                    // Use the new batch historical IRR calculation function
+                                    const dateIrrMap = await calculatePreviousFundsHistoricalIRR(
+                                      portfolioFundIds, 
+                                      Array.from(historicalDates) as string[]
+                                    );
                                   // Update the previousFundsIRRData state with calculated values
                                   setPreviousFundsIRRData(prev => {
                                     const updated = new Map(prev);
                                     updated.set(productKey, dateIrrMap);
                                     return updated;
                                   });
-                                  
                                   // Mark calculation as complete
                                   setPreviousFundsCalculationComplete(prev => new Set(prev).add(productHistory.product_id));
-                                  
-                                  console.log(`✅ [Previous Funds DEBUG] Completed aggregated IRR calculations for existing Previous Funds entry ${productHistory.product_id}`);
+                                  } catch (error) {
+                                    console.error(`Error in batch IRR calculation for existing entry:`, error);
+                                  }
                                 };
-                                
                                 // Start calculation if not already running
                                 if (!previousFundsCalculationComplete.has(productHistory.product_id)) {
                                   calculateHistoricalAggregatedIRR();
                                 }
                               }
-                              
                               // Note: fundIrrMaps.set removed to prevent infinite re-render loop
                               // Previous Funds IRR data will be accessed directly from previousFundsIRRData state
-                              
-                              console.log(`✅ [Previous Funds DEBUG] Skipped fundIrrMaps update to prevent infinite re-render, data available via previousFundsIRRData with ${aggregatedIrrMap.size} historical dates`);
                             } else {
-                              console.log(`❌ [Previous Funds DEBUG] No portfolio fund IDs found for Previous Funds calculation`);
                             }
                           }
-                          
                           const fundRows = processedFunds.map((fund: any, fundIndex: number) => {
                             // For Previous Funds, use previousFundsIRRData state; for regular funds, use fundIrrMaps
-                            let fundIrrMap: Map<string, number>;
-                            if (fund.isVirtual && fund.fund_name === 'Previous Funds') {
+                            let fundIrrMap: Map<string, number | null>; // Changed type to allow null
+                            // Determine if this fund should use the dynamically calculated previousFundsIRRData
+                            // Note: Historical/Previous Funds are included regardless of isVirtual status
+                            const shouldUseDynamicIRR = 
+                                (fund.status === 'inactive' && !fund.isVirtual) ||
+                                (fund.fund_name === 'Historical Funds' || fund.fund_name === 'Previous Funds');
+                            if (shouldUseDynamicIRR) {
                               const productKey = `product_${productHistory.product_id}`;
                               fundIrrMap = previousFundsIRRData.get(productKey) || new Map();
                             } else {
                               fundIrrMap = fundIrrMaps.get(fund.portfolio_fund_id) || new Map();
                             }
-                            
                             return (
                               <tr key={fundIndex} className={`hover:bg-blue-50 ${fund.isVirtual ? 'bg-gray-100 font-medium' : ''}`}>
                                 <td className="px-2 py-2 text-xs font-medium text-gray-800 text-left">
@@ -1729,7 +1545,6 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                           </span>
                                         );
                                       }
-                                      
                                       // Fallback: look for Previous Funds in current product funds
                                       const currentProduct = reportData.productSummaries.find(p => p.id === productHistory.product_id);
                                       if (currentProduct && currentProduct.funds) {
@@ -1744,10 +1559,8 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                           );
                                         }
                                       }
-                                      
                                       return <span className="text-gray-500">N/A</span>;
                                     }
-                                    
                                     // Find current IRR for this fund from the main reportData
                                     const currentProduct = reportData.productSummaries.find(p => p.id === productHistory.product_id);
                                     if (currentProduct && currentProduct.funds) {
@@ -1781,38 +1594,21 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                           </tr>
                             );
                           });
-
                           // Add product total row
                           const productForTotal = reportData.productSummaries.find(p => p.id === productHistory.product_id);
-                          
                           // Use updated IRR from portfolioIrrValues if available, otherwise fall back to reportData
                           let productIrr = portfolioIrrValues.has(productHistory.product_id) 
                             ? portfolioIrrValues.get(productHistory.product_id) 
                             : productForTotal?.irr;
-                          
                           // Debug: Log current IRR value extraction
-                          console.log(`🔍 [IRR HISTORY] Product ${productHistory.product_id} current IRR debug:`, {
-                            productFound: !!productForTotal,
-                            rawIrrValueFromReportData: productForTotal?.irr,
-                            hasUpdatedIrrInState: portfolioIrrValues.has(productHistory.product_id),
-                            updatedIrrFromState: portfolioIrrValues.get(productHistory.product_id),
-                            finalProductIrr: productIrr,
-                            irrType: typeof productIrr,
-                            isNull: productIrr === null,
-                            isUndefined: productIrr === undefined,
-                            isZero: productIrr === 0
-                          });
-                          
                                     // Calculate total weighted risk including Previous Funds
           let totalWeightedRisk: number | undefined = undefined;
           if (productForTotal && productForTotal.funds && productForTotal.funds.length > 0) {
             let totalValue = 0;
             let weightedRiskSum = 0;
-            
             productForTotal.funds.forEach(fund => {
               const fundValue = fund.current_valuation || 0;
               const fundRisk = fund.risk_factor;
-              
               // For Previous Funds (virtual funds), use total_investment as weight since current_valuation is 0
               if (fund.isVirtual && fund.fund_name === 'Previous Funds') {
                 const previousFundsWeight = fund.total_investment || 0;
@@ -1828,32 +1624,14 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                 }
               }
             });
-            
             if (totalValue > 0) {
               totalWeightedRisk = weightedRiskSum / totalValue;
-              
-              console.log(`🔍 [RISK DEBUG] Product ${productHistory.product_id} total risk calculation:`, {
-                originalProductRisk: productForTotal?.weighted_risk,
-                calculatedTotalRisk: totalWeightedRisk,
-                fundCount: productForTotal.funds.length,
-                totalValue,
-                fundsIncluded: productForTotal.funds.map(f => ({
-                  name: f.fund_name,
-                  value: f.current_valuation,
-                  risk: f.risk_factor,
-                  isVirtual: f.isVirtual,
-                  weight: f.isVirtual ? f.total_investment : f.current_valuation
-                }))
-              });
             }
           }
-                          
                           // Fallback to product weighted risk if calculation fails
                           const productWeightedRisk = totalWeightedRisk !== undefined ? totalWeightedRisk : productForTotal?.weighted_risk;
-                          
                           // Get historical IRR data for the product - ONLY for selected dates
                           // Data comes from portfolio_irr_values table via portfolio_historical_irr
-                          
                           // Normalize selected dates to YYYY-MM-DD format for comparison
                           const normalizedSelectedDates = sortedDates.map(date => {
                             if (date.includes('T')) {
@@ -1863,7 +1641,6 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                             }
                             return date;
                           });
-                          
                           const productHistoricalIrrMap = new Map<string, number>();
                           if (productHistory?.portfolio_historical_irr) {
                             console.log(`🔍 [PRODUCT IRR DEBUG] Product ${productHistory.product_id} - Raw historical IRR data:`, {
@@ -1903,7 +1680,6 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                 return acc;
                               }, {})
                             });
-                            
                             // 🚨 CRITICAL DEBUG: Check if all IRR values are actually the same
                             const allIrrValues = productHistory.portfolio_historical_irr.map((r: any) => {
                               const parsed = parseFloat(r.irr_result);
@@ -1925,16 +1701,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                 ]
                               });
                             } else {
-                              console.log(`✅ [DATA QUALITY CHECK] Product ${productHistory.product_id} has VARIED IRR values:`, {
-                                uniqueIrrValues,
-                                totalRecords: allIrrValues.length,
-                                irrRange: {
-                                  min: Math.min(...allIrrValues),
-                                  max: Math.max(...allIrrValues)
-                                }
-                              });
                             }
-                            
                             // ONLY store IRR data for the selected dates (not all historical data)
                             productHistory.portfolio_historical_irr.forEach((record: any) => {
                               // Normalize the database date format to YYYY-MM-DD
@@ -1945,7 +1712,6 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                               } else if (normalizedDbDate.includes(' ')) {
                                 normalizedDbDate = normalizedDbDate.split(' ')[0];
                               }
-                              
                               // ONLY include if this date is in the normalized selected dates
                               if (normalizedSelectedDates.includes(normalizedDbDate)) {
                                 const irrValue = parseFloat(record.irr_result);
@@ -1955,29 +1721,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                 }
                               }
                             });
-                            
                             // Debug: Show what we actually found for selected dates
-                            console.log(`🔍 [PRODUCT IRR DEBUG] Product ${productHistory.product_id} - Filtered for selected dates:`, {
-                              originalSelectedDates: sortedDates,
-                              normalizedSelectedDates: normalizedSelectedDates,
-                              foundDates: Array.from(productHistoricalIrrMap.keys()),
-                              missingDates: normalizedSelectedDates.filter(date => !productHistoricalIrrMap.has(date)),
-                              selectedDateIRRs: normalizedSelectedDates.map(date => ({
-                                date: date,
-                                irr: productHistoricalIrrMap.get(date),
-                                found: productHistoricalIrrMap.has(date)
-                              })),
-                              dataSource: 'portfolio_irr_values table - filtered',
-                              // DETAILED IRR VALUES DEBUG
-                              allIrrValues: Array.from(productHistoricalIrrMap.entries()).map(([date, irr]) => ({
-                                date,
-                                irr,
-                                irrType: typeof irr
-                              })),
-                              uniqueIrrValues: [...new Set(Array.from(productHistoricalIrrMap.values()))],
-                              hasDifferentIrrValues: new Set(Array.from(productHistoricalIrrMap.values())).size > 1
-                            });
-                            
                             // Check for date mismatches and available vs selected dates
                             if (productHistory.portfolio_historical_irr.length > 0) {
                               const availableDates = productHistory.portfolio_historical_irr.map((r: any) => {
@@ -1989,18 +1733,8 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                 }
                                 return normalizedDate;
                               });
-                              
                               const missingSelectedDates = normalizedSelectedDates.filter((date: string) => !availableDates.includes(date));
                               const availableButNotSelected = availableDates.filter((date: string) => !normalizedSelectedDates.includes(date));
-                              
-                              console.log(`🔍 [DATE ANALYSIS] Product ${productHistory.product_id} date comparison:`, {
-                                selectedDates: normalizedSelectedDates,
-                                availableDates: availableDates,
-                                missingSelectedDates,
-                                availableButNotSelected,
-                                hasDateMismatch: missingSelectedDates.length > 0 || availableButNotSelected.length > 0
-                              });
-                              
                               if (missingSelectedDates.length > 0) {
                                 console.warn(`⚠️ [DATE MISMATCH WARNING] Product ${productHistory.product_id} selected dates not found in database:`, {
                                   missingSelectedDates,
@@ -2011,7 +1745,6 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                 });
                               }
                             }
-                            
                             if (productHistoricalIrrMap.size === 0) {
                               console.warn(`⚠️ [PRODUCT IRR WARNING] Product ${productHistory.product_id} has no IRR data for any selected dates. 
 Original selected dates: ${sortedDates.join(', ')}
@@ -2019,7 +1752,6 @@ Normalized selected dates: ${normalizedSelectedDates.join(', ')}
 Available database dates: ${productHistory.portfolio_historical_irr.map((r: any) => r.irr_date).join(', ')}`);
                             }
                           }
-
                           const productTotalRow = (
                             <tr key="product-total" className="bg-gray-50 border-t-2 border-gray-300">
                               <td className="px-2 py-2 text-xs font-bold text-black text-left">
@@ -2034,14 +1766,6 @@ Available database dates: ${productHistory.portfolio_historical_irr.map((r: any)
                               </td>
                               <td className="px-2 py-2 text-xs font-bold text-right bg-purple-100 text-black">
                                 {(() => {
-                                  console.log(`🔍 [IRR HISTORY] Product ${productHistory.product_id} display logic:`, {
-                                    productIrr,
-                                    isNotNull: productIrr !== null,
-                                    isNotUndefined: productIrr !== undefined,
-                                    bothChecksPass: productIrr !== null && productIrr !== undefined,
-                                    willShowValue: productIrr !== null && productIrr !== undefined
-                                  });
-                                  
                                   if (productIrr !== null && productIrr !== undefined) {
                                     return formatIrrWithPrecision(productIrr);
                                   } else {
@@ -2066,7 +1790,6 @@ Available database dates: ${productHistory.portfolio_historical_irr.map((r: any)
                               })}
                             </tr>
                           );
-
                           return [...fundRows, productTotalRow];
                         })()
                       ) : (
@@ -2083,7 +1806,6 @@ Available database dates: ${productHistory.portfolio_historical_irr.map((r: any)
             );
           }).filter(Boolean);
         })()}
-        
         {/* History Summary Table */}
         <IRRHistorySummaryTable
           productIds={memoizedProductIds}
@@ -2097,5 +1819,4 @@ Available database dates: ${productHistory.portfolio_historical_irr.map((r: any)
     </div>
   );
 };
-
 export default IRRHistoryTab; 

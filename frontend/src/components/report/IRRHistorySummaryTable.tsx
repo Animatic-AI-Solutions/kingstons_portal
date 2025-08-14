@@ -280,21 +280,37 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
   }, [memoizedProductIds, memoizedSelectedDates, memoizedClientGroupIds, irrSummaryService]);
 
   // Get IRR value for a specific product and date from flat rows
-  const getIRRValueForProductAndDate = (productId: number, date: string): number | null => {
+  const getIRRValueForProductAndDate = (productName: string, date: string): number | null => {
+    // Debug: Log the search parameters and available data for Previous Funds entries
+    if (productName.includes("Previous Funds")) {
+      const matchingRows = tableData.productRows.filter((row: any) => row.product_name === productName);
+      console.log(`🔍 [PREVIOUS FUNDS DEBUG] Searching for: ${productName} on ${date}`);
+      console.log(`🔍 [PREVIOUS FUNDS DEBUG] Available rows for this product:`, matchingRows);
+    }
+    
     const flatRow = tableData.productRows.find((row: any) => 
-      row.product_id === productId && row.irr_date === date
+      row.product_name === productName && row.irr_date === date
     ) as any;
+    
+    if (productName.includes("Previous Funds")) {
+      console.log(`🔍 [PREVIOUS FUNDS DEBUG] Found row:`, flatRow);
+      console.log(`🔍 [PREVIOUS FUNDS DEBUG] Returning IRR:`, flatRow ? flatRow.irr_result : null);
+    }
+    
     return flatRow ? flatRow.irr_result : null;
   };
 
-  // Get unique products from flat rows
+  // Get unique products from flat rows (including Previous Funds entries)
   const getUniqueProducts = () => {
     if (!tableData.productRows || tableData.productRows.length === 0) return [];
     
     const productMap = new Map();
     tableData.productRows.forEach((row: any) => {
-      if (!productMap.has(row.product_id)) {
-        productMap.set(row.product_id, {
+      // Use product_name as key to distinguish between active funds and "Previous Funds" entries
+      // This ensures both "Product Name" and "Product Name - Previous Funds" are kept as separate entries
+      const uniqueKey = row.product_name;
+      if (!productMap.has(uniqueKey)) {
+        productMap.set(uniqueKey, {
           product_id: row.product_id,
           product_name: row.product_name,
           provider_name: row.provider_name,
@@ -304,7 +320,14 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
       }
     });
     
-    return Array.from(productMap.values());
+    const uniqueProducts = Array.from(productMap.values());
+    console.log('🔍 [IRR SUMMARY TABLE DEBUG] Unique products detected:', {
+      totalProducts: uniqueProducts.length,
+      productNames: uniqueProducts.map(p => p.product_name),
+      previousFundsCount: uniqueProducts.filter(p => p.product_name.includes('Previous Funds')).length
+    });
+    
+    return uniqueProducts;
   };
 
   // Get portfolio IRR for a specific date
@@ -546,7 +569,7 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
 
                       {/* IRR Value Cells */}
                       {tableData.dateHeaders.map((date, index) => {
-                        const irrValue = getIRRValueForProductAndDate(product.product_id, date);
+                        const irrValue = getIRRValueForProductAndDate(product.product_name, date);
                         // Check if this is the most recent (first) date since dates are sorted newest first
                         const isCurrentYear = index === 0;
                         // Use 'total' format type for active products (1 decimal place), 'inactive' for inactive products (smart decimal places)

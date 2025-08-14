@@ -338,44 +338,18 @@ async def get_irr_history_summary(
                     continue
                     
                 product_info = product_info_map[product_id]
+                product_status = product_info.get("status", "active").lower()
                 
-                for date_str in request.selected_dates:
-                    try:
-                        # Normalize date format to YYYY-MM-DD
-                        normalized_date_str = date_str.split('T')[0] if 'T' in date_str else date_str
-                        
-                        # Convert string to date object for database query
-                        normalized_date = datetime.strptime(normalized_date_str, "%Y-%m-%d").date()
-                        # For month/year matching, get the first day of the month and first day of next month
-                        first_day_of_month = normalized_date.replace(day=1)
-                        # Calculate first day of next month
-                        if normalized_date.month == 12:
-                            first_day_of_next_month = normalized_date.replace(year=normalized_date.year + 1, month=1, day=1)
-                        else:
-                            first_day_of_next_month = normalized_date.replace(month=normalized_date.month + 1, day=1)
-                        
-                        # Get IRR value for this product and month/year from portfolio_historical_irr view
-                        irr_result = await db.fetchrow(
-                            """
-                            SELECT phi.irr_result FROM portfolio_historical_irr phi
-                            JOIN client_products cp ON phi.portfolio_id = cp.portfolio_id
-                            WHERE cp.id = $1 
-                              AND phi.date >= $2 
-                              AND phi.date < $3 
-                            ORDER BY phi.date DESC 
-                            LIMIT 1
-                            """,
-                            product_id, first_day_of_month, first_day_of_next_month
-                        )
-                        
-                        irr_value = None
-                        if irr_result:
-                            irr_value = float(irr_result["irr_result"])
-                            logger.info(f"📊 Product {product_id} IRR for {date_str}: {irr_value}%")
-                        else:
-                            logger.warning(f"⚠️ No IRR data found for product {product_id} on date {date_str}")
-                        
-                        # Create one flat row per product-date combination
+                # Check if product has previous/inactive funds that need individual IRR calculations
+                portfolio_id_result = await db.fetchrow(
+                    "SELECT portfolio_id FROM client_products WHERE id = $1",
+                    product_id
+                )
+                
+                if not portfolio_id_result or not portfolio_id_result["portfolio_id"]:
+                    logger.warning(f"No portfolio found for product {product_id}")
+                    # Still create null entries for consistency
+                    for date_str in request.selected_dates:
                         product_irr_history.append({
                             "product_id": product_id,
                             "product_name": product_info["product_name"],
@@ -383,11 +357,107 @@ async def get_irr_history_summary(
                             "provider_theme_color": product_info["provider_theme_color"],
                             "status": product_info["status"],
                             "irr_date": date_str,
-                            "irr_result": irr_value
+                            "irr_result": None
                         })
+                    continue
+                
+                portfolio_id = portfolio_id_result["portfolio_id"]
+                
+                # Get all funds (active and inactive) for this product
+                all_funds = await db.fetch(
+                    """
+                    SELECT pf.id, af.fund_name, pf.status, pf.start_date, pf.end_date 
+                    FROM portfolio_funds pf
+                    JOIN available_funds af ON pf.available_funds_id = af.id
+                    WHERE pf.portfolio_id = $1
+                    ORDER BY pf.status, af.fund_name
+                    """,
+                    portfolio_id
+                )
+                
+                logger.error(f"🔍 DEBUG: Product {product_id} has {len(all_funds)} total funds:")
+                for fund in all_funds:
+                    logger.error(f"🔍 DEBUG:   - Fund {fund['id']} ({fund['fund_name']}): status='{fund['status']}'")
+                
+                active_funds_count = len([f for f in all_funds if f.get("status") == "active"])
+                inactive_funds_count = len([f for f in all_funds if f.get("status") != "active"])
+                logger.error(f"🔍 DEBUG: Product {product_id}: {active_funds_count} active, {inactive_funds_count} inactive funds")
+                
+                for date_str in request.selected_dates:
+                    try:
+                        # Normalize date format to YYYY-MM-DD
+                        normalized_date_str = date_str.split('T')[0] if 'T' in date_str else date_str
+                        normalized_date = datetime.strptime(normalized_date_str, "%Y-%m-%d").date()
+                        
+                        # Separate active and inactive funds
+                        active_fund_ids = [fund["id"] for fund in all_funds if fund.get("status") == "active"]
+                        inactive_fund_ids = [fund["id"] for fund in all_funds if fund.get("status") != "active"]
+                        
+                        logger.error(f"🔍 DEBUG: For {date_str}: Found {len(active_fund_ids)} active funds and {len(inactive_fund_ids)} inactive funds for product {product_id}")
+                        logger.error(f"🔍 DEBUG: Active fund IDs: {active_fund_ids}")
+                        logger.error(f"🔍 DEBUG: Inactive fund IDs: {inactive_fund_ids}")
+                        
+                        # Calculate combined IRR for all funds (active + inactive) in the product
+                        all_fund_ids = active_fund_ids + inactive_fund_ids
+                        
+                        if all_fund_ids:
+                            logger.info(f"📊 Calculating combined IRR for all funds: {all_fund_ids}")
+                            try:
+                                # Import here to avoid potential circular import issues
+                                from app.api.routes.portfolio_funds import calculate_multiple_portfolio_funds_irr
+                                
+                                combined_irr_result = await calculate_multiple_portfolio_funds_irr(
+                                    portfolio_fund_ids=all_fund_ids,
+                                    irr_date=normalized_date,
+                                    bypass_cache=True,
+                                    db=db
+                                )
+                                
+                                if combined_irr_result and combined_irr_result.get("success"):
+                                    combined_irr_value = combined_irr_result.get("irr_percentage")
+                                    logger.info(f"✅ Combined IRR for {date_str}: {combined_irr_value}%")
+                                    
+                                    # Add single entry for the entire product (active + inactive funds combined)
+                                    product_irr_history.append({
+                                        "product_id": product_id,
+                                        "product_name": product_info["product_name"],
+                                        "provider_name": product_info["provider_name"],
+                                        "provider_theme_color": product_info["provider_theme_color"],
+                                        "status": product_info["status"],
+                                        "irr_date": date_str,
+                                        "irr_result": combined_irr_value
+                                    })
+                                    
+                            except Exception as combined_error:
+                                logger.error(f"❌ Error calculating combined IRR: {str(combined_error)}")
+                                # Still create a row with null IRR value for consistency
+                                product_irr_history.append({
+                                    "product_id": product_id,
+                                    "product_name": product_info["product_name"],
+                                    "provider_name": product_info["provider_name"],
+                                    "provider_theme_color": product_info["provider_theme_color"],
+                                    "status": product_info["status"],
+                                    "irr_date": date_str,
+                                    "irr_result": None
+                                })
+                        else:
+                            # No funds found, create null entry
+                            product_irr_history.append({
+                                "product_id": product_id,
+                                "product_name": product_info["product_name"],
+                                "provider_name": product_info["provider_name"],
+                                "provider_theme_color": product_info["provider_theme_color"],
+                                "status": product_info["status"],
+                                "irr_date": date_str,
+                                "irr_result": None
+                            })
+                        
+                        # Continue to next date
+                        continue
+
                         
                     except Exception as product_date_error:
-                        logger.error(f"Error fetching IRR for product {product_id} on date {date_str}: {str(product_date_error)}")
+                        logger.error(f"Error processing product {product_id} for date {date_str}: {str(product_date_error)}")
                         # Still create a row with null IRR value for consistency
                         product_irr_history.append({
                             "product_id": product_id,
@@ -485,6 +555,9 @@ async def get_irr_history_summary(
                     
                     # Use the proper portfolio IRR calculation function - this is the ONLY method we should use
                     try:
+                        # Import here to avoid potential circular import issues
+                        from app.api.routes.portfolio_funds import calculate_multiple_portfolio_funds_irr
+                        
                         portfolio_irr_result = await calculate_multiple_portfolio_funds_irr(
                             portfolio_fund_ids=portfolio_fund_ids,
                             irr_date=normalized_date,  # Now passing date object instead of string
