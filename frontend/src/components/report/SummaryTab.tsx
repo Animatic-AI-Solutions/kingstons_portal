@@ -332,52 +332,52 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                             </div>
                           </div>
                         </td>
-                        <td className="px-2 py-2 whitespace-nowrap text-sm text-right">
+                        <td className="px-2 py-2 whitespace-nowrap text-base text-right">
                           {(() => {
                             const formatted = formatCurrencyWithVisualSigningWrapper((product.total_investment || 0) + (product.total_regular_investment || 0), 'investment');
                             return <span className={formatted.className}>{formatted.value}</span>;
                           })()}
                         </td>
-                        <td className="px-2 py-2 whitespace-nowrap text-sm text-right">
+                        <td className="px-2 py-2 whitespace-nowrap text-base text-right">
                           {(() => {
                             const formatted = formatCurrencyWithVisualSigningWrapper(product.total_tax_uplift || 0, 'tax_uplift');
                             return <span className={formatted.className}>{formatted.value}</span>;
                           })()}
                         </td>
-                        <td className="px-2 py-2 whitespace-nowrap text-sm text-right">
+                        <td className="px-2 py-2 whitespace-nowrap text-base text-right">
                           {(() => {
                             const formatted = formatCurrencyWithVisualSigningWrapper(product.total_product_switch_in || 0, 'product_switch_in');
                             return <span className={formatted.className}>{formatted.value}</span>;
                           })()}
                         </td>
-                        <td className="px-2 py-2 whitespace-nowrap text-sm text-right">
+                        <td className="px-2 py-2 whitespace-nowrap text-base text-right">
                           {(() => {
                             const netSwitches = (product.total_fund_switch_in || 0) + (product.total_fund_switch_out || 0);
                             const formatted = formatCurrencyWithVisualSigningWrapper(netSwitches, 'fund_switch');
                             return <span className={formatted.className}>{formatted.value}</span>;
                           })()}
                         </td>
-                        <td className="px-2 py-2 whitespace-nowrap text-sm text-right">
+                        <td className="px-2 py-2 whitespace-nowrap text-base text-right">
                           {(() => {
                             const formatted = formatCurrencyWithVisualSigningWrapper(product.total_product_switch_out || 0, 'product_switch_out');
                             return <span className={formatted.className}>{formatted.value}</span>;
                           })()}
                         </td>
-                        <td className="px-2 py-2 whitespace-nowrap text-sm text-right">
+                        <td className="px-2 py-2 whitespace-nowrap text-base text-right">
                           {(() => {
                             const formatted = formatCurrencyWithVisualSigningWrapper(product.total_withdrawal || 0, 'withdrawal');
                             return <span className={formatted.className}>{formatted.value}</span>;
                           })()}
                         </td>
-                        <td className="px-2 py-2 text-sm font-semibold text-primary-700 text-right bg-green-50">
+                        <td className="px-2 py-2 text-base font-semibold text-primary-700 text-right bg-green-50">
                           {formatCurrencyWithTruncation(product.current_valuation || 0)}
                         </td>
-                        <td className="px-2 py-2 text-sm text-right bg-blue-50">
+                        <td className="px-2 py-2 text-base text-right bg-blue-50">
                           <span className={profit >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
                             {formatCurrencyWithTruncation(profit)}
                           </span>
                         </td>
-                        <td className="px-2 py-2 text-xs text-right bg-purple-50">
+                        <td className="px-2 py-2 text-base text-right bg-purple-50">
                           {(() => {
                             const portfolioIrr = portfolioIrrValues.get(product.id);
                             if (portfolioIrr !== null && portfolioIrr !== undefined) {
@@ -390,7 +390,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                             return <span className="text-gray-400">N/A</span>;
                           })()}
                         </td>
-                        <td className="px-2 py-2 whitespace-nowrap text-xs text-right">
+                        <td className="px-2 py-2 whitespace-nowrap text-base text-right">
                           {product.weighted_risk !== undefined && product.weighted_risk !== null ? (
                             formatWeightedRisk(product.weighted_risk)
                           ) : (
@@ -403,84 +403,84 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                 
                 {/* Investment Totals Row - Matches Product Card Style */}
                 <tr className="bg-gray-50 border-t-2 border-gray-300">
-                  <td className="px-1 py-2 text-xs font-bold text-black text-left">
+                  <td className="px-1 py-2 text-base font-bold text-black text-left">
                     Investment Totals
                   </td>
-                  <td className="px-2 py-2 text-sm font-bold text-right text-black">
+                  <td className="px-2 py-2 text-base font-bold text-right text-black">
                     {(() => {
-                      const totalAmount = reportData.productSummaries.reduce((sum, product) => 
+                      const totalAmount = reportData.productSummaries.reduce((sum, product) =>
                         sum + (product.total_investment || 0) + (product.total_regular_investment || 0), 0
                       );
                       return formatCurrencyWithTruncation(totalAmount);
                     })()}
                   </td>
-                  <td className="px-2 py-2 text-sm font-bold text-right text-black">
+                  <td className="px-2 py-2 text-base font-bold text-right text-black">
                     {(() => {
-                      const totalAmount = reportData.productSummaries.reduce((sum, product) => 
+                      const totalAmount = reportData.productSummaries.reduce((sum, product) =>
                         sum + (product.total_tax_uplift || 0), 0
                       );
                       return formatCurrencyWithTruncation(totalAmount);
                     })()}
                   </td>
-                  <td className="px-2 py-2 text-sm font-bold text-right text-black">
+                  <td className="px-2 py-2 text-base font-bold text-right text-black">
                     {(() => {
-                      const totalAmount = reportData.productSummaries.reduce((sum, product) => 
+                      const totalAmount = reportData.productSummaries.reduce((sum, product) =>
                         sum + (product.total_product_switch_in || 0), 0
                       );
                       return formatCurrencyWithTruncation(totalAmount);
                     })()}
                   </td>
-                  <td className="px-2 py-2 text-sm font-bold text-right text-black">
+                  <td className="px-2 py-2 text-base font-bold text-right text-black">
                     {(() => {
-                      const totalAmount = reportData.productSummaries.reduce((sum, product) => 
+                      const totalAmount = reportData.productSummaries.reduce((sum, product) =>
                         sum + (product.total_fund_switch_in || 0) + (product.total_fund_switch_out || 0), 0
                       );
                       return formatCurrencyWithTruncation(totalAmount);
                     })()}
                   </td>
-                  <td className="px-2 py-2 text-sm font-bold text-right text-black">
+                  <td className="px-2 py-2 text-base font-bold text-right text-black">
                     {(() => {
-                      const totalAmount = reportData.productSummaries.reduce((sum, product) => 
+                      const totalAmount = reportData.productSummaries.reduce((sum, product) =>
                         sum + (product.total_product_switch_out || 0), 0
                       );
                       return formatCurrencyWithTruncation(totalAmount);
                     })()}
                   </td>
-                  <td className="px-2 py-2 text-sm font-bold text-right text-black">
+                  <td className="px-2 py-2 text-base font-bold text-right text-black">
                     {(() => {
-                      const totalAmount = reportData.productSummaries.reduce((sum, product) => 
+                      const totalAmount = reportData.productSummaries.reduce((sum, product) =>
                         sum + (product.total_withdrawal || 0), 0
                       );
                       return formatCurrencyWithTruncation(totalAmount);
                     })()}
                   </td>
-                  <td className="px-2 py-2 text-sm font-bold text-right bg-green-100 text-black">
+                  <td className="px-2 py-2 text-base font-bold text-right bg-green-100 text-black">
                     {formatCurrencyWithTruncation(
-                      reportData.productSummaries.reduce((sum, product) => 
+                      reportData.productSummaries.reduce((sum, product) =>
                         sum + (product.current_valuation || 0), 0
                       )
                     )}
                   </td>
-                  <td className="px-2 py-2 text-sm font-bold text-right bg-blue-100 text-black">
+                  <td className="px-2 py-2 text-base font-bold text-right bg-blue-100 text-black">
                     {(() => {
-                      const totalGains = reportData.productSummaries.reduce((sum, product) => 
+                      const totalGains = reportData.productSummaries.reduce((sum, product) =>
                         sum + (product.current_valuation || 0) + (product.total_withdrawal || 0) + (product.total_product_switch_out || 0) + (product.total_fund_switch_out || 0), 0
                       );
-                      const totalCosts = reportData.productSummaries.reduce((sum, product) => 
+                      const totalCosts = reportData.productSummaries.reduce((sum, product) =>
                         sum + (product.total_investment || 0) + (product.total_regular_investment || 0) + (product.total_tax_uplift || 0) + (product.total_product_switch_in || 0) + (product.total_fund_switch_in || 0), 0
                       );
                       const totalProfit = totalGains - totalCosts;
                       return formatCurrencyWithTruncation(totalProfit);
                     })()}
                   </td>
-                  <td className="px-2 py-2 text-xs font-bold text-right bg-purple-100 text-black">
+                  <td className="px-2 py-2 text-base font-bold text-right bg-purple-100 text-black">
                     {realTimeTotalIRR !== null && realTimeTotalIRR !== undefined && !isNaN(realTimeTotalIRR) ? (
                       formatIrrWithPrecision(realTimeTotalIRR)
                     ) : (
                       'N/A'
                     )}
                   </td>
-                  <td className="px-2 py-2 text-xs font-bold text-right text-black">
+                  <td className="px-2 py-2 text-base font-bold text-right text-black">
                     {(() => {
                       // Calculate weighted risk across all products
                       let weightedRisk = 0;
