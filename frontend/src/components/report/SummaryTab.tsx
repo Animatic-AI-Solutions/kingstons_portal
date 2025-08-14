@@ -544,7 +544,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
             return (
               <div
                 key={`${product.id}-${index}`}
-                className={`mb-8 bg-white shadow-sm rounded-lg border border-gray-200 p-6 w-full product-card print-clean ${isInactive ? 'opacity-60 bg-gray-50' : ''}`}
+                className={`mb-8 bg-white shadow-sm rounded-lg border border-gray-200 w-full product-card print-clean ${isInactive ? 'opacity-60 bg-gray-50' : ''}`}
                 style={{
                   borderLeft: product.provider_theme_color ? `4px solid ${product.provider_theme_color}` : '4px solid #e5e7eb',
                   borderTop: product.provider_theme_color ? `1px solid ${product.provider_theme_color}` : undefined,
@@ -552,27 +552,30 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                   borderBottom: product.provider_theme_color ? `1px solid ${product.provider_theme_color}` : undefined,
                 }}
               >
-                <div className="flex items-center gap-3 mb-4">
-                  {product.provider_theme_color && (
-                    <div 
-                      className="w-4 h-4 rounded-full" 
-                      style={{ backgroundColor: product.provider_theme_color }}
-                    />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className={`text-xl font-semibold flex-1 min-w-0 ${isInactive ? 'text-gray-600' : 'text-gray-800'}`}>
-                        {generateEffectiveProductTitle(product, customTitles)}
-                      </h3>
-                      {product.status === 'inactive' && (
-                        <span className="text-sm text-red-600 font-medium whitespace-nowrap">(Lapsed)</span>
-                      )}
+                <div className="px-2 py-2">
+                  <div className="flex items-center gap-3 mb-2">
+                    {product.provider_theme_color && (
+                      <div
+                        className="w-4 h-4 rounded-full"
+                        style={{ backgroundColor: product.provider_theme_color }}
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className={`text-xl font-semibold flex-1 min-w-0 ${isInactive ? 'text-gray-600' : 'text-gray-800'}`}>
+                          {generateEffectiveProductTitle(product, customTitles)}
+                        </h3>
+                        {product.status === 'inactive' && (
+                          <span className="text-sm text-red-600 font-medium whitespace-nowrap">(Lapsed)</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Fund Breakdown Table */}
-                <div className="overflow-x-auto product-table">
+                <div className="px-2 py-2">
+                  <div className="overflow-x-auto product-table">
                   <table className="w-full table-fixed divide-y divide-gray-300 landscape-table product-fund-table">
                     <colgroup>
                       <col className="w-[22%]" />
@@ -790,6 +793,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                       )}
                     </tbody>
                   </table>
+                  </div>
                 </div>
               </div>
             );

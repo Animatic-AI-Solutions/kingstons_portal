@@ -1209,7 +1209,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
             return (
               <div 
                 key={index} 
-                className={`mb-8 bg-white shadow-sm rounded-lg border border-gray-200 p-6 w-full product-card print-clean ${product?.status === 'inactive' ? 'opacity-60 bg-gray-50' : ''}`}
+                className={`mb-8 bg-white shadow-sm rounded-lg border border-gray-200 w-full product-card print-clean ${product?.status === 'inactive' ? 'opacity-60 bg-gray-50' : ''}`}
                 style={{
                   borderLeft: product?.provider_theme_color ? `4px solid ${product.provider_theme_color}` : '4px solid #e5e7eb',
                   borderTop: product?.provider_theme_color ? `1px solid ${product.provider_theme_color}` : undefined,
@@ -1217,21 +1217,24 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                   borderBottom: product?.provider_theme_color ? `1px solid ${product.provider_theme_color}` : undefined,
                 }}
               >
-                <div className="flex items-center gap-3 mb-4">
-                  {product?.provider_theme_color && (
-                    <div 
-                      className="w-4 h-4 rounded-full" 
-                      style={{ backgroundColor: product.provider_theme_color }}
-                    />
-                  )}
-                  <h3 className={`text-xl font-semibold ${product?.status === 'inactive' ? 'text-gray-600' : 'text-gray-800'}`}>
-                    {getProductTitle(product)}
-                    {product?.status === 'inactive' && (
-                      <span className="ml-2 text-sm text-red-600 font-medium">(Lapsed)</span>
+                <div className="px-2 py-2">
+                  <div className="flex items-center gap-3 mb-2">
+                    {product?.provider_theme_color && (
+                      <div
+                        className="w-4 h-4 rounded-full"
+                        style={{ backgroundColor: product.provider_theme_color }}
+                      />
                     )}
-                  </h3>
+                    <h3 className={`text-xl font-semibold ${product?.status === 'inactive' ? 'text-gray-600' : 'text-gray-800'}`}>
+                      {getProductTitle(product)}
+                      {product?.status === 'inactive' && (
+                        <span className="ml-2 text-sm text-red-600 font-medium">(Lapsed)</span>
+                      )}
+                    </h3>
+                  </div>
                 </div>
-                <div className="overflow-x-auto product-table">
+                <div className="px-2 py-2">
+                  <div className="overflow-x-auto product-table">
                   <table className="w-full table-fixed divide-y divide-gray-300 landscape-table irr-history-table">
                     <colgroup>
                       <col className="w-[30%]" />
@@ -1819,6 +1822,7 @@ Available database dates: ${productHistory.portfolio_historical_irr.map((r: any)
                       )}
                     </tbody>
                   </table>
+                  </div>
                 </div>
               </div>
             );
