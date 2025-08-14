@@ -268,7 +268,7 @@ async def get_fund_products_with_owners(
         
         # Get all products that use these portfolios
         products_result = await db.fetch(
-            "SELECT * FROM client_products WHERE portfolio_id IN ($1:list)",
+            "SELECT * FROM client_products WHERE portfolio_id = ANY($1)",
             portfolio_ids
         )
         
@@ -280,7 +280,7 @@ async def get_fund_products_with_owners(
         
         # Get all product owner associations
         owner_assocs = await db.fetch(
-            "SELECT * FROM product_owner_products WHERE product_id IN ($1:list)",
+            "SELECT * FROM product_owner_products WHERE product_id = ANY($1)",
             product_ids
         )
         
@@ -301,14 +301,14 @@ async def get_fund_products_with_owners(
         
         # Get all owner details
         owners_result = await db.fetch(
-            "SELECT id, firstname, surname, known_as, status, created_at FROM product_owners WHERE id IN ($1:list)",
+            "SELECT id, firstname, surname, known_as, status, created_at FROM product_owners WHERE id = ANY($1)",
             owner_ids
         )
         owner_map = {owner["id"]: owner for owner in owners_result} if owners_result else {}
         
         # Create portfolio map for quick lookup
         portfolios_result = await db.fetch(
-            "SELECT * FROM portfolios WHERE id IN ($1:list)",
+            "SELECT * FROM portfolios WHERE id = ANY($1)",
             portfolio_ids
         )
         portfolio_map = {p["id"]: p for p in portfolios_result} if portfolios_result else {}

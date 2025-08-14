@@ -366,6 +366,17 @@ const FundDetails: React.FC = () => {
       }));
   };
 
+  // Handle product row click - navigate to product details
+  const handleProductClick = (product: ProductWithOwner) => {
+    navigate(`/products/${product.product_id}`, {
+      state: {
+        from: 'fund-details',
+        fundId: id,
+        fundName: fund?.fund_name || 'Fund Details'
+      }
+    });
+  };
+
   // CSV Export function - exports all data (StandardTable filtering is for display only)
   const exportToCSV = () => {
     if (productsWithOwners.length === 0) {
@@ -727,6 +738,7 @@ const FundDetails: React.FC = () => {
                 data={productsWithOwners}
                 columns={columns}
                 className="cursor-pointer"
+                onRowClick={handleProductClick}
               />
             )}
           </div>

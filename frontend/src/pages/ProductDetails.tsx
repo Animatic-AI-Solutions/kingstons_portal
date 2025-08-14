@@ -45,9 +45,21 @@ const ProductDetails: React.FC = () => {
         if (location.state.portfolioId && location.state.portfolioName) {
           trail.push({ path: '/definitions', label: 'Definitions' });
           trail.push({ path: '/definitions/portfolio-templates', label: 'Portfolios' });
-          trail.push({ 
-            path: `/definitions/portfolio-templates/${location.state.portfolioId}`, 
-            label: location.state.portfolioName 
+          trail.push({
+            path: `/definitions/portfolio-templates/${location.state.portfolioId}`,
+            label: location.state.portfolioName
+          });
+        }
+        return trail;
+      }
+      
+      // Handle fund details navigation
+      if (location.state.from === 'fund-details') {
+        if (location.state.fundId && location.state.fundName) {
+          trail.push({ path: '/definitions?tab=funds', label: 'Funds' });
+          trail.push({
+            path: `/definitions/funds/${location.state.fundId}`,
+            label: location.state.fundName
           });
         }
         return trail;
