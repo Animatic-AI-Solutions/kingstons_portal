@@ -1502,7 +1502,25 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                             } else {
                             }
                           }
-                          const fundRows = processedFunds.map((fund: any, fundIndex: number) => {
+                          
+                          // Sort funds to match SummaryTab ordering: cash funds last (unless Previous Funds exist)
+                          const sortedProcessedFunds = [...processedFunds].sort((a, b) => {
+                            // First: Check if either is "Previous Funds" (virtual) - these go last
+                            if (a.isVirtual && !b.isVirtual) return 1;
+                            if (!a.isVirtual && b.isVirtual) return -1;
+                            if (a.isVirtual && b.isVirtual) return 0;
+                            
+                            // Second: Check if either is "Cash" - cash goes after regular funds but before Previous Funds
+                            const aIsCash = a.fund_name.toLowerCase().includes('cash');
+                            const bIsCash = b.fund_name.toLowerCase().includes('cash');
+                            if (aIsCash && !bIsCash) return 1;
+                            if (!aIsCash && bIsCash) return -1;
+                            
+                            // Third: Regular funds in alphabetical order
+                            return a.fund_name.localeCompare(b.fund_name);
+                          });
+                          
+                          const fundRows = sortedProcessedFunds.map((fund: any, fundIndex: number) => {
                             // For Previous Funds, use previousFundsIRRData state; for regular funds, use fundIrrMaps
                             let fundIrrMap: Map<string, number | null>; // Changed type to allow null
                             // Determine if this fund should use the dynamically calculated previousFundsIRRData

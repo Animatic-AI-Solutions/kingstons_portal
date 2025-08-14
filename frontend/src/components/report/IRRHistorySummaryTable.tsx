@@ -98,14 +98,19 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
   // Organize products by type in the same order as SummaryTab, with inactive/lapsed products at the bottom
   const organizeProductsByType = (products: ProductIRRHistory[]): ProductIRRHistory[] => {
     if (!reportData?.productSummaries) {
-      // Fallback to simple status sorting if no reportData
-      const activeProducts = products.filter(product => 
+      // Fallback to simple status sorting if no reportData, but still apply cash/previous funds ordering
+      const activeProducts = products.filter(product =>
         product.status !== 'inactive' && product.status !== 'lapsed'
       );
-      const inactiveProducts = products.filter(product => 
+      const inactiveProducts = products.filter(product =>
         product.status === 'inactive' || product.status === 'lapsed'
       );
-      return [...activeProducts, ...inactiveProducts];
+      
+      // Apply cash and previous funds ordering to both active and inactive products
+      const sortedActiveProducts = applyCashAndPreviousFundsOrdering([...activeProducts]);
+      const sortedInactiveProducts = applyCashAndPreviousFundsOrdering([...inactiveProducts]);
+      
+      return [...sortedActiveProducts, ...sortedInactiveProducts];
     }
 
     // Create a map of product ID to product summary for quick lookup
@@ -154,7 +159,7 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
         // Convert to ProductPeriodSummary for sorting, then back to ProductIRRHistory
         const summariesToSort = groupedProducts[type].map(p => productSummaryMap.get(p.product_id)).filter(Boolean) as ProductPeriodSummary[];
         const sortedSummaries = sortProductsByOwnerOrder(summariesToSort, reportData.productOwnerOrder || []);
-        groupedProducts[type] = sortedSummaries.map(summary => 
+        groupedProducts[type] = sortedSummaries.map(summary =>
           groupedProducts[type].find(p => p.product_id === summary.id)!
         );
       } else {
@@ -162,10 +167,13 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
         // Convert to ProductPeriodSummary for sorting, then back to ProductIRRHistory
         const summariesToSort = groupedProducts[type].map(p => productSummaryMap.get(p.product_id)).filter(Boolean) as ProductPeriodSummary[];
         const sortedSummaries = sortProductsByOwnerOrder(summariesToSort, reportData.productOwnerOrder || []);
-        groupedProducts[type] = sortedSummaries.map(summary => 
+        groupedProducts[type] = sortedSummaries.map(summary =>
           groupedProducts[type].find(p => p.product_id === summary.id)!
         );
       }
+      
+      // Apply cash and previous funds ordering within each product type
+      groupedProducts[type] = applyCashAndPreviousFundsOrdering(groupedProducts[type]);
     });
 
     // Return products in the specified order
@@ -179,15 +187,36 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
 
     // Apply status-based sorting: active products first, then inactive/lapsed at the bottom
     // while maintaining original relative order within each group
-    const activeProducts = orderedProducts.filter(product => 
+    const activeProducts = orderedProducts.filter(product =>
       product.status !== 'inactive' && product.status !== 'lapsed'
     );
-    const inactiveProducts = orderedProducts.filter(product => 
+    const inactiveProducts = orderedProducts.filter(product =>
       product.status === 'inactive' || product.status === 'lapsed'
     );
     
     // Return active products first, then inactive/lapsed products
     return [...activeProducts, ...inactiveProducts];
+  };
+
+  // Helper function to apply cash and previous funds ordering (same logic as SummaryTab)
+  const applyCashAndPreviousFundsOrdering = (products: ProductIRRHistory[]): ProductIRRHistory[] => {
+    return [...products].sort((a, b) => {
+      // First: Check if either is "Previous Funds" entry - these go last
+      const aIsPreviousFunds = a.product_name.includes('Previous Funds');
+      const bIsPreviousFunds = b.product_name.includes('Previous Funds');
+      if (aIsPreviousFunds && !bIsPreviousFunds) return 1;
+      if (!aIsPreviousFunds && bIsPreviousFunds) return -1;
+      if (aIsPreviousFunds && bIsPreviousFunds) return 0;
+      
+      // Second: Check if either is "Cash" - cash goes after regular funds but before Previous Funds
+      const aIsCash = a.product_name.toLowerCase().includes('cash');
+      const bIsCash = b.product_name.toLowerCase().includes('cash');
+      if (aIsCash && !bIsCash) return 1;
+      if (!aIsCash && bIsCash) return -1;
+      
+      // Third: Regular products maintain their original order (no additional sorting)
+      return 0;
+    });
   };
 
   // Fetch IRR history summary data
@@ -321,12 +350,6 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
     });
     
     const uniqueProducts = Array.from(productMap.values());
-    console.log('🔍 [IRR SUMMARY TABLE DEBUG] Unique products detected:', {
-      totalProducts: uniqueProducts.length,
-      productNames: uniqueProducts.map(p => p.product_name),
-      previousFundsCount: uniqueProducts.filter(p => p.product_name.includes('Previous Funds')).length
-    });
-    
     return uniqueProducts;
   };
 
