@@ -521,27 +521,32 @@ async def create_available_portfolio(portfolio_data: PortfolioCreate, db = Depen
         
         # Add funds if provided
         if portfolio_data.funds:
-            for fund in portfolio_data.funds:
-                # Verify the fund exists
-                fund_exists = await db.fetchrow(
-                    "SELECT id FROM available_funds WHERE id = $1",
-                    fund.fund_id
-                )
-                
-                if not fund_exists:
-                    logger.warning(f"Fund {fund.fund_id} does not exist, skipping")
-                    continue
-                
-                # Add the fund to the portfolio generation
-                fund_response = await db.fetchrow(
-                    "INSERT INTO available_portfolio_funds (template_portfolio_generation_id, fund_id, target_weighting) VALUES ($1, $2, $3) RETURNING *",
-                    new_generation_id,
-                    fund.fund_id,
-                    fund.target_weighting
-                )
-                
-                if not fund_response:
-                    logger.warning(f"Failed to add fund {fund.fund_id} to portfolio generation {new_generation_id}")
+            try:
+                async with db.transaction():
+                    for fund in portfolio_data.funds:
+                        # Verify the fund exists
+                        fund_exists = await db.fetchrow(
+                            "SELECT id FROM available_funds WHERE id = $1",
+                            fund.fund_id
+                        )
+                        
+                        if not fund_exists:
+                            logger.warning(f"Fund {fund.fund_id} does not exist, skipping")
+                            continue
+                        
+                        # Add the fund to the portfolio generation
+                        fund_response = await db.fetchrow(
+                            "INSERT INTO available_portfolio_funds (template_portfolio_generation_id, fund_id, target_weighting) VALUES ($1, $2, $3) RETURNING *",
+                            new_generation_id,
+                            fund.fund_id,
+                            fund.target_weighting
+                        )
+                        
+                        if not fund_response:
+                            logger.warning(f"Failed to add fund {fund.fund_id} to portfolio generation {new_generation_id}")
+            except Exception as fund_error:
+                logger.error(f"Failed to add funds to portfolio generation {new_generation_id}: {str(fund_error)}")
+                # Continue without raising exception since portfolio template is already created
         
         # Return the new portfolio with ID
         return {
@@ -901,48 +906,58 @@ async def create_portfolio_generation(portfolio_id: int, generation_data: Genera
                 )
                 
                 if source_funds_response and len(source_funds_response) > 0:
-                    # Copy each fund to the new generation
-                    for source_fund in source_funds_response:
-                        source_fund = dict(source_fund)
-                        new_fund = {
-                            "template_portfolio_generation_id": new_generation_id,
-                            "fund_id": source_fund['fund_id'],
-                            "target_weighting": source_fund['target_weighting']
-                        }
-                        
-                        await db.execute(
-                            "INSERT INTO available_portfolio_funds (template_portfolio_generation_id, fund_id, target_weighting) VALUES ($1, $2, $3)",
-                            new_fund["template_portfolio_generation_id"],
-                            new_fund["fund_id"],
-                            new_fund["target_weighting"]
-                        )
+                    # Copy each fund to the new generation using transaction for safety
+                    try:
+                        async with db.transaction():
+                            for source_fund in source_funds_response:
+                                source_fund = dict(source_fund)
+                                new_fund = {
+                                    "template_portfolio_generation_id": new_generation_id,
+                                    "fund_id": source_fund['fund_id'],
+                                    "target_weighting": source_fund['target_weighting']
+                                }
+                                
+                                await db.execute(
+                                    "INSERT INTO available_portfolio_funds (template_portfolio_generation_id, fund_id, target_weighting) VALUES ($1, $2, $3)",
+                                    new_fund["template_portfolio_generation_id"],
+                                    new_fund["fund_id"],
+                                    new_fund["target_weighting"]
+                                )
+                    except Exception as copy_error:
+                        logger.error(f"Failed to copy funds from generation {generation_data.copy_from_generation_id}: {str(copy_error)}")
+                        raise HTTPException(status_code=500, detail=f"Failed to copy funds: {str(copy_error)}")
                     
                     logger.info(f"Copied {len(source_funds_response)} funds from generation {generation_data.copy_from_generation_id} to {new_generation_id}")
         elif generation_data.funds:
-            # Add new funds directly from the request
-            for fund in generation_data.funds:
-                # Verify the fund exists
-                fund_exists = await db.fetchrow(
-                    "SELECT id FROM available_funds WHERE id = $1",
-                    fund.fund_id
-                )
-                
-                if not fund_exists:
-                    logger.warning(f"Fund {fund.fund_id} does not exist, skipping")
-                    continue
-                
-                # Add the fund to the portfolio generation
-                fund_response = await db.fetchrow(
-                    "INSERT INTO available_portfolio_funds (template_portfolio_generation_id, fund_id, target_weighting) VALUES ($1, $2, $3) RETURNING *",
-                    new_generation_id,
-                    fund.fund_id,
-                    fund.target_weighting
-                )
-                
-                if not fund_response:
-                    logger.warning(f"Failed to add fund {fund.fund_id} to generation {new_generation_id}")
-                    
-            logger.info(f"Added {len(generation_data.funds)} funds to generation {new_generation_id}")
+            # Add new funds directly from the request using transaction for safety
+            try:
+                async with db.transaction():
+                    for fund in generation_data.funds:
+                        # Verify the fund exists
+                        fund_exists = await db.fetchrow(
+                            "SELECT id FROM available_funds WHERE id = $1",
+                            fund.fund_id
+                        )
+                        
+                        if not fund_exists:
+                            logger.warning(f"Fund {fund.fund_id} does not exist, skipping")
+                            continue
+                        
+                        # Add the fund to the portfolio generation
+                        fund_response = await db.fetchrow(
+                            "INSERT INTO available_portfolio_funds (template_portfolio_generation_id, fund_id, target_weighting) VALUES ($1, $2, $3) RETURNING *",
+                            new_generation_id,
+                            fund.fund_id,
+                            fund.target_weighting
+                        )
+                        
+                        if not fund_response:
+                            logger.warning(f"Failed to add fund {fund.fund_id} to generation {new_generation_id}")
+                            
+                logger.info(f"Added {len(generation_data.funds)} funds to generation {new_generation_id}")
+            except Exception as fund_error:
+                logger.error(f"Failed to add funds to generation {new_generation_id}: {str(fund_error)}")
+                raise HTTPException(status_code=500, detail=f"Failed to add funds to generation: {str(fund_error)}")
         
         # Return the newly created generation
         return dict(generation_response)
@@ -1045,38 +1060,105 @@ async def update_generation(
         
         # Handle fund updates if provided
         if hasattr(update_data, 'funds') and update_data.funds is not None:
-            # First, delete existing funds for this generation
-            await db.execute(
-                "DELETE FROM available_portfolio_funds WHERE template_portfolio_generation_id = $1",
-                generation_id
-            )
-            
-            logger.info(f"Removed existing funds from generation {generation_id}")
-            
-            # Add the new funds
-            for fund in update_data.funds:
-                # Verify the fund exists
-                fund_exists = await db.fetchrow(
-                    "SELECT id FROM available_funds WHERE id = $1",
-                    fund.fund_id
+            try:
+                logger.info(f"Starting fund update for generation {generation_id}")
+                
+                # Check current funds before deletion
+                existing_funds = await db.fetch(
+                    "SELECT id, fund_id, target_weighting FROM available_portfolio_funds WHERE template_portfolio_generation_id = $1",
+                    generation_id
                 )
+                logger.info(f"Found {len(existing_funds) if existing_funds else 0} existing funds for generation {generation_id}")
                 
-                if not fund_exists:
-                    logger.warning(f"Fund {fund.fund_id} does not exist, skipping")
-                    continue
-                
-                # Add the fund to the portfolio generation
-                fund_response = await db.fetchrow(
-                    "INSERT INTO available_portfolio_funds (template_portfolio_generation_id, fund_id, target_weighting) VALUES ($1, $2, $3) RETURNING *",
-                    generation_id,
-                    fund.fund_id,
-                    fund.target_weighting
-                )
-                
-                if not fund_response:
-                    logger.warning(f"Failed to add fund {fund.fund_id} to generation {generation_id}")
-            
-            logger.info(f"Added {len(update_data.funds)} funds to generation {generation_id}")
+                # Use a transaction to ensure atomicity
+                async with db.transaction():
+                    # Delete existing funds for this generation (PostgreSQL compatible approach)
+                    await db.execute(
+                        "DELETE FROM available_portfolio_funds WHERE template_portfolio_generation_id = $1",
+                        generation_id
+                    )
+                    
+                    # Use the pre-counted existing funds for logging
+                    delete_result = len(existing_funds) if existing_funds else 0
+                    logger.info(f"Deleted {delete_result} existing funds from generation {generation_id}")
+                    
+                    # Validate all funds exist before inserting any
+                    valid_funds = []
+                    for fund in update_data.funds:
+                        fund_exists = await db.fetchrow(
+                            "SELECT id FROM available_funds WHERE id = $1",
+                            fund.fund_id
+                        )
+                        
+                        if not fund_exists:
+                            logger.warning(f"Fund {fund.fund_id} does not exist, skipping")
+                            continue
+                        
+                        valid_funds.append(fund)
+                    
+                    logger.info(f"Validated {len(valid_funds)} funds for insertion")
+                    
+                    # Add the valid funds with robust error handling
+                    inserted_count = 0
+                    for i, fund in enumerate(valid_funds):
+                        try:
+                            fund_response = await db.fetchrow(
+                                "INSERT INTO available_portfolio_funds (template_portfolio_generation_id, fund_id, target_weighting) VALUES ($1, $2, $3) RETURNING id",
+                                generation_id,
+                                fund.fund_id,
+                                fund.target_weighting
+                            )
+                            
+                            if fund_response:
+                                inserted_count += 1
+                                logger.debug(f"Inserted fund {fund.fund_id} with new ID {fund_response['id']}")
+                            else:
+                                logger.warning(f"Failed to add fund {fund.fund_id} to generation {generation_id} - no response")
+                                
+                        except Exception as insert_error:
+                            error_msg = str(insert_error).lower()
+                            if "duplicate key" in error_msg and "primary key" in error_msg:
+                                logger.error(f"Primary key constraint violation inserting fund {fund.fund_id}: {str(insert_error)}")
+                                logger.error("This indicates a sequence synchronization issue - attempting recovery")
+                                
+                                # Try to resync sequence within the transaction
+                                try:
+                                    max_id_result = await db.fetchval("SELECT COALESCE(MAX(id), 0) FROM available_portfolio_funds")
+                                    next_val = (max_id_result or 0) + 1
+                                    await db.execute(
+                                        f"ALTER SEQUENCE available_portfolio_funds_id_seq RESTART WITH {next_val}"
+                                    )
+                                    logger.info(f"Resynced sequence to start at {next_val}")
+                                    
+                                    # Retry the insert
+                                    fund_response = await db.fetchrow(
+                                        "INSERT INTO available_portfolio_funds (template_portfolio_generation_id, fund_id, target_weighting) VALUES ($1, $2, $3) RETURNING id",
+                                        generation_id,
+                                        fund.fund_id,
+                                        fund.target_weighting
+                                    )
+                                    
+                                    if fund_response:
+                                        inserted_count += 1
+                                        logger.info(f"Successfully inserted fund {fund.fund_id} after sequence resync with ID {fund_response['id']}")
+                                    else:
+                                        logger.error(f"Failed to insert fund {fund.fund_id} even after sequence resync")
+                                        raise Exception(f"Fund insertion failed after sequence resync for fund {fund.fund_id}")
+                                        
+                                except Exception as recovery_error:
+                                    logger.error(f"Failed to recover from sequence sync issue: {str(recovery_error)}")
+                                    raise
+                            else:
+                                logger.error(f"Error inserting fund {i+1}/{len(valid_funds)} (fund_id={fund.fund_id}) to generation {generation_id}: {str(insert_error)}")
+                                logger.error(f"Error details: {type(insert_error).__name__}")
+                                raise
+                    
+                    logger.info(f"Successfully inserted {inserted_count}/{len(valid_funds)} funds to generation {generation_id}")
+                    
+            except Exception as transaction_error:
+                logger.error(f"Transaction failed during fund updates for generation {generation_id}: {str(transaction_error)}")
+                logger.error(f"Error type: {type(transaction_error).__name__}")
+                raise HTTPException(status_code=500, detail=f"Failed to update generation funds: {str(transaction_error)}")
         
         # Get the updated generation to return
         updated_generation = await db.fetchrow(
