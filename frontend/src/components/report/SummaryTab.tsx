@@ -182,32 +182,32 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
   return (
     <div className="print:block report-section" id="summary-tab-panel" role="tabpanel" aria-labelledby="summary-tab">
       {/* Portfolio Performance Cards */}
-      <div className="mb-1 print:mb-0 bg-white px-2 py-2 product-card print-clean investment-performance-container">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 portfolio-performance-grid">
+      <div className="mb-1 print:mb-0 bg-white px-2 py-2 print:px-1 print:py-1 product-card print-clean investment-performance-container">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 print:gap-1 portfolio-performance-grid">
 
           {/* Total Portfolio Value */}
           {reportData.totalValuation !== null && (
-            <div className="bg-green-50 rounded-lg p-3 portfolio-performance-card relative flex flex-col justify-center items-center h-16">
-              <div className="text-sm font-medium text-green-700 mb-2">Total Portfolio Value</div>
-              <div className="text-2xl font-bold text-black">
+            <div className="bg-green-50 rounded-lg p-3 print:p-0.5 print:rounded-sm portfolio-performance-card relative flex flex-col print:flex-row print:items-center justify-center items-center h-16 print:h-4">
+              <div className="text-sm print:text-[9px] print:mr-1 font-medium text-green-700 mb-2 print:mb-0">Total Portfolio Value:</div>
+              <div className="text-2xl print:text-[10px] font-bold text-black">
                 {formatCurrencyWithTruncation(reportData.totalValuation)}
               </div>
             </div>
           )}
 
           {/* Total Profit Made */}
-          <div className="bg-blue-50 rounded-lg p-3 portfolio-performance-card relative flex flex-col justify-center items-center h-16">
-            <div className="text-sm font-medium text-blue-700 mb-2">Total Profit Made</div>
+          <div className="bg-blue-50 rounded-lg p-3 print:p-0.5 print:rounded-sm portfolio-performance-card relative flex flex-col print:flex-row print:items-center justify-center items-center h-16 print:h-4">
+            <div className="text-sm print:text-[9px] print:mr-1 font-medium text-blue-700 mb-2 print:mb-0">Total Profit Made:</div>
             {(() => {
-              const totalGains = reportData.productSummaries.reduce((sum, product) => 
+              const totalGains = reportData.productSummaries.reduce((sum, product) =>
                 sum + (product.current_valuation || 0) + (product.total_withdrawal || 0) + (product.total_product_switch_out || 0) + (product.total_fund_switch_out || 0), 0
               );
-              const totalCosts = reportData.productSummaries.reduce((sum, product) => 
+              const totalCosts = reportData.productSummaries.reduce((sum, product) =>
                 sum + (product.total_investment || 0) + (product.total_regular_investment || 0) + (product.total_tax_uplift || 0) + (product.total_product_switch_in || 0) + (product.total_fund_switch_in || 0), 0
               );
               const totalProfit = totalGains - totalCosts;
               return (
-                <div className="text-2xl font-bold text-black">
+                <div className="text-2xl print:text-[10px] font-bold text-black">
                   {formatCurrencyWithTruncation(totalProfit)}
                 </div>
               );
@@ -215,19 +215,19 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
           </div>
 
           {/* Total Current Average Returns */}
-          <div className="bg-purple-50 rounded-lg p-3 portfolio-performance-card relative flex flex-col justify-center items-center h-16">
-            <div className="text-sm font-medium text-purple-700 mb-2">Total Current Average Returns</div>
+          <div className="bg-purple-50 rounded-lg p-3 print:p-0.5 print:rounded-sm portfolio-performance-card relative flex flex-col print:flex-row print:items-center justify-center items-center h-16 print:h-4">
+            <div className="text-sm print:text-[9px] print:mr-1 font-medium text-purple-700 mb-2 print:mb-0">Total Current Average Returns:</div>
             {loading.totalIRR ? (
-              <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600"></div>
-                <div className="text-xs text-purple-600">Calculating...</div>
+              <div className="flex items-center gap-2 print:gap-0.5">
+                <div className="animate-spin rounded-full h-3 w-3 print:h-1.5 print:w-1.5 border-b-2 print:border-b-1 border-purple-600"></div>
+                <div className="text-xs print:text-[8px] text-purple-600">Calculating...</div>
               </div>
             ) : realTimeTotalIRR !== null && realTimeTotalIRR !== undefined && !isNaN(realTimeTotalIRR) ? (
-              <div className="text-2xl font-bold text-black">
+              <div className="text-2xl print:text-[10px] font-bold text-black">
                 {formatIrrWithPrecision(realTimeTotalIRR)}
               </div>
             ) : (
-              <div className="text-2xl font-bold text-black">N/A</div>
+              <div className="text-2xl print:text-[10px] font-bold text-black">N/A</div>
             )}
           </div>
         </div>

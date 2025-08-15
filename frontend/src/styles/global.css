@@ -279,6 +279,48 @@
     box-shadow: none !important;
     outline: none !important;
     margin-bottom: 0.25rem !important; /* Reduce spacing in print for better alignment */
+    padding: 0.25rem !important; /* Reduce container padding */
+  }
+  
+  /* Reset portfolio performance cards to match web view in print */
+  .portfolio-performance-card {
+    height: 4rem !important; /* 64px - same as web view h-16 */
+    padding: 0.75rem !important; /* 12px - same as web view p-3 */
+    flex-direction: column !important; /* Vertical layout like web view */
+    justify-content: center !important;
+    align-items: center !important;
+    border-radius: 0.5rem !important; /* Same as web view rounded-lg */
+  }
+  
+  /* Portfolio performance grid spacing - same as web view */
+  .portfolio-performance-grid {
+    gap: 1rem !important; /* 16px - same as web view gap-4 */
+  }
+  
+  /* Text sizes matching web view */
+  .portfolio-performance-card > div:first-child {
+    font-size: 14px !important; /* Same as web view text-sm */
+    margin-right: 0 !important;
+    margin-bottom: 0.5rem !important; /* Same as web view mb-2 */
+    font-weight: 500 !important;
+  }
+  
+  .portfolio-performance-card > div:last-child,
+  .portfolio-performance-card .text-2xl {
+    font-size: 24px !important; /* Same as web view text-2xl */
+    font-weight: 700 !important; /* Same as web view font-bold */
+    margin: 0 !important;
+  }
+  
+  /* Loading state matching web view */
+  .portfolio-performance-card .animate-spin {
+    height: 0.75rem !important; /* 12px - same as web view h-3 w-3 */
+    width: 0.75rem !important;
+    border-width: 2px !important;
+  }
+  
+  .portfolio-performance-card .text-xs {
+    font-size: 12px !important; /* Same as web view text-xs */
   }
   
   /* Make Portfolio Summary column headers smaller in print only */
