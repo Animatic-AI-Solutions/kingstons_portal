@@ -701,6 +701,12 @@
     padding-top: 1rem !important;
     padding-bottom: 1rem !important;
   }
+  /* Fix product name font consistency - ensure product card h3 elements match web view */
+  .product-card h3,
+  .product-card h3.text-xl.font-semibold,
+  h3.text-xl.font-semibold {
+    font-weight: 600 !important; /* font-semibold equivalent - matches web view */
+  }
 }
 
 /* Comprehensive print-only normalization for all report titles */
