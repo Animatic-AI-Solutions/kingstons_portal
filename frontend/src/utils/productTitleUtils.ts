@@ -98,18 +98,18 @@ export const generateDefaultProductTitle = (product: ProductPeriodSummary, optio
     title += ` - ${simplifiedType}`;
   }
   
-  // Only include owner nickname if not omitted
+  // Add plan number if available (moved before owner nickname)
+  const planNumber = extractPlanNumber(product);
+  if (planNumber) {
+    title += ` - ${planNumber}`;
+  }
+  
+  // Only include owner nickname if not omitted (moved after plan number)
   if (!options?.omitOwner) {
     const ownerNickname = extractProductOwnerNickname(product);
     if (ownerNickname) {
       title += ` - ${ownerNickname}`;
     }
-  }
-  
-  // Add plan number if available
-  const planNumber = extractPlanNumber(product);
-  if (planNumber) {
-    title += ` - ${planNumber}`;
   }
   
   return title;
