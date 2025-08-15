@@ -299,16 +299,16 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
       <div ref={printRef} className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 print:bg-white print:p-4">
         
         {/* Print-only Company Logo Header */}
-        <div className="hidden print:block mb-12 text-center">
-          <img 
-            src="/images/Company logo.svg" 
-            alt="Kingstons Logo" 
-            className="mx-auto h-16 w-auto mb-8"
+        <div className="hidden print:block mb-3 text-center">
+          <img
+            src="/images/Company logo.svg"
+            alt="Kingstons Logo"
+            className="mx-auto h-16 w-auto mb-2"
           />
         </div>
 
         {/* Report Header */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-3">
           <div className="relative inline-block">
             <h1 className="text-3xl font-light text-slate-800 mb-1 tracking-wide roboto-title-large">
               Investment Summary
