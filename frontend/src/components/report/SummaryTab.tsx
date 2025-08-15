@@ -507,6 +507,23 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
         </div>
       </div>
 
+      {/* Print-only Warning Text - appears only in print view */}
+      <div className="hidden print:block mt-0.5 mb-1 px-2">
+        <div className="disclaimer-text">
+          <p>
+            The original investment, percentage rate of return and profit measures result from the products displayed in the report and not
+            previous investments unless a provider switch has been completed.
+            The method of calculating percentage returns is based on the timing of your investments, withdrawals and switches to the nearest
+            full month and may result in under or over estimates of these returns over shorter time periods.
+            Please note that past performance is not any guarantee of future performance and your capital is at risk in the products displayed.
+            The Kingstons risk scores used are a guide and risk takes many different forms.
+            In general, the product returns are calculated including all ongoing charges for advice, investment charges and provider or platform
+            fees. They do not include initial advice fees and ongoing advice fees where these ongoing fees are paid directly to Kingstons.
+            Variations may occur in cash and individual fund percentage returns due to the way product and platform providers take fees.
+          </p>
+        </div>
+      </div>
+
       {/* Individual Product Cards */}
       <div className="mb-8 print:break-before-page">
         {organizeProductsByType(reportData.productSummaries)
