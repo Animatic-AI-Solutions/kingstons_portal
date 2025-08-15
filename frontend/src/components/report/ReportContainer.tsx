@@ -147,22 +147,59 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
       return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
     };
     
-    // Auto-format to nickname + lastname with "&" separator and capitalized names
-    const formatToNicknameLast = (fullName: string): string => {
+    // Parse full names into first name and surname
+    const parseFullName = (fullName: string): { firstName: string; surname: string } => {
       const parts = fullName.trim().split(' ');
       if (parts.length === 1) {
-        return capitalizeFirstLetter(parts[0]);
+        return { firstName: capitalizeFirstLetter(parts[0]), surname: '' };
       }
       
-      // For multiple parts, use first name (nickname) + last name, both capitalized
-      const firstname = capitalizeFirstLetter(parts[0]);
-      const lastname = capitalizeFirstLetter(parts[parts.length - 1]);
-      return `${firstname} ${lastname}`;
+      // For multiple parts, use first name + last name, both capitalized
+      const firstName = capitalizeFirstLetter(parts[0]);
+      const surname = capitalizeFirstLetter(parts[parts.length - 1]);
+      return { firstName, surname };
     };
 
-    return reportData.productOwnerNames.length > 0 
-      ? reportData.productOwnerNames.map(name => formatToNicknameLast(name)).join(' & ')
-      : '';
+    if (reportData.productOwnerNames.length === 0) {
+      return '';
+    }
+
+    // Parse all names
+    const parsedNames = reportData.productOwnerNames.map(parseFullName);
+    
+    // Group by surname
+    const surnameGroups = new Map<string, string[]>();
+    
+    parsedNames.forEach(({ firstName, surname }) => {
+      if (!surnameGroups.has(surname)) {
+        surnameGroups.set(surname, []);
+      }
+      surnameGroups.get(surname)!.push(firstName);
+    });
+    
+    // Format each surname group
+    const formattedGroups: string[] = [];
+    
+    surnameGroups.forEach((firstNames, surname) => {
+      if (firstNames.length === 1) {
+        // Single person with this surname
+        if (surname) {
+          formattedGroups.push(`${firstNames[0]} ${surname}`);
+        } else {
+          formattedGroups.push(firstNames[0]);
+        }
+      } else {
+        // Multiple people with same surname - combine first names
+        const joinedFirstNames = firstNames.join(' & ');
+        if (surname) {
+          formattedGroups.push(`${joinedFirstNames} ${surname}`);
+        } else {
+          formattedGroups.push(joinedFirstNames);
+        }
+      }
+    });
+    
+    return formattedGroups.join(' & ');
   }, [reportData.productOwnerNames, customProductOwnerNames]);
 
   // PERFORMANCE OPTIMIZATION: Memoized event handlers

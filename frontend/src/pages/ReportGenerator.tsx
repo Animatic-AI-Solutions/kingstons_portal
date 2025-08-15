@@ -433,15 +433,13 @@ const ReportGenerator: React.FC = () => {
     
     products.forEach((product, index) => {
 
-      // Method 1: Extract from product_owner_name string (existing logic)
+      // Method 1: Extract from product_owner_name string (keep full names for surname grouping)
       if (product.product_owner_name) {
         const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
 
         ownerNames.forEach(ownerName => {
-          const nameParts = ownerName.trim().split(' ');
-          const nickname = nameParts[0]; // Take first part (nickname)
-          if (nickname) {
-            ownerSet.add(nickname);
+          if (ownerName) {
+            ownerSet.add(ownerName); // Keep full name instead of just nickname
 
           }
         });
@@ -2503,11 +2501,11 @@ Please select a different valuation date or ensure all active funds have valuati
               earliestTransactionDate: earliestDate,
               selectedValuationDate: selectedValuationDate,
               productOwnerNames: (() => {
-                console.log('🔍 [PRODUCT OWNER DEBUG] Raw product owner names:', productSummaryResults.map(p => ({ 
-                  id: p.id, 
-                  name: p.product_name, 
+                console.log('🔍 [PRODUCT OWNER DEBUG] Raw product owner names:', productSummaryResults.map(p => ({
+                  id: p.id,
+                  name: p.product_name,
                   owner: p.product_owner_name,
-                  ownerType: typeof p.product_owner_name 
+                  ownerType: typeof p.product_owner_name
                 })));
                 
                 const allNames = productSummaryResults
@@ -2524,7 +2522,7 @@ Please select a different valuation date or ensure all active funds have valuati
                 
                 const uniqueNames = Array.from(new Set(splitNames)).sort();
                 
-                console.log('🔍 [PRODUCT OWNER DEBUG] Final unique names:', uniqueNames);
+                console.log('🔍 [PRODUCT OWNER DEBUG] Final unique full names:', uniqueNames);
                 
                 return uniqueNames;
               })(),
@@ -2578,11 +2576,11 @@ Please select a different valuation date or ensure all active funds have valuati
           return productOwnerOrder;
         })(), // Use custom order instead of alphabetical
         productOwnerNames: (() => {
-          console.log('🔍 [PRODUCT OWNER DEBUG - FINAL] Raw product owner names:', productSummaryResults.map(p => ({ 
-            id: p.id, 
-            name: p.product_name, 
+          console.log('🔍 [PRODUCT OWNER DEBUG - FINAL] Raw product owner names:', productSummaryResults.map(p => ({
+            id: p.id,
+            name: p.product_name,
             owner: p.product_owner_name,
-            ownerType: typeof p.product_owner_name 
+            ownerType: typeof p.product_owner_name
           })));
           
           const allNames = productSummaryResults
@@ -2597,17 +2595,10 @@ Please select a different valuation date or ensure all active funds have valuati
           
           console.log('🔍 [PRODUCT OWNER DEBUG - FINAL] After splitting:', splitNames);
           
-          // Extract nicknames only (first word) to match productOwnerOrder format
-          const nicknames = splitNames
-            .map(fullName => {
-              const nameParts = fullName.trim().split(' ');
-              return nameParts[0]; // Take first part (nickname)
-            })
-            .filter(nickname => nickname !== '');
+          // Keep full names instead of extracting just nicknames
+          const uniqueNames = Array.from(new Set(splitNames)).sort();
           
-          const uniqueNames = Array.from(new Set(nicknames)).sort();
-          
-          console.log('🔍 [PRODUCT OWNER DEBUG - FINAL] Final unique nicknames (matching productOwnerOrder):', uniqueNames);
+          console.log('🔍 [PRODUCT OWNER DEBUG - FINAL] Final unique full names:', uniqueNames);
           
           return uniqueNames;
         })(),
