@@ -205,21 +205,99 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       }
       /* Print-specific styles */
       @media print {
-        .irr-history-table {
-          font-size: 9px !important;
+        /* Product card containers - prevent breaking across pages */
+        .product-card {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+          margin-bottom: 20px !important;
         }
+        
+        /* Table container improvements */
+        .product-table {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+        }
+        
+        /* More reasonable font sizes for print */
+        .irr-history-table {
+          font-size: 10px !important;
+          table-layout: auto !important; /* Let browser calculate optimal widths */
+          width: 100% !important;
+        }
+        
         .irr-history-table th,
         .irr-history-table td {
-          font-size: 8px !important;
-          line-height: 1.0 !important;
-          padding: 1px 2px !important;
+          font-size: 9px !important;
+          line-height: 1.2 !important;
+          padding: 2px 4px !important; /* More reasonable padding */
         }
-        /* Ensure Fund Name column wraps properly in print */
+        
+        /* Fund Name column - allow proper text wrapping */
         .irr-history-table th:nth-child(1),
         .irr-history-table td:nth-child(1) {
           white-space: normal !important;
           overflow: visible !important;
           text-overflow: clip !important;
+          min-width: 120px !important; /* Ensure minimum readable width */
+          max-width: none !important;
+        }
+        
+        /* Risk column - ensure it doesn't get too narrow */
+        .irr-history-table th:nth-child(2),
+        .irr-history-table td:nth-child(2) {
+          min-width: 40px !important;
+        }
+        
+        /* Current Average Return column */
+        .irr-history-table th:nth-child(3),
+        .irr-history-table td:nth-child(3) {
+          min-width: 60px !important;
+        }
+        
+        /* Historical IRR columns - ensure consistent width */
+        .irr-history-table th:nth-child(n+4),
+        .irr-history-table td:nth-child(n+4) {
+          min-width: 55px !important;
+          text-align: right !important;
+          padding-right: 6px !important;
+        }
+        
+        /* Override colgroup percentages for print */
+        .irr-history-table colgroup col {
+          width: auto !important;
+        }
+        
+        /* Keep minimal styling for headers */
+        .irr-history-table th {
+          font-weight: bold !important;
+        }
+        
+        /* Handle long product titles better in print */
+        .product-card h3 {
+          font-size: 11px !important;
+          line-height: 1.3 !important;
+          margin-bottom: 8px !important;
+        }
+        
+        /* History Summary Table specific print styling - align columns with product cards */
+        .irr-history-section .irr-history-table {
+          /* History Summary has different column structure - no "Current Average Return" column */
+          /* Need to adjust widths to match product card alignment */
+        }
+        
+        .irr-history-section .irr-history-table th:nth-child(1),
+        .irr-history-section .irr-history-table td:nth-child(1) {
+          min-width: 120px !important; /* Product name - same as Fund Name */
+        }
+        
+        .irr-history-section .irr-history-table th:nth-child(2),
+        .irr-history-section .irr-history-table td:nth-child(2) {
+          min-width: 100px !important; /* Risk column - wider to compensate for missing Current Average Return */
+        }
+        
+        .irr-history-section .irr-history-table th:nth-child(n+3),
+        .irr-history-section .irr-history-table td:nth-child(n+3) {
+          min-width: 55px !important; /* Historical dates - same as product cards */
         }
       }
     `;

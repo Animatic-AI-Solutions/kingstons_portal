@@ -522,7 +522,7 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
         <div className="px-2 py-2">
           <h2 className="text-lg font-semibold text-gray-900 mb-2">History Summary</h2>
           <div className="overflow-x-auto product-table">
-            <table className="w-full table-fixed divide-y divide-gray-300 landscape-table">
+            <table className="w-full table-fixed divide-y divide-gray-300 landscape-table irr-history-table">
               <colgroup>
                 <col className="w-[30%]" />
                 <col className="w-[10%]" />
@@ -594,10 +594,10 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
                             />
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className="text-base leading-tight">
+                            <div className="text-sm leading-tight">
                               {getEffectiveProductTitle(product)}
                               {isLapsed && (
-                                <span className="ml-2 text-base text-red-600 font-medium">(Lapsed)</span>
+                                <span className="ml-2 text-sm text-red-600 font-medium">(Lapsed)</span>
                               )}
                             </div>
                           </div>

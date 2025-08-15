@@ -188,7 +188,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
 
           {/* Total Portfolio Value */}
           {reportData.totalValuation !== null && (
-            <div className="bg-green-50 rounded-lg p-3 portfolio-performance-card relative flex flex-col justify-center items-center h-24">
+            <div className="bg-green-50 rounded-lg p-3 portfolio-performance-card relative flex flex-col justify-center items-center h-16">
               <div className="text-sm font-medium text-green-700 mb-2">Total Portfolio Value</div>
               <div className="text-2xl font-bold text-black">
                 {formatCurrencyWithTruncation(reportData.totalValuation)}
@@ -197,7 +197,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
           )}
 
           {/* Total Profit Made */}
-          <div className="bg-blue-50 rounded-lg p-3 portfolio-performance-card relative flex flex-col justify-center items-center h-24">
+          <div className="bg-blue-50 rounded-lg p-3 portfolio-performance-card relative flex flex-col justify-center items-center h-16">
             <div className="text-sm font-medium text-blue-700 mb-2">Total Profit Made</div>
             {(() => {
               const totalGains = reportData.productSummaries.reduce((sum, product) => 
@@ -216,7 +216,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
           </div>
 
           {/* Total Current Average Returns */}
-          <div className="bg-purple-50 rounded-lg p-3 portfolio-performance-card relative flex flex-col justify-center items-center h-24">
+          <div className="bg-purple-50 rounded-lg p-3 portfolio-performance-card relative flex flex-col justify-center items-center h-16">
             <div className="text-sm font-medium text-purple-700 mb-2">Total Current Average Returns</div>
             {loading.totalIRR ? (
               <div className="flex items-center gap-2">
