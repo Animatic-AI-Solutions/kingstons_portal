@@ -216,6 +216,30 @@
     background: white !important;
   }
   
+  /* Reduce top padding/margin for print view */
+  body, html {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+  
+  /* Reduce top spacing on main page containers */
+  .min-h-screen,
+  main,
+  .main-content,
+  .page-container {
+    margin-top: 0 !important;
+    padding-top: 0.5rem !important;
+  }
+  
+  /* Reduce top spacing on report containers */
+  .report-container,
+  .display-page,
+  [class*="report"],
+  [class*="display"] {
+    margin-top: 0 !important;
+    padding-top: 0.25rem !important;
+  }
+  
   .print-hide {
     display: none !important;
   }
