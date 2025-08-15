@@ -631,6 +631,7 @@ export class PrintService implements IPrintService {
 
   /**
    * Get CSS for page numbering based on options
+   * Uses a more reliable approach than @page margin boxes
    */
   private getPageNumberingCSS(options: PrintOptions): string {
     const pageOptions = options.pageNumbers;
@@ -642,72 +643,49 @@ export class PrintService implements IPrintService {
       day: 'numeric'
     });
     
-    let pageNumberCSS = '';
-    
-    // If page numbers are enabled, add page number styling
-    if (pageOptions?.enabled) {
-      const position = pageOptions.position || 'bottom-right';
-      const format = pageOptions.format || 'page-only';
-      const fontSize = pageOptions.fontSize || '10px';
-      const color = pageOptions.color || '#666';
-      const customFormat = pageOptions.customFormat || 'Page {page}';
-      
-      // Generate content based on format
-      let content = '"Page " counter(page)';
-      if (format === 'page-total') {
-        content = '"Page " counter(page) " of " counter(pages)';
-      } else if (format === 'custom' && customFormat) {
-        content = `"${customFormat.replace('{page}', '" counter(page) "').replace('{total}', '" counter(pages) "')}"`;
-      }
-      
-      // Generate position-specific CSS
-      const positionMap = {
-        'top-left': '@top-left',
-        'top-center': '@top-center', 
-        'top-right': '@top-right',
-        'bottom-left': '@bottom-left',
-        'bottom-center': '@bottom-center',
-        'bottom-right': '@bottom-right'
-      };
-      
-      const cssPosition = positionMap[position];
-      
-      pageNumberCSS = `
-        /* Page numbers positioned at ${position} */
-        ${cssPosition} {
-          content: ${content};
-          font-size: ${fontSize};
-          font-family: Arial, sans-serif;
-          color: ${color};
-          margin: 0.1in 0.25in;
-        }
-      `;
-    }
-    
     return `
-      /* Initialize page counter */
-      body {
+      /* Go back to CSS @page approach with proper counter setup */
+      html {
         counter-reset: page;
       }
       
       @page {
+        size: A4 landscape;
+        margin: 0.75in 0.5in 0.75in 0.5in;
         counter-increment: page;
         
-        /* Current date on bottom left of each page */
+        /* Try @page margin boxes one more time with better setup */
         @bottom-left {
           content: "${currentDate}";
-          font-size: 10px;
           font-family: Arial, sans-serif;
+          font-size: 10px;
           color: #666;
-          margin: 0.1in 0.25in;
+          vertical-align: bottom;
         }
         
-        ${pageNumberCSS}
+        @bottom-right {
+          content: "Page " counter(page);
+          font-family: Arial, sans-serif;
+          font-size: 10px;
+          color: #666;
+          vertical-align: bottom;
+        }
       }
       
-      /* Ensure content doesn't overlap with page footer */
-      .report-content {
-        padding-bottom: 0.6in;
+      /* Remove the DOM footer approach */
+      .print-page-footer {
+        display: none !important;
+      }
+      
+      @media print {
+        /* Clean print setup */
+        .print-content-container {
+          padding-bottom: 0.25in;
+        }
+        
+        .irr-history-section {
+          page-break-before: always;
+        }
       }
     `;
   }

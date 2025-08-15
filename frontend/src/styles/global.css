@@ -6,8 +6,8 @@
 /* Investment Summary Disclaimer - Subtle Professional Styling */
 .disclaimer-text {
   font-size: 9px !important;
-  color: #9ca3af !important;
-  opacity: 0.8 !important;
+  color: #6b7280 !important;
+  opacity: 0.9 !important;
   line-height: 1.2 !important;
   text-align: justify !important;
   font-family: ui-sans-serif, system-ui, sans-serif !important;
@@ -18,7 +18,7 @@
 
 .disclaimer-text p {
   font-size: 9px !important;
-  color: #9ca3af !important;
+  color: #6b7280 !important;
   line-height: 1.2 !important;
   margin: 0 0 2px 0 !important;
   padding: 0 !important;
@@ -46,8 +46,8 @@
   html body .disclaimer-text p {
     font-size: 9px !important;
     line-height: 1.2 !important;
-    color: #9ca3af !important;
-    opacity: 0.8 !important;
+    color: #6b7280 !important;
+    opacity: 0.9 !important;
   }
 }
 
@@ -286,6 +286,26 @@
   [class*="display"] {
     margin-top: 0 !important;
     padding-top: 0.25rem !important;
+  }
+  
+  /* Specifically target the main print container div in ReportContainer */
+  .w-full.mx-auto.px-4.sm\\:px-6.lg\\:px-8.py-8.print\\:bg-white.print\\:p-4,
+  [class*="py-8"][class*="print:p-4"],
+  .min-h-screen .w-full.mx-auto[class*="py-8"] {
+    padding-top: 0.25rem !important;
+  }
+  
+  /* More specific targeting for the printRef container */
+  .min-h-screen.bg-gray-50.print\\:bg-white > div:last-child,
+  .min-h-screen > div[class*="w-full"][class*="mx-auto"][class*="py-8"] {
+    padding-top: 0.25rem !important;
+    margin-top: 0 !important;
+  }
+  
+  /* Specific rule for the print content container */
+  .print-content-container {
+    padding-top: 0.25rem !important;
+    margin-top: 0 !important;
   }
   
   .print-hide {

@@ -117,17 +117,6 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
       const productCards = printRef.current?.querySelectorAll('.product-card');
       if (productCards) {
         console.log('🔍 [PRINT DEBUG] Found', productCards.length, 'product cards');
-        productCards.forEach((card, index) => {
-          const element = card as HTMLElement;
-          const style = element.getAttribute('style');
-          const computedStyle = window.getComputedStyle(element);
-          console.log(`🔍 [PRINT DEBUG] Card ${index + 1}:`, {
-            hasInlineStyle: !!style,
-            inlineStyle: style,
-            computedBorderLeft: computedStyle.borderLeft,
-            computedBorderColor: computedStyle.borderColor,
-          });
-        });
       }
       
       // Note: History loading is handled by individual components
@@ -296,7 +285,7 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
       </header>
 
       {/* Report Content */}
-      <div ref={printRef} className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 print:bg-white print:p-4">
+      <div ref={printRef} className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 print:bg-white print:p-4 print-content-container">
         
         {/* Print-only Company Logo Header */}
         <div className="hidden print:block mb-3 text-center">
@@ -400,6 +389,9 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
         <div className="tab-content print:block">
           {children}
         </div>
+        
+        {/* Print-only page footer - appears on every printed page */}
+        <div className="print-page-footer"></div>
       </div>
 
       {/* Product Title Modal */}
