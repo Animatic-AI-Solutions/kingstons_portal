@@ -142,7 +142,9 @@ export const ProductTitleModal: React.FC<ProductTitleModalProps> = ({ reportData
       const organizedProducts = organizeProductsByType(reportData.productSummaries);
       
       organizedProducts.forEach(product => {
-        const effectiveTitle = generateEffectiveProductTitle(product, customTitles);
+        const effectiveTitle = generateEffectiveProductTitle(product, customTitles, {
+          omitOwner: reportData.productOwnerOrder && reportData.productOwnerOrder.length <= 1
+        });
         currentModalTitles.set(product.id, effectiveTitle);
       });
       
@@ -164,7 +166,9 @@ export const ProductTitleModal: React.FC<ProductTitleModalProps> = ({ reportData
     modalTitles.forEach((title, productId) => {
       const product = reportData.productSummaries.find(p => p.id === productId);
       if (product) {
-        const defaultTitle = generateDefaultProductTitle(product);
+        const defaultTitle = generateDefaultProductTitle(product, {
+          omitOwner: reportData.productOwnerOrder && reportData.productOwnerOrder.length <= 1
+        });
         
         // Only save as custom if it's different from default and not empty
         if (title && title.trim() && title.trim() !== defaultTitle) {
@@ -183,7 +187,9 @@ export const ProductTitleModal: React.FC<ProductTitleModalProps> = ({ reportData
     
     // Reset to current effective titles (what user sees on screen)
     organizeProductsByType(reportData.productSummaries).forEach(product => {
-      const effectiveTitle = generateEffectiveProductTitle(product, customTitles);
+      const effectiveTitle = generateEffectiveProductTitle(product, customTitles, {
+        omitOwner: reportData.productOwnerOrder && reportData.productOwnerOrder.length <= 1
+      });
       resetTitles.set(product.id, effectiveTitle);
     });
     
@@ -203,7 +209,9 @@ export const ProductTitleModal: React.FC<ProductTitleModalProps> = ({ reportData
   const resetAllTitles = () => {
     const defaultTitles = new Map<number, string>();
     organizeProductsByType(reportData.productSummaries).forEach(product => {
-      defaultTitles.set(product.id, generateDefaultProductTitle(product));
+      defaultTitles.set(product.id, generateDefaultProductTitle(product, {
+        omitOwner: reportData.productOwnerOrder && reportData.productOwnerOrder.length <= 1
+      }));
     });
     setModalTitles(defaultTitles);
     setModalHasChanges(true);
@@ -257,8 +265,12 @@ export const ProductTitleModal: React.FC<ProductTitleModalProps> = ({ reportData
 
             {organizeProductsByType(reportData.productSummaries).map(product => {
               const currentTitle = modalTitles.get(product.id) || '';
-              const defaultTitle = generateDefaultProductTitle(product);
-              const effectiveTitle = generateEffectiveProductTitle(product, customTitles);
+              const defaultTitle = generateDefaultProductTitle(product, {
+          omitOwner: reportData.productOwnerOrder && reportData.productOwnerOrder.length <= 1
+        });
+              const effectiveTitle = generateEffectiveProductTitle(product, customTitles, {
+                omitOwner: reportData.productOwnerOrder && reportData.productOwnerOrder.length <= 1
+              });
               const isCustom = customTitles.has(product.id);
               const hasChanges = currentTitle !== effectiveTitle;
 

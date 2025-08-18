@@ -322,7 +322,9 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
   // Generate product title (simple function to avoid useCallback complexity)
   const getProductTitle = (product: ProductPeriodSummary | undefined): string => {
     if (!product) return 'Unknown Product';
-    return generateEffectiveProductTitle(product, customTitles);
+    return generateEffectiveProductTitle(product, customTitles, {
+      omitOwner: reportData.productOwnerOrder && reportData.productOwnerOrder.length <= 1
+    });
   };
   // Process chart data for visualization
   const chartData = useMemo(() => {

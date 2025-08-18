@@ -86,7 +86,9 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
     
     if (productSummary) {
       // Use the utility function with the full product details
-      return generateEffectiveProductTitle(productSummary, customTitles);
+      return generateEffectiveProductTitle(productSummary, customTitles, {
+        omitOwner: reportData?.productOwnerOrder && reportData.productOwnerOrder.length <= 1
+      });
     }
     
     // Fallback: use the original display name if product summary not found

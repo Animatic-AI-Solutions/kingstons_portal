@@ -13,37 +13,21 @@ export interface ProductOwner {
 
 /**
  * Gets the display name for a product owner.
- * Prioritizes "firstname surname" when both are available, 
- * falls back to known_as when firstname and surname are not both present.
+ * Uses the same logic as backend Pattern 2 (client_products.py):
+ * Prioritizes known_as over firstname, then combines with surname.
+ * This ensures consistency across all product owner display logic.
  */
 export const getProductOwnerDisplayName = (owner: ProductOwner): string => {
-  // Client-side computation with same logic as backend
-  const nameParts = [];
-  if (owner.firstname && owner.firstname.trim() !== '') {
-    nameParts.push(owner.firstname.trim());
-  }
-  if (owner.surname && owner.surname.trim() !== '') {
-    nameParts.push(owner.surname.trim());
-  }
+  // Use the same logic as backend: known_as or firstname, then combine with surname
+  const nickname = (owner.known_as && owner.known_as.trim()) || (owner.firstname && owner.firstname.trim()) || '';
+  const surname = (owner.surname && owner.surname.trim()) || '';
   
-  // If we have both firstname and surname, use them
-  if (nameParts.length === 2) {
-    return nameParts.join(' ');
-  }
-  
-  // If we only have one name part but known_as is available, prefer known_as
-  if (nameParts.length === 1 && owner.known_as && owner.known_as.trim() !== '') {
-    return owner.known_as.trim();
-  }
-  
-  // If we have one name part but no known_as, use the single name part
-  if (nameParts.length === 1) {
-    return nameParts[0];
-  }
-  
-  // If no firstname/surname, fall back to known_as
-  if (owner.known_as && owner.known_as.trim() !== '') {
-    return owner.known_as.trim();
+  if (nickname && surname) {
+    return `${nickname} ${surname}`;
+  } else if (nickname) {
+    return nickname;
+  } else if (surname) {
+    return surname;
   }
   
   return 'Unknown';

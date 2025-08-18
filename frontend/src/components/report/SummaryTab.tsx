@@ -323,7 +323,9 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                             )}
                             <div className="flex-1 min-w-0">
                               <div className="text-xs leading-tight">
-                                {generateEffectiveProductTitle(product, customTitles)}
+                                {generateEffectiveProductTitle(product, customTitles, { 
+                                  omitOwner: reportData.productOwnerOrder && reportData.productOwnerOrder.length <= 1 
+                                })}
                                 {product.status === 'inactive' && (
                                   <span className="ml-2 text-xs text-red-600 font-medium">(Lapsed)</span>
                                 )}
@@ -579,7 +581,9 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <h3 className={`text-xl font-semibold flex-1 min-w-0 ${isInactive ? 'text-gray-600' : 'text-gray-800'}`}>
-                          {generateEffectiveProductTitle(product, customTitles)}
+                          {generateEffectiveProductTitle(product, customTitles, { 
+                            omitOwner: reportData.productOwnerOrder && reportData.productOwnerOrder.length <= 1 
+                          })}
                         </h3>
                         {product.status === 'inactive' && (
                           <span className="text-sm text-red-600 font-medium whitespace-nowrap">(Lapsed)</span>

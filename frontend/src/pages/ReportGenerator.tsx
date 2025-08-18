@@ -12,6 +12,7 @@ import { createPortfolioFundsService } from '../services/portfolioFundsService';
 import { formatDateFallback, formatCurrencyFallback, formatPercentageFallback } from '../components/reports/shared/ReportFormatters';
 import { formatWeightedRisk } from '../utils/reportFormatters';
 import historicalIRRService from '../services/historicalIRRService';
+import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
 
 /* 
  * PERFORMANCE OPTIMIZATIONS - PHASE 1, 2 & 3 (Implemented ✅)
@@ -429,47 +430,31 @@ const ReportGenerator: React.FC = () => {
   const extractProductOwners = (products: Product[]): string[] => {
     const ownerSet = new Set<string>();
     
-
-    
-    products.forEach((product, index) => {
-
-      // Method 1: Extract from product_owner_name string (keep full names for surname grouping)
+    products.forEach((product) => {
+      // Method 1: Extract from product_owner_name string (backend-computed names)
       if (product.product_owner_name) {
         const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
-
         ownerNames.forEach(ownerName => {
           if (ownerName) {
-            ownerSet.add(ownerName); // Keep full name instead of just nickname
-
+            ownerSet.add(ownerName);
           }
         });
       }
       
       // Method 2: Extract from product_owners array (for joint products)
+      // Use consistent logic to avoid duplicates like "Sue" and "Sue Cole"
       if (product.product_owners && Array.isArray(product.product_owners)) {
-
         product.product_owners.forEach(owner => {
-          // Priority: known_as > firstname > id
-          let ownerName = '';
-          if (owner.known_as) {
-            ownerName = owner.known_as;
-          } else if (owner.firstname) {
-            ownerName = owner.firstname;
-          } else if (owner.id) {
-            ownerName = `Owner_${owner.id}`;
-          }
-          
-          if (ownerName) {
+          // Use the same utility function as backend for consistent naming
+          const ownerName = getProductOwnerDisplayName(owner);
+          if (ownerName && ownerName !== 'Unknown') {
             ownerSet.add(ownerName);
-
           }
         });
       }
     });
     
-    const result = Array.from(ownerSet).sort();
-
-    return result;
+    return Array.from(ownerSet).sort();
   };
 
   // Update product owner order when related products change
