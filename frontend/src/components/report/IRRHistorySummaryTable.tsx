@@ -355,48 +355,26 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
     return uniqueProducts;
   };
 
-  // Get portfolio IRR for a specific date - only if ALL products have IRR data for that date
+  // Get portfolio IRR for a specific date - backend already filters for portfolios with valuations
   const getPortfolioIRRForDate = (date: string): number | null => {
-    // First, check if ALL products have IRR data for this specific date
-    const uniqueProducts = getUniqueProducts();
-    const allProductsHaveData = uniqueProducts.every(product => {
-      const irrValue = getIRRValueForProductAndDate(product.product_name, date);
-      return irrValue !== null && irrValue !== undefined;
-    });
-
-    // If any product is missing IRR data for this date, don't show portfolio total
-    if (!allProductsHaveData) {
-      console.log(`⚠️ [IRR SUMMARY] Not all products have IRR data for ${date}. Portfolio total will be hidden.`, {
-        date,
-        totalProducts: uniqueProducts.length,
-        productsWithData: uniqueProducts.filter(product => {
-          const irrValue = getIRRValueForProductAndDate(product.product_name, date);
-          return irrValue !== null && irrValue !== undefined;
-        }).length,
-        missingDataProducts: uniqueProducts
-          .filter(product => {
-            const irrValue = getIRRValueForProductAndDate(product.product_name, date);
-            return irrValue === null || irrValue === undefined;
-          })
-          .map(p => p.product_name)
-      });
-      return null;
-    }
-
-    // Only show portfolio IRR if ALL products have data for this date
+    // Backend calculation already ensures only portfolios with valuations are included
+    // No need to check if ALL current products have data - historical portfolios may not have existed
     const isCurrentDate = tableData.dateHeaders.length > 0 && date === tableData.dateHeaders[0];
     
     if (isCurrentDate && realTimeTotalIRR !== null && realTimeTotalIRR !== undefined) {
-      console.log(`🎯 [IRR SUMMARY] Using realTimeTotalIRR for current date ${date}: ${realTimeTotalIRR}% (all products have data)`);
+      console.log(`🎯 [IRR SUMMARY] Using realTimeTotalIRR for current date ${date}: ${realTimeTotalIRR}%`);
       return realTimeTotalIRR;
     }
     
-    // For historical dates, use backend calculated portfolio IRR (only if all products have data)
+    // For historical dates, use backend calculated portfolio IRR
+    // Backend only includes portfolios that have valuations for that specific date
     const portfolioData = tableData.portfolioTotals.find(data => data.date === date);
     const backendIRR = portfolioData ? portfolioData.portfolio_irr : null;
     
-    if (!isCurrentDate) {
-      console.log(`📊 [IRR SUMMARY] Using backend IRR for historical date ${date}: ${backendIRR}% (all products have data)`);
+    if (!isCurrentDate && backendIRR !== null) {
+      console.log(`📊 [IRR SUMMARY] Using backend IRR for historical date ${date}: ${backendIRR}% (calculated from portfolios with valuations)`);
+    } else if (!isCurrentDate && backendIRR === null) {
+      console.log(`⚠️ [IRR SUMMARY] No portfolio IRR data available for ${date} (no portfolios had valuations)`);
     }
     
     return backendIRR;
