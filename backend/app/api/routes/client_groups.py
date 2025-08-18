@@ -1264,7 +1264,20 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                     COALESCE(fas.total_switch_in, 0) as total_fund_switch_in,
                     COALESCE(fas.total_switch_out, 0) as total_fund_switch_out,
                     COALESCE(fas.total_product_switch_in, 0) as total_product_switch_in,
-                    COALESCE(fas.total_product_switch_out, 0) as total_product_switch_out
+                    COALESCE(fas.total_product_switch_out, 0) as total_product_switch_out,
+                    -- Calculate regular investments and tax uplifts separately for product cards
+                    COALESCE((
+                        SELECT SUM(amount) 
+                        FROM holding_activity_log 
+                        WHERE portfolio_fund_id = pf.id 
+                        AND activity_type = 'RegularInvestment'
+                    ), 0) as total_regular_investments,
+                    COALESCE((
+                        SELECT SUM(amount) 
+                        FROM holding_activity_log 
+                        WHERE portfolio_fund_id = pf.id 
+                        AND activity_type = 'TaxUplift'
+                    ), 0) as total_tax_uplift
                 FROM portfolio_funds pf
                 LEFT JOIN available_funds af ON af.id = pf.available_funds_id  
                 LEFT JOIN latest_portfolio_fund_valuations lpfv ON lpfv.portfolio_fund_id = pf.id
@@ -1310,8 +1323,13 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                     "risk_factor": fund["risk_factor"],
                     "amount_invested": fund["amount_invested"] or 0,
                     "market_value": float(fund["market_value"]) if fund["market_value"] is not None and str(fund["market_value"]).strip() != '' else 0,
-                    "investments": float(fund["total_investments"]) if fund["total_investments"] is not None else 0,
-                    "tax_uplift": 0,  # Not available in fund_activity_summary, would need separate query
+                    # For client details product cards, combine all investment types
+                    "investments": (
+                        (float(fund["total_investments"]) if fund["total_investments"] is not None else 0) +
+                        (float(fund["total_regular_investments"]) if fund["total_regular_investments"] is not None else 0) +
+                        (float(fund["total_tax_uplift"]) if fund["total_tax_uplift"] is not None else 0)
+                    ),
+                    "tax_uplift": float(fund["total_tax_uplift"]) if fund["total_tax_uplift"] is not None else 0,
                     "withdrawals": float(fund["total_withdrawals"]) if fund["total_withdrawals"] is not None else 0,
                     "fund_switch_in": float(fund["total_fund_switch_in"]) if fund["total_fund_switch_in"] is not None else 0,
                     "fund_switch_out": float(fund["total_fund_switch_out"]) if fund["total_fund_switch_out"] is not None else 0,
@@ -1325,8 +1343,14 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
             
             # Process inactive funds into aggregated "Previous Funds" entry if they exist
             if inactive_funds:
-                total_investments = sum(float(f["total_investments"]) if f["total_investments"] is not None else 0 for f in inactive_funds)
-                total_tax_uplift = 0  # Not available in fund_activity_summary
+                # Combine all investment types for Previous Funds
+                total_investments = sum(
+                    (float(f["total_investments"]) if f["total_investments"] is not None else 0) +
+                    (float(f["total_regular_investments"]) if f["total_regular_investments"] is not None else 0) +
+                    (float(f["total_tax_uplift"]) if f["total_tax_uplift"] is not None else 0)
+                    for f in inactive_funds
+                )
+                total_tax_uplift = sum(float(f["total_tax_uplift"]) if f["total_tax_uplift"] is not None else 0 for f in inactive_funds)
                 total_withdrawals = sum(float(f["total_withdrawals"]) if f["total_withdrawals"] is not None else 0 for f in inactive_funds)
                 total_fund_switch_in = sum(float(f["total_fund_switch_in"]) if f["total_fund_switch_in"] is not None else 0 for f in inactive_funds)
                 total_fund_switch_out = sum(float(f["total_fund_switch_out"]) if f["total_fund_switch_out"] is not None else 0 for f in inactive_funds)

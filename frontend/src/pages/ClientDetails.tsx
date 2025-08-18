@@ -1064,7 +1064,7 @@ const ProductCard: React.FC<{
                           <span className="truncate block">{fund.fund_name}</span>
                         )}
                       </td>
-                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling((fund.investments || 0) + (fund.tax_uplift || 0))}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.investments || 0)}</td>
                       <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.withdrawals || 0)}</td>
                                       <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.fund_switch_in || 0)}</td>
                 <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrencyWithZeroHandling(fund.fund_switch_out || 0)}</td>
@@ -1097,7 +1097,7 @@ const ProductCard: React.FC<{
                   <tr className="bg-gray-50 font-medium">
                     <td className="px-3 py-2 text-xs font-medium text-gray-900 truncate">TOTAL</td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
-                      {formatCurrencyWithZeroHandling(funds.reduce((sum, fund) => sum + (fund.investments || 0) + (fund.tax_uplift || 0), 0))}
+                      {formatCurrencyWithZeroHandling(funds.reduce((sum, fund) => sum + (fund.investments || 0), 0))}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-right">
                       {formatCurrencyWithZeroHandling(funds.reduce((sum, fund) => sum + (fund.withdrawals || 0), 0))}

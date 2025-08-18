@@ -651,12 +651,14 @@ const calculateTotalInvestments = (activities: ActivityLog[], holdings: Holding[
   // Include ALL real holdings (active and inactive) but exclude virtual entries
   const allRealHoldings = holdings.filter(h => !h.isVirtual);
   const total = allRealHoldings.reduce((total, holding) => {
-    const amount = calculateInvestmentsPlusSwitchIns(activities, holding.id);
-    console.log(`Total investments (including regular) for holding ${holding.id} (${holding.fund_name}): ${amount}`);
+    // Only include activities of type 'Investment' for this column
+    // Regular investments and tax uplifts have their own separate columns
+    const amount = calculateInvestments(activities, holding.id);
+    console.log(`Investments only for holding ${holding.id} (${holding.fund_name}): ${amount}`);
     return total + amount;
   }, 0);
   
-  console.log(`Total investments: ${total}`);
+  console.log(`Total investments (Investment type only): ${total}`);
   return total;
 };
 
