@@ -14,6 +14,37 @@ from app.api.routes.portfolio_funds import calculate_multiple_portfolio_funds_ir
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+async def log_out_of_range_activity_warning(portfolio_fund_id: int, activity_date: date, db) -> None:
+    """
+    Logs a warning if an existing activity is found to be out of range when fetching data.
+    
+    Args:
+        portfolio_fund_id: The portfolio fund ID
+        activity_date: The activity date to check
+        db: Database connection
+    """
+    try:
+        # Get the product start date
+        query = """
+        SELECT cp.start_date, cp.product_name, cp.id as product_id
+        FROM portfolio_funds pf
+        JOIN portfolios p ON p.id = pf.portfolio_id
+        JOIN client_products cp ON cp.portfolio_id = p.id
+        WHERE pf.id = $1
+        """
+        result = await db.fetchrow(query, portfolio_fund_id)
+        
+        if result:
+            # Check if activity is in a month BEFORE the product start date
+            activity_year_month = (activity_date.year, activity_date.month)
+            product_start_year_month = (result['start_date'].year, result['start_date'].month)
+            
+            if activity_year_month < product_start_year_month:
+                logger.warning(f"OUT-OF-RANGE ACTIVITY FOUND: Activity date {activity_date} is in a month before product start date {result['start_date']} for product '{result['product_name']}' (ID: {result['product_id']})")
+            
+    except Exception as e:
+        logger.error(f"Error checking out-of-range activity: {e}")
+
 class PortfolioFromTemplate(BaseModel):
     template_id: int
     generation_id: Optional[int] = None  # Added generation_id field
@@ -1595,9 +1626,17 @@ async def get_portfolio_activity_logs(
             param_count += 1
         
         # Build and execute the query
-        query = f"SELECT * FROM holding_activity_log WHERE {' AND '.join(where_clauses)} ORDER BY activity_timestamp DESC"
+        # TIMEZONE FIX: Convert timestamp to local date to avoid month shifts
+        query = f"SELECT *, DATE(activity_timestamp AT TIME ZONE 'Europe/London') as local_date FROM holding_activity_log WHERE {' AND '.join(where_clauses)} ORDER BY activity_timestamp DESC"
         activity_result = await db.fetch(query, *params)
         activity_logs = [dict(row) for row in activity_result] if activity_result else []
+
+        # 🔍 VALIDATION: Log warnings for any out-of-range activities  
+        for log in activity_logs:
+            portfolio_fund_id = log.get('portfolio_fund_id')
+            local_date = log.get('local_date')  # Use the timezone-corrected date
+            if portfolio_fund_id and local_date:
+                await log_out_of_range_activity_warning(portfolio_fund_id, local_date, db)
 
         
         # Prepare the response

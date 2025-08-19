@@ -22,6 +22,7 @@ interface Activity {
   account_holding_id: number;
   units_transacted?: number;
   market_value_held?: number;
+  local_date?: string; // New field for timezone-corrected date
 }
 
 interface Fund {
@@ -93,6 +94,22 @@ const ACTIVITY_TYPES = [
   'Withdrawal',
   'Current Value'
 ];
+
+// Helper function to get the correct date for activity filtering
+// Uses local_date if available (timezone-corrected), otherwise falls back to activity_timestamp
+const getActivityDate = (activity: Activity): Date => {
+  if (activity.local_date) {
+    // Use the timezone-corrected local date
+    return new Date(activity.local_date + 'T00:00:00.000Z');
+  } else {
+    // Fall back to the original timestamp logic
+    if (activity.activity_timestamp.includes('T')) {
+      return new Date(activity.activity_timestamp);
+    } else {
+      return new Date(activity.activity_timestamp + 'T00:00:00.000Z');
+    }
+  }
+};
 
 // Utility function to throttle expensive operations
 const throttle = (func: Function, delay: number) => {
@@ -223,15 +240,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     const index = new Map<string, Activity>();
     activitiesState.forEach(activity => {
       try {
-        // Handle different timestamp formats safely
-        let date: Date;
-        if (activity.activity_timestamp.includes('T')) {
-          // Already has time component
-          date = new Date(activity.activity_timestamp);
-        } else {
-          // Date-only string, force UTC to avoid timezone shifts
-          date = new Date(activity.activity_timestamp + 'T00:00:00.000Z');
-        }
+        // Handle different timestamp formats safely - use timezone-corrected date when available
+        const date = getActivityDate(activity);
         
         // Validate the date
         if (isNaN(date.getTime())) {
@@ -1061,14 +1071,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           activities.forEach(activity => {
             try {
               // Handle different timestamp formats safely
-              let activityDate: Date;
-              if (activity.activity_timestamp.includes('T')) {
-                // Already has time component
-                activityDate = new Date(activity.activity_timestamp);
-              } else {
-                // Date-only string, force UTC to avoid timezone shifts
-                activityDate = new Date(activity.activity_timestamp + 'T00:00:00.000Z');
-              }
+              // Use timezone-corrected date when available
+              const activityDate = getActivityDate(activity);
               
               // Validate the date
               if (isNaN(activityDate.getTime())) {

@@ -17,6 +17,91 @@ from app.services.irr_cascade_service import IRRCascadeService
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+async def validate_activity_date_against_product(portfolio_fund_id: int, activity_date: date, db) -> None:
+    """
+    Validates that an activity date is not before the product start date.
+    
+    Args:
+        portfolio_fund_id: The portfolio fund ID
+        activity_date: The activity date to validate
+        db: Database connection
+        
+    Raises:
+        HTTPException: If activity date is before product start date
+    """
+    try:
+        # Get the product start date via portfolio fund -> portfolio -> client product
+        query = """
+        SELECT cp.start_date, cp.product_name, cp.id as product_id
+        FROM portfolio_funds pf
+        JOIN portfolios p ON p.id = pf.portfolio_id
+        JOIN client_products cp ON cp.portfolio_id = p.id
+        WHERE pf.id = $1
+        """
+        result = await db.fetchrow(query, portfolio_fund_id)
+        
+        if not result:
+            logger.warning(f"⚠️ VALIDATION WARNING: Could not find product for portfolio_fund_id {portfolio_fund_id}")
+            return  # If we can't find the product, allow the activity (defensive)
+        
+        product_start_date = result['start_date']
+        product_name = result['product_name']
+        product_id = result['product_id']
+        
+        # Check if activity date is in a month BEFORE the product start date
+        # Allow activities in the same month as the start date
+        # NOTE: Use date objects directly to avoid timezone conversion issues
+        activity_year_month = (activity_date.year, activity_date.month)
+        product_start_year_month = (product_start_date.year, product_start_date.month)
+        
+        if activity_year_month < product_start_year_month:
+            error_msg = f"Activity date {activity_date} is in a month before product start date {product_start_date} for product '{product_name}' (ID: {product_id}). Activities are allowed in the same month or after."
+            logger.error(f"VALIDATION ERROR: {error_msg}")
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Invalid activity date: {error_msg}"
+            )
+        
+        logger.info(f"VALIDATION PASSED: Activity date {activity_date} is valid for product '{product_name}' (start: {product_start_date})")
+        
+    except HTTPException:
+        raise  # Re-raise validation errors
+    except Exception as e:
+        logger.error(f"Error validating activity date: {e}")
+        # Don't block the activity creation if validation fails due to technical issues
+        return
+
+async def log_out_of_range_activity_warning(portfolio_fund_id: int, activity_date: date, db) -> None:
+    """
+    Logs a warning if an existing activity is found to be out of range when fetching data.
+    
+    Args:
+        portfolio_fund_id: The portfolio fund ID
+        activity_date: The activity date to check
+        db: Database connection
+    """
+    try:
+        # Get the product start date
+        query = """
+        SELECT cp.start_date, cp.product_name, cp.id as product_id
+        FROM portfolio_funds pf
+        JOIN portfolios p ON p.id = pf.portfolio_id
+        JOIN client_products cp ON cp.portfolio_id = p.id
+        WHERE pf.id = $1
+        """
+        result = await db.fetchrow(query, portfolio_fund_id)
+        
+        if result:
+            # Check if activity is in a month BEFORE the product start date
+            activity_year_month = (activity_date.year, activity_date.month)
+            product_start_year_month = (result['start_date'].year, result['start_date'].month)
+            
+            if activity_year_month < product_start_year_month:
+                logger.warning(f"OUT-OF-RANGE ACTIVITY FOUND: Activity date {activity_date} is in a month before product start date {result['start_date']} for product '{result['product_name']}' (ID: {result['product_id']})")
+            
+    except Exception as e:
+        logger.error(f"Error checking out-of-range activity: {e}")
+
 async def recalculate_irr_after_activity_change(portfolio_fund_id: int, db, activity_date: str = None):
     """
     OPTIMIZED: This function now uses targeted IRR recalculation for single activities.
@@ -478,6 +563,9 @@ async def create_holding_activity_log(
         # Prepare data for insertion
         logger.info(f"🔍 ACTIVITY CREATE: Preparing log data for portfolio_fund_id={log.portfolio_fund_id}, product_id={log.product_id}, activity_type={log.activity_type}, activity_timestamp={log.activity_timestamp}, amount={log.amount}")
         logger.info(f"🔍 ACTIVITY CREATE: Timestamp details - Type={type(log.activity_timestamp)}, Value={log.activity_timestamp}, Repr={repr(log.activity_timestamp)}")
+        
+        # 🔒 VALIDATION: Check activity date against product start date
+        await validate_activity_date_against_product(log.portfolio_fund_id, log.activity_timestamp, db)
         
         # Convert date to timezone-aware datetime at midnight UTC to avoid timezone conversion issues
         if isinstance(log.activity_timestamp, date) and not isinstance(log.activity_timestamp, datetime):
@@ -1092,6 +1180,9 @@ async def create_bulk_holding_activity_logs(
         # Convert Pydantic models to dict format for bulk insertion
         activity_data = []
         for log in activities:
+            # 🔒 VALIDATION: Check activity date against product start date
+            await validate_activity_date_against_product(log.portfolio_fund_id, log.activity_timestamp, db)
+            
             # Handle timezone conversion - improved datetime parsing
             if isinstance(log.activity_timestamp, date) and not isinstance(log.activity_timestamp, datetime):
                 from datetime import timezone
