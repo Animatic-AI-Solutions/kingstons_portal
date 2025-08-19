@@ -439,6 +439,10 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
     // Calculate fund month totals for all funds (including inactive ones when shown)
     allFundsToProcess.forEach(fund => {
+      // Skip virtual "Previous Funds" entry to avoid double counting
+      // Check both id === -1 and the condition used in cellValuesCache
+      if (fund.id === -1 || (fund.isActive === false && fund.inactiveHoldingIds && !fund.isInactiveBreakdown)) return;
+      
       months.forEach(month => {
         const key = `${fund.id}-${month}`;
         let total = 0;
@@ -473,8 +477,12 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         const key = `${activityType}-${month}`;
         let total = 0;
         
-        // Include activities from displayed funds
+        // Include activities from displayed funds (excluding virtual "Previous Funds" entry)
         funds.forEach(fund => {
+          // Skip virtual "Previous Funds" entry to avoid double counting
+          // Check both id === -1 and the condition used in cellValuesCache
+          if (fund.id === -1 || (fund.isActive === false && fund.inactiveHoldingIds && !fund.isInactiveBreakdown)) return;
+          
           const cellKey = `${fund.id}-${month}-${activityType}`;
           const cellValue = cellValuesCache.get(cellKey) || '';
           const numericValue = parseFloat(cellValue.replace(/,/g, '')) || 0;
@@ -494,20 +502,28 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         // Also include activities from inactive funds
         if (inactiveFundsForTotals && inactiveFundsForTotals.length > 0) {
           inactiveFundsForTotals.forEach(inactiveFund => {
-            const backendType = convertActivityTypeForBackend(activityType);
-            const activityKey = `${inactiveFund.id}-${month}-${backendType}`;
-            const activity = activitiesIndex.get(activityKey);
-            
-            if (activity) {
-              const numericValue = parseFloat(activity.amount);
-              if (!isNaN(numericValue)) {
-                const signType = activityTypeSignMap.get(activityType);
-                if (signType === 'inflow') {
-                  total -= numericValue; // Negative for inflows
-                } else if (signType === 'outflow') {
-                  total += numericValue; // Positive for outflows
-                } else if (signType === 'neutral' && activityType === 'Current Value') {
-                  total += numericValue; // Positive for current value
+            if (activityType === 'Current Value') {
+              // Handle valuations using fundValuationsIndex
+              const valuationKey = `${inactiveFund.id}-${month}`;
+              const valuation = fundValuationsIndex.get(valuationKey);
+              if (valuation) {
+                total += valuation.valuation;
+              }
+            } else {
+              // Handle other activity types using activitiesIndex
+              const backendType = convertActivityTypeForBackend(activityType);
+              const activityKey = `${inactiveFund.id}-${month}-${backendType}`;
+              const activity = activitiesIndex.get(activityKey);
+              
+              if (activity) {
+                const numericValue = parseFloat(activity.amount);
+                if (!isNaN(numericValue)) {
+                  const signType = activityTypeSignMap.get(activityType);
+                  if (signType === 'inflow') {
+                    total -= numericValue; // Negative for inflows
+                  } else if (signType === 'outflow') {
+                    total += numericValue; // Positive for outflows
+                  }
                 }
               }
             }
@@ -562,6 +578,10 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     // Calculate fund row totals across ALL months for entire product lifetime (not filtered by year)
     // This ensures fund row totals show cumulative totals across all years, not just the current year
     allFundsToProcess.forEach(fund => {
+      // Skip virtual "Previous Funds" entry to avoid double counting
+      // Check both id === -1 and the condition used in cellValuesCache
+      if (fund.id === -1 || (fund.isActive === false && fund.inactiveHoldingIds && !fund.isInactiveBreakdown)) return;
+      
       let total = 0;
       
       ACTIVITY_TYPES.forEach(activityType => {
@@ -1888,6 +1908,38 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
   // Calculate the total for a specific fund and month - now uses memoized results
   const calculateFundMonthTotal = (fundId: number, month: string): number => {
+    // Special case for virtual "Previous Funds" entry
+    // Check if this is the virtual fund by ID or by finding it in the funds array
+    const isVirtualFund = fundId === -1 || funds.some(f => f.id === fundId && f.isActive === false && f.inactiveHoldingIds && !f.isInactiveBreakdown);
+    if (isVirtualFund) {
+      // Calculate total from actual inactive funds data
+      let total = 0;
+      if (inactiveFundsForTotals && inactiveFundsForTotals.length > 0) {
+        ACTIVITY_TYPES
+          .filter(activityType => activityType !== 'Current Value')
+          .forEach(activityType => {
+            inactiveFundsForTotals.forEach(inactiveFund => {
+              const backendType = convertActivityTypeForBackend(activityType);
+              const activityKey = `${inactiveFund.id}-${month}-${backendType}`;
+              const activity = activitiesIndex.get(activityKey);
+              
+              if (activity) {
+                const numericValue = parseFloat(activity.amount);
+                if (!isNaN(numericValue)) {
+                  const signType = activityTypeSignMap.get(activityType);
+                  if (signType === 'inflow') {
+                    total -= numericValue; // Negative for inflows
+                  } else if (signType === 'outflow') {
+                    total += numericValue; // Positive for outflows
+                  }
+                }
+              }
+            });
+          });
+      }
+      return total;
+    }
+    
     const key = `${fundId}-${month}`;
     return calculationResults.fundMonthTotals.get(key) || 0;
   };
@@ -1906,9 +1958,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     
     // Include activities from displayed funds (excluding virtual "Previous Funds" entry)
     funds.forEach(fund => {
-      // Skip virtual "Previous Funds" entry (id: -1) to avoid double counting
-      // The actual inactive fund activities are processed separately via inactiveFundsForTotals
-      if (fund.id === -1) return;
+      // Skip virtual "Previous Funds" entry to avoid double counting
+      // Check both id === -1 and the condition used in cellValuesCache
+      if (fund.id === -1 || (fund.isActive === false && fund.inactiveHoldingIds && !fund.isInactiveBreakdown)) return;
       
       const cellKey = `${fund.id}-${month}-${activityType}`;
       const cellValue = cellValuesCache.get(cellKey) || '';
@@ -2207,6 +2259,40 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
   // Calculate row total for fund across all activities and months - now uses memoized results
   const calculateFundRowTotal = (fundId: number): number => {
+    // Special case for virtual "Previous Funds" entry
+    // Check if this is the virtual fund by ID or by finding it in the funds array
+    const isVirtualFund = fundId === -1 || funds.some(f => f.id === fundId && f.isActive === false && f.inactiveHoldingIds && !f.isInactiveBreakdown);
+    if (isVirtualFund) {
+      // Calculate total from actual inactive funds data across all months
+      let total = 0;
+      if (inactiveFundsForTotals && inactiveFundsForTotals.length > 0) {
+        ACTIVITY_TYPES
+          .filter(activityType => activityType !== 'Current Value')
+          .forEach(activityType => {
+            allMonths.forEach(month => {
+              inactiveFundsForTotals.forEach(inactiveFund => {
+                const backendType = convertActivityTypeForBackend(activityType);
+                const activityKey = `${inactiveFund.id}-${month}-${backendType}`;
+                const activity = activitiesIndex.get(activityKey);
+                
+                if (activity) {
+                  const numericValue = parseFloat(activity.amount);
+                  if (!isNaN(numericValue)) {
+                    const signType = activityTypeSignMap.get(activityType);
+                    if (signType === 'inflow') {
+                      total -= numericValue; // Negative for inflows
+                    } else if (signType === 'outflow') {
+                      total += numericValue; // Positive for outflows
+                    }
+                  }
+                }
+              });
+            });
+          });
+      }
+      return total;
+    }
+    
     return calculationResults.fundRowTotals.get(fundId) || 0;
   };
 
