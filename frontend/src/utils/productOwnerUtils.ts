@@ -13,20 +13,30 @@ export interface ProductOwner {
 
 /**
  * Gets the display name for a product owner.
- * Uses the same logic as backend Pattern 2 (client_products.py):
- * Prioritizes known_as over firstname, then combines with surname.
- * This ensures consistency across all product owner display logic.
+ * Logic: Show firstname + surname if both exist, otherwise show known_as, otherwise show whatever exists.
+ * This ensures proper name display: either formal name (firstname surname) or nickname (known_as).
  */
 export const getProductOwnerDisplayName = (owner: ProductOwner): string => {
-  // Use the same logic as backend: known_as or firstname, then combine with surname
-  const nickname = (owner.known_as && owner.known_as.trim()) || (owner.firstname && owner.firstname.trim()) || '';
+  const firstname = (owner.firstname && owner.firstname.trim()) || '';
   const surname = (owner.surname && owner.surname.trim()) || '';
+  const knownAs = (owner.known_as && owner.known_as.trim()) || '';
   
-  if (nickname && surname) {
-    return `${nickname} ${surname}`;
-  } else if (nickname) {
-    return nickname;
-  } else if (surname) {
+  // Priority 1: If both firstname and surname exist, use formal name
+  if (firstname && surname) {
+    return `${firstname} ${surname}`;
+  }
+  
+  // Priority 2: If known_as exists, use it
+  if (knownAs) {
+    return knownAs;
+  }
+  
+  // Priority 3: Use whatever single field exists
+  if (firstname) {
+    return firstname;
+  }
+  
+  if (surname) {
     return surname;
   }
   

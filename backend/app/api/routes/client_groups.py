@@ -11,6 +11,7 @@ from app.models.client_group import (
 )
 from app.db.database import get_db
 from app.api.routes.auth import get_current_user
+from app.utils.product_owner_utils import get_product_owner_display_name
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -1220,7 +1221,17 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                         po.firstname,
                         po.surname, 
                         po.known_as,
-                        COALESCE(po.known_as, po.firstname || ' ' || po.surname) as display_name,
+                        CASE 
+                            WHEN po.firstname IS NOT NULL AND po.firstname != '' AND po.surname IS NOT NULL AND po.surname != '' 
+                            THEN po.firstname || ' ' || po.surname
+                            WHEN po.known_as IS NOT NULL AND po.known_as != '' 
+                            THEN po.known_as
+                            WHEN po.firstname IS NOT NULL AND po.firstname != '' 
+                            THEN po.firstname
+                            WHEN po.surname IS NOT NULL AND po.surname != '' 
+                            THEN po.surname
+                            ELSE 'Unknown'
+                        END as display_name,
                         pop.product_id
                     FROM product_owners po
                     JOIN product_owner_products pop ON po.id = pop.product_owner_id

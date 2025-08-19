@@ -174,7 +174,7 @@ const FundDetails: React.FC = () => {
           product_name: item.product_name,
           product_type: item.product_type,
           product_status: item.status,
-          product_owner_name: item.product_owner_name || 'No Owner',
+          product_owner_name: item.product_owner_name || 'Unknown',
           portfolio_name: item.portfolio_name,
           weighting: item.target_weighting || 0,
           start_date: item.start_date,

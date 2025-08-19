@@ -435,7 +435,7 @@ const ReportGenerator: React.FC = () => {
       if (product.product_owner_name) {
         const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
         ownerNames.forEach(ownerName => {
-          if (ownerName) {
+          if (ownerName && ownerName !== 'Unknown') {
             ownerSet.add(ownerName);
           }
         });

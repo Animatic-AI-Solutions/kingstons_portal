@@ -6,6 +6,7 @@ from datetime import date, datetime
 from app.models.client_product import Clientproduct, ClientproductCreate, ClientproductUpdate, ProductRevenueCalculation
 from app.db.database import get_db
 from app.api.routes.portfolio_funds import calculate_excel_style_irr, calculate_multiple_portfolio_funds_irr
+from app.utils.product_owner_utils import get_product_owner_display_name
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -218,17 +219,8 @@ async def get_client_products_with_owners(
                         }
                         product_owners.append(enhanced_owner)
                         
-                        # For reports, use known_as (nickname) + surname combination
-                        nickname = owner.get('known_as') or owner.get('firstname') or ""
-                        surname = owner.get('surname') or ""
-                        if nickname and surname:
-                            owner_name = f"{nickname} {surname}"
-                        elif nickname:
-                            owner_name = nickname
-                        elif surname:
-                            owner_name = surname
-                        else:
-                            owner_name = "No Owner"
+                        # Use consistent product owner display logic
+                        owner_name = get_product_owner_display_name(owner)
                         
                         product_owner_names.append(owner_name)
             
@@ -238,10 +230,10 @@ async def get_client_products_with_owners(
             elif len(product_owner_names) == 1:
                 product_owner_name = product_owner_names[0]  # Single owner
             else:
-                product_owner_name = "No Owner"  # No owners
+                product_owner_name = "Unknown"  # No owners
             
             enhanced_product["product_owners"] = product_owners
-            enhanced_product["product_owner_name"] = product_owner_name or "No Owner"  # Add this for report compatibility
+            enhanced_product["product_owner_name"] = product_owner_name or "Unknown"  # Add this for report compatibility
             enhanced_products.append(enhanced_product)
         
         logger.info(f"Retrieved {len(enhanced_products)} client products using optimized products_list_view")
@@ -877,21 +869,12 @@ async def get_client_products(
                         }
                         product_owners.append(enhanced_owner)
                         
-                        # For reports, use known_as (nickname) + surname combination
+                        # Use consistent product owner display logic
                         if product_owner_name is None:
-                            nickname = owner.get('known_as') or owner.get('firstname') or ""
-                            surname = owner.get('surname') or ""
-                            if nickname and surname:
-                                product_owner_name = f"{nickname} {surname}"
-                            elif nickname:
-                                product_owner_name = nickname
-                            elif surname:
-                                product_owner_name = surname
-                            else:
-                                product_owner_name = "No Owner"
+                            product_owner_name = get_product_owner_display_name(owner)
             
             product["product_owners"] = product_owners
-            product["product_owner_name"] = product_owner_name or "No Owner"  # Add this for report compatibility
+            product["product_owner_name"] = product_owner_name or "Unknown"  # Add this for report compatibility
             enhanced_data.append(product)
         
         logger.info(f"Retrieved {len(enhanced_data)} client products with all related data including owners")

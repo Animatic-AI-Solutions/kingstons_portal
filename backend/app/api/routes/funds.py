@@ -5,6 +5,7 @@ from datetime import date
 
 from app.models.fund import FundBase, FundCreate, FundUpdate, FundInDB, FundWithProvider
 from app.db.database import get_db
+from app.utils.product_owner_utils import get_product_owner_display_name
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -332,20 +333,11 @@ async def get_fund_products_with_owners(
             owner_ids = product_owner_map.get(product_id, [])
             owners = [owner_map.get(owner_id) for owner_id in owner_ids if owner_id in owner_map]
             
-            # For reports, use known_as (nickname) + surname combination
-            product_owner_name = "No Owner"
+            # Use consistent product owner display logic
+            product_owner_name = "Unknown"
             if owners:
                 owner = owners[0]
-                nickname = owner.get('known_as') or owner.get('firstname') or ""
-                surname = owner.get('surname') or ""
-                if nickname and surname:
-                    product_owner_name = f"{nickname} {surname}"
-                elif nickname:
-                    product_owner_name = nickname
-                elif surname:
-                    product_owner_name = surname
-                else:
-                    product_owner_name = "No Owner"
+                product_owner_name = get_product_owner_display_name(owner)
             
             # Build product entry
             product_entry = {
