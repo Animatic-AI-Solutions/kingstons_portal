@@ -129,6 +129,17 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
           groupedProducts[normalizedType] = [];
         }
         groupedProducts[normalizedType].push(product);
+      } else {
+        // CRITICAL FIX: Don't silently drop products without product summaries
+        // This was causing AJ1055J (Product 37) to be filtered out
+        console.warn(`⚠️ [IRR SUMMARY] Product ${product.product_id} (${product.product_name}) not found in product summaries - including anyway`);
+        
+        // Create a fallback group for products without summaries
+        const fallbackType = 'Other';
+        if (!groupedProducts[fallbackType]) {
+          groupedProducts[fallbackType] = [];
+        }
+        groupedProducts[fallbackType].push(product);
       }
     });
 
@@ -337,9 +348,11 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
     
     const productMap = new Map();
     tableData.productRows.forEach((row: any) => {
-      // Use product_name as key to distinguish between active funds and "Previous Funds" entries
-      // This ensures both "Product Name" and "Product Name - Previous Funds" are kept as separate entries
-      const uniqueKey = row.product_name;
+      // CRITICAL FIX: Use product_id as the unique key instead of product_name
+      // This prevents products with the same name (like multiple "Investment Plan" products)
+      // from overwriting each other in the Map
+      const uniqueKey = row.product_id;
+      
       if (!productMap.has(uniqueKey)) {
         productMap.set(uniqueKey, {
           product_id: row.product_id,
@@ -351,8 +364,7 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
       }
     });
     
-    const uniqueProducts = Array.from(productMap.values());
-    return uniqueProducts;
+    return Array.from(productMap.values());
   };
 
   // Get portfolio IRR for a specific date - backend already filters for portfolios with valuations

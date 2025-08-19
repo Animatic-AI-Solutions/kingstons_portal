@@ -2285,6 +2285,44 @@ async def calculate_multiple_portfolio_funds_irr(
                 "note": f"No valuations found as of {irr_date_obj} - IRR set to 0%"
             }
         
+        # CRITICAL FIX: Filter out portfolio funds without valuations for this date
+        # This prevents products like AJ1055J from distorting IRR calculations
+        # when they have activities but no valuations for a specific historical date
+        portfolio_fund_ids_with_valuations = [
+            fund_id for fund_id in portfolio_fund_ids 
+            if fund_valuations.get(fund_id) is not None
+        ]
+        
+        excluded_funds = [
+            fund_id for fund_id in portfolio_fund_ids 
+            if fund_valuations.get(fund_id) is None
+        ]
+        
+        if excluded_funds:
+            logger.warning(f"💰 DEBUG: ⚠️ Excluding {len(excluded_funds)} funds without valuations from IRR calculation: {excluded_funds}")
+            logger.warning(f"💰 DEBUG: ✅ Including {len(portfolio_fund_ids_with_valuations)} funds with valuations: {portfolio_fund_ids_with_valuations}")
+        
+        # Update portfolio_fund_ids to only include funds with valuations
+        portfolio_fund_ids = portfolio_fund_ids_with_valuations
+        
+        # If no funds remain after filtering, return 0% IRR
+        if not portfolio_fund_ids:
+            logger.warning(f"💰 DEBUG: ⚠️ No funds with valuations remain after filtering for {irr_date_obj}")
+            return {
+                "success": True,
+                "irr_percentage": 0.0,
+                "irr_decimal": 0.0,
+                "calculation_date": irr_date_obj.isoformat(),
+                "portfolio_fund_ids": [],
+                "total_valuation": 0.0,
+                "fund_valuations": {},
+                "cash_flows_count": 0,
+                "period_start": irr_date_obj.isoformat(),
+                "period_end": irr_date_obj.isoformat(),
+                "days_in_period": 0,
+                "note": f"No funds with valuations available for {irr_date_obj} - IRR set to 0%"
+            }
+        
         # Verify all portfolio funds exist
         funds_response = await db.fetch("SELECT id FROM portfolio_funds WHERE id = ANY($1::int[])", portfolio_fund_ids)
         found_fund_ids = [fund["id"] for fund in funds_response]
