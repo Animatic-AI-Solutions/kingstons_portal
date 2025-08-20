@@ -729,9 +729,8 @@ const PreviousFundsIRRDisplay: React.FC<{
       
       if (response.data && response.data.irr_percentage !== undefined) {
         console.log(`PreviousFundsIRRDisplay: IRR calculation completed: ${response.data.irr_percentage}%`);
-        // Divide by 100 since the API returns a percentage value (like 520 for 5.2%)
-        // but the display code expects a decimal value (like 5.2 for 5.2%)
-        setLivePreviousFundsIRR(response.data.irr_percentage / 100);
+        // API returns a percentage value (like 5.2 for 5.2%) ready for display
+        setLivePreviousFundsIRR(response.data.irr_percentage);
       }
     } catch (error) {
       console.error('PreviousFundsIRRDisplay: Error calculating IRR:', error);
