@@ -192,7 +192,7 @@ const PreviousFundsIRRDisplay: React.FC<{
 
   if (livePreviousFundsIRR !== null) {
     return (
-      <span className={`font-medium ${
+      <span className={`text-sm font-medium ${
         livePreviousFundsIRR >= 0 ? 'text-green-600' : 'text-red-600'
       }`}>
         {`${livePreviousFundsIRR.toFixed(1)}%`}
@@ -200,7 +200,7 @@ const PreviousFundsIRRDisplay: React.FC<{
     );
   }
 
-  return <span className="text-gray-500">-</span>;
+  return <span className="text-sm text-gray-500">-</span>;
 });
 
 // Component for displaying individual inactive fund IRR from database
