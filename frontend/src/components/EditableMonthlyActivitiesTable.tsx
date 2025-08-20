@@ -733,17 +733,18 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
             
             cells.forEach((cell, index) => {
               const cellRect = cell.getBoundingClientRect();
-              let left = cellRect.left - containerLeft;
               
-              // Activities column (index 0) is always at left: 0 in fixed mode
+              // For sticky headers, we need to calculate position relative to the table container
+              // Use offsetLeft which is stable and doesn't change with viewport scrolling
+              let left: number;
+              
               if (index === 0) {
+                // Activities column is always pinned to the left
                 left = 0;
-              }
-              // For month columns (index > 0), position them to the right of the Activities column
-              else if (index > 0 && index <= months.length) {
-                const activityColumnWidth = cells[0]?.getBoundingClientRect().width || 120;
-                // Position month columns starting from the Activities column width
-                left = activityColumnWidth + (index - 1) * 100;
+              } else {
+                // For other columns, use their offsetLeft position within the table minus scroll
+                const cellElement = cell as HTMLElement;
+                left = cellElement.offsetLeft - scrollLeft;
               }
               
               positions.push({
@@ -809,17 +810,18 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
             
             cells.forEach((cell, index) => {
               const cellRect = cell.getBoundingClientRect();
-              let left = cellRect.left - containerLeft;
               
-              // Activities column (index 0) is always at left: 0 in fixed mode
+              // For sticky headers, we need to calculate position relative to the table container
+              // Use offsetLeft which is stable and doesn't change with viewport scrolling
+              let left: number;
+              
               if (index === 0) {
+                // Activities column is always pinned to the left
                 left = 0;
-              }
-              // For month columns (index > 0), position them to the right of the Activities column
-              else if (index > 0 && index <= months.length) {
-                const activityColumnWidth = cells[0]?.getBoundingClientRect().width || 120;
-                // Position month columns starting from the Activities column width
-                left = activityColumnWidth + (index - 1) * 100;
+              } else {
+                // For other columns, use their offsetLeft position within the table minus scroll
+                const cellElement = cell as HTMLElement;
+                left = cellElement.offsetLeft - scrollLeft;
               }
               
               positions.push({
