@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DatePicker } from 'antd';
 import dayjs, { Dayjs } from 'dayjs';
@@ -131,6 +131,146 @@ interface PortfolioFund {
 interface ProductOverviewProps {
   accountId?: string;
 }
+
+// Component for calculating and displaying Previous Funds IRR
+const PreviousFundsIRRDisplay: React.FC<{ 
+  inactiveHoldings: Holding[]; 
+}> = React.memo(({ inactiveHoldings }) => {
+  const [livePreviousFundsIRR, setLivePreviousFundsIRR] = useState<number | null>(null);
+  const [isLoadingLivePreviousFundsIRR, setIsLoadingLivePreviousFundsIRR] = useState(false);
+
+  // Format date for display (month and year only)
+  const formatDateMonthYear = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', {
+      year: 'numeric',
+      month: 'short'
+    });
+  };
+
+  // Memoize the inactive fund IDs to prevent unnecessary recalculations
+  const inactiveFundIds = useMemo(() => 
+    inactiveHoldings.map(h => h.id), 
+    [inactiveHoldings]
+  );
+
+  const calculateLivePreviousFundsIRR = useCallback(async () => {
+    if (inactiveFundIds.length === 0) {
+      console.log('PreviousFundsIRRDisplay: No inactive funds, skipping calculation');
+      return;
+    }
+    
+    console.log(`PreviousFundsIRRDisplay: Starting IRR calculation for funds [${inactiveFundIds.join(', ')}]`);
+    
+    setIsLoadingLivePreviousFundsIRR(true);
+    try {
+      const response = await calculateStandardizedMultipleFundsIRR({
+        portfolioFundIds: inactiveFundIds
+      });
+      
+      if (response.data && response.data.irr_percentage !== undefined) {
+        console.log(`PreviousFundsIRRDisplay: IRR calculation completed: ${response.data.irr_percentage}%`);
+        // API returns a percentage value (like 5.2 for 5.2%) ready for display
+        setLivePreviousFundsIRR(response.data.irr_percentage);
+      }
+    } catch (error) {
+      console.error('PreviousFundsIRRDisplay: Error calculating IRR:', error);
+      setLivePreviousFundsIRR(null);
+    } finally {
+      setIsLoadingLivePreviousFundsIRR(false);
+    }
+  }, [inactiveFundIds]);
+
+  // Calculate when component mounts or fund IDs change
+  useEffect(() => {
+    calculateLivePreviousFundsIRR();
+  }, [calculateLivePreviousFundsIRR]);
+
+  if (isLoadingLivePreviousFundsIRR) {
+    return <span className="text-xs text-gray-500 text-right">Loading...</span>;
+  }
+
+  if (livePreviousFundsIRR !== null) {
+    return (
+      <span className={`font-medium ${
+        livePreviousFundsIRR >= 0 ? 'text-green-600' : 'text-red-600'
+      }`}>
+        {`${livePreviousFundsIRR.toFixed(1)}%`}
+      </span>
+    );
+  }
+
+  return <span className="text-gray-500">-</span>;
+});
+
+// Component for displaying individual inactive fund IRR from database
+const InactiveFundIRRDisplay: React.FC<{ 
+  portfolioFundId: number;
+  api: any; // API client from auth context
+}> = React.memo(({ portfolioFundId, api }) => {
+  const [fundIRR, setFundIRR] = useState<{ irr: number; date: string } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Format date for display (month and year only)
+  const formatDateMonthYear = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', {
+      year: 'numeric',
+      month: 'short'
+    });
+  };
+
+  const fetchFundIRR = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      console.log(`Fetching IRR for portfolio fund ${portfolioFundId}`);
+      const response = await api.get(`/portfolio_funds/${portfolioFundId}/latest-irr`);
+      
+      if (response.data && response.data.irr !== null && response.data.irr !== undefined) {
+        console.log(`Found IRR for fund ${portfolioFundId}:`, response.data);
+        setFundIRR({
+          irr: response.data.irr,
+          date: response.data.calculation_date
+        });
+      } else {
+        console.log(`No IRR data for fund ${portfolioFundId}`);
+        setFundIRR(null);
+      }
+    } catch (error) {
+      console.error(`Error fetching IRR for portfolio fund ${portfolioFundId}:`, error);
+      setFundIRR(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [portfolioFundId, api]);
+
+  useEffect(() => {
+    fetchFundIRR();
+  }, [fetchFundIRR]);
+
+  if (isLoading) {
+    return <span className="text-xs text-gray-500">Loading...</span>;
+  }
+
+  if (fundIRR !== null) {
+    return (
+      <div className="text-right">
+        <div className={`text-sm font-medium ${
+          fundIRR.irr >= 0 ? 'text-green-600' : 'text-red-600'
+        }`}>
+          {`${fundIRR.irr.toFixed(1)}%`}
+        </div>
+        {fundIRR.date && (
+          <div className="text-xs text-gray-500 mt-1">
+            {formatDateMonthYear(fundIRR.date)}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return <span className="text-sm text-gray-500">-</span>;
+});
 
 const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccountId }) => {
   const { accountId: paramAccountId } = useParams<{ accountId: string }>();
@@ -2816,7 +2956,16 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             <span className="text-gray-500">-</span>
                           </td>
                           <td className="px-6 py-2 whitespace-nowrap text-right">
-                            <span className="text-gray-500">-</span>
+                            {(() => {
+                              const previousFundsEntry = holdings.find(h => h.isVirtual && h.fund_name === 'Previous Funds');
+                              return previousFundsEntry?.inactiveFunds && previousFundsEntry.inactiveFunds.length > 0 ? (
+                                <PreviousFundsIRRDisplay 
+                                  inactiveHoldings={previousFundsEntry.inactiveFunds} 
+                                />
+                              ) : (
+                                <span className="text-gray-500">-</span>
+                              );
+                            })()}
                           </td>
                           {isEditingFunds && account && (
                             <td className="px-6 py-2 whitespace-nowrap text-right">
@@ -2906,7 +3055,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                                 )}
                               </td>
                               <td className="px-6 py-2 whitespace-nowrap text-right">
-                                <span className="text-sm text-gray-500">-</span>
+                                <InactiveFundIRRDisplay portfolioFundId={holding.id} api={api} />
                               </td>
                               {isEditingFunds && account && !isCashFund({ fund_name: holding.fund_name, isin_number: holding.isin_number } as any) && (
                                 <td className="px-6 py-2 whitespace-nowrap text-right">
