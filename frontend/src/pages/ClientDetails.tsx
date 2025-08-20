@@ -19,6 +19,7 @@ import { useClientDetails } from '../hooks/useClientDetails';
 import { useClientMutations } from '../hooks/useClientMutations';
 import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
 import { isCashFund } from '../utils/fundUtils';
+import { generateProductDisplayName } from '../utils/productTitleUtils';
 import DynamicPageContainer from '../components/DynamicPageContainer';
 
 
@@ -476,26 +477,6 @@ const ClientHeader = ({
                      
                      <StatusBadge />
                      
-                     {/* Product Owners Section - Read Only Display */}
-                     <div className="flex items-center">
-                       <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mr-2">Product Owners:</span>
-                       <div className="flex items-center space-x-2">
-                         {client.product_owners && client.product_owners.length > 0 ? (
-                           <div className="flex flex-wrap gap-1">
-                             {client.product_owners.map((owner) => (
-                               <span 
-                                 key={owner.id}
-                                 className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
-                               >
-                                 {getProductOwnerDisplayName(owner)}
-                               </span>
-                             ))}
-                           </div>
-                         ) : (
-                           <span className="text-sm text-gray-500">Managed at product level</span>
-                         )}
-                       </div>
-                     </div>
                     
                     {/* Start Date - Only show inline when NOT editing */}
                     {!isEditing && (
@@ -850,7 +831,7 @@ const ProductCard: React.FC<{
           {/* Left side - Product Info */}
           <div>
             <div className="flex items-center">
-              <h3 className="text-lg font-medium text-gray-900">{account.product_name}</h3>
+              <h3 className="text-lg font-medium text-gray-900">{generateProductDisplayName(account)}</h3>
               <span 
                 className="ml-3 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                 style={{ 
@@ -865,7 +846,6 @@ const ProductCard: React.FC<{
             </div>
             <div className="flex items-center mt-1">
               <span style={styles.providerDot}></span>
-              <p className="text-base text-gray-600 font-medium">{account.provider_name || 'Unknown Provider'}</p>
             </div>
             {account.plan_number && (
               <p className="text-sm text-gray-500 mt-0.5">Plan: {account.plan_number}</p>
@@ -931,28 +911,6 @@ const ProductCard: React.FC<{
               </div>
             )}
             
-            {/* Product Owners */}
-            {account.product_owners && account.product_owners.length > 0 && (
-              <div className="flex items-center ml-2">
-                <span className="text-sm font-medium text-gray-500 mr-1">
-                  Owner{account.product_owners.length > 1 ? 's' : ''}:
-                </span>
-                <div className="flex flex-wrap gap-1">
-                  {account.product_owners.map(owner => (
-                    <span 
-                      key={owner.id}
-                      className="px-2 py-0.5 text-xs font-medium rounded-full"
-                      style={{ 
-                        backgroundColor: `${themeColor}15`, 
-                        color: themeColor
-                      }}
-                    >
-                      {getProductOwnerDisplayName(owner)}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
             
             <button
               onClick={(e) => {
@@ -2083,8 +2041,7 @@ const RevenueAssignmentModal: React.FC<{
                            style={{ backgroundColor: account.provider_theme_color || '#6B7280' }}
                          />
                          <div>
-                           <div className="text-xs font-medium text-gray-900">{account.product_name}</div>
-                           <div className="text-xs text-gray-500">{account.provider_name}</div>
+                           <div className="text-xs font-medium text-gray-900">{generateProductDisplayName(account)}</div>
                          </div>
                        </div>
                      </td>

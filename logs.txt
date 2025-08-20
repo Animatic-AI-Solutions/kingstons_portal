@@ -1,54 +1,46 @@
-MultiSelectDropdown.tsx:171 ✅ MultiSelect: Adding item 65 to selection. New values: [65]
-ReportGenerator.tsx:773 🕐 PHASE 2.1: Using debounced updateRelatedProducts (300ms delay)
-ReportGenerator.tsx:3098 🚫 PHASE 1.2 FIX: Skipping IRR dates fetch - no included products
-ReportGenerator.tsx:677 Using cached data for client group 65: 4 products
-ReportGenerator.tsx:753 Total products displayed: 4
-ReportGenerator.tsx:754 Client group cache size: 1 groups
-ReportGenerator.tsx:433 🔍 [PRODUCT OWNER DEBUG] Starting extractProductOwners with 4 products
-ReportGenerator.tsx:436 🔍 [PRODUCT OWNER DEBUG] Product 1: {id: 219, name: 'Pru ISA - 674172 - Whistler, Jaime', product_owner_name: 'Jaime Whistler', product_owners: Array(1), product_owners_count: 1}
-ReportGenerator.tsx:446 🔍 [PRODUCT OWNER DEBUG] Method 1 - Processing product_owner_name: "Jaime Whistler"
-ReportGenerator.tsx:449 🔍 [PRODUCT OWNER DEBUG] Method 1 - Adding owner: "Jaime Whistler"
-ReportGenerator.tsx:461 🔍 [PRODUCT OWNER DEBUG] Method 2 - Processing product_owners array with 1 owners
-ReportGenerator.tsx:463 🔍 [PRODUCT OWNER DEBUG] Method 2 - Owner 1: {id: 71, firstname: 'Jaime', surname: 'Whistler', known_as: 'Jaime Whistler', status: 'active', …}
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner: {id: 71, firstname: 'Jaime', surname: 'Whistler', known_as: 'Jaime Whistler', status: 'active', …}
-productOwnerUtils.ts:26 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields: {firstname: 'Jaime', surname: 'Whistler', knownAs: 'Jaime Whistler'}
-productOwnerUtils.ts:35 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jaime Whistler
-ReportGenerator.tsx:466 🔍 [PRODUCT OWNER DEBUG] Method 2 - getProductOwnerDisplayName returned: "Jaime Whistler"
-ReportGenerator.tsx:468 🔍 [PRODUCT OWNER DEBUG] Method 2 - Adding owner: "Jaime Whistler"
-ReportGenerator.tsx:436 🔍 [PRODUCT OWNER DEBUG] Product 2: {id: 220, name: 'Wealthtime Stocks & Shares ISA - 672699 - Whistler Jaime', product_owner_name: 'Jaime Whistler', product_owners: Array(1), product_owners_count: 1}
-ReportGenerator.tsx:446 🔍 [PRODUCT OWNER DEBUG] Method 1 - Processing product_owner_name: "Jaime Whistler"
-ReportGenerator.tsx:449 🔍 [PRODUCT OWNER DEBUG] Method 1 - Adding owner: "Jaime Whistler"
-ReportGenerator.tsx:461 🔍 [PRODUCT OWNER DEBUG] Method 2 - Processing product_owners array with 1 owners
-ReportGenerator.tsx:463 🔍 [PRODUCT OWNER DEBUG] Method 2 - Owner 1: {id: 71, firstname: 'Jaime', surname: 'Whistler', known_as: 'Jaime Whistler', status: 'active', …}
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner: {id: 71, firstname: 'Jaime', surname: 'Whistler', known_as: 'Jaime Whistler', status: 'active', …}
-productOwnerUtils.ts:26 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields: {firstname: 'Jaime', surname: 'Whistler', knownAs: 'Jaime Whistler'}
-productOwnerUtils.ts:35 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jaime Whistler
-ReportGenerator.tsx:466 🔍 [PRODUCT OWNER DEBUG] Method 2 - getProductOwnerDisplayName returned: "Jaime Whistler"
-ReportGenerator.tsx:468 🔍 [PRODUCT OWNER DEBUG] Method 2 - Adding owner: "Jaime Whistler"
-ReportGenerator.tsx:436 🔍 [PRODUCT OWNER DEBUG] Product 3: {id: 221, name: 'Wealthtime SIPP - 677970 - Whistler, Jaime', product_owner_name: 'Jaime Whistler', product_owners: Array(1), product_owners_count: 1}
-ReportGenerator.tsx:446 🔍 [PRODUCT OWNER DEBUG] Method 1 - Processing product_owner_name: "Jaime Whistler"
-ReportGenerator.tsx:449 🔍 [PRODUCT OWNER DEBUG] Method 1 - Adding owner: "Jaime Whistler"
-ReportGenerator.tsx:461 🔍 [PRODUCT OWNER DEBUG] Method 2 - Processing product_owners array with 1 owners
-ReportGenerator.tsx:463 🔍 [PRODUCT OWNER DEBUG] Method 2 - Owner 1: {id: 71, firstname: 'Jaime', surname: 'Whistler', known_as: 'Jaime Whistler', status: 'active', …}
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner: {id: 71, firstname: 'Jaime', surname: 'Whistler', known_as: 'Jaime Whistler', status: 'active', …}
-productOwnerUtils.ts:26 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields: {firstname: 'Jaime', surname: 'Whistler', knownAs: 'Jaime Whistler'}
-productOwnerUtils.ts:35 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jaime Whistler
-ReportGenerator.tsx:466 🔍 [PRODUCT OWNER DEBUG] Method 2 - getProductOwnerDisplayName returned: "Jaime Whistler"
-ReportGenerator.tsx:468 🔍 [PRODUCT OWNER DEBUG] Method 2 - Adding owner: "Jaime Whistler"
-ReportGenerator.tsx:436 🔍 [PRODUCT OWNER DEBUG] Product 4: {id: 224, name: 'Pru PIP - AH1645M - Whistler, Jaime', product_owner_name: 'Unknown', product_owners: Array(0), product_owners_count: 0}
-ReportGenerator.tsx:446 🔍 [PRODUCT OWNER DEBUG] Method 1 - Processing product_owner_name: "Unknown"
-ReportGenerator.tsx:449 🔍 [PRODUCT OWNER DEBUG] Method 1 - Adding owner: "Unknown"
-ReportGenerator.tsx:461 🔍 [PRODUCT OWNER DEBUG] Method 2 - Processing product_owners array with 0 owners
-ReportGenerator.tsx:480 🔍 [PRODUCT OWNER DEBUG] Final unique owners: (2) ['Jaime Whistler', 'Unknown']
-ReportGenerator.tsx:3104 📊 Fetching available IRR dates for 4 products
-ReportGenerator.tsx:2980 Global Top 8 Most Recent Dates: []
-ReportGenerator.tsx:3000 Product 219: Selected 0 out of 8 global dates: []
-ReportGenerator.tsx:3000 Product 220: Selected 0 out of 8 global dates: []
-ReportGenerator.tsx:3000 Product 221: Selected 0 out of 8 global dates: []
-ReportGenerator.tsx:3000 Product 224: Selected 0 out of 8 global dates: []
-ReportGenerator.tsx:3003 Select All Results Summary:
-ReportGenerator.tsx:3004 Global unique dates selected: 0
-ReportGenerator.tsx:3007 Product 219: 0/0 global dates selected
-ReportGenerator.tsx:3007 Product 220: 0/0 global dates selected
-ReportGenerator.tsx:3007 Product 221: 0/0 global dates selected
-ReportGenerator.tsx:3007 Product 224: 0/0 global dates selected
+chunk-QYFCA5BS.js?v=cc98fab4:21609 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+providerColors.ts:75 Provider color service initialized {providersLoaded: 18, colorsInCache: 18}
+ClientDetails.tsx:1195 DEBUG: Client data: {client: null, client_product_owners: undefined, clientAccounts: Array(0), first_account_owners: undefined, apiResponse: undefined}
+ClientDetails.tsx:1195 DEBUG: Client data: {client: null, client_product_owners: undefined, clientAccounts: Array(0), first_account_owners: undefined, apiResponse: undefined}
+useClientDetails.ts:91 🚀 Fetching client details for ID: 8
+ClientDetails.tsx:1195 DEBUG: Client data: {client: null, client_product_owners: undefined, clientAccounts: Array(0), first_account_owners: undefined, apiResponse: undefined}
+ClientDetails.tsx:1195 DEBUG: Client data: {client: null, client_product_owners: undefined, clientAccounts: Array(0), first_account_owners: undefined, apiResponse: undefined}
+ClientDetails.tsx:1195 DEBUG: Client data: {client: null, client_product_owners: undefined, clientAccounts: Array(0), first_account_owners: undefined, apiResponse: undefined}
+ClientDetails.tsx:1195 DEBUG: Client data: {client: null, client_product_owners: undefined, clientAccounts: Array(0), first_account_owners: undefined, apiResponse: undefined}
+useClientDetails.ts:94 ✅ Loaded client details for: Unknown
+ClientDetails.tsx:1195 DEBUG: Client data: {client: {…}, client_product_owners: Array(4), clientAccounts: Array(4), first_account_owners: Array(1), apiResponse: {…}}
+ClientDetails.tsx:1195 DEBUG: Client data: {client: {…}, client_product_owners: Array(4), clientAccounts: Array(4), first_account_owners: Array(1), apiResponse: {…}}
+ClientDetails.tsx:298 DEBUG: ClientHeader formatDate - input: 2022-07-24T23:00:00Z output: 25 Jul 2022
+ClientDetails.tsx:298 DEBUG: ClientHeader formatDate - input: 2022-07-24T23:00:00Z output: 25 Jul 2022
+ClientDetails.tsx:676 Product card for  AJ Bell - Stocks & Shares ISA - SCC954934 - Anita : {provider: 'AJBell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
+ClientDetails.tsx:676 Product card for  AJ Bell - Stocks & Shares ISA - SCC954934 - Anita : {provider: 'AJBell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
+ClientDetails.tsx:676 Product card for AJ Bell RIA - SCC954936 - Steven : {provider: 'AJBell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
+ClientDetails.tsx:676 Product card for AJ Bell RIA - SCC954936 - Steven : {provider: 'AJBell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
+ClientDetails.tsx:676 Product card for AJ Bell Stocks & Shares JISA - Natasha : {provider: 'AJBell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
+ClientDetails.tsx:676 Product card for AJ Bell Stocks & Shares JISA - Natasha : {provider: 'AJBell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
+ClientDetails.tsx:676 Product card for  AJ Bell Stocks & Shares JISA - Louis : {provider: 'AJBell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
+ClientDetails.tsx:676 Product card for  AJ Bell Stocks & Shares JISA - Louis : {provider: 'AJBell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
+ClientDetails.tsx:1195 DEBUG: Client data: {client: {…}, client_product_owners: Array(4), clientAccounts: Array(4), first_account_owners: Array(1), apiResponse: {…}}
+ClientDetails.tsx:1195 DEBUG: Client data: {client: {…}, client_product_owners: Array(4), clientAccounts: Array(4), first_account_owners: Array(1), apiResponse: {…}}
+ClientDetails.tsx:298 DEBUG: ClientHeader formatDate - input: 2022-07-24T23:00:00Z output: 25 Jul 2022
+ClientDetails.tsx:298 DEBUG: ClientHeader formatDate - input: 2022-07-24T23:00:00Z output: 25 Jul 2022
+ClientDetails.tsx:676 Product card for  AJ Bell - Stocks & Shares ISA - SCC954934 - Anita : {provider: 'AJBell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
+ClientDetails.tsx:676 Product card for  AJ Bell - Stocks & Shares ISA - SCC954934 - Anita : {provider: 'AJBell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
+ClientDetails.tsx:676 Product card for AJ Bell RIA - SCC954936 - Steven : {provider: 'AJBell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
+ClientDetails.tsx:676 Product card for AJ Bell RIA - SCC954936 - Steven : {provider: 'AJBell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
+ClientDetails.tsx:676 Product card for AJ Bell Stocks & Shares JISA - Natasha : {provider: 'AJBell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
+ClientDetails.tsx:676 Product card for AJ Bell Stocks & Shares JISA - Natasha : {provider: 'AJBell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
+ClientDetails.tsx:676 Product card for  AJ Bell Stocks & Shares JISA - Louis : {provider: 'AJBell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
+ClientDetails.tsx:676 Product card for  AJ Bell Stocks & Shares JISA - Louis : {provider: 'AJBell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
+ClientDetails.tsx:1195 DEBUG: Client data: {client: {…}, client_product_owners: Array(4), clientAccounts: Array(4), first_account_owners: Array(1), apiResponse: {…}}
+ClientDetails.tsx:1195 DEBUG: Client data: {client: {…}, client_product_owners: Array(4), clientAccounts: Array(4), first_account_owners: Array(1), apiResponse: {…}}
+ClientDetails.tsx:298 DEBUG: ClientHeader formatDate - input: 2022-07-24T23:00:00Z output: 25 Jul 2022
+ClientDetails.tsx:298 DEBUG: ClientHeader formatDate - input: 2022-07-24T23:00:00Z output: 25 Jul 2022
+ClientDetails.tsx:676 Product card for  AJ Bell - Stocks & Shares ISA - SCC954934 - Anita : {provider: 'AJBell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
+ClientDetails.tsx:676 Product card for  AJ Bell - Stocks & Shares ISA - SCC954934 - Anita : {provider: 'AJBell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
+ClientDetails.tsx:676 Product card for AJ Bell RIA - SCC954936 - Steven : {provider: 'AJBell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
+ClientDetails.tsx:676 Product card for AJ Bell RIA - SCC954936 - Steven : {provider: 'AJBell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
+ClientDetails.tsx:676 Product card for AJ Bell Stocks & Shares JISA - Natasha : {provider: 'AJBell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
+ClientDetails.tsx:676 Product card for AJ Bell Stocks & Shares JISA - Natasha : {provider: 'AJBell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
+ClientDetails.tsx:676 Product card for  AJ Bell Stocks & Shares JISA - Louis : {provider: 'AJBell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
+ClientDetails.tsx:676 Product card for  AJ Bell Stocks & Shares JISA - Louis : {provider: 'AJBell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}

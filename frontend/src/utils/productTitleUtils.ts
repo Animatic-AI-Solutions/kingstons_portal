@@ -131,4 +131,49 @@ export const generateEffectiveProductTitle = (
 
   // Otherwise, generate the default title
   return generateDefaultProductTitle(product, options);
-}; 
+};
+
+/**
+ * Generate product display name for client groups and general display
+ * Format: provider - type - product_name - plan_number - owner
+ * Where product_name is the basic product description from the database
+ */
+export const generateProductDisplayName = (product: any): string => {
+  const parts = [];
+
+  // 1. Provider name
+  if (product.provider_name) {
+    parts.push(product.provider_name);
+  }
+
+  // 2. Product type
+  if (product.product_type) {
+    parts.push(product.product_type);
+  }
+
+  // 3. Product name (basic product description from database)
+  if (product.product_name) {
+    parts.push(product.product_name);
+  }
+
+  // 4. Plan number (if available)
+  if (product.plan_number) {
+    parts.push(product.plan_number);
+  }
+
+  // 5. Product owner(s) - show "Joint" if multiple, first name if single
+  if (product.product_owners && product.product_owners.length > 0) {
+    if (product.product_owners.length > 1) {
+      parts.push('Joint');
+    } else {
+      // Extract first name from single owner
+      const owner = product.product_owners[0];
+      const firstName = owner.known_as || owner.firstname || 'Owner';
+      parts.push(firstName);
+    }
+  }
+
+  return parts.filter(Boolean).join(' - ');
+};
+
+ 

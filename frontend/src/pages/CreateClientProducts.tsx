@@ -936,34 +936,33 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     return totalWeight > 0 ? totalWeightedRisk / totalWeight : null;
   };
 
-  // Function to generate product name based on provider, product type, and owners
+  // Function to generate basic product name (just the core product description)
+  // This will be stored in the product_name field
   const generateProductName = (product: ProductItem): string => {
-    // Get provider name
-    const provider = providers.find(p => p.id === product.provider_id);
-    const providerName = provider ? provider.name : '';
+    // Just return the basic product name based on type
+    return getBasicProductName(product.product_type);
+  };
 
-    // Get product type
-    const productType = product.product_type;
-
-    // Get product owner names
-    const ownerNames = product.product_owner_ids
-      .map(ownerId => {
-        const owner = productOwners.find(o => o.id === ownerId);
-        return owner ? getProductOwnerDisplayName(owner) : '';
-      })
-      .filter(name => name.length > 0);
-
-    // Generate name in order: Provider → Product Type → Product Owner Names
-    if (ownerNames.length === 0) {
-      // No owners - just use provider and product type
-      return `${providerName} ${productType}`.trim();
-    } else if (ownerNames.length === 1) {
-      // Single owner - format: "Provider ProductType Owner"
-      return `${providerName} ${productType} ${ownerNames[0]}`.trim();
+  // Helper function to generate basic product names based on type
+  const getBasicProductName = (productType: string): string => {
+    if (!productType) return '';
+    
+    const type = productType.toLowerCase();
+    
+    // Common product name mappings
+    if (type.includes('isa') && !type.includes('jisa')) {
+      return 'Stocks & Shares ISA';
+    } else if (type.includes('jisa') || type.includes('junior')) {
+      return 'Junior ISA';
+    } else if (type.includes('sipp') || type.includes('pension')) {
+      return 'Self Invested Personal Pension';
+    } else if (type.includes('gia') || type.includes('general')) {
+      return 'General Investment Account';
+    } else if (type.includes('bond')) {
+      return 'Investment Bond';
     } else {
-      // Multiple owners - format: "Provider ProductType Joint (Owner1, Owner2, Owner3)"
-      const ownersList = ownerNames.join(', ');
-      return `${providerName} ${productType} Joint (${ownersList})`.trim();
+      // Default: use the product type as-is
+      return productType;
     }
   };
 
