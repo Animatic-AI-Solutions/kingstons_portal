@@ -11,7 +11,7 @@ Kingston's Portal is a comprehensive wealth management system built with FastAPI
 ### Backend Development
 ```bash
 # From backend/ directory
-python main.py                    # Start FastAPI server on http://localhost:8001
+uvicorn main:app --reload --host 127.0.0.1 --port 8001  # Start FastAPI server
 pip install -r requirements.txt  # Install dependencies
 pytest                           # Run all tests with asyncio support
 pytest tests/test_specific.py    # Run specific test file
@@ -22,10 +22,10 @@ python check_schema.py           # Test database connection and schema
 ```bash
 # From frontend/ directory  
 npm start                        # Start Vite dev server on http://localhost:3000
-npm run build                    # Build for production
-npm test                         # Run Jest tests
+npm run build                    # Build for production (outputs to C:\inetpub\wwwroot\OfficeIntranet)
+npm test                         # Run Jest tests with 70% coverage threshold
 npm run test:watch               # Run tests in watch mode
-npm run test:coverage            # Run tests with coverage report
+npm run test:coverage            # Generate detailed coverage report
 ```
 
 ### Database Operations
@@ -39,6 +39,14 @@ psql $DATABASE_URL
 # Verify migration data
 python backend/database_analysis_report.py
 ```
+
+### Production Deployment
+```powershell
+# Automated deployment script (run as Administrator)
+.\deploy_minimal.ps1
+```
+**Deployment Process**: Git pull → Install dependencies → Build frontend → Copy backend → Restart service → IIS reset
+**Production URLs**: Frontend: `http://intranet.kingston.local` | Backend: `http://intranet.kingston.local:8001/docs`
 
 ## Environment Configuration
 
@@ -116,18 +124,44 @@ Complex 5-level hierarchy financial data model with 20+ core tables:
 
 ### Testing Strategy
 - **Backend**: pytest with asyncio support, comprehensive fixtures
-- **Frontend**: Jest with React Testing Library, 92 comprehensive tests for shared modules
+- **Frontend**: Jest with React Testing Library, 92 comprehensive tests (39 utility + 53 service tests) with 70% coverage threshold
 - **Database**: Migration scripts with verification and rollback capabilities
-- **London School TDD**: Outside-in development with mocks and dependency injection
+- **London School TDD**: Outside-in development approach using mocks and dependency injection:
+  - Start with acceptance tests that define behavior from user perspective
+  - Drive implementation through failing tests that specify component interfaces
+  - Mock external dependencies to isolate units under test
+  - Comprehensive shared module testing ensures code reuse reliability
 
 ## Development Guidelines
 
-### Code Quality Standards (SPARC)
+### Build & Development Configuration
+
+#### Vite Configuration
+- **Dev Proxy**: `/api` requests forwarded to `http://localhost:8001`
+- **Production Build**: Direct output to `C:\inetpub\wwwroot\OfficeIntranet`
+- **Optimization**: Vendor chunk splitting, source maps enabled
+- **Path Aliases**: `@/*` maps to `src/*`
+
+#### Tailwind Design System
+- **Primary Colors**: Extended purple palette (`primary-50` to `primary-900`)
+- **Custom Spacing**: Additional spacing utilities (18: 4.5rem, 22: 5.5rem)
+- **Forms Plugin**: Enhanced form styling with @tailwindcss/forms
+
+### Code Quality Standards (SPARC Methodology)
+
+**SPARC Development Process**: All features follow the 5-phase methodology:
+1. **Specification**: Define functional and technical requirements clearly
+2. **Pseudocode**: Outline algorithm logic and component structure
+3. **Architecture**: Plan component hierarchy and data flow patterns
+4. **Refinement**: Implement with iterative testing and validation
+5. **Completion**: Final integration testing and documentation updates
+
+**Quality Standards**:
 - **File Size**: ≤500 lines per file, ≤50 lines per function
 - **SOLID Principles**: Single responsibility, dependency injection, interface segregation
 - **DRY Implementation**: Shared modules eliminate 200+ lines of duplicate code
 - **Security**: No hard-coded credentials, comprehensive input validation, XSS protection
-- **Accessibility**: WCAG 2.1 AA compliance with high contrast design
+- **Accessibility**: WCAG 2.1 AA compliance with high contrast design (16px+ fonts, 44x44px click targets)
 
 ### Component Development
 1. **Check Existing Components**: Always review `frontend/src/components/ui/` before creating new ones
@@ -157,10 +191,14 @@ Complex 5-level hierarchy financial data model with 20+ core tables:
 - **Error Handling**: Production-ready boundaries with graceful degradation
 
 ### Security Implementation
-- **HttpOnly Cookies**: Primary authentication method prevents XSS attacks
-- **Triple-Layer Auth**: Cookie JWT, Authorization headers, session validation
-- **Input Validation**: Comprehensive sanitization for financial data integrity
-- **Audit Trails**: Complete transaction logging for regulatory compliance
+- **HttpOnly Cookies**: Primary authentication method with secure, sameSite settings prevents XSS attacks
+- **Triple-Layer Auth Support**: Cookie JWT (primary), Authorization headers (API), session validation (legacy)
+- **CORS Configuration**: Restricted to frontend domain with credentials support
+- **Input Validation**: Pydantic models with comprehensive sanitization for financial data integrity  
+- **Password Security**: Bcrypt hashing with proper salt rounds for user credentials
+- **JWT Token Management**: Secure token generation with configurable expiration (1440 minutes default)
+- **Audit Trails**: Complete transaction logging in `holding_activity_log` for regulatory compliance
+- **Environment Security**: No hard-coded credentials, all sensitive data in environment variables
 
 ## Common Workflows
 
@@ -204,3 +242,18 @@ For comprehensive architectural details, refer to the extensive documentation in
 - `docs/4_development_standards/01_coding_principles.md` - SPARC methodology and standards
 
 The documentation provides detailed implementation guides, visual diagrams, and best practices for working with this sophisticated wealth management system.
+
+## Documentation & AI Assistant Guidelines
+
+### Documentation Governance
+- **When to Create Documentation**: Only for complex architectural changes or new feature areas not covered in existing docs
+- **When NOT to Create Documentation**: Avoid redundant files, simple bug fixes, or features already well-documented
+- **AI-Assisted Development**: Use "finish commit" workflow for comprehensive commit messages and documentation updates
+- **Maintenance Triggers**: Update docs when changing core architecture, adding new major features, or modifying API contracts
+
+### For AI Code Assistants
+- **Follow SPARC methodology** for all feature development
+- **Use existing component library** before creating new components
+- **Maintain 70% test coverage** threshold with comprehensive testing
+- **Implement accessibility standards** (WCAG 2.1 AA) for all UI components
+- **Use London School TDD** approach with outside-in development and mocking
