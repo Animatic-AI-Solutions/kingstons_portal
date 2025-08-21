@@ -3430,15 +3430,77 @@ Please select a different valuation date or ensure all active funds have valuati
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-medium text-gray-900">{owner}</span>
                               <span className="text-xs text-gray-500">
-                                ({relatedProducts.filter(p => {
-                                  if (!p.product_owner_name) return false;
-                                  const ownerNames = p.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
-                                  return ownerNames.some(ownerName => {
-                                    const nameParts = ownerName.trim().split(' ');
-                                    const nickname = nameParts[0];
-                                    return nickname === owner;
+                                ({(() => {
+                                  console.log(`🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "${owner}"`);
+                                  
+                                  // First, find all product owner IDs that match this owner name
+                                  const matchingOwnerIds = new Set<number>();
+                                  
+                                  // Scan all products to find owner IDs that correspond to this owner name
+                                  relatedProducts.forEach(p => {
+                                    console.log(`🔍 [PRODUCT COUNT DEBUG] Checking product ${p.id} (${p.product_name}):`, {
+                                      has_product_owners: !!(p.product_owners && p.product_owners.length > 0),
+                                      product_owners_count: p.product_owners?.length || 0,
+                                      product_owners: p.product_owners?.map(po => ({
+                                        id: po.id,
+                                        firstname: po.firstname,
+                                        surname: po.surname,
+                                        known_as: po.known_as
+                                      })) || []
+                                    });
+                                    
+                                    if (p.product_owners && p.product_owners.length > 0) {
+                                      p.product_owners.forEach(productOwner => {
+                                        // Check if this product owner matches the current owner name
+                                        const knownAs = (productOwner.known_as && productOwner.known_as.trim()) || '';
+                                        const firstname = (productOwner.firstname && productOwner.firstname.trim()) || '';
+                                        const surname = (productOwner.surname && productOwner.surname.trim()) || '';
+                                        
+                                        // Create both possible display names
+                                        const knownAsDisplayName = knownAs || firstname;  // For product titles
+                                        const formalDisplayName = (firstname && surname) ? `${firstname} ${surname}` : (knownAs || firstname);  // For report headers
+                                        
+                                        console.log(`🔍 [PRODUCT COUNT DEBUG] Product owner check:`, {
+                                          owner_id: productOwner.id,
+                                          knownAs,
+                                          firstname,
+                                          surname,
+                                          knownAsDisplayName,
+                                          formalDisplayName,
+                                          target_owner: owner,
+                                          matches_known_as: knownAsDisplayName === owner,
+                                          matches_formal: formalDisplayName === owner
+                                        });
+                                        
+                                        // Match against either display name format
+                                        if (knownAsDisplayName === owner || formalDisplayName === owner) {
+                                          console.log(`🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: ${productOwner.id} for "${owner}"`);
+                                          matchingOwnerIds.add(productOwner.id);
+                                        }
+                                      });
+                                    }
                                   });
-                                }).length} products)
+                                  
+                                  console.log(`🔍 [PRODUCT COUNT DEBUG] Found ${matchingOwnerIds.size} matching owner IDs for "${owner}":`, Array.from(matchingOwnerIds));
+                                  
+                                  // Now count products that have any of these owner IDs
+                                  const matchingProducts = relatedProducts.filter(p => {
+                                    if (!p.product_owners || p.product_owners.length === 0) return false;
+                                    
+                                    const hasMatchingOwner = p.product_owners.some(productOwner => 
+                                      matchingOwnerIds.has(productOwner.id)
+                                    );
+                                    
+                                    if (hasMatchingOwner) {
+                                      console.log(`🔍 [PRODUCT COUNT DEBUG] ✅ Product ${p.id} (${p.product_name}) belongs to "${owner}"`);
+                                    }
+                                    
+                                    return hasMatchingOwner;
+                                  });
+                                  
+                                  console.log(`🔍 [PRODUCT COUNT DEBUG] Final count for "${owner}": ${matchingProducts.length} products`);
+                                  return matchingProducts.length;
+                                })()} products)
                               </span>
                             </div>
                           </div>
