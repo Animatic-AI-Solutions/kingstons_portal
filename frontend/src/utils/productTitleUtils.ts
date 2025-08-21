@@ -29,22 +29,68 @@ export const extractPlanNumber = (product: ProductPeriodSummary): string | null 
 };
 
 /**
- * Extract product owner nickname from product
+ * Extract product owner nickname from product for display in product titles.
+ * Uses known_as from product_owners array if available, otherwise falls back to product_owner_name.
  */
 export const extractProductOwnerNickname = (product: ProductPeriodSummary): string | null => {
+  console.log('🔍 [PRODUCT TITLE DEBUG] extractProductOwnerNickname called for product:', {
+    id: product.id,
+    product_name: product.product_name,
+    product_owner_name: product.product_owner_name,
+    product_owners_count: product.product_owners?.length || 0
+  });
+
+  // Priority 1: Use product_owners array data (has known_as support) - if available
+  if (product.product_owners && product.product_owners.length > 0) {
+    console.log('🔍 [PRODUCT TITLE DEBUG] Using product_owners array data');
+    if (product.product_owners.length > 1) {
+      // For multiple owners, return "Joint"
+      console.log('🔍 [PRODUCT TITLE DEBUG] Multiple owners, returning "Joint"');
+      return "Joint";
+    } else {
+      // For single owner, use known_as if available
+      const owner = product.product_owners[0];
+      console.log('🔍 [PRODUCT TITLE DEBUG] Single owner data:', {
+        id: owner.id,
+        firstname: owner.firstname,
+        surname: owner.surname,
+        known_as: owner.known_as
+      });
+      
+      const knownAs = (owner.known_as && owner.known_as.trim()) || '';
+      if (knownAs) {
+        console.log('🔍 [PRODUCT TITLE DEBUG] Using known_as:', knownAs);
+        return knownAs;
+      }
+      
+      // Fallback to firstname if no known_as
+      const firstname = (owner.firstname && owner.firstname.trim()) || '';
+      if (firstname) {
+        console.log('🔍 [PRODUCT TITLE DEBUG] Fallback to firstname:', firstname);
+        return firstname;
+      }
+    }
+  }
+  
+  // Priority 2: Fallback to product_owner_name string (when no product_owners array available)
   if (product.product_owner_name) {
+    console.log('🔍 [PRODUCT TITLE DEBUG] Using fallback product_owner_name string:', product.product_owner_name);
     // Check if the product_owner_name contains multiple names (comma-separated or other delimiters)
     const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
     if (ownerNames.length > 1) {
       // For multiple owners, return "Joint"
+      console.log('🔍 [PRODUCT TITLE DEBUG] Multiple names in string, returning "Joint"');
       return "Joint";
     } else {
       // For single owner, extract just the nickname (first word)
       const nameParts = product.product_owner_name.trim().split(' ');
       const nickname = nameParts[0]; // Take first part (nickname)
+      console.log('🔍 [PRODUCT TITLE DEBUG] Using first part of name string:', nickname);
       return nickname;
     }
   }
+  
+  console.log('🔍 [PRODUCT TITLE DEBUG] No owner data found, returning null');
   return null;
 };
 
@@ -90,6 +136,13 @@ export const sortProductsByOwnerOrder = (products: ProductPeriodSummary[], produ
  * Generate default product title (auto-generated without custom title)
  */
 export const generateDefaultProductTitle = (product: ProductPeriodSummary, options?: { omitOwner?: boolean }): string => {
+  console.log('🔍 [PRODUCT TITLE DEBUG] generateDefaultProductTitle called for product:', {
+    id: product.id,
+    product_name: product.product_name,
+    provider_name: product.provider_name,
+    omitOwner: options?.omitOwner
+  });
+
   let title = `${product.provider_name || 'Unknown Provider'}`;
   
   if (product.product_type) {
@@ -106,12 +159,17 @@ export const generateDefaultProductTitle = (product: ProductPeriodSummary, optio
   
   // Only include owner nickname if not omitted (moved after plan number)
   if (!options?.omitOwner) {
+    console.log('🔍 [PRODUCT TITLE DEBUG] About to extract owner nickname...');
     const ownerNickname = extractProductOwnerNickname(product);
+    console.log('🔍 [PRODUCT TITLE DEBUG] Extracted owner nickname:', ownerNickname);
     if (ownerNickname) {
       title += ` - ${ownerNickname}`;
     }
+  } else {
+    console.log('🔍 [PRODUCT TITLE DEBUG] Owner omitted from title');
   }
   
+  console.log('🔍 [PRODUCT TITLE DEBUG] Final title:', title);
   return title;
 };
 
@@ -123,12 +181,20 @@ export const generateEffectiveProductTitle = (
   customTitles: Map<number, string>,
   options?: { omitOwner?: boolean }
 ): string => {
+  console.log('🔍 [PRODUCT TITLE DEBUG] generateEffectiveProductTitle called for product:', {
+    id: product.id,
+    customTitlesSize: customTitles.size,
+    hasCustomTitle: customTitles.has(product.id)
+  });
+
   // If there's a custom title, use it
   const customTitle = customTitles.get(product.id);
   if (customTitle && customTitle.trim()) {
+    console.log('🔍 [PRODUCT TITLE DEBUG] Using custom title:', customTitle);
     return customTitle.trim();
   }
 
+  console.log('🔍 [PRODUCT TITLE DEBUG] No custom title, generating default...');
   // Otherwise, generate the default title
   return generateDefaultProductTitle(product, options);
 };

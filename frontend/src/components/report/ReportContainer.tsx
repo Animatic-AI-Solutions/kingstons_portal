@@ -9,16 +9,17 @@
  * - Print functionality integration
  */
 
-import React, { useRef, useCallback, useMemo } from 'react';
+import React, { useRef, useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useReactToPrint } from 'react-to-print';
-import { PrinterIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { PrinterIcon, EyeIcon, EyeSlashIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
 import { useReportStateManager } from '../../hooks/report/useReportStateManager';
 import { PrintService } from '../../services/report/PrintService';
 import { REPORT_TABS, type ReportTab } from '../../utils/reportConstants';
 import type { ReportData } from '../../types/reportTypes';
 import ProductTitleModal from './ProductTitleModal';
 import ProductOwnerModal from './ProductOwnerModal';
+import PrintInstructionsModal from '../ui/PrintInstructionsModal';
 
 interface ReportContainerProps {
   reportData: ReportData;
@@ -31,6 +32,7 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
 }) => {
   const navigate = useNavigate();
   const printRef = useRef<HTMLDivElement>(null);
+  const [showPrintInstructions, setShowPrintInstructions] = useState(false);
   
   // State management from Phase 1 services
   const {
@@ -137,69 +139,28 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
   });
 
   const productOwnerDisplay = useMemo(() => {
-    // Use custom names if they exist, otherwise use default format
+    console.log('🔍 [REPORT CONTAINER DEBUG] productOwnerDisplay calculation:', {
+      customProductOwnerNames,
+      reportDataProductOwnerNames: reportData.productOwnerNames,
+      reportDataProductOwnerNamesLength: reportData.productOwnerNames.length
+    });
+    
+    // Use custom names if they exist, otherwise use the properly formatted names from reportData
     if (customProductOwnerNames) {
+      console.log('🔍 [REPORT CONTAINER DEBUG] Using custom names:', customProductOwnerNames);
       return customProductOwnerNames;
     }
     
-    // Helper function to capitalize first letter
-    const capitalizeFirstLetter = (str: string): string => {
-      return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-    };
-    
-    // Parse full names into first name and surname
-    const parseFullName = (fullName: string): { firstName: string; surname: string } => {
-      const parts = fullName.trim().split(' ');
-      if (parts.length === 1) {
-        return { firstName: capitalizeFirstLetter(parts[0]), surname: '' };
-      }
-      
-      // For multiple parts, use first name + last name, both capitalized
-      const firstName = capitalizeFirstLetter(parts[0]);
-      const surname = capitalizeFirstLetter(parts[parts.length - 1]);
-      return { firstName, surname };
-    };
-
     if (reportData.productOwnerNames.length === 0) {
+      console.log('🔍 [REPORT CONTAINER DEBUG] No product owner names found, returning empty string');
       return '';
     }
 
-    // Parse all names
-    const parsedNames = reportData.productOwnerNames.map(parseFullName);
-    
-    // Group by surname
-    const surnameGroups = new Map<string, string[]>();
-    
-    parsedNames.forEach(({ firstName, surname }) => {
-      if (!surnameGroups.has(surname)) {
-        surnameGroups.set(surname, []);
-      }
-      surnameGroups.get(surname)!.push(firstName);
-    });
-    
-    // Format each surname group
-    const formattedGroups: string[] = [];
-    
-    surnameGroups.forEach((firstNames, surname) => {
-      if (firstNames.length === 1) {
-        // Single person with this surname
-        if (surname) {
-          formattedGroups.push(`${firstNames[0]} ${surname}`);
-        } else {
-          formattedGroups.push(firstNames[0]);
-        }
-      } else {
-        // Multiple people with same surname - combine first names
-        const joinedFirstNames = firstNames.join(' & ');
-        if (surname) {
-          formattedGroups.push(`${joinedFirstNames} ${surname}`);
-        } else {
-          formattedGroups.push(joinedFirstNames);
-        }
-      }
-    });
-    
-    return formattedGroups.join(' & ');
+    // reportData.productOwnerNames now contains properly formatted names with known_as support
+    // from the extractProductOwners function, so we can use them directly
+    const result = reportData.productOwnerNames.join(' & ');
+    console.log('🔍 [REPORT CONTAINER DEBUG] Final display result:', result);
+    return result;
   }, [reportData.productOwnerNames, customProductOwnerNames]);
 
   // PERFORMANCE OPTIMIZATION: Memoized event handlers
@@ -226,6 +187,14 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
   const openProductOwnerModal = useCallback(() => {
     setShowProductOwnerModal(true);
   }, [setShowProductOwnerModal]);
+
+  const openPrintInstructions = useCallback(() => {
+    setShowPrintInstructions(true);
+  }, []);
+
+  const closePrintInstructions = useCallback(() => {
+    setShowPrintInstructions(false);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 print:bg-white">
@@ -308,14 +277,24 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
                   {hideZeros ? 'Show Zeros' : 'Hide Zeros'}
                 </span>
               </button>
-              <button
-                onClick={handlePrint}
-                className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                aria-label="Print report"
-              >
-                <PrinterIcon className="h-4 w-4 mr-2" aria-hidden="true" />
-                Print Report
-              </button>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={openPrintInstructions}
+                  className="flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                  aria-label="View print instructions"
+                  title="How to get the best print quality"
+                >
+                  <QuestionMarkCircleIcon className="h-4 w-4" aria-hidden="true" />
+                </button>
+                <button
+                  onClick={handlePrint}
+                  className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                  aria-label="Print report"
+                >
+                  <PrinterIcon className="h-4 w-4 mr-2" aria-hidden="true" />
+                  Print Report
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -436,6 +415,12 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
       
       {/* Product Owner Modal */}
       <ProductOwnerModal reportData={reportData} />
+
+      {/* Print Instructions Modal */}
+      <PrintInstructionsModal 
+        isOpen={showPrintInstructions}
+        onClose={closePrintInstructions}
+      />
     </div>
   );
 });

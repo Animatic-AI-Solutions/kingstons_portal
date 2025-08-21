@@ -12,7 +12,7 @@ import { createPortfolioFundsService } from '../services/portfolioFundsService';
 import { formatDateFallback, formatCurrencyFallback, formatPercentageFallback } from '../components/reports/shared/ReportFormatters';
 import { formatWeightedRisk } from '../utils/reportFormatters';
 import historicalIRRService from '../services/historicalIRRService';
-import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
+import { getProductOwnerDisplayName, getProductOwnerFormalDisplayName, getProductOwnerKnownAsDisplayName } from '../utils/productOwnerUtils';
 
 /* 
  * PERFORMANCE OPTIMIZATIONS - PHASE 1, 2 & 3 (Implemented ✅)
@@ -430,31 +430,57 @@ const ReportGenerator: React.FC = () => {
   const extractProductOwners = (products: Product[]): string[] => {
     const ownerSet = new Set<string>();
     
-    products.forEach((product) => {
-      // Method 1: Extract from product_owner_name string (backend-computed names)
-      if (product.product_owner_name) {
-        const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
-        ownerNames.forEach(ownerName => {
+    console.log('🔍 [EXTRACT OWNERS DEBUG] Starting extraction for', products.length, 'products');
+    
+    products.forEach((product, index) => {
+      console.log(`🔍 [EXTRACT OWNERS DEBUG] Product ${index + 1}:`, {
+        id: product.id,
+        name: product.product_name,
+        product_owner_name: product.product_owner_name,
+        product_owners_array: product.product_owners,
+        product_owners_count: product.product_owners?.length || 0
+      });
+      
+      // Priority: Use Method 2 (product_owners array) if available, otherwise fallback to Method 1
+      // This prevents duplicates when both methods return names for the same person
+      
+      if (product.product_owners && Array.isArray(product.product_owners) && product.product_owners.length > 0) {
+        // Method 2: Extract from product_owners array (preferred - has known_as support)
+        console.log(`🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product ${product.id}`);
+        product.product_owners.forEach((owner, ownerIndex) => {
+          console.log(`🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner ${ownerIndex + 1}:`, {
+            id: owner.id,
+            firstname: owner.firstname,
+            surname: owner.surname,
+            known_as: owner.known_as
+          });
+          
+          // Use formal display name for report headers (firstname + surname, fallback to known_as)
+          const ownerName = getProductOwnerFormalDisplayName(owner);
+          console.log(`🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result:`, ownerName);
+          
           if (ownerName && ownerName !== 'Unknown') {
+            console.log(`🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name:`, ownerName);
             ownerSet.add(ownerName);
           }
         });
-      }
-      
-      // Method 2: Extract from product_owners array (for joint products)
-      // Use consistent logic to avoid duplicates like "Sue" and "Sue Cole"
-      if (product.product_owners && Array.isArray(product.product_owners)) {
-        product.product_owners.forEach(owner => {
-          // Use the same utility function as backend for consistent naming
-          const ownerName = getProductOwnerDisplayName(owner);
+      } else if (product.product_owner_name) {
+        // Method 1: Fallback to product_owner_name string (when no detailed owner data available)
+        console.log(`🔍 [EXTRACT OWNERS DEBUG] Using Method 1 fallback (product_owner_name) for product ${product.id}`);
+        const ownerNames = product.product_owner_name.split(/[,&]/).map((name: string) => name.trim());
+        console.log(`🔍 [EXTRACT OWNERS DEBUG] Method 1 - product_owner_name split:`, ownerNames);
+        ownerNames.forEach(ownerName => {
           if (ownerName && ownerName !== 'Unknown') {
+            console.log(`🔍 [EXTRACT OWNERS DEBUG] Method 1 - Adding name:`, ownerName);
             ownerSet.add(ownerName);
           }
         });
       }
     });
     
-    return Array.from(ownerSet).sort();
+    const result = Array.from(ownerSet).sort();
+    console.log('🔍 [EXTRACT OWNERS DEBUG] Final result:', result);
+    return result;
   };
 
   // Update product owner order when related products change
@@ -2354,6 +2380,7 @@ const ReportGenerator: React.FC = () => {
           product_name: productDetails.product_name,
           product_type: productDetails.product_type,
           product_owner_name: productOwnerName,
+          product_owners: productDetails.product_owners, // Include product owners array for known_as support
           start_date: productStartDate,
           total_investment: productTotalInvestment,
           total_regular_investment: productTotalRegularInvestment,
@@ -2486,43 +2513,26 @@ Please select a different valuation date or ensure all active funds have valuati
               earliestTransactionDate: earliestDate,
               selectedValuationDate: selectedValuationDate,
               productOwnerNames: (() => {
-                console.log('🔍 [PRODUCT OWNER DEBUG] Raw product owner names:', productSummaryResults.map(p => ({
-                  id: p.id,
-                  name: p.product_name,
-                  owner: p.product_owner_name,
-                  ownerType: typeof p.product_owner_name
-                })));
+                // Use the extractProductOwners function that properly handles known_as field
+                const includedProducts = relatedProducts.filter(product => !excludedProductIds.has(product.id));
+                const ownerNames = extractProductOwners(includedProducts);
                 
-                const allNames = productSummaryResults
-                  .map(product => product.product_owner_name)
-                  .filter(name => name && name.trim() !== '');
+                console.log('🔍 [PRODUCT OWNER DEBUG] Using extractProductOwners with known_as support:', ownerNames);
                 
-                console.log('🔍 [PRODUCT OWNER DEBUG] Filtered names:', allNames);
-                
-                const splitNames = allNames
-                  .flatMap(name => name ? name.split(/[,&]/).map(n => n.trim()) : [])
-                  .filter(name => name !== '');
-                
-                console.log('🔍 [PRODUCT OWNER DEBUG] After splitting:', splitNames);
-                
-                const uniqueNames = Array.from(new Set(splitNames)).sort();
-                
-                console.log('🔍 [PRODUCT OWNER DEBUG] Final unique full names:', uniqueNames);
-                
-                return uniqueNames;
+                return ownerNames;
               })(),
               timePeriod: (() => {
-                // Get the effective end date - use selected date or current date
-                const effectiveEndDate = selectedValuationDate || new Date().toISOString().split('T')[0];
-                
-                  if (earliestDate) {
-                  const startDate = formatDateFallback(earliestDate);
-                  const endDate = formatDateFallback(effectiveEndDate);
-                  return `${startDate} to ${endDate}`;
-                  } else {
-                  // If no earliest date found, show period ending with the effective date
-                  return `Period ending ${formatDateFallback(effectiveEndDate)}`;
+                // Get the latest date from IRR date selections
+                const allSelectedDates = getUniqueSelectedDates(selectedIRRDates);
+                if (allSelectedDates.length > 0) {
+                  // Sort dates and get the most recent one
+                  const sortedDates = allSelectedDates.sort((a, b) => b.localeCompare(a));
+                  return formatDateFallback(sortedDates[0]);
                 }
+                
+                // Fallback to selectedValuationDate or current date if no IRR dates selected
+                const effectiveEndDate = selectedValuationDate || new Date().toISOString().split('T')[0];
+                return formatDateFallback(effectiveEndDate);
               })(),
               // Report settings
               showInactiveProducts,
@@ -2561,44 +2571,26 @@ Please select a different valuation date or ensure all active funds have valuati
           return productOwnerOrder;
         })(), // Use custom order instead of alphabetical
         productOwnerNames: (() => {
-          console.log('🔍 [PRODUCT OWNER DEBUG - FINAL] Raw product owner names:', productSummaryResults.map(p => ({
-            id: p.id,
-            name: p.product_name,
-            owner: p.product_owner_name,
-            ownerType: typeof p.product_owner_name
-          })));
+          // Use the extractProductOwners function that properly handles known_as field
+          const includedProducts = relatedProducts.filter(product => !excludedProductIds.has(product.id));
+          const ownerNames = extractProductOwners(includedProducts);
           
-          const allNames = productSummaryResults
-            .map(product => product.product_owner_name)
-            .filter(name => name && name.trim() !== '');
+          console.log('🔍 [PRODUCT OWNER DEBUG - FINAL] Using extractProductOwners with known_as support:', ownerNames);
           
-          console.log('🔍 [PRODUCT OWNER DEBUG - FINAL] Filtered names:', allNames);
-          
-          const splitNames = allNames
-            .flatMap(name => name ? name.split(/[,&]/).map(n => n.trim()) : [])
-            .filter(name => name !== '');
-          
-          console.log('🔍 [PRODUCT OWNER DEBUG - FINAL] After splitting:', splitNames);
-          
-          // Keep full names instead of extracting just nicknames
-          const uniqueNames = Array.from(new Set(splitNames)).sort();
-          
-          console.log('🔍 [PRODUCT OWNER DEBUG - FINAL] Final unique full names:', uniqueNames);
-          
-          return uniqueNames;
+          return ownerNames;
         })(),
         timePeriod: (() => {
-          // Get the effective end date - use selected date or current date
-          const effectiveEndDate = selectedValuationDate || new Date().toISOString().split('T')[0];
-          
-            if (earliestDate) {
-            const startDate = formatDateFallback(earliestDate);
-            const endDate = formatDateFallback(effectiveEndDate);
-            return `${startDate} to ${endDate}`;
-            } else {
-            // If no earliest date found, show period ending with the effective date
-            return `Period ending ${formatDateFallback(effectiveEndDate)}`;
+          // Get the latest date from IRR date selections
+          const allSelectedDates = getUniqueSelectedDates(selectedIRRDates);
+          if (allSelectedDates.length > 0) {
+            // Sort dates and get the most recent one
+            const sortedDates = allSelectedDates.sort((a, b) => b.localeCompare(a));
+            return formatDateFallback(sortedDates[0]);
           }
+          
+          // Fallback to selectedValuationDate or current date if no IRR dates selected
+          const effectiveEndDate = selectedValuationDate || new Date().toISOString().split('T')[0];
+          return formatDateFallback(effectiveEndDate);
         })(),
         // Report settings
         showInactiveProducts,
@@ -2706,44 +2698,53 @@ Please select a different valuation date or ensure all active funds have valuati
     });
   };
 
+  // Helper function to count total unique dates across all products
+  const getUniqueSelectedDatesCount = (selections: ProductIRRSelections): number => {
+    const allDates = new Set<string>();
+    Object.values(selections).forEach(dates => {
+      dates.forEach(date => allDates.add(date));
+    });
+    return allDates.size;
+  };
+
+  // Helper function to get all unique selected dates
+  const getUniqueSelectedDates = (selections: ProductIRRSelections): string[] => {
+    const allDates = new Set<string>();
+    Object.values(selections).forEach(dates => {
+      dates.forEach(date => allDates.add(date));
+    });
+    return Array.from(allDates).sort();
+  };
+
   // Helper function to generate report title information
   // PHASE 2.2: Memoize expensive report title calculation to prevent re-computation
   const getReportTitleInfo = useMemo(() => {
     // Get time period
     const timePeriod = (() => {
-      // Get the effective end date - use selected date or current date
-      const effectiveEndDate = selectedValuationDate || new Date().toISOString().split('T')[0];
-      
-      if (earliestTransactionDate) {
-        const startDate = formatDateFallback(earliestTransactionDate);
-        const endDate = formatDateFallback(effectiveEndDate);
-        return `${startDate} to ${endDate}`;
-      } else {
-        // If no earliest date found, show period ending with the effective date
-        return `Period ending ${formatDateFallback(effectiveEndDate)}`;
+      // Get the latest date from IRR date selections
+      const allSelectedDates = getUniqueSelectedDates(selectedIRRDates);
+      if (allSelectedDates.length > 0) {
+        // Sort dates and get the most recent one
+        const sortedDates = allSelectedDates.sort((a, b) => b.localeCompare(a));
+        return formatDateFallback(sortedDates[0]);
       }
+      
+      // Fallback to selectedValuationDate or current date if no IRR dates selected
+      const effectiveEndDate = selectedValuationDate || new Date().toISOString().split('T')[0];
+      return formatDateFallback(effectiveEndDate);
     })();
 
-    // Get unique product owner names from the generated report
+    // Get unique product owner names using the extractProductOwners function that properly handles known_as field
     const productOwnerNames = (() => {
-      const allNames = productSummaries
-        .map(product => product.product_owner_name)
-        .filter(name => name && name.trim() !== '');
-      
-      const splitNames = allNames
-        .flatMap(name => name ? name.split(/[,&]/).map(n => n.trim()) : [])
-        .filter(name => name !== '');
-      
-      const uniqueNames = Array.from(new Set(splitNames)).sort();
-      
-      return uniqueNames;
+      const includedProducts = relatedProducts.filter(product => !excludedProductIds.has(product.id));
+      return extractProductOwners(includedProducts);
     })();
 
     return {
       timePeriod,
       productOwnerNames
     };
-  }, [selectedValuationDate, earliestTransactionDate, productSummaries]);
+  }, [selectedValuationDate, earliestTransactionDate, productSummaries, relatedProducts, excludedProductIds]);
 
   // PHASE 2.2: Memoize expensive date filtering calculations
   const getFilteredDatesForProduct = useCallback((productId: number): Array<{value: string, label: string}> => {
@@ -2772,24 +2773,6 @@ Please select a different valuation date or ensure all active funds have valuati
         value: date.date,
         label: date.label
       }));
-  };
-
-  // Helper function to count total unique dates across all products
-  const getUniqueSelectedDatesCount = (selections: ProductIRRSelections): number => {
-    const allDates = new Set<string>();
-    Object.values(selections).forEach(dates => {
-      dates.forEach(date => allDates.add(date));
-    });
-    return allDates.size;
-  };
-
-  // Helper function to get all unique selected dates
-  const getUniqueSelectedDates = (selections: ProductIRRSelections): string[] => {
-    const allDates = new Set<string>();
-    Object.values(selections).forEach(dates => {
-      dates.forEach(date => allDates.add(date));
-    });
-    return Array.from(allDates).sort();
   };
 
   // Helper function to check if new selection would exceed limit

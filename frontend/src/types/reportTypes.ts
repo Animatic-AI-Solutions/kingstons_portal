@@ -9,6 +9,7 @@ export interface ProductPeriodSummary {
   product_name: string;
   product_type?: string;
   product_owner_name?: string;
+  product_owners?: ProductOwner[]; // Add product owners array for known_as support
   start_date: string | null;
   total_investment: number;
   total_regular_investment: number;

@@ -12,36 +12,112 @@ export interface ProductOwner {
 }
 
 /**
- * Gets the display name for a product owner.
- * Logic: Show firstname + surname if both exist, otherwise show known_as, otherwise show whatever exists.
- * This ensures proper name display: either formal name (firstname surname) or nickname (known_as).
+ * Gets the formal display name for a product owner (for report headers, general display).
+ * Logic: Use firstname + surname if both exist, otherwise fallback to known_as.
+ * This ensures proper formal name display: prefer formal names over nicknames.
  */
-export const getProductOwnerDisplayName = (owner: ProductOwner): string => {
+export const getProductOwnerFormalDisplayName = (owner: ProductOwner): string => {
+  console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal):', {
+    id: owner.id,
+    firstname: owner.firstname,
+    surname: owner.surname,
+    known_as: owner.known_as
+  });
+  
   const firstname = (owner.firstname && owner.firstname.trim()) || '';
   const surname = (owner.surname && owner.surname.trim()) || '';
   const knownAs = (owner.known_as && owner.known_as.trim()) || '';
   
+  console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal):', {
+    firstname,
+    surname,
+    knownAs
+  });
+  
   // Priority 1: If both firstname and surname exist, use formal name
   if (firstname && surname) {
-    return `${firstname} ${surname}`;
+    const result = `${firstname} ${surname}`;
+    console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname):', result);
+    return result;
   }
   
-  // Priority 2: If known_as exists, use it
+  // Priority 2: If known_as exists, use it as fallback
   if (knownAs) {
+    console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 2 (known_as fallback):', knownAs);
     return knownAs;
   }
   
   // Priority 3: Use whatever single field exists
   if (firstname) {
+    console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 3 (firstname only):', firstname);
     return firstname;
   }
   
   if (surname) {
+    console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 3 (surname only):', surname);
     return surname;
   }
   
+  console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Using fallback: Unknown');
   return 'Unknown';
 };
+
+/**
+ * Gets the known_as display name for a product owner (for product names in reports).
+ * Logic: Always use known_as if available, otherwise fallback to firstname + surname.
+ * This ensures product names always show the preferred nickname.
+ */
+export const getProductOwnerKnownAsDisplayName = (owner: ProductOwner): string => {
+  console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (known_as):', {
+    id: owner.id,
+    firstname: owner.firstname,
+    surname: owner.surname,
+    known_as: owner.known_as
+  });
+  
+  const firstname = (owner.firstname && owner.firstname.trim()) || '';
+  const surname = (owner.surname && owner.surname.trim()) || '';
+  const knownAs = (owner.known_as && owner.known_as.trim()) || '';
+  
+  console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (known_as):', {
+    firstname,
+    surname,
+    knownAs
+  });
+  
+  // Priority 1: If known_as exists, always use it
+  if (knownAs) {
+    console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (known_as):', knownAs);
+    return knownAs;
+  }
+  
+  // Priority 2: Fallback to firstname + surname if both exist
+  if (firstname && surname) {
+    const result = `${firstname} ${surname}`;
+    console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 2 (firstname + surname fallback):', result);
+    return result;
+  }
+  
+  // Priority 3: Use whatever single field exists
+  if (firstname) {
+    console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 3 (firstname only):', firstname);
+    return firstname;
+  }
+  
+  if (surname) {
+    console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 3 (surname only):', surname);
+    return surname;
+  }
+  
+  console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Using fallback: Unknown');
+  return 'Unknown';
+};
+
+/**
+ * @deprecated Use getProductOwnerFormalDisplayName or getProductOwnerKnownAsDisplayName instead
+ * Legacy function - kept for backwards compatibility
+ */
+export const getProductOwnerDisplayName = getProductOwnerFormalDisplayName;
 
 /**
  * Gets the formal name (firstname + surname) for a product owner
