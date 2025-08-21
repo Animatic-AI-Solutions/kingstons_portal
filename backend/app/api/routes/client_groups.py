@@ -1411,6 +1411,7 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                 "provider_id": product["provider_id"],
                 "provider_name": product["provider_name"],
                 "provider_theme_color": product.get("provider_theme_color"),
+                "plan_number": product.get("plan_number"),
                 "total_value": sum(
                     float(fund.get("market_value") or 0) if fund.get("market_value") is not None and str(fund.get("market_value")).strip() != '' 
                     else 0 

@@ -201,7 +201,7 @@ export const generateEffectiveProductTitle = (
 
 /**
  * Generate product display name for client groups and general display
- * Format: provider - type - product_name - plan_number - owner
+ * Format: provider - name - plan_number - product_owner
  * Where product_name is the basic product description from the database
  */
 export const generateProductDisplayName = (product: any): string => {
@@ -212,22 +212,22 @@ export const generateProductDisplayName = (product: any): string => {
     parts.push(product.provider_name);
   }
 
-  // 2. Product type
-  if (product.product_type) {
-    parts.push(product.product_type);
-  }
-
-  // 3. Product name (basic product description from database)
+  // 2. Product name (basic product description from database)
   if (product.product_name) {
     parts.push(product.product_name);
   }
 
-  // 4. Plan number (if available)
-  if (product.plan_number) {
-    parts.push(product.plan_number);
+  // 3. Plan number (if available) - try both direct field and extraction
+  let planNumber = product.plan_number;
+  if (!planNumber) {
+    planNumber = extractPlanNumber(product);
+  }
+  
+  if (planNumber) {
+    parts.push(planNumber);
   }
 
-  // 5. Product owner(s) - show "Joint" if multiple, first name if single
+  // 4. Product owner(s) - show "Joint" if multiple, first name if single
   if (product.product_owners && product.product_owners.length > 0) {
     if (product.product_owners.length > 1) {
       parts.push('Joint');

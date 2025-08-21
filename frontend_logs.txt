@@ -1,377 +1,141 @@
 chunk-QYFCA5BS.js?v=cc98fab4:21609 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
 providerColors.ts:75 Provider color service initialized {providersLoaded: 19, colorsInCache: 19}
-ReportGenerator.tsx:433 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 0 products
-ReportGenerator.tsx:482 🔍 [EXTRACT OWNERS DEBUG] Final result: []
-ReportGenerator.tsx:433 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 0 products
-ReportGenerator.tsx:482 🔍 [EXTRACT OWNERS DEBUG] Final result: []
-ReportGenerator.tsx:433 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 0 products
-ReportGenerator.tsx:482 🔍 [EXTRACT OWNERS DEBUG] Final result: []
-ReportGenerator.tsx:588 🚀 Starting optimized data loading...
-ReportGenerator.tsx:592 📋 Loading client groups first (priority)...
-ReportGenerator.tsx:777 🚫 PHASE 2.1: Clearing products immediately (no debounce needed)
-ReportGenerator.tsx:3056 🚫 PHASE 1.2 FIX: Skipping IRR dates fetch - no included products
-ReportGenerator.tsx:433 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 0 products
-ReportGenerator.tsx:482 🔍 [EXTRACT OWNERS DEBUG] Final result: []
-ReportGenerator.tsx:580 🚫 PHASE 1.1 FIX: Skipping duplicate fetchInitialData call
-ReportGenerator.tsx:777 🚫 PHASE 2.1: Clearing products immediately (no debounce needed)
-ReportGenerator.tsx:3056 🚫 PHASE 1.2 FIX: Skipping IRR dates fetch - no included products
-ReportGenerator.tsx:433 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 0 products
-ReportGenerator.tsx:482 🔍 [EXTRACT OWNERS DEBUG] Final result: []
-ReportGenerator.tsx:433 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 0 products
-ReportGenerator.tsx:482 🔍 [EXTRACT OWNERS DEBUG] Final result: []
-ReportGenerator.tsx:433 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 0 products
-ReportGenerator.tsx:482 🔍 [EXTRACT OWNERS DEBUG] Final result: []
-ReportGenerator.tsx:3056 🚫 PHASE 1.2 FIX: Skipping IRR dates fetch - no included products
-ReportGenerator.tsx:607 📦 Loading all products in background...
-ReportGenerator.tsx:774 🕐 PHASE 2.1: Using debounced updateRelatedProducts (300ms delay)
-ReportGenerator.tsx:754 Total products displayed: 0
-ReportGenerator.tsx:755 Client group cache size: 0 groups
-ReportGenerator.tsx:433 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 0 products
-ReportGenerator.tsx:482 🔍 [EXTRACT OWNERS DEBUG] Final result: []
-ReportGenerator.tsx:433 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 0 products
-ReportGenerator.tsx:482 🔍 [EXTRACT OWNERS DEBUG] Final result: []
-ReportGenerator.tsx:433 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 0 products
-ReportGenerator.tsx:482 🔍 [EXTRACT OWNERS DEBUG] Final result: []
-ReportGenerator.tsx:3056 🚫 PHASE 1.2 FIX: Skipping IRR dates fetch - no included products
-MultiSelectDropdown.tsx:171 ✅ MultiSelect: Adding item 28 to selection. New values: [28]
-ReportGenerator.tsx:774 🕐 PHASE 2.1: Using debounced updateRelatedProducts (300ms delay)
-ReportGenerator.tsx:433 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 0 products
-ReportGenerator.tsx:482 🔍 [EXTRACT OWNERS DEBUG] Final result: []
-ReportGenerator.tsx:433 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 0 products
-ReportGenerator.tsx:482 🔍 [EXTRACT OWNERS DEBUG] Final result: []
-ReportGenerator.tsx:3056 🚫 PHASE 1.2 FIX: Skipping IRR dates fetch - no included products
-ReportGenerator.tsx:703 Fetching 1 client groups in parallel...
-ReportGenerator.tsx:714 Fetched client group 28: 2 products
-ReportGenerator.tsx:744 Parallel fetch complete: 1 client groups processed
-ReportGenerator.tsx:754 Total products displayed: 2
-ReportGenerator.tsx:755 Client group cache size: 0 groups
-ReportGenerator.tsx:433 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 2 products
-ReportGenerator.tsx:436 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 236, name: 'Stocks & Shares ISA', product_owner_name: 'Andrew Plumb', product_owners_array: Array(1), product_owners_count: 1}
-ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 236
-ReportGenerator.tsx:451 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Andrew', surname: 'Plumb', knownAs: 'Andrew'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Andrew Plumb
-ReportGenerator.tsx:460 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Andrew Plumb
-ReportGenerator.tsx:463 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Andrew Plumb
-ReportGenerator.tsx:436 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 237, name: 'Stocks & Shares ISA', product_owner_name: 'Gabriella Cuba', product_owners_array: Array(1), product_owners_count: 1}
-ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 237
-ReportGenerator.tsx:451 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Gabriella', surname: 'Cuba', knownAs: 'Ella'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Gabriella Cuba
-ReportGenerator.tsx:460 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Gabriella Cuba
-ReportGenerator.tsx:463 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Gabriella Cuba
-ReportGenerator.tsx:482 🔍 [EXTRACT OWNERS DEBUG] Final result: (2) ['Andrew Plumb', 'Gabriella Cuba']
-ReportGenerator.tsx:433 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 2 products
-ReportGenerator.tsx:436 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 236, name: 'Stocks & Shares ISA', product_owner_name: 'Andrew Plumb', product_owners_array: Array(1), product_owners_count: 1}
-ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 236
-ReportGenerator.tsx:451 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Andrew', surname: 'Plumb', knownAs: 'Andrew'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Andrew Plumb
-ReportGenerator.tsx:460 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Andrew Plumb
-ReportGenerator.tsx:463 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Andrew Plumb
-ReportGenerator.tsx:436 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 237, name: 'Stocks & Shares ISA', product_owner_name: 'Gabriella Cuba', product_owners_array: Array(1), product_owners_count: 1}
-ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 237
-ReportGenerator.tsx:451 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Gabriella', surname: 'Cuba', knownAs: 'Ella'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Gabriella Cuba
-ReportGenerator.tsx:460 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Gabriella Cuba
-ReportGenerator.tsx:463 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Gabriella Cuba
-ReportGenerator.tsx:482 🔍 [EXTRACT OWNERS DEBUG] Final result: (2) ['Andrew Plumb', 'Gabriella Cuba']
-ReportGenerator.tsx:433 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 2 products
-ReportGenerator.tsx:436 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 236, name: 'Stocks & Shares ISA', product_owner_name: 'Andrew Plumb', product_owners_array: Array(1), product_owners_count: 1}
-ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 236
-ReportGenerator.tsx:451 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Andrew', surname: 'Plumb', knownAs: 'Andrew'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Andrew Plumb
-ReportGenerator.tsx:460 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Andrew Plumb
-ReportGenerator.tsx:463 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Andrew Plumb
-ReportGenerator.tsx:436 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 237, name: 'Stocks & Shares ISA', product_owner_name: 'Gabriella Cuba', product_owners_array: Array(1), product_owners_count: 1}
-ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 237
-ReportGenerator.tsx:451 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Gabriella', surname: 'Cuba', knownAs: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Gabriella Cuba
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Gabriella Cuba
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Gabriella Cuba
- 🔍 [EXTRACT OWNERS DEBUG] Final result: (2) ['Andrew Plumb', 'Gabriella Cuba']
- 🕐 PHASE 2.1: Using debounced updateRelatedProducts (300ms delay)
- 📊 Fetching available IRR dates for 2 products
- 📊 Attempting to fetch combined historical IRR from: /api/historical-irr/combined/236?limit=1000
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Andrew Plumb"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Andrew Plumb', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Andrew Plumb', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Andrew Plumb": []
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Andrew Plumb": 0 products
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Gabriella Cuba"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Gabriella Cuba', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Gabriella Cuba', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Gabriella Cuba": []
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Gabriella Cuba": 0 products
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Andrew Plumb"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Andrew Plumb', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Andrew Plumb', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Andrew Plumb": []
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Andrew Plumb": 0 products
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Gabriella Cuba"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Gabriella Cuba', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Gabriella Cuba', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Gabriella Cuba": []
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Gabriella Cuba": 0 products
- 📊 Response status: 200, Content-Type: application/json
- ✅ Combined historical IRR fetched successfully for product 236: {product_id: 236, portfolio_historical_irr: Array(4), funds_historical_irr: Array(2), portfolio_count: 4, funds_count: 2, …}
- 📊 Attempting to fetch combined historical IRR from: /api/historical-irr/combined/237?limit=1000
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Andrew Plumb"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Andrew Plumb', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Andrew Plumb', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Andrew Plumb": []
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Andrew Plumb": 0 products
-ReportGenerator.tsx:3434 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Gabriella Cuba"
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Gabriella Cuba', …}
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Gabriella Cuba', …}
-ReportGenerator.tsx:3478 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Gabriella Cuba": []
-ReportGenerator.tsx:3495 🔍 [PRODUCT COUNT DEBUG] Final count for "Gabriella Cuba": 0 products
-ReportGenerator.tsx:3434 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Andrew Plumb"
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Andrew Plumb', …}
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Andrew Plumb', …}
-ReportGenerator.tsx:3478 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Andrew Plumb": []
-ReportGenerator.tsx:3495 🔍 [PRODUCT COUNT DEBUG] Final count for "Andrew Plumb": 0 products
-ReportGenerator.tsx:3434 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Gabriella Cuba"
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Gabriella Cuba', …}
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Gabriella Cuba', …}
-ReportGenerator.tsx:3478 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Gabriella Cuba": []
-ReportGenerator.tsx:3495 🔍 [PRODUCT COUNT DEBUG] Final count for "Gabriella Cuba": 0 products
-historicalIRRService.ts:154 📊 Response status: 200, Content-Type: application/json
-historicalIRRService.ts:181 ✅ Combined historical IRR fetched successfully for product 237: {product_id: 237, portfolio_historical_irr: Array(3), funds_historical_irr: Array(2), portfolio_count: 3, funds_count: 2, …}
-ReportGenerator.tsx:2938 Global Top 8 Most Recent Dates: []
-ReportGenerator.tsx:2958 Product 236: Selected 0 out of 8 global dates: []
-ReportGenerator.tsx:2958 Product 237: Selected 0 out of 8 global dates: []
-ReportGenerator.tsx:2961 Select All Results Summary:
-ReportGenerator.tsx:2962 Global unique dates selected: 0
-ReportGenerator.tsx:2965 Product 236: 0/0 global dates selected
-ReportGenerator.tsx:2965 Product 237: 0/0 global dates selected
-ReportGenerator.tsx:3434 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Andrew Plumb"
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Andrew Plumb', …}
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Andrew Plumb', …}
-ReportGenerator.tsx:3478 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Andrew Plumb": []
-ReportGenerator.tsx:3495 🔍 [PRODUCT COUNT DEBUG] Final count for "Andrew Plumb": 0 products
-ReportGenerator.tsx:3434 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Gabriella Cuba"
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Gabriella Cuba', …}
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Gabriella Cuba', …}
-ReportGenerator.tsx:3478 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Gabriella Cuba": []
-ReportGenerator.tsx:3495 🔍 [PRODUCT COUNT DEBUG] Final count for "Gabriella Cuba": 0 products
-ReportGenerator.tsx:3434 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Andrew Plumb"
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Andrew Plumb', …}
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Andrew Plumb', …}
-ReportGenerator.tsx:3478 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Andrew Plumb": []
-ReportGenerator.tsx:3495 🔍 [PRODUCT COUNT DEBUG] Final count for "Andrew Plumb": 0 products
-ReportGenerator.tsx:3434 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Gabriella Cuba"
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Gabriella Cuba', …}
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Gabriella Cuba', …}
-ReportGenerator.tsx:3478 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Gabriella Cuba": []
-ReportGenerator.tsx:3495 🔍 [PRODUCT COUNT DEBUG] Final count for "Gabriella Cuba": 0 products
-ReportGenerator.tsx:3434 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Andrew Plumb"
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Andrew Plumb', …}
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Andrew Plumb', …}
-ReportGenerator.tsx:3478 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Andrew Plumb": []
-ReportGenerator.tsx:3495 🔍 [PRODUCT COUNT DEBUG] Final count for "Andrew Plumb": 0 products
-ReportGenerator.tsx:3434 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Gabriella Cuba"
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Gabriella Cuba', …}
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Gabriella Cuba', …}
-ReportGenerator.tsx:3478 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Gabriella Cuba": []
-ReportGenerator.tsx:3495 🔍 [PRODUCT COUNT DEBUG] Final count for "Gabriella Cuba": 0 products
-ReportGenerator.tsx:3434 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Andrew Plumb"
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Andrew Plumb', …}
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Andrew Plumb', …}
-ReportGenerator.tsx:3478 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Andrew Plumb": []
-ReportGenerator.tsx:3495 🔍 [PRODUCT COUNT DEBUG] Final count for "Andrew Plumb": 0 products
-ReportGenerator.tsx:3434 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Gabriella Cuba"
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Gabriella Cuba', …}
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Gabriella Cuba', …}
-ReportGenerator.tsx:3478 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Gabriella Cuba": []
-ReportGenerator.tsx:3495 🔍 [PRODUCT COUNT DEBUG] Final count for "Gabriella Cuba": 0 products
- Using cached data for client group 28: 2 products
- Total products displayed: 2
- Client group cache size: 1 groups
- 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 2 products
- 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 236, name: 'Stocks & Shares ISA', product_owner_name: 'Andrew Plumb', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 236
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Andrew', surname: 'Plumb', knownAs: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Andrew Plumb
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Andrew Plumb
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Andrew Plumb
- 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 237, name: 'Stocks & Shares ISA', product_owner_name: 'Gabriella Cuba', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 237
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Gabriella', surname: 'Cuba', knownAs: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Gabriella Cuba
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Gabriella Cuba
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Gabriella Cuba
- 🔍 [EXTRACT OWNERS DEBUG] Final result: (2) ['Andrew Plumb', 'Gabriella Cuba']
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Andrew Plumb"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Andrew Plumb', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Andrew Plumb', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Andrew Plumb": []
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Andrew Plumb": 0 products
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Gabriella Cuba"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Gabriella Cuba', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Gabriella Cuba', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Gabriella Cuba": []
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Gabriella Cuba": 0 products
- 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 2 products
- 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 236, name: 'Stocks & Shares ISA', product_owner_name: 'Andrew Plumb', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 236
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Andrew', surname: 'Plumb', knownAs: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Andrew Plumb
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Andrew Plumb
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Andrew Plumb
- 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 237, name: 'Stocks & Shares ISA', product_owner_name: 'Gabriella Cuba', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 237
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Gabriella', surname: 'Cuba', knownAs: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Gabriella Cuba
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Gabriella Cuba
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Gabriella Cuba
- 🔍 [EXTRACT OWNERS DEBUG] Final result: (2) ['Andrew Plumb', 'Gabriella Cuba']
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Andrew Plumb"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Andrew Plumb', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Andrew Plumb', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Andrew Plumb": []
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Andrew Plumb": 0 products
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Gabriella Cuba"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Gabriella Cuba', …}
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Gabriella Cuba', …}
-ReportGenerator.tsx:3478 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Gabriella Cuba": []
-ReportGenerator.tsx:3495 🔍 [PRODUCT COUNT DEBUG] Final count for "Gabriella Cuba": 0 products
-ReportGenerator.tsx:433 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 2 products
-ReportGenerator.tsx:436 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 236, name: 'Stocks & Shares ISA', product_owner_name: 'Andrew Plumb', product_owners_array: Array(1), product_owners_count: 1}
-ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 236
-ReportGenerator.tsx:451 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Andrew', surname: 'Plumb', knownAs: 'Andrew'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Andrew Plumb
-ReportGenerator.tsx:460 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Andrew Plumb
-ReportGenerator.tsx:463 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Andrew Plumb
-ReportGenerator.tsx:436 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 237, name: 'Stocks & Shares ISA', product_owner_name: 'Gabriella Cuba', product_owners_array: Array(1), product_owners_count: 1}
-ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 237
-ReportGenerator.tsx:451 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Gabriella', surname: 'Cuba', knownAs: 'Ella'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Gabriella Cuba
-ReportGenerator.tsx:460 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Gabriella Cuba
-ReportGenerator.tsx:463 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Gabriella Cuba
-ReportGenerator.tsx:482 🔍 [EXTRACT OWNERS DEBUG] Final result: (2) ['Andrew Plumb', 'Gabriella Cuba']
-ReportGenerator.tsx:3062 📊 Fetching available IRR dates for 2 products
-ReportGenerator.tsx:2938 Global Top 8 Most Recent Dates: (5) ['2023-04-01', '2023-03-01', '2023-02-01', '2023-01-01', '2022-08-01']
-ReportGenerator.tsx:2958 Product 236: Selected 4 out of 8 global dates: (4) ['2023-04-01', '2023-03-01', '2023-02-01', '2023-01-01']
-ReportGenerator.tsx:2958 Product 237: Selected 3 out of 8 global dates: (3) ['2023-02-01', '2023-01-01', '2022-08-01']
-ReportGenerator.tsx:2961 Select All Results Summary:
-ReportGenerator.tsx:2962 Global unique dates selected: 5
-ReportGenerator.tsx:2965 Product 236: 4/5 global dates selected
-ReportGenerator.tsx:2965 Product 237: 3/5 global dates selected
-ReportGenerator.tsx:3434 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Andrew Plumb"
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Andrew Plumb', …}
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Andrew Plumb', …}
-ReportGenerator.tsx:3478 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Andrew Plumb": []
-ReportGenerator.tsx:3495 🔍 [PRODUCT COUNT DEBUG] Final count for "Andrew Plumb": 0 products
-ReportGenerator.tsx:3434 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Gabriella Cuba"
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Gabriella Cuba', …}
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Gabriella Cuba', …}
-ReportGenerator.tsx:3478 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Gabriella Cuba": []
-ReportGenerator.tsx:3495 🔍 [PRODUCT COUNT DEBUG] Final count for "Gabriella Cuba": 0 products
-ReportGenerator.tsx:3434 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Andrew Plumb"
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Andrew Plumb', …}
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Andrew Plumb', …}
-ReportGenerator.tsx:3478 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Andrew Plumb": []
-ReportGenerator.tsx:3495 🔍 [PRODUCT COUNT DEBUG] Final count for "Andrew Plumb": 0 products
-ReportGenerator.tsx:3434 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Gabriella Cuba"
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Gabriella Cuba', …}
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Gabriella Cuba', …}
-ReportGenerator.tsx:3478 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Gabriella Cuba": []
-ReportGenerator.tsx:3495 🔍 [PRODUCT COUNT DEBUG] Final count for "Gabriella Cuba": 0 products
-ReportGenerator.tsx:3434 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Andrew Plumb"
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Andrew Plumb', …}
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Andrew Plumb', …}
-ReportGenerator.tsx:3478 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Andrew Plumb": []
-ReportGenerator.tsx:3495 🔍 [PRODUCT COUNT DEBUG] Final count for "Andrew Plumb": 0 products
-ReportGenerator.tsx:3434 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Gabriella Cuba"
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Gabriella Cuba', …}
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Gabriella Cuba', …}
-ReportGenerator.tsx:3478 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Gabriella Cuba": []
-ReportGenerator.tsx:3495 🔍 [PRODUCT COUNT DEBUG] Final count for "Gabriella Cuba": 0 products
-ReportGenerator.tsx:3434 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Andrew Plumb"
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Andrew Plumb', …}
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Andrew Plumb', …}
-ReportGenerator.tsx:3478 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Andrew Plumb": []
-ReportGenerator.tsx:3495 🔍 [PRODUCT COUNT DEBUG] Final count for "Andrew Plumb": 0 products
-ReportGenerator.tsx:3434 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Gabriella Cuba"
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 236 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 63, knownAs: 'Andrew', firstname: 'Andrew', displayName: 'Andrew', target_owner: 'Gabriella Cuba', …}
-ReportGenerator.tsx:3441 🔍 [PRODUCT COUNT DEBUG] Checking product 237 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3461 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 43, knownAs: 'Ella', firstname: 'Gabriella', displayName: 'Ella', target_owner: 'Gabriella Cuba', …}
-ReportGenerator.tsx:3478 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Gabriella Cuba": []
-ReportGenerator.tsx:3495 🔍 [PRODUCT COUNT DEBUG] Final count for "Gabriella Cuba": 0 products
+ClientDetails.tsx:1196 DEBUG: Client data: {client: null, client_product_owners: undefined, clientAccounts: Array(0), first_account_owners: undefined, apiResponse: undefined}
+ClientDetails.tsx:1196 DEBUG: Client data: {client: null, client_product_owners: undefined, clientAccounts: Array(0), first_account_owners: undefined, apiResponse: undefined}
+useClientDetails.ts:91 🚀 Fetching client details for ID: 28
+ClientDetails.tsx:1196 DEBUG: Client data: {client: null, client_product_owners: undefined, clientAccounts: Array(0), first_account_owners: undefined, apiResponse: undefined}
+ClientDetails.tsx:1196 DEBUG: Client data: {client: null, client_product_owners: undefined, clientAccounts: Array(0), first_account_owners: undefined, apiResponse: undefined}
+ClientDetails.tsx:1196 DEBUG: Client data: {client: null, client_product_owners: undefined, clientAccounts: Array(0), first_account_owners: undefined, apiResponse: undefined}
+ClientDetails.tsx:1196 DEBUG: Client data: {client: null, client_product_owners: undefined, clientAccounts: Array(0), first_account_owners: undefined, apiResponse: undefined}
+ClientDetails.tsx:1196 DEBUG: Client data: {client: null, client_product_owners: undefined, clientAccounts: Array(0), first_account_owners: undefined, apiResponse: undefined}
+ClientDetails.tsx:1196 DEBUG: Client data: {client: null, client_product_owners: undefined, clientAccounts: Array(0), first_account_owners: undefined, apiResponse: undefined}
+useClientDetails.ts:94 ✅ Loaded client details for: Unknown
+ClientDetails.tsx:1196 DEBUG: Client data: {client: {…}, client_product_owners: Array(2), clientAccounts: Array(2), first_account_owners: Array(1), apiResponse: {…}}
+ClientDetails.tsx:1196 DEBUG: Client data: {client: {…}, client_product_owners: Array(2), clientAccounts: Array(2), first_account_owners: Array(1), apiResponse: {…}}
+ClientDetails.tsx:299 DEBUG: ClientHeader formatDate - input: 2022-06-08T23:00:00Z output: 9 Jun 2022
+ClientDetails.tsx:299 DEBUG: ClientHeader formatDate - input: 2022-06-08T23:00:00Z output: 9 Jun 2022
+ClientDetails.tsx:677 Product card for Stocks & Shares ISA: {provider: 'Aviva', provider_id: 18, provider_theme_color: null, using_color: '#FDBA74', template_generation_id: null, …}
+productTitleUtils.ts:208 🔍 [PRODUCT DISPLAY DEBUG] generateProductDisplayName called with product: {id: 237, provider_name: 'Aviva', product_name: 'Stocks & Shares ISA', plan_number: undefined, product_type: 'ISA', …}
+productTitleUtils.ts:222 🔍 [PRODUCT DISPLAY DEBUG] Adding provider: Aviva
+productTitleUtils.ts:228 🔍 [PRODUCT DISPLAY DEBUG] Adding product name: Stocks & Shares ISA
+productTitleUtils.ts:235 🔍 [PRODUCT DISPLAY DEBUG] No direct plan_number, trying extraction...
+productTitleUtils.ts:243 🔍 [PRODUCT DISPLAY DEBUG] No plan number found
+productTitleUtils.ts:255 🔍 [PRODUCT DISPLAY DEBUG] Adding single owner: Ella
+productTitleUtils.ts:263 🔍 [PRODUCT DISPLAY DEBUG] Final display name: Aviva - Stocks & Shares ISA - Ella
+productTitleUtils.ts:264 🔍 [PRODUCT DISPLAY DEBUG] Parts used: (3) ['Aviva', 'Stocks & Shares ISA', 'Ella']
+ClientDetails.tsx:677 Product card for Stocks & Shares ISA: {provider: 'Aviva', provider_id: 18, provider_theme_color: null, using_color: '#FDBA74', template_generation_id: null, …}
+productTitleUtils.ts:208 🔍 [PRODUCT DISPLAY DEBUG] generateProductDisplayName called with product: {id: 237, provider_name: 'Aviva', product_name: 'Stocks & Shares ISA', plan_number: undefined, product_type: 'ISA', …}
+productTitleUtils.ts:222 🔍 [PRODUCT DISPLAY DEBUG] Adding provider: Aviva
+productTitleUtils.ts:228 🔍 [PRODUCT DISPLAY DEBUG] Adding product name: Stocks & Shares ISA
+productTitleUtils.ts:235 🔍 [PRODUCT DISPLAY DEBUG] No direct plan_number, trying extraction...
+productTitleUtils.ts:243 🔍 [PRODUCT DISPLAY DEBUG] No plan number found
+productTitleUtils.ts:255 🔍 [PRODUCT DISPLAY DEBUG] Adding single owner: Ella
+productTitleUtils.ts:263 🔍 [PRODUCT DISPLAY DEBUG] Final display name: Aviva - Stocks & Shares ISA - Ella
+productTitleUtils.ts:264 🔍 [PRODUCT DISPLAY DEBUG] Parts used: (3) ['Aviva', 'Stocks & Shares ISA', 'Ella']
+ClientDetails.tsx:677 Product card for Stocks & Shares ISA: {provider: 'Calculus Capital', provider_id: 32, provider_theme_color: null, using_color: '#F59E0B', template_generation_id: null, …}
+productTitleUtils.ts:208 🔍 [PRODUCT DISPLAY DEBUG] generateProductDisplayName called with product: {id: 236, provider_name: 'Calculus Capital', product_name: 'Stocks & Shares ISA', plan_number: undefined, product_type: 'ISA', …}
+productTitleUtils.ts:222 🔍 [PRODUCT DISPLAY DEBUG] Adding provider: Calculus Capital
+productTitleUtils.ts:228 🔍 [PRODUCT DISPLAY DEBUG] Adding product name: Stocks & Shares ISA
+productTitleUtils.ts:235 🔍 [PRODUCT DISPLAY DEBUG] No direct plan_number, trying extraction...
+productTitleUtils.ts:243 🔍 [PRODUCT DISPLAY DEBUG] No plan number found
+productTitleUtils.ts:255 🔍 [PRODUCT DISPLAY DEBUG] Adding single owner: Andrew
+productTitleUtils.ts:263 🔍 [PRODUCT DISPLAY DEBUG] Final display name: Calculus Capital - Stocks & Shares ISA - Andrew
+productTitleUtils.ts:264 🔍 [PRODUCT DISPLAY DEBUG] Parts used: (3) ['Calculus Capital', 'Stocks & Shares ISA', 'Andrew']
+ClientDetails.tsx:677 Product card for Stocks & Shares ISA: {provider: 'Calculus Capital', provider_id: 32, provider_theme_color: null, using_color: '#F59E0B', template_generation_id: null, …}
+productTitleUtils.ts:208 🔍 [PRODUCT DISPLAY DEBUG] generateProductDisplayName called with product: {id: 236, provider_name: 'Calculus Capital', product_name: 'Stocks & Shares ISA', plan_number: undefined, product_type: 'ISA', …}
+productTitleUtils.ts:222 🔍 [PRODUCT DISPLAY DEBUG] Adding provider: Calculus Capital
+productTitleUtils.ts:228 🔍 [PRODUCT DISPLAY DEBUG] Adding product name: Stocks & Shares ISA
+productTitleUtils.ts:235 🔍 [PRODUCT DISPLAY DEBUG] No direct plan_number, trying extraction...
+productTitleUtils.ts:243 🔍 [PRODUCT DISPLAY DEBUG] No plan number found
+productTitleUtils.ts:255 🔍 [PRODUCT DISPLAY DEBUG] Adding single owner: Andrew
+productTitleUtils.ts:263 🔍 [PRODUCT DISPLAY DEBUG] Final display name: Calculus Capital - Stocks & Shares ISA - Andrew
+productTitleUtils.ts:264 🔍 [PRODUCT DISPLAY DEBUG] Parts used: (3) ['Calculus Capital', 'Stocks & Shares ISA', 'Andrew']
+ClientDetails.tsx:1196 DEBUG: Client data: {client: {…}, client_product_owners: Array(2), clientAccounts: Array(2), first_account_owners: Array(1), apiResponse: {…}}
+ClientDetails.tsx:1196 DEBUG: Client data: {client: {…}, client_product_owners: Array(2), clientAccounts: Array(2), first_account_owners: Array(1), apiResponse: {…}}
+ClientDetails.tsx:299 DEBUG: ClientHeader formatDate - input: 2022-06-08T23:00:00Z output: 9 Jun 2022
+ClientDetails.tsx:299 DEBUG: ClientHeader formatDate - input: 2022-06-08T23:00:00Z output: 9 Jun 2022
+ClientDetails.tsx:677 Product card for Stocks & Shares ISA: {provider: 'Aviva', provider_id: 18, provider_theme_color: null, using_color: '#FDBA74', template_generation_id: null, …}
+productTitleUtils.ts:208 🔍 [PRODUCT DISPLAY DEBUG] generateProductDisplayName called with product: {id: 237, provider_name: 'Aviva', product_name: 'Stocks & Shares ISA', plan_number: undefined, product_type: 'ISA', …}
+productTitleUtils.ts:222 🔍 [PRODUCT DISPLAY DEBUG] Adding provider: Aviva
+productTitleUtils.ts:228 🔍 [PRODUCT DISPLAY DEBUG] Adding product name: Stocks & Shares ISA
+productTitleUtils.ts:235 🔍 [PRODUCT DISPLAY DEBUG] No direct plan_number, trying extraction...
+productTitleUtils.ts:243 🔍 [PRODUCT DISPLAY DEBUG] No plan number found
+productTitleUtils.ts:255 🔍 [PRODUCT DISPLAY DEBUG] Adding single owner: Ella
+productTitleUtils.ts:263 🔍 [PRODUCT DISPLAY DEBUG] Final display name: Aviva - Stocks & Shares ISA - Ella
+productTitleUtils.ts:264 🔍 [PRODUCT DISPLAY DEBUG] Parts used: (3) ['Aviva', 'Stocks & Shares ISA', 'Ella']
+ClientDetails.tsx:677 Product card for Stocks & Shares ISA: {provider: 'Aviva', provider_id: 18, provider_theme_color: null, using_color: '#FDBA74', template_generation_id: null, …}
+productTitleUtils.ts:208 🔍 [PRODUCT DISPLAY DEBUG] generateProductDisplayName called with product: {id: 237, provider_name: 'Aviva', product_name: 'Stocks & Shares ISA', plan_number: undefined, product_type: 'ISA', …}
+productTitleUtils.ts:222 🔍 [PRODUCT DISPLAY DEBUG] Adding provider: Aviva
+productTitleUtils.ts:228 🔍 [PRODUCT DISPLAY DEBUG] Adding product name: Stocks & Shares ISA
+productTitleUtils.ts:235 🔍 [PRODUCT DISPLAY DEBUG] No direct plan_number, trying extraction...
+productTitleUtils.ts:243 🔍 [PRODUCT DISPLAY DEBUG] No plan number found
+productTitleUtils.ts:255 🔍 [PRODUCT DISPLAY DEBUG] Adding single owner: Ella
+productTitleUtils.ts:263 🔍 [PRODUCT DISPLAY DEBUG] Final display name: Aviva - Stocks & Shares ISA - Ella
+productTitleUtils.ts:264 🔍 [PRODUCT DISPLAY DEBUG] Parts used: (3) ['Aviva', 'Stocks & Shares ISA', 'Ella']
+ClientDetails.tsx:677 Product card for Stocks & Shares ISA: {provider: 'Calculus Capital', provider_id: 32, provider_theme_color: null, using_color: '#F59E0B', template_generation_id: null, …}
+productTitleUtils.ts:208 🔍 [PRODUCT DISPLAY DEBUG] generateProductDisplayName called with product: {id: 236, provider_name: 'Calculus Capital', product_name: 'Stocks & Shares ISA', plan_number: undefined, product_type: 'ISA', …}
+productTitleUtils.ts:222 🔍 [PRODUCT DISPLAY DEBUG] Adding provider: Calculus Capital
+productTitleUtils.ts:228 🔍 [PRODUCT DISPLAY DEBUG] Adding product name: Stocks & Shares ISA
+productTitleUtils.ts:235 🔍 [PRODUCT DISPLAY DEBUG] No direct plan_number, trying extraction...
+productTitleUtils.ts:243 🔍 [PRODUCT DISPLAY DEBUG] No plan number found
+productTitleUtils.ts:255 🔍 [PRODUCT DISPLAY DEBUG] Adding single owner: Andrew
+productTitleUtils.ts:263 🔍 [PRODUCT DISPLAY DEBUG] Final display name: Calculus Capital - Stocks & Shares ISA - Andrew
+productTitleUtils.ts:264 🔍 [PRODUCT DISPLAY DEBUG] Parts used: (3) ['Calculus Capital', 'Stocks & Shares ISA', 'Andrew']
+ClientDetails.tsx:677 Product card for Stocks & Shares ISA: {provider: 'Calculus Capital', provider_id: 32, provider_theme_color: null, using_color: '#F59E0B', template_generation_id: null, …}
+productTitleUtils.ts:208 🔍 [PRODUCT DISPLAY DEBUG] generateProductDisplayName called with product: {id: 236, provider_name: 'Calculus Capital', product_name: 'Stocks & Shares ISA', plan_number: undefined, product_type: 'ISA', …}
+productTitleUtils.ts:222 🔍 [PRODUCT DISPLAY DEBUG] Adding provider: Calculus Capital
+productTitleUtils.ts:228 🔍 [PRODUCT DISPLAY DEBUG] Adding product name: Stocks & Shares ISA
+productTitleUtils.ts:235 🔍 [PRODUCT DISPLAY DEBUG] No direct plan_number, trying extraction...
+productTitleUtils.ts:243 🔍 [PRODUCT DISPLAY DEBUG] No plan number found
+productTitleUtils.ts:255 🔍 [PRODUCT DISPLAY DEBUG] Adding single owner: Andrew
+productTitleUtils.ts:263 🔍 [PRODUCT DISPLAY DEBUG] Final display name: Calculus Capital - Stocks & Shares ISA - Andrew
+productTitleUtils.ts:264 🔍 [PRODUCT DISPLAY DEBUG] Parts used: (3) ['Calculus Capital', 'Stocks & Shares ISA', 'Andrew']
+ClientDetails.tsx:156 PreviousFundsIRRDisplay received inactiveFundIds: [1107]
+ClientDetails.tsx:178 Calculating live Previous Funds IRR for 1 inactive funds
+ClientDetails.tsx:179 Inactive fund IDs for live calculation: [1107]
+ClientDetails.tsx:180 🔍 DEBUG: ClientDetails.tsx calling IRR with cache key: 1107
+api.ts:607 🔍 DEBUG: api.ts calculateStandardizedMultipleFundsIRR called with: {portfolioFundIds: Array(1)}
+api.ts:608 🔍 DEBUG: portfolioFundIds being sent to backend: [1107]
+ClientDetails.tsx:156 PreviousFundsIRRDisplay received inactiveFundIds: [1107]
+ClientDetails.tsx:169 Same IRR calculation already in progress, skipping duplicate request for: 1107
+ClientDetails.tsx:1196 DEBUG: Client data: {client: {…}, client_product_owners: Array(2), clientAccounts: Array(2), first_account_owners: Array(1), apiResponse: {…}}
+ClientDetails.tsx:1196 DEBUG: Client data: {client: {…}, client_product_owners: Array(2), clientAccounts: Array(2), first_account_owners: Array(1), apiResponse: {…}}
+ClientDetails.tsx:299 DEBUG: ClientHeader formatDate - input: 2022-06-08T23:00:00Z output: 9 Jun 2022
+ClientDetails.tsx:299 DEBUG: ClientHeader formatDate - input: 2022-06-08T23:00:00Z output: 9 Jun 2022
+ClientDetails.tsx:677 Product card for Stocks & Shares ISA: {provider: 'Aviva', provider_id: 18, provider_theme_color: null, using_color: '#FDBA74', template_generation_id: null, …}
+productTitleUtils.ts:208 🔍 [PRODUCT DISPLAY DEBUG] generateProductDisplayName called with product: {id: 237, provider_name: 'Aviva', product_name: 'Stocks & Shares ISA', plan_number: undefined, product_type: 'ISA', …}
+productTitleUtils.ts:222 🔍 [PRODUCT DISPLAY DEBUG] Adding provider: Aviva
+productTitleUtils.ts:228 🔍 [PRODUCT DISPLAY DEBUG] Adding product name: Stocks & Shares ISA
+productTitleUtils.ts:235 🔍 [PRODUCT DISPLAY DEBUG] No direct plan_number, trying extraction...
+productTitleUtils.ts:243 🔍 [PRODUCT DISPLAY DEBUG] No plan number found
+productTitleUtils.ts:255 🔍 [PRODUCT DISPLAY DEBUG] Adding single owner: Ella
+productTitleUtils.ts:263 🔍 [PRODUCT DISPLAY DEBUG] Final display name: Aviva - Stocks & Shares ISA - Ella
+productTitleUtils.ts:264 🔍 [PRODUCT DISPLAY DEBUG] Parts used: (3) ['Aviva', 'Stocks & Shares ISA', 'Ella']
+ClientDetails.tsx:677 Product card for Stocks & Shares ISA: {provider: 'Aviva', provider_id: 18, provider_theme_color: null, using_color: '#FDBA74', template_generation_id: null, …}
+productTitleUtils.ts:208 🔍 [PRODUCT DISPLAY DEBUG] generateProductDisplayName called with product: {id: 237, provider_name: 'Aviva', product_name: 'Stocks & Shares ISA', plan_number: undefined, product_type: 'ISA', …}
+productTitleUtils.ts:222 🔍 [PRODUCT DISPLAY DEBUG] Adding provider: Aviva
+productTitleUtils.ts:228 🔍 [PRODUCT DISPLAY DEBUG] Adding product name: Stocks & Shares ISA
+productTitleUtils.ts:235 🔍 [PRODUCT DISPLAY DEBUG] No direct plan_number, trying extraction...
+productTitleUtils.ts:243 🔍 [PRODUCT DISPLAY DEBUG] No plan number found
+productTitleUtils.ts:255 🔍 [PRODUCT DISPLAY DEBUG] Adding single owner: Ella
+productTitleUtils.ts:263 🔍 [PRODUCT DISPLAY DEBUG] Final display name: Aviva - Stocks & Shares ISA - Ella
+productTitleUtils.ts:264 🔍 [PRODUCT DISPLAY DEBUG] Parts used: (3) ['Aviva', 'Stocks & Shares ISA', 'Ella']
+ClientDetails.tsx:677 Product card for Stocks & Shares ISA: {provider: 'Calculus Capital', provider_id: 32, provider_theme_color: null, using_color: '#F59E0B', template_generation_id: null, …}
+productTitleUtils.ts:208 🔍 [PRODUCT DISPLAY DEBUG] generateProductDisplayName called with product: {id: 236, provider_name: 'Calculus Capital', product_name: 'Stocks & Shares ISA', plan_number: undefined, product_type: 'ISA', …}
+productTitleUtils.ts:222 🔍 [PRODUCT DISPLAY DEBUG] Adding provider: Calculus Capital
+productTitleUtils.ts:228 🔍 [PRODUCT DISPLAY DEBUG] Adding product name: Stocks & Shares ISA
+productTitleUtils.ts:235 🔍 [PRODUCT DISPLAY DEBUG] No direct plan_number, trying extraction...
+productTitleUtils.ts:243 🔍 [PRODUCT DISPLAY DEBUG] No plan number found
+productTitleUtils.ts:255 🔍 [PRODUCT DISPLAY DEBUG] Adding single owner: Andrew
+productTitleUtils.ts:263 🔍 [PRODUCT DISPLAY DEBUG] Final display name: Calculus Capital - Stocks & Shares ISA - Andrew
+productTitleUtils.ts:264 🔍 [PRODUCT DISPLAY DEBUG] Parts used: (3) ['Calculus Capital', 'Stocks & Shares ISA', 'Andrew']
+ClientDetails.tsx:677 Product card for Stocks & Shares ISA: {provider: 'Calculus Capital', provider_id: 32, provider_theme_color: null, using_color: '#F59E0B', template_generation_id: null, …}
+productTitleUtils.ts:208 🔍 [PRODUCT DISPLAY DEBUG] generateProductDisplayName called with product: {id: 236, provider_name: 'Calculus Capital', product_name: 'Stocks & Shares ISA', plan_number: undefined, product_type: 'ISA', …}
+productTitleUtils.ts:222 🔍 [PRODUCT DISPLAY DEBUG] Adding provider: Calculus Capital
+productTitleUtils.ts:228 🔍 [PRODUCT DISPLAY DEBUG] Adding product name: Stocks & Shares ISA
+productTitleUtils.ts:235 🔍 [PRODUCT DISPLAY DEBUG] No direct plan_number, trying extraction...
+productTitleUtils.ts:243 🔍 [PRODUCT DISPLAY DEBUG] No plan number found
+productTitleUtils.ts:255 🔍 [PRODUCT DISPLAY DEBUG] Adding single owner: Andrew
+productTitleUtils.ts:263 🔍 [PRODUCT DISPLAY DEBUG] Final display name: Calculus Capital - Stocks & Shares ISA - Andrew
+productTitleUtils.ts:264 🔍 [PRODUCT DISPLAY DEBUG] Parts used: (3) ['Calculus Capital', 'Stocks & Shares ISA', 'Andrew']
+ClientDetails.tsx:187 Live Previous Funds IRR response: {success: true, irr_percentage: -315.8, irr_decimal: -3.158324403263071, calculation_date: '2023-04-01', portfolio_fund_ids: Array(1), …}
