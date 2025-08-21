@@ -72,6 +72,51 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
   // Track calculated Previous Funds IRR values for each product and date
   const [previousFundsIRRData, setPreviousFundsIRRData] = useState<Map<string, Map<string, number | null>>>(new Map());
   const [previousFundsCalculationComplete, setPreviousFundsCalculationComplete] = useState<Set<number>>(new Set());
+  
+  // Track validated dates per product (dates where main product has valuation data)
+  const [validatedDatesPerProduct, setValidatedDatesPerProduct] = useState<Map<number, string[]>>(new Map());
+  
+  // Effect to compute validated dates per product (run before Previous Funds calculation)
+  useEffect(() => {
+    if (!irrHistoryData || !reportData?.selectedHistoricalIRRDates) {
+      setValidatedDatesPerProduct(new Map());
+      return;
+    }
+    
+    const selectedDates = Array.from(new Set(Object.values(reportData.selectedHistoricalIRRDates).flat()));
+    if (selectedDates.length === 0) {
+      setValidatedDatesPerProduct(new Map());
+      return;
+    }
+    
+    console.log(`🔄 [Validation] Computing validated dates for ${irrHistoryData.length} products`);
+    const validatedDates = new Map<number, string[]>();
+    
+    for (const productHistory of irrHistoryData) {
+      const productId = productHistory.product_id;
+      const validDatesForProduct: string[] = [];
+      
+      // Check each selected date to see if the main product has valuation data (non-null IRR)
+      for (const date of selectedDates) {
+        const portfolioIRRForDate = productHistory.portfolio_historical_irr?.find(
+          (irr: any) => irr.irr_date === date
+        );
+        
+        // Only include dates where the main product has actual valuation data (irr_result is not null)
+        if (portfolioIRRForDate && portfolioIRRForDate.irr_result !== null) {
+          validDatesForProduct.push(date);
+        }
+      }
+      
+      if (validDatesForProduct.length > 0) {
+        validatedDates.set(productId, validDatesForProduct);
+        console.log(`✅ [Validation] Product ${productId} has ${validDatesForProduct.length} valid dates:`, validDatesForProduct);
+      }
+    }
+    
+    setValidatedDatesPerProduct(validatedDates);
+  }, [irrHistoryData, reportData?.selectedHistoricalIRRDates]);
+  
   // Debug logging to understand data state (memoized to reduce spam)
   useEffect(() => {
     console.log('🔍 [IRR HISTORY DEBUG] Component loaded with:', {
@@ -725,6 +770,8 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       }
       
       console.log(`🔄 [Previous Funds] Starting calculation with ${selectedDates.length} dates:`, selectedDates);
+      console.log(`🔄 [Previous Funds] Using pre-computed validated dates for products:`, Array.from(validatedDatesPerProduct.entries()));
+      
       // Find products that have funds requiring dynamic IRR calculation
       const productsWithDynamicFunds = [];
       for (const productHistory of irrHistoryData) {
@@ -897,11 +944,20 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
           const completedProducts = new Set<number>();
         // Calculate IRR for each product's dynamic funds
         for (const { productId, inactiveFundIds } of productsWithDynamicFunds) {
+          // Get validated dates for this specific product (dates where the main product has valuation data)
+          const validDatesForProduct = validatedDatesPerProduct.get(productId) || [];
+          
+          if (validDatesForProduct.length === 0) {
+            console.log(`⚠️ [Previous Funds] Skipping product ${productId} - no valid dates with main product valuation data`);
+            continue;
+          }
+          
           console.log(`🔄 [Previous Funds] Calculating IRR for product ${productId} with fund IDs:`, inactiveFundIds);
+          console.log(`🔄 [Previous Funds] Product ${productId} valid dates (${validDatesForProduct.length}):`, validDatesForProduct);
           
           try {
-            // Use our new historical IRR calculation function
-            const dateIrrMap = await calculatePreviousFundsHistoricalIRR(inactiveFundIds, selectedDates);
+            // Use our new historical IRR calculation function with only validated dates for this product
+            const dateIrrMap = await calculatePreviousFundsHistoricalIRR(inactiveFundIds, validDatesForProduct);
             
             console.log(`🔍 [Previous Funds] Product ${productId} IRR calculation result:`, {
               mapSize: dateIrrMap.size,
@@ -946,7 +1002,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       }
     };
     calculatePreviousFundsIRR();
-  }, [irrHistoryData, reportData?.selectedHistoricalIRRDates, reportData?.productSummaries]); // Depend on all relevant data
+  }, [irrHistoryData, reportData?.selectedHistoricalIRRDates, reportData?.productSummaries, validatedDatesPerProduct]); // Depend on all relevant data including validated dates
   // Memoize the expensive table processing to prevent multiple renders
   const memoizedTableData = useMemo(() => {
     if (!reportData?.productSummaries || !irrHistoryData) {
@@ -1398,23 +1454,22 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                               const inactiveFundIds = inactiveFundsFromSummary
                                 .map((fund: any) => fund.portfolio_fund_id || fund.id)
                                 .filter((id: any) => id !== null && id !== undefined);
-                              // Get all historical dates that we need to calculate for
-                              const historicalDates = new Set();
-                              productHistory.funds_historical_irr.forEach((fund: any) => {
-                                if (fund.historical_irr) {
-                                  fund.historical_irr.forEach((record: any) => {
-                                    historicalDates.add(record.irr_date);
-                                  });
-                                }
-                              });
+                              // Get validated dates for this specific product (where main product has valuation data)
+                              const validDatesForThisProduct = validatedDatesPerProduct.get(productHistory.product_id) || [];
+                              
+                              if (validDatesForThisProduct.length === 0) {
+                                console.log(`⚠️ [Previous Funds] No valid dates for product ${productHistory.product_id} - skipping Previous Funds IRR calculation`);
+                                return; // Skip this product entirely
+                              }
+                              
                               // Trigger async calculation using batch historical IRR endpoint
                               const calculateHistoricalAggregatedIRR = async () => {
                                 const productKey = `product_${productHistory.product_id}`;
                                 try {
-                                  // Use the new batch historical IRR calculation function
+                                  // Use the new batch historical IRR calculation function with validated dates only
                                   const dateIrrMap = await calculatePreviousFundsHistoricalIRR(
                                     inactiveFundIds, 
-                                    Array.from(historicalDates) as string[]
+                                    validDatesForThisProduct
                                   );
                                 // Update the previousFundsIRRData state with calculated values
                                 setPreviousFundsIRRData(prev => {
@@ -1545,24 +1600,23 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                   aggregatedIrrMap.set(date, irr);
                                 });
                               } else {
-                                // Trigger async calculation of aggregated IRR for historical dates
-                                // Get all historical dates that we need to calculate for
-                                const historicalDates = new Set();
-                                productHistory.funds_historical_irr.forEach((fund: any) => {
-                                  if (fund.historical_irr) {
-                                    fund.historical_irr.forEach((record: any) => {
-                                      historicalDates.add(record.irr_date);
-                                    });
-                                  }
-                                });
+                                // Trigger async calculation of aggregated IRR for validated dates only
+                                // Get validated dates for this specific product (where main product has valuation data)
+                                const validDatesForThisProduct = validatedDatesPerProduct.get(productHistory.product_id) || [];
+                                
+                                if (validDatesForThisProduct.length === 0) {
+                                  console.log(`⚠️ [Previous Funds] No valid dates for product ${productHistory.product_id} - skipping Previous Funds IRR calculation for existing entry`);
+                                  return; // Skip this product entirely
+                                }
+                                
                                 // Trigger async calculation using batch historical IRR endpoint
                                 const calculateHistoricalAggregatedIRR = async () => {
                                   const productKey = `product_${productHistory.product_id}`;
                                   try {
-                                    // Use the new batch historical IRR calculation function
+                                    // Use the new batch historical IRR calculation function with validated dates only
                                     const dateIrrMap = await calculatePreviousFundsHistoricalIRR(
                                       portfolioFundIds, 
-                                      Array.from(historicalDates) as string[]
+                                      validDatesForThisProduct
                                     );
                                   // Update the previousFundsIRRData state with calculated values
                                   setPreviousFundsIRRData(prev => {
